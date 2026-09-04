@@ -13,6 +13,7 @@ secrets.local.json) — nie als Parameter durch die GUI-UI-Geschichte reichen.
 """
 from __future__ import annotations
 
+import time
 from urllib.parse import urljoin
 
 import requests
@@ -99,9 +100,7 @@ class Mql5Session:
             if r.status_code in (429, 503):
                 wait_s = backoff_after_throttle(
                     attempt, float(self.settings.get("rate_backoff_429_s", 45.0)))
-                time_sleep = wait_s
-                import time
-                time.sleep(time_sleep)
+                time.sleep(wait_s)
                 continue
             r.raise_for_status()
             return r

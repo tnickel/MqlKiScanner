@@ -74,6 +74,12 @@ llm_only = llm_col.button("Nur LLM-Auswertung für vorhandene Ergebnisse",
                           icon=":material/psychology:",
                           disabled=not st.session_state.scan_results)
 
+# Lauf-Einstellungen: aktuelle Widget-Werte gelten auch ohne explizites Speichern
+run_settings = {**settings, "listen_seiten": int(listen_seiten),
+                "top_n_export": int(top_n), "min_wochen": int(min_wochen),
+                "min_abonnenten": int(min_abo),
+                "llm_stufe1": bool(llm1), "llm_stufe2": bool(llm2)}
+
 if not secrets_store.get_secret("mql5_user"):
     st.warning("Kein MQL5-Login gesetzt: Schritt 3 kann Kennzahlen-Seiten lesen, "
                "aber keine Trade-Exporte laden (Admin-Bereich eintragen).",
@@ -85,7 +91,7 @@ if verifizieren:
                 [str(p) for p in sorted(config.RAW_DIR.glob("*.json"))]
     with st.status("Verifikations-Datensätze durch die Engine", expanded=True) as status:
         st.write(f"{len(raw_files)} Datensätze in data/raw/ …")
-        results = pipeline.ScanPipeline.analyze_local_files(raw_files, settings)
+        results = pipeline.ScanPipeline.analyze_local_files(raw_files, run_settings)
         st.session_state.scan_results = results
         st.session_state.scan_logs = {"forensik": [f"{len(results)} Datensätze analysiert."]}
         st.session_state.last_run_file = pipeline.ScanPipeline.save_run(results, {"forensik": ["Verifikationslauf data/raw"]})
@@ -93,7 +99,7 @@ if verifizieren:
                       state="complete", expanded=False)
 
 if llm_only and st.session_state.scan_results:
-    pipe = pipeline.ScanPipeline(settings)
+    pipe = pipeline.ScanPipeline(run_settings)
     with st.status("LLM-Auswertung (GLM)", expanded=True) as status:
         log = pipeline.StepLog()
         pipe.run_llm(st.session_state.scan_results, log,
@@ -106,7 +112,7 @@ if llm_only and st.session_state.scan_results:
                       state="complete", expanded=False)
 
 if start:
-    pipe = pipeline.ScanPipeline(settings)
+    pipe = pipeline.ScanPipeline(run_settings)
     logs: dict[str, list[str]] = {}
     results: list[pipeline.ScanResult] = []
     session = None
@@ -116,7 +122,7 @@ if start:
         st.write("MT4- und MT5-Listen werden gedrosselt geladen …")
         log = pipeline.StepLog()
         try:
-            session = pipeline.Mql5Session(settings)
+            session = pipeline.Mql5Session(run_settings)
             signals = pipe.crawl(
                 on_progress=lambda i, n, txt: st.write(f"{i}/{n} — {txt}"),
                 log=log)
@@ -151,20 +157,21 @@ if start:
         from mqlkiscanner.mql5.session import Mql5Session  # noqa: F811
 
         if session is None:
-            session = Mql5Session(settings)
+            session = Mql5Session(run_settings)
         needs_login = not session.has_credentials
         if needs_login:
             st.warning("Kein MQL5-Login — Kennzahlen-Seiten ja, Trade-Exporte nein. "
                        "Ergebnisse bleiben 'Vorprüfung'.")
         progress = st.progress(0.0, text="0 %")
         log = pipeline.StepLog()
-        for idx, cand in enumerate(candidates[: int(settings["top_n_export"])]):
-            st.write(f"[{idx + 1}/{min(len(candidates), settings['top_n_export'])}] "
+        n_export = min(len(candidates), run_settings["top_n_export"])
+        for idx, cand in enumerate(candidates[: n_export]):
+            st.write(f"[{idx + 1}/{n_export}] "
                      f"{cand.get('name')} #{cand['id']} …")
             res = pipe.analyze_candidate(session, cand, log)
             results.append(res)
-            progress.progress((idx + 1) / min(len(candidates), settings["top_n_export"]),
-                              text=f"{idx + 1} von {min(len(candidates), settings['top_n_export'])}")
+            progress.progress((idx + 1) / n_export,
+                              text=f"{idx + 1} von {n_export}")
         logs["forensik"] = log.lines
         status.update(label=f"Schritt 3 fertig: {len(results)} Signale forensisiert.",
                       state="complete")
