@@ -54,7 +54,7 @@ DEFAULT_SETTINGS: dict = {
     "rate_backoff_429_s": 45.0,     # Wartezeit bei HTTP 429/503
     "llm_stufe1": True,             # Massen-Profile (Flash)
     "llm_stufe2": True,             # Verdicts fuer Finalisten (starkes Modell)
-    "llm_max_total_tokens": 200_000,  # Kosten-Budget je Lauf
+    "llm_max_total_tokens": 5_000_000,  # Token-Budget je Lauf (Abo: grosszuegig)
     "glm_base_url": GLM_BASE_URL,   # Coding-Plan-Endpunkt (Abo); umstellbar auf API-Endpunkt
     "model_stufe1": MODEL_STUFE1,
     "model_stufe2": MODEL_STUFE2,

@@ -1,10 +1,19 @@
 # -*- coding: utf-8 -*-
 """Prompt-Vorlagen: Laden, Bearbeiten, Zuruecksetzen (config/prompts/).
 
-Die Vorlagen sind Dateien, damit sie in der GUI per Button angezeigt und
-editiert werden koennen. Platzhalter werden von pipeline.py ersetzt:
-  Stufe 1: {kandidat_json}, {forensik_json}, {kriterien}
-  Stufe 2: {kandidat_json}, {forensik_json}, {stufe1_profil}, {kriterien}
+Drei Stufen (Nutzer-Prinzip: "erster Prompt analysiert, zweiter analysiert,
+zum Schluss wertet ein LLM alles aus — ausfuehrlich"):
+  trade_analyse   : Prompt 1 — Strategie-Ermittlung ANHAND DER TRADES
+                    (starkes Modell glm-5.3). Platzhalter: {kandidat_json},
+                    {trades_json}
+  risiko_analyse  : Prompt 2 — Risiko-Profil aus Forensik-Kennzahlen
+                    (Flash). Platzhalter: {kandidat_json}, {forensik_json},
+                    {kriterien}
+  gesamtbericht   : Prompt 3 — abschliessende Gesamtauswertung ALLER
+                    Teilergebnisse, ausfuehrlicher Bericht (glm-5.3).
+                    Platzhalter: {kandidat_json}, {forensik_json},
+                    {trade_analyse}, {risiko_analyse}, {kriterien}
+
 Fehlt eine Datei, wird die eingebettete DEFAULT-Vorlage neu angelegt.
 """
 from __future__ import annotations
@@ -14,11 +23,46 @@ from pathlib import Path
 from ..config import PROMPTS_DIR
 
 PROMPT_FILES = {
-    "stufe1_profil": PROMPTS_DIR / "stufe1_profil.md",
-    "stufe2_verdict": PROMPTS_DIR / "stufe2_verdict.md",
+    "trade_analyse": PROMPTS_DIR / "trade_analyse.md",
+    "risiko_analyse": PROMPTS_DIR / "risiko_analyse.md",
+    "gesamtbericht": PROMPTS_DIR / "gesamtbericht.md",
 }
 
-DEFAULT_STUFE1 = """# Stufe 1 — Massen-Profil (GLM Flash)
+DEFAULT_TRADE_ANALYSE = """# Prompt 1 — Trade-Analyse: Strategie aus den Trades ermitteln (GLM 5.3)
+
+Du bist ein erfahrener Trading-Stratege und Forensiker. Dir liegen die von
+der Engine berechneten Trade-Statistiken sowie ECHTE Beispiel-Trades
+(schlechteste, beste, laengste Verlustserie, groeszter Korb, erster
+Handelstag) eines MQL5-Signals vor. Alle Zahlen sind maschinell aus dem
+Trade-Export berechnet — zitieren erlaubt, eigene Berechnungen nicht
+noetig, nichts erfinden.
+
+## Kandidat
+{kandidat_json}
+
+## Trade-Daten (Engine-Statistiken + Beispiel-Trades)
+{trades_json}
+
+## Aufgabe — ermitteln und begruenden, WAS das fuer ein Trading-Algo ist:
+1. **Strategie-Typ**: Ausbruch, Trendfolge, Grid/Averaging, Scalping,
+   News-/Session-Trading, Rollover-Arbitrage, Martingale-Korridor, ...?
+   Nenne das erkennbare Einstiegs- und Exit-Muster (SL/TP/manuell/
+   Trailing — die "exit"-Felder der Beispiel-Trades helfen).
+2. **Positionsgrößen-Verhalten**: flach, adaptiv, eskalierend?
+   Lot-Verteilung und Koerbe deuten.
+3. **Zeit-/Marktverhalten**: Handelszeiten, Haltedauer, Monatskurve —
+   wann verdient das System, wann verliert es?
+4. **Anomalien und Auffaelligkeiten**: asymmetrische Gewinne/Verluste,
+   Ausreisser, Verdacht auf Diskretionshandel, Rollover-Muster, Cluster.
+5. **Einordnung**: Wie "mechanisch" wirkt der Algo — regelbasiert oder
+   eher manuell/diskretionaer?
+
+Stil: Deutsch, sachlich-technisch, max. 450 Woerter, jede Aussage mit
+Zahlen aus den Daten belegen. Keine Anlageberatung, keine Emojis,
+kein Markdown-Header am Anfang — beginne direkt mit dem Text.
+"""
+
+DEFAULT_RISIKO_ANALYSE = """# Prompt 2 — Risiko-Analyse aus den Forensik-Kennzahlen (GLM Flash)
 
 Du bist ein forensischer Analyst fuer MetaTrader-Signale. Dir liegen NUR
 gepruefte Maschinendaten vor: Kandidaten-Kennzahlen (von der MQL5-Seite)
@@ -35,54 +79,66 @@ Zahlen wurden von der Engine berechnet; erfinde keine weiteren.
 {kriterien}
 
 ## Aufgabe
-Schreibe ein kompaktes deutsches Profil (max. 200 Woerter):
-1. **Was das System offenbar macht** (Strategie-Hypothese aus den Daten).
-2. **Risikobefunde**: Martingale/Grid/Exposure/Stop-Nachweis/Verlustserien —
+Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
+1. **Risikobefunde**: Martingale/Grid/Exposure/Stop-Nachweis/Verlustserien —
    mit den konkreten Zahlen. Kein Befund, keine Aussage.
-3. **Copy-Eignung**: Slippage-/Kontogroessen-Risiken.
-4. **Ein Satz Fazit**: Empfehlung oder Warnung — mit Hauptgrund.
+2. **Copy-Eignung**: Slippage-/Kontogroessen-Risiken.
+3. **Ein Satz Fazit**: Warnung oder Entlastung — mit Hauptgrund.
 
 Ton: nuedtern, technisch, keine Anlageberatung, keine Emojis.
 Wenn zentrale Forensik fehlt, sage das explizit ("keine positive Einstufung
 vor vollstaendiger Forensik").
 """
 
-DEFAULT_STUFE2 = """# Stufe 2 — Verdict fuer Finalisten (GLM stark)
+DEFAULT_GESAMTBERICHT = """# Prompt 3 — Gesamtauswertung: ausfuehrlicher Abschlussbericht (GLM 5.3)
 
-Du bist der leitende Pruefer. Vor dir: ein Kandidat mit vollstaendiger
-Forensik (Engine) und dem Stufe-1-Profil (Flash-Modell). Deine Aufgabe ist
-ein verbindliches Urteil mit Widerspruchscheck.
+Du bist der leitende Pruefer und schreibst den abschliessenden,
+AUSFUEHRLICHEN Bericht ueber einen MQL5-Signal-Kandidaten. Vor dir liegen
+ALLE Teilergebnisse: die Kandidaten-/Kennzahlen-Daten, die Forensik der
+Engine (maschinell, massgeblich), die Trade-Analyse (Prompt 1) und die
+Risiko-Analyse (Prompt 2). Alle Zahlen sind von der Engine berechnet —
+zitieren erlaubt, nichts dazuerfinden.
 
 ## Kandidat
 {kandidat_json}
 
-## Forensik der Engine (maschinell berechnet, massgeblich)
+## Forensik der Engine (massgeblich)
 {forensik_json}
 
-## Stufe-1-Profil (zur Kritik, nicht zur Uebernahme)
-{stufe1_profil}
+## Trade-Analyse (Prompt 1, Strategie aus den Trades)
+{trade_analyse}
+
+## Risiko-Analyse (Prompt 2)
+{risiko_analyse}
 
 ## Bindende Kriterien des Nutzers
 {kriterien}
 
-## Aufgabe
-1. **Widerspruchscheck**: Widerspricht das Stufe-1-Profil den Forensik-
-   Zahlen? Streiche nicht-belegbare Behauptungen.
-2. **Kriterien-Check**: Schranke EQ-DD > 30 % = AUTOMATISCHE ABLEHNUNG.
-   Ertrag < 5 %/Monat = Ablehnung. Ohne Stop-Nachweis = keine Empfehlung
-   ("bewiesen" heisst nur Orderbuch oder klare Cluster-Signatur).
-3. **Urteil**: genau eines von EMPFEHLUNG | WATCHLIST | ABLEHNUNG.
-4. **Risiko-Score 1-10** (hoch = riskant) mit einzeiliger Begruendung je
-   Dimension: Drawdown, Struktur (SL/Grid/Martingale), Exposure, Copy,
-   Track-Record.
-5. **Bedingungen** fuer Wiederaufnahme bei Ablehnung.
+## Aufgabe — schreibe den Bericht (800-1200 Woerter, Deutsch, Markdown):
 
-Format (Markdown, max. 250 Woerter):
-**Urteil:** ... | **Score:** n/10
-**Begruendung:** ...
-**Kritische Punkte:** - ...
-**Bedingungen:** - ... (nur bei ABLEHNUNG/WATCHLIST)
-Nuedtern, keine Anlageberatung. Zahlen nur aus den gelieferten Daten.
+Beginne mit EXAKT einer Zeile:
+Kurzfassung: <max. 25 Woerter, Kernurteil>
+
+Danach Abschnitte mit ## -Ueberschriften:
+1. **Was ist das fuer ein Trading-Algo?** — Strategie-Typ, Einstiegs-/Exit-
+   Logik, Automatisierungsgrad, belegt aus den Trades.
+2. **Wie handelt das System?** — Verhalten anhand der Beispiel-Trades:
+   Positions sizing, Körbe, Haltezeiten, Session-Muster, Monatsverlauf.
+3. **Risikoanalyse** — Drawdown (Trading-DD vs. Plattform-EQ-DD),
+   Verlustserien mit Summen, Peak-Exposure mit Dollar-Schockszenario,
+   Martingale-Befund, Stop-Loss-Nachweis oder dessen Fehlen.
+4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
+   praktische Risiken beim Kopieren.
+5. **Urteil** — genau eines von EMPFEHLUNG | WATCHLIST | ABLEHNUNG plus
+   Risiko-Score 1-10 (hoch = riskant) und die drei wichtigsten Gruende.
+   Bindende Kriterien beachten: EQ-DD > 30 % = AUTOMATISCHE ABLEHNUNG,
+   Ertrag < 5 %/Monat = Ablehnung, ohne Stop-Nachweis keine Empfehlung.
+6. **Bedingungen** — was muesste sich aendern, damit der Status wechselt
+   (nur bei ABLEHNUNG/WATCHLIST).
+
+Pruefe zunaechst intern: Widersprechen sich die Teilergebnisse? Loese
+Widersprueche zugunsten der maschinellen Forensik-Zahlen und weise im
+Bericht darauf hin. Sachlich, keine Anlageberatung, keine Emojis.
 """
 
 
@@ -92,8 +148,9 @@ def _write_default(path: Path, content: str) -> None:
 
 
 DEFAULTS = {
-    "stufe1_profil": DEFAULT_STUFE1,
-    "stufe2_verdict": DEFAULT_STUFE2,
+    "trade_analyse": DEFAULT_TRADE_ANALYSE,
+    "risiko_analyse": DEFAULT_RISIKO_ANALYSE,
+    "gesamtbericht": DEFAULT_GESAMTBERICHT,
 }
 
 

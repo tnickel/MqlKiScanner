@@ -11,17 +11,23 @@ def results_to_dataframe(results) -> pd.DataFrame:
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
+    df["Bericht"] = ":material/description: Bericht"
     return df
 
 
 def render_results_table(results, key: str = "results_table") -> int | None:
-    """Tabelle mit Ampel-Spalte; Rueckgabe = gewaehlte Signal-ID (oder None)."""
+    """Tabelle mit Ampel- und Bericht-Button; Rueckgabe = gewaehlte Signal-ID."""
     df = results_to_dataframe(results)
     if df.empty:
         st.info("Noch keine Ergebnisse — erst einen Scan starten oder die "
                 "Verifikations-Datensaetze laden.")
         return None
     df["Link"] = [f"https://www.mql5.com/en/signals/{r.id}" if r.id else "" for r in results]
+
+    def _open_report():
+        click = st.session_state.get(f"{key}_bericht")  # ButtonColumn-Click-Info
+        if click is not None and getattr(click, "row", None) is not None:
+            st.session_state["report_signal_id"] = results[click.row].id
 
     event = st.dataframe(
         df,
@@ -52,8 +58,12 @@ def render_results_table(results, key: str = "results_table") -> int | None:
             "Stop": st.column_config.TextColumn("Stop-Nachweis", width="medium"),
             "Score": st.column_config.ProgressColumn(
                 "Risiko-Score", min_value=1.0, max_value=10.0, format="%.1f"),
-            "Urteil": st.column_config.TextColumn("Urteil", width="large"),
+            "Kurzfassung": st.column_config.TextColumn("Kurzfassung", width="large"),
+            "Urteil": st.column_config.TextColumn("Urteil", width="medium"),
             "Fehler": st.column_config.TextColumn(None, width="small"),
+            "Bericht": st.column_config.ButtonColumn(
+                "Bericht", on_click=_open_report, key=f"{key}_bericht",
+                type="primary"),
             "Link": st.column_config.LinkColumn("MQL5", width="small"),
         },
     )
@@ -62,8 +72,35 @@ def render_results_table(results, key: str = "results_table") -> int | None:
     return None
 
 
+def render_report_panel(results) -> None:
+    """Ausfuehrlicher Gesamtbericht (per Bericht-Button in der Tabelle geoeffnet)."""
+    report_id = st.session_state.get("report_signal_id")
+    if report_id is None:
+        return
+    r = next((x for x in results if x.id == report_id), None)
+    if r is None:
+        st.session_state.pop("report_signal_id", None)
+        return
+    with st.container(border=True):
+        head = st.container(horizontal=True)
+        head.markdown(f"### :material/description: Ausführlicher Bericht — "
+                      f"{r.name} (#{r.id})")
+        if head.button("Schließen", key=f"close_report_{r.id}"):
+            st.session_state.pop("report_signal_id", None)
+            st.rerun()
+        if r.gesamtbericht:
+            st.markdown(r.gesamtbericht)
+        else:
+            st.warning("Noch kein Gesamtbericht vorhanden. Erst den LLM-Lauf "
+                       "(Schritt 4) starten — der Bericht wird von GLM 5.3 über "
+                       "alle Teilergebnisse (Trades, Forensik, Risikoprofil) "
+                       "geschrieben.")
+        if r.llm_fehler:
+            st.caption(f"LLM-Hinweis: {r.llm_fehler}")
+
+
 def render_detail(result) -> None:
-    """Detailansicht eines ScanResults: Forensik-Karten + LLM-Texte."""
+    """Detailansicht eines ScanResults: Kennzahlen, Teilergebnisse, Bericht."""
     st.subheader(f"{result.ampel} {result.name} #{result.id}", divider=True)
     if result.url:
         st.markdown(f"[Signal auf MQL5 öffnen]({result.url})")
@@ -93,9 +130,14 @@ def render_detail(result) -> None:
     if result.fehler:
         st.error(f"Fehler: {result.fehler}")
 
-    with st.expander("Stufe-1-Profil (GLM Flash)", icon=":material/psychology:"):
-        st.markdown(result.stufe1_profil or "_Noch nicht erstellt (LLM-Lauf starten)._")
-    with st.expander("Stufe-2-Verdict (GLM stark)", icon=":material/gavel:"):
-        st.markdown(result.stufe2_verdict or "_Noch nicht erstellt (Finalist + LLM-Lauf noetig)._")
+    with st.expander("Prompt 1 — Trade-Analyse (GLM 5.3, Strategie aus den Trades)",
+                     icon=":material/query_stats:"):
+        st.markdown(result.trade_analyse or "_Noch nicht erstellt (LLM-Lauf starten)._")
+    with st.expander("Prompt 2 — Risiko-Analyse (Forensik-Profil)",
+                     icon=":material/health_and_safety:"):
+        st.markdown(result.risiko_analyse or "_Noch nicht erstellt (LLM-Lauf starten)._")
+    with st.expander("Prompt 3 — Ausführlicher Gesamtbericht (GLM 5.3)",
+                     icon=":material/description:", expanded=True):
+        st.markdown(result.gesamtbericht or "_Noch nicht erstellt (LLM-Lauf starten)._")
     if result.llm_fehler:
         st.warning(f"LLM-Hinweis: {result.llm_fehler}")

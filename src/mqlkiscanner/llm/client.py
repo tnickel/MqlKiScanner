@@ -44,7 +44,7 @@ class LlmUsage:
 
 class GlmClient:
     def __init__(self, model_stufe1: str, model_stufe2: str,
-                 max_total_tokens: int = 200_000, timeout: int = 120,
+                 max_total_tokens: int = 5_000_000, timeout: int = 180,
                  base_url: str | None = None):
         # base_url: Coding-Plan-Endpunkt (Abo-Keys) vs. Standard-API-Endpunkt
         # (Pay-as-you-go-Keys) — falscher Endpunkt => Fehler 1113 "Insufficient
@@ -120,7 +120,7 @@ class GlmClient:
         Antworten, obwohl der Aufruf klappt.
         """
         content = self.chat("Antworte mit genau einem Wort: Test",
-                            model=self.model_stufe1, stufe=1, max_tokens=256)
+                            model=self.model_stufe1, stufe=1, max_tokens=2048)
         return {"ok": True, "antwort": content.strip(), "usage": {
             "total_tokens": self.usage.total_tokens,
             "pro_modell": self.usage.pro_modell}}

@@ -28,3 +28,4 @@ data/runs/
 Thumbs.db
 .DS_Store
 monthly.json
+data/*.db

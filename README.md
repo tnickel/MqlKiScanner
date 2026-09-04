@@ -48,20 +48,34 @@ Vorlage: `.env.example` kopieren nach `.env` und füllen — oder direkt in
 der App im Admin-Bereich setzen (wird nach `config/secrets.local.json`
 geschrieben, ebenfalls gitignored).
 
-## LLM-Layer (GLM, zweistufig — AGENTS.md Design-Regel 5)
+## LLM-Layer (GLM, dreistufig — Nutzer-Prinzip)
 
-- **Stufe 1** `glm-5.3-flash`: Massen-Profile für alle Forensik-Kandidaten.
-- **Stufe 2** `glm-5.3`: Verdicts (EMPFEHLUNG/WATCHLIST/ABLEHNUNG) nur für
-  Finalisten (Score < 5), mit Widerspruchscheck gegen die Engine-Zahlen.
+- **Prompt 1 — Trade-Analyse** (`glm-5.3`, stark): ermittelt die Strategie
+  **anhand der Trades** — die Engine stellt Statistiken plus kuratierte
+  Beispiel-Trades (schlechteste/beste, längste Verlustserie, größter Korb,
+  erster Handelstag) als JSON bereit.
+- **Prompt 2 — Risiko-Analyse** (`glm-5.3-flash`): Risikoprofil aus den
+  Forensik-Kennzahlen (Drawdown, Serien, Exposure, Stop-Nachweis).
+- **Prompt 3 — Gesamtbericht** (`glm-5.3`, stark): wertet **alle
+  Teilergebnisse** aus und schreibt einen ausführlichen Bericht (8 Abschnitte,
+  ~800–1200 Wörter): Was ist das für ein Algo, wie handelt er, wie riskant
+  ist er, Urteil + Score + Bedingungen.
+- **In der Tabelle steht nur die Kurzfassung** — den ausführlichen Bericht
+  öffnet man per **Bericht-Button** in der Tabellenzeile.
+- Alle Teilergebnisse landen in einer **SQLite-Datenbank**
+  (`data/mqlkiscanner.db`): Signale, Trade-Dateien (mit SHA-256), Forensik-
+  JSON und die LLM-Analysen je Stufe — Berichte bleiben so über Läufe hinweg
+  erhalten.
+- Token-Limits sind großzügig (Abo): ~8–24k completion-Tokens je Prompt,
+  5 Mio. Budget je Lauf — im Admin-Bereich änderbar.
+- Die Engine rechnet **alle** Zahlen; das LLM bekommt nur fertige
+  Befund-JSONs und interpretiert. Prompts liegen editierbar unter
+  `config/prompts/`.
 - **Endpunkt-Hinweis (wichtig):** Z.ai hat zwei Endpunkte mit getrennten
   Kontingenten — Abo-Keys aus dem **GLM Coding Plan** laufen über
   `https://api.z.ai/api/coding/paas/v4` (Standard hier), Pay-as-you-go-Keys
   mit Guthaben über `https://api.z.ai/api/paas/v4`. Falscher Endpunkt =
   Fehler 1113 „Insufficient balance“. Umstellbar im Admin-Bereich.
-- Die Engine rechnet **alle** Zahlen; das LLM bekommt nur fertige
-  Befund-JSONs und formuliert. Token-Budget je Lauf einstellbar.
-- Prompts liegen als editierbare Vorlagen unter `config/prompts/` und sind
-  per Button in der GUI anzeigbar und änderbar.
 - Die Engine läuft komplett ohne LLM-Key (Schritt 4 ist optional).
 
 ## Rate-Limiting (Account-Schutz)

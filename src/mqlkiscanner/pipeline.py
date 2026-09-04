@@ -16,6 +16,7 @@ from datetime import datetime
 from typing import Callable
 
 from . import config, scoring
+from . import db
 from .engine import analyze as analyze_export
 from .llm import client as llm_client
 from .llm import prompts as llm_prompts
@@ -70,8 +71,12 @@ class ScanResult:
     schranke_verletzt: bool = False
     ampel: str = "⚪"
     urteil: str = "Vorprüfung (ohne Forensik)"
-    stufe1_profil: str = ""
-    stufe2_verdict: str = ""
+    # LLM-Teilergebnisse (Nutzer-Prinzip: 2 Analysen + 1 Gesamtauswertung)
+    trades_path: str = ""           # Quelldatei der Trades (fuer Prompt 1)
+    trade_analyse: str = ""         # Prompt 1: Strategie aus den Trades (glm-5.3)
+    risiko_analyse: str = ""        # Prompt 2: Risiko-Profil aus Forensik (Flash)
+    gesamtbericht: str = ""         # Prompt 3: ausfuehrlicher Gesamtbericht (glm-5.3)
+    kurzfassung: str = ""           # Kurzzeile aus dem Gesamtbericht (fuer Tabelle)
     llm_fehler: str = ""
     fehler: str = ""
 
@@ -91,7 +96,8 @@ class ScanResult:
             "Martingale": ("JA" if self.martingale_flag else
                            ("nein" if self.martingale_flag is not None else "")),
             "Stop": self.stop_nachweis, "Score": self.score,
-            "Urteil": self.urteil, "Fehler": self.fehler,
+            "Kurzfassung": self.kurzfassung, "Urteil": self.urteil,
+            "Fehler": self.fehler,
         }
 
 
@@ -191,6 +197,7 @@ class ScanPipeline:
                 session, res.id,
                 extra_pause_s=float(self.settings.get("rate_pause_zwischen_signalen_s", 5.0)))
             log(f"  Trade-Export: {path} {'(Cache)' if from_cache else '(neu geladen)'}")
+            res.trades_path = path
             report = analyze_export(path)
             st, fx = report["stats"], report["forensics"]
             res.forensik_vorhanden = True
@@ -227,6 +234,33 @@ class ScanPipeline:
             res.fehler = f"{type(exc).__name__}: {exc}"
             log(f"  FEHLER bei {res.id}: {res.fehler}")
             log(traceback.format_exc(limit=3))
+        # Alles in die Datenbank (Nutzer-Prinzip: CSV + MQL5-Infos + Befunde)
+        try:
+            db.init_db()
+            db.upsert_signal(res.id, name=res.name, platform=res.platform, url=res.url,
+                             autor=res.autor, abo_preis=res.abo_preis_usd,
+                             abonnenten=res.abonnenten, wochen=res.wochen,
+                             stats={"eq_dd_pct": res.dd_equity_pct,
+                                    "bal_dd_pct": res.dd_balance_pct,
+                                    "ertrag_monat_pct": res.ertrag_monat_pct,
+                                    "pf": res.pf, "growth_pct": res.growth_pct,
+                                    "broker_server": res.broker_server})
+            if res.trades_path:
+                db.store_trade_file(res.id, res.trades_path)
+            if res.forensik_vorhanden:
+                db.store_forensik(res.id, {
+                    "trading_dd": {"pct": res.trading_dd_pct, "usd": res.trading_dd_usd},
+                    "winrate_pct": res.winrate_pct,
+                    "max_verlustserie": res.max_verlustserie,
+                    "verlustserie_usd": res.verlustserie_usd,
+                    "peak_exposure": {"positionen": res.peak_positionen,
+                                      "netto_lots": res.peak_netto_lots,
+                                      "schock_usd": res.shock_usd},
+                    "martingale_flag": res.martingale_flag,
+                    "stop_nachweis": res.stop_nachweis,
+                    "score": res.score, "ampel": res.ampel})
+        except Exception as exc:  # DB-Fehler darf den Lauf nicht abbrechen
+            log(f"  DB-Hinweis bei {res.id}: {exc}")
         ampel, grund = ampel_for(res, self.settings)
         res.ampel = ampel
         detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
@@ -238,33 +272,39 @@ class ScanPipeline:
     # ------------------------------------------------------ Schritt 4
     def run_llm(self, results: list[ScanResult], log: LogCb,
                 on_progress: ProgressCb | None = None) -> None:
-        """Stufe 1 (Flash) fuer alle mit Forensik; Stufe 2 (stark) fuer Finalisten."""
+        """Drei-Stufen-Auswertung (Nutzer-Prinzip):
+
+        Prompt 1  Trade-Analyse   — Strategie ANHAND DER TRADES ermitteln
+                                    (starkes Modell, glm-5.3)
+        Prompt 2  Risiko-Analyse  — Risikoprofil aus Forensik-Kennzahlen (Flash)
+        Prompt 3  Gesamtbericht   — wertet ALLE Teilergebnisse aus, ausfuehrlich
+                                    (starkes Modell, glm-5.3)
+
+        Jedes Teilergebnis landet in der Datenbank (Tabelle analyses).
+        """
         if not self.llm.has_key:
             log("LLM uebersprungen: kein GLM-Key gesetzt (Admin-Bereich).")
             return
         kriterien = _kriterien_text(self.settings)
-        finalists: list[ScanResult] = []
-        stage1_jobs = [r for r in results if r.forensik_vorhanden and not r.fehler]
+        jobs = [r for r in results if r.forensik_vorhanden and not r.fehler]
+        strong = 2  # starker Modell-Slot (model_stufe2, z. B. glm-5.3)
 
-        jobs = [(1, r) for r in stage1_jobs]
-        if self.settings.get("llm_stufe2", True):
-            jobs += [(2, r) for r in stage1_jobs
-                     if r.ampel == "🟢" or (r.score is not None and r.score < 5.0)]
-        finalists = [r for stufe, r in jobs if stufe == 2]
-
-        for i, (stufe, r) in enumerate(jobs):
-            if on_progress:
-                on_progress(i, len(jobs),
-                            f"Stufe {stufe}: {r.name} ({len(jobs) - i} verbleibend)")
-            cand_json = json.dumps({
+        def _kandidat(r: ScanResult) -> str:
+            return json.dumps({
                 "id": r.id, "name": r.name, "platform": r.platform,
+                "autor": r.autor, "url": r.url,
                 "wochen": r.wochen, "abonnenten": r.abonnenten,
+                "abo_preis_usd": r.abo_preis_usd,
                 "growth_pct": r.growth_pct, "ertrag_monat_pct": r.ertrag_monat_pct,
                 "pf": r.pf, "dd_equity_pct": r.dd_equity_pct,
-                "dd_balance_pct": r.dd_balance_pct, "score_engine": r.score,
+                "dd_balance_pct": r.dd_balance_pct,
+                "broker_server": r.broker_server,
+                "score_engine": r.score, "ampel": r.ampel,
                 "schranke_verletzt": r.schranke_verletzt,
             }, ensure_ascii=False)
-            forensik_json = json.dumps({
+
+        def _forensik(r: ScanResult) -> str:
+            return json.dumps({
                 "trading_dd": {"pct": r.trading_dd_pct, "usd": r.trading_dd_usd},
                 "winrate_pct": r.winrate_pct,
                 "max_verlustserie": r.max_verlustserie,
@@ -276,32 +316,75 @@ class ScanPipeline:
                 "martingale_evidenz": r.martingale_evidenz,
                 "stop_nachweis": r.stop_nachweis,
             }, ensure_ascii=False)
+
+        total = len(jobs) * 3
+        done = 0
+
+        def _tick(text: str) -> None:
+            nonlocal done
+            done += 1
+            if on_progress:
+                on_progress(done, total, text)
+
+        for r in jobs:
             try:
-                if stufe == 1 and self.settings.get("llm_stufe1", True):
-                    prompt = (llm_prompts.load_prompt("stufe1_profil")
-                              .replace("{kandidat_json}", cand_json)
-                              .replace("{forensik_json}", forensik_json)
-                              .replace("{kriterien}", kriterien))
-                    r.stufe1_profil = self.llm.chat(prompt, stufe=1, max_tokens=1200)
-                    log(f"  [Stufe 1] {r.name}: Profil ({self.llm.usage.total_tokens} Tokens gesamt)")
-                elif stufe == 2 and self.settings.get("llm_stufe2", True):
-                    prompt = (llm_prompts.load_prompt("stufe2_verdict")
-                              .replace("{kandidat_json}", cand_json)
-                              .replace("{forensik_json}", forensik_json)
-                              .replace("{stufe1_profil}", r.stufe1_profil or "(kein Profil)")
-                              .replace("{kriterien}", kriterien))
-                    r.stufe2_verdict = self.llm.chat(prompt, stufe=2, max_tokens=1500)
-                    log(f"  [Stufe 2] {r.name}: Verdict ({self.llm.usage.total_tokens} Tokens gesamt)")
+                # -------- Prompt 1: Trade-Analyse (starkes Modell)
+                trades_json = "{}"
+                if r.trades_path:
+                    from .parser import load_export
+                    from .trade_data import build_trade_payload
+                    trades_json = json.dumps(
+                        build_trade_payload(load_export(r.trades_path)),
+                        ensure_ascii=False)
+                prompt = (llm_prompts.load_prompt("trade_analyse")
+                          .replace("{kandidat_json}", _kandidat(r))
+                          .replace("{trades_json}", trades_json))
+                r.trade_analyse = self.llm.chat(prompt, stufe=strong, max_tokens=16384)
+                db.store_analysis(r.id, "trade_analyse",
+                                  self.settings.get("model_stufe2", ""),
+                                  self.llm.usage.total_tokens, r.trade_analyse)
+                log(f"  [1/3 Trade-Analyse] {r.name} "
+                    f"({self.llm.usage.total_tokens} Tokens gesamt)")
+                _tick(f"Trade-Analyse: {r.name}")
+
+                # -------- Prompt 2: Risiko-Analyse (Flash)
+                prompt = (llm_prompts.load_prompt("risiko_analyse")
+                          .replace("{kandidat_json}", _kandidat(r))
+                          .replace("{forensik_json}", _forensik(r))
+                          .replace("{kriterien}", kriterien))
+                r.risiko_analyse = self.llm.chat(prompt, stufe=1, max_tokens=8192)
+                db.store_analysis(r.id, "risiko_analyse",
+                                  self.settings.get("model_stufe1", ""),
+                                  self.llm.usage.total_tokens, r.risiko_analyse)
+                log(f"  [2/3 Risiko-Analyse] {r.name} "
+                    f"({self.llm.usage.total_tokens} Tokens gesamt)")
+                _tick(f"Risiko-Analyse: {r.name}")
+
+                # -------- Prompt 3: Gesamtauswertung, ausfuehrlich (starkes Modell)
+                prompt = (llm_prompts.load_prompt("gesamtbericht")
+                          .replace("{kandidat_json}", _kandidat(r))
+                          .replace("{forensik_json}", _forensik(r))
+                          .replace("{trade_analyse}", r.trade_analyse or "(nicht erstellt)")
+                          .replace("{risiko_analyse}", r.risiko_analyse or "(nicht erstellt)")
+                          .replace("{kriterien}", kriterien))
+                r.gesamtbericht = self.llm.chat(prompt, stufe=strong, max_tokens=24576)
+                db.store_analysis(r.id, "gesamtbericht",
+                                  self.settings.get("model_stufe2", ""),
+                                  self.llm.usage.total_tokens, r.gesamtbericht)
+                r.kurzfassung = _extract_kurzfassung(r.gesamtbericht)
+                log(f"  [3/3 Gesamtbericht] {r.name} "
+                    f"({len(r.gesamtbericht)} Zeichen, "
+                    f"{self.llm.usage.total_tokens} Tokens gesamt)")
+                _tick(f"Gesamtbericht: {r.name}")
             except llm_client.LlmNoBalanceError as exc:
-                for rr in jobs[i:]:
-                    rr[1].llm_fehler = str(exc)
+                r.llm_fehler = str(exc)
                 log(f"LLM abgebrochen: {exc}")
                 return
             except llm_client.LlmError as exc:
                 r.llm_fehler = str(exc)
                 log(f"  LLM-Fehler bei {r.name}: {exc}")
-            if on_progress:
-                on_progress(i + 1, len(jobs), f"{len(finalists)} Finalisten bewertet")
+        if on_progress:
+            on_progress(total, total, f"{len(jobs)} Signale vollstaendig ausgewertet")
 
     # ------------------------------------------------------ Hilfen
     @staticmethod
@@ -328,6 +411,7 @@ class ScanPipeline:
                 id=sid or (_extract_id(path) or 0),
                 name=path.split("/")[-1].split("\\")[-1].replace("_", " "),
                 platform="CSV",
+                trades_path=path,
                 wochen=st.get("span_weeks"),
                 pf=st.get("profit_factor_csv"),
                 forensik_vorhanden=True,
@@ -358,6 +442,28 @@ class ScanPipeline:
             r.ampel, grund = ampel_for(r, settings)
             r.urteil = grund + (f" | Score {r.score}, Trading-DD {r.trading_dd_pct} %"
                                 if r.trading_dd_pct is not None else "")
+            # Fruehere LLM-Analysen aus der DB nachladen (Nutzer-Prinzip:
+            # Berichte bleiben Datenbank-uebergreifend erhalten)
+            try:
+                db.init_db()
+                db.upsert_signal(r.id, name=r.name, platform=r.platform,
+                                 url=r.url or f"https://www.mql5.com/en/signals/{r.id}",
+                                 abo_preis=r.abo_preis_usd, wochen=r.wochen,
+                                 stats={"trading_dd_pct": r.trading_dd_pct,
+                                        "winrate_pct": r.winrate_pct, "score": r.score})
+                db.store_trade_file(r.id, path)
+                db.store_forensik(r.id, {"score": r.score, "ampel": r.ampel,
+                                         "trading_dd_pct": r.trading_dd_pct})
+                for kind, attr in (("trade_analyse", "trade_analyse"),
+                                   ("risiko_analyse", "risiko_analyse"),
+                                   ("gesamtbericht", "gesamtbericht")):
+                    prev = db.get_latest_analysis(r.id, kind)
+                    if prev:
+                        setattr(r, attr, prev["text"])
+                if r.gesamtbericht and not r.kurzfassung:
+                    r.kurzfassung = _extract_kurzfassung(r.gesamtbericht)
+            except Exception:
+                pass
             results.append(r)
         return results
 
@@ -381,3 +487,12 @@ def _extract_id(path: str) -> int | None:
     import re
     m = re.search(r"(\d{6,7})", path)
     return int(m.group(1)) if m else None
+
+
+def _extract_kurzfassung(bericht: str) -> str:
+    """Zieht die Kurzzeile aus dem Gesamtbericht (fuer die Tabellenspalte)."""
+    import re
+    m = re.search(r"Kurzfassung\s*[:：]\s*(.+)", bericht)
+    if m:
+        return m.group(1).strip().strip("*").strip()
+    return bericht.strip().splitlines()[0][:160] if bericht.strip() else ""

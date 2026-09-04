@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import streamlit as st
 
 from mqlkiscanner import config, pipeline
-from mqlkiscanner.app_ui import render_detail, render_results_table
+from mqlkiscanner.app_ui import render_detail, render_report_panel, render_results_table
 
 st.title("Ergebnisse", icon=":material/table_chart:")
 
@@ -69,6 +69,7 @@ else:
     visible = results
 
 st.divider()
+render_report_panel(results)
 if sel_id is not None:
     selected = next((r for r in results if r.id == sel_id), None)
     if selected:

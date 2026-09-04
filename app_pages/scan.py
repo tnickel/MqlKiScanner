@@ -20,7 +20,7 @@ import streamlit as st
 
 from mqlkiscanner import config, pipeline
 from mqlkiscanner import secrets_store
-from mqlkiscanner.app_ui import render_results_table
+from mqlkiscanner.app_ui import render_report_panel, render_results_table
 
 st.title("Scan", icon=":material/radar:")
 
@@ -70,7 +70,7 @@ start = run_col.button("Scan starten (Schritte 1–4)", type="primary",
                        icon=":material/play_circle:")
 verifizieren = ver_col.button("Verifikations-Datensätze laden (data/raw)",
                               icon=":material/fact_check:")
-llm_only = llm_col.button("Nur LLM-Auswertung für vorhandene Ergebnisse",
+llm_only = llm_col.button("LLM-Auswertung starten (3 Prompts je Signal)",
                           icon=":material/psychology:",
                           disabled=not st.session_state.scan_results)
 
@@ -177,7 +177,7 @@ if start:
                       state="complete")
 
     # ---------------- Schritt 4: LLM
-    with st.status("Schritt 4: LLM-Auswertung (GLM 2-stufig)", expanded=True) as status:
+    with st.status("Schritt 4: LLM-Auswertung (3 Prompts: Trades -> Risiko -> Gesamtbericht)", expanded=True) as status:
         log = pipeline.StepLog()
         if not pipe.llm.has_key:
             st.warning("Kein GLM-Key gesetzt (Admin) — Schritt 4 übersprungen. "
@@ -207,6 +207,7 @@ if n:
     c4.metric("🔴 Schranke/Flag", ampeln.count("🔴"))
     c5.metric("⛔ Ausgeschlossen", ampeln.count("⛔"))
 
+render_report_panel(st.session_state.scan_results)
 sel_id = render_results_table(st.session_state.scan_results)
 if sel_id is not None:
     result = next(r for r in st.session_state.scan_results if r.id == sel_id)

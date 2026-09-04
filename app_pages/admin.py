@@ -53,19 +53,19 @@ with admin1:
 
     settings = config.load_settings()
     c1, c2, c3 = st.columns(3)
-    m1 = c1.selectbox("Stufe 1 — Massen-Scan (schnell/günstig)",
+    m1 = c1.selectbox("Stufe 1 — Risiko-Analyse (schnell/günstig, Flash-Klasse)",
                       ["glm-5.3-flash", "glm-4.5-flash", "glm-4.5-air"],
                       index=["glm-5.3-flash", "glm-4.5-flash", "glm-4.5-air"].index(
                           settings.get("model_stufe1", "glm-5.3-flash")),
                       key="admin_model1")
-    m2 = c2.selectbox("Stufe 2 — Finalisten-Verdict (stark)",
+    m2 = c2.selectbox("Stufe 2 — Trade-Analyse + Gesamtbericht (stark)",
                       ["glm-5.3", "glm-5.2", "glm-5.1", "glm-4.5"],
                       index=["glm-5.3", "glm-5.2", "glm-5.1", "glm-4.5"].index(
                           settings.get("model_stufe2", "glm-5.3")),
                       key="admin_model2")
-    budget = c3.number_input("Token-Budget je Lauf", 5_000, 5_000_000,
-                             value=int(settings.get("llm_max_total_tokens", 200_000)), step=5_000,
-                             key="admin_budget")
+    budget = c3.number_input("Token-Budget je Lauf", 50_000, 50_000_000,
+                             value=int(settings.get("llm_max_total_tokens", 5_000_000)),
+                             step=100_000, key="admin_budget")
     st.caption(
         "**Endpunkt wählen** (getrennte Kontingente bei Z.ai): Abo-Keys aus dem "
         "GLM Coding Plan laufen über `…/api/coding/paas/v4` — Pay-as-you-go-Keys "
@@ -147,24 +147,36 @@ with admin1:
 
 # ============================================================ Prompts + Limits
 with admin2:
-    st.subheader("LLM-Prompts (zweistufig)", icon=":material/edit_note:")
+    st.subheader("LLM-Prompts (dreistufig)", icon=":material/edit_note:")
     st.caption(
-        "Stufe 1 (Flash) schreibt Massen-Profile im Scan; Stufe 2 (starkes Modell) "
-        "fällt das Verdict für Finalisten. Die Engine übergibt nur fertige "
-        "Befund-JSONs — das LLM rechnet nie selbst. Vorlagen sind editierbar und "
-        "werden unter `config/prompts/` gespeichert.")
+        f"Prompt 1 **Trade-Analyse** (`{settings.get('model_stufe2', 'glm-5.3')}`, stark): "
+        "ermittelt die Strategie ANHAND DER TRADES. Prompt 2 **Risiko-Analyse** "
+        f"(`{settings.get('model_stufe1', 'glm-5.3-flash')}`): Risikoprofil aus der "
+        "Forensik. Prompt 3 **Gesamtbericht** (`glm-5.3`, stark): wertet ALLE "
+        "Teilergebnisse aus — ausführlich; in der Tabelle steht nur die Kurzfassung. "
+        "Die Engine übergibt nur fertige Befund-JSONs — das LLM rechnet nie selbst. "
+        "Vorlagen sind editierbar und werden unter `config/prompts/` gespeichert.")
+    _PROMPT_LABELS = {
+        "trade_analyse": "Prompt 1 — Trade-Analyse (stark)",
+        "risiko_analyse": "Prompt 2 — Risiko-Analyse (Flash)",
+        "gesamtbericht": "Prompt 3 — Gesamtbericht (stark, ausführlich)",
+    }
     prompt_key = st.segmented_control(
         "Vorlage", list(llm_prompts.PROMPT_FILES),
-        format_func=lambda k: ("Stufe 1 — Profil (Flash)" if k == "stufe1_profil"
-                               else "Stufe 2 — Verdict (stark)"),
-        default="stufe1_profil")
+        format_func=lambda k: _PROMPT_LABELS.get(k, k),
+        default="trade_analyse")
     if prompt_key:
         current = llm_prompts.load_prompt(prompt_key)
         changed = llm_prompts.prompt_is_modified(prompt_key)
         st.markdown(f"Status: {'🟡 geändert (nicht Standard)' if changed else '⬜ Standard-Vorlage'}")
+        _platzhalter = {
+            "trade_analyse": "{kandidat_json}, {trades_json}",
+            "risiko_analyse": "{kandidat_json}, {forensik_json}, {kriterien}",
+            "gesamtbericht": ("{kandidat_json}, {forensik_json}, {trade_analyse}, "
+                              "{risiko_analyse}, {kriterien}"),
+        }
         edited = st.text_area(
-            "Prompt-Vorlage (Platzhalter: {kandidat_json}, {forensik_json}, "
-            "{kriterien}, {stufe1_profil})",
+            f"Prompt-Vorlage (Platzhalter: {_platzhalter[prompt_key]})",
             value=current, height=420, key=f"prompt_{prompt_key}")
         c1, c2, c3 = st.columns([1, 1, 2])
         if c1.button("Speichern", icon=":material/save:"):
