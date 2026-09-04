@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "stand": "2026-09-04",
+    "quelle": "Forensische Analyse-Reihe, Workspace Allgemein, Session sess_ff799a20-8b9b-4b1b-b605-0826e01ceffa",
+    "schranke": {"max_drawdown_pct": 30, "prioritaet": "Risiko vor Ertrag", "min_ertrag_pct_monat": 5}
+  },
+  "empfehlung": [
+    {"id": 2349227, "name": "Gold Spike MT4", "plattform": "MT4", "rolle": "Risikotraeger", "score": 4.0, "eq_dd_pct": 3.8, "monat_pct": 21.95, "pf": 3.15, "wochen": 44, "broker": "RoboForex-ECN", "stop_beweis": "Orderbuch: 368/368 mit SL/TP, Trailing 161/186 im Plus", "abo_preis_usd": 30},
+    {"id": 2375480, "name": "Gold Spike MT5", "plattform": "MT5", "rolle": "Risikotraeger (Zwilling, identischer EA)", "score": null, "eq_dd_pct": 5.26, "monat_pct": 24.29, "pf": 2.17, "wochen": 14, "broker": "RoboForex-ECN", "stop_beweis": "87% sekundengenaue Uebereinstimmung mit MT4", "abo_preis_usd": 30},
+    {"id": 2342895, "name": "KiraCat", "plattform": "MT5", "rolle": "Ertragstraeger", "score": 4.7, "eq_dd_pct": 20.55, "realer_dd_pct": 7.9, "monat_pct": 24.89, "pf": 4.11, "wochen": 43, "broker": "FPTradingLLC (FP Markets)", "stop_beweis": "KEIN Markt-SL (manuell, Diskretionsrisiko dokumentiert)", "abo_preis_usd": 49}
+  ],
+  "ea_kauf_alternative": [
+    {"id": 2265877, "name": "Gold Reaper New V2 2", "grund": "Strategie solide (Score 4.4), aber 8/14 Reviews fehlgeschlagene Kopien; EA im Market ~949 USD (4.47/5)"}
+  ],
+  "watchlist": [
+    {"id": 2362868, "name": "Pure Gold 2000 Vantage", "status": "HERABGESTUFT 2026-09-04", "grund": "32 gleichz. SELL-Positionen / 2.66 Lots netto (=266 USD je 1 USD Bewegung; 50-USD-Schock ~ -13.300 USD), kein SL-Nachweis, 19-Verluste-Serie (-1.703 USD), nur 26 Wochen. Wiederaufnahme nur mit Orderbuch-Stop-Nachweis."},
+    {"id": 2339082, "name": "GoldWave signal", "status": "Watchlist", "grund": "50-USD-Micro-Konto, Median-Gewinn 1.06 USD, Rollover-Scalper — Copy-fragil"},
+    {"id": 2049326, "name": "SFE Impulse", "status": "vom Nutzer abgelehnt", "grund": "12 Monate seitwaerts, PF 1.43, 100 USD/Monat"}
+  ],
+  "ausgeschlossen": [
+    {"id": 2379208, "name": "World PEACE Multi FX Algo", "grund": "Grid+Martingale ohne SL, EQ-DD 30.6%"},
+    {"id": 2231030, "name": "MSC Gold Stable Pro", "grund": "EQ-DD 33.7% (Schranke verletzt), Slippage-frissiges Sekunden-Scalping"},
+    {"id": 2356441, "name": "FXtrading", "grund": "Grid+Martingale ohne SL, schwaechster Ertrag (5%/Monat), Mini-Konto mit Nachschuessen"},
+    {"id": 2371777, "name": "AlgoForge", "grund": "EQ-DD 41.2%"},
+    {"id": 2364821, "name": "Gold Whisperer Low Risk", "grund": "31% Winrate, 25 Verluste an einem Tag, DD ~17-25%, 25 Wochen, manuell"},
+    {"id": 2304847, "name": "MSC SuperGold Pro", "grund": "Bal-DD 53%, EQ-DD 34.5% (Martingale-Monster)"},
+    {"id": 2280569, "name": "MagicGW audcad L", "grund": "EQ-DD 45.8%, Ertrag 3.7%"},
+    {"id": 2347343, "name": "SERONGGA", "grund": "aktuell -30.6%/Monat, Bal-DD 49.4%"},
+    {"id": 2383310, "name": "Low Risk Gold", "grund": "EQ-DD 45.9% (Namensluege)"},
+    {"id": 2268766, "name": "Soma PureGold Indexes and Oil", "grund": "Bal-DD 28.6%, PF 1.30, Sharpe 0.07"},
+    {"id": 2375343, "name": "Multi EA Trading", "grund": "EQ-DD 33.1%, negative Monate (Anbieter = FXtrading)"},
+    {"id": 2376950, "name": "Multi EA combo", "grund": "Bal-DD 35.5%, PF 1.17"},
+    {"id": 2262642, "name": "NoPain MT5", "grund": "Ertrag 1.7%/Monat, 86% manuell"},
+    {"id": 2306053, "name": "Kenni Trades Gold Breakout (MT4)", "grund": "EQ-DD 23.1% UND Bal-DD 27.9%, 18 Verluste in Serie"},
+    {"id": 2204998, "name": "Gold Reaper Goldtrade Pro Daytrade Pro", "grund": "Bal-DD 32.6%, PF 1.19, 0 Abonnenten"},
+    {"id": 2281256, "name": "Turtle One", "grund": "aktuell -5.5%/Monat, PF 1.37"},
+    {"id": 2356872, "name": "Smart Boss", "grund": "EQ-DD 24.9%, Sharpe 0.11"},
+    {"id": 2367701, "name": "LUBOTFX", "grund": "Ertrag 3.7%/Monat"},
+    {"id": 2375487, "name": "Different gold strategies 1", "grund": "aktuell -1.9%/Monat, 0 Abonnenten"},
+    {"id": 2084890, "name": "Goldtrade Pro ICM", "grund": "Bal-DD 32.0%"},
+    {"id": 2245675, "name": "OnlyUJ", "grund": "Bal-DD 35.5%, PF 1.29, Margin-Last 38.6%"},
+    {"id": 2376856, "name": "GOLD HUAT EA", "grund": "Bal-DD 44.2%"},
+    {"id": 2337490, "name": "MegaGold", "grund": "aktuell -4.8%/Monat, PF 1.20"},
+    {"id": 2359404, "name": "Lucky Cat MT5", "grund": "Ertrag 2.9%/Monat"},
+    {"id": 2324441, "name": "Ultimate Portfolio 2000", "grund": "Ertrag 4.3%/Monat, PF 1.38"},
+    {"id": 2361280, "name": "VTS You Only Live Once 7", "grund": "nur 27 Wochen, EQ-DD 17.3%"},
+    {"id": 2383608, "name": "Kenni Daily Scalp Breakout Gold MT5", "grund": "PF 1.32, Sharpe 0.07, kurz"},
+    {"id": 2383311, "name": "Gold and GBPUSD", "grund": "Reliability 76%, kurz"}
+  ]
+}

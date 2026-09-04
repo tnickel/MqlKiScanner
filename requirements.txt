@@ -1,0 +1,9 @@
+# Kern (Phase 0-2, laeuft ohne LLM-Key)
+requests>=2.31
+beautifulsoup4>=4.12
+pandas>=2.0
+matplotlib>=3.8
+# GUI (Phase 4)
+streamlit>=1.45
+# LLM-Layer (Phase 3): GLM ueber die OpenAI-kompatible Z.ai-REST-API,
+# kein zusaetzliches SDK noetig (requests genuegt).

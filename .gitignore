@@ -1,0 +1,30 @@
+# --- Geheimnisse: NIE committen ---
+.env
+config/secrets.local.json
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Daten (lokale Scans, Exporte, Runs — koennen personenbezogene Daten enthalten)
+data/candidates.json
+data/stats/
+data/trades/
+data/runs/
+
+# temporaere Arbeitsdateien
+.tmp/
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
+monthly.json

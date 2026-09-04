@@ -1,0 +1,10 @@
+# Streamlit theme — MqlKiScanner (finanzieller Look, risikoorientiert)
+[theme]
+base = "light"
+primaryColor = "#0f6b4f"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f2f5f3"
+textColor = "#1c2420"
+
+[server]
+headless = true
