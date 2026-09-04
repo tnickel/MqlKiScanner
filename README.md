@@ -9,6 +9,12 @@ zweistufigem GLM-LLM-Layer. Fortsetzung einer forensischen Analyse-Reihe
 
 ## Schnellstart
 
+**Windows:** `start.bat` doppelklicken — findet Python (oder `.venv`),
+installiert fehlende Abhängigkeiten beim ersten Start selbst und öffnet
+die App unter http://localhost:8501 im Browser.
+
+Manuell:
+
 ```bash
 pip install -r requirements.txt
 streamlit run streamlit_app.py
