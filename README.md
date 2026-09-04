@@ -53,6 +53,11 @@ geschrieben, ebenfalls gitignored).
 - **Stufe 1** `glm-5.3-flash`: Massen-Profile für alle Forensik-Kandidaten.
 - **Stufe 2** `glm-5.3`: Verdicts (EMPFEHLUNG/WATCHLIST/ABLEHNUNG) nur für
   Finalisten (Score < 5), mit Widerspruchscheck gegen die Engine-Zahlen.
+- **Endpunkt-Hinweis (wichtig):** Z.ai hat zwei Endpunkte mit getrennten
+  Kontingenten — Abo-Keys aus dem **GLM Coding Plan** laufen über
+  `https://api.z.ai/api/coding/paas/v4` (Standard hier), Pay-as-you-go-Keys
+  mit Guthaben über `https://api.z.ai/api/paas/v4`. Falscher Endpunkt =
+  Fehler 1113 „Insufficient balance“. Umstellbar im Admin-Bereich.
 - Die Engine rechnet **alle** Zahlen; das LLM bekommt nur fertige
   Befund-JSONs und formuliert. Token-Budget je Lauf einstellbar.
 - Prompts liegen als editierbare Vorlagen unter `config/prompts/` und sind

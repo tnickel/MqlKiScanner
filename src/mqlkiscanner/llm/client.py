@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 
 import requests
 
-from ..config import GLM_BASE_URL
+from .. import config as _config
 from .. import secrets_store
 
 
@@ -44,8 +44,12 @@ class LlmUsage:
 
 class GlmClient:
     def __init__(self, model_stufe1: str, model_stufe2: str,
-                 max_total_tokens: int = 200_000, timeout: int = 120):
-        self.base_url = GLM_BASE_URL
+                 max_total_tokens: int = 200_000, timeout: int = 120,
+                 base_url: str | None = None):
+        # base_url: Coding-Plan-Endpunkt (Abo-Keys) vs. Standard-API-Endpunkt
+        # (Pay-as-you-go-Keys) — falscher Endpunkt => Fehler 1113 "Insufficient
+        # balance". Default kommt aus den Settings (config.glm_base_url).
+        self.base_url = (base_url or _config.GLM_BASE_URL).rstrip("/")
         self.model_stufe1 = model_stufe1
         self.model_stufe2 = model_stufe2
         self.max_total_tokens = max_total_tokens
@@ -91,8 +95,12 @@ class GlmClient:
                     err = {}
                 if err.get("code") in ("1113", "1302"):
                     raise LlmNoBalanceError(
-                        "GLM-Key gueltig, aber kein Guthaben/Resource-Package "
-                        f"(Z.ai-Code {err.get('code')}). Bitte bei Z.ai aufladen.")
+                        "GLM-Key gueltig, aber kein Kontingent auf diesem Endpunkt "
+                        f"(Z.ai-Code {err.get('code')}). Bei Abo-Keys (GLM Coding "
+                        "Plan) muss der Coding-Endpunkt gesetzt sein "
+                        "(api.z.ai/api/coding/paas/v4), bei Guthaben-Keys der "
+                        "Standard-Endpunkt (api.z.ai/api/paas/v4) — im Admin-"
+                        "bereich umstellbar, ggf. dort aufladen.")
                 time.sleep(5 * (attempt + 1))
                 last_error = LlmError(f"HTTP 429: {r.text[:200]}")
                 continue
@@ -105,9 +113,14 @@ class GlmClient:
         raise last_error or LlmError("GLM-Aufruf fehlgeschlagen.")
 
     def test_connection(self) -> dict:
-        """Mini-Test fuer den Admin-Bereich: Modellanfrage mit 8 Tokens."""
+        """Mini-Test fuer den Admin-Bereich.
+
+        max_tokens=256: die glm-5.x-Modelle verbrauchen Reasoning-Tokens,
+        bevor sichtbarer Content entsteht — zu kleine Werte liefern leere
+        Antworten, obwohl der Aufruf klappt.
+        """
         content = self.chat("Antworte mit genau einem Wort: Test",
-                            model=self.model_stufe1, stufe=1, max_tokens=8)
+                            model=self.model_stufe1, stufe=1, max_tokens=256)
         return {"ok": True, "antwort": content.strip(), "usage": {
             "total_tokens": self.usage.total_tokens,
             "pro_modell": self.usage.pro_modell}}

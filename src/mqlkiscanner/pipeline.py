@@ -131,6 +131,7 @@ class ScanPipeline:
             model_stufe1=self.settings.get("model_stufe1", config.MODEL_STUFE1),
             model_stufe2=self.settings.get("model_stufe2", config.MODEL_STUFE2),
             max_total_tokens=int(self.settings.get("llm_max_total_tokens", 200_000)),
+            base_url=self.settings.get("glm_base_url") or None,
         )
 
     # ------------------------------------------------------ Schritt 1 + 2
@@ -281,7 +282,7 @@ class ScanPipeline:
                               .replace("{kandidat_json}", cand_json)
                               .replace("{forensik_json}", forensik_json)
                               .replace("{kriterien}", kriterien))
-                    r.stufe1_profil = self.llm.chat(prompt, stufe=1, max_tokens=700)
+                    r.stufe1_profil = self.llm.chat(prompt, stufe=1, max_tokens=1200)
                     log(f"  [Stufe 1] {r.name}: Profil ({self.llm.usage.total_tokens} Tokens gesamt)")
                 elif stufe == 2 and self.settings.get("llm_stufe2", True):
                     prompt = (llm_prompts.load_prompt("stufe2_verdict")
@@ -289,7 +290,7 @@ class ScanPipeline:
                               .replace("{forensik_json}", forensik_json)
                               .replace("{stufe1_profil}", r.stufe1_profil or "(kein Profil)")
                               .replace("{kriterien}", kriterien))
-                    r.stufe2_verdict = self.llm.chat(prompt, stufe=2, max_tokens=900)
+                    r.stufe2_verdict = self.llm.chat(prompt, stufe=2, max_tokens=1500)
                     log(f"  [Stufe 2] {r.name}: Verdict ({self.llm.usage.total_tokens} Tokens gesamt)")
             except llm_client.LlmNoBalanceError as exc:
                 for rr in jobs[i:]:

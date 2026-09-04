@@ -24,10 +24,20 @@ KNOWN_SIGNALS_FILE = DATA_DIR / "known_signals.json"
 
 MQL5_BASE = "https://www.mql5.com"
 
+# LLM — GLM-Zugang. WICHTIG (gelernt aus dem elearning-Projekt):
+# Es gibt zwei Endpunkte mit getrennten Kontingenten:
+#   https://api.z.ai/api/coding/paas/v4   -> GLM Coding Plan (Abo-Keys)
+#   https://api.z.ai/api/paas/v4          -> Pay-as-you-go API-Keys (Guthaben)
+# Ein Coding-Plan-Abo-Key liefert auf dem Standard-Endpunkt Fehler 1113
+# ("Insufficient balance") — deshalb ist der Coding-Endpunkt hier Default.
+# Die Base-URL ist im Admin-Bereich aenderbar (glm_base_url).
+GLM_BASE_URL_CODING = "https://api.z.ai/api/coding/paas/v4"
+GLM_BASE_URL_API = "https://api.z.ai/api/paas/v4"
+GLM_BASE_URL = GLM_BASE_URL_CODING
+
 # LLM — Zweistufen-Modellwahl (AGENTS.md Design-Regel 5):
 #   Stufe 1: Flash-Klasse fuer Massen-Profile im Scan
 #   Stufe 2: starkes Modell nur fuer Finalisten (Verdict)
-GLM_BASE_URL = "https://api.z.ai/api/paas/v4"
 MODEL_STUFE1 = "glm-5.3-flash"
 MODEL_STUFE2 = "glm-5.3"
 
@@ -45,6 +55,7 @@ DEFAULT_SETTINGS: dict = {
     "llm_stufe1": True,             # Massen-Profile (Flash)
     "llm_stufe2": True,             # Verdicts fuer Finalisten (starkes Modell)
     "llm_max_total_tokens": 200_000,  # Kosten-Budget je Lauf
+    "glm_base_url": GLM_BASE_URL,   # Coding-Plan-Endpunkt (Abo); umstellbar auf API-Endpunkt
     "model_stufe1": MODEL_STUFE1,
     "model_stufe2": MODEL_STUFE2,
 }

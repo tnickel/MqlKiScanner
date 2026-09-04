@@ -66,20 +66,44 @@ with admin1:
     budget = c3.number_input("Token-Budget je Lauf", 5_000, 5_000_000,
                              value=int(settings.get("llm_max_total_tokens", 200_000)), step=5_000,
                              key="admin_budget")
-    if st.button("Modelle + Budget speichern", icon=":material/save:"):
+    st.caption(
+        "**Endpunkt wählen** (getrennte Kontingente bei Z.ai): Abo-Keys aus dem "
+        "GLM Coding Plan laufen über `…/api/coding/paas/v4` — Pay-as-you-go-Keys "
+        "mit Guthaben über `…/api/paas/v4`. Falscher Endpunkt = Fehler 1113 "
+        "„Insufficient balance“.")
+    url_choice = st.selectbox(
+        "GLM-Endpunkt",
+        ["GLM Coding Plan (Abo)", "Standard-API (Guthaben)", "Eigene URL"],
+        index=0 if "coding" in (settings.get("glm_base_url") or "") else
+              (1 if settings.get("glm_base_url") == config.GLM_BASE_URL_API else 2),
+        key="admin_baseurl_choice")
+    custom_url = st.text_input(
+        "Eigene Base-URL (nur bei „Eigene URL“)",
+        value=settings.get("glm_base_url", config.GLM_BASE_URL),
+        key="admin_baseurl_custom", disabled=url_choice != "Eigene URL")
+    if st.button("Modelle + Endpunkt + Budget speichern", icon=":material/save:"):
+        if url_choice == "GLM Coding Plan (Abo)":
+            new_base = config.GLM_BASE_URL_CODING
+        elif url_choice == "Standard-API (Guthaben)":
+            new_base = config.GLM_BASE_URL_API
+        else:
+            new_base = custom_url.strip().rstrip("/")
         config.save_settings({**settings, "model_stufe1": m1, "model_stufe2": m2,
-                              "llm_max_total_tokens": int(budget)})
-        st.toast("Modell-Konfiguration gespeichert.", icon=":material/check:")
+                              "llm_max_total_tokens": int(budget),
+                              "glm_base_url": new_base})
+        st.toast(f"Konfiguration gespeichert. Endpunkt: {new_base}", icon=":material/check:")
 
     if st.button("Verbindung testen", icon=":material/network_check:"):
-        with st.spinner("Teste GLM-API …"):
-            client = llm_client.GlmClient(model_stufe1=m1, model_stufe2=m2)
+        test_base = config.load_settings().get("glm_base_url") or config.GLM_BASE_URL
+        with st.spinner(f"Teste GLM-API über {test_base} …"):
+            client = llm_client.GlmClient(model_stufe1=m1, model_stufe2=m2,
+                                          base_url=test_base)
             try:
                 out = client.test_connection()
                 st.success(f"Verbindung ok — Antwort: {out['antwort']!r} "
-                           f"({out['usage']['total_tokens']} Tokens).")
+                           f"({out['usage']['total_tokens']} Tokens, Endpunkt {client.base_url}).")
             except llm_client.LlmNoBalanceError as exc:
-                st.warning(f"Key gültig, aber: {exc}")
+                st.warning(f"Key/Endpunkt-Problem: {exc}")
             except llm_client.LlmError as exc:
                 st.error(str(exc))
 
