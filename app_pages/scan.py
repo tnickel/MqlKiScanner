@@ -167,10 +167,10 @@ if start:
         if needs_login:
             st.warning("Kein MQL5-Login — Kennzahlen-Seiten ja, Trade-Exporte nein. "
                        "Ergebnisse bleiben 'Vorprüfung'.")
+        n_export = min(len(candidates), run_settings["top_n_export"])
         progress = st.progress(0.0, text=f"0/{n_export}")
         activity = st.empty()   # EINE Zeile, die sich aktualisiert (kein Log-Stream)
         log = pipeline.StepLog()
-        n_export = min(len(candidates), run_settings["top_n_export"])
 
         def log_live(msg: str) -> None:
             log(msg)
