@@ -44,7 +44,7 @@ class LlmUsage:
 
 class GlmClient:
     def __init__(self, model_stufe1: str, model_stufe2: str,
-                 max_total_tokens: int = 5_000_000, timeout: int = 180,
+                 max_total_tokens: int = 5_000_000, timeout: int = 300,
                  base_url: str | None = None):
         # base_url: Coding-Plan-Endpunkt (Abo-Keys) vs. Standard-API-Endpunkt
         # (Pay-as-you-go-Keys) — falscher Endpunkt => Fehler 1113 "Insufficient
@@ -55,6 +55,8 @@ class GlmClient:
         self.max_total_tokens = max_total_tokens
         self.timeout = timeout
         self.usage = LlmUsage()
+        # Details des letzten Aufrufs — fuer die GUI-Anzeige "was macht das LLM"
+        self.last_call: dict = {}
 
     @property
     def has_key(self) -> bool:
@@ -85,6 +87,7 @@ class GlmClient:
         }
         last_error: Exception | None = None
         for attempt in range(3):
+            start = time.monotonic()
             r = requests.post(f"{self.base_url}/chat/completions",
                               headers=self._headers(), data=json.dumps(body),
                               timeout=self.timeout)
@@ -109,7 +112,26 @@ class GlmClient:
             data = r.json()
             usage = data.get("usage", {})
             self.usage.add(model, int(usage.get("total_tokens", 0)))
-            return data["choices"][0]["message"]["content"]
+            content = data["choices"][0]["message"].get("content") or ""
+            finish = data["choices"][0].get("finish_reason")
+            self.last_call = {
+                "model": model,
+                "prompt_tokens": int(usage.get("prompt_tokens", 0)),
+                "completion_tokens": int(usage.get("completion_tokens", 0)),
+                "reasoning_tokens": int((usage.get("completion_tokens_details") or {})
+                                        .get("reasoning_tokens", 0) or 0),
+                "dauer_s": round(time.monotonic() - start, 1),
+                "finish_reason": finish,
+                "zeichen": len(content),
+                "prompt_zeichen": len(prompt),
+            }
+            if not content:
+                raise LlmError(
+                    f"Leere Antwort von {model} (finish_reason={finish}, "
+                    f"completion_tokens={self.last_call['completion_tokens']}). "
+                    "Moegliche Ursache: Reasoning hat das max_tokens-Budget "
+                    "aufgebraucht — Limit erhoehen.")
+            return content
         raise last_error or LlmError("GLM-Aufruf fehlgeschlagen.")
 
     def test_connection(self) -> dict:

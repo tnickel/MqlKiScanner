@@ -182,6 +182,7 @@ class ScanPipeline:
                          abo_preis_usd=cand.get("abo_preis_usd"),
                          wochen=cand.get("wochen"), growth_pct=cand.get("growth_pct"))
         try:
+            log("Kennzahlen-Seite laden (mql5) …")
             stats = signal_stats.fetch_signal_stats(session, res.id)
             res.dd_equity_pct = stats.get("dd_equity_pct")
             res.dd_balance_pct = stats.get("dd_balance_pct")
@@ -190,14 +191,19 @@ class ScanPipeline:
             if res.wochen is None:
                 res.wochen = stats.get("weeks")
             res.broker_server = stats.get("broker_server")
-            log(f"  Stats: EQ-DD {res.dd_equity_pct} % | Bal-DD {res.dd_balance_pct} % | "
-                f"PF {res.pf} | Ertrag {res.ertrag_monat_pct} %/Monat")
+            log(f"✓ Kennzahlen: EQ-DD {res.dd_equity_pct} % · PF {res.pf} · "
+                f"Ertrag {res.ertrag_monat_pct} %/Monat")
 
+            log("Trade-Export laden (CSV) …")
             path, from_cache = exporter.export_positions(
                 session, res.id,
                 extra_pause_s=float(self.settings.get("rate_pause_zwischen_signalen_s", 5.0)))
-            log(f"  Trade-Export: {path} {'(Cache)' if from_cache else '(neu geladen)'}")
             res.trades_path = path
+            with open(path, encoding="utf-8") as fh:
+                n_lines = sum(1 for _ in fh)
+            log(f"✓ Trade-Export: {n_lines} Zeilen "
+                f"({'Cache' if from_cache else 'neu geladen'})")
+            log("Forensik-Batterie (4 Tests) läuft …")
             report = analyze_export(path)
             st, fx = report["stats"], report["forensics"]
             res.forensik_vorhanden = True
@@ -218,7 +224,13 @@ class ScanPipeline:
                                      f"{stops.get('positions_total')} mit SL/TP")
             else:
                 res.stop_nachweis = stops.get("verdict", "kein Nachweis")[:60]
+            log(f"✓ Forensik: Winrate {res.winrate_pct} % · Trading-DD "
+                f"{res.trading_dd_pct} % · Serie {res.max_verlustserie} · "
+                f"Peak {res.peak_positionen} Pos · Martingale "
+                f"{'JA' if res.martingale_flag else 'nein'} · Stop: "
+                f"{res.stop_nachweis[:40]}")
 
+            log("Risiko-Score berechnen …")
             platform = {
                 "eq_dd_pct": res.dd_equity_pct or 0,
                 "weeks": res.wochen,
@@ -329,36 +341,55 @@ class ScanPipeline:
         for r in jobs:
             try:
                 # -------- Prompt 1: Trade-Analyse (starkes Modell)
+                model_strong = self.settings.get("model_stufe2", "glm-5.3")
                 trades_json = "{}"
+                n_trades = 0
                 if r.trades_path:
                     from .parser import load_export
                     from .trade_data import build_trade_payload
-                    trades_json = json.dumps(
-                        build_trade_payload(load_export(r.trades_path)),
-                        ensure_ascii=False)
+                    payload = build_trade_payload(load_export(r.trades_path))
+                    trades_json = json.dumps(payload, ensure_ascii=False)
+                    n_trades = payload.get("meta", {}).get("trades", 0)
                 prompt = (llm_prompts.load_prompt("trade_analyse")
                           .replace("{kandidat_json}", _kandidat(r))
                           .replace("{trades_json}", trades_json))
+                log(f"→ [1/3] Sende Trade-Analyse an {model_strong}: "
+                    f"{n_trades} Trades als Engine-Statistik + Beispiel-Trades "
+                    f"({len(trades_json):,} Zeichen Daten, Prompt gesamt "
+                    f"{len(prompt):,} Zeichen). Das Modell denkt jetzt — "
+                    f"1-3 Minuten …")
+                _tick(f"Prompt 1/3 (Trade-Analyse) gesendet: {r.name}")
                 r.trade_analyse = self.llm.chat(prompt, stufe=strong, max_tokens=16384)
+                lc = self.llm.last_call
+                log(f"  ✓ [1/3] Trade-Analyse fertig: {lc['zeichen']} Zeichen "
+                    f"Antwort in {lc['dauer_s']}s (Reasoning "
+                    f"{lc['reasoning_tokens']} + Completion "
+                    f"{lc['completion_tokens']} Tokens) — gesamt bisher: "
+                    f"{self.llm.usage.total_tokens:,} Tokens")
                 db.store_analysis(r.id, "trade_analyse",
                                   self.settings.get("model_stufe2", ""),
                                   self.llm.usage.total_tokens, r.trade_analyse)
-                log(f"  [1/3 Trade-Analyse] {r.name} "
-                    f"({self.llm.usage.total_tokens} Tokens gesamt)")
-                _tick(f"Trade-Analyse: {r.name}")
+                _tick(f"Trade-Analyse fertig: {r.name}")
 
                 # -------- Prompt 2: Risiko-Analyse (Flash)
+                model_flash = self.settings.get("model_stufe1", "glm-5.3-flash")
                 prompt = (llm_prompts.load_prompt("risiko_analyse")
                           .replace("{kandidat_json}", _kandidat(r))
                           .replace("{forensik_json}", _forensik(r))
                           .replace("{kriterien}", kriterien))
+                log(f"→ [2/3] Sende Risiko-Analyse an {model_flash}: "
+                    f"Forensik-Kennzahlen + Kriterien ({len(prompt):,} "
+                    f"Zeichen) …")
+                _tick(f"Prompt 2/3 (Risiko-Analyse) gesendet: {r.name}")
                 r.risiko_analyse = self.llm.chat(prompt, stufe=1, max_tokens=8192)
+                lc = self.llm.last_call
+                log(f"  ✓ [2/3] Risiko-Analyse fertig: {lc['zeichen']} Zeichen "
+                    f"in {lc['dauer_s']}s — gesamt bisher: "
+                    f"{self.llm.usage.total_tokens:,} Tokens")
                 db.store_analysis(r.id, "risiko_analyse",
                                   self.settings.get("model_stufe1", ""),
                                   self.llm.usage.total_tokens, r.risiko_analyse)
-                log(f"  [2/3 Risiko-Analyse] {r.name} "
-                    f"({self.llm.usage.total_tokens} Tokens gesamt)")
-                _tick(f"Risiko-Analyse: {r.name}")
+                _tick(f"Risiko-Analyse fertig: {r.name}")
 
                 # -------- Prompt 3: Gesamtauswertung, ausfuehrlich (starkes Modell)
                 prompt = (llm_prompts.load_prompt("gesamtbericht")
@@ -367,15 +398,23 @@ class ScanPipeline:
                           .replace("{trade_analyse}", r.trade_analyse or "(nicht erstellt)")
                           .replace("{risiko_analyse}", r.risiko_analyse or "(nicht erstellt)")
                           .replace("{kriterien}", kriterien))
+                log(f"→ [3/3] Sende Gesamtauswertung an {model_strong}: ALLE "
+                    f"Teilergebnisse zusammen ({len(prompt):,} Zeichen = "
+                    f"Forensik + Trade-Analyse {len(r.trade_analyse)} Zeichen + "
+                    f"Risiko-Analyse {len(r.risiko_analyse)} Zeichen). Der "
+                    f"ausfuehrliche Bericht wird geschrieben — 1-3 Minuten …")
+                _tick(f"Prompt 3/3 (Gesamtbericht) gesendet: {r.name}")
                 r.gesamtbericht = self.llm.chat(prompt, stufe=strong, max_tokens=24576)
+                lc = self.llm.last_call
+                log(f"  ✓ [3/3] Gesamtbericht fertig: {lc['zeichen']} Zeichen in "
+                    f"{lc['dauer_s']}s — gesamt bisher: "
+                    f"{self.llm.usage.total_tokens:,} Tokens")
                 db.store_analysis(r.id, "gesamtbericht",
                                   self.settings.get("model_stufe2", ""),
                                   self.llm.usage.total_tokens, r.gesamtbericht)
                 r.kurzfassung = _extract_kurzfassung(r.gesamtbericht)
-                log(f"  [3/3 Gesamtbericht] {r.name} "
-                    f"({len(r.gesamtbericht)} Zeichen, "
-                    f"{self.llm.usage.total_tokens} Tokens gesamt)")
-                _tick(f"Gesamtbericht: {r.name}")
+                log(f"  ● {r.name} abgeschlossen. Kurzfassung: {r.kurzfassung}")
+                _tick(f"Gesamtbericht fertig: {r.name}")
             except llm_client.LlmNoBalanceError as exc:
                 r.llm_fehler = str(exc)
                 log(f"LLM abgebrochen: {exc}")

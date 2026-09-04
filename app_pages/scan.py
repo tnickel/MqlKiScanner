@@ -100,15 +100,20 @@ if verifizieren:
 
 if llm_only and st.session_state.scan_results:
     pipe = pipeline.ScanPipeline(run_settings)
-    with st.status("LLM-Auswertung (GLM)", expanded=True) as status:
+    with st.status("LLM-Auswertung (3 Prompts je Signal)", expanded=True) as status:
+        activity = st.empty()   # eine Zeile, aktualisiert sich laufend
         log = pipeline.StepLog()
-        pipe.run_llm(st.session_state.scan_results, log,
-                     on_progress=lambda i, n, txt: st.write(f"{i}/{n} — {txt}"))
+
+        def log_live(msg: str) -> None:
+            log(msg)
+            activity.write(f"› {msg}")
+
+        pipe.run_llm(st.session_state.scan_results, log_live)
         st.session_state.scan_logs["llm"] = log.lines
         st.session_state.last_run_file = pipeline.ScanPipeline.save_run(
             st.session_state.scan_results,
             {k: v for k, v in st.session_state.scan_logs.items()})
-        status.update(label=f"LLM fertig ({pipe.llm.usage.total_tokens} Tokens).",
+        status.update(label=f"LLM fertig ({pipe.llm.usage.total_tokens:,} Tokens).",
                       state="complete", expanded=False)
 
 if start:
@@ -119,12 +124,12 @@ if start:
 
     # ---------------- Schritt 1: Listen lesen
     with st.status("Schritt 1: MQL5-Signal-Listen lesen", expanded=True) as status:
-        st.write("MT4- und MT5-Listen werden gedrosselt geladen …")
+        activity = st.empty()
         log = pipeline.StepLog()
         try:
             session = pipeline.Mql5Session(run_settings)
             signals = pipe.crawl(
-                on_progress=lambda i, n, txt: st.write(f"{i}/{n} — {txt}"),
+                on_progress=lambda i, n, txt: activity.write(f"› {txt}"),
                 log=log)
             logs["listen"] = log.lines
             status.update(label=f"Schritt 1 fertig: {len(signals)} Signale.", state="complete")
@@ -162,32 +167,35 @@ if start:
         if needs_login:
             st.warning("Kein MQL5-Login — Kennzahlen-Seiten ja, Trade-Exporte nein. "
                        "Ergebnisse bleiben 'Vorprüfung'.")
-        progress = st.progress(0.0, text="0 %")
+        progress = st.progress(0.0, text=f"0/{n_export}")
+        activity = st.empty()   # EINE Zeile, die sich aktualisiert (kein Log-Stream)
         log = pipeline.StepLog()
         n_export = min(len(candidates), run_settings["top_n_export"])
+
+        def log_live(msg: str) -> None:
+            log(msg)
+            activity.write(f"› {msg}")
+
         for idx, cand in enumerate(candidates[: n_export]):
-            st.write(f"[{idx + 1}/{n_export}] "
-                     f"{cand.get('name')} #{cand['id']} …")
-            res = pipe.analyze_candidate(session, cand, log)
+            activity.write(f"› [{idx + 1}/{n_export}] {cand.get('name')} #{cand['id']}")
+            res = pipe.analyze_candidate(session, cand, log_live)
             results.append(res)
             progress.progress((idx + 1) / n_export,
-                              text=f"{idx + 1} von {n_export}")
+                              text=f"{idx + 1}/{n_export} forensisiert")
         logs["forensik"] = log.lines
         status.update(label=f"Schritt 3 fertig: {len(results)} Signale forensisiert.",
                       state="complete")
 
     # ---------------- Schritt 4: LLM
     with st.status("Schritt 4: LLM-Auswertung (3 Prompts: Trades -> Risiko -> Gesamtbericht)", expanded=True) as status:
-        log = pipeline.StepLog()
         if not pipe.llm.has_key:
             st.warning("Kein GLM-Key gesetzt (Admin) — Schritt 4 übersprungen. "
                        "Die Engine-Ergebnisse sind bereits bewertbar.")
-        pipe.run_llm(results, log,
-                     on_progress=lambda i, n, txt: st.write(f"{i}/{n} — {txt}"))
+        activity = st.empty()
+        log = pipeline.StepLog()
+        pipe.run_llm(results, log)
         logs["llm"] = log.lines
-        for line in log.lines[-6:]:
-            st.write(line)
-        status.update(label=f"Schritt 4 fertig ({pipe.llm.usage.total_tokens} Tokens).",
+        status.update(label=f"Schritt 4 fertig ({pipe.llm.usage.total_tokens:,} Tokens).",
                       state="complete")
 
     st.session_state.scan_results = results
