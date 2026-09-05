@@ -133,6 +133,55 @@ def test_running_step_glow_and_pulse():
     assert ":material/database:" in laufender_kopf and "**Prüfen & speichern**" in laufender_kopf
 
 
+def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):
+    """Station 4: Signale mit DB-Gesamtbericht werden nicht neu berichtet —
+    der gespeicherte Bericht wird stattdessen ins Ergebnis geladen."""
+    from mqlkiscanner import db, secrets_store
+
+    db.init_db()
+    db.store_analysis(2342895, "gesamtbericht", "glm-5.3", 10,
+                      "ALTER_BERICHT. Kurzfassung: Alt.")
+    db.store_analysis(2342895, "trade_analyse", "glm-5.3", 5, "ALTE_TRADE_ANALYSE")
+
+    monkeypatch.setattr(secrets_store, "get_secret", lambda key: "ui-test-key")
+    empfangen: list[int] = []
+
+    def fake_run_llm(self, results, log, on_progress=None, should_stop=None):
+        empfangen.extend(r.id for r in results)
+        return {"completed": 3 * len(results), "total": 3 * len(results),
+                "failed": 0, "skipped": 0, "reason": ""}
+
+    monkeypatch.setattr(pipeline.ScanPipeline, "run_llm", fake_run_llm)
+    at = _scan_page()
+    at.run()
+    at.session_state["scan_results"] = [
+        pipeline.ScanResult(id=2342895, name="KiraCat", forensik_vorhanden=True),
+        pipeline.ScanResult(id=9990001, name="Neu", forensik_vorhanden=True),
+    ]
+    _btn(at, "step_btn_llm").click()
+    at.run()
+    warte_auf_lauf(at)
+    assert not at.exception, at.exception
+    # Nur das Signal ohne vorhandenen Bericht wurde zum Modell geschickt:
+    assert empfangen == [9990001]
+    wf = at.session_state["scan_workflow"]
+    assert wf["steps"]["llm"]["status"] == "complete"
+    assert "1 übersprungen" in wf["steps"]["llm"]["detail"]
+    # Gespeicherte Berichte wurden ins Ergebnis geladen:
+    k = next(r for r in at.session_state["scan_results"] if r.id == 2342895)
+    assert "ALTER_BERICHT" in k.gesamtbericht
+    assert "ALTE_TRADE_ANALYSE" in k.trade_analyse
+
+    # Mit 'Vorhandene Berichte neu erstellen' werden beide geschickt:
+    empfangen.clear()
+    at.toggle(key="scan_llm_neu").set_value(True).run()
+    _btn(at, "step_btn_llm").click()
+    at.run()
+    warte_auf_lauf(at)
+    assert not at.exception, at.exception
+    assert sorted(empfangen) == [2342895, 9990001]
+
+
 def test_step3_nur_neue_skips_known_and_keeps_old_verdicts(mocked_crawler, monkeypatch):
     """Nur-neue-Modus: bereits bewertete Signale werden nicht erneut geladen."""
     from mqlkiscanner import db

@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, pipeline, secrets_store
+from mqlkiscanner import config, db, pipeline, secrets_store
 from mqlkiscanner.app_ui import render_report_panel, render_results_table
 from mqlkiscanner.ui_design import (
     action_button, apply_theme, page_header, section_header, urteile_farbig,
@@ -346,6 +346,19 @@ with st.expander("Einstellungen für diesen Lauf", icon=":material/tune:", expan
         )
         st.caption("Trade- und Risiko-Analyse parallel, danach der Endbericht — "
                    "zum Schluss der Portfolio-Vorschlag über alle Signale.")
+        berichte_neu = st.toggle(
+            "Vorhandene Berichte neu erstellen",
+            key="scan_llm_neu",
+            value=False,
+            disabled=running,
+        )
+        st.caption(
+            "Aus (Standard): Signale mit bereits gespeichertem Gesamtbericht werden "
+            "übersprungen — ihr Bericht wird aus der Datenbank geladen. "
+            "An: alle Berichte werden neu erzeugt (Dauer + Tokens)." if not berichte_neu else
+            "An: ALLE Berichte werden neu erzeugt — vorhandene werden ersetzt "
+            "(in der Datenbank bleibt die Historie erhalten)."
+        )
     st.caption("Sichtbare Werte gelten sofort. Speichern macht sie zum Standard für später.")
     save_settings = action_button(
         "Einstellungen als Standard speichern",
@@ -405,10 +418,12 @@ run_settings = {
     "min_abonnenten": int(min_subs),
     "llm_stufe1": bool(use_llm),
     "llm_stufe2": bool(use_llm),
-    "nur_neue": bool(nur_neue),   # Lauf-Modus, wird nicht als Standard gespeichert
+    "nur_neue": bool(nur_neue),       # Lauf-Modus, wird nicht als Standard gespeichert
+    "berichte_neu": bool(berichte_neu),  # dito: vorhandene Berichte neu erzeugen
 }
 if save_settings:
-    config.save_settings({k: v for k, v in run_settings.items() if k != "nur_neue"})
+    config.save_settings({k: v for k, v in run_settings.items()
+                          if k not in ("nur_neue", "berichte_neu")})
     st.toast("Einstellungen gespeichert.", icon=":material/check:")
 if start or verify or llm_only:
     st.session_state.scan_command = {
@@ -566,15 +581,54 @@ if command:
             )
 
     def w_run_llm(targets: list[pipeline.ScanResult], cfg) -> None:
-        total = 3 * sum(r.forensik_vorhanden and not r.fehler for r in targets)
+        kandidaten = [r for r in targets if r.forensik_vorhanden and not r.fehler]
+        neu_erstellen = bool(cfg.get("berichte_neu"))
+        # Berichte sind in der DB gespeichert — Signale mit vorhandenem
+        # Gesamtbericht überspringen und die gespeicherten Texte ins Ergebnis
+        # laden, statt alles neu zu erzeugen (Token-/Zeitersparnis).
+        try:
+            db.init_db()
+        except Exception:
+            pass
+        uebersprungen: list[pipeline.ScanResult] = []
+        jobs = kandidaten
+        if kandidaten and not neu_erstellen:
+            jobs = []
+            for r in kandidaten:
+                vorhanden = db.get_latest_analysis(r.id, "gesamtbericht")
+                if vorhanden is None:
+                    jobs.append(r)
+                    continue
+                uebersprungen.append(r)
+                r.gesamtbericht = vorhanden["text"]
+                if not r.kurzfassung:
+                    r.kurzfassung = pipeline._extract_kurzfassung(vorhanden["text"])
+                for kind, attr in (("trade_analyse", "trade_analyse"),
+                                   ("risiko_analyse", "risiko_analyse")):
+                    prev = db.get_latest_analysis(r.id, kind)
+                    if prev:
+                        setattr(r, attr, prev["text"])
+        total = 3 * len(jobs)
+        if uebersprungen:
+            namen = ", ".join(f"#{r.id} {r.name}" for r in uebersprungen[:8])
+            if len(uebersprungen) > 8:
+                namen += f" … (+{len(uebersprungen) - 8})"
+            logs.setdefault("llm", []).append(
+                f"{len(uebersprungen)} Signale mit vorhandenem Bericht übersprungen "
+                f"(aus der Datenbank geladen): {namen}")
         if not pipe.llm.has_key or not total:
+            if not jobs and uebersprungen:
+                w_step("llm", "complete", done=0, total=0,
+                       detail=(f"Alle {len(uebersprungen)} Signale haben bereits Berichte — "
+                               "aus der Datenbank geladen, nichts neu erzeugt"))
+                return
             reason = "Kein KI-Key hinterlegt" if not pipe.llm.has_key else "Keine geeigneten Prüfergebnisse"
-            logs["llm"] = [reason]
+            logs["llm"] = logs.get("llm", []) + [reason]
             w_step("llm", "skipped", detail=reason, total=total)
             return
         w_step("llm", "running", total=total, detail="Trade-Analyse wird vorbereitet")
         summary = pipe.run_llm(
-            targets, w_log_for("llm"),
+            jobs, w_log_for("llm"),
             on_progress=lambda done, total, text: w_step("llm", done=done, total=total, detail=text),
             should_stop=lambda: bool(control.get("stop")),
         )
@@ -588,6 +642,8 @@ if command:
             f"{completed}/{total} Berichte gespeichert · {failed} fehlgeschlagen · "
             f"{skipped} nicht ausgeführt · {pipe.llm.usage.total_tokens:,} Tokens"
         )
+        if uebersprungen:
+            detail += f" · {len(uebersprungen)} übersprungen (Bericht vorhanden)"
         if summary["reason"]:
             detail += f". {summary['reason']}"
         w_step("llm", state, done=completed, total=total, detail=detail)
