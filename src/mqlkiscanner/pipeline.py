@@ -197,9 +197,20 @@ class ScanPipeline:
             log("Trade-Export laden (CSV) …")
             report = None
             try:
-                path, from_cache = exporter.export_positions(
-                    session, res.id,
-                    extra_pause_s=float(self.settings.get("rate_pause_zwischen_signalen_s", 5.0)))
+                try:
+                    path, from_cache = exporter.export_positions(
+                        session, res.id,
+                        extra_pause_s=float(self.settings.get(
+                            "rate_pause_zwischen_signalen_s", 5.0)))
+                except RuntimeError:
+                    # MQL5 drosselt den direkten Abruf zeitweise mit HTML —
+                    # dann der bewaehrte Weg aus dem MqlDownloader: Download
+                    # ueber echten Chrome (Login-Zustand im Profil).
+                    log("Direkter Abruf gedrosselt — Download über Chrome "
+                        "(MqlDownloader-Muster) …")
+                    from .mql5.browser_session import export_positions_via_browser
+                    path = export_positions_via_browser(res.id, log=log)
+                    from_cache = False
                 res.trades_path = path
                 with open(path, encoding="utf-8") as fh:
                     n_lines = sum(1 for _ in fh)
