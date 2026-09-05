@@ -5,14 +5,17 @@ Der Lauf läuft in einem Hintergrund-Thread (st.session_state.scan_thread),
 damit die Oberfläche bedienbar bleibt: Der Stop-Button setzt ein Flag
 (st.session_state.scan_control["stop"]) und der Lauf endet sauber zwischen
 zwei Signalen bzw. Modellaufrufen. Der Thread fasst NUR einfache Dicts/Listen
-an (workflow, logs, results, control) — kein st.* im Worker-Thread. Nach
-jedem Rendern polled die Seite, solange der Thread lebt (siehe Dateiende).
+an (workflow, logs, results, control) — kein st.* im Worker-Thread.
+
+Live-Status ohne Flimmern: Der Statusbereich ist ein st.fragment mit
+run_every — beim Tick wird NUR dieser Bereich neu gerendert, nicht die
+ganze Seite. Ist der Lauf fertig, löst das Fragment einmal einen vollen
+App-Rerun aus (Ergebnisse übernehmen + Endstand rendern).
 """
 from __future__ import annotations
 
 import sys
 import threading
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -68,19 +71,13 @@ st.session_state.setdefault("scan_new_ids", [])
 st.session_state.setdefault("scan_thread", None)
 st.session_state.setdefault("scan_control", {})
 
-command = st.session_state.pop("scan_command", None)
-workflow = st.session_state.scan_workflow
-control = st.session_state.scan_control
-_lauf_thread = st.session_state.scan_thread
-_thread_lebt = bool(_lauf_thread is not None and _lauf_thread.is_alive())
-
 
 def _lauf_ergebnisse_uebernehmen() -> None:
     """Beendetes Lauf-Thread: frische Ergebnisse in die Sitzung übernehmen.
 
-    Wird am Seitenanfang und am Dateiende gerufen — so landen Portfolio-
-    bericht, letzte Laufdatei und Zwischenergebnisse sicher in der Session,
-    auch wenn der Worker schneller fertig war als der erste Seitenaufbau.
+    Wird beim vollen Seitenaufruf gerufen (der Fragment-Tick stößt ihn an,
+    sobald der Thread beendet ist) — so landen Portfolio-Bericht, letzte
+    Laufdatei und Zwischenergebnisse sicher in der Session.
     """
     ctl = st.session_state.scan_control
     th = st.session_state.scan_thread
@@ -110,11 +107,26 @@ def _lauf_ergebnisse_uebernehmen() -> None:
                 _step_state.update(status="skipped", detail="Nach Unterbrechung nicht ausgeführt")
 
 
+def _stop_requested() -> None:
+    """Button-Callback: Stop-Flag für den Worker setzen."""
+    ctl = st.session_state.get("scan_control") or {}
+    ctl["stop"] = True
+    wf = st.session_state.get("scan_workflow")
+    if wf:
+        wf["activity"] = "Stop angefordert — der Lauf endet nach dem aktuellen Signal bzw. Modellaufruf."
+
+
+command = st.session_state.pop("scan_command", None)
+workflow = st.session_state.scan_workflow
+control = st.session_state.scan_control
+_lauf_thread = st.session_state.scan_thread
+_thread_lebt = bool(_lauf_thread is not None and _lauf_thread.is_alive())
+
 if command is None:
     _lauf_ergebnisse_uebernehmen()
 
-# Ein Widget-Rerun ohne laufenden Thread darf einen alten "running"-Stand
-# nicht weiter als aktiv anzeigen (Altlast ohne Thread-Objekt).
+# Altlast ohne Thread-Objekt (z. B. nach App-Neustart mitten im Lauf):
+# einen hängenden "running"-Stand nicht weiter als aktiv anzeigen.
 if command is None and _lauf_thread is None and workflow["status"] == "running":
     for step in workflow["steps"].values():
         if step["status"] == "running":
@@ -154,95 +166,22 @@ section_header(
     help_key="scan_workflow",
 )
 
-# Globale Slot für Lauf-Glow-CSS — bewusst GETRENNNT vom Kartenkopf-Markdown,
-# sonst schluckt der HTML-Block Icon-Makro und Fettmarkierung im Kopf.
-style_slot = st.empty()
-# Stationskarten mit Pfeil-Verbindern dazwischen (eine Reihe, keine Duplikate).
-heads = {}
-cards = {}
-_layout = st.columns([*([1, 0.14] * (len(STEPS) - 1)), 1], gap="small")
-_card_cols = _layout[0::2]
-for col in _layout[1::2]:
-    col.markdown('<div class="mks-connector" aria-hidden="true">→</div>',
-                 unsafe_allow_html=True)
-for col, (sid, _title, _icon, _unit, _beschreibung) in zip(_card_cols, STEPS):
-    with col.container(border=True, key=f"workflow_{sid}", height="stretch"):
-        heads[sid] = st.empty()
-        cards[sid] = st.empty()
-with st.container(border=True, key="scan_activity", gap="xsmall"):
-    activity_slot = st.empty()
-    next_slot = st.empty()
-    counter_slot = st.empty()
-    stop_slot = st.empty()
-with st.bottom:
-    with st.container(key="workflow_footer", gap="xxsmall"):
-        footer_slot = st.empty()
 
-
-def _refresh_workflow() -> None:
+@st.fragment(run_every=1.0)
+def _workflow_status() -> None:
+    """Live-Statusbereich (Fragment): alle 1 s NUR diesen Bereich neu zeichnen."""
+    workflow = st.session_state.scan_workflow
+    control = st.session_state.scan_control
     # Snapshot: Der Worker-Thread darf while wir rendern in das Dict schreiben.
     steps_state = {sid: dict(step) for sid, step in workflow["steps"].items()}
     first_pending = next(
         (sid for sid, *_ in STEPS if steps_state[sid]["status"] == "pending"),
         None,
     )
-    for nr, (sid, title, icon, _unit, beschreibung) in enumerate(STEPS, 1):
-        step = steps_state[sid]
-        # Nur der nächste offene Schritt blinkt — Hinweis „hier geht es weiter“.
-        blink = (
-            sid == first_pending
-            and workflow["status"] != "running"
-            and step["status"] == "pending"
-        )
-        # Laufender Schritt: Karte leuchtet teal (CSS dafür kommt zentral in
-        # den style_slot unten), Nummer pulsiert, Badge-Icon dreht sich.
-        run_cls = " mks-runnum" if step["status"] == "running" else ""
-        heads[sid].markdown(
-            f'<span class="mks-stepnum{" mks-blink" if blink else ""}{run_cls}">{nr}</span>'
-            f':material/{icon}: **{title}**'
-            f'<br><span class="mks-flow-text">{beschreibung}</span>',
-            unsafe_allow_html=True)
-        label, color, state_icon = STATES[step["status"]]
-        with cards[sid].container(gap="xsmall"):
-            st.badge(label, color=color, icon=f":material/{state_icon}:")
-            st.caption(step["detail"])
-            if step["total"] and step["status"] != "skipped":
-                st.progress(min(step["done"] / step["total"], 1.0),
-                            text=f"{step['done']}/{step['total']} {step['unit']}")
-    active = next((title for sid, title, *_ in STEPS
-                   if steps_state[sid]["status"] == "running"), None)
-    pending = [title for sid, title, *_ in STEPS
-               if steps_state[sid]["status"] == "pending"]
-    next_text = " → ".join(pending) if pending else (
-        "Ergebnisse speichern" if workflow["status"] == "running"
-        else "Ergebnisse ansehen oder Workflow erneut starten")
-    finished = sum(s["status"] == "complete" for s in steps_state.values())
-    warnings = sum(s["status"] == "warning" for s in steps_state.values())
-    skipped = sum(s["status"] == "skipped" for s in steps_state.values())
-    errors = sum(s["status"] == "error" for s in steps_state.values())
-    activity_slot.markdown(f"**{'Aktuell: ' + active if active else 'Status'}** · {workflow['activity']}")
-    next_slot.caption(f"Als Nächstes: {next_text}")
-    counter_slot.caption(
-        f"{finished}/{len(STEPS)} Stationen fertig · {warnings} mit Hinweisen · "
-        f"{skipped} übersprungen · {errors} fehlgeschlagen. "
-        "Die Balken zählen erledigte Arbeit, keine Uhrzeit.")
-    with footer_slot.container(gap="xxsmall"):
-        prefix = active or {
-            "idle": "Bereit",
-            "complete": "Workflow fertig",
-            "warning": "Workflow mit Hinweisen beendet",
-            "error": "Workflow mit Fehlern beendet",
-        }.get(workflow["status"], "Ergebnisse werden gespeichert")
-        st.markdown(
-            f":material/{'autorenew' if workflow['status'] == 'running' else 'radar'}: "
-            f"**{prefix}** · {workflow['activity']}")
-        st.caption(
-            f"Als Nächstes: {next_text}" if workflow["status"] == "running" else
-            f"{finished}/{len(STEPS)} Stationen fertig · {warnings} mit Hinweisen · "
-            f"{skipped} übersprungen · {errors} fehlgeschlagen")
-    # Glow-CSS für alle laufenden Karten — zentral in den style_slot, damit
-    # der Kartenkopf-Markdown frei von HTML-Blöcken bleibt.
     laufende = [sid for sid, *_ in STEPS if steps_state[sid]["status"] == "running"]
+
+    # Glow-CSS für laufende Karten — eigener Markdown-Block, damit der
+    # Kartenkopf-Markdown (Icon-Makro, Fettmarkierung) sauber bleibt.
     if laufende:
         regeln = []
         for sid in laufende:
@@ -257,13 +196,63 @@ def _refresh_workflow() -> None:
                 f'.st-key-workflow_{sid} [data-testid="stIconMaterial"]'
                 f"{{animation:mks-spin 1.1s linear infinite;display:inline-block;"
                 f"transform-origin:center;}}")
-        style_slot.markdown("<style>" + "".join(regeln) + "</style>",
-                            unsafe_allow_html=True)
-    else:
-        style_slot.empty()
+        st.markdown("<style>" + "".join(regeln) + "</style>", unsafe_allow_html=True)
+
+    # Stationskarten mit Pfeil-Verbindern dazwischen (eine Reihe).
+    layout = st.columns([*([1, 0.14] * (len(STEPS) - 1)), 1], gap="small")
+    for col in layout[1::2]:
+        col.markdown('<div class="mks-connector" aria-hidden="true">→</div>',
+                     unsafe_allow_html=True)
+    for nr, (col, (sid, title, icon, _unit, beschreibung)) in enumerate(
+            zip(layout[0::2], STEPS), 1):
+        step = steps_state[sid]
+        # Nur der nächste offene Schritt blinkt — Hinweis „hier geht es weiter“.
+        blink = (
+            sid == first_pending
+            and workflow["status"] != "running"
+            and step["status"] == "pending"
+        )
+        run_cls = " mks-runnum" if step["status"] == "running" else ""
+        with col.container(border=True, key=f"workflow_{sid}", height="stretch"):
+            st.markdown(
+                f'<span class="mks-stepnum{" mks-blink" if blink else ""}{run_cls}">{nr}</span>'
+                f':material/{icon}: **{title}**'
+                f'<br><span class="mks-flow-text">{beschreibung}</span>',
+                unsafe_allow_html=True)
+            label, color, state_icon = STATES[step["status"]]
+            st.badge(label, color=color, icon=f":material/{state_icon}:")
+            st.caption(step["detail"])
+            if step["total"] and step["status"] != "skipped":
+                st.progress(min(step["done"] / step["total"], 1.0),
+                            text=f"{step['done']}/{step['total']} {step['unit']}")
+
+    active = next((title for sid, title, *_ in STEPS
+                   if steps_state[sid]["status"] == "running"), None)
+    pending = [title for sid, title, *_ in STEPS
+               if steps_state[sid]["status"] == "pending"]
+    next_text = " → ".join(pending) if pending else (
+        "Ergebnisse speichern" if workflow["status"] == "running"
+        else "Ergebnisse ansehen oder Workflow erneut starten")
+    finished = sum(s["status"] == "complete" for s in steps_state.values())
+    warnings = sum(s["status"] == "warning" for s in steps_state.values())
+    skipped = sum(s["status"] == "skipped" for s in steps_state.values())
+    errors = sum(s["status"] == "error" for s in steps_state.values())
+    with st.container(border=True, key="scan_activity", gap="xsmall"):
+        st.markdown(f"**{'Aktuell: ' + active if active else 'Status'}** · {workflow['activity']}")
+        st.caption(f"Als Nächstes: {next_text}")
+        st.caption(
+            f"{finished}/{len(STEPS)} Stationen fertig · {warnings} mit Hinweisen · "
+            f"{skipped} übersprungen · {errors} fehlgeschlagen. "
+            "Die Balken zählen erledigte Arbeit, keine Uhrzeit.")
+
+    # Lauf beendet? Einmal die GANZE Seite neu laden: Ergebnisübernahme
+    # (Session) + Endstand (Tabelle, Portfolio, Protokoll) rendern.
+    th = st.session_state.scan_thread
+    if th is not None and not th.is_alive() and not control.get("copied"):
+        st.rerun(scope="app")
 
 
-_refresh_workflow()
+_workflow_status()
 
 section_header(
     "Workflow starten",
@@ -279,14 +268,28 @@ with st.container(border=True, key="scan_start_panel"):
         "3) Handelsdaten laden, speichern und rechnerisch prüfen · "
         "4) optional KI-Berichte schreiben · 5) Portfolio-Vorschlag über alle Signale."
     )
-    start = action_button(
-        "Starte Workflow",
-        key="scan_start",
-        help_key="scan_start",
-        type="primary",
-        icon=":material/play_arrow:",
-        disabled=running,
-    )
+    start_zeile = st.columns([1, 1], gap="small", vertical_alignment="center")
+    with start_zeile[0]:
+        start = action_button(
+            "Starte Workflow",
+            key="scan_start",
+            help_key="scan_start",
+            type="primary",
+            icon=":material/play_arrow:",
+            disabled=running,
+        )
+    with start_zeile[1]:
+        if running:
+            schon = bool(st.session_state.scan_control.get("stop"))
+            st.button(
+                "Stop angefordert …" if schon else "Workflow stoppen",
+                key="scan_stop",
+                icon=":material/stop_circle:",
+                disabled=schon,
+                on_click=_stop_requested,
+                help="Stoppt sauber nach dem aktuellen Signal bzw. Modellaufruf — "
+                     "kein harter Abbruch, fertige Teilergebnisse bleiben erhalten.",
+            )
     nur_neue = st.toggle(
         "Nur neue Signale bewerten — alte Bewertungen übernehmen",
         key="scan_nur_neue",
@@ -409,19 +412,10 @@ if start or verify or llm_only:
     st.rerun()
 
 
-def _stop_requested() -> None:
-    """Button-Callback (Haupt-Thread): Stop-Flag für den Worker setzen."""
-    ctl = st.session_state.get("scan_control") or {}
-    ctl["stop"] = True
-    wf = st.session_state.get("scan_workflow")
-    if wf:
-        wf["activity"] = "Stop angefordert — der Lauf endet nach dem aktuellen Signal bzw. Modellaufruf."
-
-
 # ---------------------------------------------------------- Workflow-Lauf
 # Der Worker-Thread führt die Stationen aus und fasst NUR einfache Objekte an
 # (workflow-, control-, logs-Dict, results-Liste). Rendern tut ausschließlich
-# die Seite oben (Polling per rerun am Dateiende).
+# die Seite (Inline) bzw. das Fragment (Tick alle 1 s).
 if command:
     run_config = command["settings"] or run_settings
     mode = command["mode"]
@@ -742,23 +736,8 @@ if command:
 
     _lauf_thread = threading.Thread(target=_worker, name="mqlkiscanner-workflow", daemon=True)
     st.session_state.scan_thread = _lauf_thread
+    st.session_state.scan_running = mode if mode != "scan" else "listen"
     _lauf_thread.start()
-
-# Stop-Button: sichtbar und klickbar, solange der Lauf-Thread lebt (die Seite
-# rendert schnell neu, weil der Lauf im Hintergrund-Thread arbeitet).
-if st.session_state.scan_thread is not None and st.session_state.scan_thread.is_alive():
-    schon = bool(st.session_state.scan_control.get("stop"))
-    stop_slot.button(
-        "Stop angefordert …" if schon else "Workflow stoppen",
-        key="scan_stop",
-        icon=":material/stop_circle:",
-        disabled=schon,
-        help="Stoppt sauber nach dem aktuellen Signal bzw. Modellaufruf — "
-             "kein harter Abbruch, fertige Teilergebnisse bleiben erhalten.",
-        on_click=_stop_requested,
-    )
-else:
-    stop_slot.empty()
 
 section_header(
     "Ergebnisse dieses Laufs",
@@ -798,15 +777,3 @@ if st.session_state.scan_logs:
             if lines:
                 st.markdown(f"**{title}**")
                 st.code("\n".join(lines), language=None, wrap_lines=True)
-
-# Solange der Lauf-Thread arbeitet: kurz warten und die Seite neu rendern —
-# so wandern Status, Fortschritt und Teilergebnisse live in die Anzeige.
-# War er schneller fertig als dieser Seitenaufbau: Ergebnisse übernehmen und
-# einmal neu rendern, damit der letzte Stand komplett sichtbar ist.
-if st.session_state.scan_thread is not None and st.session_state.scan_thread.is_alive():
-    time.sleep(0.8)
-    st.rerun()
-elif st.session_state.scan_thread is not None \
-        and not st.session_state.scan_control.get("copied"):
-    _lauf_ergebnisse_uebernehmen()
-    st.rerun()

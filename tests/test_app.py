@@ -9,6 +9,7 @@ import pytest
 from streamlit.proto.TextInput_pb2 import TextInput as TextInputProto
 from streamlit.testing.v1 import AppTest
 
+from conftest import warte_auf_lauf
 from mqlkiscanner import config, pipeline, secrets_store
 from mqlkiscanner.llm import prompts
 
@@ -57,6 +58,7 @@ def test_verification_button_loads_raw_data_and_saves_isolated_run():
     """The shipped nine exports must still pass through the actual engine."""
     at = _run_main(timeout=180)
     at.button(key="scan_verify").click().run()
+    warte_auf_lauf(at, timeout_s=120)
     assert not at.exception, at.exception
     results = at.session_state["scan_results"]
     assert len(results) == 9
@@ -124,6 +126,7 @@ def test_live_scan_failure_remains_an_error_after_rerun(monkeypatch):
     monkeypatch.setattr(pipeline.ScanPipeline, "crawl", failed_crawl)
     at = _run_main()
     at.button(key="scan_start").click().run()
+    warte_auf_lauf(at)
     assert not at.exception, at.exception
     workflow = at.session_state["scan_workflow"]
     assert workflow["status"] == "error"
@@ -152,6 +155,7 @@ def test_verification_exposes_each_file_and_skips_online_steps(tmp_path, monkeyp
     monkeypatch.setattr(pipeline.ScanPipeline, "analyze_local_files", staticmethod(analyze_one))
     at = _run_main()
     at.button(key="scan_verify").click().run()
+    warte_auf_lauf(at)
     assert not at.exception, at.exception
     # Jede Datei einzeln und in Reihenfolge an den Lauf übergeben.
     assert [Path(f).name for files in snapshots for f in files] == \
@@ -228,6 +232,7 @@ def test_standalone_llm_without_key_is_skipped():
         id=1234567, name="Forensik vorhanden", forensik_vorhanden=True)]
     at.run()
     at.button(key="scan_llm").click().run()
+    warte_auf_lauf(at)
     assert not at.exception, at.exception
     step = at.session_state["scan_workflow"]["steps"]["llm"]
     assert step["status"] == "skipped"

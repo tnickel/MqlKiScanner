@@ -14,6 +14,25 @@ from mqlkiscanner import config, db, secrets_store  # noqa: E402
 from mqlkiscanner.llm import prompts  # noqa: E402
 
 
+def warte_auf_lauf(at, timeout_s: float = 90.0) -> None:
+    """Wartet (AppTest), bis der Workflow-Worker fertig und übernommen ist.
+
+    Der Workflow läuft in einem Hintergrund-Thread; das Fragment löst beim
+    Ende den übernehmenden App-Rerun aus. In AppTest passiert das pro
+    at.run() einmal inline — daher hier aktiv loopen.
+    """
+    import time
+
+    ende = time.monotonic() + timeout_s
+    while time.monotonic() < ende:
+        control = at.session_state["scan_control"] if "scan_control" in at.session_state else {}
+        if control.get("copied"):
+            return
+        time.sleep(0.05)
+        at.run()
+    raise AssertionError("Workflow-Thread wurde nicht rechtzeitig fertig und übernommen")
+
+
 @pytest.fixture(autouse=True)
 def isolated_app_storage(tmp_path, monkeypatch):
     """Use real storage code, but write exclusively inside pytest's directory."""
