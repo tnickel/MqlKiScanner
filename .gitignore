@@ -1,6 +1,8 @@
 # --- Geheimnisse: NIE committen ---
 .env
 config/secrets.local.json
+data/mql5_cookies.json
+data/chrome_profile/
 .streamlit/secrets.toml
 
 # Python
