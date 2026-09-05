@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import base64
+import html
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -58,14 +60,41 @@ def _stylesheet() -> str:
       border-radius: 999px; background: #F6C453; color: #192438;
       font-weight: 800; font-size: 1.05rem; vertical-align: middle;
       border: 1px solid #FFDC89; }
+    .mks-connector { display: flex; align-items: center; justify-content: center;
+      height: 1.9rem; margin-top: .15rem; color: #79D8DA; font-size: 1.3rem;
+      font-weight: 700; user-select: none; }
     .mks-stepnum.mks-blink { animation: mks-pulse 1.3s ease-in-out infinite; }
     @keyframes mks-pulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(246,196,83,.65); transform: scale(1); }
       50% { box-shadow: 0 0 0 .55rem rgba(246,196,83,0); transform: scale(1.09); }
     }
+    /* Laufender Workflow-Schritt: teal pulsierende Nummer + leuchtender Kartenrand */
+    .mks-stepnum.mks-runnum { background: #2FA8B4; color: #EAFBFC; border-color: #9BE6EA;
+      animation: mks-run 1.2s ease-in-out infinite; }
+    @keyframes mks-run {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(121,216,218,.55); transform: scale(1); }
+      50% { box-shadow: 0 0 0 .5rem rgba(121,216,218,0); transform: scale(1.1); }
+    }
+    @keyframes mks-card-glow {
+      0%, 100% { border-color: #79D8DAB0;
+        box-shadow: 0 0 0 1px rgba(121,216,218,.35), 0 0 .7rem rgba(121,216,218,.3); }
+      50% { border-color: #C4F2F4;
+        box-shadow: 0 0 0 2px rgba(121,216,218,.6), 0 0 1.6rem rgba(121,216,218,.5); }
+    }
+    /* "Läuft"-Badge: Icon rotiert, Badge pulsiert */
+    @keyframes mks-spin { to { transform: rotate(360deg); } }
+    @keyframes mks-badge-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(121,216,218,.45); }
+      50% { box-shadow: 0 0 0 .3rem rgba(121,216,218,0); }
+    }
+    /* Urteile in KI-Berichten: EMPFEHLUNG gruen · Watchlist gelb · Ablehnung rot */
+    .mks-urteil-gruen { color: #5CDB78; font-weight: 700; }
+    .mks-urteil-gelb { color: #F6C453; font-weight: 700; }
+    .mks-urteil-rot { color: #FF7A7A; font-weight: 700; }
     [data-testid="stBottomBlockContainer"] { background: #0D1829F5; border-top: 1px solid #30445E; }
     @media(max-width:720px) {
       .mks-flow-arrow { display: none; }
+      .mks-connector { display: none; }
       .mks-flow-step { flex: 1 1 100%; }
     }
     [role="dialog"] { border: 1px solid #50627C; }
@@ -74,12 +103,68 @@ def _stylesheet() -> str:
       .st-key-page_hero h1 { font-size: 1.8rem; }
     }
     @media(prefers-reduced-motion:reduce) { .stApp * { scroll-behavior: auto !important; }
-      .mks-stepnum.mks-blink { animation: none; } }
+      .mks-stepnum.mks-blink { animation: none; }
+      .mks-stepnum.mks-runnum, [class*="st-key-workflow_"] { animation: none !important; }
+      [class*="st-key-workflow_"] [data-testid="stBadge"],
+      [class*="st-key-workflow_"] [data-testid="stIconMaterial"],
+      [class*="st-key-workflow_"] [data-testid="stBadge"] svg { animation: none !important; } }
     </style>"""
 
 
 def apply_theme() -> None:
     st.html(_stylesheet())
+
+
+# --------------------------------------------------------------- Urteile
+# KI-Berichte nennen Urteile als Woerter (EMPFEHLUNG | WATCHLIST | ABLEHNUNG,
+# Gross-/Kleinschreibung variabel). Beim Rendern werden sie sicher in farbige
+# Spans verpackt: Erst HTML escapen, dann eigene Spans einsetzen.
+_URTEIL_FARBE = {"empfehlung": "mks-urteil-gruen", "ablehnung": "mks-urteil-rot",
+                 "watchlist": "mks-urteil-gelb"}
+_URTEIL_WORT = re.compile(r"\b(empfehlung|ablehnung|watchlist)\b", re.I)
+_URTEIL_AM_ANFANG = re.compile(
+    r"^\s*(?:\*\*)?\s*(?:[⛔🔴🟡🟢]\s*)?(empfehlung|ablehnung|watchlist)\b", re.I)
+_URTEIL_GROSS = re.compile(r"\b(EMPFEHLUNG|ABLEHNUNG|WATCHLIST)\b")
+
+
+def _urteil_span(klasse: str, inhalt: str) -> str:
+    return f'<span class="{klasse}">{inhalt}</span>'
+
+
+def urteile_farbig(text: str) -> str:
+    """Faerbt Urteils-Schluesselwoerter in KI-Markdown.
+
+    - Tabellenzellen, die mit einem Urteil beginnen: die ganze Zelle faerben
+      ("EMPFEHLUNG / Ertragstraeger" komplett gruen+fett).
+    - Sonst im Fliesstext nur das Urteils-Wort selbst (GROSSCHREIBUNG, um
+      Prosa wie "keine Empfehlung" nicht anzufaerben).
+    HTML im Eingabetext wird zuerst escaped (keine Injektion via LLM-Text).
+    """
+    if not text:
+        return text
+    escaped = html.escape(text)
+    out: list[str] = []
+    for line in escaped.splitlines():
+        s = line.strip()
+        if s.startswith("|") and s.endswith("|") and s.count("|") >= 2:
+            cells = line.split("|")
+            for i, cell in enumerate(cells):
+                if not cell.strip():
+                    continue
+                start = _URTEIL_AM_ANFANG.search(cell)
+                if start:
+                    klasse = _URTEIL_FARBE[start.group(1).lower()]
+                    cells[i] = _urteil_span(klasse, cell)
+                else:
+                    m = _URTEIL_WORT.search(cell)
+                    if m:
+                        cells[i] = _urteil_span(_URTEIL_FARBE[m.group(1).lower()], cell)
+            out.append("|".join(cells))
+        else:
+            out.append(_URTEIL_GROSS.sub(
+                lambda m: _urteil_span(_URTEIL_FARBE[m.group(0).lower()], m.group(0)),
+                line))
+    return "\n".join(out)
 
 
 def page_header(eyebrow: str, title: str, description: str) -> None:

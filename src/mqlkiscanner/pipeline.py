@@ -70,6 +70,7 @@ class ScanResult:
     martingale_evidenz: list | None = None
     stop_nachweis: str = ""
     broker_server: str | None = None
+    symbole: str = ""               # gehandelte Assets ("XAUUSD, US30, ...")
     # Bewertung
     score: float | None = None
     schranke_verletzt: bool = False
@@ -159,6 +160,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             martingale_flag=f.get("martingale_flag"),
             stop_nachweis=f.get("stop_nachweis") or "",
             broker_server=stats.get("broker_server"),
+            symbole=f.get("symbole") or "",
             score=None if forensik_stale else f.get("score"),
             trades_path=row.get("trades_path") or "",
             trade_analyse=row.get("trade_analyse") or "",
@@ -211,6 +213,39 @@ def _kriterien_text(settings: dict) -> str:
             "- Risiko VOR Ertrag; Stop-Loss muss BEWIESEN sein (Orderbuch oder "
             "eindeutige Cluster-Signatur), nicht nur behauptet\n"
             "- Keine positive Einstufung vor vollstaendiger Forensik-Batterie")
+
+
+def _kandidat_json(r: ScanResult) -> str:
+    """Kandidaten-Kennzahlen als JSON (LLM-Payload, AGENTS.md Design-Regel 1)."""
+    return json.dumps({
+        "id": r.id, "name": r.name, "platform": r.platform,
+        "autor": r.autor, "url": r.url,
+        "wochen": r.wochen, "abonnenten": r.abonnenten,
+        "abo_preis_usd": r.abo_preis_usd,
+        "growth_pct": r.growth_pct, "ertrag_monat_pct": r.ertrag_monat_pct,
+        "pf": r.pf, "dd_equity_pct": r.dd_equity_pct,
+        "dd_balance_pct": r.dd_balance_pct,
+        "broker_server": r.broker_server,
+        "assets": r.symbole,
+        "score_engine": r.score, "ampel": r.ampel,
+        "schranke_verletzt": r.schranke_verletzt,
+    }, ensure_ascii=False)
+
+
+def _forensik_json(r: ScanResult) -> str:
+    """Engine-Forensik als JSON (LLM-Payload, AGENTS.md Design-Regel 1)."""
+    return json.dumps({
+        "trading_dd": {"pct": r.trading_dd_pct, "usd": r.trading_dd_usd},
+        "winrate_pct": r.winrate_pct,
+        "max_verlustserie": r.max_verlustserie,
+        "verlustserie_usd": r.verlustserie_usd,
+        "peak_exposure": {"positionen": r.peak_positionen,
+                          "netto_lots": r.peak_netto_lots,
+                          "schock_usd": r.shock_usd},
+        "martingale_flag": r.martingale_flag,
+        "martingale_evidenz": r.martingale_evidenz,
+        "stop_nachweis": r.stop_nachweis,
+    }, ensure_ascii=False)
 
 
 class ScanPipeline:
@@ -336,6 +371,7 @@ class ScanPipeline:
             if report is not None:
                 st, fx = report["stats"], report["forensics"]
                 res.forensik_vorhanden = True
+                res.symbole = ", ".join(sorted(st.get("symbols", {})))
                 td = fx["drawdown"]["trading_dd"]
                 # Risiko-/Ampel-% = max. relativer DD; USD-Anker bleibt dd_usd.
                 res.trading_dd_pct = td.get("dd_pct_max_rel", td.get("dd_pct"))
@@ -428,6 +464,7 @@ class ScanPipeline:
                                       "schock_usd": res.shock_usd},
                     "martingale_flag": res.martingale_flag,
                     "stop_nachweis": res.stop_nachweis,
+                    "symbole": res.symbole,
                     "score": res.score, "ampel": res.ampel})
         except Exception as exc:  # DB-Fehler darf den Lauf nicht abbrechen
             log(f"  DB-Hinweis bei {res.id}: {exc}")
@@ -444,7 +481,8 @@ class ScanPipeline:
 
     # ------------------------------------------------------ Schritt 4
     def run_llm(self, results: list[ScanResult], log: LogCb,
-                on_progress: ProgressCb | None = None) -> dict:
+                on_progress: ProgressCb | None = None,
+                should_stop: Callable[[], bool] | None = None) -> dict:
         """Drei-Stufen-Auswertung (Nutzer-Prinzip):
 
         Prompt 1  Trade-Analyse   — Strategie ANHAND DER TRADES ermitteln
@@ -458,6 +496,8 @@ class ScanPipeline:
         Fortschritt zählt ausschließlich fertig gespeicherte Prompts. Start-
         und Fehlermeldungen verändern den Zähler nicht. Der Rückgabewert trennt
         erfolgreiche, fehlgeschlagene und nicht ausgeführte Prompts.
+        should_stop: kooperativer Stopp (Stop-Button) — wird zwischen Kandidaten
+        und vor dem Gesamtbericht geprüft; laufende Modellaufrufe laufen zu Ende.
         """
         jobs = [r for r in results if r.forensik_vorhanden and not r.fehler]
         total = len(jobs) * 3
@@ -475,34 +515,6 @@ class ScanPipeline:
         kriterien = _kriterien_text(self.settings)
         strong = 2  # starker Modell-Slot (model_stufe2, z. B. glm-5.3)
 
-        def _kandidat(r: ScanResult) -> str:
-            return json.dumps({
-                "id": r.id, "name": r.name, "platform": r.platform,
-                "autor": r.autor, "url": r.url,
-                "wochen": r.wochen, "abonnenten": r.abonnenten,
-                "abo_preis_usd": r.abo_preis_usd,
-                "growth_pct": r.growth_pct, "ertrag_monat_pct": r.ertrag_monat_pct,
-                "pf": r.pf, "dd_equity_pct": r.dd_equity_pct,
-                "dd_balance_pct": r.dd_balance_pct,
-                "broker_server": r.broker_server,
-                "score_engine": r.score, "ampel": r.ampel,
-                "schranke_verletzt": r.schranke_verletzt,
-            }, ensure_ascii=False)
-
-        def _forensik(r: ScanResult) -> str:
-            return json.dumps({
-                "trading_dd": {"pct": r.trading_dd_pct, "usd": r.trading_dd_usd},
-                "winrate_pct": r.winrate_pct,
-                "max_verlustserie": r.max_verlustserie,
-                "verlustserie_usd": r.verlustserie_usd,
-                "peak_exposure": {"positionen": r.peak_positionen,
-                                  "netto_lots": r.peak_netto_lots,
-                                  "schock_usd": r.shock_usd},
-                "martingale_flag": r.martingale_flag,
-                "martingale_evidenz": r.martingale_evidenz,
-                "stop_nachweis": r.stop_nachweis,
-            }, ensure_ascii=False)
-
         done = 0
         failed = 0
 
@@ -513,6 +525,13 @@ class ScanPipeline:
                 on_progress(done, total, text)
 
         for r in jobs:
+            if should_stop and should_stop():
+                log("Stop angefordert — verbleibende Signale werden nicht mehr berichtet.")
+                if on_progress:
+                    on_progress(done, total, "Abgebrochen: Stop-Anforderung")
+                return {"completed": done, "total": total, "failed": failed,
+                        "skipped": total - done - failed,
+                        "reason": "Abbruch per Stop-Button"}
             r.llm_fehler = ""
             try:
                 # -------- Prompt 1+2 parallel: Trade-Analyse + Risiko-Analyse
@@ -527,11 +546,11 @@ class ScanPipeline:
                     trades_json = json.dumps(payload, ensure_ascii=False)
                     n_trades = payload.get("meta", {}).get("trades", 0)
                 trade_prompt = (llm_prompts.load_prompt("trade_analyse")
-                                .replace("{kandidat_json}", _kandidat(r))
+                                .replace("{kandidat_json}", _kandidat_json(r))
                                 .replace("{trades_json}", trades_json))
                 risk_prompt = (llm_prompts.load_prompt("risiko_analyse")
-                               .replace("{kandidat_json}", _kandidat(r))
-                               .replace("{forensik_json}", _forensik(r))
+                               .replace("{kandidat_json}", _kandidat_json(r))
+                               .replace("{forensik_json}", _forensik_json(r))
                                .replace("{kriterien}", kriterien))
                 log(f"→ [1+2/3] Parallel: Trade-Analyse ({model_strong}, "
                     f"{n_trades} Trades, {len(trade_prompt):,} Zeichen) + "
@@ -600,10 +619,18 @@ class ScanPipeline:
                             raise exc
                     raise first_err
 
+                if should_stop and should_stop():
+                    log("Stop angefordert — Gesamtbericht für dieses Signal entfällt.")
+                    if on_progress:
+                        on_progress(done, total, "Abgebrochen: Stop-Anforderung")
+                    return {"completed": done, "total": total, "failed": failed,
+                            "skipped": total - done - failed,
+                            "reason": "Abbruch per Stop-Button"}
+
                 # -------- Prompt 3: Gesamtauswertung (nach beiden Teilanalysen)
                 prompt = (llm_prompts.load_prompt("gesamtbericht")
-                          .replace("{kandidat_json}", _kandidat(r))
-                          .replace("{forensik_json}", _forensik(r))
+                          .replace("{kandidat_json}", _kandidat_json(r))
+                          .replace("{forensik_json}", _forensik_json(r))
                           .replace("{trade_analyse}", r.trade_analyse or "(nicht erstellt)")
                           .replace("{risiko_analyse}", r.risiko_analyse or "(nicht erstellt)")
                           .replace("{kriterien}", kriterien))
@@ -646,6 +673,81 @@ class ScanPipeline:
                 "skipped": total - done - failed,
                 "reason": "Einzelne Modellaufrufe fehlgeschlagen" if failed else ""}
 
+    # ------------------------------------------------------ Schritt 5
+    PORTFOLIO_ANALYSIS_ID = 0  # analyses-Zeile ohne Signalbeszug (globaler Bericht)
+
+    def run_portfolio(self, results: list[ScanResult], log: LogCb,
+                      on_progress: ProgressCb | None = None,
+                      should_stop: Callable[[], bool] | None = None) -> dict:
+        """Portfolio-Vorschlag ueber ALLE Ergebnisse (Station 5 der GUI).
+
+        Das LLM sieht je Signal: Kennzahlen, Forensik, Assets, Kurzfassung
+        und den vollstaendigen Gesamtbericht — und schlaegt eine
+        diversifizierte Depot-Kombination vor (Risiko vor Ertrag). Der
+        Bericht landet in der DB unter signal_id=0, kind='portfolio'.
+        """
+        total = 1
+        jobs = [r for r in results if r.forensik_vorhanden and not r.fehler]
+        if not self.llm.has_key:
+            log("Portfolio übersprungen: kein GLM-Key gesetzt (Admin-Bereich).")
+            if on_progress:
+                on_progress(0, total, "Übersprungen: kein GLM-Key konfiguriert")
+            return {"text": "", "reason": "Kein GLM-Key konfiguriert"}
+        if not jobs:
+            if on_progress:
+                on_progress(0, total, "Übersprungen: keine geeigneten Forensik-Ergebnisse")
+            return {"text": "", "reason": "Keine geeigneten Forensik-Ergebnisse"}
+        kriterien = _kriterien_text(self.settings)
+        eintraege = []
+        for r in jobs:
+            eintraege.append({
+                "kandidat": json.loads(_kandidat_json(r)),
+                "forensik": json.loads(_forensik_json(r)),
+                "assets": r.symbole,
+                "kurzfassung": r.kurzfassung,
+                "gesamtbericht": r.gesamtbericht or "(nicht erstellt)",
+            })
+        prompt = (llm_prompts.load_prompt("portfolio")
+                  .replace("{kandidaten_json}", json.dumps(eintraege, ensure_ascii=False))
+                  .replace("{kriterien}", kriterien))
+        model_strong = self.settings.get("model_stufe2", config.MODEL_STUFE2)
+        log(f"→ Portfolio: {len(eintraege)} Signal-Berichte "
+            f"({len(prompt):,} Zeichen) an {model_strong} …")
+        if on_progress:
+            on_progress(0, total,
+                        f"Portfolio-Analyse über {len(eintraege)} Signale · "
+                        "warte auf Modellantwort")
+        if should_stop and should_stop():
+            log("Stop angefordert — Portfolio-Analyse abgebrochen.")
+            if on_progress:
+                on_progress(0, total, "Abgebrochen: Stop-Anforderung")
+            return {"text": "", "reason": "Abbruch per Stop-Button"}
+        meta: dict = {}
+        try:
+            text = self.llm.chat(prompt, stufe=2, max_tokens=24576, meta_out=meta)
+        except llm_client.LlmNoBalanceError as exc:
+            log(f"Portfolio abgebrochen: {exc}")
+            if on_progress:
+                on_progress(0, total, f"Abgebrochen: {exc}")
+            return {"text": "", "reason": str(exc)}
+        except llm_client.LlmError as exc:
+            log(f"  Portfolio-Fehler: {exc}")
+            if on_progress:
+                on_progress(0, total, f"Fehler: {exc}")
+            return {"text": "", "reason": str(exc)}
+        try:
+            db.store_analysis(self.PORTFOLIO_ANALYSIS_ID, "portfolio", model_strong,
+                              self.llm.usage.total_tokens, text)
+        except Exception as exc:  # DB-Fehler darf den Bericht nicht verlieren
+            log(f"  DB-Hinweis (Portfolio): {exc}")
+        log(f"  ✓ Portfolio-Vorschlag fertig: {meta.get('zeichen', '?')} Zeichen "
+            f"in {meta.get('dauer_s', '?')}s — gesamt bisher: "
+            f"{self.llm.usage.total_tokens:,} Tokens")
+        if on_progress:
+            on_progress(1, total, "Portfolio-Vorschlag fertig")
+        return {"text": text, "zeichen": meta.get("zeichen", len(text)),
+                "tokens": self.llm.usage.total_tokens, "reason": ""}
+
     # ------------------------------------------------------ Hilfen
     @staticmethod
     def analyze_local_files(files: list[str], settings: dict | None = None) -> list[ScanResult]:
@@ -686,6 +788,7 @@ class ScanPipeline:
                 shock_usd=fx["exposure"].get("shock_usd"),
                 martingale_flag=fx["martingale"].get("flag"),
                 martingale_evidenz=fx["martingale"].get("evidence") or [],
+                symbole=", ".join(sorted(st.get("symbols", {}))),
             )
             stops = fx["stops"]
             r.stop_nachweis = (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
@@ -735,6 +838,7 @@ class ScanPipeline:
                                       "schock_usd": r.shock_usd},
                     "martingale_flag": r.martingale_flag,
                     "stop_nachweis": r.stop_nachweis,
+                    "symbole": r.symbole,
                     "score": r.score, "ampel": r.ampel,
                 })
                 for kind, attr in (("trade_analyse", "trade_analyse"),

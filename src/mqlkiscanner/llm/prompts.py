@@ -13,6 +13,9 @@ zum Schluss wertet ein LLM alles aus — ausfuehrlich"):
                     Teilergebnisse, ausfuehrlicher Bericht (glm-5.3).
                     Platzhalter: {kandidat_json}, {forensik_json},
                     {trade_analyse}, {risiko_analyse}, {kriterien}
+  portfolio       : Prompt 4 — Portfolio-Vorschlag ueber ALLE Signale
+                    (starkes Modell glm-5.3): Strategie-/Asset-Mix fuer ein
+                    Depot. Platzhalter: {kandidaten_json}, {kriterien}
 
 Fehlt eine Datei, wird die eingebettete DEFAULT-Vorlage neu angelegt.
 """
@@ -26,6 +29,7 @@ PROMPT_FILES = {
     "trade_analyse": PROMPTS_DIR / "trade_analyse.md",
     "risiko_analyse": PROMPTS_DIR / "risiko_analyse.md",
     "gesamtbericht": PROMPTS_DIR / "gesamtbericht.md",
+    "portfolio": PROMPTS_DIR / "portfolio.md",
 }
 
 DEFAULT_TRADE_ANALYSE = """# Prompt 1 — Trade-Analyse: Strategie aus den Trades ermitteln (GLM 5.3)
@@ -141,6 +145,52 @@ Widersprueche zugunsten der maschinellen Forensik-Zahlen und weise im
 Bericht darauf hin. Sachlich, keine Anlageberatung, keine Emojis.
 """
 
+DEFAULT_PORTFOLIO = """# Prompt 4 — Portfolio-Vorschlag: Welche Strategien passen zusammen ins Depot? (GLM 5.3)
+
+Du bist ein Portfolio-Manager fuer systematische Handelsstrategien. Dir
+liegen ALLE geprueften MQL5-Signale als JSON-Array vor — je Eintrag die
+Engine-Kennzahlen (kandidat), die Forensik (forensik), die gehandelten
+Assets (assets), die Kurzfassung und der ausfuehrliche Gesamtbericht.
+Alle Zahlen sind maschinell berechnet: zitieren erlaubt, nichts
+dazuerfinden, keine eigenen Berechnungen.
+
+## Entscheidungs-Kriterien des Nutzers
+{kriterien}
+
+## Alle Signale
+{kandidaten_json}
+
+## Aufgabe — erarbeite einen Portfolio-Vorschlag (600-1000 Woerter,
+Deutsch, Markdown):
+
+Beginne mit EXAKT einer Zeile:
+Kurzfassung: <max. 25 Woerter: der empfohlene Mix in einem Satz>
+
+Danach Abschnitte mit ## -Ueberschriften:
+1. **Bestandsaufnahme** — Welche Strategie-Typen und Asset-Klassen liegen
+   vor? Wo ueberlappen sich Signale (gleiche Assets = Klumpenrisiko,
+   gleicher Strategie-Typ/Handelszeitfenster = Korrelationsrisiko)?
+2. **Bewertung je Signal** — Kurzes Urteil je Signal: Rolle im Depot
+   (Ertragstraeger, Risikotraeger, ueberfluessig) und Hauptgrund mit
+   Zahlen (Trading-DD, Schockszenario, Stop-Nachweis, Ertrag/Monat).
+3. **Portfolio-Vorschlag** — Welche Kombination empfiehlst du? Je
+   gewaehltem Signal: Rolle, ungefaehre Gewichtung in Prozent des
+   Kopierbudgets und warum die Kombination diversifiziert ist
+   (unterschiedliche Assets, Maerkte, Strategie-Typen, Handelszeiten).
+   Aussortierte Signale mit je einem Satz Grund.
+4. **Gesamtrisiko des Mixes** — Wo bleibt Risiko trotz Einzel-Eignung
+   (gemeinsame Gold-/USD-Exposure, Grid-Klumpen, Copy-Slippage auf
+   kleinem Konto)? Was muss laufend beobachtet werden?
+5. **Naechste Schritte** — Konkrete Bedingungen fuer Aufnahme/Ausschluss
+   und was den Status aendern wuerde.
+
+Bindende Regeln: Risiko VOR Ertrag. Kein Signal ohne Stop-Nachweis wird
+Ertragstraeger. Ein Signal mit Martingale-Flag oder verletzter
+Drawdown-Schranke wird nie aufgenommen. Liegt nur ein Signal vor: einzeln
+bewerten und fehlende Diversifikation explizit benennen. Keine
+Anlageberatung im rechtlichen Sinn, keine Emojis.
+"""
+
 
 def _write_default(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -151,6 +201,7 @@ DEFAULTS = {
     "trade_analyse": DEFAULT_TRADE_ANALYSE,
     "risiko_analyse": DEFAULT_RISIKO_ANALYSE,
     "gesamtbericht": DEFAULT_GESAMTBERICHT,
+    "portfolio": DEFAULT_PORTFOLIO,
 }
 
 
