@@ -126,18 +126,22 @@ with access_tab:
             if not sess.has_credentials:
                 _test_result("_admin_mql5_result", False, "Benutzername und Passwort zuerst speichern.")
             else:
+                from mqlkiscanner.mql5.browser_session import ensure_mql5_cookies
                 with st.status("MQL5-Anmeldung wird geprüft …", expanded=True) as status:
-                    st.write("Verwende den wirksamen gespeicherten Zugang. Warte auf MQL5.")
+                    st.write("Gespeicherte Session-Cookies prüfen; bei Bedarf öffnet sich "
+                             "kurz ein Chrome-Fenster für die Anmeldung.")
                     try:
-                        ok = sess.login()
+                        ok = ensure_mql5_cookies(config.load_settings(), sess,
+                                                 log=lambda m: st.write(m))
                         _test_result("_admin_mql5_result", ok,
-                                     "Anmeldung erfolgreich. Einzelne Trade-Exporte wurden nicht geprüft."
+                                     "Anmeldung erfolgreich — Trade-Exporte verfügbar. "
+                                     "Session bleibt als lokale Cookie-Datei gespeichert."
                                      if ok else "Anmeldung fehlgeschlagen. Gespeicherten Zugang prüfen.")
                         status.update(label="Login-Test abgeschlossen" if ok else "Login-Test fehlgeschlagen",
                                       state="complete" if ok else "error", expanded=False)
                     except Exception as exc:
                         _test_result("_admin_mql5_result", False,
-                                     f"Anmeldung nicht abgeschlossen ({type(exc).__name__}). Zugang und Erreichbarkeit prüfen.")
+                                     f"Anmeldung nicht abgeschlossen: {exc}")
                         status.update(label="Login-Test fehlgeschlagen", state="error", expanded=False)
         _render_test_result("_admin_mql5_result")
 

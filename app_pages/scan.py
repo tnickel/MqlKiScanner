@@ -283,11 +283,15 @@ if command:
             log("Kein MQL5-Login — nur Kennzahlen möglich, Trade-Exporte entfallen "
                 "(Vorprüfung). Login im Admin-Bereich ergänzen.")
         else:
-            # Ein Login-Vorflug: scheitert er, alle 5 Kandidaten nicht einzeln
-            # mit derselben Meldung fallen lassen.
+            # Ein Anmelde-Vorflug: Cookies (ggf. per Chrome-Fenster) holen,
+            # statt 5 Kandidaten einzeln mit derselben Meldung scheitern zu lassen.
             _step("forensik", detail="MQL5-Anmeldung prüfen …")
             try:
-                session.ensure_session_for_export()
+                from mqlkiscanner.mql5.browser_session import ensure_mql5_cookies
+                if not ensure_mql5_cookies(cfg, session, log=log):
+                    raise RuntimeError(
+                        "Login über Browser nicht bestätigt — Zugangsdaten im "
+                        "Admin-Bereich prüfen.")
             except Exception as exc:
                 _step("forensik", "error", total=n_export,
                       detail=f"MQL5-Login fehlgeschlagen: {exc}")

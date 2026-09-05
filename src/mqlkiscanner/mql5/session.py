@@ -81,11 +81,15 @@ class Mql5Session:
         return self.logged_in
 
     def is_logged_in(self) -> bool:
-        """Eingeloggt-Check ueber die eigene Signalseite (Login-Link weg)."""
+        """Eingeloggt-Check: MQL5 zeigt den Abmelde-Link als
+        /en/auth_logout (Text 'Logout'); alte Varianten mitgeprüft."""
         try:
             self.limiter.wait()
             r = self.http.get(urljoin(MQL5_BASE, "/en"), timeout=30)
-            return 'href="/en/logout' in r.text or "Log out" in r.text
+            return ("/en/auth_logout" in r.text
+                    or 'href="/en/logout' in r.text
+                    or ">Logout<" in r.text
+                    or "Log out" in r.text)
         except requests.RequestException:
             return False
 
@@ -124,11 +128,15 @@ class Mql5Session:
                 "ueber 'MQL5-Login testen' verifizieren.")
 
     def export_positions_csv(self, signal_id: int, extra_pause_s: float = 0.0) -> str:
-        """Trade-Export je Signal (doc/02: Antwort muss mit 'Time;' beginnen)."""
+        """Trade-Export je Signal (doc/02: Antwort muss mit 'Time;' beginnen).
+
+        BOM-tolerant: Chrome/Download-Varianten der Exporte beginnen mit
+        einer UTF-8-BOM (\ufeff), der Parser liest utf-8-sig.
+        """
         self.ensure_session_for_export()
         r = self.get(f"/en/signals/{signal_id}/export/positions",
                      extra_pause_s=extra_pause_s)
-        text = r.text
+        text = r.text.lstrip("\ufeff")
         if text.lstrip().startswith("Time;"):
             return text
         if text.lstrip().startswith("<!DOCTYPE"):
@@ -136,8 +144,9 @@ class Mql5Session:
             self.login()
             r = self.get(f"/en/signals/{signal_id}/export/positions",
                          extra_pause_s=extra_pause_s)
-            if r.text.lstrip().startswith("Time;"):
-                return r.text
+            text = r.text.lstrip("\ufeff")
+            if text.lstrip().startswith("Time;"):
+                return text
         raise RuntimeError(
             f"Export fuer Signal {signal_id} lieferte kein CSV (Login-HTML?). "
             "Credentials pruefen bzw. MQL5-Status kontrollieren.")
