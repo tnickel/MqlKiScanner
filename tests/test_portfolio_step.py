@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from conftest import warte_auf_lauf
 from mqlkiscanner import db, pipeline
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -107,6 +108,7 @@ def test_step5_portfolio_runs_and_displays(monkeypatch):
     at.session_state["scan_results"] = [
         pipeline.ScanResult(id=1234567, name="A", forensik_vorhanden=True)]
     at.button(key="step_btn_portfolio").click().run()
+    warte_auf_lauf(at)
     assert not at.exception, at.exception
     wf = at.session_state["scan_workflow"]
     assert wf["steps"]["portfolio"]["status"] == "complete"
@@ -120,6 +122,7 @@ def test_step5_portfolio_without_key_is_skipped():
     at.session_state["scan_results"] = [
         pipeline.ScanResult(id=1234567, name="A", forensik_vorhanden=True)]
     at.button(key="step_btn_portfolio").click().run()
+    warte_auf_lauf(at)
     assert not at.exception, at.exception
     wf = at.session_state["scan_workflow"]
     assert wf["steps"]["portfolio"]["status"] == "skipped"

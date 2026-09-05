@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from conftest import warte_auf_lauf
 from mqlkiscanner import pipeline
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +53,7 @@ def test_step_numbers_blink_when_pending_and_stop_when_done(mocked_crawler):
     # Schritt 1 klicken -> danach abgeschlossen, nicht mehr blinkend
     _btn(at, "step_btn_listen").click()
     at.run()
+    warte_auf_lauf(at)
     assert not at.exception, at.exception
     wf = at.session_state["scan_workflow"]
     assert wf["steps"]["listen"]["status"] == "complete"
@@ -66,8 +68,10 @@ def test_step2_continues_from_step1_and_filters(mocked_crawler):
     at.run()
     _btn(at, "step_btn_listen").click()
     at.run()
+    warte_auf_lauf(at)
     _btn(at, "step_btn_kandidaten").click()
     at.run()
+    warte_auf_lauf(at)
     assert not at.exception, at.exception
     wf = at.session_state["scan_workflow"]
     assert wf["steps"]["kandidaten"]["status"] == "complete"
@@ -82,6 +86,7 @@ def test_step2_without_step1_is_skipped_with_hint():
     at.run()
     _btn(at, "step_btn_kandidaten").click()
     at.run()
+    warte_auf_lauf(at)
     assert not at.exception
     wf = at.session_state["scan_workflow"]
     assert wf["steps"]["kandidaten"]["status"] == "skipped"
@@ -93,6 +98,7 @@ def test_step3_without_step2_is_skipped_with_hint():
     at.run()
     _btn(at, "step_btn_forensik").click()
     at.run()
+    warte_auf_lauf(at)
     assert not at.exception
     wf = at.session_state["scan_workflow"]
     assert wf["steps"]["forensik"]["status"] == "skipped"
@@ -156,6 +162,7 @@ def test_step3_nur_neue_skips_known_and_keeps_old_verdicts(mocked_crawler, monke
     at.toggle(key="scan_nur_neue").set_value(True).run()
     _btn(at, "step_btn_forensik").click()
     at.run()
+    warte_auf_lauf(at)
     assert not at.exception, at.exception
 
     # Nur das neue Signal wurde analysiert; das bekannte kam aus der DB.
