@@ -45,7 +45,9 @@ def test_app_boots_without_exception():
 def test_scan_page_renders_steps():
     at = _run_main()
     body = _body(at)
-    assert "Listen lesen" in body and "LLM-Auswertung" in body
+    assert "Signale holen" in body and "KI-Bericht" in body
+    assert "Starte Workflow" in body
+    assert "Daten holen" in body and "Computer prüft" in body
 
 
 def test_verification_button_loads_raw_data_and_saves_isolated_run():
@@ -62,10 +64,35 @@ def test_verification_button_loads_raw_data_and_saves_isolated_run():
     assert len(payload["ergebnisse"]) == len(results)
 
 
+def test_results_db_marks_refreshed_signals_as_neu():
+    from mqlkiscanner import db
+
+    db.init_db()
+    db.upsert_signal(2265877, name="Gold Reaper DB Test", platform="MT4",
+                     stats={"eq_dd_pct": 7.0, "ertrag_monat_pct": 10.0})
+    db.store_forensik(2265877, {
+        "score": 4.7, "ampel": "⚪", "stop_nachweis": "kein Nachweis",
+        "martingale_flag": False, "trading_dd": {"pct": 5.0, "usd": 1.0},
+        "peak_exposure": {"positionen": 1, "netto_lots": 0.1, "schock_usd": 500.0},
+    })
+    at = _run_main()
+    at.session_state["refreshed_signal_ids"] = [2265877]
+    at.switch_page("app_pages/ergebnisse.py").run()
+    assert not at.exception, at.exception
+    assert at.selectbox(key="results_run").value.startswith("Datenbank")
+    df = at.dataframe[0].value
+    assert "Stand" in df.columns
+    row = df.loc[df["ID"] == 2265877].iloc[0]
+    assert row["Stand"] == "NEU"
+    assert list(df["ID"])[0] == 2265877, "NEU-Signale sollen oben stehen"
+
+
 def test_results_page_renders_session_results():
     at = _run_main()
     at.session_state["scan_results"] = [pipeline.ScanResult(id=1234567, name="Test Signal")]
     at.switch_page("app_pages/ergebnisse.py").run()
+    assert not at.exception, at.exception
+    at.selectbox(key="results_run").set_value("Aktuelle Sitzung").run()
     assert not at.exception, at.exception
     assert at.dataframe, "Result table is missing"
     assert list(at.dataframe[0].value["ID"]) == [1234567]
@@ -220,6 +247,8 @@ def test_results_search_and_status_filter_apply_to_table_and_verdicts():
     ]
     at.switch_page("app_pages/ergebnisse.py").run()
     assert not at.exception, at.exception
+    at.selectbox(key="results_run").set_value("Aktuelle Sitzung").run()
+    assert not at.exception, at.exception
     at.text_input(key="results_search").set_value("Alpha").run()
     assert not at.exception, at.exception
     assert list(at.dataframe[0].value["ID"]) == [1234561, 1234563]
@@ -239,6 +268,8 @@ def test_browsing_archive_keeps_current_session_results():
     at = _run_main()
     at.session_state["scan_results"] = [pipeline.ScanResult(id=1234567, name="Current")]
     at.switch_page("app_pages/ergebnisse.py").run()
+    assert not at.exception, at.exception
+    at.selectbox(key="results_run").set_value("Aktuelle Sitzung").run()
     assert not at.exception, at.exception
     current_option = at.selectbox(key="results_run").value
     at.selectbox(key="results_run").set_value(saved).run()

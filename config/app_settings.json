@@ -1,6 +1,6 @@
 {
   "listen_seiten": 2,
-  "top_n_export": 5,
+  "top_n_export": 30,
   "min_abonnenten": 1,
   "min_wochen": 26,
   "schranke_eq_dd_pct": 30.0,
@@ -8,6 +8,7 @@
   "rate_min_interval_s": 2.0,
   "rate_pause_zwischen_signalen_s": 5.0,
   "rate_backoff_429_s": 45.0,
+  "mql5_fail_fast_after": 3,
   "llm_stufe1": true,
   "llm_stufe2": true,
   "llm_max_total_tokens": 5000000,

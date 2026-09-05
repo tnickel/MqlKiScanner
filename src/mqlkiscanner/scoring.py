@@ -11,7 +11,8 @@ Regeln (AGENTS.md):
 - Dimensionen werden aus Engine-Metriken abgeleitet, wo das geht; Plattform-
   Fakten (Broker, Transparenz, Plattform-EQ-DD) werden als `platform`-Dict
   uebergeben und NICHT vom LLM erfunden.
-- Drawdown-Schranke: EQ-DD > 30 % = harte Ablehnung unabhaengig vom Score.
+- Drawdown-Schranke: max(Trading-DD, EQ-DD) > Schranke = harte Ablehnung
+  unabhaengig vom Score (Ausnahme: eq_dd_caveat → nur Trading-DD).
 """
 from __future__ import annotations
 
@@ -46,6 +47,17 @@ AVG_WIN_MAP = [(2, 8.0), (4, 6.5), (8, 5.0), (15, 5.0), (40, 4.0), (100, 3.0)]  
 WEEKS_MAP = [(8, 9.0), (26, 7.0), (40, 5.5), (52, 4.5), (78, 3.0), (104, 2.5), (156, 2.0)]
 
 
+def _trading_dd_for_risk(trading_dd: dict | None) -> float:
+    """Risiko-%: max. relativer DD, Fallback dd_pct. 0.0 ist ein gueltiger Wert."""
+    if not trading_dd:
+        return 0.0
+    if trading_dd.get("dd_pct_max_rel") is not None:
+        return float(trading_dd["dd_pct_max_rel"])
+    if trading_dd.get("dd_pct") is not None:
+        return float(trading_dd["dd_pct"])
+    return 0.0
+
+
 def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, float]:
     """7 Dimensionen (1-10, hoch = riskant) aus Engine-Report + Plattform-Fakten.
 
@@ -57,10 +69,12 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     f = report.get("forensics", {})
     s = report.get("stats", {})
 
-    # 1) Drawdown: realer Trading-DD vs. Plattform-EQ-DD — der schlimmere zaehlt.
+    # 1) Drawdown: max. relativer Trading-DD vs. Plattform-EQ-DD.
+    #    dd_pct (USD-Maximum) bleibt Anker; Score nutzt dd_pct_max_rel.
     #    Vorbehalt (eq_dd_caveat): Plattform-EQ-DD aus der Fruehphase auf einem
     #    Minikonto (Fall KiraCat, doc/01-Fusznote) — dann nur realer Trading-DD.
-    real_dd = f.get("drawdown", {}).get("trading_dd", {}).get("dd_pct", 0.0)
+    trading_dd = f.get("drawdown", {}).get("trading_dd", {}) or {}
+    real_dd = _trading_dd_for_risk(trading_dd)
     eq_dd = float(platform.get("eq_dd_pct") or 0.0)
     dd_reference = real_dd if platform.get("eq_dd_caveat") else max(real_dd, eq_dd)
     dd_dim = _interp(dd_reference, DD_MAP)
@@ -120,17 +134,29 @@ def score(dims: dict[str, float], weights: dict[str, float] | None = None) -> fl
 
 
 def evaluate(report: dict, platform: dict | None = None,
-             weights: dict[str, float] | None = None) -> dict:
-    """Score + Gate. Schranke: EQ-DD > 30 % (AGENTS.md: Risiko vor Ertrag)."""
+             weights: dict[str, float] | None = None,
+             schranke_eq_dd_pct: float = 30.0) -> dict:
+    """Score + Gate. Harte Schranke: max(Trading-DD, EQ-DD) > Schranke.
+
+    Ausnahme: platform['eq_dd_caveat'] (KiraCat-Fussnote) — dann nur Trading-DD.
+    Fehlt der Plattform-EQ-DD, greift trotzdem der rekonstruierte Trading-DD.
+    """
     platform = platform or {}
     dims = dimension_inputs(report, platform)
+    trading_dd = (report.get("forensics", {}).get("drawdown", {}) or {}).get("trading_dd") or {}
+    real_dd = _trading_dd_for_risk(trading_dd)
     eq_dd = float(platform.get("eq_dd_pct") or 0.0)
-    barrier = eq_dd > 30.0
+    if platform.get("eq_dd_caveat"):
+        barrier_dd = real_dd
+    else:
+        barrier_dd = max(real_dd, eq_dd)
+    barrier = barrier_dd > float(schranke_eq_dd_pct)
     return {
         "dimensions": dims,
         "weights": {**DEFAULT_WEIGHTS, **(weights or {})},
         "score": score(dims, weights),
         "schranke_eq_dd_verletzt": barrier,
+        "schranke_dd_pct": round(barrier_dd, 2),
         "forensics_complete": _forensics_complete(report),
         "urteil_gueltig": _forensics_complete(report) and not barrier,
     }

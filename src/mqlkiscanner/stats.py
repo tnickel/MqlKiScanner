@@ -40,8 +40,9 @@ def compute(parsed: ParsedExport) -> dict:
             if streak_len > max_streak:
                 max_streak = streak_len
                 max_streak_sum = streak_sum
-                streak_start, streak_end = t.open_time, t.close_time
                 best_streak_window = list(cur_window)
+                streak_start = best_streak_window[0].open_time
+                streak_end = best_streak_window[-1].close_time
         else:
             streak_len, streak_sum, cur_window = 0, 0.0, []
 

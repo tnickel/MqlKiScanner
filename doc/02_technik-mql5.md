@@ -11,10 +11,15 @@ in der Praxis gegen echte Signale getestet.
 | Signalliste MT4 | `https://www.mql5.com/en/signals/mt4` (+ Seiten) | nein |
 | Zuverlässigkeits-Liste | `https://www.mql5.com/en/signals/mt5/trusted` | nein |
 | Signal-Details | `https://www.mql5.com/en/signals/{ID}` | nein (mehr Daten mit Login) |
-| **Trade-Export** | `https://www.mql5.com/en/signals/{ID}/export/positions` | **ja (Cookie)** |
+| **Trade-Export MT5** | `https://www.mql5.com/en/signals/{ID}/export/positions` | **ja (Cookie)** |
+| **Trade-Export MT4** | `https://www.mql5.com/en/signals/{ID}/export/history` | **ja (Cookie)** |
 | Reviews | `https://www.mql5.com/en/signals/{ID}/reviews` | nein |
 | Anbieter | `https://www.mql5.com/en/users/{username}` | nein |
 | Login | `https://www.mql5.com/en/auth_login` | — |
+
+Wichtig: `/export/positions` liefert auf **MT4-Signalen HTTP 404** (`[NotFound]`).
+MT4 nutzt `/export/history` (Orderbuch mit S/L, T/P, Comment). MT5 nutzt
+`/export/positions` (ohne SL/TP). Bei unbekannter Plattform beide Pfade versuchen.
 
 ## 2. Login-Session
 
@@ -59,8 +64,8 @@ Time;Type;Volume;Symbol;Price;S/L;T/P;Time;Price;Commission;Swap;Profit;Comment
 - Kommentar: `[sl]` = Stop-Auslösung, `[tp]` = Take-Profit, leer = manuell/EA-Close,
   `cancelled` = stornierte Pending-Order
 - **Dieses Format ist der Goldstandard für Stop-Nachweise** (Beispiel:
-  `data/raw/gold_spike_mt4_2349227_ORDERBOOK.csv`) — aber nur verfügbar, wenn
-  der Nutzer die Datei beschafft (nicht via Web-Export abrufbar)
+  `data/raw/gold_spike_mt4_2349227_ORDERBOOK.csv`). Abrufbar über
+  `/export/history` (Cookie nötig); `/export/positions` gibt auf MT4 404.
 
 ## 4. Kennzahlen-Extraktion von der Signalseite
 

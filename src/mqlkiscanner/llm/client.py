@@ -9,6 +9,7 @@ Regeln (AGENTS.md Design-Regeln 1 + 5):
 from __future__ import annotations
 
 import json
+import threading
 import time
 from dataclasses import dataclass, field
 
@@ -57,6 +58,8 @@ class GlmClient:
         self.usage = LlmUsage()
         # Details des letzten Aufrufs — fuer die GUI-Anzeige "was macht das LLM"
         self.last_call: dict = {}
+        # Trade- und Risiko-Analyse laufen parallel; Usage/last_call absichern.
+        self._lock = threading.Lock()
 
     @property
     def has_key(self) -> bool:
@@ -70,13 +73,18 @@ class GlmClient:
 
     def chat(self, prompt: str, system: str = "", model: str | None = None,
              stufe: int = 1, temperature: float = 0.4,
-             max_tokens: int = 1600) -> str:
-        """Ein Chat-Completion. Wirft klar benannte Fehler (Key/Guthaben/Budget)."""
+             max_tokens: int = 1600, meta_out: dict | None = None) -> str:
+        """Ein Chat-Completion. Wirft klar benannte Fehler (Key/Guthaben/Budget).
+
+        meta_out: optionaler Dict, der unter Lock mit den Call-Metadaten
+        gefuellt wird — noetig bei parallelen Aufrufen (last_call allein rasant).
+        """
         model = model or (self.model_stufe1 if stufe == 1 else self.model_stufe2)
-        if self.usage.total_tokens >= self.max_total_tokens:
-            raise LlmBudgetError(
-                f"Token-Budget erschoepft ({self.max_total_tokens} je Lauf). "
-                "Budget im Admin-Bereich erhoehen oder weniger Kandidaten auswerten.")
+        with self._lock:
+            if self.usage.total_tokens >= self.max_total_tokens:
+                raise LlmBudgetError(
+                    f"Token-Budget erschoepft ({self.max_total_tokens} je Lauf). "
+                    "Budget im Admin-Bereich erhoehen oder weniger Kandidaten auswerten.")
 
         body = {
             "model": model,
@@ -96,10 +104,11 @@ class GlmClient:
                     err = r.json().get("error", {})
                 except ValueError:
                     err = {}
-                if err.get("code") in ("1113", "1302"):
+                code = str(err.get("code") or "")
+                if code in ("1113", "1302"):
                     raise LlmNoBalanceError(
                         "GLM-Key gueltig, aber kein Kontingent auf diesem Endpunkt "
-                        f"(Z.ai-Code {err.get('code')}). Bei Abo-Keys (GLM Coding "
+                        f"(Z.ai-Code {code}). Bei Abo-Keys (GLM Coding "
                         "Plan) muss der Coding-Endpunkt gesetzt sein "
                         "(api.z.ai/api/coding/paas/v4), bei Guthaben-Keys der "
                         "Standard-Endpunkt (api.z.ai/api/paas/v4) — im Admin-"
@@ -108,13 +117,35 @@ class GlmClient:
                 last_error = LlmError(f"HTTP 429: {r.text[:200]}")
                 continue
             if r.status_code >= 400:
+                try:
+                    err = r.json().get("error", {})
+                except ValueError:
+                    err = {}
+                code = str(err.get("code") or "")
+                if code in ("1113", "1302"):
+                    raise LlmNoBalanceError(
+                        "GLM-Key gueltig, aber kein Kontingent auf diesem Endpunkt "
+                        f"(Z.ai-Code {code}). Bei Abo-Keys (GLM Coding "
+                        "Plan) muss der Coding-Endpunkt gesetzt sein "
+                        "(api.z.ai/api/coding/paas/v4), bei Guthaben-Keys der "
+                        "Standard-Endpunkt (api.z.ai/api/paas/v4) — im Admin-"
+                        "bereich umstellbar, ggf. dort aufladen.")
                 raise LlmError(f"GLM-API HTTP {r.status_code}: {r.text[:300]}")
-            data = r.json()
+            try:
+                data = r.json()
+            except ValueError as exc:
+                raise LlmError(
+                    f"GLM-API lieferte kein JSON (HTTP {r.status_code}): "
+                    f"{r.text[:200]!r}") from exc
+            try:
+                choice0 = data["choices"][0]
+                content = (choice0.get("message") or {}).get("content") or ""
+                finish = choice0.get("finish_reason")
+            except (KeyError, IndexError, TypeError) as exc:
+                raise LlmError(
+                    f"GLM-API-Antwort ohne gueltige choices: {str(data)[:200]}") from exc
             usage = data.get("usage", {})
-            self.usage.add(model, int(usage.get("total_tokens", 0)))
-            content = data["choices"][0]["message"].get("content") or ""
-            finish = data["choices"][0].get("finish_reason")
-            self.last_call = {
+            call_meta = {
                 "model": model,
                 "prompt_tokens": int(usage.get("prompt_tokens", 0)),
                 "completion_tokens": int(usage.get("completion_tokens", 0)),
@@ -125,10 +156,16 @@ class GlmClient:
                 "zeichen": len(content),
                 "prompt_zeichen": len(prompt),
             }
+            with self._lock:
+                self.usage.add(model, int(usage.get("total_tokens", 0)))
+                self.last_call = call_meta
+                if meta_out is not None:
+                    meta_out.clear()
+                    meta_out.update(call_meta)
             if not content:
                 raise LlmError(
                     f"Leere Antwort von {model} (finish_reason={finish}, "
-                    f"completion_tokens={self.last_call['completion_tokens']}). "
+                    f"completion_tokens={call_meta['completion_tokens']}). "
                     "Moegliche Ursache: Reasoning hat das max_tokens-Budget "
                     "aufgebraucht — Limit erhoehen.")
             return content

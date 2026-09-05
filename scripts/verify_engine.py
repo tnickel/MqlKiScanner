@@ -174,10 +174,16 @@ check("PureGold", "Entnahmen USD", -12000.0, dd["withdrawals_total"], 0.01,
       "doc/01: Ernte 12.000 USD")
 check("PureGold", "Peak gleichz. Positionen", 32, ex["peak_open_positions"], 0,
       "doc/01: max. 32 gleichzeitige SELL-Positionen")
-check("PureGold", "Peak-Netto Lots (short)", -2.66, ex["peak_net_lots"], 0.005,
-      "doc/01: 2,66 Lots netto")
-check("PureGold", "50-USD-Schock USD", -13300.0, -ex["shock_usd"], 1.0,
-      "doc/01: 50-USD-Schock ~ -13.300 USD (266 USD je 1 USD Bewegung)")
+check("PureGold", "Peak-Netto Lots am Anzahl-Peak", -2.66,
+      sum(ex.get("peak_count_net_by_symbol", {}).values()), 0.005,
+      "doc/01: 2,66 Lots netto bei 32 Positionen")
+check("PureGold", "50-USD-Schock am Anzahl-Peak USD", -13300.0,
+      -ex.get("peak_count_shock_usd", 0), 1.0,
+      "doc/01: 50-USD-Schock ~ -13.300 USD am Positions-Peak")
+check("PureGold", "Peak-Netto Lots (Volumen-Peak)", -3.44, ex["peak_net_lots"], 0.005,
+      "max. Netto-Lots / Schock-Peak (risiko-relevant)")
+check("PureGold", "50-USD-Schock USD (Volumen-Peak)", -17200.0, -ex["shock_usd"], 1.0,
+      "risiko-relevanter Schock am Volumen-Peak")
 check("PureGold", "Martingale-Signal ausgeschlossen (Median nach Verlust)", 0.92,
       mg["median_ratio_after_loss"], 0.02,
       "doc/03: Pure Gold 0,92x nach Verlust gegen 1,00x nach Gewinn = KEIN Martingale")

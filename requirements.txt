@@ -5,5 +5,7 @@ pandas>=2.0
 matplotlib>=3.8
 # GUI (Phase 4)
 streamlit>=1.63,<2
+# MQL5-Login/Export-Fallback (Selenium-Chrome, persistentes Profil)
+selenium>=4.15
 # LLM-Layer (Phase 3): GLM ueber die OpenAI-kompatible Z.ai-REST-API,
 # kein zusaetzliches SDK noetig (requests genuegt).

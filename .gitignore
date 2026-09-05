@@ -1,6 +1,9 @@
 # --- Geheimnisse: NIE committen ---
 .env
+.env.*
+!.env.example
 config/secrets.local.json
+**/secrets.local.json
 data/mql5_cookies.json
 data/chrome_profile/
 .streamlit/secrets.toml
@@ -13,16 +16,22 @@ build/
 dist/
 .venv/
 venv/
+.pytest_cache/
 
 # Daten (lokale Scans, Exporte, Runs — koennen personenbezogene Daten enthalten)
 data/candidates.json
 data/stats/
 data/trades/
 data/runs/
+data/*.db
+data/*.db-*
 
 # temporaere Arbeitsdateien
 .tmp/
 *.log
+scripts/_probe_*.py
+scripts/_cmp_*.py
+scripts/_repro_*.py
 
 # IDE / OS
 .idea/
@@ -30,4 +39,3 @@ data/runs/
 Thumbs.db
 .DS_Store
 monthly.json
-data/*.db

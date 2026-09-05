@@ -39,6 +39,20 @@ def _stylesheet() -> str:
     [data-testid="stMetric"] { border: 1px solid #30445E; border-radius: 12px;
       background: #112034; padding: 1rem 1.15rem; }
     [data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
+    .mks-flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: .65rem;
+      margin: .35rem 0 0.15rem; }
+    .mks-flow-step { flex: 1 1 9.5rem; display: flex; flex-direction: column; gap: .35rem;
+      padding: .85rem 1rem; border: 1px solid #30445E; border-radius: 12px;
+      background: #112034; min-width: 0; }
+    .mks-flow-num { display: inline-flex; align-items: center; justify-content: center;
+      width: 1.7rem; height: 1.7rem; border-radius: 999px; background: #F6C453;
+      color: #192438; font-weight: 800; font-size: .95rem; border: 1px solid #FFDC89; }
+    .mks-flow-step strong { color: #E7EEF7; font-size: 1.02rem; letter-spacing: -.01em; }
+    .mks-flow-text { color: #9BB0C7; font-size: .9rem; line-height: 1.35; }
+    .mks-flow-arrow { align-self: center; color: #79D8DA; font-size: 1.35rem; font-weight: 700;
+      padding: 0 .1rem; }
+    .mks-flow-note { color: #9BB0C7; font-size: .92rem; margin: .55rem 0 .2rem; max-width: 52rem; }
+    .st-key-scan_start_panel { border-color: #79D8DA55 !important; }
     .mks-stepnum { display: inline-flex; align-items: center; justify-content: center;
       min-width: 1.9rem; height: 1.9rem; padding: 0 .45rem; margin-right: .5rem;
       border-radius: 999px; background: #F6C453; color: #192438;
@@ -50,6 +64,10 @@ def _stylesheet() -> str:
       50% { box-shadow: 0 0 0 .55rem rgba(246,196,83,0); transform: scale(1.09); }
     }
     [data-testid="stBottomBlockContainer"] { background: #0D1829F5; border-top: 1px solid #30445E; }
+    @media(max-width:720px) {
+      .mks-flow-arrow { display: none; }
+      .mks-flow-step { flex: 1 1 100%; }
+    }
     [role="dialog"] { border: 1px solid #50627C; }
     @media(max-width:640px) {
       .st-key-page_hero { padding: 1.25rem; background-size: cover,auto 100%; }

@@ -11,9 +11,12 @@ from __future__ import annotations
 
 import json
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Callable
+
+import requests
 
 from . import config, scoring
 from . import db
@@ -21,6 +24,7 @@ from .engine import analyze as analyze_export
 from .llm import client as llm_client
 from .llm import prompts as llm_prompts
 from .mql5 import crawler, exporter, signal_stats
+from .mql5.ratelimit import Mql5HardStopError, is_hard_mql5_failure
 from .mql5.session import Mql5Session
 
 ProgressCb = Callable[[int, int, str], None]
@@ -101,6 +105,84 @@ class ScanResult:
         }
 
 
+def results_from_db(settings: dict | None = None) -> list[ScanResult]:
+    """Alle in der SQLite-DB gespeicherten Signale als ScanResult-Liste."""
+    settings = {**config.load_settings(), **(settings or {})}
+    results: list[ScanResult] = []
+    for row in db.list_catalog():
+        stats = row.get("stats") or {}
+        f = row.get("forensik") or {}
+        if not isinstance(f, dict):
+            f = {}
+        peak = f.get("peak_exposure") or {}
+        trading = f.get("trading_dd") or {}
+        # Flaches Alt-Schema aus analyze_local_files (trading_dd_pct ohne Nesting).
+        if not trading and f.get("trading_dd_pct") is not None:
+            trading = {"pct": f.get("trading_dd_pct"), "usd": f.get("trading_dd_usd")}
+        last_fehler = stats.get("last_fehler")
+        signal_updated = row.get("signal_updated") or ""
+        forensik_updated = row.get("forensik_updated") or ""
+        forensik_ok = stats.get("forensik_ok")
+        # Aktuelle Forensik nur, wenn der letzte Scan sie explizit bestanden hat.
+        # Legacy (ohne forensik_ok): last_fehler + Zeitstempel (>= wegen Sekundenaufloesung).
+        if forensik_ok is False:
+            forensik_stale = bool(f)
+        elif forensik_ok is True:
+            forensik_stale = False
+        else:
+            forensik_stale = bool(last_fehler) and (
+                not f or not forensik_updated or signal_updated >= forensik_updated
+            )
+        res = ScanResult(
+            id=int(row["signal_id"]),
+            name=row.get("name") or str(row["signal_id"]),
+            platform=row.get("platform") or "",
+            url=row.get("url") or "",
+            autor=row.get("autor") or "",
+            abonnenten=row.get("abonnenten"),
+            abo_preis_usd=row.get("abo_preis"),
+            wochen=row.get("wochen"),
+            growth_pct=stats.get("growth_pct"),
+            ertrag_monat_pct=stats.get("ertrag_monat_pct"),
+            pf=stats.get("pf"),
+            dd_equity_pct=stats.get("eq_dd_pct"),
+            dd_balance_pct=stats.get("bal_dd_pct"),
+            forensik_vorhanden=bool(f) and not forensik_stale,
+            trading_dd_pct=trading.get("pct", f.get("trading_dd_pct")),
+            trading_dd_usd=trading.get("usd", f.get("trading_dd_usd")),
+            winrate_pct=f.get("winrate_pct"),
+            max_verlustserie=f.get("max_verlustserie"),
+            verlustserie_usd=f.get("verlustserie_usd"),
+            peak_positionen=peak.get("positionen", f.get("peak_positionen")),
+            peak_netto_lots=peak.get("netto_lots", f.get("peak_netto_lots")),
+            shock_usd=peak.get("schock_usd", f.get("shock_usd")),
+            martingale_flag=f.get("martingale_flag"),
+            stop_nachweis=f.get("stop_nachweis") or "",
+            broker_server=stats.get("broker_server"),
+            score=None if forensik_stale else f.get("score"),
+            trades_path=row.get("trades_path") or "",
+            trade_analyse=row.get("trade_analyse") or "",
+            risiko_analyse=row.get("risiko_analyse") or "",
+            gesamtbericht=row.get("gesamtbericht") or "",
+            fehler=last_fehler or "",
+        )
+        if forensik_stale and f:
+            res.urteil = (f"Veraltete Forensik nach fehlgeschlagenem Neu-Lauf "
+                          f"({last_fehler})")
+        if res.dd_equity_pct is not None or res.trading_dd_pct is not None:
+            limit = float(settings.get("schranke_eq_dd_pct", 30.0))
+            eq = float(res.dd_equity_pct) if res.dd_equity_pct is not None else 0.0
+            real = float(res.trading_dd_pct) if res.trading_dd_pct is not None else 0.0
+            res.schranke_verletzt = max(eq, real) > limit
+        if res.gesamtbericht:
+            res.kurzfassung = _extract_kurzfassung(res.gesamtbericht)
+        res.ampel, res.urteil = ampel_for(res, settings)
+        if forensik_stale and last_fehler:
+            res.urteil = f"Fehler (Forensik veraltet): {last_fehler}"
+        results.append(res)
+    return results
+
+
 def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
     """Ampel-Logik: Risiko VOR Ertrag; keine positive Einstufung ohne Forensik."""
     known = config.load_known_signals()
@@ -110,7 +192,8 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
     if result.fehler and not result.forensik_vorhanden:
         return "⚪", f"Fehler: {result.fehler}"
     if result.schranke_verletzt:
-        return "🔴", "Schranke verletzt: EQ-DD > 30 % (harte Ablehnung)"
+        limit = settings.get("schranke_eq_dd_pct", 30)
+        return "🔴", f"Schranke verletzt: Drawdown > {limit:g} % (harte Ablehnung)"
     if result.martingale_flag:
         return "🔴", "Martingale-Signatur nachgewiesen (Ablehnung)"
     if result.forensik_vorhanden:
@@ -139,6 +222,28 @@ class ScanPipeline:
             max_total_tokens=int(self.settings.get("llm_max_total_tokens", 200_000)),
             base_url=self.settings.get("glm_base_url") or None,
         )
+        # Aufeinanderfolgende systemische MQL5-Fehler (Ban/Drossel/Login).
+        self._mql5_hard_fails = 0
+        self.fail_fast_after = max(1, int(self.settings.get("mql5_fail_fast_after", 3)))
+
+    def _register_mql5_outcome(self, *, ok: bool, exc: BaseException | None = None,
+                               log: LogCb | None = None) -> None:
+        """Zaehlt Hard-Failures; wirft Mql5HardStopError ab Schwellwert."""
+        if ok:
+            self._mql5_hard_fails = 0
+            return
+        if exc is None or not is_hard_mql5_failure(exc):
+            return
+        self._mql5_hard_fails += 1
+        msg = (f"MQL5-Hard-Failure {self._mql5_hard_fails}/"
+               f"{self.fail_fast_after}: {type(exc).__name__}: {exc}")
+        if log:
+            log(msg)
+        if self._mql5_hard_fails >= self.fail_fast_after:
+            raise Mql5HardStopError(
+                f"Fail-Fast: {self._mql5_hard_fails} systemische MQL5-Fehler "
+                f"in Folge — weitere Exporte gestoppt, um den Account zu schützen. "
+                f"Letzter Fehler: {exc}") from exc
 
     # ------------------------------------------------------ Schritt 1 + 2
     def crawl(self, on_progress: ProgressCb, log: LogCb) -> list[dict]:
@@ -193,6 +298,8 @@ class ScanPipeline:
             res.broker_server = stats.get("broker_server")
             log(f"✓ Kennzahlen: EQ-DD {res.dd_equity_pct} % · PF {res.pf} · "
                 f"Ertrag {res.ertrag_monat_pct} %/Monat")
+            # Erfolgreiche Kennzahlen-Seite = MQL5 erreichbar → Fail-Fast-Zähler reset
+            self._register_mql5_outcome(ok=True)
 
             log("Trade-Export laden (CSV) …")
             report = None
@@ -201,12 +308,12 @@ class ScanPipeline:
                     path, from_cache = exporter.export_positions(
                         session, res.id,
                         extra_pause_s=float(self.settings.get(
-                            "rate_pause_zwischen_signalen_s", 5.0)))
-                except RuntimeError:
-                    # MQL5 drosselt den direkten Abruf zeitweise mit HTML —
-                    # dann der bewaehrte Weg aus dem MqlDownloader: Download
-                    # ueber echten Chrome (Login-Zustand im Profil).
-                    log("Direkter Abruf gedrosselt — Download über Chrome "
+                            "rate_pause_zwischen_signalen_s", 5.0)),
+                        platform=res.platform or cand.get("platform"))
+                except (RuntimeError, requests.HTTPError):
+                    # MQL5 drosselt / falscher Export-Pfad — Chrome-Fallback
+                    # (History-Link auf der Signal-Seite, MT4+MT5).
+                    log("Direkter Abruf fehlgeschlagen — Download über Chrome "
                         "(MqlDownloader-Muster) …")
                     from .mql5.browser_session import export_positions_via_browser
                     path = export_positions_via_browser(res.id, log=log)
@@ -229,8 +336,10 @@ class ScanPipeline:
             if report is not None:
                 st, fx = report["stats"], report["forensics"]
                 res.forensik_vorhanden = True
-                res.trading_dd_pct = fx["drawdown"]["trading_dd"]["dd_pct"]
-                res.trading_dd_usd = fx["drawdown"]["trading_dd"]["dd_usd"]
+                td = fx["drawdown"]["trading_dd"]
+                # Risiko-/Ampel-% = max. relativer DD; USD-Anker bleibt dd_usd.
+                res.trading_dd_pct = td.get("dd_pct_max_rel", td.get("dd_pct"))
+                res.trading_dd_usd = td["dd_usd"]
                 res.winrate_pct = st.get("winrate_pct")
                 res.max_verlustserie = st.get("max_consecutive_losses")
                 res.verlustserie_usd = st.get("max_consecutive_losses_sum")
@@ -259,28 +368,55 @@ class ScanPipeline:
                     "broker_risk": 5.0,      # Default offshore; Detailpruefung manuell
                     "transparency_risk": 5.0,
                 }
-                ev = scoring.evaluate(report, platform=platform)
+                ev = scoring.evaluate(
+                    report, platform=platform,
+                    schranke_eq_dd_pct=self.settings.get("schranke_eq_dd_pct", 30.0))
                 res.score = ev["score"]
-                res.schranke_verletzt = bool(
-                    (res.dd_equity_pct or 0) > self.settings.get("schranke_eq_dd_pct", 30.0)
-                    or ev["schranke_eq_dd_verletzt"])
-        except Exception as exc:  # Ein Fehler soll den Lauf nicht abbrechen
+                res.schranke_verletzt = bool(ev["schranke_eq_dd_verletzt"])
+                self._register_mql5_outcome(ok=True)
+        except Exception as exc:  # Ein weicher Fehler soll den Lauf nicht abbrechen
+            if isinstance(exc, Mql5HardStopError):
+                raise
             res.fehler = f"{type(exc).__name__}: {exc}"
             log(f"  FEHLER bei {res.id}: {res.fehler}")
             log(traceback.format_exc(limit=3))
+            try:
+                self._register_mql5_outcome(ok=False, exc=exc, log=log)
+                hard_stop = None
+            except Mql5HardStopError as stop:
+                hard_stop = stop
+        else:
+            hard_stop = None
         # Alles in die Datenbank (Nutzer-Prinzip: CSV + MQL5-Infos + Befunde)
         try:
             db.init_db()
+            stats_payload = {
+                "eq_dd_pct": res.dd_equity_pct,
+                "bal_dd_pct": res.dd_balance_pct,
+                "ertrag_monat_pct": res.ertrag_monat_pct,
+                "pf": res.pf, "growth_pct": res.growth_pct,
+                "broker_server": res.broker_server,
+                # Expliziter Vollstaendigkeitsstatus (verhindert Gruen aus alter Forensik).
+                "forensik_ok": bool(res.forensik_vorhanden),
+            }
+            if res.fehler and not res.forensik_vorhanden:
+                stats_payload["last_fehler"] = res.fehler
+            else:
+                stats_payload["last_fehler"] = None
+            if not res.forensik_vorhanden and not res.fehler:
+                stats_payload["export_skipped"] = "no_credentials_or_no_export"
             db.upsert_signal(res.id, name=res.name, platform=res.platform, url=res.url,
                              autor=res.autor, abo_preis=res.abo_preis_usd,
                              abonnenten=res.abonnenten, wochen=res.wochen,
-                             stats={"eq_dd_pct": res.dd_equity_pct,
-                                    "bal_dd_pct": res.dd_balance_pct,
-                                    "ertrag_monat_pct": res.ertrag_monat_pct,
-                                    "pf": res.pf, "growth_pct": res.growth_pct,
-                                    "broker_server": res.broker_server})
+                             stats=stats_payload)
             if res.trades_path:
                 db.store_trade_file(res.id, res.trades_path)
+            ampel, grund = ampel_for(res, self.settings)
+            res.ampel = ampel
+            detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
+                      f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
+                      if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
+            res.urteil = grund + detail
             if res.forensik_vorhanden:
                 db.store_forensik(res.id, {
                     "trading_dd": {"pct": res.trading_dd_pct, "usd": res.trading_dd_usd},
@@ -295,12 +431,15 @@ class ScanPipeline:
                     "score": res.score, "ampel": res.ampel})
         except Exception as exc:  # DB-Fehler darf den Lauf nicht abbrechen
             log(f"  DB-Hinweis bei {res.id}: {exc}")
-        ampel, grund = ampel_for(res, self.settings)
-        res.ampel = ampel
-        detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
-                  f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
-                  if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
-        res.urteil = grund + detail
+            ampel, grund = ampel_for(res, self.settings)
+            res.ampel = ampel
+            detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
+                      f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
+                      if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
+            res.urteil = grund + detail
+        if hard_stop is not None:
+            hard_stop.result = res
+            raise hard_stop
         return res
 
     # ------------------------------------------------------ Schritt 4
@@ -314,6 +453,7 @@ class ScanPipeline:
         Prompt 3  Gesamtbericht   — wertet ALLE Teilergebnisse aus, ausfuehrlich
                                     (starkes Modell, glm-5.3)
 
+        Prompt 1 und 2 laufen parallel; Prompt 3 erst danach.
         Jedes Teilergebnis landet in der Datenbank (Tabelle analyses).
         Fortschritt zählt ausschließlich fertig gespeicherte Prompts. Start-
         und Fehlermeldungen verändern den Zähler nicht. Der Rückgabewert trennt
@@ -375,8 +515,9 @@ class ScanPipeline:
         for r in jobs:
             r.llm_fehler = ""
             try:
-                # -------- Prompt 1: Trade-Analyse (starkes Modell)
+                # -------- Prompt 1+2 parallel: Trade-Analyse + Risiko-Analyse
                 model_strong = self.settings.get("model_stufe2", "glm-5.3")
+                model_flash = self.settings.get("model_stufe1", "glm-5.3-flash")
                 trades_json = "{}"
                 n_trades = 0
                 if r.trades_path:
@@ -385,49 +526,81 @@ class ScanPipeline:
                     payload = build_trade_payload(load_export(r.trades_path))
                     trades_json = json.dumps(payload, ensure_ascii=False)
                     n_trades = payload.get("meta", {}).get("trades", 0)
-                prompt = (llm_prompts.load_prompt("trade_analyse")
-                          .replace("{kandidat_json}", _kandidat(r))
-                          .replace("{trades_json}", trades_json))
-                log(f"→ [1/3] Sende Trade-Analyse an {model_strong}: "
-                    f"{n_trades} Trades als Engine-Statistik + Beispiel-Trades "
-                    f"({len(trades_json):,} Zeichen Daten, Prompt gesamt "
-                    f"{len(prompt):,} Zeichen). Modellantwort wird abgewartet …")
+                trade_prompt = (llm_prompts.load_prompt("trade_analyse")
+                                .replace("{kandidat_json}", _kandidat(r))
+                                .replace("{trades_json}", trades_json))
+                risk_prompt = (llm_prompts.load_prompt("risiko_analyse")
+                               .replace("{kandidat_json}", _kandidat(r))
+                               .replace("{forensik_json}", _forensik(r))
+                               .replace("{kriterien}", kriterien))
+                log(f"→ [1+2/3] Parallel: Trade-Analyse ({model_strong}, "
+                    f"{n_trades} Trades, {len(trade_prompt):,} Zeichen) + "
+                    f"Risiko-Analyse ({model_flash}, {len(risk_prompt):,} Zeichen) "
+                    f"für {r.name} …")
                 if on_progress:
-                    on_progress(done, total, f"Trade-Analyse 1/3: {r.name} · warte auf Modellantwort. Danach: Risiko-Analyse → Gesamtbericht")
-                r.trade_analyse = self.llm.chat(prompt, stufe=strong, max_tokens=16384)
-                lc = self.llm.last_call
-                log(f"  ✓ [1/3] Trade-Analyse fertig: {lc['zeichen']} Zeichen "
-                    f"Antwort in {lc['dauer_s']}s (Reasoning "
-                    f"{lc['reasoning_tokens']} + Completion "
-                    f"{lc['completion_tokens']} Tokens) — gesamt bisher: "
-                    f"{self.llm.usage.total_tokens:,} Tokens")
-                db.store_analysis(r.id, "trade_analyse",
-                                  self.settings.get("model_stufe2", ""),
-                                  self.llm.usage.total_tokens, r.trade_analyse)
-                _tick(f"Trade-Analyse fertig: {r.name}")
+                    on_progress(
+                        done, total,
+                        f"Trade- + Risiko-Analyse parallel: {r.name} · warte auf Modellantworten. "
+                        f"Danach: Gesamtbericht")
 
-                # -------- Prompt 2: Risiko-Analyse (Flash)
-                model_flash = self.settings.get("model_stufe1", "glm-5.3-flash")
-                prompt = (llm_prompts.load_prompt("risiko_analyse")
-                          .replace("{kandidat_json}", _kandidat(r))
-                          .replace("{forensik_json}", _forensik(r))
-                          .replace("{kriterien}", kriterien))
-                log(f"→ [2/3] Sende Risiko-Analyse an {model_flash}: "
-                    f"Forensik-Kennzahlen + Kriterien ({len(prompt):,} "
-                    f"Zeichen) …")
-                if on_progress:
-                    on_progress(done, total, f"Risiko-Analyse 2/3: {r.name} · warte auf Modellantwort. Danach: Gesamtbericht")
-                r.risiko_analyse = self.llm.chat(prompt, stufe=1, max_tokens=8192)
-                lc = self.llm.last_call
-                log(f"  ✓ [2/3] Risiko-Analyse fertig: {lc['zeichen']} Zeichen "
-                    f"in {lc['dauer_s']}s — gesamt bisher: "
-                    f"{self.llm.usage.total_tokens:,} Tokens")
-                db.store_analysis(r.id, "risiko_analyse",
-                                  self.settings.get("model_stufe1", ""),
-                                  self.llm.usage.total_tokens, r.risiko_analyse)
-                _tick(f"Risiko-Analyse fertig: {r.name}")
+                trade_meta: dict = {}
+                risk_meta: dict = {}
 
-                # -------- Prompt 3: Gesamtauswertung, ausfuehrlich (starkes Modell)
+                def _run_trade() -> str:
+                    return self.llm.chat(trade_prompt, stufe=strong, max_tokens=16384,
+                                         meta_out=trade_meta)
+
+                def _run_risk() -> str:
+                    return self.llm.chat(risk_prompt, stufe=1, max_tokens=8192,
+                                         meta_out=risk_meta)
+
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    fut_trade = pool.submit(_run_trade)
+                    fut_risk = pool.submit(_run_risk)
+                    trade_err: BaseException | None = None
+                    risk_err: BaseException | None = None
+                    new_trade: str | None = None
+                    new_risk: str | None = None
+                    try:
+                        new_trade = fut_trade.result()
+                    except BaseException as exc:  # noqa: BLE001
+                        trade_err = exc
+                        log(f"  ✗ Trade-Analyse fehlgeschlagen: {exc}")
+                    try:
+                        new_risk = fut_risk.result()
+                    except BaseException as exc:  # noqa: BLE001
+                        risk_err = exc
+                        log(f"  ✗ Risiko-Analyse fehlgeschlagen: {exc}")
+
+                # Nur frisch erzeugte Antworten speichern/zählen — Alttexte bleiben
+                # im Objekt, werden aber nicht als neuer Erfolg verbucht.
+                if new_trade is not None:
+                    r.trade_analyse = new_trade
+                    log(f"  ✓ [1/3] Trade-Analyse fertig: {trade_meta.get('zeichen', '?')} Zeichen "
+                        f"in {trade_meta.get('dauer_s', '?')}s — gesamt bisher: "
+                        f"{self.llm.usage.total_tokens:,} Tokens")
+                    db.store_analysis(r.id, "trade_analyse",
+                                      self.settings.get("model_stufe2", ""),
+                                      self.llm.usage.total_tokens, r.trade_analyse)
+                    _tick(f"Trade-Analyse fertig: {r.name}")
+                if new_risk is not None:
+                    r.risiko_analyse = new_risk
+                    log(f"  ✓ [2/3] Risiko-Analyse fertig: {risk_meta.get('zeichen', '?')} Zeichen "
+                        f"in {risk_meta.get('dauer_s', '?')}s — gesamt bisher: "
+                        f"{self.llm.usage.total_tokens:,} Tokens")
+                    db.store_analysis(r.id, "risiko_analyse",
+                                      self.settings.get("model_stufe1", ""),
+                                      self.llm.usage.total_tokens, r.risiko_analyse)
+                    _tick(f"Risiko-Analyse fertig: {r.name}")
+
+                first_err = trade_err or risk_err
+                if first_err:
+                    for exc in (trade_err, risk_err):
+                        if isinstance(exc, llm_client.LlmNoBalanceError):
+                            raise exc
+                    raise first_err
+
+                # -------- Prompt 3: Gesamtauswertung (nach beiden Teilanalysen)
                 prompt = (llm_prompts.load_prompt("gesamtbericht")
                           .replace("{kandidat_json}", _kandidat(r))
                           .replace("{forensik_json}", _forensik(r))
@@ -441,10 +614,11 @@ class ScanPipeline:
                     f"ausfuehrliche Bericht wird geschrieben; Antwort wird abgewartet …")
                 if on_progress:
                     on_progress(done, total, f"Gesamtbericht 3/3: {r.name} · warte auf Modellantwort")
-                r.gesamtbericht = self.llm.chat(prompt, stufe=strong, max_tokens=24576)
-                lc = self.llm.last_call
-                log(f"  ✓ [3/3] Gesamtbericht fertig: {lc['zeichen']} Zeichen in "
-                    f"{lc['dauer_s']}s — gesamt bisher: "
+                gesamt_meta: dict = {}
+                r.gesamtbericht = self.llm.chat(prompt, stufe=strong, max_tokens=24576,
+                                                meta_out=gesamt_meta)
+                log(f"  ✓ [3/3] Gesamtbericht fertig: {gesamt_meta.get('zeichen', '?')} Zeichen in "
+                    f"{gesamt_meta.get('dauer_s', '?')}s — gesamt bisher: "
                     f"{self.llm.usage.total_tokens:,} Tokens")
                 db.store_analysis(r.id, "gesamtbericht",
                                   self.settings.get("model_stufe2", ""),
@@ -501,7 +675,8 @@ class ScanPipeline:
                 wochen=st.get("span_weeks"),
                 pf=st.get("profit_factor_csv"),
                 forensik_vorhanden=True,
-                trading_dd_pct=fx["drawdown"]["trading_dd"]["dd_pct"],
+                trading_dd_pct=(fx["drawdown"]["trading_dd"].get("dd_pct_max_rel")
+                                or fx["drawdown"]["trading_dd"]["dd_pct"]),
                 trading_dd_usd=fx["drawdown"]["trading_dd"]["dd_usd"],
                 winrate_pct=st.get("winrate_pct"),
                 max_verlustserie=st.get("max_consecutive_losses"),
@@ -517,16 +692,24 @@ class ScanPipeline:
                                f"{stops.get('positions_total')} mit SL/TP"
                                if stops.get("evidence_level") == 1
                                else stops.get("verdict", "kein Nachweis"))
-            ev = scoring.evaluate(report)
+            ev = scoring.evaluate(
+                report, schranke_eq_dd_pct=settings.get("schranke_eq_dd_pct", 30.0))
             r.score = ev["score"]
             r.schranke_verletzt = ev["schranke_eq_dd_verletzt"]
             if sid in meta:
                 r.name = meta[sid].get("name", r.name)
-                r.score = meta[sid].get("score", r.score)
+                # Demo/Verifikation: kuratierte Referenzscores aus known_signals
+                # ueberschreiben den Engine-Ist-Score (Kalibrierungsanker, nicht Live).
+                curated = meta[sid].get("score")
+                if curated is not None:
+                    r.score = curated
+                    r.urteil = ""  # ampel_for setzt neu; Kennzeichnung unten
                 r.abo_preis_usd = meta[sid].get("abo_preis_usd")
                 r.ertrag_monat_pct = meta[sid].get("monat_pct")
             r.ampel, grund = ampel_for(r, settings)
-            r.urteil = grund + (f" | Score {r.score}, Trading-DD {r.trading_dd_pct} %"
+            if sid in meta and meta[sid].get("score") is not None:
+                grund = f"{grund} | Score kuratiert ({r.score}, Engine {ev['score']})"
+            r.urteil = grund + (f" | Trading-DD {r.trading_dd_pct} %"
                                 if r.trading_dd_pct is not None else "")
             # Fruehere LLM-Analysen aus der DB nachladen (Nutzer-Prinzip:
             # Berichte bleiben Datenbank-uebergreifend erhalten)
@@ -536,10 +719,24 @@ class ScanPipeline:
                                  url=r.url or f"https://www.mql5.com/en/signals/{r.id}",
                                  abo_preis=r.abo_preis_usd, wochen=r.wochen,
                                  stats={"trading_dd_pct": r.trading_dd_pct,
-                                        "winrate_pct": r.winrate_pct, "score": r.score})
+                                        "winrate_pct": r.winrate_pct,
+                                        "score": r.score,
+                                        "ertrag_monat_pct": r.ertrag_monat_pct,
+                                        "forensik_ok": True,
+                                        "last_fehler": None})
                 db.store_trade_file(r.id, path)
-                db.store_forensik(r.id, {"score": r.score, "ampel": r.ampel,
-                                         "trading_dd_pct": r.trading_dd_pct})
+                db.store_forensik(r.id, {
+                    "trading_dd": {"pct": r.trading_dd_pct, "usd": r.trading_dd_usd},
+                    "winrate_pct": r.winrate_pct,
+                    "max_verlustserie": r.max_verlustserie,
+                    "verlustserie_usd": r.verlustserie_usd,
+                    "peak_exposure": {"positionen": r.peak_positionen,
+                                      "netto_lots": r.peak_netto_lots,
+                                      "schock_usd": r.shock_usd},
+                    "martingale_flag": r.martingale_flag,
+                    "stop_nachweis": r.stop_nachweis,
+                    "score": r.score, "ampel": r.ampel,
+                })
                 for kind, attr in (("trade_analyse", "trade_analyse"),
                                    ("risiko_analyse", "risiko_analyse"),
                                    ("gesamtbericht", "gesamtbericht")):

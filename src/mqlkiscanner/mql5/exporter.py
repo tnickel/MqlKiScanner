@@ -16,15 +16,20 @@ from .session import Mql5Session
 
 def export_positions(session: Mql5Session, signal_id: int,
                      cache_stunden: float = 24.0,
-                     extra_pause_s: float = 0.0) -> tuple[str, bool]:
-    """Laedt den Positions-Export; Rueckgabe (pfad, aus_cache)."""
+                     extra_pause_s: float = 0.0,
+                     platform: str | None = None) -> tuple[str, bool]:
+    """Laedt den Positions-/History-Export; Rueckgabe (pfad, aus_cache).
+
+    platform steuert den Export-Pfad (MT4=history, MT5=positions).
+    """
     TRADES_DIR.mkdir(parents=True, exist_ok=True)
     path = TRADES_DIR / f"{signal_id}_positions.csv"
     if path.exists():
         age_h = (time.time() - path.stat().st_mtime) / 3600.0
         if age_h < cache_stunden:
             return str(path), True
-    text = session.export_positions_csv(signal_id, extra_pause_s=extra_pause_s)
+    text = session.export_positions_csv(
+        signal_id, extra_pause_s=extra_pause_s, platform=platform)
     path.write_text(text, encoding="utf-8")
     return str(path), False
 

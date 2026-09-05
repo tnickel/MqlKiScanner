@@ -273,6 +273,16 @@ def export_positions_via_browser(signal_id: int, log=None) -> str:
                 f"Chrome hat innerhalb von 30 s keine CSV für Signal "
                 f"{signal_id} geliefert.")
 
+        head = csv_file.read_text(encoding="utf-8-sig", errors="replace")[:64].lstrip()
+        if not head.startswith("Time;"):
+            try:
+                csv_file.unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise RuntimeError(
+                f"Chrome-Download für Signal {signal_id} ist kein Positions-CSV "
+                f"(Anfang: {head[:80]!r}). Datei verworfen — kein Cache-Eintrag.")
+
         target = TRADES_DIR / f"{signal_id}_positions.csv"
         shutil.move(str(csv_file), target)
         _info(f"  ✓ CSV über Chrome geladen: {target.name}")
