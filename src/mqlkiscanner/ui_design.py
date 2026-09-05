@@ -14,100 +14,355 @@ from mqlkiscanner.help_content import HELP_CONTENT
 
 @lru_cache(maxsize=1)
 def _stylesheet() -> str:
-    asset = Path(__file__).resolve().parents[2] / "assets" / "radar-grid.svg"
-    graphic = base64.b64encode(asset.read_bytes()).decode("ascii")
-    # Native config owns the palette; scoped CSS supplies the requested
-    # background illustration and yellow information controls.
-    return """<style>
-    .stApp { background-image: radial-gradient(ellipse at 95% 0%, #11354455, transparent 58%); }
-    .st-key-page_hero { padding: 1.8rem 2rem; border: 1px solid #30445E;
-      border-radius: 16px; background-color: #111F32;
-      background-image: linear-gradient(90deg,#111F32 28%,#111F32B8 62%,#111F3210),url('data:image/svg+xml;base64,""" + graphic + """');
-      background-position: center,right center; background-size: cover,auto 125%;
-      background-repeat: no-repeat; margin-bottom: .5rem; }
-    .st-key-page_hero h1 { letter-spacing: -.035em; padding-top: 0; }
-    .st-key-page_hero p { max-width: 760px; }
-    .st-key-page_hero [data-testid="stCaptionContainer"] { color: #79D8DA; letter-spacing: .12em; font-weight: 650; }
-    [class*="st-key-ui_info_"] button { background: #F6C453 !important; color: #192438 !important;
-      border: 1px solid #FFDC89 !important; border-radius: 50% !important;
-      width: 2rem !important; min-width: 2rem !important; height: 2rem !important;
-      min-height: 2rem !important; padding: 0 !important; box-shadow: none !important; }
-    [class*="st-key-ui_info_"] button:hover { background: #FFE19A !important; }
-    [class*="st-key-ui_info_"] button p { font-family: Georgia,serif; font-size: 1.05rem;
-      font-weight: 700; font-style: italic; line-height: 1; margin: 0; }
-    [class*="st-key-ui_info_"] button:focus-visible { outline: 3px solid #E7EEF7; outline-offset: 3px; }
-    .st-key-sidebar_brand { border-bottom: 1px solid #30445E; padding-bottom: 1.2rem; }
-    .st-key-sidebar_brand h2 { letter-spacing: -.04em; }
-    [data-testid="stMetric"] { border: 1px solid #30445E; border-radius: 12px;
-      background: #112034; padding: 1rem 1.15rem; }
-    [data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; }
-    .mks-flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: .65rem;
-      margin: .35rem 0 0.15rem; }
-    .mks-flow-step { flex: 1 1 9.5rem; display: flex; flex-direction: column; gap: .35rem;
-      padding: .85rem 1rem; border: 1px solid #30445E; border-radius: 12px;
-      background: #112034; min-width: 0; }
-    .mks-flow-num { display: inline-flex; align-items: center; justify-content: center;
-      width: 1.7rem; height: 1.7rem; border-radius: 999px; background: #F6C453;
-      color: #192438; font-weight: 800; font-size: .95rem; border: 1px solid #FFDC89; }
-    .mks-flow-step strong { color: #E7EEF7; font-size: 1.02rem; letter-spacing: -.01em; }
-    .mks-flow-text { color: #9BB0C7; font-size: .9rem; line-height: 1.35; }
-    .mks-flow-arrow { align-self: center; color: #79D8DA; font-size: 1.35rem; font-weight: 700;
-      padding: 0 .1rem; }
-    .mks-flow-note { color: #9BB0C7; font-size: .92rem; margin: .55rem 0 .2rem; max-width: 52rem; }
-    .st-key-scan_start_panel { border-color: #79D8DA55 !important; }
-    .mks-stepnum { display: inline-flex; align-items: center; justify-content: center;
-      min-width: 1.9rem; height: 1.9rem; padding: 0 .45rem; margin-right: .5rem;
-      border-radius: 999px; background: #F6C453; color: #192438;
-      font-weight: 800; font-size: 1.05rem; vertical-align: middle;
-      border: 1px solid #FFDC89; }
-    .mks-connector { display: flex; align-items: center; justify-content: center;
-      height: 1.9rem; margin-top: .15rem; color: #79D8DA; font-size: 1.3rem;
-      font-weight: 700; user-select: none; }
-    .mks-stepnum.mks-blink { animation: mks-pulse 1.3s ease-in-out infinite; }
-    @keyframes mks-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(246,196,83,.65); transform: scale(1); }
-      50% { box-shadow: 0 0 0 .55rem rgba(246,196,83,0); transform: scale(1.09); }
-    }
-    /* Laufender Workflow-Schritt: teal pulsierende Nummer + leuchtender Kartenrand */
-    .mks-stepnum.mks-runnum { background: #2FA8B4; color: #EAFBFC; border-color: #9BE6EA;
-      animation: mks-run 1.2s ease-in-out infinite; }
-    @keyframes mks-run {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(121,216,218,.55); transform: scale(1); }
-      50% { box-shadow: 0 0 0 .5rem rgba(121,216,218,0); transform: scale(1.1); }
-    }
-    @keyframes mks-card-glow {
-      0%, 100% { border-color: #79D8DAB0;
-        box-shadow: 0 0 0 1px rgba(121,216,218,.35), 0 0 .7rem rgba(121,216,218,.3); }
-      50% { border-color: #C4F2F4;
-        box-shadow: 0 0 0 2px rgba(121,216,218,.6), 0 0 1.6rem rgba(121,216,218,.5); }
-    }
+    assets_dir = Path(__file__).resolve().parents[2] / "assets"
+    
+    marble_file = assets_dir / "dark_marble_bg.jpg"
+    if not marble_file.exists():
+        marble_file = assets_dir / "dark_marble_texture.jpg"
+    marble_b64 = base64.b64encode(marble_file.read_bytes()).decode("ascii") if marble_file.exists() else ""
+    
+    radar_file = assets_dir / "radar-grid.svg"
+    radar_b64 = base64.b64encode(radar_file.read_bytes()).decode("ascii") if radar_file.exists() else ""
+
+    return f"""<style>
+    /* Global Canvas: Deep Obsidian & Dark Marble Luxury Texture */
+    .stApp {{
+        background-color: #0A111E;
+        background-image: 
+            radial-gradient(ellipse at 85% 5%, rgba(0, 210, 211, 0.12), transparent 45%),
+            radial-gradient(ellipse at 15% 95%, rgba(245, 158, 11, 0.08), transparent 40%),
+            linear-gradient(180deg, rgba(10, 17, 30, 0.84) 0%, rgba(10, 17, 30, 0.94) 100%),
+            url('data:image/jpeg;base64,{marble_b64}');
+        background-size: auto, auto, auto, 1024px 1024px;
+        background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+        background-attachment: fixed;
+    }}
+
+    /* Sidebar: Obsidian Glass over Marble */
+    [data-testid="stSidebar"] {{
+        background-color: #080E1A !important;
+        background-image: 
+            radial-gradient(ellipse at 50% 0%, rgba(0, 210, 211, 0.09), transparent 50%),
+            linear-gradient(180deg, rgba(8, 14, 26, 0.88), rgba(8, 14, 26, 0.96)),
+            url('data:image/jpeg;base64,{marble_b64}') !important;
+        background-size: auto, auto, 1024px 1024px !important;
+        background-repeat: no-repeat, no-repeat, repeat !important;
+        border-right: 1px solid rgba(39, 62, 91, 0.6) !important;
+    }}
+
+    /* Glassmorphism for all standard bordered containers */
+    [data-testid="stVerticalBlockBorderWrapper"] > div {{
+        background: linear-gradient(145deg, rgba(18, 30, 48, 0.78) 0%, rgba(12, 20, 34, 0.88) 100%) !important;
+        backdrop-filter: blur(14px) saturate(140%) !important;
+        -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+        border: 1px solid rgba(56, 189, 248, 0.16) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05) !important;
+        border-radius: 14px !important;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }}
+    [data-testid="stVerticalBlockBorderWrapper"] > div:hover {{
+        border-color: rgba(56, 189, 248, 0.28) !important;
+        box-shadow: 0 8px 26px -2px rgba(0, 0, 0, 0.55), inset 0 1px 1px 0 rgba(255, 255, 255, 0.08) !important;
+    }}
+
+    /* Page Hero: Executive Glass Header */
+    .st-key-page_hero {{
+        padding: 1.8rem 2.2rem;
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        border-radius: 18px;
+        background-color: #0E1A2C;
+        background-image: 
+            linear-gradient(90deg, #0E1A2C 28%, #0E1A2CB8 62%, #0E1A2C10),
+            url('data:image/svg+xml;base64,{radar_b64}');
+        background-position: center, right center;
+        background-size: cover, auto 125%;
+        background-repeat: no-repeat;
+        margin-bottom: 0.8rem;
+        box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 210, 211, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }}
+    .st-key-page_hero h1 {{
+        letter-spacing: -.035em;
+        padding-top: 0;
+        color: #F8FAFC;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }}
+    .st-key-page_hero p {{
+        max-width: 780px;
+        color: #CBD5E1;
+        line-height: 1.5;
+    }}
+    .st-key-page_hero [data-testid="stCaptionContainer"] {{
+        color: #00D2D3;
+        letter-spacing: .14em;
+        font-weight: 700;
+    }}
+    .st-key-page_hero img {{
+        border-radius: 14px;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 210, 211, 0.15);
+    }}
+
+    /* Info Icon Button (Gold Dial) */
+    [class*="st-key-ui_info_"] button {{
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
+        color: #0F172A !important;
+        border: 1px solid #FCD34D !important;
+        border-radius: 50% !important;
+        width: 2rem !important;
+        min-width: 2rem !important;
+        height: 2rem !important;
+        min-height: 2rem !important;
+        padding: 0 !important;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    }}
+    [class*="st-key-ui_info_"] button:hover {{
+        background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%) !important;
+        transform: scale(1.08) !important;
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.55) !important;
+    }}
+    [class*="st-key-ui_info_"] button p {{
+        font-family: Georgia, serif;
+        font-size: 1.05rem;
+        font-weight: 800;
+        font-style: italic;
+        line-height: 1;
+        margin: 0;
+    }}
+    [class*="st-key-ui_info_"] button:focus-visible {{
+        outline: 3px solid #00D2D3;
+        outline-offset: 3px;
+    }}
+
+    .st-key-sidebar_brand {{
+        border-bottom: 1px solid rgba(39, 62, 91, 0.7);
+        padding-bottom: 1.2rem;
+    }}
+    .st-key-sidebar_brand h2 {{
+        letter-spacing: -.04em;
+        color: #F8FAFC;
+    }}
+    .st-key-sidebar_brand img {{
+        border-radius: 12px;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 14px rgba(245, 158, 11, 0.15);
+        margin-bottom: 0.5rem;
+    }}
+
+    /* Metrics & KPIs: Slate Glass with Glowing Accents */
+    [data-testid="stMetric"] {{
+        border: 1px solid rgba(56, 189, 248, 0.16) !important;
+        border-radius: 14px !important;
+        background: linear-gradient(145deg, rgba(18, 32, 52, 0.75) 0%, rgba(11, 19, 32, 0.88) 100%) !important;
+        backdrop-filter: blur(12px) !important;
+        padding: 1.1rem 1.25rem !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+    }}
+    [data-testid="stMetric"]:hover {{
+        transform: translateY(-2px);
+        border-color: rgba(0, 210, 211, 0.35) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 14px rgba(0, 210, 211, 0.15) !important;
+    }}
+    [data-testid="stMetricValue"] {{
+        font-variant-numeric: tabular-nums;
+        font-weight: 750 !important;
+        letter-spacing: -0.02em;
+        color: #F8FAFC !important;
+    }}
+    [data-testid="stMetricLabel"] {{
+        color: #94A3B8 !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        font-size: 0.78rem !important;
+    }}
+
+    /* Flow / Stations */
+    .mks-flow {{
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: .65rem;
+        margin: .35rem 0 0.15rem;
+    }}
+    .mks-flow-step {{
+        flex: 1 1 9.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: .35rem;
+        padding: .9rem 1.1rem;
+        border: 1px solid rgba(56, 189, 248, 0.18);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(18, 32, 52, 0.78) 0%, rgba(11, 20, 33, 0.88) 100%);
+        backdrop-filter: blur(12px);
+        min-width: 0;
+    }}
+    .mks-flow-num {{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.8rem;
+        height: 1.8rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #F59E0B, #D97706);
+        color: #0F172A;
+        font-weight: 850;
+        font-size: .95rem;
+        border: 1px solid #FCD34D;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }}
+    .mks-flow-step strong {{
+        color: #F8FAFC;
+        font-size: 1.02rem;
+        letter-spacing: -.01em;
+    }}
+    .mks-flow-text {{
+        color: #94A3B8;
+        font-size: .9rem;
+        line-height: 1.35;
+    }}
+    .mks-flow-arrow {{
+        align-self: center;
+        color: #00D2D3;
+        font-size: 1.35rem;
+        font-weight: 700;
+        padding: 0 .1rem;
+    }}
+    .mks-flow-note {{
+        color: #94A3B8;
+        font-size: .92rem;
+        margin: .55rem 0 .2rem;
+        max-width: 52rem;
+    }}
+    .st-key-scan_start_panel {{
+        border-color: rgba(0, 210, 211, 0.35) !important;
+    }}
+    .mks-stepnum {{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        padding: 0 .45rem;
+        margin-right: .55rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        color: #0F172A;
+        font-weight: 850;
+        font-size: 1.05rem;
+        vertical-align: middle;
+        border: 1px solid #FCD34D;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+    }}
+    .mks-connector {{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2rem;
+        margin-top: .15rem;
+        color: #00D2D3;
+        font-size: 1.4rem;
+        font-weight: 800;
+        user-select: none;
+        text-shadow: 0 0 10px rgba(0, 210, 211, 0.45);
+    }}
+    .mks-stepnum.mks-blink {{
+        animation: mks-pulse 1.3s ease-in-out infinite;
+    }}
+    @keyframes mks-pulse {{
+        0%, 100% {{ box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); transform: scale(1); }}
+        50% {{ box-shadow: 0 0 0 .55rem rgba(245, 158, 11, 0); transform: scale(1.09); }}
+    }}
+
+    /* Laufender Workflow-Schritt: cyan pulsierende Nummer + leuchtender Kartenrand */
+    .mks-stepnum.mks-runnum {{
+        background: linear-gradient(135deg, #00D2D3, #0891B2);
+        color: #F8FAFC;
+        border-color: #67E8F9;
+        animation: mks-run 1.2s ease-in-out infinite;
+    }}
+    @keyframes mks-run {{
+        0%, 100% {{ box-shadow: 0 0 0 0 rgba(0, 210, 211, 0.6); transform: scale(1); }}
+        50% {{ box-shadow: 0 0 0 .5rem rgba(0, 210, 211, 0); transform: scale(1.1); }}
+    }}
+    @keyframes mks-card-glow {{
+        0%, 100% {{
+            border-color: rgba(0, 210, 211, 0.7);
+            box-shadow: 0 0 0 1px rgba(0, 210, 211, 0.4), 0 0 1rem rgba(0, 210, 211, 0.3);
+        }}
+        50% {{
+            border-color: #A5F3FC;
+            box-shadow: 0 0 0 2px rgba(0, 210, 211, 0.65), 0 0 1.8rem rgba(0, 210, 211, 0.5);
+        }}
+    }}
     /* "Läuft"-Badge: Icon rotiert, Badge pulsiert */
-    @keyframes mks-spin { to { transform: rotate(360deg); } }
-    @keyframes mks-badge-glow {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(121,216,218,.45); }
-      50% { box-shadow: 0 0 0 .3rem rgba(121,216,218,0); }
-    }
+    @keyframes mks-spin {{ to {{ transform: rotate(360deg); }} }}
+    @keyframes mks-badge-glow {{
+        0%, 100% {{ box-shadow: 0 0 0 0 rgba(0, 210, 211, 0.45); }}
+        50% {{ box-shadow: 0 0 0 .35rem rgba(0, 210, 211, 0); }}
+    }}
+
+    /* Action Buttons */
+    button[kind="primary"], .stButton > button[type="primary"] {{
+        background: linear-gradient(135deg, #00D2D3 0%, #0891B2 100%) !important;
+        color: #08111E !important;
+        font-weight: 750 !important;
+        border: 1px solid #67E8F9 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 14px rgba(0, 210, 211, 0.35) !important;
+        transition: all 0.2s ease !important;
+    }}
+    button[kind="primary"]:hover, .stButton > button[type="primary"]:hover {{
+        background: linear-gradient(135deg, #26E0E0 0%, #0E7490 100%) !important;
+        box-shadow: 0 6px 20px rgba(0, 210, 211, 0.5) !important;
+        transform: translateY(-1px) !important;
+    }}
+    button[kind="secondary"], .stButton > button[type="secondary"] {{
+        background: linear-gradient(145deg, rgba(20, 35, 56, 0.8) 0%, rgba(12, 22, 36, 0.9) 100%) !important;
+        backdrop-filter: blur(10px) !important;
+        color: #F1F5F9 !important;
+        border: 1px solid rgba(56, 189, 248, 0.22) !important;
+        border-radius: 10px !important;
+        transition: all 0.2s ease !important;
+    }}
+    button[kind="secondary"]:hover, .stButton > button[type="secondary"]:hover {{
+        border-color: rgba(0, 210, 211, 0.45) !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+        transform: translateY(-1px) !important;
+    }}
+
     /* Urteile in KI-Berichten: EMPFEHLUNG gruen · Watchlist gelb · Ablehnung rot */
-    .mks-urteil-gruen { color: #5CDB78; font-weight: 700; }
-    .mks-urteil-gelb { color: #F6C453; font-weight: 700; }
-    .mks-urteil-rot { color: #FF7A7A; font-weight: 700; }
-    [data-testid="stBottomBlockContainer"] { background: #0D1829F5; border-top: 1px solid #30445E; }
-    @media(max-width:720px) {
-      .mks-flow-arrow { display: none; }
-      .mks-connector { display: none; }
-      .mks-flow-step { flex: 1 1 100%; }
-    }
-    [role="dialog"] { border: 1px solid #50627C; }
-    @media(max-width:640px) {
-      .st-key-page_hero { padding: 1.25rem; background-size: cover,auto 100%; }
-      .st-key-page_hero h1 { font-size: 1.8rem; }
-    }
-    @media(prefers-reduced-motion:reduce) { .stApp * { scroll-behavior: auto !important; }
-      .mks-stepnum.mks-blink { animation: none; }
-      .mks-stepnum.mks-runnum, [class*="st-key-workflow_"] { animation: none !important; }
-      [class*="st-key-workflow_"] [data-testid="stBadge"],
-      [class*="st-key-workflow_"] [data-testid="stIconMaterial"],
-      [class*="st-key-workflow_"] [data-testid="stBadge"] svg { animation: none !important; } }
+    .mks-urteil-gruen {{ color: #10B981; font-weight: 750; text-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }}
+    .mks-urteil-gelb {{ color: #F59E0B; font-weight: 750; text-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }}
+    .mks-urteil-rot {{ color: #F43F5E; font-weight: 750; text-shadow: 0 0 8px rgba(244, 63, 94, 0.3); }}
+
+    [data-testid="stBottomBlockContainer"] {{
+        background: rgba(8, 14, 26, 0.92) !important;
+        backdrop-filter: blur(16px) !important;
+        border-top: 1px solid rgba(39, 62, 91, 0.7) !important;
+    }}
+    @media(max-width:720px) {{
+        .mks-flow-arrow {{ display: none; }}
+        .mks-connector {{ display: none; }}
+        .mks-flow-step {{ flex: 1 1 100%; }}
+    }}
+    [role="dialog"] {{
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        background: #0E1A2C !important;
+    }}
+    @media(max-width:640px) {{
+        .st-key-page_hero {{ padding: 1.25rem; background-size: cover, auto 100%; }}
+        .st-key-page_hero h1 {{ font-size: 1.8rem; }}
+    }}
+    @media(prefers-reduced-motion:reduce) {{
+        .stApp * {{ scroll-behavior: auto !important; }}
+        .mks-stepnum.mks-blink {{ animation: none; }}
+        .mks-stepnum.mks-runnum, [class*="st-key-workflow_"] {{ animation: none !important; }}
+        [class*="st-key-workflow_"] [data-testid="stBadge"],
+        [class*="st-key-workflow_"] [data-testid="stIconMaterial"],
+        [class*="st-key-workflow_"] [data-testid="stBadge"] svg {{ animation: none !important; }}
+    }}
     </style>"""
 
 
@@ -167,11 +422,20 @@ def urteile_farbig(text: str) -> str:
     return "\n".join(out)
 
 
-def page_header(eyebrow: str, title: str, description: str) -> None:
+def page_header(eyebrow: str, title: str, description: str, *, image_path: str | None = None) -> None:
     with st.container(key="page_hero", gap="xsmall"):
-        st.caption(eyebrow.upper())
-        st.title(title)
-        st.markdown(description)
+        if image_path and Path(image_path).exists():
+            c_text, c_img = st.columns([1.55, 1.45], gap="medium", vertical_alignment="center")
+            with c_text:
+                st.caption(f"✦ {eyebrow.upper()}")
+                st.title(title)
+                st.markdown(description)
+            with c_img:
+                st.image(str(image_path), use_container_width=True)
+        else:
+            st.caption(f"✦ {eyebrow.upper()}")
+            st.title(title)
+            st.markdown(description)
 
 
 def help_topics() -> dict[str, tuple[str, str]]:

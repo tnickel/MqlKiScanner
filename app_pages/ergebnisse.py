@@ -16,8 +16,10 @@ from mqlkiscanner.ui_design import (apply_theme, info_button, page_header, secti
                                     urteile_farbig)
 
 apply_theme()
+hero_results_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_results_banner.jpg"
 page_header('Auswertung / Evidenz vor Entscheidung', 'Ergebnisse im Überblick',
-            'Alle gespeicherten Berichte aus der Datenbank — neu aktualisierte Läufe sind markiert.')
+            'Alle gespeicherten Berichte aus der Datenbank — neu aktualisierte Läufe sind markiert.',
+            image_path=str(hero_results_banner) if hero_results_banner.exists() else None)
 st.session_state.setdefault('scan_results', [])
 st.session_state.setdefault('last_run_file', None)
 st.session_state.setdefault('refreshed_signal_ids', [])

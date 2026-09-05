@@ -25,7 +25,11 @@ import streamlit as st
 
 from mqlkiscanner import config, pipeline, secrets_store
 from mqlkiscanner.app_ui import render_report_panel, render_results_table
-from mqlkiscanner.ui_design import action_button, page_header, section_header, urteile_farbig
+from mqlkiscanner.ui_design import (
+    action_button, apply_theme, page_header, section_header, urteile_farbig,
+)
+
+apply_theme()
 
 # Interne Status-Schritte (IDs stabil für Pipeline/Tests). Letztes Element =
 # Laien-Beschreibung, die in der Stationskarte mit angezeigt wird.
@@ -153,11 +157,13 @@ if command:
 
 settings = config.load_settings()
 running = command is not None or _thread_lebt
+hero_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_scan_banner.jpg"
 page_header(
     "WORKFLOW",
     "So prüft der Scanner Signale",
     "Ein fester Ablauf: Daten holen → speichern → rechnerisch prüfen → "
     "optional KI-Berichte und Portfolio-Vorschlag. Ein Knopf startet alles.",
+    image_path=str(hero_banner) if hero_banner.exists() else None,
 )
 section_header(
     "Der Workflow",

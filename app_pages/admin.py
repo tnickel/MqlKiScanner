@@ -70,9 +70,11 @@ for _widget_key, _widget_value in st.session_state.pop("_admin_widget_updates", 
 settings = config.load_settings()
 secret_status = secrets_store.secret_status()
 
+admin_hero_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_settings_banner.jpg"
 page_header(
     "SYSTEM / KONFIGURATION", "Einstellungen",
     "Zugänge verbinden, Prüfregeln festlegen und Analysen gezielt steuern.",
+    image_path=str(admin_hero_banner) if admin_hero_banner.exists() else None,
 )
 with st.container(horizontal=True, vertical_alignment="center"):
     st.caption("Jeder Bereich wird separat gespeichert. Gelbes i = ausführliche Erklärung.")

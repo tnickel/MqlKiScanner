@@ -1,14 +1,14 @@
-# Based on Streamlit's financial-dashboard template, with offline fonts.
+# High-end Fintech Dark Marble Theme
 [theme]
 base = "dark"
-primaryColor = "#087F8C"
-backgroundColor = "#0B1220"
-secondaryBackgroundColor = "#142236"
-textColor = "#E7EEF7"
-linkColor = "#6DDBDC"
-borderColor = "#30445E"
-codeBackgroundColor = "#101C2D"
-codeTextColor = "#C8D8EA"
+primaryColor = "#00D2D3"
+backgroundColor = "#0A111E"
+secondaryBackgroundColor = "#142135"
+textColor = "#F1F5F9"
+linkColor = "#38BDF8"
+borderColor = "#273E5B"
+codeBackgroundColor = "#0F1A2A"
+codeTextColor = "#CBD5E1"
 showWidgetBorder = true
 showSidebarBorder = true
 baseRadius = "12px"
@@ -16,24 +16,24 @@ buttonRadius = "8px"
 font = "sans-serif"
 baseFontSize = 15
 headingFontSizes = ["36px", "27px", "21px", "18px", "16px", "14px"]
-headingFontWeights = [700, 650, 600, 600, 600, 600]
-greenColor = "#54CBA2"
-redColor = "#FF808A"
-yellowColor = "#F6C453"
-orangeColor = "#F2AD72"
-blueColor = "#78B7F3"
-violetColor = "#B3A2EA"
-grayColor = "#A8B9CE"
-dataframeBorderColor = "#30445E"
-dataframeHeaderBackgroundColor = "#1A2C43"
-chartCategoricalColors = ["#6DDBDC", "#78B7F3", "#F6C453", "#B3A2EA", "#FF808A"]
+headingFontWeights = [750, 700, 650, 600, 600, 600]
+greenColor = "#10B981"
+redColor = "#F43F5E"
+yellowColor = "#F59E0B"
+orangeColor = "#FB923C"
+blueColor = "#38BDF8"
+violetColor = "#A855F7"
+grayColor = "#94A3B8"
+dataframeBorderColor = "#273E5B"
+dataframeHeaderBackgroundColor = "#182840"
+chartCategoricalColors = ["#00D2D3", "#38BDF8", "#F59E0B", "#A855F7", "#F43F5E"]
 
 [theme.sidebar]
-backgroundColor = "#0D1829"
-secondaryBackgroundColor = "#182A40"
-textColor = "#E7EEF7"
-primaryColor = "#6DDBDC"
-borderColor = "#30445E"
+backgroundColor = "#080E1A"
+secondaryBackgroundColor = "#121E31"
+textColor = "#F1F5F9"
+primaryColor = "#00D2D3"
+borderColor = "#273E5B"
 
 [server]
 headless = true

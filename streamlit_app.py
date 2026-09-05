@@ -42,9 +42,12 @@ status = secrets_store.secret_status()
 settings = config.load_settings()
 with st.sidebar:
     with st.container(key="sidebar_brand", gap="xsmall"):
-        st.caption("SIGNAL RESEARCH")
+        emblem_path = ROOT / "assets" / "brand_emblem.jpg"
+        if emblem_path.exists():
+            st.image(str(emblem_path), use_container_width=True)
+        st.caption("SIGNAL RESEARCH · FORENSIC RADAR")
         st.header("MqlKiScanner", icon=":material/radar:")
-        st.markdown("Risiko vor Ertrag.")
+        st.markdown("**Risiko vor Ertrag.**")
     with st.container(border=True):
         with st.container(horizontal=True, vertical_alignment="center"):
             st.markdown("**Verbindungen**")
