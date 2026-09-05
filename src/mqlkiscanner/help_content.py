@@ -78,4 +78,11 @@ Die Engine berechnet die Kennzahlen. KI-Texte interpretieren Daten und können t
 
 **Schließen** blendet den Bericht aus und löscht keine Ergebnisse.
 """),
+    "portfolio_report": ("Der Portfolio-Vorschlag (Station 5)", """
+Der **Portfolio-Vorschlag** ist ein zusätzlicher KI-Bericht, der ALLE geprüften Signale zusammen ansieht: Kennzahlen, Forensik, gehandelte Assets und die Gesamtberichte. Er empfiehlt eine Depot-Kombination mit Rollen (Ertragsträger/Risikoträger), Gewichtung und Diversifikations-Begründung über unterschiedliche Assets und Strategie-Typen.
+
+Der Bericht steht in der Datenbank und bleibt auch über Sitzungen hinweg erhalten; ein neuer Lauf mit KI ersetzt ihn. Liegen weniger als zwei geprüfte Signale vor, weist der Bericht auf die fehlende Diversifikation hin.
+
+**Wichtig:** Risiko vor Ertrag — Signale ohne Stop-Nachweis, mit Martingale-Flag oder verletzter Drawdown-Schranke dürfen nicht als Ertragsträger aufgenommen werden. Der Vorschlag ist keine Anlageberatung; die Engine-Zahlen sind maßgeblich.
+"""),
 }

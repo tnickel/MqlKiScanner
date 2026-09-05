@@ -45,9 +45,12 @@ def test_app_boots_without_exception():
 def test_scan_page_renders_steps():
     at = _run_main()
     body = _body(at)
-    assert "Signale holen" in body and "KI-Bericht" in body
+    assert "Signale holen" in body and "KI-Bericht" in body and "Portfolio" in body
     assert "Starte Workflow" in body
-    assert "Daten holen" in body and "Computer prüft" in body
+    assert "Fünf klare Stationen" in body
+    assert "Signallisten und Handelsdaten von MQL5 laden" in body
+    # Die alte Story-Reihe ist entfernt: Beschreibungen stecken jetzt in den Karten.
+    assert body.count("Signallisten und Handelsdaten") == 1
 
 
 def test_verification_button_loads_raw_data_and_saves_isolated_run():
@@ -141,10 +144,8 @@ def test_verification_exposes_each_file_and_skips_online_steps(tmp_path, monkeyp
     snapshots = []
 
     def analyze_one(files, settings):
-        import streamlit as st
-
-        current = dict(st.session_state["scan_workflow"]["steps"]["forensik"])
-        snapshots.append((list(files), current))
+        # Wird im Worker-Thread ausgeführt — kein st.* hier.
+        snapshots.append(list(files))
         return [pipeline.ScanResult(id=1234560 + len(snapshots), name=Path(files[0]).stem,
                                     forensik_vorhanden=True)]
 
@@ -152,19 +153,16 @@ def test_verification_exposes_each_file_and_skips_online_steps(tmp_path, monkeyp
     at = _run_main()
     at.button(key="scan_verify").click().run()
     assert not at.exception, at.exception
-    assert len(snapshots) == 3
-    for index, (files, state) in enumerate(snapshots):
-        assert len(files) == 1
-        assert state["status"] == "running"
-        assert state["done"] == index
-        assert state["total"] == 3
-        assert Path(files[0]).name in state["detail"]
+    # Jede Datei einzeln und in Reihenfolge an den Lauf übergeben.
+    assert [Path(f).name for files in snapshots for f in files] == \
+        ["first.csv", "second.csv", "third.json"]
     workflow = at.session_state["scan_workflow"]
     assert workflow["status"] == "complete"
     assert workflow["steps"]["forensik"]["done"] == 3
+    assert workflow["steps"]["forensik"]["total"] == 3
     assert workflow["steps"]["forensik"]["status"] == "complete"
     assert all(workflow["steps"][step]["status"] == "skipped"
-               for step in ("listen", "kandidaten", "llm"))
+               for step in ("listen", "kandidaten", "llm", "portfolio"))
 
 
 def test_prompt_reset_updates_saved_template_and_visible_editor():
@@ -236,6 +234,8 @@ def test_standalone_llm_without_key_is_skipped():
     assert step["done"] == 0
     assert "Key" in step["detail"]
     assert not at.session_state["scan_results"][0].gesamtbericht
+    pstep = at.session_state["scan_workflow"]["steps"]["portfolio"]
+    assert pstep["status"] == "skipped" and "Key" in pstep["detail"]
 
 
 def test_results_search_and_status_filter_apply_to_table_and_verdicts():

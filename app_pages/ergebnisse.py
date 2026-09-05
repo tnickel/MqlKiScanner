@@ -10,9 +10,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 import streamlit as st
 
-from mqlkiscanner import config, pipeline
+from mqlkiscanner import config, db, pipeline
 from mqlkiscanner.app_ui import render_detail, render_report_panel, render_results_table, results_to_dataframe
-from mqlkiscanner.ui_design import apply_theme, info_button, page_header, section_header
+from mqlkiscanner.ui_design import (apply_theme, info_button, page_header, section_header,
+                                    urteile_farbig)
 
 apply_theme()
 page_header('Auswertung / Evidenz vor Entscheidung', 'Ergebnisse im Überblick',
@@ -58,6 +59,16 @@ with st.container(border=True):
             st.stop()
         st.caption(f'Archiv · {Path(selected_run).parent.name} · historische Momentaufnahme')
         fresh_ids = set()
+
+# Station 5: globaler Portfolio-Bericht (DB, signal_id=0, kind='portfolio') —
+# sichtbar auch ohne gespeicherte Signale, daher vor dem Leer-Stop.
+portfolio = db.get_latest_analysis(0, 'portfolio')
+if portfolio:
+    with st.container(border=True):
+        section_header('Portfolio-Vorschlag', 'KI-Empfehlung über alle Signale: Strategie-Mix, Assets, Gewichtung.',
+                       help_key='portfolio_report')
+        st.caption(f"Stand: {portfolio['created_at']} · Modell: {portfolio['model']} · Keine Anlageberatung.")
+        st.markdown(urteile_farbig(portfolio['text']), unsafe_allow_html=True)
 
 if not results:
     with st.container(border=True):

@@ -327,13 +327,15 @@ with scan_tab:
 
 with prompts_tab:
     with st.container(border=True):
-        section_header("Analysevorlagen", "Drei Texte, ein nachvollziehbarer Weg vom Befund zum Gesamtbericht.",
+        section_header("Analysevorlagen", "Vier Texte, ein nachvollziehbarer Weg vom Befund zum Portfolio-Vorschlag.",
                        help_key="settings_prompts")
-        labels = {"trade_analyse": "1 · Trade-Analyse", "risiko_analyse": "2 · Risikoprofil", "gesamtbericht": "3 · Gesamtbericht"}
+        labels = {"trade_analyse": "1 · Trade-Analyse", "risiko_analyse": "2 · Risikoprofil",
+                  "gesamtbericht": "3 · Gesamtbericht", "portfolio": "4 · Portfolio-Vorschlag"}
         placeholders = {
             "trade_analyse": ("kandidat_json", "trades_json"),
             "risiko_analyse": ("kandidat_json", "forensik_json", "kriterien"),
             "gesamtbericht": ("kandidat_json", "forensik_json", "trade_analyse", "risiko_analyse", "kriterien"),
+            "portfolio": ("kandidaten_json", "kriterien"),
         }
         prompt_key = st.segmented_control("Vorlage auswählen", list(llm_prompts.PROMPT_FILES),
                                           format_func=lambda key: labels.get(key, key), default="trade_analyse",

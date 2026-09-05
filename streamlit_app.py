@@ -32,6 +32,7 @@ defaults = {
     "scan_running": None,      # aktueller Schritt (fuer Statusanzeige)
     "last_run_file": None,
     "refreshed_signal_ids": [],
+    "portfolio_bericht": "",   # Station 5: globaler KI-Portfolio-Vorschlag
 }
 for key, val in defaults.items():
     st.session_state.setdefault(key, val)
@@ -61,7 +62,7 @@ with st.sidebar:
     with st.container(horizontal=True, vertical_alignment="center"):
         st.markdown("Workflow in Kurzform")
         info_button("workspace", key="sidebar_guide")
-    st.caption("Daten holen → speichern → prüfen → KI-Bericht")
+    st.caption("Daten holen → speichern → prüfen → KI-Bericht → Portfolio-Vorschlag")
     if st.session_state.last_run_file:
         st.caption(f"Letzter Lauf · {Path(st.session_state.last_run_file).parent.name}")
 

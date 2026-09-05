@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
-from mqlkiscanner.ui_design import action_button, info_button, section_header
+from mqlkiscanner.ui_design import (action_button, info_button, section_header,
+                                    urteile_farbig)
 
 
 def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataFrame:
@@ -106,7 +107,7 @@ def render_report_panel(results) -> None:
             st.session_state.pop("report_signal_id", None)
             st.rerun()
         if r.gesamtbericht:
-            st.markdown(r.gesamtbericht)
+            st.markdown(urteile_farbig(r.gesamtbericht), unsafe_allow_html=True)
         else:
             st.warning("Noch kein Gesamtbericht vorhanden. Erst den LLM-Lauf "
                        "(Schritt 4) starten — der Bericht wird vom konfigurierten Modell über "
@@ -160,6 +161,9 @@ def render_detail(result) -> None:
         st.markdown(result.risiko_analyse or "_Noch nicht erstellt (LLM-Lauf starten)._")
     with st.expander("3 · Ausführlicher Gesamtbericht",
                      icon=":material/description:", expanded=True):
-        st.markdown(result.gesamtbericht or "_Noch nicht erstellt (LLM-Lauf starten)._")
+        if result.gesamtbericht:
+            st.markdown(urteile_farbig(result.gesamtbericht), unsafe_allow_html=True)
+        else:
+            st.markdown("_Noch nicht erstellt (LLM-Lauf starten)._")
     if result.llm_fehler:
         st.warning(f"LLM-Hinweis: {result.llm_fehler}")

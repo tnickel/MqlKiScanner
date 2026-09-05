@@ -99,3 +99,31 @@ def test_ineligible_results_do_not_generate_model_requests():
     assert summary["total"] == 0
     assert summary["completed"] == 0
     assert summary["reason"]
+
+
+def test_run_llm_stops_between_signals_on_stop_request():
+    """Stop-Flag: nach dem fertig berichteten Kandidat wird nicht mehr gesendet."""
+    fake = FakeLlm()
+    pipe = _pipe_with_llm(fake)
+    results = [pipeline.ScanResult(id=111, name="A", forensik_vorhanden=True),
+               pipeline.ScanResult(id=222, name="B", forensik_vorhanden=True)]
+    summary = pipe.run_llm(results, pipeline.StepLog(),
+                           should_stop=lambda: len(fake.calls) >= 3)
+    assert len(fake.calls) == 3, "Kandidat B darf nach der Stop-Anforderung nicht mehr starten"
+    assert summary["completed"] == 3 and summary["total"] == 6
+    assert summary["failed"] == 0 and summary["skipped"] == 3
+    assert "Stop" in summary["reason"]
+
+
+def test_run_llm_stop_before_summary_keeps_partial_reports():
+    """Stop vor Prompt 3: Teilanalysen bleiben erhalten, Gesamtbericht entfällt."""
+    fake = FakeLlm()
+    pipe = _pipe_with_llm(fake)
+    result = pipeline.ScanResult(id=1234567, name="A", forensik_vorhanden=True)
+    # Stop nach den beiden Parallel-Prompts (2 Aufrufe), vor dem Gesamtbericht.
+    summary = pipe.run_llm([result], pipeline.StepLog(),
+                           should_stop=lambda: len(fake.calls) >= 2)
+    assert len(fake.calls) == 2
+    assert summary["completed"] == 2 and "Stop" in summary["reason"]
+    assert result.trade_analyse and result.risiko_analyse
+    assert not result.gesamtbericht
