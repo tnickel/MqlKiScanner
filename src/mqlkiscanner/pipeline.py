@@ -283,7 +283,7 @@ class ScanPipeline:
 
     # ------------------------------------------------------ Schritt 4
     def run_llm(self, results: list[ScanResult], log: LogCb,
-                on_progress: ProgressCb | None = None) -> None:
+                on_progress: ProgressCb | None = None) -> dict:
         """Drei-Stufen-Auswertung (Nutzer-Prinzip):
 
         Prompt 1  Trade-Analyse   — Strategie ANHAND DER TRADES ermitteln
@@ -293,12 +293,24 @@ class ScanPipeline:
                                     (starkes Modell, glm-5.3)
 
         Jedes Teilergebnis landet in der Datenbank (Tabelle analyses).
+        Fortschritt zählt ausschließlich fertig gespeicherte Prompts. Start-
+        und Fehlermeldungen verändern den Zähler nicht. Der Rückgabewert trennt
+        erfolgreiche, fehlgeschlagene und nicht ausgeführte Prompts.
         """
+        jobs = [r for r in results if r.forensik_vorhanden and not r.fehler]
+        total = len(jobs) * 3
         if not self.llm.has_key:
             log("LLM uebersprungen: kein GLM-Key gesetzt (Admin-Bereich).")
-            return
+            if on_progress:
+                on_progress(0, total, "Übersprungen: kein GLM-Key konfiguriert")
+            return {"completed": 0, "total": total, "failed": 0,
+                    "skipped": total, "reason": "Kein GLM-Key konfiguriert"}
+        if not jobs:
+            if on_progress:
+                on_progress(0, 0, "Übersprungen: keine geeigneten Forensik-Ergebnisse")
+            return {"completed": 0, "total": 0, "failed": 0, "skipped": 0,
+                    "reason": "Keine geeigneten Forensik-Ergebnisse"}
         kriterien = _kriterien_text(self.settings)
-        jobs = [r for r in results if r.forensik_vorhanden and not r.fehler]
         strong = 2  # starker Modell-Slot (model_stufe2, z. B. glm-5.3)
 
         def _kandidat(r: ScanResult) -> str:
@@ -329,8 +341,8 @@ class ScanPipeline:
                 "stop_nachweis": r.stop_nachweis,
             }, ensure_ascii=False)
 
-        total = len(jobs) * 3
         done = 0
+        failed = 0
 
         def _tick(text: str) -> None:
             nonlocal done
@@ -339,6 +351,7 @@ class ScanPipeline:
                 on_progress(done, total, text)
 
         for r in jobs:
+            r.llm_fehler = ""
             try:
                 # -------- Prompt 1: Trade-Analyse (starkes Modell)
                 model_strong = self.settings.get("model_stufe2", "glm-5.3")
@@ -356,9 +369,9 @@ class ScanPipeline:
                 log(f"→ [1/3] Sende Trade-Analyse an {model_strong}: "
                     f"{n_trades} Trades als Engine-Statistik + Beispiel-Trades "
                     f"({len(trades_json):,} Zeichen Daten, Prompt gesamt "
-                    f"{len(prompt):,} Zeichen). Das Modell denkt jetzt — "
-                    f"1-3 Minuten …")
-                _tick(f"Prompt 1/3 (Trade-Analyse) gesendet: {r.name}")
+                    f"{len(prompt):,} Zeichen). Modellantwort wird abgewartet …")
+                if on_progress:
+                    on_progress(done, total, f"Trade-Analyse 1/3: {r.name} · warte auf Modellantwort. Danach: Risiko-Analyse → Gesamtbericht")
                 r.trade_analyse = self.llm.chat(prompt, stufe=strong, max_tokens=16384)
                 lc = self.llm.last_call
                 log(f"  ✓ [1/3] Trade-Analyse fertig: {lc['zeichen']} Zeichen "
@@ -380,7 +393,8 @@ class ScanPipeline:
                 log(f"→ [2/3] Sende Risiko-Analyse an {model_flash}: "
                     f"Forensik-Kennzahlen + Kriterien ({len(prompt):,} "
                     f"Zeichen) …")
-                _tick(f"Prompt 2/3 (Risiko-Analyse) gesendet: {r.name}")
+                if on_progress:
+                    on_progress(done, total, f"Risiko-Analyse 2/3: {r.name} · warte auf Modellantwort. Danach: Gesamtbericht")
                 r.risiko_analyse = self.llm.chat(prompt, stufe=1, max_tokens=8192)
                 lc = self.llm.last_call
                 log(f"  ✓ [2/3] Risiko-Analyse fertig: {lc['zeichen']} Zeichen "
@@ -402,8 +416,9 @@ class ScanPipeline:
                     f"Teilergebnisse zusammen ({len(prompt):,} Zeichen = "
                     f"Forensik + Trade-Analyse {len(r.trade_analyse)} Zeichen + "
                     f"Risiko-Analyse {len(r.risiko_analyse)} Zeichen). Der "
-                    f"ausfuehrliche Bericht wird geschrieben — 1-3 Minuten …")
-                _tick(f"Prompt 3/3 (Gesamtbericht) gesendet: {r.name}")
+                    f"ausfuehrliche Bericht wird geschrieben; Antwort wird abgewartet …")
+                if on_progress:
+                    on_progress(done, total, f"Gesamtbericht 3/3: {r.name} · warte auf Modellantwort")
                 r.gesamtbericht = self.llm.chat(prompt, stufe=strong, max_tokens=24576)
                 lc = self.llm.last_call
                 log(f"  ✓ [3/3] Gesamtbericht fertig: {lc['zeichen']} Zeichen in "
@@ -416,14 +431,24 @@ class ScanPipeline:
                 log(f"  ● {r.name} abgeschlossen. Kurzfassung: {r.kurzfassung}")
                 _tick(f"Gesamtbericht fertig: {r.name}")
             except llm_client.LlmNoBalanceError as exc:
+                failed += 1
                 r.llm_fehler = str(exc)
                 log(f"LLM abgebrochen: {exc}")
-                return
+                if on_progress:
+                    on_progress(done, total, f"Abgebrochen bei {r.name}: {exc}")
+                return {"completed": done, "total": total, "failed": failed,
+                        "skipped": total - done - failed, "reason": str(exc)}
             except llm_client.LlmError as exc:
+                failed += 1
                 r.llm_fehler = str(exc)
                 log(f"  LLM-Fehler bei {r.name}: {exc}")
+                if on_progress:
+                    on_progress(done, total, f"Fehler bei {r.name}: {exc}")
         if on_progress:
-            on_progress(total, total, f"{len(jobs)} Signale vollstaendig ausgewertet")
+            on_progress(done, total, f"{done}/{total} Prompts fertig · {failed} fehlgeschlagen")
+        return {"completed": done, "total": total, "failed": failed,
+                "skipped": total - done - failed,
+                "reason": "Einzelne Modellaufrufe fehlgeschlagen" if failed else ""}
 
     # ------------------------------------------------------ Hilfen
     @staticmethod

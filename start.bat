@@ -58,10 +58,10 @@ for /f "tokens=*" %%v in ('%PYTHON% --version 2^>^&1') do echo Python gefunden: 
 rem -----------------------------------------------------------
 rem  SCHRITT 2: Abhaengigkeiten pruefen / bei Bedarf installieren
 rem -----------------------------------------------------------
-%PYTHON% -c "import streamlit, requests, bs4, pandas" >nul 2>nul
+%PYTHON% -c "import streamlit, requests, bs4, pandas; assert tuple(map(int, streamlit.__version__.split('.')[:2])) >= (1, 63)" >nul 2>nul
 if errorlevel 1 (
   echo.
-  echo [Setup] Abhaengigkeiten fehlen - installiere requirements.txt
+  echo [Setup] Abhaengigkeiten fehlen oder sind veraltet - installiere requirements.txt
   echo         ^(erster Start kann einige Minuten dauern^) ...
   echo.
   %PYTHON% -m pip install --upgrade pip
