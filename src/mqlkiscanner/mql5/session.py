@@ -130,23 +130,28 @@ class Mql5Session:
     def export_positions_csv(self, signal_id: int, extra_pause_s: float = 0.0) -> str:
         """Trade-Export je Signal (doc/02: Antwort muss mit 'Time;' beginnen).
 
-        BOM-tolerant: Chrome/Download-Varianten der Exporte beginnen mit
-        einer UTF-8-BOM (\ufeff), der Parser liest utf-8-sig.
+        BOM-tolerant (Chrome-Exporte beginnen mit einer UTF-8-BOM) und
+        retry-tolerant: MQL5 drosselt den Export-Endpunkt bei haeufigen
+        Abrufen kurzzeitig mit einer HTML-Seite — nach Wartezeit klappt
+        es wieder. Bei Login-HTML wird einmal neu angemeldet.
         """
         self.ensure_session_for_export()
-        r = self.get(f"/en/signals/{signal_id}/export/positions",
-                     extra_pause_s=extra_pause_s)
-        text = r.text.lstrip("\ufeff")
-        if text.lstrip().startswith("Time;"):
-            return text
-        if text.lstrip().startswith("<!DOCTYPE"):
-            # Session zwischendurch weg -> einmal neu einloggen und wiederholen
-            self.login()
+        last_text = ""
+        for attempt in range(3):
             r = self.get(f"/en/signals/{signal_id}/export/positions",
                          extra_pause_s=extra_pause_s)
             text = r.text.lstrip("\ufeff")
             if text.lstrip().startswith("Time;"):
                 return text
+            last_text = text
+            if text.lstrip().startswith("<!DOCTYPE") and "auth_login" in text:
+                # Session weg -> einmal neu anmelden (Browser-Fallback greift
+                # auf Ebene ensure_session_for_export), dann erneut versuchen.
+                self.logged_in = False
+                self.ensure_session_for_export()
+            time.sleep(10 * (attempt + 1))
         raise RuntimeError(
-            f"Export fuer Signal {signal_id} lieferte kein CSV (Login-HTML?). "
-            "Credentials pruefen bzw. MQL5-Status kontrollieren.")
+            f"Export fuer Signal {signal_id} lieferte kein CSV — MQL5 antwortet "
+            f"mit HTML (Anfang: {last_text[:80]!r}). Moegliche Ursache: "
+            "temporaere Drosselung durch MQL5; in ein paar Minuten erneut "
+            "versuchen oder den Cache des Signals nutzen.")
