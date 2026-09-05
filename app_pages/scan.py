@@ -278,8 +278,21 @@ if command:
             _step("forensik", "skipped", detail="Keine Kandidaten nach der Vorauswahl")
             return
         session = pipeline.Mql5Session(cfg)
-        _step("forensik", "running", total=n_export, detail="Kennzahlen und Trade-Exporte vorbereiten")
         log = _log_for("forensik")
+        if not session.has_credentials:
+            log("Kein MQL5-Login — nur Kennzahlen möglich, Trade-Exporte entfallen "
+                "(Vorprüfung). Login im Admin-Bereich ergänzen.")
+        else:
+            # Ein Login-Vorflug: scheitert er, alle 5 Kandidaten nicht einzeln
+            # mit derselben Meldung fallen lassen.
+            _step("forensik", detail="MQL5-Anmeldung prüfen …")
+            try:
+                session.ensure_session_for_export()
+            except Exception as exc:
+                _step("forensik", "error", total=n_export,
+                      detail=f"MQL5-Login fehlgeschlagen: {exc}")
+                return
+        _step("forensik", "running", total=n_export, detail="Kennzahlen und Trade-Exporte vorbereiten")
         for i, candidate in enumerate(candidates[:n_export]):
             _step("forensik", done=i, detail=f"Signal {i + 1}/{n_export}: {candidate.get('name')} #{candidate['id']}")
             result = pipe.analyze_candidate(session, candidate, log)

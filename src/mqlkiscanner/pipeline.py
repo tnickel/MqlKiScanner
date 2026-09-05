@@ -195,53 +195,64 @@ class ScanPipeline:
                 f"Ertrag {res.ertrag_monat_pct} %/Monat")
 
             log("Trade-Export laden (CSV) …")
-            path, from_cache = exporter.export_positions(
-                session, res.id,
-                extra_pause_s=float(self.settings.get("rate_pause_zwischen_signalen_s", 5.0)))
-            res.trades_path = path
-            with open(path, encoding="utf-8") as fh:
-                n_lines = sum(1 for _ in fh)
-            log(f"✓ Trade-Export: {n_lines} Zeilen "
-                f"({'Cache' if from_cache else 'neu geladen'})")
-            log("Forensik-Batterie (4 Tests) läuft …")
-            report = analyze_export(path)
-            st, fx = report["stats"], report["forensics"]
-            res.forensik_vorhanden = True
-            res.trading_dd_pct = fx["drawdown"]["trading_dd"]["dd_pct"]
-            res.trading_dd_usd = fx["drawdown"]["trading_dd"]["dd_usd"]
-            res.winrate_pct = st.get("winrate_pct")
-            res.max_verlustserie = st.get("max_consecutive_losses")
-            res.verlustserie_usd = st.get("max_consecutive_losses_sum")
-            expo = fx["exposure"]
-            res.peak_positionen = expo.get("peak_open_positions")
-            res.peak_netto_lots = expo.get("peak_net_lots")
-            res.shock_usd = expo.get("shock_usd")
-            res.martingale_flag = fx["martingale"].get("flag")
-            res.martingale_evidenz = fx["martingale"].get("evidence") or []
-            stops = fx["stops"]
-            if stops.get("evidence_level") == 1:
-                res.stop_nachweis = (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
-                                     f"{stops.get('positions_total')} mit SL/TP")
-            else:
-                res.stop_nachweis = stops.get("verdict", "kein Nachweis")[:60]
-            log(f"✓ Forensik: Winrate {res.winrate_pct} % · Trading-DD "
-                f"{res.trading_dd_pct} % · Serie {res.max_verlustserie} · "
-                f"Peak {res.peak_positionen} Pos · Martingale "
-                f"{'JA' if res.martingale_flag else 'nein'} · Stop: "
-                f"{res.stop_nachweis[:40]}")
+            report = None
+            try:
+                path, from_cache = exporter.export_positions(
+                    session, res.id,
+                    extra_pause_s=float(self.settings.get("rate_pause_zwischen_signalen_s", 5.0)))
+                res.trades_path = path
+                with open(path, encoding="utf-8") as fh:
+                    n_lines = sum(1 for _ in fh)
+                log(f"✓ Trade-Export: {n_lines} Zeilen "
+                    f"({'Cache' if from_cache else 'neu geladen'})")
+                log("Forensik-Batterie (4 Tests) läuft …")
+                report = analyze_export(path)
+            except RuntimeError as exc:
+                if "Keine MQL5-Credentials" in str(exc):
+                    # Kennzahlen bleiben erhalten; Ergebnis wird sauber als
+                    # Vorprüfung gefuehrt statt als Fehler.
+                    log("Trade-Export übersprungen (kein MQL5-Login) — "
+                        "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
+                else:
+                    raise
+            if report is not None:
+                st, fx = report["stats"], report["forensics"]
+                res.forensik_vorhanden = True
+                res.trading_dd_pct = fx["drawdown"]["trading_dd"]["dd_pct"]
+                res.trading_dd_usd = fx["drawdown"]["trading_dd"]["dd_usd"]
+                res.winrate_pct = st.get("winrate_pct")
+                res.max_verlustserie = st.get("max_consecutive_losses")
+                res.verlustserie_usd = st.get("max_consecutive_losses_sum")
+                expo = fx["exposure"]
+                res.peak_positionen = expo.get("peak_open_positions")
+                res.peak_netto_lots = expo.get("peak_net_lots")
+                res.shock_usd = expo.get("shock_usd")
+                res.martingale_flag = fx["martingale"].get("flag")
+                res.martingale_evidenz = fx["martingale"].get("evidence") or []
+                stops = fx["stops"]
+                if stops.get("evidence_level") == 1:
+                    res.stop_nachweis = (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
+                                         f"{stops.get('positions_total')} mit SL/TP")
+                else:
+                    res.stop_nachweis = stops.get("verdict", "kein Nachweis")[:60]
+                log(f"✓ Forensik: Winrate {res.winrate_pct} % · Trading-DD "
+                    f"{res.trading_dd_pct} % · Serie {res.max_verlustserie} · "
+                    f"Peak {res.peak_positionen} Pos · Martingale "
+                    f"{'JA' if res.martingale_flag else 'nein'} · Stop: "
+                    f"{res.stop_nachweis[:40]}")
 
-            log("Risiko-Score berechnen …")
-            platform = {
-                "eq_dd_pct": res.dd_equity_pct or 0,
-                "weeks": res.wochen,
-                "broker_risk": 5.0,      # Default offshore; Detailpruefung manuell
-                "transparency_risk": 5.0,
-            }
-            ev = scoring.evaluate(report, platform=platform)
-            res.score = ev["score"]
-            res.schranke_verletzt = bool(
-                (res.dd_equity_pct or 0) > self.settings.get("schranke_eq_dd_pct", 30.0)
-                or ev["schranke_eq_dd_verletzt"])
+                log("Risiko-Score berechnen …")
+                platform = {
+                    "eq_dd_pct": res.dd_equity_pct or 0,
+                    "weeks": res.wochen,
+                    "broker_risk": 5.0,      # Default offshore; Detailpruefung manuell
+                    "transparency_risk": 5.0,
+                }
+                ev = scoring.evaluate(report, platform=platform)
+                res.score = ev["score"]
+                res.schranke_verletzt = bool(
+                    (res.dd_equity_pct or 0) > self.settings.get("schranke_eq_dd_pct", 30.0)
+                    or ev["schranke_eq_dd_verletzt"])
         except Exception as exc:  # Ein Fehler soll den Lauf nicht abbrechen
             res.fehler = f"{type(exc).__name__}: {exc}"
             log(f"  FEHLER bei {res.id}: {res.fehler}")

@@ -109,10 +109,19 @@ class Mql5Session:
             f"{max_throttle_retries} Backoff-Versuchen: {url}")
 
     def ensure_session_for_export(self) -> None:
-        """Vor Exporten: Session pruefen/erneuern (doc/02 Fehlerquelle)."""
+        """Vor Exporten: Session pruefen/erneuern — bei scheiterndem Login
+        sofort mit klarer Meldung abbrechen, statt HTML-Exporte zu ziehen."""
+        if not self.has_credentials:
+            raise RuntimeError(
+                "Keine MQL5-Credentials gesetzt (Admin-Bereich oder "
+                "MQL5_USER/MQL5_PASS) — Trade-Export nicht moeglich.")
         if self.logged_in and self.is_logged_in():
             return
-        self.login()
+        if not self.login():
+            raise RuntimeError(
+                "MQL5-Login fehlgeschlagen (MQL5 meldet 'Incorrect login') — "
+                "Login/E-Mail und Passwort im Admin-Bereich pruefen und dort "
+                "ueber 'MQL5-Login testen' verifizieren.")
 
     def export_positions_csv(self, signal_id: int, extra_pause_s: float = 0.0) -> str:
         """Trade-Export je Signal (doc/02: Antwort muss mit 'Time;' beginnen)."""
