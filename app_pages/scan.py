@@ -1,223 +1,402 @@
 # -*- coding: utf-8 -*-
-"""Scan-Seite: die 4 Pipeline-Schritte mit sichtbarem Fortschritt.
-
-Schritt 1  MQL5-Signal-Listen lesen (MT4+MT5, mit Abonnenten)
-Schritt 2  Kandidaten-Liste erzeugen (Filter + Ausschlussliste)
-Schritt 3  Daten extrahieren + Forensik (Trade-Export je Kandidat)
-Schritt 4  LLM-Auswertung (Stufe 1 Flash-Profile, Stufe 2 Verdicts)
-
-Zusatz: Verifikations-Modus — die 8 realen Datensaetze aus data/raw/
-durch die Engine laufen lassen (ohne Netz, ohne Login).
-"""
+"""Scan-Arbeitsplatz mit explizitem, sitzungsfestem Workflow-Zustand."""
 from __future__ import annotations
 
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, pipeline
-from mqlkiscanner import secrets_store
+from mqlkiscanner import config, pipeline, secrets_store
 from mqlkiscanner.app_ui import render_report_panel, render_results_table
+from mqlkiscanner.ui_design import action_button, page_header, section_header
 
-st.title("Scan", icon=":material/radar:")
+STEPS = (
+    ("listen", "Listen lesen", "travel_explore", "Seiten"),
+    ("kandidaten", "Kandidaten auswählen", "filter_list", "Signale"),
+    ("forensik", "Daten & Forensik", "biotech", "Datensätze"),
+    ("llm", "LLM-Auswertung", "psychology", "Prompts"),
+)
+STATES = {
+    "pending": ("Wartet", "gray", "schedule"),
+    "running": ("Läuft", "blue", "autorenew"),
+    "complete": ("Abgeschlossen", "green", "check_circle"),
+    "warning": ("Mit Hinweisen", "orange", "warning"),
+    "error": ("Fehlgeschlagen", "red", "error"),
+    "skipped": ("Übersprungen", "gray", "skip_next"),
+}
+
+
+def _new_workflow(mode: str | None = None) -> dict:
+    return {
+        "mode": mode, "status": "running" if mode else "idle",
+        "started_at": datetime.now().isoformat(timespec="seconds") if mode else None,
+        "finished_at": None, "activity": "Bereit für einen neuen Lauf.", "saved": False,
+        "steps": {sid: {"status": "pending", "done": 0, "total": None,
+                        "detail": "Noch nicht gestartet", "unit": unit}
+                  for sid, _, _, unit in STEPS},
+    }
+
+
+st.session_state.setdefault("scan_results", [])
+st.session_state.setdefault("scan_logs", {})
+st.session_state.setdefault("last_run_file", None)
+st.session_state.setdefault("scan_workflow", _new_workflow())
+command = st.session_state.pop("scan_command", None)
+workflow = st.session_state.scan_workflow
+# Ein Widget-Rerun oder Seitenwechsel kann synchrone Arbeit unterbrechen.
+# Beim nächsten Rendern einen solchen Lauf nicht weiter als „läuft“ anzeigen.
+if command is None and workflow["status"] == "running":
+    for step in workflow["steps"].values():
+        if step["status"] == "running":
+            step.update(status="error", detail="Lauf unterbrochen; nicht abgeschlossen")
+        elif step["status"] == "pending":
+            step.update(status="skipped", detail="Nach Unterbrechung nicht ausgeführt")
+    workflow.update(status="error", activity="Lauf unterbrochen. Vorliegende Ergebnisse bleiben erhalten.",
+                    finished_at=datetime.now().isoformat(timespec="seconds"))
+    st.session_state.scan_running = None
+if command:
+    workflow = _new_workflow(command["mode"])
+    st.session_state.scan_workflow = workflow
+    if command["mode"] == "scan" and command["settings"] and not (
+            command["settings"]["llm_stufe1"] or command["settings"]["llm_stufe2"]):
+        workflow["steps"]["llm"].update(status="skipped", detail="KI-Berichte für diesen Lauf ausgeschaltet")
+    if command["mode"] in ("scan", "step_listen"):
+        st.session_state.scan_results = []
+        st.session_state.scan_logs = {}
+        st.session_state.last_run_file = None
 
 settings = config.load_settings()
-known = config.load_known_signals()
-n_excluded = len(known.get("ausgeschlossen", []))
+running = command is not None
+page_header("ANALYSE-ARBEITSPLATZ", "Signale prüfen. Risiken verstehen.",
+            "Vom MQL5-Angebot zum nachvollziehbaren Befund: Daten sammeln, "
+            "Risiko prüfen und die Ergebnisse verständlich einordnen.")
+section_header("Ihr Analyseablauf", "Die blinkende Zahl markiert den nächsten Schritt — "
+               "in der Karte auf „Schritt starten“ klicken. Vier Schritte, der Stand bleibt beim Scrollen sichtbar.",
+               help_key="scan_workflow")
+heads = {}
+cards = {}
+for nr, (col, (sid, title, icon, _)) in enumerate(zip(st.columns(4, gap="small"), STEPS), 1):
+    with col.container(border=True, key=f"workflow_{sid}", height="stretch"):
+        heads[sid] = st.empty()
+        cards[sid] = st.empty()
+        if st.button(f"Schritt {nr} starten", key=f"step_btn_{sid}",
+                     disabled=running, icon=":material/play_arrow:",
+                     type="primary" if nr == 1 else "secondary"):
+            st.session_state.scan_command = {"mode": f"step_{sid}", "settings": None}
+            st.rerun()
+with st.container(border=True, key="scan_activity", gap="xsmall"):
+    activity_slot = st.empty()
+    next_slot = st.empty()
+    counter_slot = st.empty()
+with st.bottom:
+    with st.container(key="workflow_footer", gap="xxsmall"):
+        footer_slot = st.empty()
 
-# ------------------------------------------------- Schritt-Übersicht (Chips)
-col1, col2, col3, col4 = st.columns(4)
-done = {k: bool(st.session_state.scan_logs.get(k)) for k in ("listen", "kandidaten", "forensik", "llm")}
-for col, nr, sid, label, icon in (
-        (col1, 1, "listen", "Listen lesen", ":material/travel_explore:"),
-        (col2, 2, "kandidaten", "Kandidaten", ":material/filter_list:"),
-        (col3, 3, "forensik", "Daten + Forensik", ":material/biotech:"),
-        (col4, 4, "llm", "LLM-Auswertung", ":material/psychology:")):
-    with col.container(border=True):
-        st.markdown(f"{'✅' if done[sid] else icon} **{nr}. {label}**")
 
-# ------------------------------------------------------------ Einstellungen
-with st.expander("Scan-Einstellungen", icon=":material/tune:"):
-    c1, c2, c3 = st.columns(3)
-    listen_seiten = c1.number_input("Listen-Seiten je MT4/MT5", 1, 10,
-                                    value=int(settings["listen_seiten"]), key="set_seiten")
-    top_n = c2.number_input("Top-N Forensik-Exporte", 1, 25,
-                            value=int(settings["top_n_export"]), key="set_topn")
-    min_wochen = c3.number_input("Min. Wochen", 0, 260,
-                                 value=int(settings["min_wochen"]), key="set_wochen")
-    c1, c2, c3 = st.columns(3)
-    min_abo = c1.number_input("Min. Abonnenten", 0, 1000,
-                              value=int(settings["min_abonnenten"]), key="set_abo")
-    llm1 = c2.checkbox("LLM Stufe 1 (Flash-Profile)", value=bool(settings["llm_stufe1"]), key="set_llm1")
-    llm2 = c3.checkbox("LLM Stufe 2 (Verdicts)", value=bool(settings["llm_stufe2"]), key="set_llm2")
-    st.caption(
-        f"Rate-Limit (Admin änderbar): {settings['rate_min_interval_s']:.1f}s je Request, "
-        f"{settings['rate_pause_zwischen_signalen_s']:.1f}s Pause je Signal, "
-        f"Backoff {settings['rate_backoff_429_s']:.0f}s bei Drosselung. "
-        "Zu schnelles Abrufen kann zur Account-Sperre führen.")
-    if st.button("Einstellungen speichern", icon=":material/save:"):
-        settings.update(listen_seiten=int(listen_seiten), top_n_export=int(top_n),
-                        min_wochen=int(min_wochen), min_abonnenten=int(min_abo),
-                        llm_stufe1=bool(llm1), llm_stufe2=bool(llm2))
-        config.save_settings(settings)
-        st.toast("Einstellungen gespeichert.", icon=":material/check:")
+def _refresh_workflow() -> None:
+    for nr, (sid, title, icon, _) in enumerate(STEPS, 1):
+        step = workflow["steps"][sid]
+        # Blinkende Zahl = dieser Schritt wartet auf den Klick. Sobald der
+        # Lauf läuft oder der Schritt erledigt ist, hört das Blinken auf.
+        blink = step["status"] == "pending" and workflow["status"] != "running"
+        heads[sid].markdown(
+            f'<span class="mks-stepnum{" mks-blink" if blink else ""}">{nr}</span>'
+            f':material/{icon}: **{title}**', unsafe_allow_html=True)
+        label, color, icon = STATES[step["status"]]
+        with cards[sid].container(gap="xsmall"):
+            st.badge(label, color=color, icon=f":material/{icon}:")
+            st.caption(step["detail"])
+            if step["total"] and step["status"] != "skipped":
+                st.progress(min(step["done"] / step["total"], 1.0),
+                            text=f"{step['done']}/{step['total']} {step['unit']}")
+    active = next((title for sid, title, _, _ in STEPS
+                   if workflow["steps"][sid]["status"] == "running"), None)
+    pending = [title for sid, title, _, _ in STEPS
+               if workflow["steps"][sid]["status"] == "pending"]
+    next_text = " → ".join(pending) if pending else (
+        "Ergebnisse speichern" if workflow["status"] == "running" else "Ergebnisse prüfen oder einen neuen Lauf starten")
+    finished = sum(s["status"] == "complete" for s in workflow["steps"].values())
+    warnings = sum(s["status"] == "warning" for s in workflow["steps"].values())
+    skipped = sum(s["status"] == "skipped" for s in workflow["steps"].values())
+    errors = sum(s["status"] == "error" for s in workflow["steps"].values())
+    activity_slot.markdown(f"**{'Aktuell: ' + active if active else 'Status'}** · {workflow['activity']}")
+    next_slot.caption(f"Danach: {next_text}")
+    counter_slot.caption(f"{finished}/4 Schritte abgeschlossen · {warnings} mit Hinweisen · {skipped} übersprungen · {errors} fehlgeschlagen. "
+                         "Balken zeigen erledigte Arbeit im jeweiligen Schritt, keine verbleibende Laufzeit.")
+    with footer_slot.container(gap="xxsmall"):
+        prefix = active or {"idle": "Bereit", "complete": "Lauf abgeschlossen", "warning": "Lauf mit Hinweisen beendet",
+                            "error": "Lauf mit Fehlern beendet"}.get(workflow["status"], "Lauf wird gespeichert")
+        st.markdown(f":material/{'autorenew' if workflow['status'] == 'running' else 'radar'}: **{prefix}** · {workflow['activity']}")
+        st.caption(f"Danach: {next_text}" if workflow["status"] == "running" else
+                   f"{finished}/4 Schritte abgeschlossen · {warnings} mit Hinweisen · {skipped} übersprungen · {errors} fehlgeschlagen")
 
-run_col, ver_col, llm_col = st.columns([2, 2, 2])
-start = run_col.button("Scan starten (Schritte 1–4)", type="primary",
-                       icon=":material/play_circle:")
-verifizieren = ver_col.button("Verifikations-Datensätze laden (data/raw)",
-                              icon=":material/fact_check:")
-llm_only = llm_col.button("LLM-Auswertung starten (3 Prompts je Signal)",
-                          icon=":material/psychology:",
-                          disabled=not st.session_state.scan_results)
 
-# Lauf-Einstellungen: aktuelle Widget-Werte gelten auch ohne explizites Speichern
-run_settings = {**settings, "listen_seiten": int(listen_seiten),
-                "top_n_export": int(top_n), "min_wochen": int(min_wochen),
-                "min_abonnenten": int(min_abo),
-                "llm_stufe1": bool(llm1), "llm_stufe2": bool(llm2)}
+def _step(sid: str, status: str | None = None, **values) -> None:
+    if status:
+        values["status"] = status
+    workflow["steps"][sid].update(values)
+    if status == "running":
+        st.session_state.scan_running = sid
+    if "detail" in values:
+        workflow["activity"] = values["detail"]
+    _refresh_workflow()
 
-if not secrets_store.get_secret("mql5_user"):
-    st.warning("Kein MQL5-Login gesetzt: Schritt 3 kann Kennzahlen-Seiten lesen, "
-               "aber keine Trade-Exporte laden (Admin-Bereich eintragen).",
-               icon=":material/person_off:")
 
-# ------------------------------------------------------------------ Aktionen
-if verifizieren:
-    raw_files = [str(p) for p in sorted(config.RAW_DIR.glob("*.csv"))] + \
-                [str(p) for p in sorted(config.RAW_DIR.glob("*.json"))]
-    with st.status("Verifikations-Datensätze durch die Engine", expanded=True) as status:
-        st.write(f"{len(raw_files)} Datensätze in data/raw/ …")
-        results = pipeline.ScanPipeline.analyze_local_files(raw_files, run_settings)
-        st.session_state.scan_results = results
-        st.session_state.scan_logs = {"forensik": [f"{len(results)} Datensätze analysiert."]}
-        st.session_state.last_run_file = pipeline.ScanPipeline.save_run(results, {"forensik": ["Verifikationslauf data/raw"]})
-        status.update(label=f"{len(results)} Datensätze analysiert — siehe Ergebnisse.",
-                      state="complete", expanded=False)
+_refresh_workflow()
+section_header("Lauf vorbereiten", "Wählen Sie die Datenquelle. Die gelben Info-Schaltflächen erklären jede Aktion.")
+run_col, verify_col, llm_col = st.columns(3, gap="small")
+with run_col.container(border=True, key="scan_source_live", height="stretch"):
+    st.markdown(":material/public: **Neue MQL5-Signale**")
+    st.caption("Signal-Listen laden, Kandidaten auswählen und ihre Handelsdaten prüfen.")
+    start = action_button("Scan starten", key="scan_start", help_key="scan_start",
+                          type="primary", icon=":material/play_arrow:", disabled=running)
+with verify_col.container(border=True, key="scan_source_local", height="stretch"):
+    st.markdown(":material/fact_check: **Lokale Verifikation**")
+    st.caption("Vorhandene Referenzdateien analysieren. Ohne Netzwerk und ohne neuen KI-Aufruf.")
+    verify = action_button("Verifikations-Datensätze laden", key="scan_verify", help_key="scan_verify",
+                           icon=":material/fact_check:", disabled=running)
+with llm_col.container(border=True, key="scan_source_llm", height="stretch"):
+    st.markdown(":material/psychology: **Befunde erklären lassen**")
+    st.caption("Für vorhandene Forensik-Ergebnisse drei KI-Berichte je geeignetem Signal erstellen.")
+    llm_only = action_button("LLM-Auswertung starten", key="scan_llm", help_key="scan_llm",
+                             icon=":material/psychology:",
+                             disabled=running or not st.session_state.scan_results)
 
-if llm_only and st.session_state.scan_results:
-    pipe = pipeline.ScanPipeline(run_settings)
-    with st.status("LLM-Auswertung (3 Prompts je Signal)", expanded=True) as status:
-        activity = st.empty()   # eine Zeile, aktualisiert sich laufend
-        log = pipeline.StepLog()
+with st.expander("Scanprofil anpassen", icon=":material/tune:"):
+    left, right = st.columns(2)
+    with left.container(border=True, key="scan_scope"):
+        section_header("Suchumfang", "Wie viel Material soll der Scanner prüfen?", help_key="scan_scope")
+        pages = st.number_input("Listen-Seiten je MT4/MT5", 1, 10, value=int(settings["listen_seiten"]),
+                                key="set_seiten", disabled=running)
+        top_n = st.number_input("Maximale Forensik-Exporte", 1, 25, value=int(settings["top_n_export"]),
+                                key="set_topn", disabled=running)
+    with right.container(border=True, key="scan_filters"):
+        section_header("Kandidatenfilter", "Diese Kriterien begrenzen die Vorauswahl.", help_key="scan_filters")
+        min_weeks = st.number_input("Mindestalter in Wochen", 0, 260, value=int(settings["min_wochen"]),
+                                    key="set_wochen", disabled=running)
+        min_subs = st.number_input("Mindestens Abonnenten", 0, 1000, value=int(settings["min_abonnenten"]),
+                                   key="set_abo", disabled=running)
+    with st.container(border=True, key="scan_llm_settings"):
+        section_header("KI-Berichte", "Optional nach der rechnerischen Risikoanalyse.", help_key="scan_llm_settings")
+        use_llm = st.toggle("KI-Berichte nach dem Scan erstellen", key="scan_use_llm",
+                            value=bool(settings["llm_stufe1"] or settings["llm_stufe2"]), disabled=running)
+        st.caption("Trade-Analyse → Risiko-Analyse → Gesamtbericht. Der separate KI-Start verwendet immer alle drei Prompts.")
+    st.caption("Die sichtbaren Werte gelten sofort für den nächsten Lauf. Speichern macht sie zum Standard.")
+    save_settings = action_button("Scanprofil als Standard speichern", key="scan_save", help_key="scan_save",
+                                  icon=":material/save:", disabled=running)
+run_settings = {**settings, "listen_seiten": int(pages), "top_n_export": int(top_n),
+                "min_wochen": int(min_weeks), "min_abonnenten": int(min_subs),
+                "llm_stufe1": bool(use_llm), "llm_stufe2": bool(use_llm)}
+if save_settings:
+    config.save_settings(run_settings)
+    st.toast("Scanprofil gespeichert.", icon=":material/check:")
+with st.container(border=True, key="scan_connections"):
+    section_header("Bereitschaft", help_key="scan_connections")
+    has_login = bool(secrets_store.get_secret("mql5_user") and secrets_store.get_secret("mql5_pass"))
+    has_llm = bool(secrets_store.get_secret("glm_api_key"))
+    with st.container(horizontal=True, gap="small"):
+        st.badge("Lokale Engine bereit", icon=":material/check_circle:", color="green")
+        st.badge("MQL5-Zugang hinterlegt" if has_login else "MQL5-Zugang fehlt",
+                 icon=":material/lock:", color="blue" if has_login else "orange")
+        st.badge("KI-Key hinterlegt" if has_llm else "KI-Key fehlt",
+                 icon=":material/key:", color="blue" if has_llm else "gray")
+    if not has_login:
+        st.caption("Ohne MQL5-Zugang bleiben Live-Ergebnisse ohne Trade-Export in der Vorprüfung. Zugang unter Einstellungen & Prompts ergänzen.")
+    st.caption(f"Abrufabstand: {settings['rate_min_interval_s']:.1f} s · Pause je Signal: "
+               f"{settings['rate_pause_zwischen_signalen_s']:.1f} s. Hinterlegte Zugänge sind noch kein Verbindungstest.")
+if start or verify or llm_only:
+    st.session_state.scan_command = {"mode": "scan" if start else "local" if verify else "llm",
+                                     "settings": run_settings}
+    st.rerun()
 
-        def log_live(msg: str) -> None:
-            log(msg)
-            activity.write(f"› {msg}")
 
-        pipe.run_llm(st.session_state.scan_results, log_live)
-        st.session_state.scan_logs["llm"] = log.lines
+def _log_for(sid: str):
+    lines = st.session_state.scan_logs.setdefault(sid, [])
+
+    def log(message: str) -> None:
+        lines.append(message)
+        # Nur die Aktivitätszeile stammt aus dem Log. Status und Fortschritt
+        # werden ausschließlich vom aufrufenden Ablauf bzw. Callback gesetzt.
+        workflow["activity"] = message.splitlines()[0][:400]
+        _refresh_workflow()
+    return log
+
+
+def _run_llm(results: list[pipeline.ScanResult], run_config: dict) -> None:
+    pipe = pipeline.ScanPipeline(run_config)
+    total = 3 * sum(r.forensik_vorhanden and not r.fehler for r in results)
+    if not pipe.llm.has_key or not total:
+        reason = "Kein KI-Key hinterlegt" if not pipe.llm.has_key else "Keine geeigneten Forensik-Ergebnisse"
+        st.session_state.scan_logs["llm"] = [reason]
+        _step("llm", "skipped", detail=reason, total=total)
+        return
+    _step("llm", "running", total=total, detail="Trade-Analyse wird vorbereitet")
+    summary = pipe.run_llm(results, _log_for("llm"), on_progress=lambda done, total, text:
+                           _step("llm", done=done, total=total, detail=text))
+    completed, total = summary["completed"], summary["total"]
+    failed, skipped = summary["failed"], summary["skipped"]
+    state = "complete" if completed == total else "warning" if completed else "error"
+    detail = (f"{completed}/{total} Prompts gespeichert · {failed} fehlgeschlagen · "
+              f"{skipped} nicht ausgeführt · {pipe.llm.usage.total_tokens:,} Tokens")
+    if summary["reason"]:
+        detail += f". {summary['reason']}"
+    _step("llm", state, done=completed, total=total, detail=detail)
+
+
+if command:
+    run_config = command["settings"]
+    mode = command["mode"]
+    run_config = command["settings"] or run_settings
+    current_step = {"llm": "llm", "local": "forensik", "step_listen": "listen",
+                    "step_kandidaten": "kandidaten", "step_forensik": "forensik",
+                    "step_llm": "llm"}.get(mode, "listen")
+    pipe = pipeline.ScanPipeline(run_config)
+
+    def _run_listen(cfg) -> list[dict]:
+        _step("listen", "running", total=2 * cfg["listen_seiten"],
+              detail="MQL5-Listen abrufen; Abrufpausen und Netzwerkantworten abwarten")
+        signals = pipe.crawl(on_progress=lambda done, total, text:
+                             _step("listen", done=done, total=total, detail=text), log=_log_for("listen"))
+        st.session_state["scan_signals"] = signals
+        _step("listen", "complete", detail=f"{len(signals)} Signale geladen")
+        return signals
+
+    def _run_kandidaten(signals: list[dict], cfg) -> list[dict]:
+        _step("kandidaten", "running", total=len(signals), detail="Alter und Abonnenten prüfen; Kandidaten sortieren")
+        candidates = pipe.build_candidates(signals, _log_for("kandidaten"))
+        st.session_state["scan_candidates"] = candidates
+        _step("kandidaten", "complete", done=len(signals), detail=f"{len(candidates)} Kandidaten aus {len(signals)} Signalen")
+        return candidates
+
+    def _run_forensik(candidates: list[dict], cfg) -> None:
+        n_export = min(len(candidates), cfg["top_n_export"])
+        if not n_export:
+            _step("forensik", "skipped", detail="Keine Kandidaten nach der Vorauswahl")
+            return
+        session = pipeline.Mql5Session(cfg)
+        _step("forensik", "running", total=n_export, detail="Kennzahlen und Trade-Exporte vorbereiten")
+        log = _log_for("forensik")
+        for i, candidate in enumerate(candidates[:n_export]):
+            _step("forensik", done=i, detail=f"Signal {i + 1}/{n_export}: {candidate.get('name')} #{candidate['id']}")
+            result = pipe.analyze_candidate(session, candidate, log)
+            st.session_state.scan_results.append(result)
+            _step("forensik", done=i + 1)
+        results = st.session_state.scan_results
+        good = sum(r.forensik_vorhanden and not r.fehler for r in results)
+        errors = sum(bool(r.fehler) for r in results)
+        preview = len(results) - good - errors
+        _step("forensik", "complete" if good == len(results) else "error" if errors == len(results) else "warning",
+              detail=f"{good} mit Forensik · {preview} nur Vorprüfung · {errors} mit Fehlern")
+
+    try:
+        if mode in ("local", "llm", "step_llm", "step_forensik", "step_kandidaten"):
+            for sid in ("listen", "kandidaten"):
+                if mode in ("local", "llm") or (
+                        sid == "listen" and mode == "step_kandidaten"
+                        and not st.session_state.get("scan_signals")):
+                    _step(sid, "skipped", detail="Vorhandene Daten verwenden")
+        if mode == "local":
+            _step("llm", "skipped", detail="Lokaler Lauf ohne neuen KI-Aufruf")
+            files = sorted(config.RAW_DIR.glob("*.csv")) + sorted(config.RAW_DIR.glob("*.json"))
+            if not files:
+                _step("forensik", "skipped", detail="Keine Referenzdateien in data/raw vorhanden")
+            else:
+                log = _log_for("forensik")
+                _step("forensik", "running", total=len(files), detail="Lokale Referenzdateien werden vorbereitet")
+                for i, file in enumerate(files):
+                    _step("forensik", detail=f"Datensatz {i + 1}/{len(files)}: {file.name}", done=i)
+                    rows = pipeline.ScanPipeline.analyze_local_files([str(file)], run_config)
+                    st.session_state.scan_results.extend(rows)
+                    log(f"{file.name}: " + ("Fehler" if any(r.fehler for r in rows) else "analysiert"))
+                    _step("forensik", done=i + 1)
+                good = sum(r.forensik_vorhanden and not r.fehler for r in st.session_state.scan_results)
+                bad = len(st.session_state.scan_results) - good
+                _step("forensik", "complete" if not bad else "warning" if good else "error",
+                      detail=f"{good} Datensätze analysiert · {bad} fehlerhaft")
+        elif mode == "llm":
+            _step("forensik", "skipped", detail="Vorliegende Forensik-Befunde verwenden")
+            _run_llm(st.session_state.scan_results, run_config)
+        elif mode == "step_listen":
+            _run_listen(run_config)
+        elif mode == "step_kandidaten":
+            signals = st.session_state.get("scan_signals")
+            if not signals:
+                _step("kandidaten", "skipped", detail="Erst Schritt 1 starten (Signale laden)")
+            else:
+                _step("listen", "complete", detail=f"{len(signals)} Signale aus Schritt 1 vorhanden")
+                _run_kandidaten(signals, run_config)
+        elif mode == "step_forensik":
+            candidates = st.session_state.get("scan_candidates")
+            if not candidates:
+                _step("forensik", "skipped", detail="Erst Schritt 2 starten (Kandidaten erzeugen)")
+            else:
+                _step("kandidaten", "complete", detail=f"{len(candidates)} Kandidaten aus Schritt 2 vorhanden")
+                _run_forensik(candidates, run_config)
+        elif mode == "step_llm":
+            _run_llm(st.session_state.scan_results, run_config)
+        else:
+            signals = _run_listen(run_config)
+            current_step = "kandidaten"
+            candidates = _run_kandidaten(signals, run_config)
+            current_step = "forensik"
+            _run_forensik(candidates, run_config)
+            current_step = "llm"
+            if run_config["llm_stufe1"] or run_config["llm_stufe2"]:
+                _run_llm(st.session_state.scan_results, run_config)
+            else:
+                _step("llm", "skipped", detail="KI-Berichte für diesen Lauf ausgeschaltet")
+    except Exception as exc:
+        message = f"{type(exc).__name__}: {exc}"
+        st.session_state.scan_logs.setdefault(current_step, []).append(f"FEHLER: {message}")
+        _step(current_step, "error", detail=message)
+        for sid, _, _, _ in STEPS:
+            if workflow["steps"][sid]["status"] == "pending":
+                _step(sid, "skipped", detail="Nach vorherigem Fehler nicht ausgeführt")
+    workflow["activity"] = "Ergebnisse und Protokoll speichern …"
+    _refresh_workflow()
+    try:
         st.session_state.last_run_file = pipeline.ScanPipeline.save_run(
-            st.session_state.scan_results,
-            {k: v for k, v in st.session_state.scan_logs.items()})
-        status.update(label=f"LLM fertig ({pipe.llm.usage.total_tokens:,} Tokens).",
-                      state="complete", expanded=False)
+            st.session_state.scan_results, st.session_state.scan_logs)
+        workflow["saved"] = True
+    except Exception as exc:
+        workflow.update(status="error", activity=f"Speichern fehlgeschlagen: {exc}")
+    states = [s["status"] for s in workflow["steps"].values()]
+    if workflow["saved"]:
+        final_status = "error" if "error" in states else "warning" if "warning" in states or all(s == "skipped" for s in states) else "complete"
+        workflow.update(status=final_status, activity=(
+            "Lauf mit Fehlern beendet. Vorliegende Ergebnisse und Protokoll sind gespeichert." if final_status == "error" else
+            "Lauf beendet. Hinweise und ausgelassene Schritte prüfen; Ergebnisse sind gespeichert." if final_status == "warning" else
+            f"{len(st.session_state.scan_results)} Ergebnisse gespeichert. Ausgelassene Schritte bleiben gekennzeichnet."))
+    workflow["finished_at"] = datetime.now().isoformat(timespec="seconds")
+    st.session_state.scan_running = None
+    st.rerun()
 
-if start:
-    pipe = pipeline.ScanPipeline(run_settings)
-    logs: dict[str, list[str]] = {}
-    results: list[pipeline.ScanResult] = []
-    session = None
-
-    # ---------------- Schritt 1: Listen lesen
-    with st.status("Schritt 1: MQL5-Signal-Listen lesen", expanded=True) as status:
-        activity = st.empty()
-        log = pipeline.StepLog()
-        try:
-            session = pipeline.Mql5Session(run_settings)
-            signals = pipe.crawl(
-                on_progress=lambda i, n, txt: activity.write(f"› {txt}"),
-                log=log)
-            logs["listen"] = log.lines
-            status.update(label=f"Schritt 1 fertig: {len(signals)} Signale.", state="complete")
-            st.session_state["_signals"] = signals
-        except Exception as exc:
-            logs["listen"] = log.lines + [f"FEHLER: {exc}"]
-            status.update(label=f"Schritt 1 fehlgeschlagen: {exc}", state="error", expanded=True)
-            st.session_state.scan_logs = logs
-            st.stop()
-
-    # ---------------- Schritt 2: Kandidatenliste
-    with st.status("Schritt 2: Kandidaten-Liste erzeugen", expanded=True) as status:
-        log = pipeline.StepLog()
-        candidates = pipe.build_candidates(st.session_state.get("_signals", []), log)
-        logs["kandidaten"] = log.lines
-        for line in log.lines:
-            st.write(line)
-        top_preview = candidates[:15]
-        if top_preview:
-            st.dataframe(
-                [{"ID": c["id"], "Name": c.get("name"), "Plattform": c.get("platform"),
-                  "Abonnenten": c.get("abonnenten"), "Wochen": c.get("wochen"),
-                  "Growth %": c.get("growth_pct"), "Abo $": c.get("abo_preis_usd")}
-                 for c in top_preview],
-                hide_index=True)
-        status.update(label=f"Schritt 2 fertig: {len(candidates)} Kandidaten.", state="complete")
-
-    # ---------------- Schritt 3: Daten extrahieren + Forensik
-    with st.status("Schritt 3: Daten extrahieren + Forensik", expanded=True) as status:
-        from mqlkiscanner.mql5.session import Mql5Session  # noqa: F811
-
-        if session is None:
-            session = Mql5Session(run_settings)
-        needs_login = not session.has_credentials
-        if needs_login:
-            st.warning("Kein MQL5-Login — Kennzahlen-Seiten ja, Trade-Exporte nein. "
-                       "Ergebnisse bleiben 'Vorprüfung'.")
-        n_export = min(len(candidates), run_settings["top_n_export"])
-        progress = st.progress(0.0, text=f"0/{n_export}")
-        activity = st.empty()   # EINE Zeile, die sich aktualisiert (kein Log-Stream)
-        log = pipeline.StepLog()
-
-        def log_live(msg: str) -> None:
-            log(msg)
-            activity.write(f"› {msg}")
-
-        for idx, cand in enumerate(candidates[: n_export]):
-            activity.write(f"› [{idx + 1}/{n_export}] {cand.get('name')} #{cand['id']}")
-            res = pipe.analyze_candidate(session, cand, log_live)
-            results.append(res)
-            progress.progress((idx + 1) / n_export,
-                              text=f"{idx + 1}/{n_export} forensisiert")
-        logs["forensik"] = log.lines
-        status.update(label=f"Schritt 3 fertig: {len(results)} Signale forensisiert.",
-                      state="complete")
-
-    # ---------------- Schritt 4: LLM
-    with st.status("Schritt 4: LLM-Auswertung (3 Prompts: Trades -> Risiko -> Gesamtbericht)", expanded=True) as status:
-        if not pipe.llm.has_key:
-            st.warning("Kein GLM-Key gesetzt (Admin) — Schritt 4 übersprungen. "
-                       "Die Engine-Ergebnisse sind bereits bewertbar.")
-        activity = st.empty()
-        log = pipeline.StepLog()
-        pipe.run_llm(results, log)
-        logs["llm"] = log.lines
-        status.update(label=f"Schritt 4 fertig ({pipe.llm.usage.total_tokens:,} Tokens).",
-                      state="complete")
-
-    st.session_state.scan_results = results
-    st.session_state.scan_logs = logs
-    st.session_state.last_run_file = pipeline.ScanPipeline.save_run(results, logs)
-    st.toast("Scan abgeschlossen.", icon=":material/check_circle:")
-
-# ----------------------------------------------------------------- Ergebnis
-st.divider()
-n = len(st.session_state.scan_results)
-ampeln = [r.ampel for r in st.session_state.scan_results]
-if n:
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Datensätze", n)
-    c2.metric("🟢 Kandidaten", ampeln.count("🟢"))
-    c3.metric("🟡 Beobachtung", ampeln.count("🟡"))
-    c4.metric("🔴 Schranke/Flag", ampeln.count("🔴"))
-    c5.metric("⛔ Ausgeschlossen", ampeln.count("⛔"))
-
-render_report_panel(st.session_state.scan_results)
-sel_id = render_results_table(st.session_state.scan_results)
-if sel_id is not None:
-    result = next(r for r in st.session_state.scan_results if r.id == sel_id)
-    from mqlkiscanner.app_ui import render_detail
-    render_detail(result)
+section_header("Ergebnisse dieses Laufs", "Ein abgeschlossener Arbeitsschritt ist keine positive Risikobewertung.",
+               help_key="scan_results")
+if st.session_state.scan_results:
+    results = st.session_state.scan_results
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Datensätze", len(results), border=True)
+    c2.metric("Mit Forensik", sum(r.forensik_vorhanden for r in results), border=True)
+    c3.metric("Kandidaten", sum(r.ampel == "🟢" for r in results), border=True)
+    c4.metric("Fehler / Vorprüfung", sum(bool(r.fehler) or not r.forensik_vorhanden for r in results), border=True)
+    render_report_panel(results)
+    selected_id = render_results_table(results)
+    if selected_id is not None:
+        from mqlkiscanner.app_ui import render_detail
+        render_detail(next(r for r in results if r.id == selected_id))
+else:
+    with st.container(border=True, key="scan_empty"):
+        st.markdown(":material/insights: **Hier erscheinen Ihre Analyseergebnisse.**")
+        st.caption("Starten Sie einen Scan oder laden Sie die Verifikations-Datensätze, um die Risikoanalyse mit vorhandenen Daten zu erkunden.")
+if st.session_state.scan_logs:
+    with st.expander("Ablaufprotokoll und technische Details", icon=":material/receipt_long:"):
+        for sid, title, _, _ in STEPS:
+            lines = st.session_state.scan_logs.get(sid, [])
+            if lines:
+                st.markdown(f"**{title}**")
+                st.code("\n".join(lines), language=None, wrap_lines=True)

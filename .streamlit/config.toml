@@ -1,10 +1,39 @@
-# Streamlit theme — MqlKiScanner (finanzieller Look, risikoorientiert)
+# Based on Streamlit's financial-dashboard template, with offline fonts.
 [theme]
-base = "light"
-primaryColor = "#0f6b4f"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f2f5f3"
-textColor = "#1c2420"
+base = "dark"
+primaryColor = "#087F8C"
+backgroundColor = "#0B1220"
+secondaryBackgroundColor = "#142236"
+textColor = "#E7EEF7"
+linkColor = "#6DDBDC"
+borderColor = "#30445E"
+codeBackgroundColor = "#101C2D"
+codeTextColor = "#C8D8EA"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "12px"
+buttonRadius = "8px"
+font = "sans-serif"
+baseFontSize = 15
+headingFontSizes = ["36px", "27px", "21px", "18px", "16px", "14px"]
+headingFontWeights = [700, 650, 600, 600, 600, 600]
+greenColor = "#54CBA2"
+redColor = "#FF808A"
+yellowColor = "#F6C453"
+orangeColor = "#F2AD72"
+blueColor = "#78B7F3"
+violetColor = "#B3A2EA"
+grayColor = "#A8B9CE"
+dataframeBorderColor = "#30445E"
+dataframeHeaderBackgroundColor = "#1A2C43"
+chartCategoricalColors = ["#6DDBDC", "#78B7F3", "#F6C453", "#B3A2EA", "#FF808A"]
+
+[theme.sidebar]
+backgroundColor = "#0D1829"
+secondaryBackgroundColor = "#182A40"
+textColor = "#E7EEF7"
+primaryColor = "#6DDBDC"
+borderColor = "#30445E"
 
 [server]
 headless = true

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 320" fill="none">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" stroke="#6DDBDC" stroke-opacity=".08"/></pattern>
+    <linearGradient id="sweep" x1="700" y1="160" x2="970" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#6DDBDC" stop-opacity=".02"/><stop offset="1" stop-color="#6DDBDC" stop-opacity=".19"/></linearGradient>
+  </defs>
+  <path fill="url(#grid)" d="M0 0h1000v320H0z"/>
+  <g stroke="#6DDBDC" stroke-opacity=".2">
+    <circle cx="760" cy="160" r="62"/><circle cx="760" cy="160" r="116"/><circle cx="760" cy="160" r="171"/><circle cx="760" cy="160" r="226"/>
+    <path d="M490 160h510M760-90v500M569-31l382 382M569 351L951-31"/>
+  </g>
+  <path d="M760 160L975 90A226 226 0 0 0 863-42Z" fill="url(#sweep)"/>
+  <g fill="#6DDBDC"><circle cx="831" cy="68" r="4"/><circle cx="673" cy="123" r="3"/><circle cx="889" cy="232" r="4"/></g>
+  <g stroke="#6DDBDC" stroke-opacity=".35"><circle cx="831" cy="68" r="11"/><circle cx="889" cy="232" r="11"/></g>
+</svg>
