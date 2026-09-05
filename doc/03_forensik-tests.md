@@ -41,10 +41,12 @@ beliebigen Zeitpunkt — und was kostet ein Schock?
 ```
 Events: (open_time, +vol, Richtung) und (close_time, -vol, Richtung)
 Sortiere nach Zeit, kumuliere:
-  offene Positionen (Anzahl), aggregiertes Volumen, Long-Volumen,
-  Short-Volumen, Netto
-Peak = Maximum der offenen Positionen; am Peak-Zeitpunkt:
-  Brutto-Volumen, Netto-Volumen
+  offene Positionen (Anzahl), aggregiertes Volumen je Symbol, Long/Short
+Zwei Peak-Masse:
+  - peak_open_positions = Maximum der offenen Positions*anzahl*
+  - shock_usd / peak_net_* = am Zeitpunkt des maximalen Dollar-Schocks
+    (Volumen-Peak; Schock je Symbol mit eigenem Kontraktfaktor, Summe —
+    kein Lot-Netting über Instrumente als Hedge)
 ```
 
 **Dollar-Rechnung (zwingend angeben):**

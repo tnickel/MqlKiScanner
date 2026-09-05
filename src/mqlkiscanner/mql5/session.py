@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
-"""MQL5-Session: Login-Flow, Cookie-Verwaltung, gedrosselte Requests.
+"""MQL5-Session: Cookie-HTTP-Client, gedrosselte Requests, Export.
 
-Login (doc/02 Abschnitt 2):
-1. GET /en/auth_login  -> Formular (Login- + Passwortfeld + Hidden-Felder)
-2. POST der Credentials -> Redirect = eingeloggt; Session-Cookie merken
-3. Export-Aufruf mit Cookie
-4. Erfolgs-Check: CSV-Antwort beginnt mit "Time;". Beginnt sie mit
-   "<!DOCTYPE" und enthaelt "Log in" -> Session weg, neu einloggen.
-
-Credentials kommen ausschliesslich aus secrets_store (Umgebung/.env/
-secrets.local.json) — nie als Parameter durch die GUI-UI-Geschichte reichen.
+Anmeldung: MQL5 verlangt ein per JavaScript gesetztes Cookie. Reine
+HTTP-Formular-Logins scheitern deshalb systematisch. Login laeuft ueber
+browser_session.ensure_mql5_cookies (Selenium); diese Klasse nutzt die
+geernteten Cookies fuer schnelle HTTP-Abrufe inkl. Rate-Limit.
 """
 from __future__ import annotations
 
@@ -17,14 +12,23 @@ import time
 from urllib.parse import urljoin
 
 import requests
-from bs4 import BeautifulSoup
 
 from .. import secrets_store
 from ..config import MQL5_BASE
-from .ratelimit import Mql5ThrottleError, RateLimiter, backoff_after_throttle
+from .ratelimit import Mql5HardStopError, Mql5ThrottleError, RateLimiter, backoff_after_throttle
 
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")
+
+
+def export_kinds_for_platform(platform: str | None) -> tuple[str, ...]:
+    """MT4: history (Orderbuch); MT5: positions. Unbekannt: beide versuchen."""
+    p = (platform or "").strip().upper()
+    if p == "MT4":
+        return ("history", "positions")
+    if p == "MT5":
+        return ("positions", "history")
+    return ("positions", "history")
 
 
 class Mql5Session:
@@ -37,48 +41,10 @@ class Mql5Session:
             min_interval_s=self.settings.get("rate_min_interval_s", 2.0),
         )
 
-    # -------------------------------------------------------------- Login
     @property
     def has_credentials(self) -> bool:
         return bool(secrets_store.get_secret("mql5_user")
                     and secrets_store.get_secret("mql5_pass"))
-
-    def login(self, extra_pause_s: float = 0.0) -> bool:
-        """MQL5-Login. True = eingeloggt (oder schon eingeloggt)."""
-        if not self.has_credentials:
-            raise RuntimeError(
-                "Keine MQL5-Credentials gesetzt (Admin-Bereich oder MQL5_USER/MQL5_PASS).")
-        user = secrets_store.get_secret("mql5_user")
-        password = secrets_store.get_secret("mql5_pass")
-
-        self.limiter.wait(extra_pause_s)
-        r = self.http.get(urljoin(MQL5_BASE, "/en/auth_login"), timeout=30)
-        soup = BeautifulSoup(r.text, "html.parser")
-        form = soup.find("form", action=lambda a: a and "auth_login" in a) or soup.find("form")
-        if form is None:
-            # Bereits eingeloggt? Dann zeigt die Seite kein Login-Formular.
-            if self.is_logged_in():
-                self.logged_in = True
-                return True
-            raise RuntimeError("Login-Formular nicht gefunden.")
-
-        payload: dict[str, str] = {}
-        for inp in form.find_all("input"):
-            name = inp.get("name")
-            if not name:
-                continue
-            if inp.get("type", "text").lower() == "password":
-                payload[name] = password
-            elif inp.get("type", "text").lower() in ("text", "email", "tel"):
-                payload[name] = user
-            elif inp.get("type", "text").lower() in ("hidden", "checkbox", "radio"):
-                payload[name] = inp.get("value", "")
-        action = urljoin(MQL5_BASE, form.get("action") or "/en/auth_login")
-
-        self.limiter.wait()
-        r = self.http.post(action, data=payload, timeout=30)
-        self.logged_in = self.is_logged_in()
-        return self.logged_in
 
     def is_logged_in(self) -> bool:
         """Eingeloggt-Check: MQL5 zeigt den Abmelde-Link als
@@ -93,9 +59,9 @@ class Mql5Session:
         except requests.RequestException:
             return False
 
-    # ------------------------------------------------------------ Request
     def get(self, path_or_url: str, extra_pause_s: float = 0.0,
-            max_throttle_retries: int = 3) -> requests.Response:
+            max_throttle_retries: int = 3,
+            allow_http_statuses: tuple[int, ...] = ()) -> requests.Response:
         """GET mit Rate-Limit und Backoff bei 429/503."""
         url = urljoin(MQL5_BASE + "/", path_or_url)
         for attempt in range(max_throttle_retries):
@@ -106,6 +72,11 @@ class Mql5Session:
                     attempt, float(self.settings.get("rate_backoff_429_s", 45.0)))
                 time.sleep(wait_s)
                 continue
+            if r.status_code == 403:
+                raise Mql5HardStopError(
+                    f"MQL5 antwortet mit HTTP 403 (Sperre/Verbot) für {url}")
+            if r.status_code in allow_http_statuses:
+                return r
             r.raise_for_status()
             return r
         raise Mql5ThrottleError(
@@ -113,45 +84,54 @@ class Mql5Session:
             f"{max_throttle_retries} Backoff-Versuchen: {url}")
 
     def ensure_session_for_export(self) -> None:
-        """Vor Exporten: Session pruefen/erneuern — bei scheiterndem Login
-        sofort mit klarer Meldung abbrechen, statt HTML-Exporte zu ziehen."""
+        """Vor Exporten: Session pruefen; bei Bedarf Browser-Login (nicht HTTP)."""
         if not self.has_credentials:
             raise RuntimeError(
                 "Keine MQL5-Credentials gesetzt (Admin-Bereich oder "
                 "MQL5_USER/MQL5_PASS) — Trade-Export nicht moeglich.")
         if self.logged_in and self.is_logged_in():
             return
-        if not self.login():
+        # Bewusst kein HTTP-Formular-Login: MQL5 verlangt JS-Cookies.
+        from .browser_session import ensure_mql5_cookies
+        if not ensure_mql5_cookies(self.settings, self):
             raise RuntimeError(
-                "MQL5-Login fehlgeschlagen (MQL5 meldet 'Incorrect login') — "
-                "Login/E-Mail und Passwort im Admin-Bereich pruefen und dort "
-                "ueber 'MQL5-Login testen' verifizieren.")
+                "MQL5-Browser-Login fehlgeschlagen — Zugangsdaten unter "
+                "Einstellungen prüfen und „MQL5-Login testen“.")
+        self.logged_in = True
 
-    def export_positions_csv(self, signal_id: int, extra_pause_s: float = 0.0) -> str:
+    def export_positions_csv(self, signal_id: int, extra_pause_s: float = 0.0,
+                             platform: str | None = None) -> str:
         """Trade-Export je Signal (doc/02: Antwort muss mit 'Time;' beginnen).
 
-        BOM-tolerant (Chrome-Exporte beginnen mit einer UTF-8-BOM) und
-        retry-tolerant: MQL5 drosselt den Export-Endpunkt bei haeufigen
-        Abrufen kurzzeitig mit einer HTML-Seite — nach Wartezeit klappt
-        es wieder. Bei Login-HTML wird einmal neu angemeldet.
+        MT5: /export/positions — MT4: /export/history (positions → 404).
+        BOM-tolerant und retry-tolerant. Bei Login-HTML: Browser-Session
+        erneuern (ensure_session_for_export), dann erneut versuchen.
         """
         self.ensure_session_for_export()
+        kinds = export_kinds_for_platform(platform)
         last_text = ""
-        for attempt in range(3):
-            r = self.get(f"/en/signals/{signal_id}/export/positions",
-                         extra_pause_s=extra_pause_s)
-            text = r.text.lstrip("\ufeff")
-            if text.lstrip().startswith("Time;"):
-                return text
-            last_text = text
-            if text.lstrip().startswith("<!DOCTYPE") and "auth_login" in text:
-                # Session weg -> einmal neu anmelden (Browser-Fallback greift
-                # auf Ebene ensure_session_for_export), dann erneut versuchen.
-                self.logged_in = False
-                self.ensure_session_for_export()
-            time.sleep(10 * (attempt + 1))
+        last_status = None
+        tried: list[str] = []
+        for kind in kinds:
+            path = f"/en/signals/{signal_id}/export/{kind}"
+            tried.append(kind)
+            for attempt in range(3):
+                r = self.get(path, extra_pause_s=extra_pause_s,
+                             allow_http_statuses=(404,))
+                last_status = r.status_code
+                if r.status_code == 404:
+                    break  # falscher Export-Typ → naechsten kind
+                text = r.text.lstrip("\ufeff")
+                if text.lstrip().startswith("Time;"):
+                    return text
+                last_text = text
+                if text.lstrip().startswith("<!DOCTYPE") and "auth_login" in text:
+                    self.logged_in = False
+                    self.ensure_session_for_export()
+                time.sleep(10 * (attempt + 1))
         raise RuntimeError(
-            f"Export fuer Signal {signal_id} lieferte kein CSV — MQL5 antwortet "
-            f"mit HTML (Anfang: {last_text[:80]!r}). Moegliche Ursache: "
-            "temporaere Drosselung durch MQL5; in ein paar Minuten erneut "
-            "versuchen oder den Cache des Signals nutzen.")
+            f"Export fuer Signal {signal_id} (Plattform={platform or '?'}, "
+            f"versucht: {', '.join(tried)}) lieferte kein CSV "
+            f"(letzter HTTP {last_status}, Anfang: {last_text[:80]!r}). "
+            "Moegliche Ursache: temporaere Drosselung oder Session-Sperre; "
+            "in ein paar Minuten erneut versuchen oder den Cache nutzen.")

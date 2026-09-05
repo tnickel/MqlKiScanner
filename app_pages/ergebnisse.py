@@ -1,4 +1,4 @@
-"""Results workspace: one filtered view, explicit archive provenance."""
+"""Results workspace: database catalog, session run, or archived run."""
 from __future__ import annotations
 
 import json
@@ -16,19 +16,38 @@ from mqlkiscanner.ui_design import apply_theme, info_button, page_header, sectio
 
 apply_theme()
 page_header('Auswertung / Evidenz vor Entscheidung', 'Ergebnisse im Überblick',
-            'Signale vergleichen, Risiken einordnen und die Belege hinter jedem Urteil prüfen.')
+            'Alle gespeicherten Berichte aus der Datenbank — neu aktualisierte Läufe sind markiert.')
 st.session_state.setdefault('scan_results', [])
 st.session_state.setdefault('last_run_file', None)
+st.session_state.setdefault('refreshed_signal_ids', [])
 
 with st.container(border=True):
-    section_header('Datenstand', 'Aktuelle Sitzung oder einen gespeicherten Lauf öffnen.', help_key='results_runs')
+    section_header('Datenstand', 'Datenbank, aktuelle Sitzung oder einen gespeicherten Lauf.',
+                   help_key='results_runs')
     runs = sorted(config.RUNS_DIR.glob('*/results.json'), reverse=True)
-    selected_run = st.selectbox('Lauf', ['Aktuelle Sitzung'] + [str(p) for p in runs[:12]],
-                               format_func=lambda p: p if p == 'Aktuelle Sitzung' else Path(p).parent.name,
-                               key='results_run')
-    if selected_run == 'Aktuelle Sitzung':
-        results = st.session_state.scan_results
-        st.caption('Ergebnisse des letzten Scans in dieser Sitzung. Archive werden separat angezeigt.')
+    options = ['Datenbank (alle Berichte)', 'Aktuelle Sitzung'] + [str(p) for p in runs[:12]]
+
+    def _fmt(p: str) -> str:
+        if p.startswith('Datenbank') or p == 'Aktuelle Sitzung':
+            return p
+        return Path(p).parent.name
+
+    selected_run = st.selectbox('Quelle', options, format_func=_fmt, key='results_run')
+    fresh_ids: set[int] = set(st.session_state.get('refreshed_signal_ids') or [])
+    if not fresh_ids and st.session_state.scan_results:
+        fresh_ids = {r.id for r in st.session_state.scan_results}
+
+    if selected_run.startswith('Datenbank'):
+        results = pipeline.results_from_db()
+        # Frisch aktualisierte Signale oben.
+        results.sort(key=lambda r: (0 if r.id in fresh_ids else 1, (r.name or '').casefold()))
+        st.caption(
+            f'Datenbank · {len(results)} Signale. '
+            f'„NEU“ = im letzten Lauf dieser Sitzung aktualisiert ({len(fresh_ids)} Stück).'
+        )
+    elif selected_run == 'Aktuelle Sitzung':
+        results = list(st.session_state.scan_results)
+        st.caption('Nur die Ergebnisse des letzten Scans in dieser Sitzung.')
     else:
         try:
             data = json.loads(Path(selected_run).read_text(encoding='utf-8'))
@@ -38,12 +57,13 @@ with st.container(border=True):
             st.error(f'Der gespeicherte Lauf konnte nicht gelesen werden: {exc}')
             st.stop()
         st.caption(f'Archiv · {Path(selected_run).parent.name} · historische Momentaufnahme')
+        fresh_ids = set()
 
 if not results:
     with st.container(border=True):
-        st.subheader('Dein erster Prüfbericht beginnt mit einem Scan', icon=':material/manage_search:')
-        st.write('Starte einen Online-Scan oder prüfe die vorhandenen Verifikations-Datensätze ohne Login. Danach stehen hier Kennzahlen und Signal-Details bereit.')
-        st.page_link('app_pages/scan.py', label='Zur Scan-Seite', icon=':material/arrow_forward:')
+        st.subheader('Noch keine Berichte in der Ansicht', icon=':material/manage_search:')
+        st.write('Starte den Workflow oder lade Testdaten. Gespeicherte Auswertungen erscheinen hier unter „Datenbank“.')
+        st.page_link('app_pages/scan.py', label='Zum Workflow', icon=':material/arrow_forward:')
     st.stop()
 
 # Never carry an open report from a different source or filter into this view.
@@ -52,31 +72,44 @@ if st.session_state.get('_results_source') != source_signature:
     st.session_state.pop('report_signal_id', None)
     st.session_state['_results_source'] = source_signature
 
-section_header('Risikobild des Laufs', 'Bewertungen der Engine · zuerst die Evidenz prüfen.', help_key='risk_status')
+section_header('Risikobild', 'Bewertungen der Engine · zuerst die Evidenz prüfen.', help_key='risk_status')
 ampeln = [r.ampel for r in results]
-columns = st.columns(4)
-columns[0].metric('Signale gesamt', len(results))
-columns[1].metric('Kandidaten', ampeln.count('🟢'))
-columns[2].metric('Beobachtung', ampeln.count('🟡'))
-columns[3].metric('Risiko / Ausschluss', ampeln.count('🔴') + ampeln.count('⛔'))
+columns = st.columns(5)
+columns[0].metric('Signale', len(results))
+columns[1].metric('Neu / aktualisiert', sum(1 for r in results if r.id in fresh_ids))
+columns[2].metric('Kandidaten', ampeln.count('🟢'))
+columns[3].metric('Beobachtung', ampeln.count('🟡'))
+columns[4].metric('Risiko / Ausschluss', ampeln.count('🔴') + ampeln.count('⛔'))
 st.caption(f"Vorprüfung ohne vollständige Trade-Forensik: {ampeln.count('⚪')} · leere Werte sind keine Entwarnung.")
 
 with st.container(border=True):
-    section_header('Signale vergleichen', 'Suchen → Zeile auswählen → Details und Bericht prüfen.', help_key='results_filter')
-    c1, c2 = st.columns([2, 1])
+    section_header('Signale vergleichen', 'Suchen → Zeile auswählen → Details und Bericht prüfen.',
+                   help_key='results_filter')
+    c1, c2, c3 = st.columns([2, 1, 1])
     query = c1.text_input('Name oder Signal-ID', placeholder='Signal suchen …', key='results_search')
-    view = c2.segmented_control('Tabellenansicht', ['Kompakt', 'Alle Kennzahlen'], default='Kompakt', key='results_view')
+    view = c2.segmented_control('Tabellenansicht', ['Kompakt', 'Alle Kennzahlen'], default='Kompakt',
+                                key='results_view')
+    only_fresh = c3.toggle('Nur NEU', value=False, key='results_only_fresh',
+                           disabled=not fresh_ids)
     labels = {'🟢': 'Kandidat', '🟡': 'Beobachtung', '🔴': 'Risiko-Flag', '⛔': 'Ausgeschlossen', '⚪': 'Vorprüfung'}
     statuses = st.pills('Statusfilter', list(labels), selection_mode='multi',
                         format_func=lambda s: f'{s} {labels[s]}', key='results_status')
+    # Archiv/leere Frische: Session-State des Toggles nicht anwenden.
+    apply_fresh = bool(only_fresh and fresh_ids)
     visible = [r for r in results if (not statuses or r.ampel in statuses)
-               and (not query.strip() or query.strip().casefold() in f'{r.name} {r.id}'.casefold())]
+               and (not query.strip() or query.strip().casefold() in f'{r.name} {r.id}'.casefold())
+               and (not apply_fresh or r.id in fresh_ids)]
     st.caption(f'{len(visible)} von {len(results)} Signalen angezeigt · Tabellenansicht und Export verwenden dieselben Filter.')
+    show_fresh = fresh_ids if selected_run.startswith('Datenbank') or selected_run == 'Aktuelle Sitzung' else None
     if visible:
-        signature = sha1((source_signature + repr([(r.id, r.name) for r in visible])).encode()).hexdigest()[:12]
-        sel_id = render_results_table(visible, key=f'ergebnisse_table_{signature}', compact=view != 'Alle Kennzahlen')
+        signature = sha1((source_signature + repr([(r.id, r.name) for r in visible])
+                          + repr(sorted(show_fresh or []))).encode()).hexdigest()[:12]
+        sel_id = render_results_table(
+            visible, key=f'ergebnisse_table_{signature}', compact=view != 'Alle Kennzahlen',
+            fresh_ids=show_fresh)
         with st.container(horizontal=True, vertical_alignment='center', gap='xsmall'):
-            csv = results_to_dataframe(visible).drop(columns=['Bericht'], errors='ignore').to_csv(index=False, sep=';').encode('utf-8-sig')
+            csv = results_to_dataframe(visible, fresh_ids=show_fresh).drop(
+                columns=['Bericht'], errors='ignore').to_csv(index=False, sep=';').encode('utf-8-sig')
             st.download_button('Gefilterte Tabelle als CSV', csv, 'mql-signale.csv', 'text/csv',
                                key='results_download', icon=':material/download:')
             info_button('results_runs', key='results_download_help')
@@ -96,5 +129,6 @@ if visible:
     with st.expander('Urteile im Überblick', expanded=False, icon=':material/summarize:'):
         for r in visible:
             with st.container(border=True):
-                st.markdown(f'**{r.ampel} {r.name}** · #{r.id}')
+                mark = ' · **NEU**' if r.id in fresh_ids else ''
+                st.markdown(f'**{r.ampel} {r.name}** · #{r.id}{mark}')
                 st.write(r.urteil or 'Noch kein Urteil vorhanden.')

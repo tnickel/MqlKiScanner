@@ -44,7 +44,7 @@ MODEL_STUFE2 = "glm-5.3"
 # Scan-Grundeinstellungen (in der GUI aenderbar, persistiert in app_settings.json)
 DEFAULT_SETTINGS: dict = {
     "listen_seiten": 2,             # je Liste (MT4 + MT5): Seiten 1..N
-    "top_n_export": 5,              # wie viele Kandidaten bekommen Trade-Export + Forensik
+    "top_n_export": 30,             # wie viele Kandidaten bekommen Trade-Export + Forensik
     "min_abonnenten": 0,            # Vorfilter Kandidatenliste
     "min_wochen": 26,               # Vorfilter: Track-Record-Laenge
     "schranke_eq_dd_pct": 30.0,     # harte Drawdown-Schranke (AGENTS.md)
@@ -52,6 +52,7 @@ DEFAULT_SETTINGS: dict = {
     "rate_min_interval_s": 2.0,     # Rate-Limit: Mindestabstand Requests (doc/02: 1-2 s)
     "rate_pause_zwischen_signalen_s": 5.0,
     "rate_backoff_429_s": 45.0,     # Wartezeit bei HTTP 429/503
+    "mql5_fail_fast_after": 3,      # Abbruch nach N systemischen Export-Fehlern in Folge
     "llm_stufe1": True,             # Massen-Profile (Flash)
     "llm_stufe2": True,             # Verdicts fuer Finalisten (starkes Modell)
     "llm_max_total_tokens": 5_000_000,  # Token-Budget je Lauf (Abo: grosszuegig)

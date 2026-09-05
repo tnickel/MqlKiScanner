@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Schritt-fuer-Schritt-Workflow: Blink-Status, Klick-Buttons, Fortsetzung.
+"""Einzelschritte im Experten-Bereich: Blink-Status und Fortsetzung.
 
-Die Schritte 1-4 sind einzeln klickbar; Zwischenergebnisse (Signale,
-Kandidaten) bleiben sitzungsfest, sodass spaetere Schritte weiterlaufen.
-Der Crawler wird gemockt — kein Netzwerk.
+Die Stationen 1-4 bleiben einzeln klickbar; Zwischenergebnisse (Signale,
+Kandidaten) bleiben sitzungsfest. Der Crawler wird gemockt — kein Netzwerk.
 """
 from __future__ import annotations
 
@@ -84,7 +83,7 @@ def test_step2_without_step1_is_skipped_with_hint():
     assert not at.exception
     wf = at.session_state["scan_workflow"]
     assert wf["steps"]["kandidaten"]["status"] == "skipped"
-    assert "Schritt 1" in wf["steps"]["kandidaten"]["detail"]
+    assert "Station 1" in wf["steps"]["kandidaten"]["detail"]
 
 
 def test_step3_without_step2_is_skipped_with_hint():
@@ -95,4 +94,4 @@ def test_step3_without_step2_is_skipped_with_hint():
     assert not at.exception
     wf = at.session_state["scan_workflow"]
     assert wf["steps"]["forensik"]["status"] == "skipped"
-    assert "Schritt 2" in wf["steps"]["forensik"]["detail"]
+    assert "Station 2" in wf["steps"]["forensik"]["detail"]

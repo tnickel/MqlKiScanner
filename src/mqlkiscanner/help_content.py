@@ -2,13 +2,15 @@
 
 HELP_CONTENT = {
     "workspace": ("So arbeitest du mit dem Scanner", """
-**1 · Vorbereiten.** Unter Einstellungen hinterlegst du MQL5-Zugang und optional einen KI-Key. Auf der Scan-Seite legst du Umfang und Vorfilter fest. Die lokalen Verifikationsdaten funktionieren ohne Netzwerk.
+**Kurzfassung:** Einstellungen ausfüllen → auf der Scan-Seite **Starte Workflow** drücken → unter Ergebnisse die Ampel und Belege prüfen.
 
-**2 · Ablauf verfolgen.** Der Scanner liest Listen, wählt Kandidaten aus, lädt Daten und führt die Forensik durch. Optional folgen drei KI-Analysen. Die Statusanzeige benennt laufende, folgende und ausgelassene Schritte. Ein abgeschlossener Abruf ist noch kein positives Urteil über ein Signal.
+**1 · Einmal vorbereiten.** Unter Einstellungen MQL5-Zugang und optional einen KI-Key hinterlegen. Testdaten gehen auch ohne Login.
 
-**3 · Ergebnisse prüfen.** Filtere die Tabelle, wähle eine Zeile und prüfe zuerst Drawdown, Exposure und Stop-Nachweis. Die KI erläutert die Befunde; die Zahlen berechnet die Engine.
+**2 · Workflow starten.** Ein Knopf führt den Ablauf aus: Daten von MQL5 holen → speichern → Computer prüft → optional KI-Bericht. Die Statuskarten zeigen, wo der Lauf gerade steht. Fertig heißt nicht „empfohlen“.
 
-**Gelbes i.** Öffnet Erklärungen zur benachbarten Aktion oder zum Bereich. Schließe das Fenster über „Verstanden“, das Kreuz oder Escape.
+**3 · Ergebnisse lesen.** Tabelle filtern, Zeile wählen, zuerst Drawdown, Exposure und Stop-Nachweis ansehen. Die KI erklärt; die Zahlen rechnet das Programm.
+
+**Gelbes i.** Öffnet kurze Hilfe zum Nachbarn. Schließen mit „Verstanden“, Kreuz oder Escape.
 """),
     "connections": ("Zugänge und Bereitschaft", """
 **MQL5** benötigt Benutzername und Passwort für authentifizierte Trade-Exporte. Sind beide hinterlegt, ist der Zugang konfiguriert, aber noch nicht als gültig getestet. Ein abgelaufener Login kann beim Export weiterhin scheitern.
@@ -17,12 +19,12 @@ HELP_CONTENT = {
 
 **Ohne Zugänge** kannst du lokale Verifikationsdaten auswerten. Ohne KI-Key bleiben berechnete Befunde verfügbar; es entstehen keine KI-Berichte.
 """),
-    "results_runs": ("Aktueller Lauf und gespeicherte Ergebnisse", """
-**Aktuelle Sitzung** zeigt die zuletzt in dieser Sitzung erzeugten Ergebnisse. Ein gespeicherter Lauf zeigt seinen damaligen Datenstand. Der Wechsel startet keinen Abruf und keine neue Analyse.
+    "results_runs": ("Aktueller Lauf, Archiv und Datenbank", """
+**Datenbank (alle Berichte)** zeigt alle in SQLite gespeicherten Signale mit Forensik und KI-Texten. Signale aus dem letzten Lauf dieser Sitzung sind in der Spalte **Stand** mit **NEU** markiert und stehen oben.
 
-**Datenstand beachten.** Archivierte Kennzahlen sind historische Momentaufnahmen. Der Dateiname bezeichnet den Lauf, nicht zwingend das Datum der zugrunde liegenden Trades. Die Auswahl eines Archivs überschreibt die aktuelle Sitzung nicht.
+**Aktuelle Sitzung** zeigt nur den letzten Scan in diesem Browser-Tab. **Archiv** öffnet einen gespeicherten Laufordner.
 
-**CSV herunterladen** exportiert genau die aktuell gefilterten Tabellenzeilen. Ausführliche KI-Texte liest du über „Bericht“ oder in der Signal-Detailansicht.
+Der Wechsel startet keinen neuen Abruf. CSV exportiert die aktuell gefilterten Zeilen.
 """),
     "results_filter": ("Ergebnisse suchen und filtern", """
 Die Textsuche findet Signalnamen oder IDs. Im Statusfilter sind mehrere Einstufungen wählbar; ohne Auswahl sind alle sichtbar. Suche und Statusfilter gelten gemeinsam für Tabelle, Export und Urteile.

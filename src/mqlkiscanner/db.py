@@ -15,6 +15,7 @@ Server noetig.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import sqlite3
@@ -62,11 +63,16 @@ CREATE INDEX IF NOT EXISTS idx_analyses_sig_kind ON analyses(signal_id, kind, id
 """
 
 
-def _connect() -> sqlite3.Connection:
+@contextlib.contextmanager
+def _connect():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 def init_db() -> None:
@@ -137,6 +143,43 @@ def get_latest_analysis(signal_id: int, kind: str) -> dict | None:
             "WHERE signal_id=? AND kind=? ORDER BY id DESC LIMIT 1",
             (signal_id, kind)).fetchone()
     return dict(row) if row else None
+
+
+def list_catalog() -> list[dict]:
+    """Alle Signale mit Forensik und neuesten KI-Texten (eine Zeile je Signal)."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT s.signal_id, s.name, s.platform, s.url, s.autor, s.abo_preis,
+                   s.abonnenten, s.wochen, s.stats_json, s.updated_at AS signal_updated,
+                   t.path AS trades_path, t.fetched_at AS trades_fetched,
+                   f.json AS forensik_json, f.updated_at AS forensik_updated,
+                   (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
+                      AND a.kind='trade_analyse' ORDER BY a.id DESC LIMIT 1) AS trade_analyse,
+                   (SELECT created_at FROM analyses a WHERE a.signal_id=s.signal_id
+                      AND a.kind='trade_analyse' ORDER BY a.id DESC LIMIT 1) AS trade_at,
+                   (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
+                      AND a.kind='risiko_analyse' ORDER BY a.id DESC LIMIT 1) AS risiko_analyse,
+                   (SELECT created_at FROM analyses a WHERE a.signal_id=s.signal_id
+                      AND a.kind='risiko_analyse' ORDER BY a.id DESC LIMIT 1) AS risiko_at,
+                   (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
+                      AND a.kind='gesamtbericht' ORDER BY a.id DESC LIMIT 1) AS gesamtbericht,
+                   (SELECT created_at FROM analyses a WHERE a.signal_id=s.signal_id
+                      AND a.kind='gesamtbericht' ORDER BY a.id DESC LIMIT 1) AS gesamt_at
+            FROM signals s
+            LEFT JOIN trade_files t ON t.signal_id = s.signal_id
+            LEFT JOIN forensik f ON f.signal_id = s.signal_id
+            ORDER BY COALESCE(f.updated_at, s.updated_at) DESC, s.signal_id DESC
+            """
+        ).fetchall()
+    out = []
+    for row in rows:
+        item = dict(row)
+        item["stats"] = json.loads(item.pop("stats_json") or "{}")
+        item["forensik"] = json.loads(item.pop("forensik_json") or "null")
+        out.append(item)
+    return out
 
 
 def get_signal(signal_id: int) -> dict | None:

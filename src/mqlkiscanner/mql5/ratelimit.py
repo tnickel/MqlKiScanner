@@ -32,6 +32,35 @@ class Mql5ThrottleError(RuntimeError):
     """MQL5 drosselt uns (429/503) — nach Backoff immer noch blockiert."""
 
 
+class Mql5HardStopError(RuntimeError):
+    """Systemische MQL5-Sperre/Drosselung — Pipeline soll Fail-Fast abbrechen."""
+
+    def __init__(self, message: str, result=None):
+        super().__init__(message)
+        self.result = result
+
+
+def is_hard_mql5_failure(exc: BaseException | str) -> bool:
+    """Erkennt Fehler, die eher Account-/IP-Sperre als Einzel-Signal-Pech sind."""
+    text = str(exc)
+    needles = (
+        "Mql5ThrottleError",
+        "Mql5HardStopError",
+        "drosselt weiter",
+        "HTTP 403",
+        "HTTP 429",
+        "HTTP 503",
+        "auth_login",
+        "Login-HTML",
+        "lieferte kein CSV",
+        "Browser-Login fehlgeschlagen",
+        "Incorrect login",
+        "MQL5-Login fehlgeschlagen",
+        "Login über Browser nicht bestätigt",
+    )
+    return any(n.casefold() in text.casefold() for n in needles)
+
+
 def backoff_after_throttle(attempt: int, base_s: float) -> float:
     """Wartezeit vor dem (attempt+1)-ten Versuch, attempt ab 0."""
     return base_s * (2 ** attempt)

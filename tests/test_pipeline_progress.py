@@ -1,4 +1,7 @@
-"""The progress UI must count completed model work and retain failure details."""
+"""The progress UI must count completed model work and retain failure details.
+
+Trade- und Risiko-Analyse laufen parallel; der Gesamtbericht danach.
+"""
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -47,8 +50,9 @@ def test_llm_progress_starts_at_zero_and_counts_saved_answers():
     assert events[-1][0:2] == (3, 3)
     assert [done for done, _, _ in events] == sorted(done for done, _, _ in events)
     starts = [event for event in events if "warte auf Modellantwort" in event[2]]
-    assert [done for done, _, _ in starts] == [0, 1, 2]
-    assert [call[1]["stufe"] for call in fake.calls] == [2, 1, 2]
+    assert [done for done, _, _ in starts] == [0, 2]
+    assert {call[1]["stufe"] for call in fake.calls[:2]} == {1, 2}
+    assert fake.calls[2][1]["stufe"] == 2
     for kind in ("trade_analyse", "risiko_analyse", "gesamtbericht"):
         assert db.get_latest_analysis(result.id, kind)["text"] == getattr(result, kind)
 
@@ -67,7 +71,7 @@ def test_llm_error_never_reports_full_success(failure):
     assert summary["skipped"] == 1
     assert summary["reason"]
     assert result.llm_fehler == str(failure)
-    assert result.trade_analyse and not result.gesamtbericht
+    assert (result.trade_analyse or result.risiko_analyse) and not result.gesamtbericht
     assert all(done < total for done, total, _ in events)
 
 

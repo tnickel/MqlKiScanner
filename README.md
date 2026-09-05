@@ -1,122 +1,97 @@
+<p align="center">
+  <img src="assets/mqlkiscanner-banner.png" alt="MqlKiScanner — Forensic Risk Analysis for MQL5 Signals" width="100%">
+</p>
+
 # MqlKiScanner
 
-Scanner für MQL5-Handelssignale mit forensischer Risiko-Analyse und
-zweistufigem GLM-LLM-Layer. Fortsetzung einer forensischen Analyse-Reihe
-(6 Tiefenanalysen, 37 gescannte Signale, Sep. 2026).
+**Forensischer Scanner für MQL5-Handelssignale (MT4 + MT5).**  
+Python · Streamlit · optionale GLM-Berichte.
 
-**Grundsatz: Risiko vor Ertrag.** Harte 30-%-Drawdown-Schranke, mindestens
-5 % Ertrag/Monat, und: kein positives Urteil ohne bewiesenen Stop-Loss.
+> **Risiko vor Ertrag.** Harte Drawdown-Schranke (Standard 30 %), Mindest-Ertrag 5 %/Monat, und kein positives Urteil ohne belastbaren Stop-Nachweis.
+
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
+[![License](https://img.shields.io/badge/license-see%20repo-lightgrey.svg)](#lizenz--hinweis)
+
+---
+
+## Warum dieses Tool?
+
+Signalnamen lügen („Low Risk“, „Stable“, „Hedge“). Abonnentenzahlen korrelieren mit Marketing, nicht mit Qualität. MqlKiScanner holt Trade-Historien, **rechnet** Exposure, Martingale, Drawdown und Stop-Signaturen selbst — und lässt ein LLM nur noch formulieren, nie rechnen.
+
+Entstanden aus einer forensischen Analyse-Reihe (u. a. Gold Spike, KiraCat, Pure Gold 2000) — Ankerwerte sind in `scripts/verify_engine.py` regressionssicher hinterlegt.
+
+## Features
+
+- **MT4 + MT5** Signallisten crawlen, filtern, Top-N gründlich prüfen
+- **Korrekte Export-URLs:** MT5 `/export/positions`, MT4 `/export/history` (Orderbuch mit S/L)
+- **Forensik-Batterie:** Martingale · Peak-Exposure (Anzahl- + Schock-Peak) · Stops · Drawdown
+- **Harte Schranke** auf max(Trading-DD, EQ-DD); Score mit 7 Dimensionen
+- **Optional GLM:** Trade-Analyse + Risiko parallel, dann Gesamtbericht
+- **SQLite-Persistenz** und Ergebnisse-UI mit NEU-Markierung
+- **Rate-Limit / Fail-Fast** zum Schutz des MQL5-Accounts
 
 ## Schnellstart
 
-**Windows:** `start.bat` doppelklicken — findet Python (oder `.venv`),
-installiert fehlende Abhängigkeiten beim ersten Start selbst und öffnet
-die App unter http://localhost:8501 im Browser.
-
-Manuell:
-
 ```bash
+git clone https://github.com/tnickel/MqlKiScanner.git
+cd MqlKiScanner
+python -m venv .venv
+# Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+copy .env.example .env   # Keys eintragen — oder später in der Admin-UI
 streamlit run streamlit_app.py
 ```
 
-- **Scan-Seite:** 4 sichtbare Schritte — (1) MQL5-Signal-Listen lesen,
-  (2) Kandidaten-Liste erzeugen, (3) Daten extrahieren + Forensik,
-  (4) LLM-Auswertung — plus Ergebnistabelle mit Ampel und Detailansicht.
-  Ohne MQL5-Login gibt es einen Verifikations-Modus: die 9 realen
-  Datensätze aus `data/raw/` laufen durch die Engine (83/83 Checks
-  reproduzieren die Werte aus `doc/01_analysen-verlauf.md`, Aufruf:
-  `python scripts/verify_engine.py`).
-- **Ergebnisse-Seite:** Gesamttabelle (Filter, Zeilenauswahl), Urteile,
-  Detailkarten je Signal.
-- **Admin-Seite:** GLM-API-Key und MQL5-Login setzen (siehe unten),
-  Verbindungstests, Rate-Limits, Prompt-Vorlagen anzeigen/bearbeiten.
+Windows: `start.bat` doppelklicken → http://localhost:8501
 
-## Sicherheit: Keys und Logins
+Ohne MQL5-Login: **Testdaten** aus `data/raw/` (Engine-Verifikation).  
+Ohne GLM-Key: Scan + Forensik laufen, KI-Schritt ist optional.
 
-Geheimnisse landen **nie** im Repository. Reihenfolge beim Laden:
-Umgebungsvariable → `.env` → `config/secrets.local.json`
-(beide Dateien stehen in `.gitignore`).
+## Secrets (wichtig für Forks)
 
-| Geheimnis | Env-Variable | Zweck |
+| Geheimnis | Variable | Speicherung |
 |---|---|---|
-| GLM-API-Key | `GLM_API_KEY` (oder `MQLKISCANNER_GLM_KEY`) | LLM-Auswertung |
-| MQL5-Login | `MQL5_USER` | Trade-Exporte |
-| MQL5-Passwort | `MQL5_PASS` | Trade-Exporte |
+| GLM / Z.ai Key | `GLM_API_KEY` | Env / `.env` / Admin-UI |
+| MQL5 User | `MQL5_USER` | Env / `.env` / Admin-UI |
+| MQL5 Passwort | `MQL5_PASS` | Env / `.env` / Admin-UI |
 
-Vorlage: `.env.example` kopieren nach `.env` und füllen — oder direkt in
-der App im Admin-Bereich setzen (wird nach `config/secrets.local.json`
-geschrieben, ebenfalls gitignored).
+**Nie committen:** `.env`, `config/secrets.local.json`, `data/mql5_cookies.json`, `data/chrome_profile/`.  
+Details: [`SECURITY.md`](SECURITY.md) · [`doc/09_sicherheit.md`](doc/09_sicherheit.md)
 
-## LLM-Layer (GLM, dreistufig — Nutzer-Prinzip)
+## Dokumentation
 
-- **Prompt 1 — Trade-Analyse** (`glm-5.3`, stark): ermittelt die Strategie
-  **anhand der Trades** — die Engine stellt Statistiken plus kuratierte
-  Beispiel-Trades (schlechteste/beste, längste Verlustserie, größter Korb,
-  erster Handelstag) als JSON bereit.
-- **Prompt 2 — Risiko-Analyse** (`glm-5.3-flash`): Risikoprofil aus den
-  Forensik-Kennzahlen (Drawdown, Serien, Exposure, Stop-Nachweis).
-- **Prompt 3 — Gesamtbericht** (`glm-5.3`, stark): wertet **alle
-  Teilergebnisse** aus und schreibt einen ausführlichen Bericht (8 Abschnitte,
-  ~800–1200 Wörter): Was ist das für ein Algo, wie handelt er, wie riskant
-  ist er, Urteil + Score + Bedingungen.
-- **In der Tabelle steht nur die Kurzfassung** — den ausführlichen Bericht
-  öffnet man per **Bericht-Button** in der Tabellenzeile.
-- Alle Teilergebnisse landen in einer **SQLite-Datenbank**
-  (`data/mqlkiscanner.db`): Signale, Trade-Dateien (mit SHA-256), Forensik-
-  JSON und die LLM-Analysen je Stufe — Berichte bleiben so über Läufe hinweg
-  erhalten.
-- Token-Limits sind großzügig (Abo): ~8–24k completion-Tokens je Prompt,
-  5 Mio. Budget je Lauf — im Admin-Bereich änderbar.
-- Die Engine rechnet **alle** Zahlen; das LLM bekommt nur fertige
-  Befund-JSONs und interpretiert. Prompts liegen editierbar unter
-  `config/prompts/`.
-- **Endpunkt-Hinweis (wichtig):** Z.ai hat zwei Endpunkte mit getrennten
-  Kontingenten — Abo-Keys aus dem **GLM Coding Plan** laufen über
-  `https://api.z.ai/api/coding/paas/v4` (Standard hier), Pay-as-you-go-Keys
-  mit Guthaben über `https://api.z.ai/api/paas/v4`. Falscher Endpunkt =
-  Fehler 1113 „Insufficient balance“. Umstellbar im Admin-Bereich.
-- Die Engine läuft komplett ohne LLM-Key (Schritt 4 ist optional).
-
-## Rate-Limiting (Account-Schutz)
-
-Alle MQL5-Requests laufen über `RateLimiter` (mql5/ratelimit.py):
-Mindestabstand je Request (Standard 2 s + Jitter), Zusatzpause zwischen
-Signalen (5 s), Backoff bei HTTP 429/503. Trade-Exporte werden 24 h
-gecached (`data/trades/`). Limits im Admin-Bereich änderbar — aggressiv
-senken kann zur Account-Sperre führen (MQL5-ToS).
-
-## Projektstruktur
-
-```
-streamlit_app.py     App-Einstieg (Navigation, Status)
-app_pages/           scan.py, ergebnisse.py, admin.py
-src/mqlkiscanner/    Engine + Pipeline
-  parser.py stats.py engine.py scoring.py pipeline.py
-  forensics/         martingale, exposure, stops, drawdown, baskets, news
-  mql5/              session (Login+Rate-Limit), crawler, signal_stats, exporter
-  llm/               client (GLM 2-stufig), prompts (editierbar)
-scripts/
-  verify_engine.py   Verifikation gegen doc/01-Werte (83 Checks)
-  calibrate_scoring.py  Score-Kalibrierung gegen die 6 Tiefanalysen
-  reference/         bewährte Analyse-Skripte aus der Reihe
-data/raw/            reale Trade-CSVs (Testdaten, Verifikations-Modus)
-data/known_signals.json   Ausschlüsse / Watchlist / Empfehlung
-config/prompts/      LLM-Prompt-Vorlagen (editierbar)
-doc/                 Analyse-Verlauf, MQL5-Technik, Test-Specs, Roadmap
-tests/test_app.py    Headless-UI-Tests (st.testing.v1.AppTest)
-```
+| Dokument | Inhalt |
+|---|---|
+| [`doc/README.md`](doc/README.md) | Dokumentations-Index |
+| [`doc/07_benutzerhandbuch.md`](doc/07_benutzerhandbuch.md) | Bedienung der App |
+| [`doc/08_architektur.md`](doc/08_architektur.md) | Schichten & Datenfluss |
+| [`doc/02_technik-mql5.md`](doc/02_technik-mql5.md) | Endpunkte & CSV-Formate |
+| [`doc/03_forensik-tests.md`](doc/03_forensik-tests.md) | Test-Spec & Scoring |
+| [`AGENTS.md`](AGENTS.md) | Regeln für KI-Agenten |
 
 ## Tests
 
 ```bash
-python scripts/verify_engine.py   # 83 Checks gegen die Analyse-Reihe
-python tests/test_app.py          # 5 UI-Tests (headless)
-python scripts/calibrate_scoring.py
+python scripts/verify_engine.py   # Anker gegen die Analyse-Reihe
+python -m pytest tests -q         # Unit- + UI-Tests
 ```
 
-## Zweck-Hinweis
+## Projektstruktur (kurz)
 
-Das Tool analysiert und bewertet ausschließlich. Kein Order-Routing,
-keine Anlageberatung. „Bewiesener Stop“ heißt nicht risikolos —
-Historie ≠ Zukunft.
+```
+streamlit_app.py          Einstieg
+app_pages/                Scan · Ergebnisse · Admin
+src/mqlkiscanner/         Engine, Forensik, MQL5, LLM, DB
+data/raw/                 Öffentliche Referenz-CSVs (Verifikation)
+config/prompts/           Editierbare LLM-Prompts
+doc/                      Ausführliche Dokumentation
+tests/                    pytest
+```
+
+## Lizenz / Hinweis
+
+Analyse-Werkzeug, **keine** Anlageberatung und **kein** Order-Routing.  
+Historische Kennzahlen ≠ Zukunft. Automatisierte Abrufe können gegen die
+MQL5-Nutzungsbedingungen verstoßen — Rate-Limits beachten, Account-Risiko
+liegt beim Nutzer.

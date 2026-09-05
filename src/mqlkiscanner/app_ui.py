@@ -7,18 +7,21 @@ import streamlit as st
 from mqlkiscanner.ui_design import action_button, info_button, section_header
 
 
-def results_to_dataframe(results) -> pd.DataFrame:
+def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataFrame:
     rows = [r.to_row() for r in results]
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
+    if fresh_ids is not None:
+        df.insert(0, "Stand", ["NEU" if r.id in fresh_ids else "" for r in results])
     df["Bericht"] = ":material/description: Bericht"
     return df
 
 
-def render_results_table(results, key: str = "results_table", compact: bool = True) -> int | None:
+def render_results_table(results, key: str = "results_table", compact: bool = True,
+                         fresh_ids: set[int] | None = None) -> int | None:
     """Tabelle mit Ampel- und Bericht-Button; Rueckgabe = gewaehlte Signal-ID."""
-    df = results_to_dataframe(results)
+    df = results_to_dataframe(results, fresh_ids=fresh_ids)
     if df.empty:
         st.info("Noch keine Ergebnisse — erst einen Scan starten oder die "
                 "Verifikations-Datensaetze laden.")
@@ -30,15 +33,23 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
         if click is not None and getattr(click, "row", None) is not None:
             st.session_state["report_signal_id"] = results[click.row].id
 
+    column_order = None
+    if compact:
+        column_order = (["Stand"] if fresh_ids is not None else []) + [
+            "Ampel", "Name", "EQ-DD %", "Trading-DD %", "Ertrag/Monat %",
+            "Stop", "Score", "Urteil", "Bericht", "Link"]
+
     event = st.dataframe(
         df,
         key=key,
         on_select="rerun",
         selection_mode="single-row",
         hide_index=True,
-        column_order=(["Ampel", "Name", "EQ-DD %", "Trading-DD %", "Ertrag/Monat %",
-                       "Stop", "Score", "Urteil", "Bericht", "Link"] if compact else None),
+        column_order=column_order,
         column_config={
+            "Stand": st.column_config.TextColumn(
+                "Stand", width="small",
+                help="NEU = im letzten Lauf dieser Sitzung aktualisiert"),
             "Ampel": st.column_config.TextColumn("", width="small"),
             "ID": st.column_config.NumberColumn("ID", format="%d"),
             "Name": st.column_config.TextColumn("Name", width="medium", pinned=True),
@@ -114,7 +125,7 @@ def render_detail(result) -> None:
     section_header("Risiko und Ertrag", "Historische Kennzahlen · fehlende Daten erscheinen als Strich.", help_key="risk_metrics")
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Risiko-Score", f"{result.score:.1f}" if result.score is not None else "—")
-    col2.metric("Trading-DD (Engine)",
+    col2.metric("Trading-DD max. relativ",
                 f"{result.trading_dd_pct:.1f} %" if result.trading_dd_pct is not None else "—")
     col3.metric("EQ-DD (Plattform)",
                 f"{result.dd_equity_pct:.1f} %" if result.dd_equity_pct is not None else "—")

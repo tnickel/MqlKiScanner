@@ -14,7 +14,7 @@ Drei Evidenzstufen:
 from __future__ import annotations
 
 import statistics
-from collections import Counter
+from collections import Counter, defaultdict
 
 from ..models import ParsedExport
 
@@ -71,37 +71,110 @@ def _orderbook_evidence(parsed: ParsedExport) -> dict:
         "rr_median": round(statistics.median(rr), 2) if rr else None,
         "sl_loss_dist_median": round(statistics.median(sl_loss_dists), 2) if sl_loss_dists else None,
         "sl_loss_dist_max": round(max(sl_loss_dists), 2) if sl_loss_dists else None,
-        "verdict": (
-            "BEWIESEN: jede Position mit SL/TP im Orderbuch; Stop-Ausloesungen "
-            "rekonstruierbar" if with_sl_tp else "kein SL im Orderbuch"
-        ),
+        "verdict": _orderbook_verdict(len(trades), len(with_sl_tp), len(sl_exits)),
     }
 
 
+def _orderbook_verdict(total: int, with_sl_tp: int, sl_exits: int) -> str:
+    if total <= 0:
+        return "kein SL im Orderbuch"
+    if with_sl_tp <= 0:
+        return "kein SL/TP-Paar im Orderbuch"
+    pct = with_sl_tp / total * 100
+    if with_sl_tp == total and sl_exits > 0:
+        return ("BEWIESEN: jede Position mit SL/TP im Orderbuch; "
+                "Stop-Ausloesungen rekonstruierbar")
+    if with_sl_tp == total:
+        return (f"Orderbuch: {with_sl_tp}/{total} Positionen mit SL/TP-Feldern "
+                "(keine [sl]-Ausfuehrungen im Export)")
+    return (f"TEILWEISE: {with_sl_tp}/{total} Positionen ({pct:.0f} %) mit SL/TP "
+            "im Orderbuch — kein vollstaendiger Stop-Nachweis")
+
+
 # ---------------------------------------------------------------- Stufe 2
+def _distance_bin(distance: float, symbol: str) -> float:
+    """Symbolgerechte Rundung: Gold/Index 0.1, FX 1 Pip (nicht pauschal 0.1)."""
+    s = (symbol or "").upper()
+    if s.startswith(("XAU", "XAG", "XPT")):
+        return round(distance, 1)
+    if any(idx in s for idx in ("US30", "US500", "NAS100", "GER40", "UK100", "JP225", "SPX", "NDX")):
+        return round(distance, 1)
+    if "JPY" in s:
+        return round(distance, 2)   # 0.01 ≈ 1 Pip
+    return round(distance, 4)       # 0.0001 ≈ 1 Pip (Majors)
+
+
 def _distance_clustering(trades) -> dict:
-    dists = sorted(d for t in trades if (d := t.loss_distance()) is not None)
-    if not dists:
+    """Cluster je Symbol mit angepasster Bin-Weite; staerkstes Symbol gewinnt."""
+    by_sym: dict[str, list[float]] = defaultdict(list)
+    for t in trades:
+        d = t.loss_distance()
+        if d is not None:
+            by_sym[t.symbol].append(d)
+    if not by_sym:
         return {"n_losses_with_distance": 0, "verdict": "keine Verluste mit Preisdaten"}
-    n = len(dists)
-    rounded = Counter(round(d, 1) for d in dists)
-    top_level, top_count = rounded.most_common(1)[0]
-    top_share = top_count / n
-    spread = dists[-1] / max(dists[n // 2], 1e-9)  # max / median
-    clustered = top_share >= 0.25
-    free_running = top_share < 0.10 and spread >= 10.0
+
+    best: dict | None = None
+    all_dists: list[float] = []
+    for sym, dists in by_sym.items():
+        all_dists.extend(dists)
+        n = len(dists)
+        if n < 3:
+            continue
+        rounded = Counter(_distance_bin(d, sym) for d in dists)
+        top_level, top_count = rounded.most_common(1)[0]
+        top_share = top_count / n
+        sorted_d = sorted(dists)
+        spread = sorted_d[-1] / max(sorted_d[n // 2], 1e-9)
+        cand = {
+            "symbol": sym,
+            "n": n,
+            "top_level": top_level,
+            "top_share": top_share,
+            "spread": spread,
+            "clustered": top_share >= 0.25,
+            "free_running": top_share < 0.10 and spread >= 10.0,
+            "dists": sorted_d,
+        }
+        if best is None or cand["top_share"] > best["top_share"] or (
+                cand["top_share"] == best["top_share"] and cand["n"] > best["n"]):
+            best = cand
+
+    n_all = len(all_dists)
+    if best is None:
+        # Zu wenige Verluste je Symbol — Gesamtstatistik ohne Cluster-Claim
+        sorted_all = sorted(all_dists)
+        return {
+            "n_losses_with_distance": n_all,
+            "loss_dist_median": round(statistics.median(sorted_all), 5),
+            "loss_dist_p75": round(sorted_all[3 * n_all // 4], 5),
+            "loss_dist_p90": round(sorted_all[9 * n_all // 10], 5),
+            "loss_dist_max": round(sorted_all[-1], 5),
+            "top_distance_level": None,
+            "top_distance_share_pct": None,
+            "spread_max_over_median": None,
+            "clustered": False,
+            "verdict": "zu wenige Verluste je Symbol fuer Cluster-Aussage (kein Nachweis)",
+        }
+
+    n = best["n"]
+    dists = best["dists"]
+    clustered = best["clustered"]
+    free_running = best["free_running"]
     return {
-        "n_losses_with_distance": n,
-        "loss_dist_median": round(statistics.median(dists), 2),
-        "loss_dist_p75": round(dists[3 * n // 4], 2),
-        "loss_dist_p90": round(dists[9 * n // 10], 2),
-        "loss_dist_max": round(dists[-1], 2),
-        "top_distance_level": top_level,
-        "top_distance_share_pct": round(top_share * 100, 1),
-        "spread_max_over_median": round(spread, 1),
+        "n_losses_with_distance": n_all,
+        "cluster_symbol": best["symbol"],
+        "loss_dist_median": round(statistics.median(dists), 5),
+        "loss_dist_p75": round(dists[3 * n // 4], 5),
+        "loss_dist_p90": round(dists[9 * n // 10], 5),
+        "loss_dist_max": round(dists[-1], 5),
+        "top_distance_level": best["top_level"],
+        "top_distance_share_pct": round(best["top_share"] * 100, 1),
+        "spread_max_over_median": round(best["spread"], 1),
         "clustered": clustered,
         "verdict": (
-            f"Stop-Signatur: {top_share*100:.0f}% der Verlustdistanzen bei {top_level}"
+            f"Stop-Signatur ({best['symbol']}): {best['top_share']*100:.0f}% der "
+            f"Verlustdistanzen bei {best['top_level']}"
             if clustered
             else ("Verlustdistanzen ungebundelt, laufen frei (kein Stop-Nachweis)"
                   if free_running else

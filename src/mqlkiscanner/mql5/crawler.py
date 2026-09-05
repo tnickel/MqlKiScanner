@@ -24,11 +24,12 @@ def _num(text: str | None) -> float | None:
     if not text:
         return None
     cleaned = text.replace("\xa0", " ").replace(" ", "")
+    # Tausender-Kommas (1,403 / 1,403.03) entfernen — MQL5-EN-Karten
+    cleaned = re.sub(r",(?=\d{3}(\D|$))", "", cleaned)
     m = _NUM.search(cleaned)
     if not m:
         return None
     raw = m.group(0).rstrip(".")
-    # MQL5 nutzt Punkt als Dezimaltrenner, keine Tausenderpunkte in Karten
     try:
         return float(raw)
     except ValueError:

@@ -83,8 +83,22 @@ def run(parsed: ParsedExport) -> dict:
     ladder = _basket_ladder_test(parsed.trades)
     result.update(succ)
     result["basket_ladder"] = ladder
+    # Korb-Leiter ist ein eigenstaendiger Kanal (Modulbeschreibung): auch ohne
+    # auswertbare nicht-ueberlappende Nachfolger zählt sie fuer das Flag.
     if not result.get("n_after_loss"):
-        result.update({"flag": False, "note": "keine nicht-ueberlappenden Nachfolger"})
+        result["flag"] = bool(ladder.get("flag"))
+        result["note"] = "keine nicht-ueberlappenden Nachfolger"
+        if ladder.get("flag") and ladder.get("examples"):
+            ex = ladder["examples"][0]
+            result["evidence"] = [
+                f"{ladder['escalating_baskets']} eskalierende Korb-Leitern "
+                f"(z. B. {' -> '.join(ex['ladder'])} @ {ex['symbol']})"
+            ]
+            result["interpretation"] = "Martingale-Signatur (Korb-Leiter)"
+        else:
+            result["evidence"] = []
+            result["interpretation"] = (
+                "keine Martingale-Eskalation (keine Nachfolger, keine Korb-Leiter)")
         return result
     result["flag"] = bool(succ["flag"] or ladder["flag"])
     result["evidence"] = [e for e, on in (

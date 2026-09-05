@@ -33,13 +33,14 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 
 ## Technisches Wissen (kritisch — hier wurden Fehler gemacht, nicht wiederholen)
 
-1. **Trade-Export:** `https://www.mql5.com/en/signals/{ID}/export/positions`
-   (Login-Cookie nötig). Erfolg: Antwort beginnt mit `Time;`. Session abgelaufen:
+1. **Trade-Export:** MT5: `https://www.mql5.com/en/signals/{ID}/export/positions`;
+   MT4: `.../export/history` (Orderbuch mit S/L; `/export/positions` → HTTP 404).
+   Login-Cookie nötig. Erfolg: Antwort beginnt mit `Time;`. Session abgelaufen:
    Antwort ist Login-HTML (`<!DOCTYPE`) → neu einloggen
    (https://www.mql5.com/en/auth_login). Zugangsdaten: beim Nutzer erfragen
    (stehen auch in der Automation im Workspace Allgemein) — **nie in Code/Repo**.
-2. **Positions-Export enthält KEINE SL/TP-Spalten.** Stop-Nachweis nur über
-   (a) Orderbuch-CSV (MT4 "history"-Format mit S/L-Spalte und [sl]/[tp]-Kommentaren,
+2. **Positions-Export (MT5) enthält KEINE SL/TP-Spalten.** Stop-Nachweis nur über
+   (a) MT4-History-Export / Orderbuch-CSV (S/L-Spalte und [sl]/[tp]-Kommentaren,
    Beispiel: `data/raw/gold_spike_mt4_2349227_ORDERBOOK.csv`) oder (b) statistische
    Signaturen. "Kein Nachweis" = Warnflag, niemals Entlastung.
 3. **XAUUSD-Kontraktgröße: 1 Lot = 100 USD je 1 USD Kursbewegung.**
