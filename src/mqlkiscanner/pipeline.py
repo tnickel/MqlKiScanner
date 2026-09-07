@@ -10,8 +10,11 @@ Lauf-Ergebnisse landen in data/runs/{zeitstempel}/results.json.
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 import time
 import traceback
+from uuid import uuid4
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -67,6 +70,10 @@ class ScanResult:
     peak_positionen: int | None = None
     peak_netto_lots: float | None = None
     shock_usd: float | None = None
+    shock_pct_max: float | None = None
+    shock_pct_peak_time: str | None = None
+    shock_pct_peak_account: float | None = None
+    shock_pct_peak_usd: float | None = None
     martingale_flag: bool | None = None
     martingale_evidenz: list | None = None
     stop_nachweis: str = ""
@@ -85,6 +92,7 @@ class ScanResult:
     kurzfassung: str = ""           # Kurzzeile aus dem Gesamtbericht (fuer Tabelle)
     llm_fehler: str = ""
     fehler: str = ""
+    source_kind: str = "live"  # Demo-Ergebnisse nie in den Live-Katalog übernehmen.
 
     def to_row(self) -> dict:
         return {
@@ -137,6 +145,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             )
         res = ScanResult(
             id=int(row["signal_id"]),
+            source_kind="demo" if row.get("platform") == "CSV" else "live",
             name=row.get("name") or str(row["signal_id"]),
             platform=row.get("platform") or "",
             url=row.get("url") or "",
@@ -158,6 +167,10 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             peak_positionen=peak.get("positionen", f.get("peak_positionen")),
             peak_netto_lots=peak.get("netto_lots", f.get("peak_netto_lots")),
             shock_usd=peak.get("schock_usd", f.get("shock_usd")),
+            shock_pct_max=peak.get("shock_pct_max"),
+            shock_pct_peak_time=peak.get("shock_pct_peak_time"),
+            shock_pct_peak_account=peak.get("shock_pct_peak_account"),
+            shock_pct_peak_usd=peak.get("shock_pct_peak_usd"),
             martingale_flag=f.get("martingale_flag"),
             stop_nachweis=f.get("stop_nachweis") or "",
             broker_server=stats.get("broker_server"),
@@ -242,7 +255,11 @@ def _forensik_json(r: ScanResult) -> str:
         "verlustserie_usd": r.verlustserie_usd,
         "peak_exposure": {"positionen": r.peak_positionen,
                           "netto_lots": r.peak_netto_lots,
-                          "schock_usd": r.shock_usd},
+                          "schock_usd": r.shock_usd,
+                          "shock_pct_max": r.shock_pct_max,
+                          "shock_pct_peak_time": r.shock_pct_peak_time,
+                          "shock_pct_peak_account": r.shock_pct_peak_account,
+                          "shock_pct_peak_usd": r.shock_pct_peak_usd},
         "martingale_flag": r.martingale_flag,
         "martingale_evidenz": r.martingale_evidenz,
         "stop_nachweis": r.stop_nachweis,
@@ -357,8 +374,8 @@ class ScanPipeline:
             res.broker_server = stats.get("broker_server")
             log(f"✓ Kennzahlen: EQ-DD {res.dd_equity_pct} % · PF {res.pf} · "
                 f"Ertrag {res.ertrag_monat_pct} %/Monat")
-            # Erfolgreiche Kennzahlen-Seite = MQL5 erreichbar → Fail-Fast-Zähler reset
-            self._register_mql5_outcome(ok=True)
+            # Eine öffentliche Kennzahlen-Seite belegt keinen funktionierenden
+            # authentifizierten Export. Dessen Fehlerkette hier nicht zurücksetzen.
 
             log("Trade-Export laden (CSV) …")
             report = None
@@ -409,6 +426,10 @@ class ScanPipeline:
                 res.peak_positionen = expo.get("peak_open_positions")
                 res.peak_netto_lots = expo.get("peak_net_lots")
                 res.shock_usd = expo.get("shock_usd")
+                res.shock_pct_max = expo.get("shock_pct_max")
+                res.shock_pct_peak_time = expo.get("shock_pct_peak_time")
+                res.shock_pct_peak_account = expo.get("shock_pct_peak_account")
+                res.shock_pct_peak_usd = expo.get("shock_pct_peak_usd")
                 res.martingale_flag = fx["martingale"].get("flag")
                 res.martingale_evidenz = fx["martingale"].get("evidence") or []
                 stops = fx["stops"]
@@ -435,11 +456,15 @@ class ScanPipeline:
                     schranke_eq_dd_pct=self.settings.get("schranke_eq_dd_pct", 30.0))
                 res.score = ev["score"]
                 res.schranke_verletzt = bool(ev["schranke_eq_dd_verletzt"])
+                res.forensik_vorhanden = bool(ev["forensics_complete"])
+                if not res.forensik_vorhanden:
+                    raise ValueError("Forensik unvollständig: Kapitalhistorie oder Pflichtbefunde fehlen.")
                 self._register_mql5_outcome(ok=True)
         except Exception as exc:  # Ein weicher Fehler soll den Lauf nicht abbrechen
             if isinstance(exc, Mql5HardStopError):
                 raise
             res.fehler = f"{type(exc).__name__}: {exc}"
+            res.forensik_vorhanden = False
             log(f"  FEHLER bei {res.id}: {res.fehler}")
             log(traceback.format_exc(limit=3))
             try:
@@ -487,7 +512,11 @@ class ScanPipeline:
                     "verlustserie_usd": res.verlustserie_usd,
                     "peak_exposure": {"positionen": res.peak_positionen,
                                       "netto_lots": res.peak_netto_lots,
-                                      "schock_usd": res.shock_usd},
+                                      "schock_usd": res.shock_usd,
+                                      "shock_pct_max": res.shock_pct_max,
+                                      "shock_pct_peak_time": res.shock_pct_peak_time,
+                                      "shock_pct_peak_account": res.shock_pct_peak_account,
+                                      "shock_pct_peak_usd": res.shock_pct_peak_usd},
                     "martingale_flag": res.martingale_flag,
                     "stop_nachweis": res.stop_nachweis,
                     "symbole": res.symbole,
@@ -525,7 +554,8 @@ class ScanPipeline:
         should_stop: kooperativer Stopp (Stop-Button) — wird zwischen Kandidaten
         und vor dem Gesamtbericht geprüft; laufende Modellaufrufe laufen zu Ende.
         """
-        jobs = [r for r in results if r.forensik_vorhanden and not r.fehler]
+        jobs = [r for r in results
+                if r.source_kind == "live" and r.forensik_vorhanden and not r.fehler]
         total = len(jobs) * 3
         if not self.llm.has_key:
             log("LLM uebersprungen: kein GLM-Key gesetzt (Admin-Bereich).")
@@ -713,7 +743,8 @@ class ScanPipeline:
         Bericht landet in der DB unter signal_id=0, kind='portfolio'.
         """
         total = 1
-        jobs = [r for r in results if r.forensik_vorhanden and not r.fehler]
+        jobs = [r for r in results
+                if r.source_kind == "live" and r.forensik_vorhanden and not r.fehler]
         if not self.llm.has_key:
             log("Portfolio übersprungen: kein GLM-Key gesetzt (Admin-Bereich).")
             if on_progress:
@@ -786,7 +817,8 @@ class ScanPipeline:
             try:
                 report = analyze_export(path)
             except Exception as exc:
-                r = ScanResult(id=0, name=path, fehler=f"{type(exc).__name__}: {exc}")
+                r = ScanResult(id=0, source_kind="demo", name=path,
+                               fehler=f"{type(exc).__name__}: {exc}")
                 r.ampel, r.urteil = ampel_for(r, settings)
                 results.append(r)
                 continue
@@ -797,6 +829,7 @@ class ScanPipeline:
                     sid = sid_cand
             r = ScanResult(
                 id=sid or (_extract_id(path) or 0),
+                source_kind="demo",
                 name=path.split("/")[-1].split("\\")[-1].replace("_", " "),
                 platform="CSV",
                 trades_path=path,
@@ -812,6 +845,10 @@ class ScanPipeline:
                 peak_positionen=fx["exposure"].get("peak_open_positions"),
                 peak_netto_lots=fx["exposure"].get("peak_net_lots"),
                 shock_usd=fx["exposure"].get("shock_usd"),
+                shock_pct_max=fx["exposure"].get("shock_pct_max"),
+                shock_pct_peak_time=fx["exposure"].get("shock_pct_peak_time"),
+                shock_pct_peak_account=fx["exposure"].get("shock_pct_peak_account"),
+                shock_pct_peak_usd=fx["exposure"].get("shock_pct_peak_usd"),
                 martingale_flag=fx["martingale"].get("flag"),
                 martingale_evidenz=fx["martingale"].get("evidence") or [],
                 symbole=", ".join(sorted(st.get("symbols", {}))),
@@ -825,6 +862,9 @@ class ScanPipeline:
                 report, schranke_eq_dd_pct=settings.get("schranke_eq_dd_pct", 30.0))
             r.score = ev["score"]
             r.schranke_verletzt = ev["schranke_eq_dd_verletzt"]
+            r.forensik_vorhanden = bool(ev["forensics_complete"])
+            if not r.forensik_vorhanden:
+                r.fehler = "Forensik unvollständig: Kapitalhistorie oder Pflichtbefunde fehlen."
             if sid in meta:
                 r.name = meta[sid].get("name", r.name)
                 # Demo/Verifikation: kuratierte Referenzscores aus known_signals
@@ -840,59 +880,36 @@ class ScanPipeline:
                 grund = f"{grund} | Score kuratiert ({r.score}, Engine {ev['score']})"
             r.urteil = grund + (f" | Trading-DD {r.trading_dd_pct} %"
                                 if r.trading_dd_pct is not None else "")
-            # Fruehere LLM-Analysen aus der DB nachladen (Nutzer-Prinzip:
-            # Berichte bleiben Datenbank-uebergreifend erhalten)
-            try:
-                db.init_db()
-                db.upsert_signal(r.id, name=r.name, platform=r.platform,
-                                 url=r.url or f"https://www.mql5.com/en/signals/{r.id}",
-                                 abo_preis=r.abo_preis_usd, wochen=r.wochen,
-                                 stats={"trading_dd_pct": r.trading_dd_pct,
-                                        "winrate_pct": r.winrate_pct,
-                                        "score": r.score,
-                                        "ertrag_monat_pct": r.ertrag_monat_pct,
-                                        "forensik_ok": True,
-                                        "last_fehler": None})
-                db.store_trade_file(r.id, path)
-                db.store_forensik(r.id, {
-                    "trading_dd": {"pct": r.trading_dd_pct, "usd": r.trading_dd_usd},
-                    "winrate_pct": r.winrate_pct,
-                    "max_verlustserie": r.max_verlustserie,
-                    "verlustserie_usd": r.verlustserie_usd,
-                    "peak_exposure": {"positionen": r.peak_positionen,
-                                      "netto_lots": r.peak_netto_lots,
-                                      "schock_usd": r.shock_usd},
-                    "martingale_flag": r.martingale_flag,
-                    "stop_nachweis": r.stop_nachweis,
-                    "symbole": r.symbole,
-                    "score": r.score, "ampel": r.ampel,
-                })
-                for kind, attr in (("trade_analyse", "trade_analyse"),
-                                   ("risiko_analyse", "risiko_analyse"),
-                                   ("gesamtbericht", "gesamtbericht")):
-                    prev = db.get_latest_analysis(r.id, kind)
-                    if prev:
-                        setattr(r, attr, prev["text"])
-                if r.gesamtbericht and not r.kurzfassung:
-                    r.kurzfassung = _extract_kurzfassung(r.gesamtbericht)
-            except Exception:
-                pass
+            # Demo bleibt im Arbeitsspeicher bzw. separat im Laufarchiv.
+            # Keine Live-Daten oder alten KI-Texte über dieselbe Signal-ID mischen.
             results.append(r)
         return results
 
     @staticmethod
     def save_run(results: list[ScanResult], logs: dict[str, list[str]]) -> str:
-        stamp = datetime.now().strftime("%Y-%m-%d_%H%M")
+        stamp = datetime.now().strftime("%Y-%m-%d_%H%M%S_%f") + "_" + uuid4().hex[:8]
         run_dir = config.RUNS_DIR / stamp
-        run_dir.mkdir(parents=True, exist_ok=True)
+        run_dir.mkdir(parents=True, exist_ok=False)
         payload = {
             "zeitstempel": stamp,
             "ergebnisse": [vars(r) for r in results],
             "logs": logs,
         }
         out = run_dir / "results.json"
-        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str),
-                       encoding="utf-8")
+        text = json.dumps(payload, ensure_ascii=False, indent=2, default=str)
+        # Archivleser sehen erst eine vollständige Datei, auch bei laufender UI.
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=run_dir,
+                                             suffix=".tmp", delete=False) as fh:
+                temporary = fh.name
+                fh.write(text)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(temporary, out)
+        finally:
+            if temporary and os.path.exists(temporary):
+                os.unlink(temporary)
         return str(out)
 
 

@@ -15,6 +15,7 @@ def scan(monkeypatch, tmp_path):
     csv = tmp_path / "trades.csv"
     csv.write_text(
         "Time;Type;Volume;Symbol;Price;S/L;T/P;Time;Price;Commission;Swap;Profit;Comment\n"
+        "2023.12.31 10:00:00;Balance;;;;;;;;;;1000;\n"
         "2024.01.01 10:00:00;Buy;0.01;XAUUSD;2000;1990;2010;2024.01.01 11:00:00;2001;0;0;1;\n"
         "2024.01.02 10:00:00;Buy;0.01;XAUUSD;2000;1990;2010;2024.01.02 11:00:00;1999;0;0;-1;\n",
         encoding="utf-8",
@@ -37,6 +38,13 @@ def test_retry_recovers_and_clears_persisted_error(scan):
     assert result.forensik_vorhanden and not result.fehler
     stored = json.loads(db.get_signal(1)["stats_json"])
     assert stored["last_fehler"] is None and stored["forensik_ok"]
+    loaded = next(r for r in pipeline.results_from_db() if r.id == 1)
+    risk_payload = json.loads(pipeline._forensik_json(loaded))["peak_exposure"]
+    assert loaded.shock_pct_max == result.shock_pct_max == 5.0
+    for field in ("shock_pct_peak_time", "shock_pct_peak_account", "shock_pct_peak_usd"):
+        assert getattr(loaded, field) == getattr(result, field)
+        assert risk_payload[field] == getattr(result, field)
+    assert risk_payload["shock_pct_max"] == 5.0
     assert any("Wiederholung erfolgreich" in line for line in logs)
 
 

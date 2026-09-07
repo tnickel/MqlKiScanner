@@ -42,7 +42,6 @@ class Mql5HardStopError(RuntimeError):
 
 def is_hard_mql5_failure(exc: BaseException | str) -> bool:
     """Erkennt Fehler, die eher Account-/IP-Sperre als Einzel-Signal-Pech sind."""
-    text = str(exc)
     needles = (
         "Mql5ThrottleError",
         "Mql5HardStopError",
@@ -58,7 +57,20 @@ def is_hard_mql5_failure(exc: BaseException | str) -> bool:
         "MQL5-Login fehlgeschlagen",
         "Login über Browser nicht bestätigt",
     )
-    return any(n.casefold() in text.casefold() for n in needles)
+    # Ein Chrome-Fallback kann den ursprünglichen HTTP-/Drosselfehler mit
+    # einem Fenster- oder Downloadfehler überlagern. Die Ursache bleibt für
+    # den Accountschutz maßgeblich, solange auch der Fallback scheitert.
+    current: BaseException | str | None = exc
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, (Mql5ThrottleError, Mql5HardStopError)):
+            return True
+        if any(n.casefold() in str(current).casefold() for n in needles):
+            return True
+        current = (current.__cause__ or current.__context__
+                   if isinstance(current, BaseException) else None)
+    return False
 
 
 def backoff_after_throttle(attempt: int, base_s: float) -> float:

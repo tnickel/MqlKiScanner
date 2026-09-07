@@ -152,7 +152,11 @@ if command:
         st.session_state.scan_logs = {}
         st.session_state.last_run_file = None
         st.session_state.portfolio_bericht = ""
-    if command["mode"] in ("scan", "local"):
+    if command["mode"] in ("local", "step_forensik"):
+        # Eine neue Prüfung ersetzt die vorherige Ergebnismenge dieser Sitzung.
+        st.session_state.scan_results = []
+        st.session_state.portfolio_bericht = ""
+    if command["mode"] in ("scan", "local", "step_forensik"):
         st.session_state.scan_new_ids = []
 
 settings = config.load_settings()
@@ -321,19 +325,19 @@ with st.expander("Einstellungen für diesen Lauf", icon=":material/tune:", expan
     with left.container(border=True, key="scan_scope"):
         section_header("Wie weit suchen?", "Weniger Seiten = schnellerer Lauf.", help_key="scan_scope")
         pages = st.number_input(
-            "Listen-Seiten je MT4/MT5", 1, 10, value=int(settings["listen_seiten"]),
+            "Listen-Seiten je MT4/MT5", *config.SCAN_INPUT_BOUNDS["listen_seiten"], value=int(settings["listen_seiten"]),
             key="set_seiten", disabled=running)
         top_n = st.number_input(
-            "Max. Signale gründlich prüfen", 1, 50, value=int(settings["top_n_export"]),
+            "Max. Signale gründlich prüfen", *config.SCAN_INPUT_BOUNDS["top_n_export"], value=int(settings["top_n_export"]),
             key="set_topn", disabled=running)
     with right.container(border=True, key="scan_filters"):
         section_header("Vorfilter", "Nur Signale, die alt genug und sichtbar genug sind.",
                        help_key="scan_filters")
         min_weeks = st.number_input(
-            "Mindestalter in Wochen", 0, 260, value=int(settings["min_wochen"]),
+            "Mindestalter in Wochen", *config.SCAN_INPUT_BOUNDS["min_wochen"], value=int(settings["min_wochen"]),
             key="set_wochen", disabled=running)
         min_subs = st.number_input(
-            "Mindestens Abonnenten", 0, 1000, value=int(settings["min_abonnenten"]),
+            "Mindestens Abonnenten", *config.SCAN_INPUT_BOUNDS["min_abonnenten"], value=int(settings["min_abonnenten"]),
             key="set_abo", disabled=running)
     with st.container(border=True, key="scan_llm_settings"):
         section_header("KI am Ende?", "Nach dem Rechnen drei Berichte je Signal, danach der Portfolio-Vorschlag.",
@@ -377,6 +381,7 @@ with st.expander("Weitere Möglichkeiten", icon=":material/more_horiz:", expande
     with vcol.container(border=True, key="scan_source_local", height="stretch"):
         st.markdown(":material/fact_check: **Nur Testdaten prüfen**")
         st.caption("Vorhandene Dateien in data/raw analysieren — ohne Internet und ohne neue KI.")
+        st.caption("Demo-Ergebnisse bleiben getrennt vom Live-Katalog und werden nicht für KI-Berichte verwendet.")
         verify = action_button(
             "Testdaten laden",
             key="scan_verify",
@@ -393,7 +398,8 @@ with st.expander("Weitere Möglichkeiten", icon=":material/more_horiz:", expande
             key="scan_llm",
             help_key="scan_llm",
             icon=":material/psychology:",
-            disabled=running or not st.session_state.scan_results,
+            disabled=running or not any(getattr(r, "source_kind", "live") == "live"
+                                        for r in st.session_state.scan_results),
         )
     st.markdown("**Einzelschritte (Experten)**")
     st.caption("Normalerweise unnötig. Der Workflow-Button führt alle Stationen automatisch aus.")
@@ -494,7 +500,8 @@ if command:
         only_new = bool(cfg.get("nur_neue"))
         alt: dict[int, pipeline.ScanResult] = {}
         if only_new:
-            alt = {r.id: r for r in pipeline.results_from_db(cfg) if r.forensik_vorhanden}
+            alt = {r.id: r for r in pipeline.results_from_db(cfg) if r.forensik_vorhanden
+                   and getattr(r, "source_kind", "live") == "live"}
         scope = cands[:n_export]
         neu = [c for c in scope if c["id"] not in alt] if only_new else scope
         uebernommen = [alt[c["id"]] for c in scope if c["id"] in alt]
@@ -582,7 +589,8 @@ if command:
             )
 
     def w_run_llm(targets: list[pipeline.ScanResult], cfg) -> None:
-        kandidaten = [r for r in targets if r.forensik_vorhanden and not r.fehler]
+        kandidaten = [r for r in targets if r.forensik_vorhanden and not r.fehler
+                      and getattr(r, "source_kind", "live") == "live"]
         neu_erstellen = bool(cfg.get("berichte_neu"))
         # Berichte sind in der DB gespeichert — Signale mit vorhandenem
         # Gesamtbericht überspringen und die gespeicherten Texte ins Ergebnis
@@ -650,6 +658,7 @@ if command:
         w_step("llm", state, done=completed, total=total, detail=detail)
 
     def w_run_portfolio(alle: list[pipeline.ScanResult], cfg) -> None:
+        alle = [r for r in alle if getattr(r, "source_kind", "live") == "live"]
         if not pipe.llm.has_key:
             logs["portfolio"] = ["Kein KI-Key hinterlegt"]
             w_step("portfolio", "skipped", detail="Kein KI-Key hinterlegt")
@@ -773,7 +782,8 @@ if command:
             workflow["activity"] = "Ergebnisse und Protokoll speichern …"
             try:
                 control["last_run_file"] = pipeline.ScanPipeline.save_run(results, logs)
-                control["refreshed_ids"] = [r.id for r in results]
+                control["refreshed_ids"] = [r.id for r in results
+                                            if getattr(r, "source_kind", "live") == "live"]
                 workflow["saved"] = True
             except Exception as exc:
                 workflow.update(status="error", activity=f"Speichern fehlgeschlagen: {exc}")

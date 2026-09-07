@@ -34,6 +34,8 @@ Ergebnisse erscheinen danach auf dieser Seite und unter „Ergebnisse“.
 **Prüft die vorhandenen Dateien in `data/raw`.** Kein MQL5-Abruf, kein neuer KI-Aufruf.
 
 Nützlich zum Ausprobieren ohne Login. Die Stationen „Signale holen“, „Auswahl“ und „KI“ werden als übersprungen markiert.
+
+Die Demo verändert keine Live-Daten oder Bewertungen im Katalog. Ihre Ergebnisse werden nicht für KI-Berichte oder Portfolio-Vorschläge verwendet.
 """),
     "scan_llm": ("Nur KI-Berichte starten", """
 **Erzeugt KI-Texte für bereits geprüfte Ergebnisse dieser Sitzung.**

@@ -8,13 +8,14 @@ Zwei CSV-Varianten (doc/02_technik-mql5.md Abschnitt 3):
 
 Fallstricke, die hier behandelt werden:
 - Tausendertrennzeichen als Leerzeichen bzw. NBSP ("1 403.03")
-- Zeilen, die kuerzer als die Kopfzeile sind, werden uebersprungen
+- Beschaedigte Datensaetze werden mit Zeilennummer abgelehnt
 - Balance-Zeilen: Betrag steht in der Profit-Spalte des jeweiligen Formats
 """
 from __future__ import annotations
 
 import csv
 import json
+import math
 from datetime import datetime
 from typing import Optional
 
@@ -28,7 +29,10 @@ PENDING_TYPES = ("Buy Stop", "Sell Stop", "Buy Limit", "Sell Limit")
 def parse_number(text: str) -> Optional[float]:
     """MQL5-Zahl: Tausenderpunkt-Leerzeichen entfernen, leer -> None."""
     cleaned = text.replace(" ", "").replace("\xa0", "")
-    return float(cleaned) if cleaned else None
+    value = float(cleaned) if cleaned else None
+    if value is not None and not math.isfinite(value):
+        raise ValueError("Zahl ist nicht endlich")
+    return value
 
 
 def parse_time(text: str) -> datetime:
@@ -63,17 +67,33 @@ def load_export(path: str) -> ParsedExport:
             "vermutlich Login-HTML statt Export (Session abgelaufen, siehe doc/02)."
         )
     fmt = _detect_format(header)
+    expected_columns = 13 if fmt == "mt4_orderbook" else 11
+    if len(header) != expected_columns:
+        raise ValueError(f"{path}: unvollstaendiger oder unbekannter CSV-Header")
     result = ParsedExport(source_path=path, source_format=fmt)
 
-    for row in rows[1:]:
-        if len(row) < 11:
+    for line, row in enumerate(rows[1:], start=2):
+        if not row or not any(cell.strip() for cell in row):
             continue
+        if len(row) != expected_columns:
+            raise ValueError(f"{path}: Zeile {line}: {len(row)} statt "
+                             f"{expected_columns} Felder (unvollstaendiger Export)")
         row_type = row[1].strip()
+        if row_type not in (*FILLED_TYPES, *PENDING_TYPES, "Balance", "Credit"):
+            raise ValueError(f"{path}: Zeile {line}: unbekannter Datensatztyp {row_type!r}")
+        profit_idx = 11 if fmt == "mt4_orderbook" else 10
+        required = [0, 1]
+        if row_type in FILLED_TYPES:
+            required += [2, 3, 4, 7, 8, profit_idx] if fmt == "mt4_orderbook" else [2, 3, 4, 6, 7, profit_idx]
+        elif row_type in ("Balance", "Credit"):
+            required.append(profit_idx)
+        if any(not row[idx].strip() for idx in required):
+            raise ValueError(f"{path}: Zeile {line}: Pflichtfeld fehlt ({row_type})")
         if row_type in FILLED_TYPES:
             if fmt == "mt4_orderbook":
                 trade = Trade(
                     open_time=parse_time(row[0]), close_time=parse_time(row[7]),
-                    direction=row_type, volume=float(row[2]), symbol=row[3],
+                    direction=row_type, volume=parse_number(row[2]), symbol=row[3].strip(),
                     entry_price=_row_number(row, 4), exit_price=_row_number(row, 8),
                     profit=float(_row_number(row, 11) or 0.0),
                     commission=float(_row_number(row, 9) or 0.0),
@@ -84,12 +104,14 @@ def load_export(path: str) -> ParsedExport:
             else:
                 trade = Trade(
                     open_time=parse_time(row[0]), close_time=parse_time(row[6]),
-                    direction=row_type, volume=float(row[2]), symbol=row[3],
+                    direction=row_type, volume=parse_number(row[2]), symbol=row[3].strip(),
                     entry_price=_row_number(row, 4), exit_price=_row_number(row, 7),
                     profit=float(_row_number(row, 10) or 0.0),
                     commission=float(_row_number(row, 8) or 0.0),
                     swap=float(_row_number(row, 9) or 0.0),
                 )
+            if trade.volume <= 0 or trade.close_time < trade.open_time:
+                raise ValueError(f"{path}: Zeile {line}: ungueltiges Volumen oder Handelszeitraum")
             result.trades.append(trade)
         elif row_type == "Balance":
             amount = _row_number(row, 11 if fmt == "mt4_orderbook" else 10)

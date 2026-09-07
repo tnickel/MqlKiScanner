@@ -92,7 +92,8 @@ def test_z_f4_hard_barrier_uses_trading_dd_without_platform():
         "stats": {"avg_win": 50, "span_weeks": 104},
         "forensics": {
             "martingale": {"flag": False},
-            "exposure": {"shock_usd": 100},
+            "exposure": {"shock_usd": 100, "shock_pct_max": 1.0,
+                         "temporal_risk_available": True},
             "stops": {"evidence_level": 1, "positions_with_sl_tp_pct": 100, "clustered": True},
             "drawdown": {"trading_dd": {"dd_pct": 5.0, "dd_pct_max_rel": 40.0,
                                         "dd_usd": 400, "peak_balance": 10_000}},
@@ -287,7 +288,7 @@ def test_e_fx_distances_do_not_collapse_to_zero_cluster():
     assert "Stop-Signatur" not in cl["verdict"]
 
 
-def test_d_local_roundtrip_keeps_monthly_return(tmp_path, monkeypatch):
+def test_d_local_archive_keeps_monthly_return_without_live_db(tmp_path, monkeypatch):
     monkeypatch.setattr(db, "DB_PATH", tmp_path / "ertrag.db")
     raw = Path("data/raw/gold_spike_mt4_2349227_ORDERBOOK.csv")
     if not raw.exists():
@@ -295,15 +296,21 @@ def test_d_local_roundtrip_keeps_monthly_return(tmp_path, monkeypatch):
     rows = ScanPipeline.analyze_local_files([str(raw)])
     direct = next(r for r in rows if r.id == 2349227)
     assert direct.ertrag_monat_pct is not None
-    loaded = next(r for r in pipeline.results_from_db() if r.id == 2349227)
+    import json
+    saved = ScanPipeline.save_run(rows, {})
+    loaded = next(pipeline.ScanResult(**r) for r in json.loads(Path(saved).read_text(encoding="utf-8"))["ergebnisse"]
+                  if r["id"] == 2349227)
     assert loaded.ertrag_monat_pct == pytest.approx(direct.ertrag_monat_pct)
     assert loaded.ampel == direct.ampel
+    assert loaded.source_kind == "demo"
+    assert not db.DB_PATH.exists()
 
 
 def test_b_volume_peak_already_feeds_scoring():
     """Nachpruefung B: Score nutzt bereits Volumen-/Schock-Peak (nicht Anzahl-Peak)."""
     trades = [_t(0, 2, "Buy", 0.01), _t(0.1, 2, "Buy", 0.01), _t(3, 5, "Buy", 1.0)]
-    r = exposure.run(ParsedExport("x", "positions", trades=trades))
+    r = exposure.run(ParsedExport("x", "positions", trades=trades,
+                                 balances=[BalanceRow(datetime(2024, 1, 1, 10), 10_000)]))
     assert abs(r["shock_usd"] - 5000.0) < 1e-6
     fake = {"forensics": {
         "exposure": r,
@@ -363,7 +370,7 @@ def test_failed_llm_does_not_recount_old_texts(monkeypatch, tmp_path):
     assert summary["failed"] == 1
 
 
-def test_local_forensik_roundtrip_keeps_metrics(tmp_path, monkeypatch):
+def test_local_forensik_archive_keeps_metrics_without_live_db(tmp_path, monkeypatch):
     monkeypatch.setattr(db, "DB_PATH", tmp_path / "local.db")
     raw = Path("data/raw/goldwave_2339082_positions.csv")
     if not raw.exists():
@@ -371,5 +378,10 @@ def test_local_forensik_roundtrip_keeps_metrics(tmp_path, monkeypatch):
     rows = ScanPipeline.analyze_local_files([str(raw)])
     assert rows and rows[0].forensik_vorhanden
     direct = rows[0]
-    loaded = next(r for r in pipeline.results_from_db() if r.id == direct.id)
+    import json
+    saved = ScanPipeline.save_run(rows, {})
+    loaded = next(pipeline.ScanResult(**r) for r in json.loads(Path(saved).read_text(encoding="utf-8"))["ergebnisse"]
+                  if r["id"] == direct.id)
     assert loaded.trading_dd_pct == pytest.approx(direct.trading_dd_pct, abs=0.05)
+    assert loaded.source_kind == "demo"
+    assert not db.DB_PATH.exists()
