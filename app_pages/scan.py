@@ -292,8 +292,9 @@ with st.container(border=True, key="scan_start_panel"):
     )
     st.caption(
         "An: Bereits gründlich bewertete Signale werden nicht erneut von MQL5 "
-        "geladen — ihre Bewertungen bleiben unverändert und erscheinen trotzdem "
-        "im Ergebnis. Der Portfolio-Vorschlag (Station 5) nutzt immer alle Signale."
+        "geladen. Die KI prüft für alle geeigneten Ergebnisse, ob passende Berichte "
+        "vorliegen; fehlende oder veraltete Berichte werden erstellt. "
+        "Der Portfolio-Vorschlag (Station 5) nutzt immer alle Signale."
     )
     with st.container(horizontal=True, gap="small"):
         st.badge("MQL5-Zugang ok" if has_login else "MQL5-Zugang fehlt",
@@ -342,8 +343,8 @@ with st.expander("Einstellungen für diesen Lauf", icon=":material/tune:", expan
             disabled=running,
         )
         st.caption(
-            "Aus (Standard): Signale mit bereits gespeichertem Gesamtbericht werden "
-            "übersprungen — ihr Bericht wird aus der Datenbank geladen. "
+            "Aus (Standard): Signale mit einem zur aktuellen Bewertungsbasis passenden "
+            "Gesamtbericht werden übersprungen — ihr Bericht wird aus der Datenbank geladen. "
             "An: alle Berichte werden neu erzeugt (Dauer + Tokens)." if not berichte_neu else
             "An: ALLE Berichte werden neu erzeugt — vorhandene werden ersetzt "
             "(in der Datenbank bleibt die Historie erhalten)."
@@ -437,7 +438,7 @@ if command:
     candidates_vorhanden = st.session_state.get("scan_candidates")
     control = {"stop": False, "portfolio_bericht": "", "portfolio": None, "new_ids": [],
                "signals": signals_vorhanden or [], "candidates": candidates_vorhanden or [],
-               "last_run_file": None, "refreshed_ids": None, "copied": False}
+               "last_run_file": None, "refreshed_ids": [], "copied": False}
     st.session_state.scan_control = control
     st.session_state.scan_running = mode if mode != "scan" else "listen"
     pipe = pipeline.ScanPipeline(run_config)
@@ -552,9 +553,13 @@ if command:
                     session, candidate, log, should_stop=lambda: bool(control.get("stop")))
                 results.append(result)
                 new_ids.append(result.id)
+                if result.persisted_this_run:
+                    control["refreshed_ids"].append(result.id)
             except pipeline.Mql5HardStopError as exc:
                 if getattr(exc, "result", None) is not None:
                     results.append(exc.result)
+                    if exc.result.persisted_this_run:
+                        control["refreshed_ids"].append(exc.result.id)
                 log(str(exc))
                 skipped = len(neu) - (i + 1)
                 if skipped > 0:
@@ -633,6 +638,8 @@ if command:
             on_progress=lambda done, total, text: w_step("llm", done=done, total=total, detail=text),
             should_stop=lambda: bool(control.get("stop")),
         )
+        control["refreshed_ids"] = list(dict.fromkeys(
+            [*control["refreshed_ids"], *summary.get("updated_ids", [])]))
         completed, total = summary["completed"], summary["total"]
         failed, skipped = summary["failed"], summary["skipped"]
         if (summary.get("reason") or "").startswith("Abbruch"):
@@ -758,14 +765,8 @@ if command:
                     ki_an = run_config["llm_stufe1"] or run_config["llm_stufe2"]
                     gestoppt = bool(control.get("stop"))
                     if ki_an and not gestoppt:
-                        # Im Nur-neue-Modus nur die frisch geprüften Signale neu
-                        # berichten; der Portfolio-Vorschlag sieht alle Signale.
                         current_step = "llm"
-                        targets = results
-                        frisch = set(control.get("new_ids") or [])
-                        if run_config.get("nur_neue") and frisch:
-                            targets = [r for r in results if r.id in frisch]
-                        w_run_llm(targets, run_config)
+                        w_run_llm(results, run_config)
                         current_step = "portfolio"
                         w_run_portfolio(results, run_config)
                     else:
@@ -786,8 +787,6 @@ if command:
             try:
                 control["last_run_file"] = pipeline.ScanPipeline.save_run(
                     results, logs, portfolio=control.get("portfolio"))
-                control["refreshed_ids"] = [r.id for r in results
-                                            if getattr(r, "source_kind", "live") == "live"]
                 workflow["saved"] = True
             except Exception as exc:
                 workflow.update(status="error", activity=f"Speichern fehlgeschlagen: {exc}")

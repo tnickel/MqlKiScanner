@@ -138,7 +138,8 @@ def _distance_clustering(trades) -> dict:
     best: dict | None = None
     per_symbol: dict[str, dict] = {}
     all_dists: list[float] = []
-    for sym, dists in by_sym.items():
+    for sym in sorted(by_sym):
+        dists = by_sym[sym]
         all_dists.extend(dists)
         n = len(dists)
         if n < MIN_CLUSTER_LOSSES:
@@ -146,7 +147,10 @@ def _distance_clustering(trades) -> dict:
                                "reason": "zu wenige Verluste"}
             continue
         rounded = Counter(_distance_bin(d, sym) for d in dists)
-        top_level, top_count = rounded.most_common(1)[0]
+        # File order cannot decide stop proof. Among equally frequent modes,
+        # prefer the lower level; a tied zero bin must not be bypassed by a
+        # positive bin that happened to appear first in the CSV.
+        top_level, top_count = min(rounded.items(), key=lambda item: (-item[1], item[0]))
         top_share = top_count / n
         sorted_d = sorted(dists)
         spread = sorted_d[-1] / max(sorted_d[n // 2], 1e-9)

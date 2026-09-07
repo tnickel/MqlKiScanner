@@ -22,6 +22,11 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             if r.source_kind == "live" and r.forensik_vorhanden and not r.fehler]
     total = len(jobs) * 3
     done = failed = 0
+    updated_ids: list[int] = []
+
+    def mark_updated(result):
+        if result.id not in updated_ids:
+            updated_ids.append(result.id)
 
     def progress(message):
         if on_progress:
@@ -29,7 +34,8 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
 
     def summary(reason=""):
         return {"completed": done, "total": total, "failed": failed,
-                "skipped": total - done - failed, "reason": reason}
+                "skipped": total - done - failed, "reason": reason,
+                "updated_ids": list(updated_ids)}
 
     def stopped():
         log("Stop angefordert — verbleibende Prompts werden nicht mehr gesendet.")
@@ -141,6 +147,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
                                "Speicherfehler")
             else:
                 done += 1
+                mark_updated(result)
                 log(f"  ✓ {label} gespeichert: {result.name}")
                 progress(f"{label} fertig: {result.name}")
         if abort_error:
@@ -178,6 +185,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             record_failure(RuntimeError(f"Gesamtbericht nicht gespeichert: {exc}"), "Speicherfehler")
         else:
             done += 1
+            mark_updated(result)
             log(f"  ● {result.name} abgeschlossen. Kurzfassung: {result.kurzfassung}")
             progress(f"Gesamtbericht fertig: {result.name}")
 

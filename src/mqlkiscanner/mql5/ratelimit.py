@@ -11,6 +11,8 @@ from __future__ import annotations
 import random
 import time
 
+from .errors import Mql5AuthenticationError
+
 
 class RateLimiter:
     def __init__(self, min_interval_s: float = 2.0, jitter_s: float = 1.0):
@@ -64,7 +66,7 @@ def is_hard_mql5_failure(exc: BaseException | str) -> bool:
     seen: set[int] = set()
     while current is not None and id(current) not in seen:
         seen.add(id(current))
-        if isinstance(current, (Mql5ThrottleError, Mql5HardStopError)):
+        if isinstance(current, (Mql5ThrottleError, Mql5HardStopError, Mql5AuthenticationError)):
             return True
         if any(n.casefold() in str(current).casefold() for n in needles):
             return True

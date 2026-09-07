@@ -20,7 +20,7 @@ HELP_CONTENT = {
 **Ohne Zugänge** kannst du lokale Verifikationsdaten auswerten. Ohne KI-Key bleiben berechnete Befunde verfügbar; es entstehen keine KI-Berichte.
 """),
     "results_runs": ("Aktueller Lauf, Archiv und Datenbank", """
-**Datenbank (alle Berichte)** zeigt alle in SQLite gespeicherten Signale mit Forensik und KI-Texten. Signale aus dem letzten Lauf dieser Sitzung sind in der Spalte **Stand** mit **NEU** markiert und stehen oben.
+**Datenbank (alle Berichte)** zeigt alle in SQLite gespeicherten Signale mit Forensik und KI-Texten. **NEU** markiert Signale, für die im letzten Lauf dieser Sitzung Kennzahlen, Befunde oder Signalberichte neu gespeichert wurden. Unverändert übernommene Bewertungen zählen nicht dazu.
 
 **Aktuelle Sitzung** zeigt nur den letzten Scan in diesem Browser-Tab. **Archiv** öffnet einen gespeicherten Laufordner.
 

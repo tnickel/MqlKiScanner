@@ -30,7 +30,7 @@ from threading import RLock
 
 from .. import secrets_store
 from ..config import DATA_DIR
-from .errors import Mql5CredentialsMissingError
+from .errors import Mql5AuthenticationError, Mql5CredentialsMissingError
 from .exporter import publish_validated_export
 from .session import Mql5Session
 
@@ -186,7 +186,7 @@ def _driver_login(driver, user: str, password: str, *, force_login: bool = False
 
     login_fields = driver.find_elements(By.ID, "Login")
     if force_login and not login_fields:
-        raise RuntimeError("MQL5-Loginformular nicht verfügbar — neue Anmeldung nicht bestätigt.")
+        raise Mql5AuthenticationError("MQL5-Loginformular nicht verfügbar — neue Anmeldung nicht bestätigt.")
     if login_fields:
         user_field = driver.find_element(By.ID, "Login")
         user_field.clear()
@@ -235,7 +235,7 @@ def _login_via_browser(settings: dict, session: Mql5Session, log=None,
         driver.get("https://www.mql5.com/en")
         time.sleep(1.5)
         if driver.find_elements("id", "Login") or "/auth_login" in driver.current_url:
-            raise RuntimeError(
+            raise Mql5AuthenticationError(
                 "MQL5 hat die Anmeldung im Browser nicht akzeptiert "
                 "(weiterhin ausgeloggt) — Zugangsdaten im Admin-Bereich prüfen.")
 

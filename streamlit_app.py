@@ -31,7 +31,7 @@ defaults = {
     "scan_logs": {},           # step_id -> list[str]
     "scan_running": None,      # aktueller Schritt (fuer Statusanzeige)
     "last_run_file": None,
-    "refreshed_signal_ids": [],
+    "refreshed_signal_ids": None,  # unbekannter Altstand; [] = explizit nichts aktualisiert
     "portfolio_bericht": "",   # Station 5: globaler KI-Portfolio-Vorschlag
 }
 for key, val in defaults.items():

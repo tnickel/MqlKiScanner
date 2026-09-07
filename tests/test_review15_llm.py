@@ -61,6 +61,7 @@ def test_trade_storage_failure_preserves_both_answers_and_continues_next_signal(
     outcome = llm_runner.run_llm(pipe, [first, second], lambda _: None,
                                  lambda *args: events.append(args))
     assert outcome["completed"] == 4 and outcome["failed"] == 1 and outcome["skipped"] == 1
+    assert outcome["updated_ids"] == [101, 202]
     assert first.trade_analyse and first.risiko_analyse and not first.gesamtbericht
     assert "disk unavailable" in first.llm_fehler
     assert (101, "risiko_analyse") in calls
@@ -81,6 +82,7 @@ def test_two_parallel_failures_are_two_failed_prompts_and_one_skipped_summary(se
         monkeypatch.setattr(db, "store_analysis", fail)
     outcome = llm_runner.run_llm(pipe, [r], lambda _: None)
     assert outcome["completed"] == 0 and outcome["failed"] == 2 and outcome["skipped"] == 1
+    assert outcome["updated_ids"] == []
     assert len(pipe.llm.calls) == 2
     assert "trade" in r.llm_fehler and ("risk" in r.llm_fehler or "Risiko" in r.llm_fehler)
     if failure_kind == "storage":
@@ -94,7 +96,8 @@ def test_fatal_parallel_error_keeps_successful_other_response_and_stops(setup, e
     pipe.llm = FakeLlm({(101, failed_stage): error})
     r = make_result()
     outcome = llm_runner.run_llm(pipe, [r, make_result(202)], lambda _: None)
-    assert outcome == {"completed": 1, "total": 6, "failed": 1, "skipped": 4, "reason": str(error)}
+    assert outcome == {"completed": 1, "total": 6, "failed": 1, "skipped": 4,
+                       "reason": str(error), "updated_ids": [101]}
     assert len(pipe.llm.calls) == 2 and len(stored) == 1
     assert r.berichte_basis == "basis-101" and r.llm_fehler == str(error)
     other_stage = "risiko_analyse" if failed_stage == "trade_analyse" else "trade_analyse"
@@ -146,6 +149,7 @@ def test_summary_storage_error_retains_text_and_continues(setup, monkeypatch):
     r = make_result()
     outcome = llm_runner.run_llm(pipe, [r, make_result(202)], lambda _: None)
     assert outcome["completed"] == 5 and outcome["failed"] == 1 and outcome["skipped"] == 0
+    assert outcome["updated_ids"] == [101, 202]
     assert r.gesamtbericht and r.kurzfassung and "summary disk error" in r.llm_fehler
 
 
@@ -153,7 +157,8 @@ def test_success_writes_one_current_basis_for_all_three_parts(setup):
     pipe, make_result, stored = setup
     r = make_result()
     outcome = llm_runner.run_llm(pipe, [r], lambda _: None)
-    assert outcome == {"completed": 3, "total": 3, "failed": 0, "skipped": 0, "reason": ""}
+    assert outcome == {"completed": 3, "total": 3, "failed": 0, "skipped": 0,
+                       "reason": "", "updated_ids": [101]}
     assert len(stored) == 3 and all(kwargs == {"basis": "basis-101"} for _, kwargs in stored)
     assert r.berichte_basis == "basis-101"
 

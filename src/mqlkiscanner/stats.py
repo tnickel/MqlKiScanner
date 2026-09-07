@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import statistics
 from collections import Counter, defaultdict
-from datetime import timedelta
+from datetime import date, timedelta
 
 from .models import ParsedExport
+from .lot_format import lot_histogram
 
 
 def compute(parsed: ParsedExport) -> dict:
@@ -101,7 +102,7 @@ def compute(parsed: ParsedExport) -> dict:
         "span_weeks": round(span_days / 7, 1),
         "symbols": dict(Counter(t.symbol for t in trades)),
         "per_symbol": per_symbol,
-        "lots": {f"{v:.2f}": c for v, c in sorted(Counter(t.volume for t in trades).items())},
+        "lots": lot_histogram(t.volume for t in trades),
         "max_consecutive_losses": max_streak,
         "max_consecutive_losses_sum": round(max_streak_sum, 2),
         "max_loss_streak_from": streak_start.isoformat(sep=" ") if streak_start else None,
@@ -132,8 +133,10 @@ def full_month_keys(first_open, last_close) -> set[str]:
     import calendar
 
     full: set[str] = set()
-    cursor = first_open.replace(day=1)
-    last = last_close.replace(day=1)
+    # Full-month eligibility below is a calendar-day rule. Intraday times
+    # must not prevent the final calendar month from reaching that rule.
+    cursor = date(first_open.year, first_open.month, 1)
+    last = date(last_close.year, last_close.month, 1)
     while cursor <= last:
         key = cursor.strftime("%Y-%m")
         days_in_month = calendar.monthrange(cursor.year, cursor.month)[1]
