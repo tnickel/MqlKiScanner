@@ -15,7 +15,7 @@ import requests
 
 from .. import secrets_store
 from ..config import MQL5_BASE
-from .errors import Mql5CredentialsMissingError
+from .errors import Mql5AuthenticationError, Mql5CredentialsMissingError
 from .ratelimit import Mql5HardStopError, Mql5ThrottleError, RateLimiter, backoff_after_throttle
 
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -104,7 +104,7 @@ class Mql5Session:
         # Bewusst kein HTTP-Formular-Login: MQL5 verlangt JS-Cookies.
         from .browser_session import ensure_mql5_cookies
         if not ensure_mql5_cookies(self.settings, self):
-            raise RuntimeError(
+            raise Mql5AuthenticationError(
                 "MQL5-Browser-Login fehlgeschlagen — Zugangsdaten unter "
                 "Einstellungen prüfen und „MQL5-Login testen“.")
         self.logged_in = True

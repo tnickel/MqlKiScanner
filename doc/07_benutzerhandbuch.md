@@ -44,6 +44,11 @@ Ohne GLM-Key: Scan und Forensik laufen, KI-Berichte entfallen.
 3. Einstellungen: Listen-Seiten, Max. Signale gründlich prüfen (Standard 30),
    Mindestwochen, Abonnenten, Rate-Limits.
 
+**Nur neue** begrenzt das erneute Laden und Prüfen bei MQL5. Die KI berücksichtigt
+weiterhin alle geeigneten Ergebnisse: passende vorhandene Berichte werden
+wiederverwendet, fehlende oder veraltete erstellt. **Vorhandene Berichte neu
+erstellen** erzeugt auch die Berichte übernommener Signale neu.
+
 ### Ampel
 
 | Symbol | Bedeutung |
@@ -62,7 +67,9 @@ und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
 ## 4. Ergebnisse
 
 - Quelle: aktueller Lauf, Archiv-Run oder **Datenbank (alle Berichte)**.
-- Spalte **Stand=NEU** markiert frisch aktualisierte Signale.
+- Spalte **Stand=NEU** markiert Signale, für die im letzten Lauf dieser Sitzung
+  Kennzahlen, Befunde oder Signalberichte neu gespeichert wurden. Unveränderte
+  Übernahmen und reine Portfolio-Läufe erzeugen keine NEU-Markierung.
 - Detailansicht: Kennzahlen, Forensik, LLM-Texte, Link zur MQL5-Seite.
 
 ## 5. Typische Stolpersteine

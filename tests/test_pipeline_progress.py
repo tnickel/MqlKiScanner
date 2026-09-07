@@ -47,7 +47,8 @@ def test_llm_progress_starts_at_zero_and_counts_saved_answers():
     events = []
     summary = pipe.run_llm([result], pipeline.StepLog(), lambda *event: events.append(event))
 
-    assert summary == {"completed": 3, "total": 3, "failed": 0, "skipped": 0, "reason": ""}
+    assert summary == {"completed": 3, "total": 3, "failed": 0, "skipped": 0,
+                       "reason": "", "updated_ids": [result.id]}
     assert events[0][0:2] == (0, 3)
     assert events[-1][0:2] == (3, 3)
     assert [done for done, _, _ in events] == sorted(done for done, _, _ in events)
@@ -86,6 +87,7 @@ def test_missing_key_marks_model_work_as_skipped():
     summary = pipe.run_llm([result], pipeline.StepLog(), lambda *event: events.append(event))
 
     assert not fake.calls
+    assert summary["updated_ids"] == []
     assert summary["completed"] == 0 and summary["skipped"] == 3
     assert summary["failed"] == 0 and "Key" in summary["reason"]
     assert events[0][0:2] == (0, 3)

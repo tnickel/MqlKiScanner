@@ -100,6 +100,7 @@ class ScanResult:
     llm_fehler: str = ""
     fehler: str = ""
     source_kind: str = "live"  # Demo-Ergebnisse nie in den Live-Katalog übernehmen.
+    persisted_this_run: bool = False  # Mindestens ein Versuch dieses analyze_candidate-Aufrufs gespeichert.
 
     def to_row(self) -> dict:
         return {
@@ -462,7 +463,14 @@ class ScanPipeline:
         if should_stop and should_stop():
             log(f"Signal {result.id}: Wiederholung wegen Stop-Anforderung ausgelassen.")
             return result
-        result = self._analyze_candidate_once(session, cand, log)
+        persisted_before_retry = result.persisted_this_run
+        try:
+            result = self._analyze_candidate_once(session, cand, log)
+        except Mql5HardStopError as exc:
+            if exc.result is not None:
+                exc.result.persisted_this_run |= persisted_before_retry
+            raise
+        result.persisted_this_run |= persisted_before_retry
         log(f"Signal {result.id}: " + (
             "Auch Versuch 2/2 fehlgeschlagen; keine weitere Wiederholung."
             if result.fehler else "Wiederholung erfolgreich."))
@@ -568,17 +576,20 @@ class ScanPipeline:
                 res.forensik_version = FORENSICS_VERSION
                 self._register_mql5_outcome(ok=True)
         except Exception as exc:  # Ein weicher Fehler soll den Lauf nicht abbrechen
-            if isinstance(exc, Mql5HardStopError):
-                raise
             res.fehler = f"{type(exc).__name__}: {exc}"
             res.forensik_vorhanden = False
             log(f"  FEHLER bei {res.id}: {res.fehler}")
             log(traceback.format_exc(limit=3))
-            try:
-                self._register_mql5_outcome(ok=False, exc=exc, log=log)
-                hard_stop = None
-            except Mql5HardStopError as stop:
-                hard_stop = stop
+            if isinstance(exc, Mql5HardStopError):
+                # Stop further network work immediately, but preserve the current
+                # failed scan just like a stop raised by the failure counter.
+                hard_stop = exc
+            else:
+                try:
+                    self._register_mql5_outcome(ok=False, exc=exc, log=log)
+                    hard_stop = None
+                except Mql5HardStopError as stop:
+                    hard_stop = stop
         else:
             hard_stop = None
         # Alles in die Datenbank (Nutzer-Prinzip: CSV + MQL5-Infos + Befunde)
@@ -633,6 +644,7 @@ class ScanPipeline:
                 "abonnenten": res.abonnenten, "wochen": res.wochen,
                 "stats": stats_payload,
             }, trades_path=res.trades_path, forensik=forensik_payload)
+            res.persisted_this_run = True
             if saved_trades_path:
                 res.trades_path = saved_trades_path
                 res.trades_sha256 = db.file_sha256(saved_trades_path)

@@ -15,6 +15,7 @@ import statistics
 from collections import Counter, defaultdict
 
 from .models import ParsedExport, Trade
+from .lot_format import format_lots, lot_histogram
 from .symbols import fx_pip_size, normalize_symbol, symbol_class
 
 
@@ -86,7 +87,8 @@ def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
             "symbol": sym, "trades": len(sub),
             "netto": round(sum(t.net for t in sub), 2),
             "winrate_pct": round(len(sw) / len(sub) * 100, 1),
-            "lots": f"{min(t.volume for t in sub):.2f}-{max(t.volume for t in sub):.2f}",
+            "lots": (f"{format_lots(min(t.volume for t in sub))}-"
+                     f"{format_lots(max(t.volume for t in sub))}"),
             "median_hold_h": round(statistics.median(t.holding_hours for t in sub), 2),
         })
 
@@ -139,8 +141,7 @@ def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
         },
         "monatskurve": [{"monat": m, "netto": round(v, 2)} for m, v in sorted(monthly.items())],
         "pro_symbol": per_symbol,
-        "lots_verteilung": {f"{v:.2f}": c for v, c in
-                            sorted(Counter(t.volume for t in trades).items())},
+        "lots_verteilung": lot_histogram(t.volume for t in trades),
         "einstiegsstunden_top": dict(sorted(Counter(t.open_time.hour for t in trades).items(),
                                             key=lambda kv: -kv[1])[:8]),
         "verluste": {

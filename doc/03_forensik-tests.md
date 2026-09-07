@@ -144,9 +144,16 @@ Begründung. Eine vollständige Analyse ohne Stop-Nachweis bleibt eine
 vollständige Analyse; sie wird deshalb nicht erneut heruntergeladen.
 Drawdown- und Martingale-Ablehnungen haben weiterhin Vorrang. Der Status
 wird durch Scan, Datenbank, Laufarchiv und KI-Payload durchgereicht;
-Freitext gilt nicht als Ersatznachweis. Bewertungsstand 5 verlangt für
+Freitext gilt nicht als Ersatznachweis. Bewertungsstand 6 verlangt für
 ältere Live-Befunde eine erneute Prüfung; Archive bleiben historische
 Momentaufnahmen.
+
+Beim Verlustdistanz-Clustering gilt für gleich häufige gerundete Niveaus
+deterministisch das kleinere Niveau. Eine gleich starke Nullklasse verhindert
+damit einen positiven Stop-Nachweis; die Reihenfolge der CSV-Zeilen darf keine
+Entlastung erzeugen. Bestehende Mindesthäufigkeiten und Evidenzschwellen bleiben
+unverändert. Auch die Auswahl eines repräsentativen Symbols bei Gleichstand
+ist unabhängig von der CSV-Reihenfolge.
 
 **Referenz:** `scripts/reference/analyze_goldspike_orderbook.py` (Stufe 1),
 `analyze_goldreaper.py` / `analyze_kiracat.py` (Stufe 2)

@@ -22,7 +22,7 @@ page_header('Auswertung / Evidenz vor Entscheidung', 'Ergebnisse im Überblick',
             image_path=str(hero_results_banner) if hero_results_banner.exists() else None)
 st.session_state.setdefault('scan_results', [])
 st.session_state.setdefault('last_run_file', None)
-st.session_state.setdefault('refreshed_signal_ids', [])
+st.session_state.setdefault('refreshed_signal_ids', None)
 scan_state.sync_worker_state(st.session_state)
 
 with st.container(border=True):
@@ -37,8 +37,11 @@ with st.container(border=True):
         return Path(p).parent.name
 
     selected_run = st.selectbox('Quelle', options, format_func=_fmt, key='results_run')
-    fresh_ids: set[int] = set(st.session_state.get('refreshed_signal_ids') or [])
-    if not fresh_ids and st.session_state.scan_results:
+    freshness = st.session_state.get('refreshed_signal_ids')
+    fresh_ids: set[int] = set(freshness or [])
+    # Nur alte Sitzungsstände ohne explizite Frischeliste benötigen den Fallback.
+    # [] bedeutet: Im letzten Lauf wurde kein Signaldatensatz aktualisiert.
+    if freshness is None and st.session_state.scan_results:
         fresh_ids = {r.id for r in st.session_state.scan_results
                      if getattr(r, 'source_kind', 'live') == 'live'}
 
@@ -50,7 +53,8 @@ with st.container(border=True):
         portfolio = db.get_latest_analysis(None, 'portfolio')
         st.caption(
             f'Datenbank · {len(results)} Signale. '
-            f'„NEU“ = im letzten Lauf dieser Sitzung aktualisiert ({len(fresh_ids)} Stück).'
+            f'„NEU“ = im letzten Lauf Kennzahlen, Befunde oder Signalberichte neu gespeichert '
+            f'({len(fresh_ids)} Stück); reine Übernahmen zählen nicht.'
         )
     elif selected_run == 'Aktuelle Sitzung':
         results = list(st.session_state.scan_results)
