@@ -3,11 +3,26 @@
 from __future__ import annotations
 
 from copy import copy
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import streamlit as st
 from mqlkiscanner.ui_design import (action_button, section_header,
                                     urteile_farbig)
+
+if TYPE_CHECKING:
+    from mqlkiscanner.pipeline import ScanResult
+
+
+def _result_identity(result) -> tuple:
+    """Different local CSV snapshots can share one signal ID (including zero)."""
+    return (result.source_kind, result.id, result.trades_path,
+            result.trades_sha256, result.name)
+
+
+def clear_report_selection() -> None:
+    st.session_state.pop("report_signal_id", None)
+    st.session_state.pop("report_result_identity", None)
 
 
 def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataFrame:
@@ -23,8 +38,8 @@ def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataF
 
 
 def render_results_table(results, key: str = "results_table", compact: bool = True,
-                         fresh_ids: set[int] | None = None) -> int | None:
-    """Tabelle mit Ampel- und Bericht-Button; Rueckgabe = gewaehlte Signal-ID."""
+                         fresh_ids: set[int] | None = None) -> ScanResult | None:
+    """Tabelle mit Ampel- und Bericht-Button; Rueckgabe = gewaehlter Ergebnissnapshot."""
     results = tuple(copy(r) for r in results)
     df = results_to_dataframe(results, fresh_ids=fresh_ids)
     if df.empty:
@@ -37,6 +52,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
         click = st.session_state.get(f"{key}_bericht")  # ButtonColumn-Click-Info
         if click is not None and getattr(click, "row", None) is not None:
             st.session_state["report_signal_id"] = results[click.row].id
+            st.session_state["report_result_identity"] = _result_identity(results[click.row])
 
     column_order = None
     if compact:
@@ -88,7 +104,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
         },
     )
     if event.selection.rows:
-        return results[event.selection.rows[0]].id
+        return results[event.selection.rows[0]]
     return None
 
 
@@ -97,9 +113,13 @@ def render_report_panel(results) -> None:
     report_id = st.session_state.get("report_signal_id")
     if report_id is None:
         return
-    r = next((x for x in results if x.id == report_id), None)
+    identity = st.session_state.get("report_result_identity")
+    matching = [x for x in results if (_result_identity(x) == identity if identity is not None
+                                     else x.id == report_id)]
+    # An old ID-only selection is safe only when it identifies exactly one row.
+    r = matching[0] if len(matching) == 1 else None
     if r is None:
-        st.session_state.pop("report_signal_id", None)
+        clear_report_selection()
         return
     with st.container(border=True):
         head = st.container(horizontal=True)
@@ -108,7 +128,7 @@ def render_report_panel(results) -> None:
         with head:
             close_report = action_button("Schließen", key=f"close_report_{r.id}", help_key="reports")
         if close_report:
-            st.session_state.pop("report_signal_id", None)
+            clear_report_selection()
             st.rerun()
         if r.gesamtbericht:
             st.markdown(urteile_farbig(r.gesamtbericht), unsafe_allow_html=True)

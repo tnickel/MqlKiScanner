@@ -240,9 +240,10 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
                       else "Kein belastbarer Stop-Nachweis")
             return "🟡", f"{reason} (kein Kandidat)"
         if result.score is not None and result.score < 5.0:
-            if (result.ertrag_monat_pct or 0) >= settings.get("min_ertrag_pct_monat", 5.0):
+            min_return = settings.get("min_ertrag_pct_monat", 5.0)
+            if (result.ertrag_monat_pct or 0) >= min_return:
                 return "🟢", "Kandidat: Forensik bestanden, Stop-Evidenz vorhanden, Score < 5, Ertrag ok"
-            return "🟡", "Forensik ok, aber Ertrag < 5 %/Monat"
+            return "🟡", f"Forensik ok, aber Ertrag < {min_return:g} %/Monat"
         return "🟡", f"Forensik bestanden, Score {result.score} (kein Kandidat)"
     return "⚪", "Vorprüfung (ohne Trade-Export-Forensik)"
 
@@ -530,6 +531,8 @@ class ScanPipeline:
                     "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
             if report is not None:
                 st, fx = report["stats"], report["forensics"]
+                if not st.get("trades"):
+                    raise ValueError("Forensik unvollständig: keine abgeschlossenen Trades im Export.")
                 res.forensik_vorhanden = True
                 res.symbole = ", ".join(sorted(st.get("symbols", {})))
                 td = fx["drawdown"]["trading_dd"]
@@ -594,6 +597,9 @@ class ScanPipeline:
             hard_stop = None
         # Alles in die Datenbank (Nutzer-Prinzip: CSV + MQL5-Infos + Befunde)
         try:
+            # A public drawdown breach already rules out a signal, even when
+            # the authenticated export was skipped and no score was computed.
+            refresh_report_verdict(res, self.settings)
             db.init_db()
             stats_payload = {
                 "eq_dd_pct": res.dd_equity_pct,
@@ -780,6 +786,8 @@ class ScanPipeline:
         for path in files:
             try:
                 report = analyze_export(path)
+                if not report["stats"].get("trades"):
+                    raise ValueError("Forensik unvollständig: keine abgeschlossenen Trades im Export.")
             except Exception as exc:
                 r = ScanResult(id=0, source_kind="demo", name=path,
                                fehler=f"{type(exc).__name__}: {exc}")

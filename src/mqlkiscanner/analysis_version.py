@@ -4,4 +4,4 @@ Bei Änderungen an Pflichtprüfungen oder Bewertungsregeln erhöhen: Live-Befund
 älterer Versionen müssen neu geprüft werden. Laufarchive bleiben unverändert.
 """
 
-FORENSICS_VERSION = 6
+FORENSICS_VERSION = 7

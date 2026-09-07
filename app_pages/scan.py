@@ -844,10 +844,10 @@ if st.session_state.scan_results:
     c4.metric("Fehler / Vorprüfung",
               sum(bool(r.fehler) or not r.forensik_vorhanden for r in results), border=True)
     render_report_panel(results)
-    selected_id = render_results_table(results)
-    if selected_id is not None:
+    selected = render_results_table(results)
+    if selected is not None:
         from mqlkiscanner.app_ui import render_detail
-        render_detail(next(r for r in results if r.id == selected_id))
+        render_detail(selected)
 else:
     with st.container(border=True, key="scan_empty"):
         st.markdown(":material/insights: **Noch keine Ergebnisse.**")
