@@ -71,6 +71,7 @@ st.session_state.setdefault("scan_logs", {})
 st.session_state.setdefault("last_run_file", None)
 st.session_state.setdefault("scan_workflow", _new_workflow())
 st.session_state.setdefault("portfolio_bericht", "")
+st.session_state.setdefault("portfolio_result", None)
 st.session_state.setdefault("scan_new_ids", [])
 st.session_state.setdefault("scan_thread", None)
 st.session_state.setdefault("scan_control", {})
@@ -88,6 +89,7 @@ def _lauf_ergebnisse_uebernehmen() -> None:
     if th is None or th.is_alive() or ctl.get("copied"):
         return
     st.session_state.portfolio_bericht = ctl.get("portfolio_bericht", "")
+    st.session_state.portfolio_result = ctl.get("portfolio")
     st.session_state.scan_new_ids = ctl.get("new_ids", [])
     if ctl.get("signals") is not None:
         st.session_state["scan_signals"] = ctl["signals"]
@@ -143,6 +145,14 @@ if command is None and _lauf_thread is None and workflow["status"] == "running":
 if command:
     workflow = _new_workflow(command["mode"])
     st.session_state.scan_workflow = workflow
+    st.session_state.portfolio_result = None
+    st.session_state.portfolio_bericht = ""
+    if command["mode"] in ("scan", "step_listen"):
+        st.session_state.scan_signals = []
+    if command["mode"] in ("scan", "step_listen", "step_kandidaten"):
+        # Nachgelagerte Daten gehören zur vorherigen Auswahl. Auch bei einem
+        # Fehler im neuen Abruf dürfen sie nicht als neuer Stand weiterlaufen.
+        st.session_state.scan_candidates = []
     if command["mode"] == "scan" and command["settings"] and not (
             command["settings"]["llm_stufe1"] or command["settings"]["llm_stufe2"]):
         workflow["steps"]["llm"].update(status="skipped", detail="KI-Berichte für diesen Lauf ausgeschaltet")
@@ -152,7 +162,7 @@ if command:
         st.session_state.scan_logs = {}
         st.session_state.last_run_file = None
         st.session_state.portfolio_bericht = ""
-    if command["mode"] in ("local", "step_forensik"):
+    if command["mode"] in ("local", "step_kandidaten", "step_forensik"):
         # Eine neue Prüfung ersetzt die vorherige Ergebnismenge dieser Sitzung.
         st.session_state.scan_results = []
         st.session_state.portfolio_bericht = ""
@@ -450,7 +460,7 @@ if command:
     results = st.session_state.scan_results
     signals_vorhanden = st.session_state.get("scan_signals")
     candidates_vorhanden = st.session_state.get("scan_candidates")
-    control = {"stop": False, "portfolio_bericht": "", "new_ids": [],
+    control = {"stop": False, "portfolio_bericht": "", "portfolio": None, "new_ids": [],
                "signals": None, "candidates": None,
                "last_run_file": None, "refreshed_ids": None, "copied": False}
     st.session_state.scan_control = control
@@ -673,11 +683,14 @@ if command:
             on_progress=lambda done, total, text: w_step("portfolio", done=done, total=total, detail=text),
             should_stop=lambda: bool(control.get("stop")),
         )
+        control["portfolio"] = dict(summary)
         if summary.get("text"):
             control["portfolio_bericht"] = summary["text"]
-            w_step("portfolio", "complete", done=1,
+            issue = summary.get("storage_error") or summary.get("reason")
+            w_step("portfolio", "warning" if issue else "complete", done=1,
                    detail=(f"Portfolio-Vorschlag erstellt · {summary.get('zeichen', 0):,} Zeichen · "
-                           f"{summary.get('tokens', 0):,} Tokens gesamt"))
+                           f"{summary.get('tokens', 0):,} Tokens gesamt"
+                           + (f" · Speicher-/Laufhinweis: {issue}" if issue else "")))
         elif "Stop" in (summary.get("reason") or ""):
             w_step("portfolio", "warning", detail="Abbruch per Stop-Button")
         else:
@@ -709,7 +722,12 @@ if command:
                         log = w_log_for("forensik")
                         w_step("forensik", "running", total=len(files),
                                detail="Lokale Testdateien werden geprüft")
+                        stopped = False
                         for i, file in enumerate(files):
+                            if control.get("stop"):
+                                stopped = True
+                                log("Stop angefordert — verbleibende Testdateien werden nicht geprüft.")
+                                break
                             w_step("forensik", detail=f"Datei {i + 1}/{len(files)}: {file.name}", done=i)
                             rows = pipeline.ScanPipeline.analyze_local_files([str(file)], run_config)
                             results.extend(rows)
@@ -719,8 +737,9 @@ if command:
                         bad = len(results) - good
                         w_step(
                             "forensik",
-                            "complete" if not bad else "warning" if good else "error",
-                            detail=f"{good} Dateien geprüft · {bad} fehlerhaft",
+                            "warning" if stopped else "complete" if not bad else "warning" if good else "error",
+                            detail=(f"{good} Dateien geprüft · {bad} fehlerhaft"
+                                    + (" · Abbruch per Stop-Button" if stopped else "")),
                         )
                 elif mode == "llm":
                     w_step("forensik", "skipped", detail="Vorliegende Prüfergebnisse verwenden")
@@ -781,7 +800,8 @@ if command:
                         w_step(sid, "skipped", detail="Nach vorherigem Fehler nicht ausgeführt")
             workflow["activity"] = "Ergebnisse und Protokoll speichern …"
             try:
-                control["last_run_file"] = pipeline.ScanPipeline.save_run(results, logs)
+                control["last_run_file"] = pipeline.ScanPipeline.save_run(
+                    results, logs, portfolio=control.get("portfolio"))
                 control["refreshed_ids"] = [r.id for r in results
                                             if getattr(r, "source_kind", "live") == "live"]
                 workflow["saved"] = True
@@ -843,6 +863,9 @@ if st.session_state.get("portfolio_bericht"):
                    "Gewichtung. Keine Anlageberatung.")
         st.markdown(urteile_farbig(st.session_state.portfolio_bericht),
                     unsafe_allow_html=True)
+        portfolio_result = st.session_state.get("portfolio_result") or {}
+        if issue := portfolio_result.get("storage_error") or portfolio_result.get("reason"):
+            st.warning(f"Portfolio-Hinweis: {issue}")
 if st.session_state.scan_logs:
     with st.expander("Ablaufprotokoll (technisch)", icon=":material/receipt_long:"):
         for sid, title, *_rest in STEPS:

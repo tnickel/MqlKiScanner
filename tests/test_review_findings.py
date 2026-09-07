@@ -39,7 +39,8 @@ def test_z_f1_shock_uses_volume_peak_not_only_count_peak():
 
 
 def test_z_f2_multi_symbol_uses_per_class_factors():
-    trades = [_t(0, 2, "Buy", 1.0, "US30"), _t(0.1, 2, "Buy", 0.95, "NZDCAD")]
+    # Beide Gewinnwährungen USD: keine unbelegte CAD/USD-Umrechnung im Klassenvergleich.
+    trades = [_t(0, 2, "Buy", 1.0, "US30"), _t(0.1, 2, "Buy", 0.95, "EURUSD")]
     r = exposure.run(ParsedExport("x", "positions", trades=trades))
     # 1.0 * 50 * 1 + 0.95 * 0.05 * 100000 = 50 + 4750
     assert abs(r["shock_usd"] - 4800.0) < 1e-6
@@ -200,7 +201,8 @@ def test_a_vorpruefung_without_credentials_does_not_keep_green_forensik(
         pass
 
     def boom_export(*_a, **_k):
-        raise RuntimeError("Keine MQL5-Credentials gesetzt")
+        from mqlkiscanner.mql5.errors import Mql5CredentialsMissingError
+        raise Mql5CredentialsMissingError("Keine MQL5-Credentials gesetzt")
 
     monkeypatch.setattr("mqlkiscanner.mql5.exporter.export_positions", boom_export)
     monkeypatch.setattr(

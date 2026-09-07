@@ -185,11 +185,15 @@ def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):
 def test_step3_nur_neue_skips_known_and_keeps_old_verdicts(mocked_crawler, monkeypatch):
     """Nur-neue-Modus: bereits bewertete Signale werden nicht erneut geladen."""
     from mqlkiscanner import db
+    from mqlkiscanner.analysis_version import FORENSICS_VERSION
     from mqlkiscanner.mql5 import browser_session
 
     db.init_db()
-    db.upsert_signal(2342895, name="KiraCat", platform="MT5")
-    db.store_forensik(2342895, {"score": 4.7, "ampel": "🟡",
+    db.upsert_signal(2342895, name="KiraCat", platform="MT5",
+                     stats={"forensik_ok": True, "forensik_version": FORENSICS_VERSION})
+    db.store_forensik(2342895, {"version": FORENSICS_VERSION,
+                                "peak_exposure": {"shock_pct_max": 5.0},
+                                "score": 4.7, "ampel": "🟡",
                                 "stop_nachweis": "kein Nachweis"})
 
     called: list[int] = []

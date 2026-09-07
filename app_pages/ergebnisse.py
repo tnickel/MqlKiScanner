@@ -46,35 +46,44 @@ with st.container(border=True):
                    if getattr(r, 'source_kind', 'live') == 'live']
         # Frisch aktualisierte Signale oben.
         results.sort(key=lambda r: (0 if r.id in fresh_ids else 1, (r.name or '').casefold()))
+        portfolio = db.get_latest_analysis(0, 'portfolio')
         st.caption(
             f'Datenbank · {len(results)} Signale. '
             f'„NEU“ = im letzten Lauf dieser Sitzung aktualisiert ({len(fresh_ids)} Stück).'
         )
     elif selected_run == 'Aktuelle Sitzung':
         results = list(st.session_state.scan_results)
+        portfolio = st.session_state.get('portfolio_result')
+        if portfolio is None and st.session_state.get('portfolio_bericht'):
+            portfolio = {'text': st.session_state.portfolio_bericht}
         st.caption('Nur die Ergebnisse des letzten Scans in dieser Sitzung.')
     else:
         try:
             data = json.loads(Path(selected_run).read_text(encoding='utf-8'))
             results = [pipeline.ScanResult(**{k: v for k, v in row.items()
                         if k in pipeline.ScanResult.__dataclass_fields__}) for row in data.get('ergebnisse', [])]
+            portfolio = data.get('portfolio')
         except (OSError, ValueError, TypeError, AttributeError) as exc:
             st.error(f'Der gespeicherte Lauf konnte nicht gelesen werden: {exc}')
             st.stop()
         st.caption(f'Archiv · {Path(selected_run).parent.name} · historische Momentaufnahme')
         fresh_ids = set()
 
-# Station 5: globaler Portfolio-Bericht (DB, signal_id=0, kind='portfolio') —
-# sichtbar auch ohne gespeicherte Signale, daher vor dem Leer-Stop.
+# Das Portfolio stammt aus derselben Quelle wie die Signale. Alte Archive
+# ohne Portfolio erhalten keinen heutigen Bericht aus dem Live-Katalog.
 demo_only = bool(results) and all(getattr(r, 'source_kind', 'live') == 'demo'
                                   for r in results)
-portfolio = None if demo_only else db.get_latest_analysis(0, 'portfolio')
+portfolio = None if demo_only or not isinstance(portfolio, dict) else portfolio
 if portfolio:
     with st.container(border=True):
         section_header('Portfolio-Vorschlag', 'KI-Empfehlung über alle Signale: Strategie-Mix, Assets, Gewichtung.',
                        help_key='portfolio_report')
-        st.caption(f"Stand: {portfolio['created_at']} · Modell: {portfolio['model']} · Keine Anlageberatung.")
-        st.markdown(urteile_farbig(portfolio['text']), unsafe_allow_html=True)
+        st.caption(f"Stand: {portfolio.get('created_at') or 'nicht gespeichert'} · "
+                   f"Modell: {portfolio.get('model') or 'nicht gespeichert'} · Keine Anlageberatung.")
+        if portfolio.get('text'):
+            st.markdown(urteile_farbig(portfolio['text']), unsafe_allow_html=True)
+        if issue := portfolio.get('storage_error') or portfolio.get('reason'):
+            st.warning(f"Portfolio-Hinweis: {issue}")
 
 if not results:
     with st.container(border=True):

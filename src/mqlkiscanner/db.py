@@ -18,7 +18,9 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import json
+import os
 import sqlite3
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -94,8 +96,8 @@ def file_sha256(path: str) -> str:
 
 def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str = "",
                   autor: str = "", abo_preis=None, abonnenten=None, wochen=None,
-                  stats: dict | None = None) -> None:
-    with _connect() as conn:
+                  stats: dict | None = None, *, _connection=None) -> None:
+    with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
         conn.execute(
             """INSERT INTO signals (signal_id, name, platform, url, autor, abo_preis,
                abonnenten, wochen, stats_json, updated_at)
@@ -109,23 +111,70 @@ def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str =
              json.dumps(stats or {}, ensure_ascii=False), _now()))
 
 
-def store_trade_file(signal_id: int, path: str) -> None:
-    with _connect() as conn:
+def _snapshot_trade_file(path: str) -> tuple[str, str]:
+    """Keep the exact hashed bytes independently of the mutable download cache.
+
+    A rolled-back SQL transaction may leave an unused snapshot, but cannot
+    overwrite a previous version. Files belong to this database, never to the
+    directory containing an input fixture or externally supplied CSV.
+    """
+    directory = DB_PATH.parent / "trade_snapshots"
+    directory.mkdir(parents=True, exist_ok=True)
+    suffix = ".json" if Path(path).suffix.lower() == ".json" else ".csv"
+    temporary = None
+    digest = hashlib.sha256()
+    try:
+        with open(path, "rb") as source:
+            with tempfile.NamedTemporaryFile(mode="wb", dir=directory,
+                                             suffix=".tmp", delete=False) as target:
+                temporary = Path(target.name)
+                for chunk in iter(lambda: source.read(65536), b""):
+                    target.write(chunk)
+                    digest.update(chunk)
+                target.flush()
+                os.fsync(target.fileno())
+        sha256 = digest.hexdigest()
+        snapshot = directory / f"{sha256}{suffix}"
+        # Concurrent identical content has the same destination and bytes.
+        os.replace(temporary, snapshot)
+        return str(snapshot), sha256
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def store_trade_file(signal_id: int, path: str, *, _connection=None) -> str:
+    snapshot, sha256 = _snapshot_trade_file(path)
+    with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
         conn.execute(
             """INSERT INTO trade_files (signal_id, path, sha256, fetched_at)
                VALUES (?,?,?,?)
                ON CONFLICT(signal_id) DO UPDATE SET path=excluded.path,
                  sha256=excluded.sha256, fetched_at=excluded.fetched_at""",
-            (signal_id, path, file_sha256(path), _now()))
+            (signal_id, snapshot, sha256, _now()))
+    return snapshot
 
 
-def store_forensik(signal_id: int, report: dict) -> None:
-    with _connect() as conn:
+def store_forensik(signal_id: int, report: dict, *, _connection=None) -> None:
+    with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
         conn.execute(
             """INSERT INTO forensik (signal_id, json, updated_at) VALUES (?,?,?)
                ON CONFLICT(signal_id) DO UPDATE SET json=excluded.json,
                  updated_at=excluded.updated_at""",
             (signal_id, json.dumps(report, ensure_ascii=False, default=str), _now()))
+
+
+def store_scan_result(signal_id: int, signal: dict, trades_path: str = "",
+                      forensik: dict | None = None) -> str:
+    """Kennzahlen und zugehörigen Befund gemeinsam bestätigen oder zurückrollen."""
+    snapshot = ""
+    with _connect() as conn:
+        upsert_signal(signal_id, **signal, _connection=conn)
+        if trades_path:
+            snapshot = store_trade_file(signal_id, trades_path, _connection=conn)
+        if forensik is not None:
+            store_forensik(signal_id, forensik, _connection=conn)
+    return snapshot
 
 
 def store_analysis(signal_id: int, kind: str, model: str, tokens: int, text: str) -> None:
