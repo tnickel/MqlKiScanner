@@ -2,6 +2,8 @@
 """Gemeinsame UI-Bausteine fuer die Streamlit-Seiten (Tabelle + Detail)."""
 from __future__ import annotations
 
+from copy import copy
+
 import pandas as pd
 import streamlit as st
 from mqlkiscanner.ui_design import (action_button, section_header,
@@ -9,6 +11,7 @@ from mqlkiscanner.ui_design import (action_button, section_header,
 
 
 def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataFrame:
+    results = tuple(copy(r) for r in results)
     rows = [r.to_row() for r in results]
     if not rows:
         return pd.DataFrame()
@@ -22,6 +25,7 @@ def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataF
 def render_results_table(results, key: str = "results_table", compact: bool = True,
                          fresh_ids: set[int] | None = None) -> int | None:
     """Tabelle mit Ampel- und Bericht-Button; Rueckgabe = gewaehlte Signal-ID."""
+    results = tuple(copy(r) for r in results)
     df = results_to_dataframe(results, fresh_ids=fresh_ids)
     if df.empty:
         st.info("Noch keine Ergebnisse — erst einen Scan starten oder die "
@@ -115,6 +119,8 @@ def render_report_panel(results) -> None:
                        "geschrieben.")
         if r.llm_fehler:
             st.caption(f"LLM-Hinweis: {r.llm_fehler}")
+        if hint := getattr(r, "bericht_hinweis", ""):
+            st.info(hint)
 
 
 def render_detail(result) -> None:
@@ -167,3 +173,5 @@ def render_detail(result) -> None:
             st.markdown("_Noch nicht erstellt (LLM-Lauf starten)._")
     if result.llm_fehler:
         st.warning(f"LLM-Hinweis: {result.llm_fehler}")
+    if hint := getattr(result, "bericht_hinweis", ""):
+        st.info(hint)

@@ -226,8 +226,6 @@ def test_a_vorpruefung_without_credentials_does_not_keep_green_forensik(
 
 
 def test_a_same_second_error_marks_forensik_stale(tmp_path, monkeypatch):
-    import json
-
     monkeypatch.setattr(db, "DB_PATH", tmp_path / "same.db")
     db.init_db()
     ts = "2026-09-05 12:00:00"
@@ -367,9 +365,11 @@ def test_failed_llm_does_not_recount_old_texts(monkeypatch, tmp_path):
     pipe.llm = Boom()
     r = ScanResult(id=7770002, name="LLM", forensik_vorhanden=True,
                    trade_analyse="ALT TRADE", risiko_analyse="ALT RISIKO")
+    r.berichte_basis = pipeline.report_basis_for(r, pipe.settings)
     summary = pipe.run_llm([r], pipeline.StepLog())
     assert summary["completed"] == 0
-    assert summary["failed"] == 1
+    assert summary["failed"] == 2 and summary["skipped"] == 1
+    assert r.trade_analyse == "ALT TRADE" and r.risiko_analyse == "ALT RISIKO"
 
 
 def test_local_forensik_archive_keeps_metrics_without_live_db(tmp_path, monkeypatch):

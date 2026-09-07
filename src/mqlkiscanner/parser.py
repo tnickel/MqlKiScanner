@@ -24,6 +24,10 @@ from .models import BalanceRow, PendingOrder, ParsedExport, Trade
 TIME_FMT = "%Y.%m.%d %H:%M:%S"
 FILLED_TYPES = ("Buy", "Sell")
 PENDING_TYPES = ("Buy Stop", "Sell Stop", "Buy Limit", "Sell Limit")
+POSITION_HEADER = ("Time", "Type", "Volume", "Symbol", "Price", "Volume",
+                   "Time", "Price", "Commission", "Swap", "Profit")
+ORDERBOOK_HEADER = ("Time", "Type", "Volume", "Symbol", "Price", "S/L", "T/P",
+                   "Time", "Price", "Commission", "Swap", "Profit", "Comment")
 
 
 def parse_number(text: str) -> Optional[float]:
@@ -40,9 +44,14 @@ def parse_time(text: str) -> datetime:
 
 
 def _detect_format(header: list[str]) -> str:
-    if len(header) >= 13 and any("S/L" in cell for cell in header):
+    # Field positions below are fixed. Width alone cannot prove their meaning
+    # (e.g. swapped S/L and T/P must never turn take profits into stop proof).
+    columns = tuple(cell.strip() for cell in header)
+    if columns == ORDERBOOK_HEADER:
         return "mt4_orderbook"
-    return "positions"
+    if columns == POSITION_HEADER:
+        return "positions"
+    raise ValueError("unvollstaendiger oder unbekannter CSV-Header")
 
 
 def _row_number(row: list[str], idx: int) -> Optional[float]:
@@ -66,10 +75,11 @@ def load_export(path: str) -> ParsedExport:
             f"{path}: kein CSV-Export (Header beginnt nicht mit 'Time') — "
             "vermutlich Login-HTML statt Export (Session abgelaufen, siehe doc/02)."
         )
-    fmt = _detect_format(header)
+    try:
+        fmt = _detect_format(header)
+    except ValueError as exc:
+        raise ValueError(f"{path}: {exc}") from exc
     expected_columns = 13 if fmt == "mt4_orderbook" else 11
-    if len(header) != expected_columns:
-        raise ValueError(f"{path}: unvollstaendiger oder unbekannter CSV-Header")
     result = ParsedExport(source_path=path, source_format=fmt)
 
     for line, row in enumerate(rows[1:], start=2):

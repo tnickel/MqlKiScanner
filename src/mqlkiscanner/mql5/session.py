@@ -38,6 +38,7 @@ class Mql5Session:
         self.http = requests.Session()
         self.http.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "en"})
         self.logged_in = False
+        self._authenticated_user: str | None = None
         self.limiter = RateLimiter(
             min_interval_s=self.settings.get("rate_min_interval_s", 2.0),
         )
@@ -97,7 +98,8 @@ class Mql5Session:
             raise Mql5CredentialsMissingError(
                 "Keine MQL5-Credentials gesetzt (Admin-Bereich oder "
                 "MQL5_USER/MQL5_PASS) — Trade-Export nicht moeglich.")
-        if self.logged_in and self.is_logged_in():
+        user = secrets_store.get_secret("mql5_user").strip()
+        if self.logged_in and self._authenticated_user == user and self.is_logged_in():
             return
         # Bewusst kein HTTP-Formular-Login: MQL5 verlangt JS-Cookies.
         from .browser_session import ensure_mql5_cookies

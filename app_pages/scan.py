@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, db, pipeline, scan_worker, secrets_store
+from mqlkiscanner import config, db, pipeline, scan_state, scan_worker, secrets_store
 from mqlkiscanner.app_ui import render_report_panel, render_results_table
 from mqlkiscanner.ui_design import (
     action_button, apply_theme, page_header, section_header, urteile_farbig,
@@ -76,43 +76,6 @@ st.session_state.setdefault("scan_thread", None)
 st.session_state.setdefault("scan_control", {})
 
 
-def _lauf_ergebnisse_uebernehmen() -> None:
-    """Beendetes Lauf-Thread: frische Ergebnisse in die Sitzung übernehmen.
-
-    Wird beim vollen Seitenaufruf gerufen (der Fragment-Tick stößt ihn an,
-    sobald der Thread beendet ist) — so landen Portfolio-Bericht, letzte
-    Laufdatei und Zwischenergebnisse sicher in der Session.
-    """
-    ctl = st.session_state.scan_control
-    th = st.session_state.scan_thread
-    if th is None or th.is_alive() or st.session_state.get("_copied_scan_control") is ctl:
-        return
-    st.session_state.portfolio_bericht = ctl.get("portfolio_bericht", "")
-    st.session_state.portfolio_result = ctl.get("portfolio")
-    st.session_state.scan_new_ids = ctl.get("new_ids", [])
-    if ctl.get("signals") is not None:
-        st.session_state["scan_signals"] = ctl["signals"]
-    if ctl.get("candidates") is not None:
-        st.session_state["scan_candidates"] = ctl["candidates"]
-    if ctl.get("last_run_file"):
-        st.session_state.last_run_file = ctl["last_run_file"]
-    if ctl.get("refreshed_ids") is not None:
-        st.session_state.refreshed_signal_ids = ctl["refreshed_ids"]
-    ctl["copied"] = True
-    st.session_state["_copied_scan_control"] = ctl
-    st.session_state.scan_running = None
-    wf = st.session_state.scan_workflow
-    if wf["status"] == "running":
-        # Hart gestorbener Worker (App-Neustart mitten im Lauf): sauber beenden.
-        wf.update(status="error",
-                  activity="Lauf wurde unterbrochen. Vorliegende Ergebnisse bleiben erhalten.")
-        for _step_state in wf["steps"].values():
-            if _step_state["status"] == "running":
-                _step_state.update(status="error", detail="Lauf unterbrochen; nicht abgeschlossen")
-            elif _step_state["status"] == "pending":
-                _step_state.update(status="skipped", detail="Nach Unterbrechung nicht ausgeführt")
-
-
 def _stop_requested() -> None:
     """Button-Callback: Stop-Flag für den Worker setzen."""
     ctl = st.session_state.get("scan_control") or {}
@@ -124,17 +87,12 @@ def _stop_requested() -> None:
 
 def _attach_worker(run: scan_worker.WorkerRun) -> None:
     """Nach Browser-Reload denselben Prozess-Worker wieder sichtbar machen."""
-    st.session_state.scan_thread = run.thread
-    st.session_state.scan_workflow = run.workflow
-    st.session_state.scan_control = run.control
-    st.session_state.scan_logs = run.logs
-    st.session_state.scan_results = run.results
-    st.session_state.scan_running = run.workflow.get("mode")
+    scan_state.attach_worker(st.session_state, run)
 
 
+reattached = scan_state.sync_worker_state(st.session_state)
 command = st.session_state.pop("scan_command", None)
 shared_run = scan_worker.active_run()
-reattached = shared_run is not None and st.session_state.scan_thread is not shared_run.thread
 if shared_run is not None:
     _attach_worker(shared_run)
     # Auch bereits abgesendete Befehle aus einer zweiten Sitzung abweisen.
@@ -143,9 +101,6 @@ workflow = st.session_state.scan_workflow
 control = st.session_state.scan_control
 _lauf_thread = st.session_state.scan_thread
 _thread_lebt = bool(_lauf_thread is not None and _lauf_thread.is_alive())
-
-if command is None:
-    _lauf_ergebnisse_uebernehmen()
 
 # Altlast ohne Thread-Objekt (z. B. nach App-Neustart mitten im Lauf):
 # einen hängenden "running"-Stand nicht weiter als aktiv anzeigen.
@@ -481,7 +436,7 @@ if command:
     signals_vorhanden = st.session_state.get("scan_signals")
     candidates_vorhanden = st.session_state.get("scan_candidates")
     control = {"stop": False, "portfolio_bericht": "", "portfolio": None, "new_ids": [],
-               "signals": None, "candidates": None,
+               "signals": signals_vorhanden or [], "candidates": candidates_vorhanden or [],
                "last_run_file": None, "refreshed_ids": None, "copied": False}
     st.session_state.scan_control = control
     st.session_state.scan_running = mode if mode != "scan" else "listen"
@@ -502,7 +457,15 @@ if command:
             workflow["activity"] = message.splitlines()[0][:400]
         return log
 
+    def w_skip_if_stopped(sid: str) -> bool:
+        if not control.get("stop"):
+            return False
+        w_step(sid, "skipped", detail="Abbruch per Stop-Button vor dieser Station")
+        return True
+
     def w_run_listen(cfg) -> list[dict]:
+        if w_skip_if_stopped("listen"):
+            return []
         w_step("listen", "running", total=2 * cfg["listen_seiten"],
                detail="MQL5-Listen abrufen …")
         signals = pipe.crawl(
@@ -514,6 +477,8 @@ if command:
         return signals
 
     def w_run_kandidaten(signals: list[dict], cfg) -> list[dict]:
+        if w_skip_if_stopped("kandidaten"):
+            return []
         w_step("kandidaten", "running", total=len(signals),
                detail="Alter und Abonnenten prüfen …")
         candidates = pipe.build_candidates(signals, w_log_for("kandidaten"))
@@ -523,6 +488,8 @@ if command:
         return candidates
 
     def w_run_forensik(cands: list[dict], cfg) -> None:
+        if w_skip_if_stopped("forensik"):
+            return
         n_export = min(len(cands), cfg["top_n_export"])
         if not n_export:
             w_step("forensik", "skipped", detail="Keine passenden Signale nach der Auswahl")
@@ -546,6 +513,8 @@ if command:
                 "nichts neu von MQL5 geladen.")
             w_step("forensik", "complete", done=n_export,
                    detail=f"Alle {n_export} Signale bereits bewertet — unverändert übernommen")
+            return
+        if w_skip_if_stopped("forensik"):
             return
         if not session.has_credentials:
             log("Kein MQL5-Login — nur Kennzahlen möglich, Trade-Exporte entfallen "
@@ -619,6 +588,8 @@ if command:
             )
 
     def w_run_llm(targets: list[pipeline.ScanResult], cfg) -> None:
+        if w_skip_if_stopped("llm"):
+            return
         kandidaten = [r for r in targets if r.forensik_vorhanden and not r.fehler
                       and getattr(r, "source_kind", "live") == "live"]
         neu_erstellen = bool(cfg.get("berichte_neu"))
@@ -634,19 +605,10 @@ if command:
         if kandidaten and not neu_erstellen:
             jobs = []
             for r in kandidaten:
-                vorhanden = db.get_latest_analysis(r.id, "gesamtbericht")
-                if vorhanden is None:
+                if not pipeline.restore_current_reports(r, cfg):
                     jobs.append(r)
                     continue
                 uebersprungen.append(r)
-                r.gesamtbericht = vorhanden["text"]
-                if not r.kurzfassung:
-                    r.kurzfassung = pipeline._extract_kurzfassung(vorhanden["text"])
-                for kind, attr in (("trade_analyse", "trade_analyse"),
-                                   ("risiko_analyse", "risiko_analyse")):
-                    prev = db.get_latest_analysis(r.id, kind)
-                    if prev:
-                        setattr(r, attr, prev["text"])
         total = 3 * len(jobs)
         if uebersprungen:
             namen = ", ".join(f"#{r.id} {r.name}" for r in uebersprungen[:8])
@@ -688,6 +650,8 @@ if command:
         w_step("llm", state, done=completed, total=total, detail=detail)
 
     def w_run_portfolio(alle: list[pipeline.ScanResult], cfg) -> None:
+        if w_skip_if_stopped("portfolio"):
+            return
         alle = [r for r in alle if getattr(r, "source_kind", "live") == "live"]
         if not pipe.llm.has_key:
             logs["portfolio"] = ["Kein KI-Key hinterlegt"]
@@ -831,7 +795,7 @@ if command:
             if workflow["saved"]:
                 final_status = (
                     "error" if "error" in states
-                    else "warning" if "warning" in states or all(s == "skipped" for s in states)
+                    else "warning" if control.get("stop") or "warning" in states or all(s == "skipped" for s in states)
                     else "complete"
                 )
                 workflow.update(status=final_status, activity=(
@@ -873,7 +837,7 @@ section_header(
     help_key="scan_results",
 )
 if st.session_state.scan_results:
-    results = st.session_state.scan_results
+    results = list(st.session_state.scan_results)
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Datensätze", len(results), border=True)
     c2.metric("Gründlich geprüft", sum(r.forensik_vorhanden for r in results), border=True)

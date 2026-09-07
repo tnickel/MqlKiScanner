@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 import streamlit as st
 
-from mqlkiscanner import config, db, pipeline
+from mqlkiscanner import config, db, pipeline, scan_state
 from mqlkiscanner.app_ui import render_detail, render_report_panel, render_results_table, results_to_dataframe
 from mqlkiscanner.ui_design import (apply_theme, info_button, page_header, section_header,
                                     urteile_farbig)
@@ -23,6 +23,7 @@ page_header('Auswertung / Evidenz vor Entscheidung', 'Ergebnisse im Überblick',
 st.session_state.setdefault('scan_results', [])
 st.session_state.setdefault('last_run_file', None)
 st.session_state.setdefault('refreshed_signal_ids', [])
+scan_state.sync_worker_state(st.session_state)
 
 with st.container(border=True):
     section_header('Datenstand', 'Datenbank, aktuelle Sitzung oder einen gespeicherten Lauf.',
@@ -76,10 +77,16 @@ demo_only = bool(results) and all(getattr(r, 'source_kind', 'live') == 'demo'
 portfolio = None if demo_only or not isinstance(portfolio, dict) else portfolio
 if portfolio:
     with st.container(border=True):
-        section_header('Portfolio-Vorschlag', 'KI-Empfehlung über alle Signale: Strategie-Mix, Assets, Gewichtung.',
+        catalog_portfolio = selected_run.startswith('Datenbank')
+        section_header('Gespeicherter Portfolio-Vorschlag (historischer Stand)' if catalog_portfolio
+                       else 'Portfolio-Vorschlag',
+                       'KI-Empfehlung über alle Signale: Strategie-Mix, Assets, Gewichtung.',
                        help_key='portfolio_report')
         st.caption(f"Stand: {portfolio.get('created_at') or 'nicht gespeichert'} · "
                    f"Modell: {portfolio.get('model') or 'nicht gespeichert'} · Keine Anlageberatung.")
+        if catalog_portfolio:
+            st.info('Dieser Bericht zeigt den Stand seiner Erstellung. Er wurde nicht mit '
+                    'den aktuellen Katalogbewertungen abgeglichen.')
         if portfolio.get('text'):
             st.markdown(urteile_farbig(portfolio['text']), unsafe_allow_html=True)
         if issue := portfolio.get('storage_error') or portfolio.get('reason'):

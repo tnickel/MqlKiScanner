@@ -9,14 +9,13 @@ Lauf-Ergebnisse landen in data/runs/{zeitstempel}/results.json.
 """
 from __future__ import annotations
 
-import csv
+import hashlib
 import json
 import os
 import tempfile
 import time
 import traceback
 from uuid import uuid4
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Callable
@@ -91,6 +90,9 @@ class ScanResult:
     urteil: str = "Vorprüfung (ohne Forensik)"
     # LLM-Teilergebnisse (Nutzer-Prinzip: 2 Analysen + 1 Gesamtauswertung)
     trades_path: str = ""           # Quelldatei der Trades (fuer Prompt 1)
+    trades_sha256: str = ""         # Inhalt des unveränderlichen Trade-Snapshots
+    berichte_basis: str = ""        # Datengrundlage der im Ergebnis enthaltenen KI-Texte
+    bericht_hinweis: str = ""
     trade_analyse: str = ""         # Prompt 1: Strategie aus den Trades (glm-5.3)
     risiko_analyse: str = ""        # Prompt 2: Risiko-Profil aus Forensik (Flash)
     gesamtbericht: str = ""         # Prompt 3: ausfuehrlicher Gesamtbericht (glm-5.3)
@@ -183,12 +185,14 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             shock_pct_peak_account=peak.get("shock_pct_peak_account"),
             shock_pct_peak_usd=peak.get("shock_pct_peak_usd"),
             martingale_flag=f.get("martingale_flag"),
+            martingale_evidenz=f.get("martingale_evidenz") or [],
             stop_nachweis=f.get("stop_nachweis") or "",
             stop_evidence=f.get("stop_evidence"),
             broker_server=stats.get("broker_server"),
             symbole=f.get("symbole") or "",
             score=None if forensik_stale else f.get("score"),
             trades_path=row.get("trades_path") or "",
+            trades_sha256=row.get("trades_sha256") or "",
             trade_analyse=row.get("trade_analyse") or "",
             risiko_analyse=row.get("risiko_analyse") or "",
             gesamtbericht=row.get("gesamtbericht") or "",
@@ -209,6 +213,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             res.urteil = f"Fehler (Forensik veraltet): {last_fehler}"
         elif forensik_stale:
             res.urteil = "Forensik veraltet oder unvollständig — erneute Prüfung erforderlich."
+        restore_current_reports(res, settings)
         results.append(res)
     return results
 
@@ -294,6 +299,78 @@ def _stop_evidence_text(stops: dict) -> str:
         return (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
                 f"{stops.get('positions_total')} mit SL/TP")
     return stops.get("verdict", "kein Nachweis")
+
+
+def report_basis_for(result: ScanResult, settings: dict) -> str | None:
+    """Stable identity of the facts and criteria used for signal reports.
+
+    Timestamps and storage paths are not evidence: identical CSV bytes and
+    facts may reuse a report, while changed risk inputs must not do so.
+    """
+    csv_hash = result.trades_sha256
+    if not csv_hash and result.trades_path:
+        try:
+            csv_hash = db.file_sha256(result.trades_path)
+        except OSError:
+            return None
+    facts = json.loads(_kandidat_json(result))
+    # Derived display fields are reconstructed from the same facts/criteria.
+    facts.pop("ampel", None)
+    facts.pop("schranke_verletzt", None)
+    forensics = json.loads(_forensik_json(result))
+    forensics["martingale_evidenz"] = result.martingale_evidenz or []
+    content = {
+        "format": 1, "version": result.forensik_version,
+        "implementation_version": FORENSICS_VERSION,
+        "forensics_complete": result.forensik_vorhanden,
+        "csv_sha256": csv_hash, "facts": facts, "forensics": forensics,
+        "exclusion": next((entry for entry in config.load_known_signals().get("ausgeschlossen", [])
+                           if entry["id"] == result.id), None),
+        "criteria": {key: settings.get(key, config.DEFAULT_SETTINGS[key])
+                     for key in ("schranke_eq_dd_pct", "min_ertrag_pct_monat")},
+    }
+
+    def canonical(value):
+        if isinstance(value, dict):
+            return {key: canonical(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [canonical(item) for item in value]
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return float(value) if value else 0.0  # SQLite REAL vs. parsed integer
+        return value
+
+    encoded = json.dumps(canonical(content), sort_keys=True, ensure_ascii=False,
+                         separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def refresh_report_verdict(result: ScanResult, settings: dict) -> None:
+    """Recompute settings-dependent flags before using a current report or prompt."""
+    if result.dd_equity_pct is not None or result.trading_dd_pct is not None:
+        limit = float(settings.get("schranke_eq_dd_pct", 30.0))
+        result.schranke_verletzt = max(result.dd_equity_pct or 0.0,
+                                      result.trading_dd_pct or 0.0) > limit
+    result.ampel, result.urteil = ampel_for(result, settings)
+
+
+def restore_current_reports(result: ScanResult, settings: dict) -> bool:
+    """Load only analyses bound to the current evidence; retain history in SQLite."""
+    if result.forensik_vorhanden and not result.fehler:
+        refresh_report_verdict(result, settings)
+    basis = report_basis_for(result, settings) if result.forensik_vorhanden and not result.fehler else None
+    stale = False
+    for kind in ("trade_analyse", "risiko_analyse", "gesamtbericht"):
+        previous = db.get_latest_analysis(result.id, kind)
+        current = db.get_latest_analysis(result.id, kind, basis=basis) if basis else None
+        setattr(result, kind, current["text"] if current else "")
+        stale = stale or bool(previous and current is None)
+    result.kurzfassung = _extract_kurzfassung(result.gesamtbericht)
+    result.berichte_basis = basis or ""
+    result.bericht_hinweis = (
+        "Vorhandene KI-Berichte sind veraltet oder keiner geprüften Datengrundlage zugeordnet. "
+        "Sie bleiben im Archiv bzw. in der Datenbank-Historie erhalten; aktuelle Berichte neu erstellen."
+        if stale else "")
+    return bool(result.gesamtbericht)
 
 
 def _incomplete_forensics_reason(exposure: dict) -> str:
@@ -545,6 +622,7 @@ class ScanPipeline:
                                       "shock_pct_peak_account": res.shock_pct_peak_account,
                                       "shock_pct_peak_usd": res.shock_pct_peak_usd},
                     "martingale_flag": res.martingale_flag,
+                    "martingale_evidenz": res.martingale_evidenz,
                     "stop_nachweis": res.stop_nachweis,
                     "stop_evidence": res.stop_evidence,
                     "symbole": res.symbole,
@@ -557,6 +635,7 @@ class ScanPipeline:
             }, trades_path=res.trades_path, forensik=forensik_payload)
             if saved_trades_path:
                 res.trades_path = saved_trades_path
+                res.trades_sha256 = db.file_sha256(saved_trades_path)
         except Exception as exc:  # DB-Fehler darf den Lauf nicht abbrechen
             storage_error = f"Speichern fehlgeschlagen: {type(exc).__name__}: {exc}"
             res.fehler = f"{res.fehler} | {storage_error}" if res.fehler else storage_error
@@ -592,184 +671,8 @@ class ScanPipeline:
         should_stop: kooperativer Stopp (Stop-Button) — wird zwischen Kandidaten
         und vor dem Gesamtbericht geprüft; laufende Modellaufrufe laufen zu Ende.
         """
-        jobs = [r for r in results
-                if r.source_kind == "live" and r.forensik_vorhanden and not r.fehler]
-        total = len(jobs) * 3
-        if not self.llm.has_key:
-            log("LLM uebersprungen: kein GLM-Key gesetzt (Admin-Bereich).")
-            if on_progress:
-                on_progress(0, total, "Übersprungen: kein GLM-Key konfiguriert")
-            return {"completed": 0, "total": total, "failed": 0,
-                    "skipped": total, "reason": "Kein GLM-Key konfiguriert"}
-        if not jobs:
-            if on_progress:
-                on_progress(0, 0, "Übersprungen: keine geeigneten Forensik-Ergebnisse")
-            return {"completed": 0, "total": 0, "failed": 0, "skipped": 0,
-                    "reason": "Keine geeigneten Forensik-Ergebnisse"}
-        kriterien = _kriterien_text(self.settings)
-        strong = 2  # starker Modell-Slot (model_stufe2, z. B. glm-5.3)
-
-        done = 0
-        failed = 0
-
-        def _tick(text: str) -> None:
-            nonlocal done
-            done += 1
-            if on_progress:
-                on_progress(done, total, text)
-
-        for r in jobs:
-            if should_stop and should_stop():
-                log("Stop angefordert — verbleibende Signale werden nicht mehr berichtet.")
-                if on_progress:
-                    on_progress(done, total, "Abgebrochen: Stop-Anforderung")
-                return {"completed": done, "total": total, "failed": failed,
-                        "skipped": total - done - failed,
-                        "reason": "Abbruch per Stop-Button"}
-            r.llm_fehler = ""
-            try:
-                # -------- Prompt 1+2 parallel: Trade-Analyse + Risiko-Analyse
-                model_strong = self.settings.get("model_stufe2", "glm-5.3")
-                model_flash = self.settings.get("model_stufe1", "glm-5.3-flash")
-                trades_json = "{}"
-                n_trades = 0
-                if r.trades_path:
-                    from .parser import load_export
-                    from .trade_data import build_trade_payload
-                    try:
-                        payload = build_trade_payload(load_export(r.trades_path))
-                    except (OSError, ValueError, csv.Error) as exc:
-                        raise llm_client.LlmError(
-                            f"Trade-Export nicht lesbar: {type(exc).__name__}: {exc}") from exc
-                    trades_json = json.dumps(payload, ensure_ascii=False)
-                    n_trades = payload.get("meta", {}).get("trades", 0)
-                trade_prompt = (llm_prompts.load_prompt("trade_analyse")
-                                .replace("{kandidat_json}", _kandidat_json(r))
-                                .replace("{trades_json}", trades_json))
-                risk_prompt = (llm_prompts.load_prompt("risiko_analyse")
-                               .replace("{kandidat_json}", _kandidat_json(r))
-                               .replace("{forensik_json}", _forensik_json(r))
-                               .replace("{kriterien}", kriterien))
-                log(f"→ [1+2/3] Parallel: Trade-Analyse ({model_strong}, "
-                    f"{n_trades} Trades, {len(trade_prompt):,} Zeichen) + "
-                    f"Risiko-Analyse ({model_flash}, {len(risk_prompt):,} Zeichen) "
-                    f"für {r.name} …")
-                if on_progress:
-                    on_progress(
-                        done, total,
-                        f"Trade- + Risiko-Analyse parallel: {r.name} · warte auf Modellantworten. "
-                        f"Danach: Gesamtbericht")
-
-                trade_meta: dict = {}
-                risk_meta: dict = {}
-
-                def _run_trade() -> str:
-                    return self.llm.chat(trade_prompt, stufe=strong, max_tokens=16384,
-                                         meta_out=trade_meta)
-
-                def _run_risk() -> str:
-                    return self.llm.chat(risk_prompt, stufe=1, max_tokens=8192,
-                                         meta_out=risk_meta)
-
-                with ThreadPoolExecutor(max_workers=2) as pool:
-                    fut_trade = pool.submit(_run_trade)
-                    fut_risk = pool.submit(_run_risk)
-                    trade_err: BaseException | None = None
-                    risk_err: BaseException | None = None
-                    new_trade: str | None = None
-                    new_risk: str | None = None
-                    try:
-                        new_trade = fut_trade.result()
-                    except BaseException as exc:  # noqa: BLE001
-                        trade_err = exc
-                        log(f"  ✗ Trade-Analyse fehlgeschlagen: {exc}")
-                    try:
-                        new_risk = fut_risk.result()
-                    except BaseException as exc:  # noqa: BLE001
-                        risk_err = exc
-                        log(f"  ✗ Risiko-Analyse fehlgeschlagen: {exc}")
-
-                # Nur frisch erzeugte Antworten speichern/zählen — Alttexte bleiben
-                # im Objekt, werden aber nicht als neuer Erfolg verbucht.
-                if new_trade is not None:
-                    r.trade_analyse = new_trade
-                    log(f"  ✓ [1/3] Trade-Analyse fertig: {trade_meta.get('zeichen', '?')} Zeichen "
-                        f"in {trade_meta.get('dauer_s', '?')}s — gesamt bisher: "
-                        f"{self.llm.usage.total_tokens:,} Tokens")
-                    db.store_analysis(r.id, "trade_analyse",
-                                      self.settings.get("model_stufe2", ""),
-                                      self.llm.usage.total_tokens, r.trade_analyse)
-                    _tick(f"Trade-Analyse fertig: {r.name}")
-                if new_risk is not None:
-                    r.risiko_analyse = new_risk
-                    log(f"  ✓ [2/3] Risiko-Analyse fertig: {risk_meta.get('zeichen', '?')} Zeichen "
-                        f"in {risk_meta.get('dauer_s', '?')}s — gesamt bisher: "
-                        f"{self.llm.usage.total_tokens:,} Tokens")
-                    db.store_analysis(r.id, "risiko_analyse",
-                                      self.settings.get("model_stufe1", ""),
-                                      self.llm.usage.total_tokens, r.risiko_analyse)
-                    _tick(f"Risiko-Analyse fertig: {r.name}")
-
-                first_err = trade_err or risk_err
-                if first_err:
-                    for exc in (trade_err, risk_err):
-                        if isinstance(exc, llm_client.LlmNoBalanceError):
-                            raise exc
-                    raise first_err
-
-                if should_stop and should_stop():
-                    log("Stop angefordert — Gesamtbericht für dieses Signal entfällt.")
-                    if on_progress:
-                        on_progress(done, total, "Abgebrochen: Stop-Anforderung")
-                    return {"completed": done, "total": total, "failed": failed,
-                            "skipped": total - done - failed,
-                            "reason": "Abbruch per Stop-Button"}
-
-                # -------- Prompt 3: Gesamtauswertung (nach beiden Teilanalysen)
-                prompt = (llm_prompts.load_prompt("gesamtbericht")
-                          .replace("{kandidat_json}", _kandidat_json(r))
-                          .replace("{forensik_json}", _forensik_json(r))
-                          .replace("{trade_analyse}", r.trade_analyse or "(nicht erstellt)")
-                          .replace("{risiko_analyse}", r.risiko_analyse or "(nicht erstellt)")
-                          .replace("{kriterien}", kriterien))
-                log(f"→ [3/3] Sende Gesamtauswertung an {model_strong}: ALLE "
-                    f"Teilergebnisse zusammen ({len(prompt):,} Zeichen = "
-                    f"Forensik + Trade-Analyse {len(r.trade_analyse)} Zeichen + "
-                    f"Risiko-Analyse {len(r.risiko_analyse)} Zeichen). Der "
-                    f"ausfuehrliche Bericht wird geschrieben; Antwort wird abgewartet …")
-                if on_progress:
-                    on_progress(done, total, f"Gesamtbericht 3/3: {r.name} · warte auf Modellantwort")
-                gesamt_meta: dict = {}
-                r.gesamtbericht = self.llm.chat(prompt, stufe=strong, max_tokens=24576,
-                                                meta_out=gesamt_meta)
-                log(f"  ✓ [3/3] Gesamtbericht fertig: {gesamt_meta.get('zeichen', '?')} Zeichen in "
-                    f"{gesamt_meta.get('dauer_s', '?')}s — gesamt bisher: "
-                    f"{self.llm.usage.total_tokens:,} Tokens")
-                db.store_analysis(r.id, "gesamtbericht",
-                                  self.settings.get("model_stufe2", ""),
-                                  self.llm.usage.total_tokens, r.gesamtbericht)
-                r.kurzfassung = _extract_kurzfassung(r.gesamtbericht)
-                log(f"  ● {r.name} abgeschlossen. Kurzfassung: {r.kurzfassung}")
-                _tick(f"Gesamtbericht fertig: {r.name}")
-            except llm_client.LlmNoBalanceError as exc:
-                failed += 1
-                r.llm_fehler = str(exc)
-                log(f"LLM abgebrochen: {exc}")
-                if on_progress:
-                    on_progress(done, total, f"Abgebrochen bei {r.name}: {exc}")
-                return {"completed": done, "total": total, "failed": failed,
-                        "skipped": total - done - failed, "reason": str(exc)}
-            except llm_client.LlmError as exc:
-                failed += 1
-                r.llm_fehler = str(exc)
-                log(f"  LLM-Fehler bei {r.name}: {exc}")
-                if on_progress:
-                    on_progress(done, total, f"Fehler bei {r.name}: {exc}")
-        if on_progress:
-            on_progress(done, total, f"{done}/{total} Prompts fertig · {failed} fehlgeschlagen")
-        return {"completed": done, "total": total, "failed": failed,
-                "skipped": total - done - failed,
-                "reason": "Einzelne Modellaufrufe fehlgeschlagen" if failed else ""}
+        from .llm_runner import run_llm
+        return run_llm(self, results, log, on_progress, should_stop)
 
     # ------------------------------------------------------ Schritt 5
     PORTFOLIO_ANALYSIS_ID = None  # Globaler Bericht ohne Fremdschlüssel auf ein Signal.
@@ -799,6 +702,9 @@ class ScanPipeline:
         kriterien = _kriterien_text(self.settings)
         eintraege = []
         for r in jobs:
+            refresh_report_verdict(r, self.settings)
+            if r.berichte_basis != report_basis_for(r, self.settings):
+                restore_current_reports(r, self.settings)
             eintraege.append({
                 "kandidat": json.loads(_kandidat_json(r)),
                 "forensik": json.loads(_forensik_json(r)),

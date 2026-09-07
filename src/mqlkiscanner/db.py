@@ -8,7 +8,7 @@ Tabellen:
 - trade_files : geladene Trade-CSVs je Signal (Pfad, Hash, Zeitpunkt)
 - forensik    : Engine-Befund-JSON je Signal
 - analyses    : LLM-Teilergebnisse (kind = trade_analyse | risiko_analyse |
-                gesamtbericht), je (signal, kind) gilt der neueste Eintrag
+                gesamtbericht), aktuelle Texte müssen zur Bewertungsbasis passen
 
 Pfad: data/mqlkiscanner.db (gitignored). sqlite3 aus der Stdlib — kein
 Server noetig.
@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS analyses (
     model       TEXT,
     tokens      INTEGER,
     text        TEXT,
-    created_at  TEXT
+    created_at  TEXT,
+    basis       TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_analyses_sig_kind ON analyses(signal_id, kind, id DESC);
 """
@@ -81,6 +82,10 @@ def _connect():
 def init_db() -> None:
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        # Serialize the additive migration across simultaneous page/worker starts.
+        conn.execute("BEGIN IMMEDIATE")
+        if "basis" not in {row["name"] for row in conn.execute("PRAGMA table_info(analyses)")}:
+            conn.execute("ALTER TABLE analyses ADD COLUMN basis TEXT")
         # Globale Portfolios haben kein Elternsignal. Alte 0-Platzhalter ohne
         # Änderung des Berichtsinhalts auf den bereits erlaubten NULL-Wert heben.
         conn.execute("UPDATE analyses SET signal_id=NULL "
@@ -182,26 +187,28 @@ def store_scan_result(signal_id: int, signal: dict, trades_path: str = "",
     return snapshot
 
 
-def store_analysis(signal_id: int | None, kind: str, model: str, tokens: int, text: str) -> None:
+def store_analysis(signal_id: int | None, kind: str, model: str, tokens: int, text: str,
+                   *, basis: str | None = None) -> None:
     if kind == "portfolio" and signal_id == 0:
         signal_id = None  # Kompatibilität für bisherige Aufrufer.
     with _connect() as conn:
         conn.execute(
-            "INSERT INTO analyses (signal_id, kind, model, tokens, text, created_at) "
-            "VALUES (?,?,?,?,?,?)",
-            (signal_id, kind, model, tokens, text, _now()))
+            "INSERT INTO analyses (signal_id, kind, model, tokens, text, created_at, basis) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (signal_id, kind, model, tokens, text, _now(), basis))
 
 
-def get_latest_analysis(signal_id: int | None, kind: str) -> dict | None:
+def get_latest_analysis(signal_id: int | None, kind: str, *, basis: str | None = None) -> dict | None:
     if kind == "portfolio" and signal_id == 0:
         signal_id = None
     legacy_portfolio = kind == "portfolio" and signal_id is None
     with _connect() as conn:
         row = conn.execute(
-            "SELECT model, tokens, text, created_at FROM analyses "
+            "SELECT model, tokens, text, created_at, basis FROM analyses "
             "WHERE (signal_id IS ? OR (? AND signal_id=0)) AND kind=? "
+            "AND (? IS NULL OR basis=?) "
             "ORDER BY id DESC LIMIT 1",
-            (signal_id, legacy_portfolio, kind)).fetchone()
+            (signal_id, legacy_portfolio, kind, basis, basis)).fetchone()
     return dict(row) if row else None
 
 
@@ -213,7 +220,7 @@ def list_catalog() -> list[dict]:
             """
             SELECT s.signal_id, s.name, s.platform, s.url, s.autor, s.abo_preis,
                    s.abonnenten, s.wochen, s.stats_json, s.updated_at AS signal_updated,
-                   t.path AS trades_path, t.fetched_at AS trades_fetched,
+                   t.path AS trades_path, t.sha256 AS trades_sha256, t.fetched_at AS trades_fetched,
                    f.json AS forensik_json, f.updated_at AS forensik_updated,
                    (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
                       AND a.kind='trade_analyse' ORDER BY a.id DESC LIMIT 1) AS trade_analyse,
