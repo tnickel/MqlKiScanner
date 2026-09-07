@@ -46,7 +46,7 @@ with st.container(border=True):
                    if getattr(r, 'source_kind', 'live') == 'live']
         # Frisch aktualisierte Signale oben.
         results.sort(key=lambda r: (0 if r.id in fresh_ids else 1, (r.name or '').casefold()))
-        portfolio = db.get_latest_analysis(0, 'portfolio')
+        portfolio = db.get_latest_analysis(None, 'portfolio')
         st.caption(
             f'Datenbank · {len(results)} Signale. '
             f'„NEU“ = im letzten Lauf dieser Sitzung aktualisiert ({len(fresh_ids)} Stück).'

@@ -31,10 +31,12 @@ class FakeLlm:
         return "Testbericht. Kurzfassung: Forensik prüfen."
 
 
-def _pipe_with_llm(fake):
+def _pipe_with_llm(fake, signal_ids=(1234567,)):
     pipe = pipeline.ScanPipeline()
     pipe.llm = fake
     db.init_db()
+    for signal_id in signal_ids:
+        db.upsert_signal(signal_id)
     return pipe
 
 
@@ -104,7 +106,7 @@ def test_ineligible_results_do_not_generate_model_requests():
 def test_run_llm_stops_between_signals_on_stop_request():
     """Stop-Flag: nach dem fertig berichteten Kandidat wird nicht mehr gesendet."""
     fake = FakeLlm()
-    pipe = _pipe_with_llm(fake)
+    pipe = _pipe_with_llm(fake, signal_ids=(111, 222))
     results = [pipeline.ScanResult(id=111, name="A", forensik_vorhanden=True),
                pipeline.ScanResult(id=222, name="B", forensik_vorhanden=True)]
     summary = pipe.run_llm(results, pipeline.StepLog(),

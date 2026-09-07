@@ -378,7 +378,10 @@ def test_local_forensik_archive_keeps_metrics_without_live_db(tmp_path, monkeypa
     if not raw.exists():
         pytest.skip("goldwave fixture missing")
     rows = ScanPipeline.analyze_local_files([str(raw)])
-    assert rows and rows[0].forensik_vorhanden
+    # Goldwave enthält CHINA50 ohne belegten Broker-Punktwert. Die anderen
+    # Metriken müssen trotz unvollständiger Exposure-Prüfung erhalten bleiben.
+    assert rows and not rows[0].forensik_vorhanden
+    assert "CHINA50" in rows[0].fehler and "Brokerspezifikation" in rows[0].fehler
     direct = rows[0]
     import json
     saved = ScanPipeline.save_run(rows, {})

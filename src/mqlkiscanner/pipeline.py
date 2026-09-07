@@ -81,6 +81,7 @@ class ScanResult:
     martingale_flag: bool | None = None
     martingale_evidenz: list | None = None
     stop_nachweis: str = ""
+    stop_evidence: str | None = None  # direct | cluster | partial | none; nie aus Freitext ableiten
     broker_server: str | None = None
     symbole: str = ""               # gehandelte Assets ("XAUUSD, US30, ...")
     # Bewertung
@@ -183,6 +184,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             shock_pct_peak_usd=peak.get("shock_pct_peak_usd"),
             martingale_flag=f.get("martingale_flag"),
             stop_nachweis=f.get("stop_nachweis") or "",
+            stop_evidence=f.get("stop_evidence"),
             broker_server=stats.get("broker_server"),
             symbole=f.get("symbole") or "",
             score=None if forensik_stale else f.get("score"),
@@ -212,7 +214,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
 
 
 def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
-    """Ampel-Logik: Risiko VOR Ertrag; keine positive Einstufung ohne Forensik."""
+    """Risiko VOR Ertrag; Grün erfordert Forensik und belastbare Stop-Evidenz."""
     known = config.load_known_signals()
     excluded = {e["id"]: e for e in known.get("ausgeschlossen", [])}
     if result.id in excluded:
@@ -227,9 +229,13 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
     if result.martingale_flag:
         return "🔴", "Martingale-Signatur nachgewiesen (Ablehnung)"
     if result.forensik_vorhanden:
+        if result.stop_evidence not in ("direct", "cluster"):
+            reason = ("Stop-Nachweis nur teilweise vorhanden" if result.stop_evidence == "partial"
+                      else "Kein belastbarer Stop-Nachweis")
+            return "🟡", f"{reason} (kein Kandidat)"
         if result.score is not None and result.score < 5.0:
             if (result.ertrag_monat_pct or 0) >= settings.get("min_ertrag_pct_monat", 5.0):
-                return "🟢", "Kandidat: Forensik bestanden, Score < 5, Ertrag ok"
+                return "🟢", "Kandidat: Forensik bestanden, Stop-Evidenz vorhanden, Score < 5, Ertrag ok"
             return "🟡", "Forensik ok, aber Ertrag < 5 %/Monat"
         return "🟡", f"Forensik bestanden, Score {result.score} (kein Kandidat)"
     return "⚪", "Vorprüfung (ohne Trade-Export-Forensik)"
@@ -277,6 +283,7 @@ def _forensik_json(r: ScanResult) -> str:
         "martingale_flag": r.martingale_flag,
         "martingale_evidenz": r.martingale_evidenz,
         "stop_nachweis": r.stop_nachweis,
+        "stop_evidence": r.stop_evidence,
     }, ensure_ascii=False)
 
 
@@ -287,6 +294,13 @@ def _stop_evidence_text(stops: dict) -> str:
         return (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
                 f"{stops.get('positions_total')} mit SL/TP")
     return stops.get("verdict", "kein Nachweis")
+
+
+def _incomplete_forensics_reason(exposure: dict) -> str:
+    warnings = exposure.get("warnings") or []
+    if warnings:
+        return " ".join(warnings)
+    return "Kapitalhistorie oder Pflichtbefunde fehlen."
 
 
 class ScanPipeline:
@@ -452,6 +466,7 @@ class ScanPipeline:
                 res.martingale_evidenz = fx["martingale"].get("evidence") or []
                 stops = fx["stops"]
                 res.stop_nachweis = _stop_evidence_text(stops)
+                res.stop_evidence = stops.get("stop_evidence")
                 log(f"✓ Forensik: Winrate {res.winrate_pct} % · Trading-DD "
                     f"{res.trading_dd_pct} % · Serie {res.max_verlustserie} · "
                     f"Peak {res.peak_positionen} Pos · Martingale "
@@ -472,10 +487,7 @@ class ScanPipeline:
                 res.schranke_verletzt = bool(ev["schranke_eq_dd_verletzt"])
                 res.forensik_vorhanden = bool(ev["forensics_complete"])
                 if not res.forensik_vorhanden:
-                    missing = expo.get("missing_conversion_symbols") or []
-                    reason = ("USD-Umrechnung fehlt für " + ", ".join(missing)
-                              if missing else "Kapitalhistorie oder Pflichtbefunde fehlen")
-                    raise ValueError(f"Forensik unvollständig: {reason}.")
+                    raise ValueError(f"Forensik unvollständig: {_incomplete_forensics_reason(expo)}")
                 res.forensik_version = FORENSICS_VERSION
                 self._register_mql5_outcome(ok=True)
         except Exception as exc:  # Ein weicher Fehler soll den Lauf nicht abbrechen
@@ -534,6 +546,7 @@ class ScanPipeline:
                                       "shock_pct_peak_usd": res.shock_pct_peak_usd},
                     "martingale_flag": res.martingale_flag,
                     "stop_nachweis": res.stop_nachweis,
+                    "stop_evidence": res.stop_evidence,
                     "symbole": res.symbole,
                     "score": res.score, "ampel": res.ampel}
             saved_trades_path = db.store_scan_result(res.id, {
@@ -759,7 +772,7 @@ class ScanPipeline:
                 "reason": "Einzelne Modellaufrufe fehlgeschlagen" if failed else ""}
 
     # ------------------------------------------------------ Schritt 5
-    PORTFOLIO_ANALYSIS_ID = 0  # analyses-Zeile ohne Signalbeszug (globaler Bericht)
+    PORTFOLIO_ANALYSIS_ID = None  # Globaler Bericht ohne Fremdschlüssel auf ein Signal.
 
     def run_portfolio(self, results: list[ScanResult], log: LogCb,
                       on_progress: ProgressCb | None = None,
@@ -769,7 +782,7 @@ class ScanPipeline:
         Das LLM sieht je Signal: Kennzahlen, Forensik, Assets, Kurzfassung
         und den vollstaendigen Gesamtbericht — und schlaegt eine
         diversifizierte Depot-Kombination vor (Risiko vor Ertrag). Der
-        Bericht landet in der DB unter signal_id=0, kind='portfolio'.
+        Bericht landet in der DB unter signal_id=NULL, kind='portfolio'.
         """
         total = 1
         jobs = [r for r in results
@@ -888,6 +901,7 @@ class ScanPipeline:
             )
             stops = fx["stops"]
             r.stop_nachweis = _stop_evidence_text(stops)
+            r.stop_evidence = stops.get("stop_evidence")
             ev = scoring.evaluate(
                 report, schranke_eq_dd_pct=settings.get("schranke_eq_dd_pct", 30.0))
             r.score = ev["score"]
@@ -895,10 +909,7 @@ class ScanPipeline:
             r.forensik_vorhanden = bool(ev["forensics_complete"])
             r.forensik_version = FORENSICS_VERSION if r.forensik_vorhanden else None
             if not r.forensik_vorhanden:
-                missing = fx["exposure"].get("missing_conversion_symbols") or []
-                reason = ("USD-Umrechnung fehlt für " + ", ".join(missing)
-                          if missing else "Kapitalhistorie oder Pflichtbefunde fehlen")
-                r.fehler = f"Forensik unvollständig: {reason}."
+                r.fehler = f"Forensik unvollständig: {_incomplete_forensics_reason(fx['exposure'])}"
             if sid in meta:
                 r.name = meta[sid].get("name", r.name)
                 # Demo/Verifikation: kuratierte Referenzscores aus known_signals

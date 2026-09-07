@@ -161,6 +161,8 @@ def test_real_balance_error_still_stops_immediately(monkeypatch, status):
 @pytest.mark.parametrize("bad_kind", ["missing", "malformed", "oversized_field"])
 def test_bad_csv_marks_one_signal_and_continues_with_valid_input(live_scan, tmp_path, bad_kind):
     pipe, csv = live_scan
+    db.upsert_signal(123)
+    db.upsert_signal(124)
     bad = tmp_path / "unusable.csv"
     if bad_kind == "malformed":
         bad.write_text("Time;Type\n2024.01.01 10:00:00;Buy\n", encoding="utf-8")

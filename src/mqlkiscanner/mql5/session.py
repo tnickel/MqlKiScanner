@@ -62,7 +62,15 @@ class Mql5Session:
     def get(self, path_or_url: str, extra_pause_s: float = 0.0,
             max_throttle_retries: int = 3,
             allow_http_statuses: tuple[int, ...] = ()) -> requests.Response:
-        """GET mit Rate-Limit und Backoff bei 429/503."""
+        """GET mit Rate-Limit und Backoff bei 429/503.
+
+        max_throttle_retries begrenzt die Gesamtzahl der HTTP-Versuche
+        einschließlich des ersten Aufrufs und muss eine positive Ganzzahl sein.
+        """
+        if (isinstance(max_throttle_retries, bool)
+                or not isinstance(max_throttle_retries, int)
+                or max_throttle_retries < 1):
+            raise ValueError("max_throttle_retries muss eine positive Ganzzahl sein")
         url = urljoin(MQL5_BASE + "/", path_or_url)
         for attempt in range(max_throttle_retries):
             self.limiter.wait(extra_pause_s)

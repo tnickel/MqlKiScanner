@@ -15,7 +15,6 @@ App-Rerun aus (Ergebnisse übernehmen + Endstand rendern).
 from __future__ import annotations
 
 import sys
-import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -23,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, db, pipeline, secrets_store
+from mqlkiscanner import config, db, pipeline, scan_worker, secrets_store
 from mqlkiscanner.app_ui import render_report_panel, render_results_table
 from mqlkiscanner.ui_design import (
     action_button, apply_theme, page_header, section_header, urteile_farbig,
@@ -86,7 +85,7 @@ def _lauf_ergebnisse_uebernehmen() -> None:
     """
     ctl = st.session_state.scan_control
     th = st.session_state.scan_thread
-    if th is None or th.is_alive() or ctl.get("copied"):
+    if th is None or th.is_alive() or st.session_state.get("_copied_scan_control") is ctl:
         return
     st.session_state.portfolio_bericht = ctl.get("portfolio_bericht", "")
     st.session_state.portfolio_result = ctl.get("portfolio")
@@ -100,6 +99,7 @@ def _lauf_ergebnisse_uebernehmen() -> None:
     if ctl.get("refreshed_ids") is not None:
         st.session_state.refreshed_signal_ids = ctl["refreshed_ids"]
     ctl["copied"] = True
+    st.session_state["_copied_scan_control"] = ctl
     st.session_state.scan_running = None
     wf = st.session_state.scan_workflow
     if wf["status"] == "running":
@@ -122,7 +122,23 @@ def _stop_requested() -> None:
         wf["activity"] = "Stop angefordert — der Lauf endet nach dem aktuellen Signal bzw. Modellaufruf."
 
 
+def _attach_worker(run: scan_worker.WorkerRun) -> None:
+    """Nach Browser-Reload denselben Prozess-Worker wieder sichtbar machen."""
+    st.session_state.scan_thread = run.thread
+    st.session_state.scan_workflow = run.workflow
+    st.session_state.scan_control = run.control
+    st.session_state.scan_logs = run.logs
+    st.session_state.scan_results = run.results
+    st.session_state.scan_running = run.workflow.get("mode")
+
+
 command = st.session_state.pop("scan_command", None)
+shared_run = scan_worker.active_run()
+reattached = shared_run is not None and st.session_state.scan_thread is not shared_run.thread
+if shared_run is not None:
+    _attach_worker(shared_run)
+    # Auch bereits abgesendete Befehle aus einer zweiten Sitzung abweisen.
+    command = None
 workflow = st.session_state.scan_workflow
 control = st.session_state.scan_control
 _lauf_thread = st.session_state.scan_thread
@@ -179,6 +195,9 @@ page_header(
     "optional KI-Berichte und Portfolio-Vorschlag. Ein Knopf startet alles.",
     image_path=str(hero_banner) if hero_banner.exists() else None,
 )
+if reattached:
+    st.info("Ein Workflow läuft bereits im Hintergrund. Der laufende Prozess wurde "
+            "wieder verbunden; Status und Stop-Button steuern denselben Lauf.")
 section_header(
     "Der Workflow",
     "Fünf klare Stationen. Sie müssen nichts einzeln anstoßen — "
@@ -268,7 +287,8 @@ def _workflow_status() -> None:
     # Lauf beendet? Einmal die GANZE Seite neu laden: Ergebnisübernahme
     # (Session) + Endstand (Tabelle, Portfolio, Protokoll) rendern.
     th = st.session_state.scan_thread
-    if th is not None and not th.is_alive() and not control.get("copied"):
+    if (th is not None and not th.is_alive()
+            and st.session_state.get("_copied_scan_control") is not control):
         st.rerun(scope="app")
 
 
@@ -827,10 +847,25 @@ if command:
         finally:
             workflow["finished_at"] = datetime.now().isoformat(timespec="seconds")
 
-    _lauf_thread = threading.Thread(target=_worker, name="mqlkiscanner-workflow", daemon=True)
-    st.session_state.scan_thread = _lauf_thread
-    st.session_state.scan_running = mode if mode != "scan" else "listen"
-    _lauf_thread.start()
+    try:
+        started = scan_worker.start(_worker, workflow=workflow, control=control,
+                                    logs=logs, results=results)
+    except Exception as exc:
+        workflow.update(status="error", activity=f"Worker konnte nicht gestartet werden: {exc}",
+                        finished_at=datetime.now().isoformat(timespec="seconds"))
+        control["copied"] = True
+        st.session_state.scan_thread = None
+        st.session_state.scan_running = None
+        st.error(workflow["activity"])
+    else:
+        if started is None:
+            # Zwischen Seitenaufbau und Start kann eine andere Sitzung starten.
+            # Atomarer Modul-Guard entscheidet, nicht der Buttonzustand.
+            existing = scan_worker.active_run()
+            if existing is not None:
+                _attach_worker(existing)
+            st.rerun()
+        _attach_worker(started)
 
 section_header(
     "Ergebnisse dieses Laufs",

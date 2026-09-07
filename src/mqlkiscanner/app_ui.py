@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
-from mqlkiscanner.ui_design import (action_button, info_button, section_header,
+from mqlkiscanner.ui_design import (action_button, section_header,
                                     urteile_farbig)
 
 

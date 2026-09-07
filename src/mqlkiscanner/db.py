@@ -71,6 +71,7 @@ def _connect():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
+        conn.execute("PRAGMA foreign_keys=ON")
         with conn:
             yield conn
     finally:
@@ -80,6 +81,10 @@ def _connect():
 def init_db() -> None:
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        # Globale Portfolios haben kein Elternsignal. Alte 0-Platzhalter ohne
+        # Änderung des Berichtsinhalts auf den bereits erlaubten NULL-Wert heben.
+        conn.execute("UPDATE analyses SET signal_id=NULL "
+                     "WHERE kind='portfolio' AND signal_id=0")
 
 
 def _now() -> str:
@@ -177,7 +182,9 @@ def store_scan_result(signal_id: int, signal: dict, trades_path: str = "",
     return snapshot
 
 
-def store_analysis(signal_id: int, kind: str, model: str, tokens: int, text: str) -> None:
+def store_analysis(signal_id: int | None, kind: str, model: str, tokens: int, text: str) -> None:
+    if kind == "portfolio" and signal_id == 0:
+        signal_id = None  # Kompatibilität für bisherige Aufrufer.
     with _connect() as conn:
         conn.execute(
             "INSERT INTO analyses (signal_id, kind, model, tokens, text, created_at) "
@@ -185,12 +192,16 @@ def store_analysis(signal_id: int, kind: str, model: str, tokens: int, text: str
             (signal_id, kind, model, tokens, text, _now()))
 
 
-def get_latest_analysis(signal_id: int, kind: str) -> dict | None:
+def get_latest_analysis(signal_id: int | None, kind: str) -> dict | None:
+    if kind == "portfolio" and signal_id == 0:
+        signal_id = None
+    legacy_portfolio = kind == "portfolio" and signal_id is None
     with _connect() as conn:
         row = conn.execute(
             "SELECT model, tokens, text, created_at FROM analyses "
-            "WHERE signal_id=? AND kind=? ORDER BY id DESC LIMIT 1",
-            (signal_id, kind)).fetchone()
+            "WHERE (signal_id IS ? OR (? AND signal_id=0)) AND kind=? "
+            "ORDER BY id DESC LIMIT 1",
+            (signal_id, legacy_portfolio, kind)).fetchone()
     return dict(row) if row else None
 
 

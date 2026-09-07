@@ -139,6 +139,7 @@ def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):
     from mqlkiscanner import db, secrets_store
 
     db.init_db()
+    db.upsert_signal(2342895, name="KiraCat", platform="MT5")
     db.store_analysis(2342895, "gesamtbericht", "glm-5.3", 10,
                       "ALTER_BERICHT. Kurzfassung: Alt.")
     db.store_analysis(2342895, "trade_analyse", "glm-5.3", 5, "ALTE_TRADE_ANALYSE")

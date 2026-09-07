@@ -160,7 +160,7 @@ def test_real_us100_fixture_uses_index_contract():
     assert risk["shock_usd"] == 125
 
 
-@pytest.mark.parametrize("symbol", ["CHINA50", "CHINA50.cash", "US100", "NAS100", "NDX"])
+@pytest.mark.parametrize("symbol", ["US30", "SPX500", "US100", "NAS100", "NDX"])
 def test_known_index_aliases_keep_index_units(symbol):
     assert exposure.run(parsed([trade(symbol=symbol)]))["shock_usd"] == 50
 
