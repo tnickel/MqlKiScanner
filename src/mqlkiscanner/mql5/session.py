@@ -121,7 +121,11 @@ class Mql5Session:
                 last_status = r.status_code
                 if r.status_code == 404:
                     break  # falscher Export-Typ → naechsten kind
-                text = r.text.lstrip("\ufeff")
+                # Requests kann UTF-8-BOM als ï»¿ dekodieren, wenn der Server
+                # keinen passenden Charset meldet. BOM direkt in Bytes erkennen.
+                raw = getattr(r, "content", b"")
+                text = (raw.decode("utf-8-sig") if raw.startswith(b"\xef\xbb\xbf")
+                        else r.text.lstrip("\ufeff"))
                 if text.lstrip().startswith("Time;"):
                     return text
                 last_text = text

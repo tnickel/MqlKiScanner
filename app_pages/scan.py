@@ -542,7 +542,8 @@ if command:
             w_step("forensik", done=i,
                    detail=f"Signal {i + 1}/{len(neu)}: {candidate.get('name')} #{candidate['id']}")
             try:
-                result = pipe.analyze_candidate(session, candidate, log)
+                result = pipe.analyze_candidate(
+                    session, candidate, log, should_stop=lambda: bool(control.get("stop")))
                 results.append(result)
                 new_ids.append(result.id)
             except pipeline.Mql5HardStopError as exc:

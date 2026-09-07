@@ -194,7 +194,7 @@ def test_step3_nur_neue_skips_known_and_keeps_old_verdicts(mocked_crawler, monke
 
     called: list[int] = []
 
-    def fake_analyze(self, session, cand, log):
+    def fake_analyze(self, session, cand, log, should_stop=None):
         called.append(cand["id"])
         return pipeline.ScanResult(id=cand["id"], name=cand.get("name", ""),
                                    forensik_vorhanden=True)

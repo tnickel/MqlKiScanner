@@ -10,6 +10,7 @@ Lauf-Ergebnisse landen in data/runs/{zeitstempel}/results.json.
 from __future__ import annotations
 
 import json
+import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -314,6 +315,29 @@ class ScanPipeline:
 
     # ------------------------------------------------------ Schritt 3
     def analyze_candidate(self, session: Mql5Session, cand: dict,
+                          log: LogCb,
+                          should_stop: Callable[[], bool] | None = None) -> ScanResult:
+        """Einzelprüfung einmal wiederholen; Hard-Stop-Ausnahmen durchreichen."""
+        result = self._analyze_candidate_once(session, cand, log)
+        if not result.fehler:
+            return result
+        log(f"Signal {result.id}: Prüfung fehlgeschlagen — einmalige Wiederholung "
+            "in 5 Sekunden (Versuch 2/2).")
+        for _ in range(10):
+            if should_stop and should_stop():
+                log(f"Signal {result.id}: Wiederholung wegen Stop-Anforderung ausgelassen.")
+                return result
+            time.sleep(0.5)
+        if should_stop and should_stop():
+            log(f"Signal {result.id}: Wiederholung wegen Stop-Anforderung ausgelassen.")
+            return result
+        result = self._analyze_candidate_once(session, cand, log)
+        log(f"Signal {result.id}: " + (
+            "Auch Versuch 2/2 fehlgeschlagen; keine weitere Wiederholung."
+            if result.fehler else "Wiederholung erfolgreich."))
+        return result
+
+    def _analyze_candidate_once(self, session: Mql5Session, cand: dict,
                           log: LogCb) -> ScanResult:
         res = ScanResult(id=cand["id"], name=cand.get("name") or str(cand["id"]),
                          platform=cand.get("platform") or "", url=cand.get("url", ""),
@@ -345,6 +369,8 @@ class ScanPipeline:
                         extra_pause_s=float(self.settings.get(
                             "rate_pause_zwischen_signalen_s", 5.0)),
                         platform=res.platform or cand.get("platform"))
+                except Mql5HardStopError:
+                    raise
                 except (RuntimeError, requests.HTTPError):
                     # MQL5 drosselt / falscher Export-Pfad — Chrome-Fallback
                     # (History-Link auf der Signal-Seite, MT4+MT5).
