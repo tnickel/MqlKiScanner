@@ -31,6 +31,10 @@ class LlmBudgetError(LlmError):
     """Token-Budget des Laufs erschoepft."""
 
 
+class LlmIncompleteResponseError(LlmError):
+    """Antwort wurde abgebrochen und darf nicht als fertiger Bericht gelten."""
+
+
 @dataclass
 class LlmUsage:
     total_tokens: int = 0
@@ -96,9 +100,20 @@ class GlmClient:
         last_error: Exception | None = None
         for attempt in range(3):
             start = time.monotonic()
-            r = requests.post(f"{self.base_url}/chat/completions",
-                              headers=self._headers(), data=json.dumps(body),
-                              timeout=self.timeout)
+            # Ein Transportfehler darf nicht den gesamten Signal-Lauf abbrechen.
+            # Pro HTTP-Aufruf genau eine Wiederholung, dann ein LlmError.
+            for transport_attempt in range(2):
+                try:
+                    r = requests.post(f"{self.base_url}/chat/completions",
+                                      headers=self._headers(), data=json.dumps(body),
+                                      timeout=self.timeout)
+                    break
+                except requests.RequestException as exc:
+                    if transport_attempt:
+                        raise LlmError(
+                            f"GLM-Verbindungsfehler nach 2 Versuchen: "
+                            f"{type(exc).__name__}: {exc}") from exc
+                    time.sleep(5)
             if r.status_code == 429:
                 try:
                     err = r.json().get("error", {})
@@ -162,6 +177,11 @@ class GlmClient:
                 if meta_out is not None:
                     meta_out.clear()
                     meta_out.update(call_meta)
+            if finish not in (None, "stop"):
+                raise LlmIncompleteResponseError(
+                    f"Unvollständige Antwort von {model} (finish_reason={finish}). "
+                    "Nicht als fertiger Bericht gespeichert; bei length das "
+                    "Ausgabelimit erhöhen oder den Bericht kürzer anfordern.")
             if not content:
                 raise LlmError(
                     f"Leere Antwort von {model} (finish_reason={finish}, "

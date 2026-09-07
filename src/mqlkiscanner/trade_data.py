@@ -15,6 +15,34 @@ import statistics
 from collections import Counter, defaultdict
 
 from .models import ParsedExport, Trade
+from .symbols import fx_pip_size, normalize_symbol, symbol_class
+
+
+def _distance_summary(symbol: str, distances: list[float]) -> dict:
+    """Keep quote precision and units explicit, never mix instruments."""
+    pip = fx_pip_size(symbol)
+    decimals = (3 if pip == 0.01 else 5) if pip else (
+        2 if symbol_class(symbol) in ("METAL", "INDEX") else None)
+
+    def quote(value: float) -> float:
+        rounded = round(value, decimals) if decimals is not None else 0.0
+        # Preserve sub-tick input rather than turn a real loss into zero.
+        return rounded or float(f"{value:.10g}")
+
+    levels = Counter(quote(d) for d in distances).most_common(5)
+    median = statistics.median(distances)
+    maximum = max(distances)
+    return {
+        "symbol": symbol,
+        "einheit": "Preiseinheiten",
+        "anzahl": len(distances),
+        "distanz_median": quote(median),
+        "distanz_max": quote(maximum),
+        "distanz_top_level": [{"punkte": level, "anzahl": count}
+                              for level, count in levels],
+        **({"pip_groesse": pip, "median_pips": round(median / pip, 3),
+            "max_pips": round(maximum / pip, 3)} if pip else {}),
+    }
 
 
 def _trade_row(t: Trade) -> dict:
@@ -80,9 +108,15 @@ def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
         by_exit[t.close_time.strftime("%Y%m%d%H%M%S")].append(t)
     biggest = max(by_exit.values(), key=len, default=[])
 
-    # --- Verlustdistanzen (Kurspunkte)
-    dists = sorted(d for t in trades if (d := t.loss_distance()) is not None)
-    dist_levels = Counter(round(d, 1) for d in dists).most_common(5)
+    # --- Verlustdistanzen: getrennt je Instrument in dessen Preiseinheiten
+    distances_by_symbol: dict[str, list[float]] = defaultdict(list)
+    for t in trades:
+        distance = t.loss_distance()
+        if distance is not None:
+            distances_by_symbol[normalize_symbol(t.symbol)].append(distance)
+    distance_summaries = [_distance_summary(sym, sorted(values))
+                          for sym, values in sorted(distances_by_symbol.items())]
+    single_distance = distance_summaries[0] if len(distance_summaries) == 1 else {}
 
     # --- Beispiel-Trades: schlechteste + beste + Serienfenster + erster Handelstag
     worst = sorted(trades, key=lambda t: t.profit)[:max_samples]
@@ -112,9 +146,12 @@ def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
         "verluste": {
             "worst": round(min(t.profit for t in trades), 2),
             "median": round(statistics.median(t.profit for t in losses), 2) if losses else None,
-            "distanz_median": round(statistics.median(dists), 2) if dists else None,
-            "distanz_max": round(dists[-1], 2) if dists else None,
-            "distanz_top_level": [{"punkte": lvl, "anzahl": c} for lvl, c in dist_levels],
+            # Existing scalar keys remain usable for a single instrument only.
+            "distanz_median": single_distance.get("distanz_median"),
+            "distanz_max": single_distance.get("distanz_max"),
+            "distanz_top_level": single_distance.get("distanz_top_level", []),
+            "distanz_symbol": single_distance.get("symbol"),
+            "distanz_pro_symbol": distance_summaries,
         },
         "verlustserie_max": {
             "laenge": best_len,

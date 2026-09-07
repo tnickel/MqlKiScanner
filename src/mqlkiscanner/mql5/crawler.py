@@ -16,14 +16,14 @@ from bs4 import BeautifulSoup
 from ..config import MQL5_BASE
 from .session import Mql5Session
 
-_NUM = re.compile(r"[\d.,]+")
+_NUM = re.compile(r"[+-]?[\d.,]+")
 CARD_SEL = "div.signal-card"
 
 
 def _num(text: str | None) -> float | None:
     if not text:
         return None
-    cleaned = text.replace("\xa0", " ").replace(" ", "")
+    cleaned = text.replace("\xa0", " ").replace(" ", "").replace("\u2212", "-")
     # Tausender-Kommas (1,403 / 1,403.03) entfernen — MQL5-EN-Karten
     cleaned = re.sub(r",(?=\d{3}(\D|$))", "", cleaned)
     m = _NUM.search(cleaned)

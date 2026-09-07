@@ -17,6 +17,10 @@ import statistics
 from collections import Counter, defaultdict
 
 from ..models import ParsedExport
+from ..symbols import normalize_symbol, symbol_class, fx_pip_size
+
+MIN_CLUSTER_LOSSES = 8
+MIN_CLUSTER_REPEATS = 3
 
 
 def run(parsed: ParsedExport) -> dict:
@@ -94,32 +98,33 @@ def _orderbook_verdict(total: int, with_sl_tp: int, sl_exits: int) -> str:
 # ---------------------------------------------------------------- Stufe 2
 def _distance_bin(distance: float, symbol: str) -> float:
     """Symbolgerechte Rundung: Gold/Index 0.1, FX 1 Pip (nicht pauschal 0.1)."""
-    s = (symbol or "").upper()
-    if s.startswith(("XAU", "XAG", "XPT")):
+    if symbol_class(symbol) in ("METAL", "INDEX"):
         return round(distance, 1)
-    if any(idx in s for idx in ("US30", "US500", "NAS100", "GER40", "UK100", "JP225", "SPX", "NDX")):
-        return round(distance, 1)
-    if "JPY" in s:
+    if fx_pip_size(symbol) == 0.01:
         return round(distance, 2)   # 0.01 ≈ 1 Pip
     return round(distance, 4)       # 0.0001 ≈ 1 Pip (Majors)
 
 
 def _distance_clustering(trades) -> dict:
-    """Cluster je Symbol mit angepasster Bin-Weite; staerkstes Symbol gewinnt."""
+    """Cluster je Symbol; Teilstichproben entlasten kein ganzes Signal."""
     by_sym: dict[str, list[float]] = defaultdict(list)
     for t in trades:
         d = t.loss_distance()
         if d is not None:
-            by_sym[t.symbol].append(d)
+            by_sym[normalize_symbol(t.symbol)].append(d)
     if not by_sym:
-        return {"n_losses_with_distance": 0, "verdict": "keine Verluste mit Preisdaten"}
+        return {"n_losses_with_distance": 0, "clustered": False,
+                "verdict": "keine Verluste mit Preisdaten (kein Nachweis)"}
 
     best: dict | None = None
+    per_symbol: dict[str, dict] = {}
     all_dists: list[float] = []
     for sym, dists in by_sym.items():
         all_dists.extend(dists)
         n = len(dists)
-        if n < 3:
+        if n < MIN_CLUSTER_LOSSES:
+            per_symbol[sym] = {"n": n, "clustered": False,
+                               "reason": "zu wenige Verluste"}
             continue
         rounded = Counter(_distance_bin(d, sym) for d in dists)
         top_level, top_count = rounded.most_common(1)[0]
@@ -132,10 +137,11 @@ def _distance_clustering(trades) -> dict:
             "top_level": top_level,
             "top_share": top_share,
             "spread": spread,
-            "clustered": top_share >= 0.25,
+            "clustered": top_count >= MIN_CLUSTER_REPEATS and top_share >= 0.25 and top_level > 0,
             "free_running": top_share < 0.10 and spread >= 10.0,
             "dists": sorted_d,
         }
+        per_symbol[sym] = {k: cand[k] for k in ("n", "clustered", "top_level", "top_share")}
         if best is None or cand["top_share"] > best["top_share"] or (
                 cand["top_share"] == best["top_share"] and cand["n"] > best["n"]):
             best = cand
@@ -154,12 +160,15 @@ def _distance_clustering(trades) -> dict:
             "top_distance_share_pct": None,
             "spread_max_over_median": None,
             "clustered": False,
+            "per_symbol": per_symbol,
             "verdict": "zu wenige Verluste je Symbol fuer Cluster-Aussage (kein Nachweis)",
         }
 
     n = best["n"]
     dists = best["dists"]
-    clustered = best["clustered"]
+    traded_symbols = {normalize_symbol(t.symbol) for t in trades}
+    clustered = (set(per_symbol) == traded_symbols
+                 and all(item["clustered"] for item in per_symbol.values()))
     free_running = best["free_running"]
     return {
         "n_losses_with_distance": n_all,
@@ -172,11 +181,14 @@ def _distance_clustering(trades) -> dict:
         "top_distance_share_pct": round(best["top_share"] * 100, 1),
         "spread_max_over_median": round(best["spread"], 1),
         "clustered": clustered,
+        "per_symbol": per_symbol,
         "verdict": (
             f"Stop-Signatur ({best['symbol']}): {best['top_share']*100:.0f}% der "
             f"Verlustdistanzen bei {best['top_level']}"
             if clustered
-            else ("Verlustdistanzen ungebundelt, laufen frei (kein Stop-Nachweis)"
+            else ("Stop-Signatur nur in Teilstichproben; kein Nachweis fuer das gesamte Signal"
+                  if any(item["clustered"] for item in per_symbol.values()) else
+                  "Verlustdistanzen ungebundelt, laufen frei (kein Stop-Nachweis)"
                   if free_running else
                   "kein eindeutiges Stop-Niveau erkennbar (kein Nachweis)")
         ),

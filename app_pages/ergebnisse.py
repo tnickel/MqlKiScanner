@@ -38,10 +38,12 @@ with st.container(border=True):
     selected_run = st.selectbox('Quelle', options, format_func=_fmt, key='results_run')
     fresh_ids: set[int] = set(st.session_state.get('refreshed_signal_ids') or [])
     if not fresh_ids and st.session_state.scan_results:
-        fresh_ids = {r.id for r in st.session_state.scan_results}
+        fresh_ids = {r.id for r in st.session_state.scan_results
+                     if getattr(r, 'source_kind', 'live') == 'live'}
 
     if selected_run.startswith('Datenbank'):
-        results = pipeline.results_from_db()
+        results = [r for r in pipeline.results_from_db()
+                   if getattr(r, 'source_kind', 'live') == 'live']
         # Frisch aktualisierte Signale oben.
         results.sort(key=lambda r: (0 if r.id in fresh_ids else 1, (r.name or '').casefold()))
         st.caption(
@@ -64,7 +66,9 @@ with st.container(border=True):
 
 # Station 5: globaler Portfolio-Bericht (DB, signal_id=0, kind='portfolio') —
 # sichtbar auch ohne gespeicherte Signale, daher vor dem Leer-Stop.
-portfolio = db.get_latest_analysis(0, 'portfolio')
+demo_only = bool(results) and all(getattr(r, 'source_kind', 'live') == 'demo'
+                                  for r in results)
+portfolio = None if demo_only else db.get_latest_analysis(0, 'portfolio')
 if portfolio:
     with st.container(border=True):
         section_header('Portfolio-Vorschlag', 'KI-Empfehlung über alle Signale: Strategie-Mix, Assets, Gewichtung.',

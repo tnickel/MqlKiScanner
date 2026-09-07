@@ -268,10 +268,10 @@ with scan_tab:
     with filters_column, st.container(border=True):
         section_header("Scanprofil", "Ausgangswerte für neue Scans. Größerer Umfang benötigt mehr Zeit.",
                        help_key="settings_filters")
-        pages = st.number_input("Listen-Seiten je MT4 / MT5", 1, 10, value=int(settings["listen_seiten"]), key="admin_pages")
-        top_n = st.number_input("Export-Kandidaten", min_value=1, value=int(settings["top_n_export"]), key="admin_topn")
-        weeks = st.number_input("Mindesthistorie in Wochen", min_value=0, value=int(settings["min_wochen"]), key="admin_weeks")
-        subscribers = st.number_input("Mindest-Abonnenten", min_value=0, value=int(settings["min_abonnenten"]), key="admin_subscribers")
+        pages = st.number_input("Listen-Seiten je MT4 / MT5", *config.SCAN_INPUT_BOUNDS["listen_seiten"], value=int(settings["listen_seiten"]), key="admin_pages")
+        top_n = st.number_input("Export-Kandidaten", *config.SCAN_INPUT_BOUNDS["top_n_export"], value=int(settings["top_n_export"]), key="admin_topn")
+        weeks = st.number_input("Mindesthistorie in Wochen", *config.SCAN_INPUT_BOUNDS["min_wochen"], value=int(settings["min_wochen"]), key="admin_weeks")
+        subscribers = st.number_input("Mindest-Abonnenten", *config.SCAN_INPUT_BOUNDS["min_abonnenten"], value=int(settings["min_abonnenten"]), key="admin_subscribers")
         filter_values = {"listen_seiten": int(pages), "top_n_export": int(top_n),
                          "min_wochen": int(weeks), "min_abonnenten": int(subscribers)}
         _draft_status(_changed(filter_values, settings))

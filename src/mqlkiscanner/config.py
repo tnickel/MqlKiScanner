@@ -41,6 +41,15 @@ GLM_BASE_URL = GLM_BASE_URL_CODING
 MODEL_STUFE1 = "glm-5.3-flash"
 MODEL_STUFE2 = "glm-5.3"
 
+# Beide Einstellungsseiten verwenden dieselben Eingabegrenzen. Für Anzahl
+# und Vorfilter gibt es keine fachlich begründete obere Grenze.
+SCAN_INPUT_BOUNDS = {
+    "listen_seiten": (1, 10),
+    "top_n_export": (1, None),
+    "min_wochen": (0, None),
+    "min_abonnenten": (0, None),
+}
+
 # Scan-Grundeinstellungen (in der GUI aenderbar, persistiert in app_settings.json)
 DEFAULT_SETTINGS: dict = {
     "listen_seiten": 2,             # je Liste (MT4 + MT5): Seiten 1..N

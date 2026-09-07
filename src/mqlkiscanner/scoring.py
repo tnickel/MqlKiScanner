@@ -92,12 +92,14 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     struct += 1.0 if (platform.get("correlated_pairs") or 1) >= 5 else 0.0
     struct_dim = _clamp(struct)
 
-    # 3) Margin: Schockszenario in % des rekonstruierten Kontos
+    # 3) Historische Margin: zeitgleiches Kapital am relativen Schockmaximum.
+    # Alte/unvollstaendige Reports liefern keine belastbare Bezugsbasis;
+    # kein Rueckfall auf spaeteres Peak-Kapital, sondern konservativer Wert.
     expo = f.get("exposure", {})
-    ddinfo = f.get("drawdown", {})
-    account = max(ddinfo.get("trading_dd", {}).get("peak_balance") or 0.0, 100.0)
-    shock = abs(expo.get("shock_usd") or 0.0)
-    margin_dim = _interp(shock / account * 100, SHOCK_MAP)
+    shock_pct = expo.get("shock_pct_max")
+    margin_dim = (_interp(shock_pct, SHOCK_MAP)
+                  if shock_pct is not None and expo.get("temporal_risk_available", True)
+                  else 10.0)
 
     # 4) Copy/Slippage: kleine Durchschnittsgewinne + Grid-Exits kopieren schlecht
     avg_win = s.get("avg_win") or 0.0
@@ -164,6 +166,11 @@ def evaluate(report: dict, platform: dict | None = None,
 
 def _forensics_complete(report: dict) -> bool:
     f = report.get("forensics", {})
+    expo = f.get("exposure", {})
+    if (expo.get("capital_history_complete") is False
+            or expo.get("temporal_risk_available") is False
+            or expo.get("shock_pct_max") is None):
+        return False
     return all(k in f and f[k] for k in ("martingale", "exposure", "stops", "drawdown"))
 
 
