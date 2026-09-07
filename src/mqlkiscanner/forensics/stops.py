@@ -30,6 +30,7 @@ def run(parsed: ParsedExport) -> dict:
     else:
         result = {"evidence_level": 2, "method": "verlustdistanz-clustering"}
         result.update(_distance_clustering(trades))
+        result["stop_evidence"] = "cluster" if result.get("clustered") else "none"
     result["ribbon"] = _ribbon_statistics(trades)
     return result
 
@@ -37,6 +38,7 @@ def run(parsed: ParsedExport) -> dict:
 # ---------------------------------------------------------------- Stufe 1
 def _orderbook_evidence(parsed: ParsedExport) -> dict:
     trades = parsed.trades
+    with_sl = [t for t in trades if t.sl is not None and t.sl > 0]
     with_sl_tp = [t for t in trades if t.sl and t.tp]
     sl_exits = [t for t in trades if t.comment == "[sl]"]
     tp_exits = [t for t in trades if t.comment == "[tp]"]
@@ -61,6 +63,10 @@ def _orderbook_evidence(parsed: ParsedExport) -> dict:
         "evidence_level": 1,
         "method": "orderbuch-direktnachweis",
         "positions_total": len(trades),
+        "positions_with_sl": len(with_sl),
+        "positions_with_sl_pct": round(len(with_sl) / len(trades) * 100, 1) if trades else 0,
+        "stop_evidence": ("direct" if trades and len(with_sl) == len(trades)
+                          else "partial" if with_sl else "none"),
         "positions_with_sl_tp": len(with_sl_tp),
         "positions_with_sl_tp_pct": round(len(with_sl_tp) / len(trades) * 100, 1) if trades else 0,
         "exits_sl": len(sl_exits),
@@ -75,23 +81,25 @@ def _orderbook_evidence(parsed: ParsedExport) -> dict:
         "rr_median": round(statistics.median(rr), 2) if rr else None,
         "sl_loss_dist_median": round(statistics.median(sl_loss_dists), 2) if sl_loss_dists else None,
         "sl_loss_dist_max": round(max(sl_loss_dists), 2) if sl_loss_dists else None,
-        "verdict": _orderbook_verdict(len(trades), len(with_sl_tp), len(sl_exits)),
+        "verdict": _orderbook_verdict(len(trades), len(with_sl_tp), len(sl_exits), len(with_sl)),
     }
 
 
-def _orderbook_verdict(total: int, with_sl_tp: int, sl_exits: int) -> str:
+def _orderbook_verdict(total: int, with_sl_tp: int, sl_exits: int,
+                       with_sl: int | None = None) -> str:
+    with_sl = with_sl_tp if with_sl is None else with_sl
     if total <= 0:
         return "kein SL im Orderbuch"
-    if with_sl_tp <= 0:
-        return "kein SL/TP-Paar im Orderbuch"
-    pct = with_sl_tp / total * 100
-    if with_sl_tp == total and sl_exits > 0:
-        return ("BEWIESEN: jede Position mit SL/TP im Orderbuch; "
+    if with_sl <= 0:
+        return "kein SL im Orderbuch (kein Stop-Nachweis)"
+    pct = with_sl / total * 100
+    if with_sl == total and sl_exits > 0:
+        return ("BEWIESEN: jede Position mit SL im Orderbuch; "
                 "Stop-Ausloesungen rekonstruierbar")
-    if with_sl_tp == total:
-        return (f"Orderbuch: {with_sl_tp}/{total} Positionen mit SL/TP-Feldern "
+    if with_sl == total:
+        return (f"Orderbuch: {with_sl}/{total} Positionen mit SL-Feldern "
                 "(keine [sl]-Ausfuehrungen im Export)")
-    return (f"TEILWEISE: {with_sl_tp}/{total} Positionen ({pct:.0f} %) mit SL/TP "
+    return (f"TEILWEISE: {with_sl}/{total} Positionen ({pct:.0f} %) mit SL "
             "im Orderbuch — kein vollstaendiger Stop-Nachweis")
 
 

@@ -15,6 +15,7 @@ import requests
 
 from .. import secrets_store
 from ..config import MQL5_BASE
+from .errors import Mql5CredentialsMissingError
 from .ratelimit import Mql5HardStopError, Mql5ThrottleError, RateLimiter, backoff_after_throttle
 
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -50,8 +51,7 @@ class Mql5Session:
         """Eingeloggt-Check: MQL5 zeigt den Abmelde-Link als
         /en/auth_logout (Text 'Logout'); alte Varianten mitgeprüft."""
         try:
-            self.limiter.wait()
-            r = self.http.get(urljoin(MQL5_BASE, "/en"), timeout=30)
+            r = self.get("/en")
             return ("/en/auth_logout" in r.text
                     or 'href="/en/logout' in r.text
                     or ">Logout<" in r.text
@@ -86,7 +86,7 @@ class Mql5Session:
     def ensure_session_for_export(self) -> None:
         """Vor Exporten: Session pruefen; bei Bedarf Browser-Login (nicht HTTP)."""
         if not self.has_credentials:
-            raise RuntimeError(
+            raise Mql5CredentialsMissingError(
                 "Keine MQL5-Credentials gesetzt (Admin-Bereich oder "
                 "MQL5_USER/MQL5_PASS) — Trade-Export nicht moeglich.")
         if self.logged_in and self.is_logged_in():

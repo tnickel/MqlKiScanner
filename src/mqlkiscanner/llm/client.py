@@ -114,30 +114,13 @@ class GlmClient:
                             f"GLM-Verbindungsfehler nach 2 Versuchen: "
                             f"{type(exc).__name__}: {exc}") from exc
                     time.sleep(5)
-            if r.status_code == 429:
-                try:
-                    err = r.json().get("error", {})
-                except ValueError:
-                    err = {}
-                code = str(err.get("code") or "")
-                if code in ("1113", "1302"):
-                    raise LlmNoBalanceError(
-                        "GLM-Key gueltig, aber kein Kontingent auf diesem Endpunkt "
-                        f"(Z.ai-Code {code}). Bei Abo-Keys (GLM Coding "
-                        "Plan) muss der Coding-Endpunkt gesetzt sein "
-                        "(api.z.ai/api/coding/paas/v4), bei Guthaben-Keys der "
-                        "Standard-Endpunkt (api.z.ai/api/paas/v4) — im Admin-"
-                        "bereich umstellbar, ggf. dort aufladen.")
-                time.sleep(5 * (attempt + 1))
-                last_error = LlmError(f"HTTP 429: {r.text[:200]}")
-                continue
             if r.status_code >= 400:
                 try:
                     err = r.json().get("error", {})
                 except ValueError:
                     err = {}
                 code = str(err.get("code") or "")
-                if code in ("1113", "1302"):
+                if code == "1113":
                     raise LlmNoBalanceError(
                         "GLM-Key gueltig, aber kein Kontingent auf diesem Endpunkt "
                         f"(Z.ai-Code {code}). Bei Abo-Keys (GLM Coding "
@@ -145,6 +128,15 @@ class GlmClient:
                         "(api.z.ai/api/coding/paas/v4), bei Guthaben-Keys der "
                         "Standard-Endpunkt (api.z.ai/api/paas/v4) — im Admin-"
                         "bereich umstellbar, ggf. dort aufladen.")
+                # 1302 bezeichnet das Parallelitätslimit, nicht fehlendes Guthaben.
+                # https://docs.z.ai/api-reference/api-code
+                if r.status_code == 429 or code == "1302":
+                    last_error = LlmError(
+                        f"GLM-Drosselung (HTTP {r.status_code}, Code {code or 'unbekannt'}): "
+                        f"{r.text[:200]}")
+                    if attempt < 2:
+                        time.sleep(5 * (attempt + 1))
+                    continue
                 raise LlmError(f"GLM-API HTTP {r.status_code}: {r.text[:300]}")
             try:
                 data = r.json()

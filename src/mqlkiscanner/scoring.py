@@ -83,11 +83,18 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     stops = f.get("stops", {})
     mart = f.get("martingale", {})
     bask = f.get("baskets", {})
-    stop_proven = stops.get("evidence_level") == 1 and stops.get("positions_with_sl_tp_pct", 0) >= 99.0
+    evidence = stops.get("stop_evidence")
+    # Legacy reports may only contain the old count/cluster fields. Absence
+    # of either field is never evidence of protection.
+    stop_proven = evidence == "direct" or (
+        evidence is None and stops.get("evidence_level") == 1
+        and stops.get("positions_with_sl_tp_pct", 0) == 100.0)
+    stop_signature = evidence == "cluster" or (
+        evidence is None and stops.get("clustered") is True)
     struct = 3.0
     struct -= 1.0 if stop_proven else 0.0
     struct += 3.0 if mart.get("flag") else 0.0
-    struct += 2.0 if not stop_proven and stops.get("clustered") is False else 0.0
+    struct += 2.0 if not stop_proven and not stop_signature else 0.0
     struct += 1.5 if (bask.get("grid_indicator_pct") or 0) > 30 else 0.0
     struct += 1.0 if (platform.get("correlated_pairs") or 1) >= 5 else 0.0
     struct_dim = _clamp(struct)
@@ -168,6 +175,7 @@ def _forensics_complete(report: dict) -> bool:
     f = report.get("forensics", {})
     expo = f.get("exposure", {})
     if (expo.get("capital_history_complete") is False
+            or expo.get("conversion_complete") is False
             or expo.get("temporal_risk_available") is False
             or expo.get("shock_pct_max") is None):
         return False

@@ -17,7 +17,8 @@ nicht, wenn die Plattform-Kennzahlen gut aussehen.
 **Frage:** Werden Positionen nach Verlusten größer?
 
 ```
-Für jede Nachbarsequenz (Trade i, Trade i+1), wobei i+1 nach dem
+Trades zuerst nach normalisiertem Instrument gruppieren.
+Für jede Nachbarsequenz je Instrument (Trade i, Trade i+1), wobei i+1 nach dem
 Close von i eröffnet wird:
   ratio = vol(i+1) / max(vol(i), 1e-9)
 Gruppiere ratio nach: Trade i war Verlust (pnl <= 0) vs. Gewinn
@@ -57,6 +58,24 @@ Zwei Peak-Masse:
 | US30/Indizes | 1 USD je Punkt |
 | FX-Majors | ~10 USD je Pip (4. Dezimale) |
 
+Die FX-Angabe gilt nur bei USD als Kurswährung. Bei JPY als Kurswährung
+ist ein Pip 0,01, sonst 0,0001; das Standardszenario umfasst jeweils
+500 Pips (JPY: 5,00 Preiseinheiten). Bei anderen Kurswährungen ist eine
+belegte historische Umrechnung nach USD erforderlich. Ohne diese bleiben
+USD-Schock und Schockanteil unbekannt, die Forensik unvollständig. Die
+nativen Beträge je Symbol werden mit ihrer Kurswährung ausgegeben; sie
+dürfen nicht als USD addiert oder aus späteren Tradegewinnen umgerechnet
+werden. Das Projekt verwendet weiterhin die explizite USD-Konvention für
+Kontostände sowie bekannte Gold-/Indexkontrakte; eine CSV allein beweist
+die Kontowährung nicht.
+
+Der historische Schockanteil verwendet das zum jeweiligen Zeitpunkt
+vorhandene Kapital. Kontobewegungen mit identischem Zeitstempel werden
+als ein Nettofluss verarbeitet, weil ihre Reihenfolge innerhalb der
+Zeitauflösung nicht bekannt ist. Neben dem USD-Maximum wird ein separates
+Maximum des relativen Schocks mit Zeitpunkt und damaligem Kontostand
+ausgegeben.
+
 **Interpretation:**
 - Beispiegelrechnung angeben: "50-USD-Schock = ±X USD" und ins
   Verhältnis zum Kontostand setzen
@@ -90,6 +109,11 @@ Zwei Peak-Masse:
   (Grid-/Diskretionsrisiko; Beispiele: MSC -21 USD-Kappe ohne Level,
   Pure Gold Worst -152 USD Bewegung, KiraCat -7 % in einem Trade)
 
+Die Engine liefert formatunabhängig `stop_evidence`: `direct` (alle
+Positionen mit SL), `cluster` (ausreichende Distanzsignatur), `partial`
+oder `none`. Leere Orderbuchfelder oder fehlende Schlüssel liefern keine
+Entlastung im Score. Ein Take-Profit ist für den SL-Nachweis nicht nötig.
+
 **Referenz:** `scripts/reference/analyze_goldspike_orderbook.py` (Stufe 1),
 `analyze_goldreaper.py` / `analyze_kiracat.py` (Stufe 2)
 
@@ -98,8 +122,10 @@ Zwei Peak-Masse:
 **Frage:** Stimmen die Daten, und wie tief war der echte Drawdown?
 
 ```
-Trades chronologisch nach Close-Zeit; Startkapital = Summe der
-Einzahlungen vor erstem Trade (bzw. "Initial Deposit" der Plattform).
+Trades chronologisch nach Close-Zeit; Startkapital = Nettosumme aller
+Kontobewegungen bis zum ersten Einstieg (Einzahlungen minus bereits
+erfolgte Auszahlungen). Vor Handelsbeginn entnommenes Kapital steht für
+die Handelskurve nicht zur Verfügung.
 Kontobewegungen (Balance-Zeilen) an ihren Zeitpunkten einrechnen;
 zusätzlich eine "virtuelle" Kurve OHNE Ein-/Auszahlungen fahren
 (zeigt die Handelsleistung separat von der Kapitalentnahme).

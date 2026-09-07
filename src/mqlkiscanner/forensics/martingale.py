@@ -16,6 +16,7 @@ import statistics
 from collections import defaultdict
 
 from ..models import ParsedExport
+from ..symbols import normalize_symbol
 
 MARTINGALE_FLAG_THRESHOLD = 1.3
 
@@ -23,12 +24,26 @@ MARTINGALE_FLAG_THRESHOLD = 1.3
 def _successor_test(seq) -> dict:
     after_loss: list[float] = []
     after_win: list[float] = []
-    for a, b in zip(seq, seq[1:]):
-        if b.open_time > a.close_time:  # nicht parallel offen
-            ratio = b.volume / max(a.volume, 1e-9)
-            (after_loss if a.profit <= 0 else after_win).append(ratio)
+    by_symbol: dict[str, list] = defaultdict(list)
+    for trade in seq:
+        by_symbol[normalize_symbol(trade.symbol)].append(trade)
+    per_symbol = {}
+    for symbol, trades in by_symbol.items():
+        losses, wins = [], []
+        for a, b in zip(trades, trades[1:]):
+            if b.open_time > a.close_time:  # nicht parallel offen
+                ratio = b.volume / max(a.volume, 1e-9)
+                (losses if a.profit <= 0 else wins).append(ratio)
+        median = statistics.median(losses) if losses else None
+        per_symbol[symbol] = {
+            "n_after_loss": len(losses),
+            "median_ratio_after_loss": round(median, 2) if median is not None else None,
+            "flag": median is not None and median > MARTINGALE_FLAG_THRESHOLD,
+        }
+        after_loss.extend(losses)
+        after_win.extend(wins)
     if not after_loss:
-        return {"n_after_loss": 0}
+        return {"n_after_loss": 0, "per_symbol": per_symbol}
     med_loss = statistics.median(after_loss)
     return {
         "n_after_loss": len(after_loss),
@@ -36,7 +51,8 @@ def _successor_test(seq) -> dict:
         "median_ratio_after_loss": round(med_loss, 2),
         "mean_ratio_after_loss": round(statistics.mean(after_loss), 2),
         "median_ratio_after_win": round(statistics.median(after_win), 2) if after_win else None,
-        "flag": med_loss > MARTINGALE_FLAG_THRESHOLD,
+        "flag": any(item["flag"] for item in per_symbol.values()),
+        "per_symbol": per_symbol,
     }
 
 
@@ -48,7 +64,7 @@ def _basket_ladder_test(trades) -> dict:
     (False Positive bei Pure Gold, das kein Martingale betreibt)."""
     by_exit: dict[tuple, list] = defaultdict(list)
     for t in trades:
-        by_exit[(t.symbol, t.direction, t.close_time)].append(t)
+        by_exit[(normalize_symbol(t.symbol), t.direction, t.close_time)].append(t)
     escalations: list[dict] = []
     for (sym, direction, close_time), basket in by_exit.items():
         if len(basket) < 3:
@@ -102,8 +118,9 @@ def run(parsed: ParsedExport) -> dict:
         return result
     result["flag"] = bool(succ["flag"] or ladder["flag"])
     result["evidence"] = [e for e, on in (
-        (f"Nachfolger-Median nach Verlust {succ['median_ratio_after_loss']}x > "
-         f"{MARTINGALE_FLAG_THRESHOLD}", succ["flag"]),
+        ("Nachfolger-Median nach Verlust je Instrument: " + "; ".join(
+            f"{sym} {value['median_ratio_after_loss']}x > {MARTINGALE_FLAG_THRESHOLD}"
+            for sym, value in succ["per_symbol"].items() if value["flag"]), succ["flag"]),
         (f"{ladder['escalating_baskets']} eskalierende Korb-Leitern "
          f"(z. B. {' -> '.join(ladder['examples'][0]['ladder'])} @ "
          f"{ladder['examples'][0]['symbol']})" if ladder["examples"] else "", ladder["flag"]),

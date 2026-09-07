@@ -21,12 +21,13 @@ Anmeldung ueberlebt App-Neustarts. Cookie-Datei: data/mql5_cookies.json
 from __future__ import annotations
 
 import json
-import shutil
 import time
 from pathlib import Path
 
 from .. import secrets_store
 from ..config import DATA_DIR
+from .errors import Mql5CredentialsMissingError
+from .exporter import publish_validated_export
 from .session import Mql5Session
 
 COOKIE_FILE = DATA_DIR / "mql5_cookies.json"
@@ -166,7 +167,7 @@ def _login_via_browser(settings: dict, session: Mql5Session, log=None) -> bool:
     user = secrets_store.get_secret("mql5_user")
     password = secrets_store.get_secret("mql5_pass")
     if not (user and password):
-        raise RuntimeError(
+        raise Mql5CredentialsMissingError(
             "Keine MQL5-Credentials gesetzt (Admin-Bereich oder "
             "MQL5_USER/MQL5_PASS) — Browser-Login nicht möglich.")
 
@@ -211,6 +212,12 @@ def export_positions_via_browser(signal_id: int, log=None) -> str:
     abwarten und nach data/trades/{id}_positions.csv verschieben.
     Rueckgabe: Pfad der CSV.
     """
+    user = secrets_store.get_secret("mql5_user")
+    password = secrets_store.get_secret("mql5_pass")
+    if not (user and password):
+        raise Mql5CredentialsMissingError(
+            "Keine MQL5-Credentials gesetzt — Export über Browser nicht möglich.")
+
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
 
@@ -226,17 +233,12 @@ def export_positions_via_browser(signal_id: int, log=None) -> str:
         except OSError:
             pass
 
-    user = secrets_store.get_secret("mql5_user")
-    password = secrets_store.get_secret("mql5_pass")
-
     driver = _start_driver(download_dir=DOWNLOAD_DIR)
     try:
         wait = WebDriverWait(driver, 45)
         driver.get(f"https://www.mql5.com/en/signals/{signal_id}")
         time.sleep(1.5)
         if driver.find_elements(By.ID, "Login"):
-            if not (user and password):
-                raise RuntimeError("Kein MQL5-Login — Export über Browser nicht möglich.")
             _info("  Chrome ist ausgeloggt — Anmeldung läuft …")
             _driver_login(driver, user, password)
             driver.get(f"https://www.mql5.com/en/signals/{signal_id}")
@@ -284,7 +286,10 @@ def export_positions_via_browser(signal_id: int, log=None) -> str:
                 f"(Anfang: {head[:80]!r}). Datei verworfen — kein Cache-Eintrag.")
 
         target = TRADES_DIR / f"{signal_id}_positions.csv"
-        shutil.move(str(csv_file), target)
+        try:
+            publish_validated_export(csv_file, target)
+        finally:
+            csv_file.unlink(missing_ok=True)
         _info(f"  ✓ CSV über Chrome geladen: {target.name}")
         return str(target)
     finally:

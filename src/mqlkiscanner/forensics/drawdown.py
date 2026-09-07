@@ -2,7 +2,7 @@
 """Forensik-Test 4: Drawdown-Rekonstruktion + Konsistenz (doc/03).
 
 Zwei Kurven (Spec doc/03_forensik-tests.md):
-- Trading-Kurve ("virtuell"): Startkapital = Einzahlungen vor dem ersten
+- Trading-Kurve ("virtuell"): Startkapital = Netto-Kontobewegungen vor dem ersten
   Trade, KEINE weiteren Kontobewegungen — zeigt die Handelsleistung
   getrennt von der Kapitalentnahme. ANKER: an diesem DD haengt der
   Plattform-Abgleich auf den Cent (Reihe: MSC 76,83 / Reaper 319,49 /
@@ -68,7 +68,9 @@ def run(parsed: ParsedExport) -> dict:
     balances = sorted(parsed.balances, key=lambda b: b.time)
     first_open = min(t.open_time for t in trades)
 
-    deposits_start = sum(b.amount for b in balances if b.amount > 0 and b.time <= first_open)
+    # Bereits vor Handelsbeginn entnommenes Kapital stand nie fuer Trades
+    # bereit. Nur spaetere Flows bleiben aus der virtuellen Kurve heraus.
+    deposits_start = sum(b.amount for b in balances if b.time <= first_open)
     deposits_total = sum(b.amount for b in balances if b.amount > 0)
     withdrawals_total = sum(b.amount for b in balances if b.amount < 0)
 

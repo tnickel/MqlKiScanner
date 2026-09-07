@@ -9,6 +9,7 @@ Lauf-Ergebnisse landen in data/runs/{zeitstempel}/results.json.
 """
 from __future__ import annotations
 
+import csv
 import json
 import os
 import tempfile
@@ -24,10 +25,12 @@ import requests
 
 from . import config, scoring
 from . import db
+from .analysis_version import FORENSICS_VERSION
 from .engine import analyze as analyze_export
 from .llm import client as llm_client
 from .llm import prompts as llm_prompts
 from .mql5 import crawler, exporter, signal_stats
+from .mql5.errors import Mql5CredentialsMissingError
 from .mql5.ratelimit import Mql5HardStopError, is_hard_mql5_failure
 from .mql5.session import Mql5Session
 
@@ -62,6 +65,7 @@ class ScanResult:
     dd_balance_pct: float | None = None    # Plattform "By Balance"
     # Forensik (nur mit Trade-Export)
     forensik_vorhanden: bool = False
+    forensik_version: int | None = None
     trading_dd_pct: float | None = None
     trading_dd_usd: float | None = None
     winrate_pct: float | None = None
@@ -143,6 +147,11 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             forensik_stale = bool(last_fehler) and (
                 not f or not forensik_updated or signal_updated >= forensik_updated
             )
+        version_current = (f.get("version") == FORENSICS_VERSION
+                           and stats.get("forensik_version") == FORENSICS_VERSION
+                           and peak.get("shock_pct_max") is not None)
+        version_stale = bool(f) and not version_current
+        forensik_stale = forensik_stale or version_stale
         res = ScanResult(
             id=int(row["signal_id"]),
             source_kind="demo" if row.get("platform") == "CSV" else "live",
@@ -159,6 +168,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             dd_equity_pct=stats.get("eq_dd_pct"),
             dd_balance_pct=stats.get("bal_dd_pct"),
             forensik_vorhanden=bool(f) and not forensik_stale,
+            forensik_version=f.get("version"),
             trading_dd_pct=trading.get("pct", f.get("trading_dd_pct")),
             trading_dd_usd=trading.get("usd", f.get("trading_dd_usd")),
             winrate_pct=f.get("winrate_pct"),
@@ -195,6 +205,8 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         res.ampel, res.urteil = ampel_for(res, settings)
         if forensik_stale and last_fehler:
             res.urteil = f"Fehler (Forensik veraltet): {last_fehler}"
+        elif forensik_stale:
+            res.urteil = "Forensik veraltet oder unvollständig — erneute Prüfung erforderlich."
         results.append(res)
     return results
 
@@ -207,6 +219,8 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
         return "⛔", f"Ausgeschlossen (Liste): {excluded[result.id].get('grund', '')}"
     if result.fehler and not result.forensik_vorhanden:
         return "⚪", f"Fehler: {result.fehler}"
+    if result.fehler:
+        return "⚪", f"Prüfung mit Fehler: {result.fehler}"
     if result.schranke_verletzt:
         limit = settings.get("schranke_eq_dd_pct", 30)
         return "🔴", f"Schranke verletzt: Drawdown > {limit:g} % (harte Ablehnung)"
@@ -264,6 +278,15 @@ def _forensik_json(r: ScanResult) -> str:
         "martingale_evidenz": r.martingale_evidenz,
         "stop_nachweis": r.stop_nachweis,
     }, ensure_ascii=False)
+
+
+def _stop_evidence_text(stops: dict) -> str:
+    if stops.get("evidence_level") == 1:
+        if "positions_with_sl" in stops:
+            return f"Orderbuch: {stops['positions_with_sl']}/{stops.get('positions_total')} mit SL"
+        return (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
+                f"{stops.get('positions_total')} mit SL/TP")
+    return stops.get("verdict", "kein Nachweis")
 
 
 class ScanPipeline:
@@ -386,7 +409,7 @@ class ScanPipeline:
                         extra_pause_s=float(self.settings.get(
                             "rate_pause_zwischen_signalen_s", 5.0)),
                         platform=res.platform or cand.get("platform"))
-                except Mql5HardStopError:
+                except (Mql5HardStopError, Mql5CredentialsMissingError):
                     raise
                 except (RuntimeError, requests.HTTPError):
                     # MQL5 drosselt / falscher Export-Pfad — Chrome-Fallback
@@ -403,14 +426,9 @@ class ScanPipeline:
                     f"({'Cache' if from_cache else 'neu geladen'})")
                 log("Forensik-Batterie (4 Tests) läuft …")
                 report = analyze_export(path)
-            except RuntimeError as exc:
-                if "Keine MQL5-Credentials" in str(exc):
-                    # Kennzahlen bleiben erhalten; Ergebnis wird sauber als
-                    # Vorprüfung gefuehrt statt als Fehler.
-                    log("Trade-Export übersprungen (kein MQL5-Login) — "
-                        "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
-                else:
-                    raise
+            except Mql5CredentialsMissingError:
+                log("Trade-Export übersprungen (kein MQL5-Login) — "
+                    "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
             if report is not None:
                 st, fx = report["stats"], report["forensics"]
                 res.forensik_vorhanden = True
@@ -433,11 +451,7 @@ class ScanPipeline:
                 res.martingale_flag = fx["martingale"].get("flag")
                 res.martingale_evidenz = fx["martingale"].get("evidence") or []
                 stops = fx["stops"]
-                if stops.get("evidence_level") == 1:
-                    res.stop_nachweis = (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
-                                         f"{stops.get('positions_total')} mit SL/TP")
-                else:
-                    res.stop_nachweis = stops.get("verdict", "kein Nachweis")[:60]
+                res.stop_nachweis = _stop_evidence_text(stops)
                 log(f"✓ Forensik: Winrate {res.winrate_pct} % · Trading-DD "
                     f"{res.trading_dd_pct} % · Serie {res.max_verlustserie} · "
                     f"Peak {res.peak_positionen} Pos · Martingale "
@@ -458,7 +472,11 @@ class ScanPipeline:
                 res.schranke_verletzt = bool(ev["schranke_eq_dd_verletzt"])
                 res.forensik_vorhanden = bool(ev["forensics_complete"])
                 if not res.forensik_vorhanden:
-                    raise ValueError("Forensik unvollständig: Kapitalhistorie oder Pflichtbefunde fehlen.")
+                    missing = expo.get("missing_conversion_symbols") or []
+                    reason = ("USD-Umrechnung fehlt für " + ", ".join(missing)
+                              if missing else "Kapitalhistorie oder Pflichtbefunde fehlen")
+                    raise ValueError(f"Forensik unvollständig: {reason}.")
+                res.forensik_version = FORENSICS_VERSION
                 self._register_mql5_outcome(ok=True)
         except Exception as exc:  # Ein weicher Fehler soll den Lauf nicht abbrechen
             if isinstance(exc, Mql5HardStopError):
@@ -485,6 +503,7 @@ class ScanPipeline:
                 "broker_server": res.broker_server,
                 # Expliziter Vollstaendigkeitsstatus (verhindert Gruen aus alter Forensik).
                 "forensik_ok": bool(res.forensik_vorhanden),
+                "forensik_version": res.forensik_version,
             }
             if res.fehler and not res.forensik_vorhanden:
                 stats_payload["last_fehler"] = res.fehler
@@ -492,20 +511,16 @@ class ScanPipeline:
                 stats_payload["last_fehler"] = None
             if not res.forensik_vorhanden and not res.fehler:
                 stats_payload["export_skipped"] = "no_credentials_or_no_export"
-            db.upsert_signal(res.id, name=res.name, platform=res.platform, url=res.url,
-                             autor=res.autor, abo_preis=res.abo_preis_usd,
-                             abonnenten=res.abonnenten, wochen=res.wochen,
-                             stats=stats_payload)
-            if res.trades_path:
-                db.store_trade_file(res.id, res.trades_path)
             ampel, grund = ampel_for(res, self.settings)
             res.ampel = ampel
             detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
                       f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
             res.urteil = grund + detail
+            forensik_payload = None
             if res.forensik_vorhanden:
-                db.store_forensik(res.id, {
+                forensik_payload = {
+                    "version": FORENSICS_VERSION,
                     "trading_dd": {"pct": res.trading_dd_pct, "usd": res.trading_dd_usd},
                     "winrate_pct": res.winrate_pct,
                     "max_verlustserie": res.max_verlustserie,
@@ -520,9 +535,19 @@ class ScanPipeline:
                     "martingale_flag": res.martingale_flag,
                     "stop_nachweis": res.stop_nachweis,
                     "symbole": res.symbole,
-                    "score": res.score, "ampel": res.ampel})
+                    "score": res.score, "ampel": res.ampel}
+            saved_trades_path = db.store_scan_result(res.id, {
+                "name": res.name, "platform": res.platform, "url": res.url,
+                "autor": res.autor, "abo_preis": res.abo_preis_usd,
+                "abonnenten": res.abonnenten, "wochen": res.wochen,
+                "stats": stats_payload,
+            }, trades_path=res.trades_path, forensik=forensik_payload)
+            if saved_trades_path:
+                res.trades_path = saved_trades_path
         except Exception as exc:  # DB-Fehler darf den Lauf nicht abbrechen
-            log(f"  DB-Hinweis bei {res.id}: {exc}")
+            storage_error = f"Speichern fehlgeschlagen: {type(exc).__name__}: {exc}"
+            res.fehler = f"{res.fehler} | {storage_error}" if res.fehler else storage_error
+            log(f"  DB-Fehler bei {res.id}: {exc}")
             ampel, grund = ampel_for(res, self.settings)
             res.ampel = ampel
             detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
@@ -598,7 +623,11 @@ class ScanPipeline:
                 if r.trades_path:
                     from .parser import load_export
                     from .trade_data import build_trade_payload
-                    payload = build_trade_payload(load_export(r.trades_path))
+                    try:
+                        payload = build_trade_payload(load_export(r.trades_path))
+                    except (OSError, ValueError, csv.Error) as exc:
+                        raise llm_client.LlmError(
+                            f"Trade-Export nicht lesbar: {type(exc).__name__}: {exc}") from exc
                     trades_json = json.dumps(payload, ensure_ascii=False)
                     n_trades = payload.get("meta", {}).get("trades", 0)
                 trade_prompt = (llm_prompts.load_prompt("trade_analyse")
@@ -792,18 +821,22 @@ class ScanPipeline:
             if on_progress:
                 on_progress(0, total, f"Fehler: {exc}")
             return {"text": "", "reason": str(exc)}
+        storage_error = ""
         try:
             db.store_analysis(self.PORTFOLIO_ANALYSIS_ID, "portfolio", model_strong,
                               self.llm.usage.total_tokens, text)
         except Exception as exc:  # DB-Fehler darf den Bericht nicht verlieren
-            log(f"  DB-Hinweis (Portfolio): {exc}")
+            storage_error = f"Portfolio nicht in Datenbank gespeichert: {type(exc).__name__}: {exc}"
+            log(f"  {storage_error}")
         log(f"  ✓ Portfolio-Vorschlag fertig: {meta.get('zeichen', '?')} Zeichen "
             f"in {meta.get('dauer_s', '?')}s — gesamt bisher: "
             f"{self.llm.usage.total_tokens:,} Tokens")
         if on_progress:
-            on_progress(1, total, "Portfolio-Vorschlag fertig")
+            on_progress(1, total, storage_error or "Portfolio-Vorschlag fertig")
         return {"text": text, "zeichen": meta.get("zeichen", len(text)),
-                "tokens": self.llm.usage.total_tokens, "reason": ""}
+                "tokens": self.llm.usage.total_tokens, "model": model_strong,
+                "created_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
+                "reason": storage_error, "storage_error": storage_error}
 
     # ------------------------------------------------------ Hilfen
     @staticmethod
@@ -854,17 +887,18 @@ class ScanPipeline:
                 symbole=", ".join(sorted(st.get("symbols", {}))),
             )
             stops = fx["stops"]
-            r.stop_nachweis = (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
-                               f"{stops.get('positions_total')} mit SL/TP"
-                               if stops.get("evidence_level") == 1
-                               else stops.get("verdict", "kein Nachweis"))
+            r.stop_nachweis = _stop_evidence_text(stops)
             ev = scoring.evaluate(
                 report, schranke_eq_dd_pct=settings.get("schranke_eq_dd_pct", 30.0))
             r.score = ev["score"]
             r.schranke_verletzt = ev["schranke_eq_dd_verletzt"]
             r.forensik_vorhanden = bool(ev["forensics_complete"])
+            r.forensik_version = FORENSICS_VERSION if r.forensik_vorhanden else None
             if not r.forensik_vorhanden:
-                r.fehler = "Forensik unvollständig: Kapitalhistorie oder Pflichtbefunde fehlen."
+                missing = fx["exposure"].get("missing_conversion_symbols") or []
+                reason = ("USD-Umrechnung fehlt für " + ", ".join(missing)
+                          if missing else "Kapitalhistorie oder Pflichtbefunde fehlen")
+                r.fehler = f"Forensik unvollständig: {reason}."
             if sid in meta:
                 r.name = meta[sid].get("name", r.name)
                 # Demo/Verifikation: kuratierte Referenzscores aus known_signals
@@ -886,7 +920,8 @@ class ScanPipeline:
         return results
 
     @staticmethod
-    def save_run(results: list[ScanResult], logs: dict[str, list[str]]) -> str:
+    def save_run(results: list[ScanResult], logs: dict[str, list[str]],
+                 portfolio: dict | None = None) -> str:
         stamp = datetime.now().strftime("%Y-%m-%d_%H%M%S_%f") + "_" + uuid4().hex[:8]
         run_dir = config.RUNS_DIR / stamp
         run_dir.mkdir(parents=True, exist_ok=False)
@@ -894,6 +929,7 @@ class ScanPipeline:
             "zeitstempel": stamp,
             "ergebnisse": [vars(r) for r in results],
             "logs": logs,
+            "portfolio": portfolio,
         }
         out = run_dir / "results.json"
         text = json.dumps(payload, ensure_ascii=False, indent=2, default=str)
