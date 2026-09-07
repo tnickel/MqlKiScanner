@@ -7,8 +7,8 @@
 | `.env` | API-Keys, Passwörter |
 | `config/secrets.local.json` | lokal gespeicherte Secrets |
 | `data/mql5_cookies.json` | Session-Cookies = Login |
-| `data/chrome_profile/` | Browser-Profil mit Login-Zustand |
-| `data/*.db`, `data/trades/`, `data/runs/` | lokale Scan-Artefakte |
+| `data/chrome_profile/`, `data/chrome_profile_accounts/` | Browser-Profile mit Login-Zustand |
+| `data/*.db`, `data/trades/`, `data/trade_snapshots/`, `data/runs/` | lokale Scan-Artefakte einschließlich unveränderlicher CSV-Kopien |
 | `.streamlit/secrets.toml` | Streamlit-Secrets |
 
 Alle Einträge stehen in `.gitignore`. Vor jedem Push:

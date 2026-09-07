@@ -143,15 +143,46 @@ def _load_json_excerpt(path: str) -> ParsedExport:
     """
     with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
+    if not isinstance(data, list):
+        raise ValueError(f"{path}: JSON-Auszug muss eine Liste von Trades enthalten")
     result = ParsedExport(source_path=path, source_format="json_excerpt")
     fmt = "%Y-%m-%d %H:%M"
-    for item in data:
-        direction = "Buy" if item["dir"].upper().startswith("B") else "Sell"
-        result.trades.append(Trade(
-            open_time=datetime.strptime(item["o"], fmt),
-            close_time=datetime.strptime(item["c"], fmt),
-            direction=direction, volume=float(item["vol"]), symbol=item["sym"],
-            entry_price=item.get("ep"), exit_price=item.get("xp"),
-            profit=float(item.get("pnl", 0.0)),
-        ))
+    directions = {"B": "Buy", "BUY": "Buy", "S": "Sell", "SELL": "Sell"}
+    for index, item in enumerate(data, start=1):
+        try:
+            if not isinstance(item, dict):
+                raise ValueError("Trade muss ein JSON-Objekt sein")
+            for key in ("o", "c", "dir", "vol", "sym", "pnl"):
+                if key not in item or item[key] is None:
+                    raise ValueError(f"Pflichtfeld fehlt: {key}")
+            if not isinstance(item["dir"], str) or item["dir"].strip().upper() not in directions:
+                raise ValueError("ungueltige Richtung (erwartet B/S oder Buy/Sell)")
+            if not isinstance(item["sym"], str) or not item["sym"].strip():
+                raise ValueError("Instrument fehlt oder ist kein Text")
+            trade = Trade(
+                open_time=datetime.strptime(item["o"], fmt),
+                close_time=datetime.strptime(item["c"], fmt),
+                direction=directions[item["dir"].strip().upper()],
+                volume=_json_number(item["vol"], required=True), symbol=item["sym"].strip(),
+                entry_price=_json_number(item.get("ep")), exit_price=_json_number(item.get("xp")),
+                profit=_json_number(item["pnl"], required=True),
+            )
+            if trade.volume <= 0 or trade.close_time < trade.open_time:
+                raise ValueError("ungueltiges Volumen oder Handelszeitraum")
+        except (ValueError, TypeError) as exc:
+            raise ValueError(f"{path}: Trade {index}: {exc}") from exc
+        result.trades.append(trade)
     return result
+
+
+def _json_number(value, *, required: bool = False) -> Optional[float]:
+    """Apply the CSV finite-number contract to excerpt numbers as well."""
+    if value is None:
+        number = None
+    elif isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        raise ValueError("ungueltige Zahl")
+    else:
+        number = parse_number(str(value).strip())
+    if required and number is None:
+        raise ValueError("numerisches Pflichtfeld ist leer")
+    return number

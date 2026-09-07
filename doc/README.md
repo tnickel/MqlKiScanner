@@ -18,7 +18,7 @@ Einstieg für Menschen und Agenten. Alles Wesentliche liegt unter `doc/`.
 | — | [`../SECURITY.md`](../SECURITY.md) | Kurzfassung für GitHub Security |
 
 Code-Reviews und Nachprüfungen (historisch): `05_…`, `06_…`, Ordner `reviews/`.
-Aktuelle Korrekturen: [`17_korrekturen_codereview_ecf9d4f_2026-09-07.md`](17_korrekturen_codereview_ecf9d4f_2026-09-07.md).
+Aktueller Review mit Korrekturen: [`18_codereview_f0b2245_2026-09-07.md`](18_codereview_f0b2245_2026-09-07.md).
 
 ## Schnellbefehle
 

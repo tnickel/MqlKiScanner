@@ -11,7 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import streamlit as st
 
 from mqlkiscanner import config, db, pipeline, scan_state
-from mqlkiscanner.app_ui import render_detail, render_report_panel, render_results_table, results_to_dataframe
+from mqlkiscanner.app_ui import (clear_report_selection, render_detail, render_report_panel,
+                                 render_results_table, results_to_dataframe)
 from mqlkiscanner.ui_design import (apply_theme, info_button, page_header, section_header,
                                     urteile_farbig)
 
@@ -106,7 +107,7 @@ if not results:
 # Never carry an open report from a different source or filter into this view.
 source_signature = selected_run + '|' + '|'.join(str(r.id) for r in results)
 if st.session_state.get('_results_source') != source_signature:
-    st.session_state.pop('report_signal_id', None)
+    clear_report_selection()
     st.session_state['_results_source'] = source_signature
 
 section_header('Risikobild', 'Bewertungen der Engine · zuerst die Evidenz prüfen.', help_key='risk_status')
@@ -141,7 +142,7 @@ with st.container(border=True):
     if visible:
         signature = sha1((source_signature + repr([(r.id, r.name) for r in visible])
                           + repr(sorted(show_fresh or []))).encode()).hexdigest()[:12]
-        sel_id = render_results_table(
+        selected = render_results_table(
             visible, key=f'ergebnisse_table_{signature}', compact=view != 'Alle Kennzahlen',
             fresh_ids=show_fresh)
         with st.container(horizontal=True, vertical_alignment='center', gap='xsmall'):
@@ -151,16 +152,14 @@ with st.container(border=True):
                                key='results_download', icon=':material/download:')
             info_button('results_runs', key='results_download_help')
     else:
-        sel_id = None
+        selected = None
         st.info('Keine Treffer. Entferne einen Statusfilter oder passe den Suchbegriff an.')
 
 if st.session_state.get('report_signal_id') not in {r.id for r in visible}:
-    st.session_state.pop('report_signal_id', None)
+    clear_report_selection()
 render_report_panel(visible)
-if sel_id is not None:
-    selected = next((r for r in visible if r.id == sel_id), None)
-    if selected:
-        render_detail(selected)
+if selected is not None:
+    render_detail(selected)
 
 if visible:
     with st.expander('Urteile im Überblick', expanded=False, icon=':material/summarize:'):

@@ -135,8 +135,10 @@ Danach Abschnitte mit ## -Ueberschriften:
    praktische Risiken beim Kopieren.
 5. **Urteil** — genau eines von EMPFEHLUNG | WATCHLIST | ABLEHNUNG plus
    Risiko-Score 1-10 (hoch = riskant) und die drei wichtigsten Gruende.
-   Bindende Kriterien beachten: EQ-DD > 30 % = AUTOMATISCHE ABLEHNUNG,
-   Ertrag < 5 %/Monat = Ablehnung, ohne Stop-Nachweis keine Empfehlung.
+   Die oben eingesetzten Nutzer-Kriterien sind verbindlich. Eine von der
+   Engine markierte Drawdown-Schrankenverletzung bedeutet AUTOMATISCHE
+   ABLEHNUNG. Ertrag unter der dort genannten Monatsschwelle bedeutet
+   Ablehnung; ohne Stop-Nachweis keine Empfehlung.
 6. **Bedingungen** — was muesste sich aendern, damit der Status wechselt
    (nur bei ABLEHNUNG/WATCHLIST).
 

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Kennzahlen von der Signalseite (doc/02 Abschnitt 4).
 
-Werte stehen als Label/Wert-Paare im Seitentext (Label-Zeile gefolgt von
-Wert-Zeile(n)). Strategie: HTML -> Textzeilen (bs4 get_text("\\n")), dann
-sequentieller Scan ueber bekannte Labels; der Wert ist die Zusammenfassung
-der folgenden Zeilen bis zum naechsten Label.
+Werte werden aus den Label/Wert-Zeilen der MQL5-Statistik gelesen. Titel,
+Beschreibung und andere Freitexte duerfen keine Kennzahlen ersetzen.
+Alte HTML-Ausschnitte ohne diese Struktur nutzen den bisherigen Textparser.
 """
 from __future__ import annotations
 
@@ -58,10 +57,8 @@ def _number(text: str) -> float | None:
         return None
 
 
-def parse_detail_html(html: str) -> dict:
-    soup = BeautifulSoup(html, "html.parser")
-    lines = [ln.strip() for ln in soup.get_text("\n").splitlines() if ln.strip()]
-
+def _text_values(lines: list[str]) -> dict[str, str]:
+    """Compatibility parser for older plain label/value HTML excerpts."""
     values: dict[str, str] = {}
     current: str | None = None
     buffer: list[str] = []
@@ -88,6 +85,29 @@ def parse_detail_html(html: str) -> dict:
             else:
                 buffer.append(line)
     _flush()
+    return values
+
+
+def parse_detail_html(html: str) -> dict:
+    soup = BeautifulSoup(html, "html.parser")
+    lines = [ln.strip() for ln in soup.get_text("\n").splitlines() if ln.strip()]
+    rows = soup.select(".s-list-info__item, .s-data-columns__item")
+    if rows:
+        values: dict[str, str] = {}
+        for row in rows:
+            prefix = ("s-list-info" if "s-list-info__item" in row.get("class", [])
+                      else "s-data-columns")
+            label = row.find(class_=prefix + "__label", recursive=False)
+            value = row.find(class_=prefix + "__value", recursive=False)
+            if label is None:
+                continue
+            key = label.get_text(" ", strip=True)
+            if _LABEL_RE.fullmatch(key):
+                # Keep the first actual metric row; never fill a missing value
+                # from a matching signal title, description or copy widget.
+                values.setdefault(key, value.get_text(" ", strip=True) if value else "")
+    else:
+        values = _text_values(lines)
 
     text_all = "\n".join(lines)
     broker_m = _BROKER_RE.search(text_all)
