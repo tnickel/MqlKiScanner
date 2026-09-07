@@ -144,7 +144,7 @@ Begründung. Eine vollständige Analyse ohne Stop-Nachweis bleibt eine
 vollständige Analyse; sie wird deshalb nicht erneut heruntergeladen.
 Drawdown- und Martingale-Ablehnungen haben weiterhin Vorrang. Der Status
 wird durch Scan, Datenbank, Laufarchiv und KI-Payload durchgereicht;
-Freitext gilt nicht als Ersatznachweis. Bewertungsstand 4 verlangt für
+Freitext gilt nicht als Ersatznachweis. Bewertungsstand 5 verlangt für
 ältere Live-Befunde eine erneute Prüfung; Archive bleiben historische
 Momentaufnahmen.
 
@@ -165,6 +165,24 @@ zusätzlich eine "virtuelle" Kurve OHNE Ein-/Auszahlungen fahren
 (zeigt die Handelsleistung separat von der Kapitalentnahme).
 Peak-Tracking; max. (peak - balance), absolute und prozentual.
 ```
+
+Die unterstützten CSV-Header werden vollständig einschließlich ihrer
+Spaltenreihenfolge geprüft. Unbekannte Anordnungen werden abgewiesen,
+damit beispielsweise Take-Profit-Werte nicht als Stop-Loss gelten können.
+
+Bei identischen Zeitstempeln werden realisierte Nettoergebnisse gemeinsam
+gebucht. Die Sekundenauflösung belegt keine Reihenfolge innerhalb derselben
+Sekunde; aus der CSV-Zeilenfolge werden daher keine Zwischenhochs oder
+Zwischentiefs konstruiert. Die Balancekurve fasst Kontobewegungen und
+Abschlüsse desselben Zeitpunkts zusammen; die Tradingkurve berücksichtigt
+weiterhin nur Handelsresultate nach dem Startkapital.
+
+Für Exposure gilt am gleichen Zeitpunkt die Reihenfolge: gemeinsame
+Kontobewegungen, alle Einstiege, alle Abschlüsse samt Nettoergebnis.
+Damit kann ein erst gleichzeitig realisierter Gewinn keine neuen Positionen
+vorfinanzieren. Einstiege und Abschlüsse werden jeweils als Gruppe bewertet.
+Das ist eine dokumentierte Rekonstruktion in Sekundenauflösung; tatsächliche
+untersekündliche Risiko- und Kapitalspitzen bleiben aus diesen Daten unbekannt.
 
 **Konsistenzprüfung (Pflicht):**
 - Monatsnetto aus CSV gegen die Monats-Tabelle der Plattform

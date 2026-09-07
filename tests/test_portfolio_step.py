@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
 from streamlit.testing.v1 import AppTest
 
 from conftest import warte_auf_lauf
@@ -45,6 +44,8 @@ def test_run_portfolio_sends_all_reports_and_stores_analysis():
         pipeline.ScanResult(id=333, name="Fehlerfall", forensik_vorhanden=True,
                             fehler="export kaputt"),
     ]
+    for result in results:
+        result.berichte_basis = pipeline.report_basis_for(result, pipe.settings)
     summary = pipe.run_portfolio(results, pipeline.StepLog())
     assert summary["text"].startswith("Kurzfassung:")
     assert "PORTFOLIO_TEST_BERICHT" in summary["text"]

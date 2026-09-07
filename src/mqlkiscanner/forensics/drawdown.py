@@ -16,6 +16,9 @@ alle vier Ankerwerte der Reihe auf den Cent (siehe scripts/verify_engine.py).
 """
 from __future__ import annotations
 
+import math
+from itertools import groupby
+
 from ..models import ParsedExport
 
 
@@ -30,7 +33,10 @@ def _max_drawdown(points: list[tuple], start: float) -> dict:
     max_dd = max_dd_pct = 0.0
     max_rel = 0.0
     when = when_rel = None
-    for _time, delta in points:
+    # CSV timestamps do not establish an order inside a second. Book each
+    # timestamp together rather than manufacture row-order-dependent peaks.
+    for _time, batch in groupby(sorted(points, key=lambda p: p[0]), key=lambda p: p[0]):
+        delta = math.fsum(point[1] for point in batch)
         bal += delta
         if bal > peak:
             peak = bal
@@ -70,7 +76,7 @@ def run(parsed: ParsedExport) -> dict:
 
     # Bereits vor Handelsbeginn entnommenes Kapital stand nie fuer Trades
     # bereit. Nur spaetere Flows bleiben aus der virtuellen Kurve heraus.
-    deposits_start = sum(b.amount for b in balances if b.time <= first_open)
+    deposits_start = math.fsum(b.amount for b in balances if b.time <= first_open)
     deposits_total = sum(b.amount for b in balances if b.amount > 0)
     withdrawals_total = sum(b.amount for b in balances if b.amount < 0)
 

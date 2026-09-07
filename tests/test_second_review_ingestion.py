@@ -1,5 +1,4 @@
 """Cache recovery and login safeguards, with isolated files and mocked HTTP/Chrome."""
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, call
 
@@ -119,6 +118,7 @@ def logged_session(monkeypatch):
     monkeypatch.setattr(secrets_store, "get_secret", lambda _: "dummy")
     session = Mql5Session({"rate_backoff_429_s": 2})
     session.logged_in = True
+    session._authenticated_user = "dummy"
     monkeypatch.setattr(session.limiter, "wait", Mock())
     return session
 

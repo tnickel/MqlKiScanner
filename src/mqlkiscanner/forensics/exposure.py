@@ -24,6 +24,7 @@ Referenz: scripts/reference/martingale_exposure_test.py (Test 4).
 from __future__ import annotations
 
 from collections import defaultdict
+from itertools import groupby
 import math
 
 from ..models import ParsedExport
@@ -151,6 +152,8 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
     for time, amounts in flows_by_time.items():
         events.append((time, 0, 0, math.fsum(amounts)))
     # Kontobewegungen vor Opens, Opens vor Closes derselben Sekunde.
+    # Gleiche Ereignisarten werden gemeinsam gebucht: weder die Reihenfolge
+    # paralleler Eroeffnungen noch zeitgleicher Korb-Exits ist im CSV belegt.
     # Ein Close verbucht sein Netto erst beim Entfernen der Position; damit
     # kann spaeterer Gewinn die historische Belastung nicht verkleinern.
     events.sort(key=lambda e: (e[0], e[1]))
@@ -164,26 +167,27 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
     relative_snap: dict | None = None
     account = 0.0
     first_open = min(t.open_time for t in trades)
-    initial_capital = sum(b.amount for b in parsed.balances if b.time <= first_open)
+    initial_capital = math.fsum(b.amount for b in parsed.balances if b.time <= first_open)
     capital_history_complete = initial_capital > 0
     temporal_risk_available = capital_history_complete and conversion_complete
 
-    for time, kind, delta, item in events:
+    for (time, kind), grouped in groupby(events, key=lambda e: (e[0], e[1])):
+        batch = list(grouped)
         if kind == 0:
-            account += item
+            account += math.fsum(item for _, _, _, item in batch)
         else:
-            t = item
-            open_count += delta
-            signed = delta * t.volume
-            sym = normalize_symbol(t.symbol)
+            delta = 1 if kind == 1 else -1
+            trades_batch = [item for _, _, _, item in batch]
+            open_count += delta * len(trades_batch)
             if delta == -1:
-                account += t.net
-            if t.direction == "Buy":
-                long_vol += signed
-                net_by_symbol[sym] += signed
-            else:
-                short_vol += signed
-                net_by_symbol[sym] -= signed
+                account += math.fsum(t.net for t in trades_batch)
+            long_vol += delta * math.fsum(t.volume for t in trades_batch if t.direction == "Buy")
+            short_vol += delta * math.fsum(t.volume for t in trades_batch if t.direction == "Sell")
+            symbol_deltas: dict[str, list[float]] = defaultdict(list)
+            for t in trades_batch:
+                symbol_deltas[normalize_symbol(t.symbol)].append(delta * t.volume * t.sign)
+            for sym in sorted(symbol_deltas):
+                net_by_symbol[sym] += math.fsum(symbol_deltas[sym])
         snap = _snapshot(net_by_symbol, long_vol, short_vol, time, stress_move)
         snap["account"] = account
         if snap["shock"] is not None and snap["shock"] > 0 and account <= 0:
@@ -195,7 +199,10 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
         if open_count > peak_count:
             peak_count = open_count
             count_snap = snap
-        if snap["shock"] is not None and (risk_snap is None or snap["shock"] > risk_snap["shock"]):
+        # A zero-risk hedge still has actual long/short positions. Do not let
+        # an earlier deposit-only snapshot win the zero-shock tie.
+        if open_count > 0 and snap["shock"] is not None and (
+                risk_snap is None or snap["shock"] > risk_snap["shock"]):
             risk_snap = snap
 
     assert count_snap is not None
@@ -217,7 +224,7 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
     else:
         headline_net = signed_peak_net
 
-    sym = peak_symbol or (trades[0].symbol if trades else "")
+    sym = peak_symbol or symbols[0]
     sclass = symbol_class(sym) if sym else "FX"
     move = _stress_move(sym, stress_move)
 

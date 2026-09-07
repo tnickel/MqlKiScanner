@@ -6,6 +6,7 @@ config/secrets.local.json
 **/secrets.local.json
 data/mql5_cookies.json
 data/chrome_profile/
+data/chrome_profile_accounts/
 .streamlit/secrets.toml
 
 # Python

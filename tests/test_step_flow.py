@@ -136,13 +136,17 @@ def test_running_step_glow_and_pulse():
 def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):
     """Station 4: Signale mit DB-Gesamtbericht werden nicht neu berichtet —
     der gespeicherte Bericht wird stattdessen ins Ergebnis geladen."""
-    from mqlkiscanner import db, secrets_store
+    from mqlkiscanner import config, db, secrets_store
+    from mqlkiscanner.analysis_version import FORENSICS_VERSION
 
     db.init_db()
     db.upsert_signal(2342895, name="KiraCat", platform="MT5")
+    known_result = pipeline.ScanResult(id=2342895, name="KiraCat", forensik_vorhanden=True,
+                                      forensik_version=FORENSICS_VERSION, trades_sha256="a" * 64)
+    basis = pipeline.report_basis_for(known_result, config.load_settings())
     db.store_analysis(2342895, "gesamtbericht", "glm-5.3", 10,
-                      "ALTER_BERICHT. Kurzfassung: Alt.")
-    db.store_analysis(2342895, "trade_analyse", "glm-5.3", 5, "ALTE_TRADE_ANALYSE")
+                      "ALTER_BERICHT. Kurzfassung: Alt.", basis=basis)
+    db.store_analysis(2342895, "trade_analyse", "glm-5.3", 5, "ALTE_TRADE_ANALYSE", basis=basis)
 
     monkeypatch.setattr(secrets_store, "get_secret", lambda key: "ui-test-key")
     empfangen: list[int] = []
@@ -156,7 +160,7 @@ def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):
     at = _scan_page()
     at.run()
     at.session_state["scan_results"] = [
-        pipeline.ScanResult(id=2342895, name="KiraCat", forensik_vorhanden=True),
+        known_result,
         pipeline.ScanResult(id=9990001, name="Neu", forensik_vorhanden=True),
     ]
     _btn(at, "step_btn_llm").click()
