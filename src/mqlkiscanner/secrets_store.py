@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 
 from .config import CONFIG_DIR, ROOT
 

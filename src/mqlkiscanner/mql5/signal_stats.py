@@ -8,6 +8,7 @@ der folgenden Zeilen bis zum naechsten Label.
 """
 from __future__ import annotations
 
+import math
 import re
 
 from bs4 import BeautifulSoup
@@ -29,22 +30,30 @@ LABELS = (
     "Absolute:", "Maximal:", "By Balance:", "By Equity:",
 )
 
-_LABEL_RE = re.compile(r"^(?:" + "|".join(re.escape(l) for l in LABELS) + r")\s*$")
+_LABEL_RE = re.compile(r"^(?:" + "|".join(re.escape(label) for label in LABELS) + r")\s*$")
 _BROKER_RE = re.compile(r"\b([A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*)-(Live|Demo|Real)(\d+)\b")
 _LEVERAGE_RE = re.compile(r"\b1:(\d{1,5})\b")
 
 
 def _number(text: str) -> float | None:
-    cleaned = text.replace("\xa0", "").replace(" ", "")
-    m = re.search(r"-?\d[\d.,]*", cleaned)
+    """First number in an English MQL5 value: decimal dot, grouped thousands.
+
+    Accept comma or space grouping, but never reinterpret a decimal comma or
+    several dots as another locale: a malformed value stays unknown.
+    """
+    cleaned = text.replace("\u2212", "-")
+    # Remove only three-digit space groups, keeping separate numbers separate.
+    cleaned = re.sub(r"(?<=\d)[ \u00a0\u202f\u2009]+(?=\d{3}(?!\d))", "", cleaned)
+    cleaned = re.sub(r"([+-])\s+(?=\d|\.)", r"\1", cleaned)
+    m = re.search(r"[+-]?(?:\d[\d.,]*|\.\d+)", cleaned)
     if not m:
         return None
     raw = m.group(0)
-    # "1 403.03" -> "1403.03" (Leerzeichen schon weg); Punkte nach der 3. Stelle = Tausender
-    if raw.count(".") > 1:
-        raw = raw.replace(".", "")
+    if not re.fullmatch(r"[+-]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d*)?|\.\d+)", raw):
+        return None
     try:
-        return float(raw.rstrip("."))
+        value = float(raw.replace(",", ""))
+        return value if math.isfinite(value) else None
     except ValueError:
         return None
 

@@ -2,9 +2,12 @@
 """GLM-Client (Z.ai API, OpenAI-kompatibel) mit Token-Budget und Backoff.
 
 Regeln (AGENTS.md Design-Regeln 1 + 5):
-- Das LLM bekommt NUR fertige Forensik-/Kennzahlen-JSONs, nie Roh-Trades.
-- Alle Zahlen stammen aus der Engine; das LLM formuliert und interpretiert.
-- Kosten-Budget: `max_total_tokens` je Lauf; Budgetueberschreitung -> LlmBudgetError.
+- Das LLM bekommt Forensik-/Kennzahlen-JSONs und kuratierte Beispiel-Trades
+  aus `trade_data`, um die Strategie anhand des Handelsverhaltens zu beschreiben.
+- Die Engine berechnet die Kennzahlen; das LLM zitiert und interpretiert sie,
+  ohne eigene Berechnungen durchzufuehren.
+- Token-Budget: `max_total_tokens` je Lauf; vor jedem Aufruf wird der bisher
+  gemeldete Verbrauch geprueft. Auch unvollstaendige Antworten zaehlen dazu.
 """
 from __future__ import annotations
 

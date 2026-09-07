@@ -14,6 +14,7 @@ Drei Evidenzstufen:
 from __future__ import annotations
 
 import statistics
+import re
 from collections import Counter, defaultdict
 
 from ..models import ParsedExport
@@ -36,12 +37,22 @@ def run(parsed: ParsedExport) -> dict:
 
 
 # ---------------------------------------------------------------- Stufe 1
+def _exit_marker(comment: str) -> str | None:
+    """Recognize explicit SL/TP markers, with an optional ticket suffix.
+
+    Do not infer an exit reason from arbitrary prose mentioning a stop.
+    """
+    match = re.fullmatch(r"\[(sl|tp)\](?:\s+(?:ticket\s*)?#?\d+)?",
+                         comment.strip(), flags=re.IGNORECASE)
+    return match.group(1).lower() if match else None
+
+
 def _orderbook_evidence(parsed: ParsedExport) -> dict:
     trades = parsed.trades
     with_sl = [t for t in trades if t.sl is not None and t.sl > 0]
     with_sl_tp = [t for t in trades if t.sl and t.tp]
-    sl_exits = [t for t in trades if t.comment == "[sl]"]
-    tp_exits = [t for t in trades if t.comment == "[tp]"]
+    sl_exits = [t for t in trades if _exit_marker(t.comment) == "sl"]
+    tp_exits = [t for t in trades if _exit_marker(t.comment) == "tp"]
     manual = len(trades) - len(sl_exits) - len(tp_exits)
     sl_in_plus = [t for t in sl_exits if t.profit > 0]
 

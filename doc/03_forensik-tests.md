@@ -34,6 +34,13 @@ Berichte: Median und Mittel je Gruppe
 
 **Referenz:** `scripts/reference/martingale_exposure_test.py` (Test 1)
 
+Dieser Kanal prüft die unmittelbar benachbarten Einstiege je Instrument.
+Ein während der Haltedauer eröffneter Zwischentrade wird nicht übersprungen,
+um den älteren Trade nachträglich mit einem beliebigen späteren Einstieg
+zu paaren. Das ist die spezifizierte Grenze des Nachfolgertests, kein
+Nachweis dafür, dass ein überlappendes System generell frei von Martingale
+ist. Der separate Korbleiter-Test ergänzt diesen Kanal.
+
 ## Test 2: Peak-Exposure (gleichzeitige Positionen)
 
 **Frage:** Wie groß ist die maximale aggregierte Marktposition zu einem
@@ -55,7 +62,7 @@ Zwei Peak-Masse:
 | Symbol | Risiko je 1 USD/EUR Bewegung je Lot |
 |---|---|
 | XAUUSD | 100 USD |
-| US30/Indizes | 1 USD je Punkt |
+| US30 / US100 / US500 (Projektkonvention, inklusive Aliase) | 1 USD je Punkt |
 | FX-Majors | ~10 USD je Pip (4. Dezimale) |
 
 Die FX-Angabe gilt nur bei USD als Kurswährung. Bei JPY als Kurswährung
@@ -66,8 +73,17 @@ USD-Schock und Schockanteil unbekannt, die Forensik unvollständig. Die
 nativen Beträge je Symbol werden mit ihrer Kurswährung ausgegeben; sie
 dürfen nicht als USD addiert oder aus späteren Tradegewinnen umgerechnet
 werden. Das Projekt verwendet weiterhin die explizite USD-Konvention für
-Kontostände sowie bekannte Gold-/Indexkontrakte; eine CSV allein beweist
+Kontostände sowie bekannte Gold-/US-Indexkontrakte; eine CSV allein beweist
 die Kontowährung nicht.
+
+Andere Indexnamen, etwa JP225, GER40, UK100 oder CHINA50, belegen weder
+Kontraktgröße noch Punktwert oder Gewinnwährung. Diese Merkmale bestimmt
+die [Brokerspezifikation des Symbols](https://www.metatrader5.com/en/terminal/help/trading/market_watch#specification).
+Ohne solche Daten bleiben auch native Schockbeträge unbekannt; insbesondere
+wird weder pauschal 1 USD noch 1 JPY/EUR je Punkt unterstellt. Die Engine
+meldet `contract_complete=False`, `missing_contract_symbols` und eine
+konkrete Warnung; die Bewertung bleibt unvollständig. Die Erkennung als
+Index für andere Analysen bleibt davon unabhängig.
 
 Der historische Schockanteil verwendet das zum jeweiligen Zeitpunkt
 vorhandene Kapital. Kontobewegungen mit identischem Zeitstempel werden
@@ -96,6 +112,13 @@ ausgegeben.
    Stop-Auslösungen im Plus (Trailing-Nachweis)?
    (Referenzbeispiel: Gold Spike — 368/368 mit SL/TP, 161 von 186
    Stop-Exits im Plus)
+
+   Explizite `[sl]`-/`[tp]`-Marker werden ohne Unterscheidung der
+   Groß-/Kleinschreibung erkannt, auch mit einer angehängten Ticketnummer
+   (z. B. `[SL] #123`). Bloße Erwähnungen in Freitext sind kein Exit-Beleg.
+   Fehlende Einstiegspreise in MT4-Handelszeilen weist bereits der Parser
+   als fehlendes Pflichtfeld zurück; dafür werden keine Ersatzpreise
+   erfunden.
 2. **Positions-Export:** Verlustdistanz je Verlusttrade berechnen:
    `(ep - xp) * (+1 Buy | -1 Sell)`. Ballen sich die Distanzen an einem
    festen Niveau (Top-Distanz deutlich dominant, z. B. alle ~20 USD)?
@@ -113,6 +136,17 @@ Die Engine liefert formatunabhängig `stop_evidence`: `direct` (alle
 Positionen mit SL), `cluster` (ausreichende Distanzsignatur), `partial`
 oder `none`. Leere Orderbuchfelder oder fehlende Schlüssel liefern keine
 Entlastung im Score. Ein Take-Profit ist für den SL-Nachweis nicht nötig.
+
+Eine grüne Kandidatenampel setzt zusätzlich zu Score und Rendite einen
+strukturierten Status `direct` oder `cluster` voraus. `partial`, `none`
+sowie fehlende oder unbekannte Evidenz führen höchstens zu Gelb mit
+Begründung. Eine vollständige Analyse ohne Stop-Nachweis bleibt eine
+vollständige Analyse; sie wird deshalb nicht erneut heruntergeladen.
+Drawdown- und Martingale-Ablehnungen haben weiterhin Vorrang. Der Status
+wird durch Scan, Datenbank, Laufarchiv und KI-Payload durchgereicht;
+Freitext gilt nicht als Ersatznachweis. Bewertungsstand 4 verlangt für
+ältere Live-Befunde eine erneute Prüfung; Archive bleiben historische
+Momentaufnahmen.
 
 **Referenz:** `scripts/reference/analyze_goldspike_orderbook.py` (Stufe 1),
 `analyze_goldreaper.py` / `analyze_kiracat.py` (Stufe 2)

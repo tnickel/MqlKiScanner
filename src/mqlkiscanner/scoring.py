@@ -138,7 +138,6 @@ def score(dims: dict[str, float], weights: dict[str, float] | None = None) -> fl
     if weights:
         w.update(weights)
     total = sum(w[k] * dims[k] for k in w)
-    hard_block = dims.get("_schranke_verletzt", False)
     return round(_clamp(total), 1)
 
 
@@ -175,6 +174,7 @@ def _forensics_complete(report: dict) -> bool:
     f = report.get("forensics", {})
     expo = f.get("exposure", {})
     if (expo.get("capital_history_complete") is False
+            or expo.get("contract_complete") is False
             or expo.get("conversion_complete") is False
             or expo.get("temporal_risk_available") is False
             or expo.get("shock_pct_max") is None):

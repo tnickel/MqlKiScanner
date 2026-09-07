@@ -101,6 +101,8 @@ def test_exhausted_network_retry_marks_signal_and_continues(monkeypatch):
     monkeypatch.setattr("mqlkiscanner.llm.client.requests.post", post)
     db.init_db()
     results = [pipeline.ScanResult(id=sid, forensik_vorhanden=True) for sid in (123, 124)]
+    for result in results:
+        db.upsert_signal(result.id)
     summary = pipe.run_llm(results, lambda _: None)
     assert results[0].llm_fehler and "2 Versuchen" in results[0].llm_fehler
     assert results[1].gesamtbericht == "Bericht vollständig"
@@ -120,6 +122,7 @@ def test_truncated_summary_is_not_saved_as_complete(monkeypatch):
 
     monkeypatch.setattr("mqlkiscanner.llm.client.requests.post", post)
     db.init_db()
+    db.upsert_signal(123)
     result = pipeline.ScanResult(id=123, forensik_vorhanden=True)
     summary = pipe.run_llm([result], lambda _: None)
     assert summary["completed"] == 2 and summary["failed"] == 1

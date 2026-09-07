@@ -48,11 +48,16 @@ Ohne GLM-Key: Scan und Forensik laufen, KI-Berichte entfallen.
 
 | Symbol | Bedeutung |
 |---|---|
-| 🟢 | Kandidat (Forensik ok, Score &lt; 5, Ertrag ok, Schranke frei) |
+| 🟢 | Kandidat (Forensik vollständig, Stop-Evidenz vorhanden, Score &lt; 5, Ertrag ok, kein Ausschluss oder Risikoflag) |
 | 🟡 | Beobachtung / kein Kandidat |
 | 🔴 | Schranke / Martingale / hartes Risiko |
 | ⛔ | Auf Ausschlussliste |
 | ⚪ | Vorprüfung oder Fehler (kein vollständiger Export) |
+
+Für Grün müssen alle Positionen einen SL im Orderbuch aufweisen oder es muss
+eine ausreichende statistische Stop-Signatur vorliegen. Ein fehlender oder
+nur teilweiser Stop-Nachweis ergibt höchstens Gelb, auch bei niedrigem Score
+und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
 
 ## 4. Ergebnisse
 
