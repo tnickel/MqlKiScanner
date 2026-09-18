@@ -1,6 +1,7 @@
 """Prozessweite Workflow-Koordination, unabhängig von Streamlit-Sitzungen."""
 from __future__ import annotations
 
+import builtins
 import threading
 from dataclasses import dataclass
 from typing import Callable
@@ -15,13 +16,24 @@ class WorkerRun:
     thread: threading.Thread | None = None
 
 
-_lock = threading.Lock()
-_active: WorkerRun | None = None
+# Das Register liegt absichtlich in builtins statt im Modul: Streamlit lädt
+# lokale Module neu, wenn sich Dateien ändern — mitten in einem Lauf würde ein
+# frisches Modul sonst ein leeres Register sehen und einen zweiten Lauf
+# zulassen, während der alte Thread noch arbeitet. builtins gehört dem
+# Prozess, nicht der Modulversion.
+_REGISTRY_ATTR = "_mqlkiscanner_worker_registry"
+
+
+def _registry() -> dict:
+    reg = getattr(builtins, _REGISTRY_ATTR, None)
+    if reg is None:
+        reg = {"active": None, "lock": threading.Lock()}
+        setattr(builtins, _REGISTRY_ATTR, reg)
+    return reg
 
 
 def active_run() -> WorkerRun | None:
-    with _lock:
-        return _active
+    return _registry()["active"]
 
 
 def start(target: Callable[[], None], *, workflow: dict, control: dict,
@@ -31,26 +43,26 @@ def start(target: Callable[[], None], *, workflow: dict, control: dict,
     Die Registry hält Daten für wiederverbundene Sitzungen. Der Mutex wird
     nur während Start/Freigabe gehalten, niemals während des Workflows.
     """
-    global _active
-    with _lock:
-        if _active is not None:
+    reg = _registry()
+    lock = reg["lock"]
+    with lock:
+        if reg["active"] is not None:
             return None
         run = WorkerRun(workflow, control, logs, results)
 
         def execute() -> None:
-            global _active
             try:
                 target()
             finally:
-                with _lock:
-                    if _active is run:
-                        _active = None
+                with lock:
+                    if reg["active"] is run:
+                        reg["active"] = None
 
         run.thread = threading.Thread(target=execute, name="mqlkiscanner-workflow", daemon=True)
-        _active = run
+        reg["active"] = run
         try:
             run.thread.start()
         except BaseException:
-            _active = None
+            reg["active"] = None
             raise
         return run

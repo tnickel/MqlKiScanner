@@ -55,13 +55,13 @@ def _stylesheet() -> str:
         background: linear-gradient(145deg, rgba(18, 30, 48, 0.78) 0%, rgba(12, 20, 34, 0.88) 100%) !important;
         backdrop-filter: blur(14px) saturate(140%) !important;
         -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
-        border: 1px solid rgba(56, 189, 248, 0.16) !important;
+        border: 1.6px solid rgba(56, 189, 248, 0.28) !important;
         box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05) !important;
         border-radius: 14px !important;
         transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }}
     [data-testid="stVerticalBlockBorderWrapper"] > div:hover {{
-        border-color: rgba(56, 189, 248, 0.28) !important;
+        border-color: rgba(56, 189, 248, 0.46) !important;
         box-shadow: 0 8px 26px -2px rgba(0, 0, 0, 0.55), inset 0 1px 1px 0 rgba(255, 255, 255, 0.08) !important;
     }}
 
@@ -178,129 +178,241 @@ def _stylesheet() -> str:
         font-size: 0.78rem !important;
     }}
 
-    /* Flow / Stations */
-    .mks-flow {{
+    /* Lauf-Zentrale: Statusleiste (Aktivität + Uhr) */
+    .mks-strip {{
         display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
         flex-wrap: wrap;
-        align-items: stretch;
-        gap: .65rem;
-        margin: .35rem 0 0.15rem;
+        margin: .1rem 0 .6rem;
     }}
-    .mks-flow-step {{
-        flex: 1 1 9.5rem;
+    .mks-strip__main {{
         display: flex;
-        flex-direction: column;
-        gap: .35rem;
-        padding: .9rem 1.1rem;
-        border: 1px solid rgba(56, 189, 248, 0.18);
-        border-radius: 14px;
-        background: linear-gradient(145deg, rgba(18, 32, 52, 0.78) 0%, rgba(11, 20, 33, 0.88) 100%);
-        backdrop-filter: blur(12px);
+        align-items: center;
+        gap: .65rem;
         min-width: 0;
     }}
-    .mks-flow-num {{
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 1.8rem;
-        height: 1.8rem;
-        border-radius: 999px;
-        background: linear-gradient(135deg, #F59E0B, #D97706);
-        color: #0F172A;
-        font-weight: 850;
-        font-size: .95rem;
-        border: 1px solid #FCD34D;
-        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-    }}
-    .mks-flow-step strong {{
-        color: #F8FAFC;
-        font-size: 1.02rem;
-        letter-spacing: -.01em;
-    }}
-    .mks-flow-text {{
+    .mks-strip__text {{ min-width: 0; }}
+    .mks-strip__text b {{ font-size: 1.04rem; color: #F1F5F9; }}
+    .mks-strip__text small {{
+        display: block;
         color: #94A3B8;
-        font-size: .9rem;
+        font-size: .85rem;
+        margin-top: .12rem;
         line-height: 1.35;
     }}
-    .mks-flow-arrow {{
-        align-self: center;
-        color: #00D2D3;
-        font-size: 1.35rem;
-        font-weight: 700;
-        padding: 0 .1rem;
-    }}
-    .mks-flow-note {{
-        color: #94A3B8;
-        font-size: .92rem;
-        margin: .55rem 0 .2rem;
-        max-width: 52rem;
-    }}
-    .st-key-scan_start_panel {{
-        border-color: rgba(0, 210, 211, 0.35) !important;
-    }}
-    .mks-stepnum {{
-        display: inline-flex;
+    .mks-strip__side {{
+        display: flex;
         align-items: center;
-        justify-content: center;
-        min-width: 2rem;
-        height: 2rem;
-        padding: 0 .45rem;
-        margin-right: .55rem;
-        border-radius: 999px;
-        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-        color: #0F172A;
-        font-weight: 850;
-        font-size: 1.05rem;
-        vertical-align: middle;
-        border: 1px solid #FCD34D;
-        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+        gap: .5rem;
+        flex: 0 0 auto;
     }}
-    .mks-connector {{
+    .mks-dot {{
+        flex: 0 0 auto;
+        width: .8rem;
+        height: .8rem;
+        border-radius: 50%;
+        background: #64748B;
+        box-shadow: 0 0 0 3px rgba(100, 116, 139, .16);
+    }}
+    .mks-dot--running {{
+        background: #00D2D3;
+        box-shadow: 0 0 0 3px rgba(0, 210, 211, .18), 0 0 12px rgba(0, 210, 211, .6);
+        animation: mks-dot-blink 1.4s ease-in-out infinite;
+    }}
+    .mks-dot--complete {{ background: #10B981; box-shadow: 0 0 0 3px rgba(16, 185, 129, .18); }}
+    .mks-dot--warning {{ background: #F59E0B; box-shadow: 0 0 0 3px rgba(245, 158, 11, .18); }}
+    .mks-dot--error {{ background: #F43F5E; box-shadow: 0 0 0 3px rgba(244, 63, 94, .18); }}
+    @keyframes mks-dot-blink {{ 0%, 100% {{ opacity: 1; }} 50% {{ opacity: .4; }} }}
+    .mks-clock {{
+        flex: 0 0 auto;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        color: #67E8F9;
+        background: rgba(0, 210, 211, .1);
+        border: 1px solid rgba(0, 210, 211, .3);
+        padding: .16rem .62rem;
+        border-radius: 99px;
+        font-size: .85rem;
+        white-space: nowrap;
+    }}
+    /* Stoppuhr der aktuellen Meldung: amber, zählt hoch bis zur nächsten Meldung */
+    .mks-clock--wait {{
+        color: #FCD34D;
+        background: rgba(245, 158, 11, .12);
+        border-color: rgba(245, 158, 11, .38);
+    }}
+
+    /* Stations-Stepper: Knoten + Fortschrittsschiene */
+    .mks-stepper {{
+        --mks-fill: 0%;
+        position: relative;
+        display: flex;
+        gap: .5rem;
+        padding: .3rem .2rem .15rem;
+    }}
+    .mks-rail {{
+        position: absolute;
+        top: 1.29rem;
+        left: 10%;
+        right: 10%;
+        height: 5px;
+        border-radius: 99px;
+        background: rgba(148, 163, 184, .22);
+        overflow: hidden;
+    }}
+    .mks-rail i {{
+        display: block;
+        height: 100%;
+        width: var(--mks-fill);
+        border-radius: inherit;
+        background: linear-gradient(90deg, #0891B2, #22D3EE 70%, #67E8F9);
+        box-shadow: 0 0 12px rgba(34, 211, 238, .75);
+        transition: width .6s ease;
+    }}
+    .mks-step {{
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }}
+    .mks-step-body {{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 0;
+        flex: 1 1 auto;
+    }}
+    .mks-node {{
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 2rem;
-        margin-top: .15rem;
-        color: #00D2D3;
-        font-size: 1.4rem;
         font-weight: 800;
-        user-select: none;
-        text-shadow: 0 0 10px rgba(0, 210, 211, 0.45);
+        font-size: 1rem;
+        position: relative;
+        border: 1px solid rgba(148, 163, 184, .28);
+        background: #121E31;
+        color: #64748B;
     }}
-    .mks-stepnum.mks-blink {{
-        animation: mks-pulse 1.3s ease-in-out infinite;
+    .mks-step--running .mks-node {{
+        background: linear-gradient(135deg, #00D2D3, #0891B2);
+        color: #04262B;
+        border-color: #67E8F9;
+        box-shadow: 0 0 0 4px rgba(0, 210, 211, .15), 0 0 18px rgba(0, 210, 211, .45);
     }}
-    @keyframes mks-pulse {{
-        0%, 100% {{ box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); transform: scale(1); }}
-        50% {{ box-shadow: 0 0 0 .55rem rgba(245, 158, 11, 0); transform: scale(1.09); }}
+    .mks-step--running .mks-node::before {{
+        content: "";
+        position: absolute;
+        inset: -7px;
+        border-radius: 50%;
+        border: 2px dashed rgba(103, 232, 249, .65);
+        animation: mks-spin 3.2s linear infinite;
+    }}
+    .mks-step--complete .mks-node {{
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: #03271C;
+        border-color: #6EE7B7;
+        box-shadow: 0 0 12px rgba(16, 185, 129, .35);
+    }}
+    .mks-step--warning .mks-node {{
+        background: linear-gradient(135deg, #F59E0B, #D97706);
+        color: #2B1A02;
+        border-color: #FCD34D;
+        box-shadow: 0 0 12px rgba(245, 158, 11, .35);
+    }}
+    .mks-step--error .mks-node {{
+        background: linear-gradient(135deg, #F43F5E, #E11D48);
+        color: #2B040D;
+        border-color: #FDA4AF;
+        box-shadow: 0 0 12px rgba(244, 63, 94, .35);
+    }}
+    .mks-step--skipped .mks-node {{ opacity: .55; }}
+    .mks-step--idle-hint .mks-node {{ animation: mks-node-hint 2s ease-in-out infinite; }}
+    @keyframes mks-node-hint {{
+        0%, 100% {{ box-shadow: 0 0 0 0 rgba(245, 158, 11, .5); }}
+        50% {{ box-shadow: 0 0 0 .5rem rgba(245, 158, 11, 0); }}
+    }}
+    .mks-step-title {{
+        margin-top: .6rem;
+        font-weight: 700;
+        font-size: .95rem;
+        color: #CBD5E1;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }}
+    .mks-step--running .mks-step-title {{ color: #67E8F9; }}
+    .mks-step--complete .mks-step-title {{ color: #A7F3D0; }}
+    .mks-step--warning .mks-step-title {{ color: #FDE68A; }}
+    .mks-step--error .mks-step-title {{ color: #FDA4AF; }}
+    .mks-step-meta {{
+        font-size: .78rem;
+        line-height: 1.3;
+        color: #8CA0B8;
+        max-width: 100%;
+        margin-top: .12rem;
+        min-height: 1.02em;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }}
+    .mks-step--running .mks-step-meta {{ color: #A5F3FC; }}
+    .mks-mini {{
+        width: 100%;
+        max-width: 7.5rem;
+        height: 4px;
+        margin-top: .5rem;
+        border-radius: 99px;
+        background: rgba(148, 163, 184, .18);
+        overflow: hidden;
+    }}
+    .mks-mini i {{
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #0891B2, #22D3EE);
+        box-shadow: 0 0 8px rgba(34, 211, 238, .5);
+        transition: width .5s ease;
     }}
 
-    /* Laufender Workflow-Schritt: cyan pulsierende Nummer + leuchtender Kartenrand */
-    .mks-stepnum.mks-runnum {{
-        background: linear-gradient(135deg, #00D2D3, #0891B2);
-        color: #F8FAFC;
-        border-color: #67E8F9;
-        animation: mks-run 1.2s ease-in-out infinite;
+    /* Letzte Meldungen: kompakter Status-Feed statt Logfile-Wand */
+    .mks-feed {{
+        margin-top: 1rem;
+        border-left: 2px solid rgba(0, 210, 211, .35);
+        padding: .12rem 0 .12rem .8rem;
+        display: flex;
+        flex-direction: column;
+        gap: .2rem;
     }}
-    @keyframes mks-run {{
-        0%, 100% {{ box-shadow: 0 0 0 0 rgba(0, 210, 211, 0.6); transform: scale(1); }}
-        50% {{ box-shadow: 0 0 0 .5rem rgba(0, 210, 211, 0); transform: scale(1.1); }}
+    .mks-feed__line {{
+        font-size: .8rem;
+        color: #7C8DA6;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }}
-    @keyframes mks-card-glow {{
-        0%, 100% {{
-            border-color: rgba(0, 210, 211, 0.7);
-            box-shadow: 0 0 0 1px rgba(0, 210, 211, 0.4), 0 0 1rem rgba(0, 210, 211, 0.3);
-        }}
-        50% {{
-            border-color: #A5F3FC;
-            box-shadow: 0 0 0 2px rgba(0, 210, 211, 0.65), 0 0 1.8rem rgba(0, 210, 211, 0.5);
-        }}
-    }}
-    /* "Läuft"-Badge: Icon rotiert, Badge pulsiert */
+    .mks-feed__line::before {{ content: "· "; color: #00D2D3; font-weight: 800; }}
     @keyframes mks-spin {{ to {{ transform: rotate(360deg); }} }}
-    @keyframes mks-badge-glow {{
-        0%, 100% {{ box-shadow: 0 0 0 0 rgba(0, 210, 211, 0.45); }}
-        50% {{ box-shadow: 0 0 0 .35rem rgba(0, 210, 211, 0); }}
+
+    .st-key-scan_control_panel > div {{
+        border-color: rgba(0, 210, 211, 0.42) !important;
+    }}
+
+    /* Lauf-Modus: Hintergrundbeleuchtung für das ganze Zentrale-Panel.
+       Die Selektoren injiziert das Live-Fragment nur während ein Workflow
+       läuft (status=running); die Keyframes stehen immer bereit. */
+    @keyframes mks-backlight {{
+        0%, 100% {{ opacity: 0.5; }}
+        50% {{ opacity: 1; }}
     }}
 
     /* Action Buttons */
@@ -343,9 +455,13 @@ def _stylesheet() -> str:
         border-top: 1px solid rgba(39, 62, 91, 0.7) !important;
     }}
     @media(max-width:720px) {{
-        .mks-flow-arrow {{ display: none; }}
-        .mks-connector {{ display: none; }}
-        .mks-flow-step {{ flex: 1 1 100%; }}
+        .mks-stepper {{ flex-direction: column; gap: 1.05rem; }}
+        .mks-rail {{ left: 1.03rem; right: auto; top: 1.45rem; bottom: 1.45rem; width: 4px; height: auto; }}
+        .mks-rail i {{ width: 100%; height: var(--mks-fill); transition: height .6s ease; }}
+        .mks-step {{ flex-direction: row; align-items: flex-start; gap: .85rem; }}
+        .mks-step-body {{ align-items: flex-start; }}
+        .mks-step-title {{ margin-top: .1rem; }}
+        .mks-mini {{ max-width: 11rem; }}
     }}
     [role="dialog"] {{
         border: 1px solid rgba(56, 189, 248, 0.3);
@@ -357,17 +473,66 @@ def _stylesheet() -> str:
     }}
     @media(prefers-reduced-motion:reduce) {{
         .stApp * {{ scroll-behavior: auto !important; }}
-        .mks-stepnum.mks-blink {{ animation: none; }}
-        .mks-stepnum.mks-runnum, [class*="st-key-workflow_"] {{ animation: none !important; }}
-        [class*="st-key-workflow_"] [data-testid="stBadge"],
-        [class*="st-key-workflow_"] [data-testid="stIconMaterial"],
-        [class*="st-key-workflow_"] [data-testid="stBadge"] svg {{ animation: none !important; }}
+        .mks-dot--running, .mks-step--idle-hint .mks-node,
+        .mks-step--running .mks-node::before {{ animation: none !important; }}
+        .mks-rail i, .mks-mini i {{ transition: none !important; }}
     }}
     </style>"""
 
 
 def apply_theme() -> None:
     st.html(_stylesheet())
+
+
+# ------------------------------------------------------- Workflow-Stepper
+# Reine HTML/CSS-Fortschrittsanzeige: Knoten je Station (Zahl / Häkchen /
+# Warndreieck), Fortschrittsschiene dahinter, Mini-Balken im laufenden Schritt.
+_NODE_MARK = {
+    "complete": '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" '
+                'stroke="currentColor" stroke-width="3.4" stroke-linecap="round" '
+                'stroke-linejoin="round" aria-hidden="true">'
+                '<path d="M4.5 12.8l4.8 4.7L19.5 6.8"/></svg>',
+    "warning": "!",
+    "error": '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" '
+             'stroke="currentColor" stroke-width="3.2" stroke-linecap="round" '
+             'aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    "skipped": "–",
+}
+
+
+def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
+    """HTML für den Stations-Stepper.
+
+    steps: [{nr, title, status, meta, frac}] — frac (0..1) steuert den
+    Mini-Balken und wird nur bei laufenden Stationen angezeigt; overall
+    (0..1) füllt die Schiene zwischen den Knoten proportional auf.
+    """
+    n = len(steps)
+    fill = max(0.0, min(1.0, (overall * n - 0.5) / (n - 1))) if n > 1 else 0.0
+    parts = [
+        f'<div class="mks-stepper" style="--mks-fill:{fill * 100:.1f}%" '
+        f'role="list" aria-label="Workflow-Fortschritt">',
+        '<div class="mks-rail" aria-hidden="true"><i></i></div>',
+    ]
+    for s in steps:
+        status = s.get("status", "pending")
+        hint = " mks-step--idle-hint" if s.get("hint") else ""
+        mark = _NODE_MARK.get(status, str(s["nr"]))
+        title = html.escape(str(s["title"]))
+        meta = html.escape(str(s.get("meta") or ""))
+        aria = html.escape(f"Station {s['nr']} von {n}: {s.get('label', status)}")
+        mini = ""
+        if status == "running" and s.get("frac") is not None:
+            mini = (f'<div class="mks-mini" aria-hidden="true">'
+                    f'<i style="width:{s["frac"] * 100:.0f}%"></i></div>')
+        parts.append(
+            f'<div class="mks-step mks-step--{status}{hint}" role="listitem">'
+            f'<div class="mks-node" role="img" aria-label="{aria}">{mark}</div>'
+            f'<div class="mks-step-body">'
+            f'<div class="mks-step-title">{title}</div>'
+            f'<div class="mks-step-meta">{meta}</div>{mini}</div></div>')
+    parts.append("</div>")
+    return "".join(parts)
 
 
 # --------------------------------------------------------------- Urteile
@@ -431,7 +596,7 @@ def page_header(eyebrow: str, title: str, description: str, *, image_path: str |
                 st.title(title)
                 st.markdown(description)
             with c_img:
-                st.image(str(image_path), use_container_width=True)
+                st.image(str(image_path), width="stretch")
         else:
             st.caption(f"✦ {eyebrow.upper()}")
             st.title(title)
