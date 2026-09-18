@@ -33,6 +33,7 @@ def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataF
     df = pd.DataFrame(rows)
     if fresh_ids is not None:
         df.insert(0, "Stand", ["NEU" if r.id in fresh_ids else "" for r in results])
+    df["Bericht vom"] = pd.to_datetime(df["Bericht vom"], errors="coerce")
     df["Bericht"] = ":material/description: Bericht"
     return df
 
@@ -58,7 +59,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
     if compact:
         column_order = (["Stand"] if fresh_ids is not None else []) + [
             "Ampel", "Name", "EQ-DD %", "Trading-DD %", "Ertrag/Monat %",
-            "Stop", "Score", "Urteil", "Bericht", "Link"]
+            "Stop", "Score", "Urteil", "Bericht vom", "Bericht", "Link"]
 
     event = st.dataframe(
         df,
@@ -96,6 +97,9 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 help="1–10: kleiner bedeutet weniger erkannte Risiken. Keine Ausfallwahrscheinlichkeit."),
             "Kurzfassung": st.column_config.TextColumn("Kurzfassung", width="large"),
             "Urteil": st.column_config.TextColumn("Urteil", width="medium"),
+            "Bericht vom": st.column_config.DatetimeColumn(
+                "Bericht vom", width="medium", format="DD.MM.YYYY HH:mm",
+                help="Erstellungszeitpunkt des angezeigten Gesamtberichts"),
             "Fehler": st.column_config.TextColumn(None, width="small"),
             "Bericht": st.column_config.ButtonColumn(
                 "Bericht", on_click=_open_report, key=f"{key}_bericht",

@@ -170,6 +170,8 @@ def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):
     # Gespeicherte Berichte wurden ins Ergebnis geladen:
     k = next(r for r in at.session_state["scan_results"] if r.id == 2342895)
     assert "ALTER_BERICHT" in k.gesamtbericht
+    assert k.gesamtbericht_at == db.get_latest_analysis(
+        2342895, "gesamtbericht", basis=basis)["created_at"]
     assert "ALTE_TRADE_ANALYSE" in k.trade_analyse
 
     # Mit 'Vorhandene Berichte neu erstellen' werden beide geschickt:

@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv
 import json
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 
 from . import db
 from .llm import client as llm_client, prompts as llm_prompts
@@ -73,6 +74,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
                                   ("trade_analyse", "risiko_analyse", "gesamtbericht"))
                 for field in ("trade_analyse", "risiko_analyse", "gesamtbericht", "kurzfassung"):
                     setattr(result, field, "")
+                result.gesamtbericht_at = ""
                 result.berichte_basis = ""
                 if had_reports:
                     result.bericht_hinweis = "Bisherige Berichte passen nicht zur aktuellen Bewertungsbasis."
@@ -170,6 +172,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             log(f"→ [3/3] Gesamtbericht für {result.name}: {len(prompt):,} Zeichen …")
             progress(f"Gesamtbericht 3/3: {result.name} · warte auf Modellantwort")
             result.gesamtbericht = pipe.llm.chat(prompt, stufe=2, max_tokens=24576, meta_out={})
+            result.gesamtbericht_at = datetime.now().isoformat(sep=" ", timespec="seconds")
             result.kurzfassung = _extract_kurzfassung(result.gesamtbericht)
             result.berichte_basis = basis
         except Exception as exc:
@@ -179,8 +182,9 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
                 return summary(str(exc))
             continue
         try:
-            db.store_analysis(result.id, "gesamtbericht", model_strong,
-                              pipe.llm.usage.total_tokens, result.gesamtbericht, basis=basis)
+            result.gesamtbericht_at = db.store_analysis(
+                result.id, "gesamtbericht", model_strong,
+                pipe.llm.usage.total_tokens, result.gesamtbericht, basis=basis)
         except Exception as exc:
             record_failure(RuntimeError(f"Gesamtbericht nicht gespeichert: {exc}"), "Speicherfehler")
         else:
