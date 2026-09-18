@@ -140,5 +140,7 @@ def test_database_portfolio_is_explicitly_a_historical_report():
     at.switch_page("app_pages/ergebnisse.py").run()
     assert not at.exception
     assert any("historischer Stand" in item.value for item in at.subheader)
+    assert any("Die Tabellenfilter verändern ihn nicht" in item.value
+               for item in at.caption)
     assert any("nicht mit den aktuellen Katalogbewertungen abgeglichen" in item.value
                for item in at.info)
