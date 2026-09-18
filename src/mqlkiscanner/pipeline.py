@@ -24,6 +24,7 @@ import requests
 
 from . import config, scoring
 from . import db
+from . import fx_rates
 from .analysis_version import FORENSICS_VERSION
 from .engine import analyze as analyze_export
 from .llm import client as llm_client
@@ -141,10 +142,13 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         signal_updated = row.get("signal_updated") or ""
         forensik_updated = row.get("forensik_updated") or ""
         forensik_ok = stats.get("forensik_ok")
+        # Teilergebnis-Payloads (vollstaendig=False): Werte zeigen, aber nicht
+        # als vollstaendige Forensik werten — der Grund steht im Fehlerfeld.
+        vollstaendig = f.get("vollstaendig", True)
         # Aktuelle Forensik nur, wenn der letzte Scan sie explizit bestanden hat.
         # Legacy (ohne forensik_ok): last_fehler + Zeitstempel (>= wegen Sekundenaufloesung).
         if forensik_ok is False:
-            forensik_stale = bool(f)
+            forensik_stale = bool(f) and vollstaendig
         elif forensik_ok is True:
             forensik_stale = False
         else:
@@ -154,7 +158,8 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         version_current = (f.get("version") == FORENSICS_VERSION
                            and stats.get("forensik_version") == FORENSICS_VERSION
                            and peak.get("shock_pct_max") is not None)
-        version_stale = bool(f) and not version_current
+        # Unvollstaendige Teilergebnisse sind bekannt-begruendet, nicht "veraltet".
+        version_stale = bool(f) and not version_current and vollstaendig
         forensik_stale = forensik_stale or version_stale
         res = ScanResult(
             id=int(row["signal_id"]),
@@ -171,7 +176,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             pf=stats.get("pf"),
             dd_equity_pct=stats.get("eq_dd_pct"),
             dd_balance_pct=stats.get("bal_dd_pct"),
-            forensik_vorhanden=bool(f) and not forensik_stale,
+            forensik_vorhanden=bool(f) and vollstaendig and not forensik_stale,
             forensik_version=f.get("version"),
             trading_dd_pct=trading.get("pct", f.get("trading_dd_pct")),
             trading_dd_usd=trading.get("usd", f.get("trading_dd_usd")),
@@ -220,11 +225,18 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
 
 
 def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
-    """Risiko VOR Ertrag; Grün erfordert Forensik und belastbare Stop-Evidenz."""
+    """Risiko VOR Ertrag; Grün erfordert Forensik und belastbare Stop-Evidenz.
+
+    Bewiesene rote Flags (Martingale-Signatur aus dem Trade-Muster) gelten
+    auch bei sonst unvollständiger Forensik — Kapitalbasis braucht dafuer
+    niemand. Alles andere bleibt ohne vollstaendige Batterie Vorprüfung.
+    """
     known = config.load_known_signals()
     excluded = {e["id"]: e for e in known.get("ausgeschlossen", [])}
     if result.id in excluded:
         return "⛔", f"Ausgeschlossen (Liste): {excluded[result.id].get('grund', '')}"
+    if result.martingale_flag:
+        return "🔴", "Martingale-Signatur nachgewiesen (Ablehnung)"
     if result.fehler and not result.forensik_vorhanden:
         return "⚪", f"Fehler: {result.fehler}"
     if result.fehler:
@@ -232,8 +244,6 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
     if result.schranke_verletzt:
         limit = settings.get("schranke_eq_dd_pct", 30)
         return "🔴", f"Schranke verletzt: Drawdown > {limit:g} % (harte Ablehnung)"
-    if result.martingale_flag:
-        return "🔴", "Martingale-Signatur nachgewiesen (Ablehnung)"
     if result.forensik_vorhanden:
         if result.stop_evidence not in ("direct", "cluster"):
             reason = ("Stop-Nachweis nur teilweise vorhanden" if result.stop_evidence == "partial"
@@ -379,7 +389,16 @@ def _incomplete_forensics_reason(exposure: dict) -> str:
     warnings = exposure.get("warnings") or []
     if warnings:
         return " ".join(warnings)
-    return "Kapitalhistorie oder Pflichtbefunde fehlen."
+    # Fallback mit konkreten Flags statt Sammelphrase — die Engine schreibt
+    # normalerweise eine Warnung; dieser Zweig deckt Alt-Befunde ab.
+    flags = [name for name, key in (
+        ("Kapitalhistorie unvollständig", "capital_history_complete"),
+        ("Kontraktspec fehlt", "contract_complete"),
+        ("USD-Umrechnung fehlt", "conversion_complete"),
+        ("kein belastbarer Schockanteil", "temporal_risk_available"),
+    ) if exposure.get(key) is False]
+    return ("; ".join(flags) + " — Details im Exposure-Befund.") if flags \
+        else "Kapitalhistorie oder Pflichtbefunde fehlen."
 
 
 class ScanPipeline:
@@ -525,7 +544,16 @@ class ScanPipeline:
                 log(f"✓ Trade-Export: {n_lines} Zeilen "
                     f"({'Cache' if from_cache else 'neu geladen'})")
                 log("Forensik-Batterie (4 Tests) läuft …")
-                report = analyze_export(path)
+                # EZB-Kurse vorwaermen (Download beim ersten Bedarf) und den
+                # Stand ins Protokoll nehmen — FX-Kreuze brauchen sie zur
+                # USD-Umrechnung; offline bleibt die Umrechnung ehrlich gesperrt.
+                ezb = fx_rates.status()
+                log("EZB-Referenzkurse: " + (
+                    f"geladen bis {ezb.get('letzte_kursdatum')}" if ezb.get("geladen")
+                    else "nicht verfuegbar (offline?) — FX-Kreuze bleiben ohne USD-Schock"))
+                # Broker mitgeben: cross_broker=false-Kontraktspecs (z. B. Oel)
+                # gelten nur fuer den gelisteten Broker des Signals.
+                report = analyze_export(path, broker=res.broker_server)
             except Mql5CredentialsMissingError:
                 log("Trade-Export übersprungen (kein MQL5-Login) — "
                     "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
@@ -624,9 +652,14 @@ class ScanPipeline:
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
             res.urteil = grund + detail
             forensik_payload = None
-            if res.forensik_vorhanden:
+            # Auch unvollstaendige Laeufe speichern ihre Teilergebnisse
+            # (vollstaendig=False): Winrate/DD/Martingale/Stop bleiben sichtbar
+            # und laden nach App-Neustart aus der DB; bewerten darf sie nur
+            # als Vorprüfung bzw. rote Flag — nie als Kandidat.
+            if res.forensik_vorhanden or res.winrate_pct is not None:
                 forensik_payload = {
                     "version": FORENSICS_VERSION,
+                    "vollstaendig": bool(res.forensik_vorhanden),
                     "trading_dd": {"pct": res.trading_dd_pct, "usd": res.trading_dd_usd},
                     "winrate_pct": res.winrate_pct,
                     "max_verlustserie": res.max_verlustserie,
@@ -643,7 +676,11 @@ class ScanPipeline:
                     "stop_nachweis": res.stop_nachweis,
                     "stop_evidence": res.stop_evidence,
                     "symbole": res.symbole,
-                    "score": res.score, "ampel": res.ampel}
+                    "fx_kursquelle": expo.get("fx_conversion", {}).get("quelle"),
+                    # Score nur bei vollstaendiger Forensik — Design-Regel:
+                    # kein Score vor bestandener Batterie.
+                    "score": res.score if res.forensik_vorhanden else None,
+                    "ampel": res.ampel}
             saved_trades_path = db.store_scan_result(res.id, {
                 "name": res.name, "platform": res.platform, "url": res.url,
                 "autor": res.autor, "abo_preis": res.abo_preis_usd,

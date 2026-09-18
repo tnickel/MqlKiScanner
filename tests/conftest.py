@@ -48,6 +48,11 @@ def isolated_app_storage(tmp_path, monkeypatch):
         path.mkdir(parents=True, exist_ok=True)
         monkeypatch.setattr(config, name, path)
     monkeypatch.setattr(config, "SETTINGS_FILE", config.CONFIG_DIR / "app_settings.json")
+    # Tests sind hermetisch: kein Spec-Eintrag aus dem echten Repository.
+    # Wer Specs braucht, schreibt die Datei in tmp_path und leert den Cache.
+    monkeypatch.setattr(config, "CONTRACT_SPECS_FILE",
+                        config.DATA_DIR / "contract_specs.json")
+    monkeypatch.setattr(config, "FX_RATES_DIR", config.DATA_DIR / "fx_rates")
     monkeypatch.setattr(db, "DB_PATH", config.DATA_DIR / "mqlkiscanner.db")
     monkeypatch.setattr(secrets_store, "SECRETS_FILE", config.CONFIG_DIR / "secrets.local.json")
     monkeypatch.setattr(secrets_store, "ENV_FILE", tmp_path / ".env")

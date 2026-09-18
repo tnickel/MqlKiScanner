@@ -87,7 +87,7 @@ def test_mixed_currency_portfolio_does_not_publish_partial_sum_as_total():
     assert r["shock_usd"] is None
     assert r["peak_net_lots"] is None
     assert r["peak_time"] is None
-    assert r["missing_conversion_symbols"] == ["NZDCAD"]
+    assert r["foreign_quote_symbols"] == ["NZDCAD"]
     assert set(r["per_symbol_scenarios"]) == {"XAUUSD", "NZDCAD"}
 
 

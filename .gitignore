@@ -41,3 +41,6 @@ scripts/_repro_*.py
 Thumbs.db
 .DS_Store
 monthly.json
+
+# EZB-Kursdateien (nachladbar, kein Repo-Inhalt)
+data/fx_rates/

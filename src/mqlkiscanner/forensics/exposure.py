@@ -7,11 +7,21 @@ in Dollar-Risiko. Kontraktgroessen (doc/02 Abschnitt 5):
   US-Indizes (Projektkonvention): 1 Lot = 1 USD je Punkt
   FX: 1 Lot = 100 000 Basiseinheiten; Gewinn zunaechst in Kurswaehrung.
   USD-Konvention des Projekts: Kontostaende und bekannte US-Indexkontrakte
-  werden als USD gefuehrt. Nicht-USD-quotierte FX-Paare benoetigen belegte
-  historische Umrechnung; ohne diese bleiben Dollar-/Prozentwerte unbekannt.
+  werden als USD gefuehrt. Fremdwaehrungs-Quotes (FX-Kreuze, EUR-Gold, DE40)
+  werden mit den belegten EZB-Euro-Referenzkursen des jeweiligen Handelstags
+  nach USD umgerechnet (Cross-Kurs ueber EUR/USD, fx_rates.py); ohne
+  belegten Kurs bleiben die Werte ehrlich unbekannt.
+
+Kontrakte ohne Klassenkonvention koennen ueber data/contract_specs.json
+belegt werden (Quelle z. B. Tickmill-Contract-Specifications). Eintraege
+mit cross_broker=false gelten nur fuer die gelisteten Broker (Teilstring-
+Match auf `broker`) — Oel ist der bekannte Fallstrick: Tickmill 1 Barrel
+je Lot, viele andere Broker 100. Ein Symbol ohne Klasse UND ohne Spec
+bleibt ein harter Fehler; Klasse ohne Faktor (z. B. GER40) bleibt weich.
 
 Schockszenario je Symbolklasse:
   Metall 50 USD Kursbewegung | Index 50 Punkte | FX 500 Pips (JPY: 5.00)
+  Spec-Eintraege tragen ihre eigene stress_move in Preiseinheiten.
 
 Zwei Peak-Masse (Spec-Frage: max. aggregierte Marktposition / Schockkosten):
   - peak_open_positions: Maximum der Positions*anzahl*
@@ -27,12 +37,13 @@ from collections import defaultdict
 from itertools import groupby
 import math
 
+from .. import fx_rates
 from ..models import ParsedExport
-from ..symbols import normalize_symbol, symbol_class, fx_pip_size
+from ..symbols import fx_pip_size, normalize_symbol, spec_for, symbol_class
 
 # Kontraktfaktor je 1.00 Kurseinheit und Lot, FX in KURSwaehrung.
 CONTRACT_FACTOR_PER_UNIT: dict[str, float] = {
-    "METAL": 100.0,   # XAUUSD (andere Metalle bleiben unbekannt)
+    "METAL": 100.0,   # XAUUSD (andere Metalle via contract_specs.json)
     "INDEX": 1.0,     # nur freigegebene US-Indexkonvention, siehe unten
     "FX": 100_000.0,
 }
@@ -52,39 +63,97 @@ _UNIT_LABEL = {"METAL": "USD Kursbewegung", "INDEX": "Punkte",
                "FX": "Preiseinheiten"}
 
 
-def _contract_factor(symbol: str) -> float | None:
+def _resolve_symbol(symbol: str, broker: str | None = None) -> dict | None:
+    """Aufgeloester Kontrakt je Symbol oder None (kein belegter Kontrakt).
+
+    Spec-Eintrag (data/contract_specs.json) gewinnt gegenueber der
+    Klassenkonvention; `broker` schraenkt cross_broker=false-Eintraege ein.
+    """
+    spec = spec_for(symbol, broker=broker)
     sclass = symbol_class(symbol)
+    if spec is not None and spec.get("contract_size") is not None:
+        pip = fx_pip_size(symbol)
+        if spec.get("stress_move") is not None:
+            move = float(spec["stress_move"])
+        elif pip is not None:
+            move = 500 * pip
+        else:
+            move = STRESS_MOVE_BY_CLASS.get(sclass, 0.0)
+        return {
+            "factor": float(spec["contract_size"]),
+            "quote": str(spec.get("quote_currency") or "USD").upper(),
+            "move": move,
+            "unit": str(spec.get("unit_label") or _UNIT_LABEL.get(sclass, "Preiseinheiten")),
+            "source": str(spec.get("source") or "contract_specs.json"),
+            "spec": True,
+        }
     if sclass == "INDEX" and normalize_symbol(symbol) not in USD_INDEX_SYMBOLS:
         return None
-    return CONTRACT_FACTOR_PER_UNIT.get(sclass)
-
-
-def _quote_currency(symbol: str) -> str | None:
-    if _contract_factor(symbol) is None:
+    factor = CONTRACT_FACTOR_PER_UNIT.get(sclass)
+    if factor is None:
         return None
-    return normalize_symbol(symbol)[-3:] if symbol_class(symbol) == "FX" else "USD"
+    pip = fx_pip_size(symbol)
+    move = 500 * pip if pip is not None else STRESS_MOVE_BY_CLASS[sclass]
+    quote = normalize_symbol(symbol)[-3:] if sclass == "FX" else "USD"
+    return {"factor": factor, "quote": quote, "move": move,
+            "unit": _UNIT_LABEL[sclass], "source": "klassenkonvention",
+            "spec": False}
 
 
-def _stress_move(symbol: str, override: float | None = None) -> float:
+def _contract_factor(symbol: str, broker: str | None = None) -> float | None:
+    resolved = _resolve_symbol(symbol, broker)
+    return resolved["factor"] if resolved else None
+
+
+def _quote_currency(symbol: str, broker: str | None = None) -> str | None:
+    resolved = _resolve_symbol(symbol, broker)
+    return resolved["quote"] if resolved else None
+
+
+def _stress_move(symbol: str, override: float | None = None,
+                 broker: str | None = None) -> float:
     if override is not None:
         return override
+    resolved = _resolve_symbol(symbol, broker)
+    if resolved:
+        return resolved["move"]
+    # Nur erreichbar fuer Spec-freie Symbole mit Klasse aber ohne Faktor
+    # (fremder Index): Szenario in Punkten, auch ohne USD-Schock nutzbar.
     pip = fx_pip_size(symbol)
-    return 500 * pip if pip is not None else STRESS_MOVE_BY_CLASS[symbol_class(symbol)]
+    if pip is not None:
+        return 500 * pip
+    return STRESS_MOVE_BY_CLASS.get(symbol_class(symbol), 50.0)
 
 
-def shock_usd(net_lots: float, move: float, symbol: str) -> float | None:
-    """Dollar-Risiko einer Gegenbewegung `move` Preiseinheiten bei `net_lots`."""
-    sclass = symbol_class(symbol)
-    if sclass == "UNKNOWN":
-        raise ValueError(f"Unbekanntes Instrument {symbol!r}: Kontraktgroesse nicht belegt")
-    if _quote_currency(symbol) != "USD":
+def shock_usd(net_lots: float, move: float, symbol: str,
+              broker: str | None = None) -> float | None:
+    """Dollar-Risiko einer Gegenbewegung `move` Preiseinheiten bei `net_lots`.
+
+    Kein belegter Kontrakt: Klasse UNKNOWN -> harter Fehler; bekannte Klasse
+    ohne Faktor (fremder Index) -> None, wie bei fehlender USD-Umrechnung.
+    """
+    resolved = _resolve_symbol(symbol, broker)
+    if resolved is None:
+        if symbol_class(symbol) == "UNKNOWN":
+            raise ValueError(f"Unbekanntes Instrument {symbol!r}: Kontraktgroesse nicht belegt")
         return None
-    return abs(net_lots) * move * _contract_factor(symbol)
+    if resolved["quote"] != "USD":
+        return None
+    return abs(net_lots) * move * resolved["factor"]
 
 
 def _portfolio_shock(net_by_symbol: dict[str, float],
-                     stress_move: float | None = None) -> tuple[float | None, str]:
-    """Schock je Symbol mit eigener Klasse, dann summieren (kein Cross-Hedge)."""
+                     stress_move: float | None = None,
+                     resolutions: dict | None = None,
+                     broker: str | None = None,
+                     when=None,
+                     fx_state: dict | None = None) -> tuple[float | None, str]:
+    """Schock je Symbol mit eigenem Kontrakt, dann summieren (kein Cross-Hedge).
+
+    Fremdwaehrungs-Quotes (EUR-Gold, FX-Kreuze, DE40) werden mit dem
+    EZB-Referenzkurs des Handelstags nach USD umgerechnet; fehlt der Kurs,
+    bleibt der Gesamtschock unbekannt (fx_state zeichnet den Grund auf).
+    """
     total = 0.0
     dominant = ""
     dominant_abs = 0.0
@@ -92,8 +161,20 @@ def _portfolio_shock(net_by_symbol: dict[str, float],
     for sym, net in net_by_symbol.items():
         if abs(net) < 1e-12:
             continue
-        move = _stress_move(sym, stress_move)
-        amount = shock_usd(net, move, sym)
+        resolved = (resolutions or {}).get(sym) or _resolve_symbol(sym, broker)
+        move = _stress_move(sym, stress_move, broker)
+        if resolved is None:
+            amount = None
+        else:
+            native = abs(net) * move * resolved["factor"]
+            if resolved["quote"] == "USD":
+                amount = native
+            else:
+                fx = fx_rates.usd_per(resolved["quote"], when.date()) if when else None
+                amount = native * fx["rate"] if fx else None
+                if fx is None and fx_state is not None:
+                    fx_state["complete"] = False
+                    fx_state["missing"].add(f"{sym} ({resolved['quote']})")
         if amount is None:
             complete = False
         else:
@@ -105,9 +186,11 @@ def _portfolio_shock(net_by_symbol: dict[str, float],
 
 
 def _snapshot(net_by_symbol: dict[str, float], long_vol: float, short_vol: float,
-              time, stress_move: float | None) -> dict:
+              time, stress_move: float | None, resolutions: dict | None = None,
+              broker: str | None = None, fx_state: dict | None = None) -> dict:
     by_sym = {s: v for s, v in net_by_symbol.items() if abs(v) > 1e-12}
-    shock, peak_symbol = _portfolio_shock(by_sym, stress_move)
+    shock, peak_symbol = _portfolio_shock(by_sym, stress_move, resolutions,
+                                          broker, when=time, fx_state=fx_state)
     return {
         "time": time,
         "long": long_vol,
@@ -118,28 +201,56 @@ def _snapshot(net_by_symbol: dict[str, float], long_vol: float, short_vol: float
     }
 
 
-def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
+def run(parsed: ParsedExport, stress_move: float | None = None,
+        broker: str | None = None) -> dict:
     trades = parsed.trades
     if not trades:
         return {"test": "exposure", "flag": False, "temporal_risk_available": False}
-    unknown = sorted({t.symbol for t in trades if symbol_class(t.symbol) == "UNKNOWN"})
-    if unknown:
-        raise ValueError("Unbekannte Instrumente ohne belegte Kontraktgroesse: " + ", ".join(unknown))
     if stress_move is not None and (not math.isfinite(stress_move) or stress_move < 0):
         raise ValueError("Schockbewegung muss endlich und nicht negativ sein")
     symbols = sorted({normalize_symbol(t.symbol) for t in trades})
-    missing_contract = [sym for sym in symbols if _contract_factor(sym) is None]
-    missing_conversion = [sym for sym in symbols if _quote_currency(sym) not in (None, "USD")]
-    conversion_complete = not missing_conversion and not missing_contract
-    warnings = (["Keine belegte historische Umrechnung nach USD fuer: "
-                 + ", ".join(f"{sym} ({_quote_currency(sym)})" for sym in missing_conversion)
-                 + ". Dollar-Schock und Schockanteil sind nicht verfuegbar."]
-                if missing_conversion else [])
+    resolutions = {sym: _resolve_symbol(sym, broker) for sym in symbols}
+
+    # Klasse UNKNOWN und kein belegter Kontrakt: harter Fehler. Gibt es zwar
+    # einen Spec-Eintrag, der aber wegen cross_broker=false nicht greift,
+    # sagt die Meldung das explizit (statt nur "unbekannt").
+    unknown = [sym for sym in symbols
+               if symbol_class(sym) == "UNKNOWN" and resolutions[sym] is None]
+    if unknown:
+        # Spec vorhanden (mit Kontraktgroesse), gilt aber nicht fuer diesen
+        # Broker -> gezielte Meldung; alles andere bleibt "unbekannt".
+        scoped = [sym for sym in unknown
+                  if (entry := spec_for(sym, ignore_broker=True)) is not None
+                  and entry.get("contract_size") is not None]
+        if scoped:
+            broker_note = (f"Broker des Signals ({broker!r})" if broker
+                           else "Broker des Signals UNBEKANNT (Kennzahlen-Seite "
+                                "lieferte keine Server-Kennung — Signal-Seite "
+                                "manuell ansehen)")
+            raise ValueError(
+                "Keine anwendbare Kontraktspec (cross_broker=false, "
+                f"{broker_note} nicht freigegeben): " + ", ".join(scoped)
+                + " — Broker in data/contract_specs.json freigeben "
+                "(Eintrag 'brokers' ergänzen), dann erneut prüfen.")
+        raise ValueError(
+            "Unbekannte Instrumente ohne belegte Kontraktgroesse: " + ", ".join(unknown)
+            + " — in data/contract_specs.json eintragen (Kontraktgroesse, "
+            "Gewinnwaehrung, Quelle), dann erneut pruefen.")
+
+    missing_contract = [sym for sym in symbols if resolutions[sym] is None]
+    # Symbole mit Fremdwaehrungs-Quote: der Schock faellt dort zunaechst in
+    # EUR/CAD/JPY an und wird pro Snapshot mit dem EZB-Kurs des Handelstags
+    # nach USD umgerechnet (fx_rates). Ohne belegten Kurs bleibt es gesperrt.
+    foreign_quote = [sym for sym in symbols
+                     if resolutions[sym] is not None
+                     and resolutions[sym]["quote"] != "USD"]
+    fx_state: dict = {"complete": True, "missing": set()}
+    warnings: list[str] = []
     if missing_contract:
         warnings.append("Keine belegte Brokerspezifikation fuer: " + ", ".join(missing_contract)
                         + " (Kontraktgroesse/Punktwert und Gewinnwaehrung fehlen). "
                         "Weder native Schockbetraege noch USD-Werte sind verfuegbar.")
-
+    conversion_complete = not missing_contract
     events: list[tuple] = []
     for t in trades:
         events.append((t.open_time, 1, 1, t))
@@ -170,6 +281,7 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
     initial_capital = math.fsum(b.amount for b in parsed.balances if b.time <= first_open)
     capital_history_complete = initial_capital > 0
     temporal_risk_available = capital_history_complete and conversion_complete
+    account_dipped_negative = False
 
     for (time, kind), grouped in groupby(events, key=lambda e: (e[0], e[1])):
         batch = list(grouped)
@@ -188,10 +300,12 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
                 symbol_deltas[normalize_symbol(t.symbol)].append(delta * t.volume * t.sign)
             for sym in sorted(symbol_deltas):
                 net_by_symbol[sym] += math.fsum(symbol_deltas[sym])
-        snap = _snapshot(net_by_symbol, long_vol, short_vol, time, stress_move)
+        snap = _snapshot(net_by_symbol, long_vol, short_vol, time, stress_move,
+                         resolutions, broker, fx_state)
         snap["account"] = account
         if snap["shock"] is not None and snap["shock"] > 0 and account <= 0:
             temporal_risk_available = False
+            account_dipped_negative = True
         if open_count > 0 and account > 0 and snap["shock"] is not None:
             snap["shock_pct"] = snap["shock"] / account * 100
             if relative_snap is None or snap["shock_pct"] > relative_snap["shock_pct"]:
@@ -206,6 +320,41 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
             risk_snap = snap
 
     assert count_snap is not None
+    # Kapitalbasis-Diagnose: konkreter Grund statt Sammel-Meldung. Ohne
+    # belastbares Konto ist der Schock-in-Prozent (30-%-Regel) nicht berechenbar.
+    if not capital_history_complete:
+        warnings.append(
+            "Kapitalbasis unbekannt: keine Einzahlungen vor dem ersten Trade im "
+            f"Export (Startkapital {initial_capital:+.2f} — z. B. Historie gekuerzt "
+            "oder Auszahlung vor Handelsbeginn). Schockanteil in Prozent und die "
+            "30-%-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorprüfung.")
+    elif account_dipped_negative:
+        warnings.append(
+            "Kontostand war bei offenen Positionen <= 0 (z. B. Auszahlung mitten "
+            "im Handel): kein belastbarer Bezugswert — Schockanteil in Prozent "
+            "und die 30-%-Schranke sind nicht berechenbar.")
+    # Fremdwaehrungs-Quotes: complete nur, wenn jeder Snapshot einen belegten
+    # EZB-Kurs fand. Sonst Warnung mit konkretem Grund (Datei fehlt/Luecke).
+    ezb = fx_rates.status()
+    if foreign_quote and not fx_state["complete"]:
+        conversion_complete = False
+        if not ezb.get("geladen"):
+            warnings.append(
+                "Keine belegte historische Umrechnung nach USD fuer: "
+                + ", ".join(sorted(fx_state["missing"]))
+                + ". EZB-Referenzkurse nicht verfuegbar (keine Datei in "
+                + ezb["ordner"] + " und Download nicht moeglich).")
+        else:
+            warnings.append(
+                "Keine belegte historische Umrechnung nach USD fuer: "
+                + ", ".join(sorted(fx_state["missing"]))
+                + ". Kein EZB-Kurs im 10-Tage-Fenster zum Handelstag "
+                "(Kalenderdeckung der Kursdatei: bis "
+                + str(ezb.get("letzte_kursdatum")) + ").")
+    if not conversion_complete:
+        # Nachtraeglich herabgestuft (fehlender EZB-Kurs): das Flag ist an
+        # conversion_complete gekoppelt und darf nicht am alten Wert haengen.
+        temporal_risk_available = False
     # Ohne vollstaendige Umrechnung gibt es kein vergleichbares USD-Maximum.
     # Der Anzahl-Peak bleibt als reine Positionsdiagnostik vorhanden.
     if not conversion_complete or risk_snap is None:
@@ -226,9 +375,25 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
 
     sym = peak_symbol or symbols[0]
     sclass = symbol_class(sym) if sym else "FX"
-    move = _stress_move(sym, stress_move)
+    headline_resolved = resolutions.get(sym) or _resolve_symbol(sym, broker)
+    move = _stress_move(sym, stress_move, broker)
+    unit = (headline_resolved["unit"] if headline_resolved
+            else _UNIT_LABEL.get(sclass, "Preiseinheiten"))
 
     temporal_risk_available = temporal_risk_available and relative_snap is not None
+    spec_sources = sorted({r["source"] for r in resolutions.values()
+                           if r is not None and r["spec"]})
+    # Provenienz der Umrechnung: welche EZB-Kurse flossen am Flag-Peak ein.
+    fx_prov: dict = {}
+    if foreign_quote and relative_snap and relative_snap.get("time"):
+        for held_sym in relative_snap["by_sym"]:
+            held_res = resolutions.get(held_sym)
+            if held_res and held_res["quote"] != "USD":
+                fx = fx_rates.usd_per(held_res["quote"], relative_snap["time"].date())
+                if fx:
+                    fx_prov[held_sym] = {"quote": held_res["quote"],
+                                         "usd_pro_einheit": round(fx["rate"], 8),
+                                         "ezb_kursdatum": fx["date"]}
     result: dict = {
         "test": "exposure",
         "peak_open_positions": peak_count,
@@ -245,9 +410,10 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
         "peak_gross_lots": round(gross, 2) if conversion_complete else None,
         "peak_net_by_symbol": {k: round(v, 2) for k, v in sorted(peak_net_by_symbol.items())} if conversion_complete else {},
         "symbol_class": sclass,
-        "usd_per_unit_per_lot": _contract_factor(sym) if _quote_currency(sym) == "USD" else None,
+        "usd_per_unit_per_lot": (_contract_factor(sym, broker)
+                                 if _quote_currency(sym, broker) == "USD" else None),
         "stress_move": move,
-        "stress_move_unit": _UNIT_LABEL[sclass],
+        "stress_move_unit": unit,
         "shock_usd": round(shock, 2) if shock is not None else None,
         "account_at_shock_peak": round(risk_snap["account"], 2) if conversion_complete else None,
         "account_currency": "USD",
@@ -255,18 +421,29 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
         "conversion_complete": conversion_complete,
         "contract_complete": not missing_contract,
         "missing_contract_symbols": missing_contract,
-        "missing_conversion_symbols": missing_conversion,
+        "foreign_quote_symbols": foreign_quote,
+        "fx_conversion": {"quelle": ("EZB-Euro-Referenzkurse (eurofxref-hist), "
+                                     "Cross-Kurs ueber EUR/USD am Handelstag")
+                          if fx_prov else None,
+                          "letzte_kursdatum": ezb.get("letzte_kursdatum"),
+                          "kurse_am_flag_peak": fx_prov},
+        "spec_sources": spec_sources,
         "warnings": warnings,
         "per_symbol_scenarios": {
-            symbol: {"quote_currency": _quote_currency(symbol),
-                     "contract_factor_in_quote": _contract_factor(symbol),
+            symbol: {"quote_currency": (_quote_currency(symbol, broker)),
+                     "contract_factor_in_quote": _contract_factor(symbol, broker),
+                     "contract_source": (resolutions[symbol]["source"]
+                                         if resolutions[symbol] else None),
                      "pip_size": fx_pip_size(symbol),
-                     "stress_move": _stress_move(symbol, stress_move),
-                     "stress_pips": (_stress_move(symbol, stress_move) / fx_pip_size(symbol)
+                     "stress_move": _stress_move(symbol, stress_move, broker),
+                     "stress_pips": (_stress_move(symbol, stress_move, broker) / fx_pip_size(symbol)
                                      if fx_pip_size(symbol) else None),
-                     "stress_quote_per_lot": (_stress_move(symbol, stress_move) * _contract_factor(symbol)
-                                               if _contract_factor(symbol) is not None else None),
-                     "usd_conversion_available": _quote_currency(symbol) == "USD"}
+                     "stress_quote_per_lot": (_stress_move(symbol, stress_move, broker) * _contract_factor(symbol, broker)
+                                               if _contract_factor(symbol, broker) is not None else None),
+                     "usd_conversion_available": (
+                         _quote_currency(symbol, broker) == "USD"
+                         or (_quote_currency(symbol, broker) is not None
+                             and fx_rates.can_convert(_quote_currency(symbol, broker))))}
             for symbol in symbols},
         "capital_history_complete": capital_history_complete,
         "temporal_risk_available": temporal_risk_available,
@@ -280,13 +457,14 @@ def run(parsed: ParsedExport, stress_move: float | None = None) -> dict:
             if shock is None else
             f"Summe je Symbol am Volumen-/Schock-Peak = {shock:,.2f} USD"
             if len(peak_net_by_symbol) > 1 else
-            f"{abs(headline_net):.2f} Lots x {move:g} {_UNIT_LABEL[sclass]} x "
-            f"{CONTRACT_FACTOR_PER_UNIT[sclass]:g} = {shock:,.2f} USD"
-        ),
+            f"{abs(headline_net):.2f} Lots x {move:g} {unit} x "
+            f"{headline_resolved['factor']:g} = {shock:,.2f} USD"
+            if headline_resolved else
+            f"Summe am Peak = {shock:,.2f} USD"),
         "flag": not temporal_risk_available or relative_snap["shock_pct"] > 30.0,
     }
     if sclass == "FX" and len(peak_net_by_symbol) <= 1:
         pip_factor = fx_pip_size(sym)
-        pip_usd = shock_usd(headline_net, pip_factor * 10, sym)  # 10 Pips
+        pip_usd = shock_usd(headline_net, pip_factor * 10, sym, broker)  # 10 Pips
         result["fx_pips_10_usd"] = round(pip_usd, 2) if pip_usd is not None else None
     return result

@@ -1,0 +1,118 @@
+{
+  "_meta": {
+    "zweck": "Belegte Kontraktspezifikationen fuer Instrumente, die die Engine nicht aus einer Symbolklasse ableiten kann. Die Engine (forensics/exposure.py) liest diese Datei; Eintraege ueberschreiben die Klassenkonvention, erfinden aber nichts: Jeder Eintrag traegt Quelle und Abrufdatum.",
+    "regeln": [
+      "contract_size = Einheiten je 1.00 Lot (MT5-Standardspec 'Contract Size').",
+      "quote_currency = Gewinnwaehrung. Alles ausser USD bleibt ohne belegte historische Umrechnung im USD-Schock gesperrt (nur nativer Schockbetrag in der Quote-Waehrung).",
+      "stress_move = Szenario-Bewegung in Preiseinheiten (bewusst konservativ gewaehlt, editierbar): Gold/EUR-Gold 50, Silber 3.0 (~10 %), BTC 5000 (~5 %), ETH 400 (~10 %), Oel 10 (~12 %), Indizes 500 Punkte (~3 %).",
+      "cross_broker=true: Kontrakt ist brancheneinheitlich (z. B. 1 Lot BTC = 1 BTC ueberall) und gilt auch ohne Brokerangabe des Signals.",
+      "cross_broker=false: Kontrakt ist brokerabhaengig und gilt nur fuer die gelisteten 'brokers' (Teilstring-Match, Gross-/Kleinschreibung egal). Der Grund: Oel ist der bekannte Fallstrick — Tickmill 1 Barrel je Lot, viele andere Broker 100 Barrel (Faktor 100!).",
+      "aliases = weitere Broker-Namen fuer denselben Kontrakt (Matching nach Suffix-Bereinigung, 'USOUSD-ECN' -> 'USOUSD')."
+    ],
+    "stand": "2026-09-08",
+    "hauptquelle": "Tickmill Contract Specifications (tickmill.com/instruments/<symbol>), vom Nutzer als Referenzbroker genannt. Abweichende Broker-Specs hier je Symbol ergaenzen."
+  },
+  "symbols": {
+    "BTCUSD": {
+      "contract_size": 1.0,
+      "quote_currency": "USD",
+      "class": "CRYPTO",
+      "stress_move": 5000.0,
+      "unit_label": "USD Kursbewegung",
+      "cross_broker": true,
+      "aliases": ["XBTUSD", "BITCOIN"],
+      "source": "https://www.tickmill.com/instruments/btcusd",
+      "retrieved": "2026-09-08",
+      "note": "1 Lot = 1 Bitcoin. Brancheneinheitlich bei Retail-Brokern (Tickmill, IC Markets, Pepperstone). Volumen Schritt 0.01."
+    },
+    "ETHUSD": {
+      "contract_size": 1.0,
+      "quote_currency": "USD",
+      "class": "CRYPTO",
+      "stress_move": 400.0,
+      "unit_label": "USD Kursbewegung",
+      "cross_broker": true,
+      "aliases": [],
+      "source": "https://www.tickmill.com/instruments/ethusd",
+      "retrieved": "2026-09-08",
+      "note": "1 Lot = 1 Ether, brancheneinheitlich."
+    },
+    "XAGUSD": {
+      "contract_size": 5000.0,
+      "quote_currency": "USD",
+      "class": "METAL",
+      "stress_move": 3.0,
+      "unit_label": "USD Kursbewegung",
+      "cross_broker": true,
+      "aliases": [],
+      "source": "https://www.tickmill.com/instruments/xagusd",
+      "retrieved": "2026-09-08",
+      "note": "1 Lot = 5.000 Unzen Silber, uebliche Retail-Konvention. Stress 3.0 USD entspricht ~10 % Silberbewegung (ca. doppelt so volatil wie Gold mit 50 USD auf ~2 %)."
+    },
+    "XAUEUR": {
+      "contract_size": 100.0,
+      "quote_currency": "EUR",
+      "class": "METAL",
+      "stress_move": 50.0,
+      "unit_label": "EUR Kursbewegung",
+      "cross_broker": true,
+      "aliases": ["GOLD-EUR", "XAUEUR-MINI"],
+      "source": "https://www.tickmill.com/instruments/xaueur",
+      "retrieved": "2026-09-08",
+      "note": "1 Lot = 100 Unzen Gold, in EUR quotiert. Wegen EUR-Quote bleibt der USD-Schock gesperrt (wie FX-Kreuze); der native Schockbetrag in EUR erscheint in den je-Symbol-Szenarien."
+    },
+    "XTIUSD": {
+      "contract_size": 1.0,
+      "quote_currency": "USD",
+      "class": "ENERGY",
+      "stress_move": 10.0,
+      "unit_label": "USD Kursbewegung",
+      "cross_broker": false,
+      "brokers": ["tickmill"],
+      "aliases": ["USOUSD", "USOIL", "WTIUSD"],
+      "source": "https://www.tickmill.com/instruments/xtiusd (EU-Seite: Contract Size 1, Min./Schritt 1 Lot, Max. 10.000 Lots)",
+      "retrieved": "2026-09-08",
+      "note": "ACHTUNG, brokerabhaengig: Tickmill definiert 1 Lot = 1 Barrel (Mindestvolumen 1 Lot). Viele andere Broker (z. B. TMGM, laut FXNX-Referenz die Retail-Mehrheit) nutzen 100 Barrel je Lot — Faktor 100 Unterschied. Deshalb gilt diese Spec NUR bei Tickmill-Konten; fuer andere Broker hier eine broker-spezifische Ergaenzung eintragen.",
+      "broker_variants": {
+        "tickmill": 1.0,
+        "uebrige_retail_broker_ueblich": 100.0
+      }
+    },
+    "DE40": {
+      "contract_size": 1.0,
+      "quote_currency": "EUR",
+      "class": "INDEX",
+      "stress_move": 500.0,
+      "unit_label": "Punkte",
+      "cross_broker": true,
+      "aliases": ["DAX", "DAX40"],
+      "source": "https://www.tickmill.com/instruments/de40 (Lot Size 1, Typical Spread 0.91 Punkte)",
+      "retrieved": "2026-09-08",
+      "note": "1 Lot = 1 Indexpunkt. Der DAX ist EUR-denominiert: Wie FX-Kreuze bleibt der USD-Schock gesperrt; der native EUR-Punktwert 1 je Lot ist die uebliche Retail-Konvention."
+    },
+    "USTEC": {
+      "contract_size": 1.0,
+      "quote_currency": "USD",
+      "class": "INDEX",
+      "stress_move": 500.0,
+      "unit_label": "Punkte",
+      "cross_broker": true,
+      "aliases": ["USTECH", "NASUSD", "NDX"],
+      "source": "https://www.tickmill.com/instruments/ustec",
+      "retrieved": "2026-09-08",
+      "note": "1 Lot = 1 Indexpunkt in USD, gleiche Konvention wie US30/US100/US500 im Kern der Engine. NASUSD ist die Pepperstone-Schreibweise fuer den Nasdaq-100-CFD."
+    },
+    "CHINA50": {
+      "contract_size": 1.0,
+      "quote_currency": "USD",
+      "class": "INDEX",
+      "stress_move": 500.0,
+      "unit_label": "Punkte",
+      "cross_broker": true,
+      "aliases": ["A50"],
+      "source": "https://www.tickmill.com/instruments/china50 (Lot Size 1, Typical Spread 10 Punkte)",
+      "retrieved": "2026-09-08",
+      "note": "FTSE China A50, USD-denominiert (SGX-Konvention), 1 Lot = 1 Indexpunkt. Bei abweichendem Punktwert des Signal-Brokers hier korrigieren."
+    }
+  }
+}
