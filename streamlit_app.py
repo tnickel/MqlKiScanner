@@ -41,10 +41,10 @@ for key, val in defaults.items():
 status = secrets_store.secret_status()
 settings = config.load_settings()
 with st.sidebar:
-    with st.container(key="sidebar_brand", gap="xsmall"):
+    with st.container(key="sidebar_brand", gap="xsmall", horizontal_alignment="center"):
         emblem_path = ROOT / "assets" / "brand_emblem.jpg"
         if emblem_path.exists():
-            st.image(str(emblem_path), width="stretch")
+            st.image(str(emblem_path), width=168)
         st.caption("SIGNAL RESEARCH · FORENSIC RADAR")
         st.header("MqlKiScanner", icon=":material/radar:")
         st.markdown("**Risiko vor Ertrag.**")
@@ -62,10 +62,6 @@ with st.sidebar:
         st.caption("PRÜFPRINZIP")
         st.markdown("**Schutz muss belegt sein.**")
         st.caption("Drawdown · Exposure · Stop-Nachweis")
-    with st.container(horizontal=True, vertical_alignment="center"):
-        st.markdown("Workflow in Kurzform")
-        info_button("workspace", key="sidebar_guide")
-    st.caption("Daten holen → speichern → prüfen → KI-Bericht → Portfolio-Vorschlag")
     if st.session_state.last_run_file:
         st.caption(f"Letzter Lauf · {Path(st.session_state.last_run_file).parent.name}")
 

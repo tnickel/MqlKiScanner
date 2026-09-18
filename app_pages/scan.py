@@ -287,7 +287,11 @@ def _live_status() -> None:
     if workflow.get("started_at"):
         fertig = sum(s["status"] in ("complete", "warning", "error", "skipped")
                      for s in steps_state.values())
-        st.progress(overall, text=f"{int(round(overall * 100))} % · {fertig}/{len(STEPS)} Stationen abgeschlossen")
+        st.progress(
+            overall,
+            text=(f"Gesamtfortschritt {int(round(overall * 100))} % · "
+                  f"{fertig} von {len(STEPS)} Stationen abgeschlossen"),
+        )
 
     # Stations-Stepper: Nummernkreis je Station, Schiene = Gesamtfortschritt.
     first_pending = next((sid for sid, *_rest in STEPS

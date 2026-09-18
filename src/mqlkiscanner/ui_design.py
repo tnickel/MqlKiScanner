@@ -31,7 +31,7 @@ def _stylesheet() -> str:
         background-image: 
             radial-gradient(ellipse at 85% 5%, rgba(0, 210, 211, 0.12), transparent 45%),
             radial-gradient(ellipse at 15% 95%, rgba(245, 158, 11, 0.08), transparent 40%),
-            linear-gradient(180deg, rgba(10, 17, 30, 0.84) 0%, rgba(10, 17, 30, 0.94) 100%),
+            linear-gradient(180deg, rgba(10, 17, 30, 0.91) 0%, rgba(10, 17, 30, 0.97) 100%),
             url('data:image/jpeg;base64,{marble_b64}');
         background-size: auto, auto, auto, 1024px 1024px;
         background-repeat: no-repeat, no-repeat, no-repeat, repeat;
@@ -55,19 +55,19 @@ def _stylesheet() -> str:
         background: linear-gradient(145deg, rgba(18, 30, 48, 0.78) 0%, rgba(12, 20, 34, 0.88) 100%) !important;
         backdrop-filter: blur(14px) saturate(140%) !important;
         -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
-        border: 1.6px solid rgba(56, 189, 248, 0.28) !important;
+        border: 1px solid rgba(56, 189, 248, 0.24) !important;
         box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05) !important;
         border-radius: 14px !important;
         transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }}
     [data-testid="stVerticalBlockBorderWrapper"] > div:hover {{
-        border-color: rgba(56, 189, 248, 0.46) !important;
-        box-shadow: 0 8px 26px -2px rgba(0, 0, 0, 0.55), inset 0 1px 1px 0 rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(56, 189, 248, 0.36) !important;
+        box-shadow: 0 6px 22px -2px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.07) !important;
     }}
 
     /* Page Hero: Executive Glass Header */
     .st-key-page_hero {{
-        padding: 1.8rem 2.2rem;
+        padding: 1.35rem 1.65rem;
         border: 1px solid rgba(56, 189, 248, 0.25);
         border-radius: 18px;
         background-color: #0E1A2C;
@@ -97,37 +97,32 @@ def _stylesheet() -> str:
         font-weight: 700;
     }}
     .st-key-page_hero img {{
+        max-height: 12rem;
+        object-fit: cover;
         border-radius: 14px;
         border: 1px solid rgba(56, 189, 248, 0.3);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 210, 211, 0.15);
     }}
 
-    /* Info Icon Button (Gold Dial) */
+    /* Context help: quiet until needed, large enough for touch. */
     [class*="st-key-ui_info_"] button {{
-        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
-        color: #0F172A !important;
-        border: 1px solid #FCD34D !important;
+        background: rgba(56, 189, 248, 0.08) !important;
+        color: #7DD3FC !important;
+        border: 1px solid rgba(56, 189, 248, 0.3) !important;
         border-radius: 50% !important;
-        width: 2rem !important;
-        min-width: 2rem !important;
-        height: 2rem !important;
-        min-height: 2rem !important;
+        width: 2.5rem !important;
+        min-width: 2.5rem !important;
+        height: 2.5rem !important;
+        min-height: 2.5rem !important;
         padding: 0 !important;
-        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
+        box-shadow: none !important;
         transition: transform 0.15s ease, box-shadow 0.15s ease !important;
     }}
     [class*="st-key-ui_info_"] button:hover {{
-        background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%) !important;
-        transform: scale(1.08) !important;
-        box-shadow: 0 0 12px rgba(245, 158, 11, 0.55) !important;
-    }}
-    [class*="st-key-ui_info_"] button p {{
-        font-family: Georgia, serif;
-        font-size: 1.05rem;
-        font-weight: 800;
-        font-style: italic;
-        line-height: 1;
-        margin: 0;
+        background: rgba(56, 189, 248, 0.16) !important;
+        border-color: rgba(103, 232, 249, 0.62) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 3px 10px rgba(0, 210, 211, 0.16) !important;
     }}
     [class*="st-key-ui_info_"] button:focus-visible {{
         outline: 3px solid #00D2D3;
@@ -136,7 +131,7 @@ def _stylesheet() -> str:
 
     .st-key-sidebar_brand {{
         border-bottom: 1px solid rgba(39, 62, 91, 0.7);
-        padding-bottom: 1.2rem;
+        padding-bottom: .9rem;
     }}
     .st-key-sidebar_brand h2 {{
         letter-spacing: -.04em;
@@ -160,9 +155,8 @@ def _stylesheet() -> str:
         transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
     }}
     [data-testid="stMetric"]:hover {{
-        transform: translateY(-2px);
         border-color: rgba(0, 210, 211, 0.35) !important;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 14px rgba(0, 210, 211, 0.15) !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 10px rgba(0, 210, 211, 0.1) !important;
     }}
     [data-testid="stMetricValue"] {{
         font-variant-numeric: tabular-nums;
@@ -443,6 +437,25 @@ def _stylesheet() -> str:
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
         transform: translateY(-1px) !important;
     }}
+    button:disabled, .stButton > button:disabled {{
+        background: rgba(30, 41, 59, 0.62) !important;
+        color: #64748B !important;
+        border-color: rgba(100, 116, 139, 0.3) !important;
+        box-shadow: none !important;
+        transform: none !important;
+        opacity: .82 !important;
+    }}
+    .st-key-scan_stop button {{
+        color: #FDA4AF !important;
+        border-color: rgba(244, 63, 94, .48) !important;
+        background: rgba(136, 19, 55, .16) !important;
+    }}
+    .st-key-scan_stop button:hover {{
+        color: #FFE4E6 !important;
+        border-color: rgba(251, 113, 133, .8) !important;
+        background: rgba(159, 18, 57, .28) !important;
+        box-shadow: 0 4px 14px rgba(244, 63, 94, .16) !important;
+    }}
 
     /* Urteile in KI-Berichten: EMPFEHLUNG gruen · Watchlist gelb · Ablehnung rot */
     .mks-urteil-gruen {{ color: #10B981; font-weight: 750; text-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }}
@@ -468,8 +481,9 @@ def _stylesheet() -> str:
         background: #0E1A2C !important;
     }}
     @media(max-width:640px) {{
-        .st-key-page_hero {{ padding: 1.25rem; background-size: cover, auto 100%; }}
+        .st-key-page_hero {{ padding: 1.1rem; background-size: cover, auto 100%; }}
         .st-key-page_hero h1 {{ font-size: 1.8rem; }}
+        .st-key-page_hero [data-testid="stImage"] {{ display: none; }}
     }}
     @media(prefers-reduced-motion:reduce) {{
         .stApp * {{ scroll-behavior: auto !important; }}
@@ -624,7 +638,8 @@ def _help_dialog(topic: str) -> None:
 def info_button(topic: str, key: str | None = None) -> None:
     """Help reruns only this fragment, preserving the active page."""
     title = help_topics()[topic][0]
-    if st.button("i", key=f"ui_info_{key or topic}", help=f"Erklärung: {title}"):
+    if st.button(":material/info:", key=f"ui_info_{key or topic}",
+                 help=f"Erklärung: {title}"):
         _help_dialog(topic)
 
 
