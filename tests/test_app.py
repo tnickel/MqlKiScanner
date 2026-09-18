@@ -48,9 +48,10 @@ def test_scan_page_renders_steps():
     body = _body(at)
     assert "Signale holen" in body and "KI-Bericht" in body and "Portfolio" in body
     assert "Starte Workflow" in body
-    assert "Fünf klare Stationen" in body
+    # Sektionskopf der Lauf-Zentrale (Titel ist ein subheader, hier die Caption)
+    assert "der komplette Ablauf an einem Ort" in body
     assert "Signallisten und Handelsdaten von MQL5 laden" in body
-    # Die alte Story-Reihe ist entfernt: Beschreibungen stecken jetzt in den Karten.
+    # Die alte Story-Reihe ist entfernt: Beschreibungen stecken jetzt im Stepper.
     assert body.count("Signallisten und Handelsdaten") == 1
 
 
@@ -67,6 +68,62 @@ def test_verification_button_loads_raw_data_and_saves_isolated_run():
     assert run_file.is_relative_to(config.RUNS_DIR)
     payload = json.loads(run_file.read_text(encoding="utf-8"))
     assert len(payload["ergebnisse"]) == len(results)
+
+
+def test_scan_page_shows_problems_with_explanations():
+    """„Probleme“ statt „Fehler“: Zähler + großer Erklär-Dialog je Signal."""
+    from mqlkiscanner.pipeline import ScanResult
+
+    at = _run_main()
+    at.session_state["scan_results"] = [
+        ScanResult(id=2367701, name="LUBOTFX", platform="MT5",
+                   fehler="ValueError: Keine anwendbare Kontraktspec "
+                          "(cross_broker=false): USOUSD-ECN"),
+        ScanResult(id=2308093, name="UpFuji MT4", platform="MT4",
+                   fehler="ValueError: Forensik unvollständig: Kapitalbasis unbekannt: "
+                          "keine Einzahlungen vor dem ersten Trade im Export"),
+        ScanResult(id=1, name="Gut", platform="MT5", forensik_vorhanden=True),
+    ]
+    at.run()
+    assert not at.exception, at.exception
+    buttons = [b for b in at.button if b.key == "scan_show_problems"]
+    assert buttons, "Probleme-Button fehlt trotz problematischer Ergebnisse"
+    assert "2 Probleme ansehen" in buttons[0].label
+    assert any(m.label == "Probleme" and m.value == "2" for m in at.metric), \
+        "Metrik heißt nicht mehr „Probleme“ mit richtigem Zähler"
+    buttons[0].click().run()
+    assert not at.exception, at.exception
+    text = "\n".join(m.value for m in at.markdown) + "\n".join(c.value for c in at.caption)
+    assert "Instrument nicht freigegeben" in text, "Kategorie Kontraktspec fehlt im Dialog"
+    assert "Kapitalbasis unbekannt" in text, "Kategorie Kapitalbasis fehlt im Dialog"
+    assert "contract_specs.json" in text, "Handlungs-Hinweis zum Freigeben fehlt"
+
+
+def test_scan_page_shows_waiting_stopwatch_for_long_model_calls():
+    """Stoppuhr pro Meldung: zählt hoch, Hinweis ab 2 Minuten ohne neue Meldung."""
+    import threading
+    import time as time_mod
+    from datetime import datetime as _dt
+
+    at = _run_main()
+    # Echten (kurzlebigen) Thread hinterlegen, sonst greift der
+    # Unterbrechungs-Wächter der Seite und beendet den Scheinlauf sofort.
+    keeper = threading.Thread(target=time_mod.sleep, args=(15,), daemon=True)
+    keeper.start()
+    wf = at.session_state["scan_workflow"]
+    wf.update(status="running", started_at=_dt.now().isoformat(timespec="seconds"),
+              activity="Schreibe Gesamtbericht für #2306053",
+              activity_at=time_mod.time() - 150)
+    wf["steps"]["llm"].update(status="running", total=81, done=45,
+                              detail="45/81 Berichte gespeichert")
+    at.session_state["scan_thread"] = keeper
+    at.run()
+    assert not at.exception, at.exception
+    page = "\n".join(m.value for m in at.markdown)
+    assert "mks-clock--wait" in page, "Warte-Stoppuhr fehlt"
+    assert "02:30" in page, "Stoppuhr zeigt nicht 150 s als 02:30 an"
+    assert "keine neue Meldung" in page, "Langwarte-Hinweis fehlt ab 2 Minuten"
+    keeper.join(timeout=16)
 
 
 def test_results_db_marks_refreshed_signals_as_neu():

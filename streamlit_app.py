@@ -44,7 +44,7 @@ with st.sidebar:
     with st.container(key="sidebar_brand", gap="xsmall"):
         emblem_path = ROOT / "assets" / "brand_emblem.jpg"
         if emblem_path.exists():
-            st.image(str(emblem_path), use_container_width=True)
+            st.image(str(emblem_path), width="stretch")
         st.caption("SIGNAL RESEARCH · FORENSIC RADAR")
         st.header("MqlKiScanner", icon=":material/radar:")
         st.markdown("**Risiko vor Ertrag.**")

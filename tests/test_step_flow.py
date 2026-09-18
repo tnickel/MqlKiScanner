@@ -49,8 +49,9 @@ def test_step_numbers_blink_when_pending_and_stop_when_done(mocked_crawler):
     at.run()
     assert not at.exception
     html = "\n".join(m.value for m in at.markdown)
-    assert "mks-stepnum" in html and "mks-blink" in html, "blinkende Zahlen fehlen (idle)"
-    # Schritt 1 klicken -> danach abgeschlossen, nicht mehr blinkend
+    assert "mks-step--pending" in html and "mks-step--idle-hint" in html, \
+        "Idle-Hinweis auf der nächsten offenen Station fehlt"
+    # Schritt 1 klicken -> danach abgeschlossen, Hinweis wandert zur nächsten Station
     _btn(at, "step_btn_listen").click()
     at.run()
     warte_auf_lauf(at)
@@ -59,8 +60,9 @@ def test_step_numbers_blink_when_pending_and_stop_when_done(mocked_crawler):
     assert wf["steps"]["listen"]["status"] == "complete"
     assert len(at.session_state["scan_signals"]) == 2
     html = "\n".join(m.value for m in at.markdown)
-    assert html.count("mks-blink") < html.count("mks-stepnum"), \
-        "fertige Schritte blinken noch"
+    assert "mks-step--complete" in html, "fertige Station zeigt kein Häkchen"
+    assert html.count("mks-step--idle-hint") == 1, \
+        "genau eine offene Station darf den Idle-Hinweis tragen"
 
 
 def test_step2_continues_from_step1_and_filters(mocked_crawler):
@@ -106,7 +108,7 @@ def test_step3_without_step2_is_skipped_with_hint():
 
 
 def test_running_step_glow_and_pulse():
-    """Status 'Läuft': Kartenrand leuchtet, Nummer pulsiert (sofort erkennbar)."""
+    """Status 'Läuft': laufende Station markiert, ganzes Panel leuchtet (Backlight)."""
     at = _scan_page()
     at.run()
     assert not at.exception
@@ -116,21 +118,14 @@ def test_running_step_glow_and_pulse():
     at.run()
     assert not at.exception, at.exception
     html = "\n".join(m.value for m in at.markdown)
-    assert "mks-runnum" in html, "laufende Schritt-Nummer pulsiert nicht"
-    assert ".st-key-workflow_forensik" in html and "mks-card-glow" in html, \
-        "laufende Karte leuchtet nicht"
-    assert "mks-spin" in html and "stBadge" in html, \
-        "Läuft-Badge bewegt sich nicht (Icon/Badge-Animation fehlt)"
-    # Nicht-laufende Karten bleiben ohne Glow.
-    assert ".st-key-workflow_listen" not in html
-    # Der Glow-CSS steht in einem EIGENEN Slot — der Kartenkopf bleibt
-    # sauberes Markdown (Icon-Makro + Fettmarkierung sonst kaputt).
-    koepfe = [m.value for m in at.markdown if "mks-stepnum" in m.value]
-    assert koepfe, "Stationsköpfe fehlen"
-    assert all("<style>" not in kopf for kopf in koepfe), \
-        "Style-Block darf nicht im Kartenkopf landen"
-    laufender_kopf = next(k for k in koepfe if "mks-runnum" in k)
-    assert ":material/database:" in laufender_kopf and "**Prüfen & speichern**" in laufender_kopf
+    assert html.count("mks-step--running") == 1, "laufende Station ist nicht genau eine"
+    assert 'aria-label="Station 3 von 5: Läuft"' in html, \
+        "laufende Station trägt keine Läuft-Kennung"
+    # Das ganze Zentrale-Panel bekommt die Hintergrundbeleuchtung injiziert.
+    assert ".st-key-scan_control_panel" in html and "mks-backlight" in html, \
+        "Panel-Backlight fehlt während ein Schritt läuft"
+    # Nicht-laufende Stationen bleiben ohne Lauf-Status.
+    assert 'aria-label="Station 1 von 5: Läuft"' not in html
 
 
 def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):

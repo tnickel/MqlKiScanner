@@ -14,7 +14,9 @@ App-Rerun aus (Ergebnisse übernehmen + Endstand rendern).
 """
 from __future__ import annotations
 
+import html
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -26,6 +28,7 @@ from mqlkiscanner import config, db, pipeline, scan_state, scan_worker, secrets_
 from mqlkiscanner.app_ui import render_report_panel, render_results_table
 from mqlkiscanner.ui_design import (
     action_button, apply_theme, page_header, section_header, urteile_farbig,
+    workflow_stepper_html,
 )
 
 apply_theme()
@@ -58,7 +61,8 @@ def _new_workflow(mode: str | None = None) -> dict:
     return {
         "mode": mode, "status": "running" if mode else "idle",
         "started_at": datetime.now().isoformat(timespec="seconds") if mode else None,
-        "finished_at": None, "activity": "Bereit. Drücken Sie „Starte Workflow“.", "saved": False,
+        "finished_at": None, "activity": "Bereit. Drücken Sie „Starte Workflow“.",
+        "activity_at": None, "saved": False,
         "steps": {sid: {"status": "pending", "done": 0, "total": None,
                         "detail": "Noch nicht gestartet", "unit": unit}
                   for sid, _, _, unit, _ in STEPS},
@@ -125,7 +129,7 @@ if command:
         # Fehler im neuen Abruf dürfen sie nicht als neuer Stand weiterlaufen.
         st.session_state.scan_candidates = []
     if command["mode"] == "scan" and command["settings"] and not (
-            command["settings"]["llm_stufe1"] or command["settings"]["llm_stufe2"]):
+            config.llm_aktiv(command["settings"])):
         workflow["steps"]["llm"].update(status="skipped", detail="KI-Berichte für diesen Lauf ausgeschaltet")
         workflow["steps"]["portfolio"].update(status="skipped", detail="Portfolio-Vorschlag für diesen Lauf ausgeschaltet")
     if command["mode"] in ("scan", "step_listen"):
@@ -154,116 +158,175 @@ if reattached:
     st.info("Ein Workflow läuft bereits im Hintergrund. Der laufende Prozess wurde "
             "wieder verbunden; Status und Stop-Button steuern denselben Lauf.")
 section_header(
-    "Der Workflow",
-    "Fünf klare Stationen. Sie müssen nichts einzeln anstoßen — "
-    "„Starte Workflow“ macht den kompletten Durchlauf.",
+    "Workflow-Zentrale",
+    "Starten, live verfolgen, stoppen — der komplette Ablauf an einem Ort.",
     help_key="scan_workflow",
 )
 
 
+def _step_fraction(step: dict) -> float:
+    """Anteil 0..1 einer Station: beendet = 1, laufend = done/total, sonst 0."""
+    status = step["status"]
+    if status in ("complete", "warning", "error", "skipped"):
+        return 1.0
+    if status == "running" and step["total"]:
+        return min(step["done"] / step["total"], 1.0)
+    return 0.0
+
+
+def _mmss(secs: float) -> str:
+    secs = max(0, int(secs))
+    h, rem = divmod(secs, 3600)
+    m, s = divmod(rem, 60)
+    return f"{h}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
+
+
+def _elapsed_text(workflow: dict) -> str:
+    started = workflow.get("started_at")
+    if not started:
+        return ""
+    try:
+        start_dt = datetime.fromisoformat(started)
+        end_dt = (datetime.fromisoformat(workflow["finished_at"])
+                  if workflow.get("finished_at") else datetime.now())
+    except ValueError:
+        return ""
+    return _mmss((end_dt - start_dt).total_seconds())
+
+
+def _stamped(text: str) -> str:
+    """Log-Zeile mit Uhrzeit-Präfix — auch im gespeicherten Protokoll nachvollziehbar."""
+    return f"{datetime.now().strftime('%H:%M:%S')} · {text}"
+
+
+def _recent_log_lines(n: int = 3) -> list[str]:
+    lines: list[str] = []
+    logs = st.session_state.get("scan_logs") or {}
+    for sid, *_rest in STEPS:
+        lines.extend(logs.get(sid) or [])
+    return lines[-n:]
+
+
 @st.fragment(run_every=1.0)
-def _workflow_status() -> None:
-    """Live-Statusbereich (Fragment): alle 1 s NUR diesen Bereich neu zeichnen."""
+def _live_status() -> None:
+    """Live-Bereich (Fragment): jede Sekunde NUR Statuszeile, Balken und Stepper neu zeichnen."""
     workflow = st.session_state.scan_workflow
-    control = st.session_state.scan_control
     # Snapshot: Der Worker-Thread darf while wir rendern in das Dict schreiben.
     steps_state = {sid: dict(step) for sid, step in workflow["steps"].items()}
-    first_pending = next(
-        (sid for sid, *_ in STEPS if steps_state[sid]["status"] == "pending"),
-        None,
-    )
-    laufende = [sid for sid, *_ in STEPS if steps_state[sid]["status"] == "running"]
+    overall = sum(_step_fraction(s) for s in steps_state.values()) / len(STEPS)
+    status = workflow["status"]
+    laufend = next(((nr, title) for nr, (sid, title, *_rest) in enumerate(STEPS, 1)
+                    if steps_state[sid]["status"] == "running"), None)
 
-    # Glow-CSS für laufende Karten — eigener Markdown-Block, damit der
-    # Kartenkopf-Markdown (Icon-Makro, Fettmarkierung) sauber bleibt.
-    if laufende:
-        regeln = []
-        for sid in laufende:
-            regeln.append(
-                f".st-key-workflow_{sid}{{border-color:#79D8DAB0!important;"
-                f"box-shadow:0 0 0 1px rgba(121,216,218,.4),"
-                f"0 0 .8rem rgba(121,216,218,.3)!important;"
-                f"animation:mks-card-glow 1.5s ease-in-out infinite;}}"
-                f'.st-key-workflow_{sid} [data-testid="stBadge"]'
-                f"{{animation:mks-badge-glow 1.5s ease-in-out infinite;}}"
-                f'.st-key-workflow_{sid} [data-testid="stBadge"] svg,'
-                f'.st-key-workflow_{sid} [data-testid="stIconMaterial"]'
-                f"{{animation:mks-spin 1.1s linear infinite;display:inline-block;"
-                f"transform-origin:center;}}")
-        st.markdown("<style>" + "".join(regeln) + "</style>", unsafe_allow_html=True)
-
-    # Stationskarten mit Pfeil-Verbindern dazwischen (eine Reihe).
-    layout = st.columns([*([1, 0.14] * (len(STEPS) - 1)), 1], gap="small")
-    for col in layout[1::2]:
-        col.markdown('<div class="mks-connector" aria-hidden="true">→</div>',
-                     unsafe_allow_html=True)
-    for nr, (col, (sid, title, icon, _unit, beschreibung)) in enumerate(
-            zip(layout[0::2], STEPS), 1):
-        step = steps_state[sid]
-        # Nur der nächste offene Schritt blinkt — Hinweis „hier geht es weiter“.
-        blink = (
-            sid == first_pending
-            and workflow["status"] != "running"
-            and step["status"] == "pending"
+    # Statuszeile: Was läuft gerade, wie lange schon.
+    dot = {"running": "running", "complete": "complete",
+           "warning": "warning", "error": "error"}.get(status, "")
+    if status == "running":
+        headline = (f"Station {laufend[0]} von {len(STEPS)} · {laufend[1]}"
+                    if laufend else "Workflow startet …")
+    else:
+        headline = {
+            "idle": "Bereit — ein Klick startet alle fünf Stationen",
+            "complete": "Workflow beendet — alle Stationen durch",
+            "warning": "Workflow beendet — mit Hinweisen",
+            "error": "Workflow beendet — mit Fehlern",
+        }.get(status, "Bereit")
+    # Idle: Überschrift ruft schon zum Start auf — Aktivitätstext wäre Doppelt.
+    activity = "" if status == "idle" else (workflow.get("activity") or "")
+    # Stoppuhr der aktuellen Meldung: zählt hoch, bis der Worker die nächste
+    # Meldung schreibt — sichtbarer Herzschlag auch bei Minuten langen
+    # Modell-Aufrufen (ältere Läufe ohne activity_at zeigen keinen Chip).
+    warte = None
+    activity_at = workflow.get("activity_at")
+    if status == "running" and activity_at:
+        warte = max(0, int(time.time() - float(activity_at)))
+        if activity and warte >= 120:
+            activity += (f" — bereits {_mmss(warte)} keine neue Meldung; "
+                         "meist wartet der Scanner auf die Antwort des KI-Modells.")
+    # Futuristisches Backlight: Während des Laufs leuchtet das ganze Panel.
+    # Identischer Inhalt je Tick, damit Streamlit das <style>-Element nicht
+    # neu erzeugt und die Puls-Animation ungestört weiterläuft.
+    if status == "running" or laufend:
+        st.markdown(
+            "<style>"
+            ".st-key-scan_control_panel > div { position: relative; "
+            "border-color: rgba(0,210,211,.72) !important; }"
+            ".st-key-scan_control_panel > div::after {"
+            " content: ''; position: absolute; inset: -2px; border-radius: 16px;"
+            " border: 2px solid rgba(0,210,211,.6);"
+            " box-shadow: 0 0 24px rgba(0,210,211,.32),"
+            " 0 0 70px rgba(0,210,211,.16),"
+            " inset 0 0 30px rgba(0,210,211,.14);"
+            " animation: mks-backlight 2.4s ease-in-out infinite;"
+            " pointer-events: none; }"
+            "</style>",
+            unsafe_allow_html=True,
         )
-        run_cls = " mks-runnum" if step["status"] == "running" else ""
-        with col.container(border=True, key=f"workflow_{sid}", height="stretch"):
-            st.markdown(
-                f'<span class="mks-stepnum{" mks-blink" if blink else ""}{run_cls}">{nr}</span>'
-                f':material/{icon}: **{title}**'
-                f'<br><span class="mks-flow-text">{beschreibung}</span>',
-                unsafe_allow_html=True)
-            label, color, state_icon = STATES[step["status"]]
-            st.badge(label, color=color, icon=f":material/{state_icon}:")
-            st.caption(step["detail"])
-            if step["total"] and step["status"] != "skipped":
-                st.progress(min(step["done"] / step["total"], 1.0),
-                            text=f"{step['done']}/{step['total']} {step['unit']}")
+    strip = [
+        '<div class="mks-strip">',
+        f'<div class="mks-strip__main"><span class="mks-dot mks-dot--{dot}" aria-hidden="true"></span>'
+        f'<div class="mks-strip__text"><b>{html.escape(headline)}</b>',
+    ]
+    if activity:
+        strip.append(f"<small>{html.escape(activity)}</small>")
+    strip.append("</div></div>")
+    chips = []
+    if clock := _elapsed_text(workflow):
+        chips.append(f'<span class="mks-clock" title="Gesamte Laufzeit">⏱ {clock}</span>')
+    if warte is not None:
+        chips.append(
+            f'<span class="mks-clock mks-clock--wait" title="So lange läuft die aktuelle '
+            f'Meldung bereits — zählt jede Sekunde hoch, bis die nächste Meldung kommt '
+            f'(z. B. Antwort des KI-Modells oder nächstes Signal).">⏳ {_mmss(warte)}</span>')
+    if chips:
+        strip.append(f'<div class="mks-strip__side">{"".join(chips)}</div>')
+    strip.append("</div>")
+    st.markdown("".join(strip), unsafe_allow_html=True)
 
-    active = next((title for sid, title, *_ in STEPS
-                   if steps_state[sid]["status"] == "running"), None)
-    pending = [title for sid, title, *_ in STEPS
-               if steps_state[sid]["status"] == "pending"]
-    next_text = " → ".join(pending) if pending else (
-        "Ergebnisse speichern" if workflow["status"] == "running"
-        else "Ergebnisse ansehen oder Workflow erneut starten")
-    finished = sum(s["status"] == "complete" for s in steps_state.values())
-    warnings = sum(s["status"] == "warning" for s in steps_state.values())
-    skipped = sum(s["status"] == "skipped" for s in steps_state.values())
-    errors = sum(s["status"] == "error" for s in steps_state.values())
-    with st.container(border=True, key="scan_activity", gap="xsmall"):
-        st.markdown(f"**{'Aktuell: ' + active if active else 'Status'}** · {workflow['activity']}")
-        st.caption(f"Als Nächstes: {next_text}")
-        st.caption(
-            f"{finished}/{len(STEPS)} Stationen fertig · {warnings} mit Hinweisen · "
-            f"{skipped} übersprungen · {errors} fehlgeschlagen. "
-            "Die Balken zählen erledigte Arbeit, keine Uhrzeit.")
+    # Gesamtfortschritt über alle Stationen (nur anzeigen, wenn ein Lauf existiert).
+    if workflow.get("started_at"):
+        fertig = sum(s["status"] in ("complete", "warning", "error", "skipped")
+                     for s in steps_state.values())
+        st.progress(overall, text=f"{int(round(overall * 100))} % · {fertig}/{len(STEPS)} Stationen abgeschlossen")
+
+    # Stations-Stepper: Nummernkreis je Station, Schiene = Gesamtfortschritt.
+    first_pending = next((sid for sid, *_rest in STEPS
+                          if steps_state[sid]["status"] == "pending"), None)
+    payload = []
+    for nr, (sid, title, _icon, _unit, beschreibung) in enumerate(STEPS, 1):
+        step = steps_state[sid]
+        payload.append({
+            "nr": nr, "title": title, "status": step["status"],
+            "label": STATES[step["status"]][0],
+            "meta": step.get("detail") if step["status"] != "pending" else beschreibung,
+            "frac": _step_fraction(step) if step["status"] == "running" else None,
+            "hint": sid == first_pending and status != "running",
+        })
+    st.markdown(workflow_stepper_html(payload, overall), unsafe_allow_html=True)
+
+    # Letzte Meldungen statt Logfile-Wand: kurz beweisen, dass sich was tut.
+    recent = _recent_log_lines()
+    if recent:
+        st.markdown(
+            '<div class="mks-feed" aria-label="Letzte Meldungen">'
+            + "".join(f'<div class="mks-feed__line">{html.escape(line)}</div>'
+                      for line in recent)
+            + "</div>",
+            unsafe_allow_html=True,
+        )
 
     # Lauf beendet? Einmal die GANZE Seite neu laden: Ergebnisübernahme
-    # (Session) + Endstand (Tabelle, Portfolio, Protokoll) rendern.
+    # (Session) + Endstand (Tabelle, Portfolio) rendern.
     th = st.session_state.scan_thread
     if (th is not None and not th.is_alive()
-            and st.session_state.get("_copied_scan_control") is not control):
+            and st.session_state.get("_copied_scan_control") is not st.session_state.scan_control):
         st.rerun(scope="app")
 
 
-_workflow_status()
-
-section_header(
-    "Workflow starten",
-    "Ein Klick reicht für den kompletten Durchlauf. Einstellungen und "
-    "Sonderfälle finden Sie darunter.",
-)
 has_login = bool(secrets_store.get_secret("mql5_user") and secrets_store.get_secret("mql5_pass"))
 has_llm = bool(secrets_store.get_secret("glm_api_key"))
-with st.container(border=True, key="scan_start_panel"):
-    st.markdown("**Was passiert nach dem Start?**")
-    st.caption(
-        "1) Signale von MQL5 holen · 2) ungeeignete aussortieren · "
-        "3) Handelsdaten laden, speichern und rechnerisch prüfen · "
-        "4) optional KI-Berichte schreiben · 5) Portfolio-Vorschlag über alle Signale."
-    )
-    start_zeile = st.columns([1, 1], gap="small", vertical_alignment="center")
+with st.container(border=True, key="scan_control_panel"):
+    start_zeile = st.columns([1.25, 1], gap="small", vertical_alignment="center")
     with start_zeile[0]:
         start = action_button(
             "Starte Workflow",
@@ -285,6 +348,12 @@ with st.container(border=True, key="scan_start_panel"):
                 help="Stoppt sauber nach dem aktuellen Signal bzw. Modellaufruf — "
                      "kein harter Abbruch, fertige Teilergebnisse bleiben erhalten.",
             )
+        else:
+            st.caption("Alle fünf Stationen laufen automatisch hintereinander — "
+                       "der Fortschritt darüber zeigt live, wo der Lauf gerade steht.")
+
+    _live_status()
+
     nur_neue = st.toggle(
         "Nur neue Signale bewerten — alte Bewertungen übernehmen",
         key="scan_nur_neue",
@@ -301,10 +370,15 @@ with st.container(border=True, key="scan_start_panel"):
                  icon=":material/lock:", color="blue" if has_login else "orange")
         st.badge("KI-Key ok" if has_llm else "KI optional · Key fehlt",
                  icon=":material/key:", color="blue" if has_llm else "gray")
-    if not has_login:
-        st.caption(
-            "Ohne MQL5-Zugang unter Einstellungen können Listen geladen werden, "
-            "aber keine vollständigen Handelsdaten. Dann bleibt es bei einer Vorprüfung.")
+    st.caption(
+        f"Tempiertes Abrufen: {settings['rate_min_interval_s']:.1f} s Abstand · "
+        f"{settings['rate_pause_zwischen_signalen_s']:.1f} s Pause je Signal. "
+        "Ein Lauf dauert daher bewusst Minuten — die Uhr und die Meldungen oben "
+        "zeigen, dass er arbeitet."
+        if has_login else
+        "Ohne MQL5-Zugang unter Einstellungen können Listen geladen werden, "
+        "aber keine vollständigen Handelsdaten. Dann bleibt es bei einer Vorprüfung."
+    )
 
 with st.expander("Einstellungen für diesen Lauf", icon=":material/tune:", expanded=False):
     left, right = st.columns(2)
@@ -331,7 +405,7 @@ with st.expander("Einstellungen für diesen Lauf", icon=":material/tune:", expan
         use_llm = st.toggle(
             "KI-Berichte nach dem Workflow erstellen",
             key="scan_use_llm",
-            value=bool(settings["llm_stufe1"] or settings["llm_stufe2"]),
+            value=config.llm_aktiv(settings),
             disabled=running,
         )
         st.caption("Trade- und Risiko-Analyse parallel, danach der Endbericht — "
@@ -443,19 +517,24 @@ if command:
     st.session_state.scan_running = mode if mode != "scan" else "listen"
     pipe = pipeline.ScanPipeline(run_config)
 
+    def _touch_activity(text: str) -> None:
+        """Neue Aktivität melden: Text plus Startzeitpunkt der Stoppuhr."""
+        workflow["activity"] = text
+        workflow["activity_at"] = time.time()
+
     def w_step(sid: str, status: str | None = None, **values) -> None:
         if status:
             values["status"] = status
         workflow["steps"][sid].update(values)
         if "detail" in values:
-            workflow["activity"] = values["detail"]
+            _touch_activity(values["detail"])
 
     def w_log_for(sid: str):
         lines = logs.setdefault(sid, [])
 
         def log(message: str) -> None:
-            lines.append(message)
-            workflow["activity"] = message.splitlines()[0][:400]
+            lines.append(_stamped(message))
+            _touch_activity(message.splitlines()[0][:400])
         return log
 
     def w_skip_if_stopped(sid: str) -> bool:
@@ -579,17 +658,17 @@ if command:
         if stopped_early:
             w_step("forensik", "warning", done=n_export,
                    detail=(f"Abbruch zum Account-Schutz · {good} geprüft · "
-                           f"{preview} Vorprüfung · {errors} Fehler{zusatz}"))
+                           f"{preview} Vorprüfung · {errors} Probleme{zusatz}"))
         elif stop_gefordert:
             w_step("forensik", "warning", done=n_export,
                    detail=(f"Abbruch per Stop-Button · {good} geprüft · "
-                           f"{preview} Vorprüfung · {errors} Fehler{zusatz}"))
+                           f"{preview} Vorprüfung · {errors} Probleme{zusatz}"))
         else:
             w_step(
                 "forensik", done=n_export,
                 status="complete" if good == len(results) else "error" if errors == len(results) else "warning",
                 detail=(f"{good} gründlich geprüft · {preview} nur Vorprüfung · "
-                        f"{errors} mit Fehlern{zusatz}"),
+                        f"{errors} mit Problemen{zusatz}"),
             )
 
     def w_run_llm(targets: list[pipeline.ScanResult], cfg) -> None:
@@ -619,9 +698,9 @@ if command:
             namen = ", ".join(f"#{r.id} {r.name}" for r in uebersprungen[:8])
             if len(uebersprungen) > 8:
                 namen += f" … (+{len(uebersprungen) - 8})"
-            logs.setdefault("llm", []).append(
+            logs.setdefault("llm", []).append(_stamped(
                 f"{len(uebersprungen)} Signale mit vorhandenem Bericht übersprungen "
-                f"(aus der Datenbank geladen): {namen}")
+                f"(aus der Datenbank geladen): {namen}"))
         if not pipe.llm.has_key or not total:
             if not jobs and uebersprungen:
                 w_step("llm", "complete", done=0, total=0,
@@ -629,7 +708,7 @@ if command:
                                "aus der Datenbank geladen, nichts neu erzeugt"))
                 return
             reason = "Kein KI-Key hinterlegt" if not pipe.llm.has_key else "Keine geeigneten Prüfergebnisse"
-            logs["llm"] = logs.get("llm", []) + [reason]
+            logs["llm"] = logs.get("llm", []) + [_stamped(reason)]
             w_step("llm", "skipped", detail=reason, total=total)
             return
         w_step("llm", "running", total=total, detail="Trade-Analyse wird vorbereitet")
@@ -661,7 +740,7 @@ if command:
             return
         alle = [r for r in alle if getattr(r, "source_kind", "live") == "live"]
         if not pipe.llm.has_key:
-            logs["portfolio"] = ["Kein KI-Key hinterlegt"]
+            logs["portfolio"] = [_stamped("Kein KI-Key hinterlegt")]
             w_step("portfolio", "skipped", detail="Kein KI-Key hinterlegt")
             return
         if not any(r.forensik_vorhanden and not r.fehler for r in alle):
@@ -729,7 +808,7 @@ if command:
                         w_step(
                             "forensik",
                             "warning" if stopped else "complete" if not bad else "warning" if good else "error",
-                            detail=(f"{good} Dateien geprüft · {bad} fehlerhaft"
+                            detail=(f"{good} Dateien geprüft · {bad} mit Problemen"
                                     + (" · Abbruch per Stop-Button" if stopped else "")),
                         )
                 elif mode == "llm":
@@ -762,7 +841,7 @@ if command:
                     candidates = w_run_kandidaten(signals, run_config)
                     current_step = "forensik"
                     w_run_forensik(candidates, run_config)
-                    ki_an = run_config["llm_stufe1"] or run_config["llm_stufe2"]
+                    ki_an = config.llm_aktiv(run_config)
                     gestoppt = bool(control.get("stop"))
                     if ki_an and not gestoppt:
                         current_step = "llm"
@@ -778,7 +857,7 @@ if command:
                                else "Portfolio-Vorschlag für diesen Lauf ausgeschaltet")
             except Exception as exc:
                 message = f"{type(exc).__name__}: {exc}"
-                logs.setdefault(current_step, []).append(f"FEHLER: {message}")
+                logs.setdefault(current_step, []).append(_stamped(f"FEHLER: {message}"))
                 w_step(current_step, "error", detail=message)
                 for sid, *_ in STEPS:
                     if workflow["steps"][sid]["status"] == "pending":
@@ -830,6 +909,64 @@ if command:
             st.rerun()
         _attach_worker(started)
 
+def _problem_art(result) -> tuple[str, str, str]:
+    """Kategorie + Handlungs-Hinweis für ein Problem-Ergebnis (Badge-Label, Icon, Hinweis)."""
+    text = result.fehler or ""
+    if "Kontraktspec" in text:
+        return (
+            "Instrument nicht freigegeben",
+            ":material/rule:",
+            "Lösbar: Auf der MQL5-Seite des Signals den Broker/Server nachsehen, das "
+            "Instrument in data/contract_specs.json für diesen Broker freigeben "
+            "(Eintrag „brokers“ ergänzen) und das Signal anschließend neu prüfen.",
+        )
+    if "Kapitalbasis" in text:
+        return (
+            "Kapitalbasis unbekannt",
+            ":material/account_balance_wallet:",
+            "Der Trade-Export beginnt ohne Einzahlung vor dem ersten Trade — z. B. gekürzte "
+            "Historie oder eine Auszahlung vor Handelsbeginn. Ohne Startkapital sind Schockanteil "
+            "und die 30-%-Schranke nicht berechenbar; das Signal bleibt deshalb bewusst ohne Urteil.",
+        )
+    if not result.forensik_vorhanden:
+        return (
+            "Nur Vorprüfung",
+            ":material/info:",
+            "Es liegen keine vollständigen Handelsdaten vor (z. B. kein MQL5-Login oder kein "
+            "Trade-Export verfügbar). Gezählt wird trotzdem, damit nichts unter den Tisch fällt.",
+        )
+    return (
+        "Prüfung abgebrochen",
+        ":material/report:",
+        "Die Prüfung wurde mit einer Meldung abgebrochen — Details stehen im Text. "
+        "Ein erneuter Lauf holt die Daten meist neu.",
+    )
+
+
+@st.dialog("Probleme in diesem Lauf", width="large")
+def _probleme_dialog(probleme: list, gesamt: int) -> None:
+    """Großes Fenster: jedes Problem verständlich erklärt — was passierte, was tun."""
+    st.caption(
+        f"{len(probleme)} von {gesamt} Signalen konnten nicht vollständig geprüft werden. "
+        "Das sind keine Programmabstürze: Der Scanner bricht die Bewertung eines Signals ab, "
+        "wenn sich das Risiko nicht belegen lässt — Risiko vor Ertrag, kein Urteil ohne Datenbasis."
+    )
+    for r in probleme:
+        label, icon, hinweis = _problem_art(r)
+        with st.container(border=True):
+            kopf = st.container(horizontal=True, vertical_alignment="center")
+            kopf.markdown(f"**:material/warning: {r.name}** · #{r.id} · {r.platform}")
+            with kopf:
+                if r.url:
+                    st.markdown(f"[Signal auf MQL5 öffnen]({r.url})")
+            st.badge(label, icon=icon, color="orange")
+            if r.fehler:
+                st.markdown(r.fehler)
+            else:
+                st.markdown("Keine vollständige forensische Prüfung vorhanden — nur Vorprüfung.")
+            st.caption(hinweis)
+
+
 section_header(
     "Ergebnisse dieses Laufs",
     "Fertig heißt: der Ablauf ist durch. Es ist noch keine Kaufempfehlung.",
@@ -837,12 +974,19 @@ section_header(
 )
 if st.session_state.scan_results:
     results = list(st.session_state.scan_results)
+    probleme = [r for r in results if r.fehler or not r.forensik_vorhanden]
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Datensätze", len(results), border=True)
     c2.metric("Gründlich geprüft", sum(r.forensik_vorhanden for r in results), border=True)
     c3.metric("Kandidaten", sum(r.ampel == "🟢" for r in results), border=True)
-    c4.metric("Fehler / Vorprüfung",
-              sum(bool(r.fehler) or not r.forensik_vorhanden for r in results), border=True)
+    c4.metric("Probleme", len(probleme), border=True,
+              help="Signale, die nicht vollständig geprüft werden konnten — z. B. unbekannte "
+                   "Kapitalbasis im Export oder ein nicht freigegebenes Instrument. Das sind "
+                   "Analysen-Hinweise, keine Programmfehler. „Probleme ansehen“ erklärt jedes einzelne.")
+    if probleme:
+        if st.button(f"{len(probleme)} Probleme ansehen — was war los?",
+                     key="scan_show_problems", icon=":material/warning:"):
+            _probleme_dialog(probleme, len(results))
     render_report_panel(results)
     selected = render_results_table(results)
     if selected is not None:
@@ -864,10 +1008,3 @@ if st.session_state.get("portfolio_bericht"):
         portfolio_result = st.session_state.get("portfolio_result") or {}
         if issue := portfolio_result.get("storage_error") or portfolio_result.get("reason"):
             st.warning(f"Portfolio-Hinweis: {issue}")
-if st.session_state.scan_logs:
-    with st.expander("Ablaufprotokoll (technisch)", icon=":material/receipt_long:"):
-        for sid, title, *_rest in STEPS:
-            lines = st.session_state.scan_logs.get(sid, [])
-            if lines:
-                st.markdown(f"**{title}**")
-                st.code("\n".join(lines), language=None, wrap_lines=True)
