@@ -67,6 +67,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
         on_select="rerun",
         selection_mode="single-row",
         hide_index=True,
+        height=560,
         column_order=column_order,
         column_config={
             "Stand": st.column_config.TextColumn(
