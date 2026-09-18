@@ -80,21 +80,29 @@ with st.container(border=True):
 demo_only = bool(results) and all(getattr(r, 'source_kind', 'live') == 'demo'
                                   for r in results)
 portfolio = None if demo_only or not isinstance(portfolio, dict) else portfolio
-if portfolio:
-    with st.container(border=True):
-        catalog_portfolio = selected_run.startswith('Datenbank')
-        section_header('Gespeicherter Portfolio-Vorschlag (historischer Stand)' if catalog_portfolio
-                       else 'Portfolio-Vorschlag',
-                       'KI-Empfehlung über alle Signale: Strategie-Mix, Assets, Gewichtung.',
-                       help_key='portfolio_report')
-        st.caption(f"Stand: {portfolio.get('created_at') or 'nicht gespeichert'} · "
-                   f"Modell: {portfolio.get('model') or 'nicht gespeichert'} · Keine Anlageberatung.")
+
+
+def _render_portfolio_report(report: dict) -> None:
+    catalog_portfolio = selected_run.startswith('Datenbank')
+    portfolio_title = ('Portfolio-Vorschlag · historischer Stand'
+                       if catalog_portfolio else 'Portfolio-Vorschlag')
+    section_header(
+        portfolio_title,
+        'Optionale KI-Einordnung über alle sichtbaren Signale.',
+        help_key='portfolio_report',
+    )
+    with st.expander('Ausführlichen Portfolio-Bericht öffnen', expanded=False,
+                     icon=':material/pie_chart:'):
+        st.markdown('**Strategie-Mix, Assets und Gewichtung**')
+        st.caption(f"Stand: {report.get('created_at') or 'nicht gespeichert'} · "
+                   f"Modell: {report.get('model') or 'nicht gespeichert'} · Keine Anlageberatung.")
         if catalog_portfolio:
-            st.info('Dieser Bericht zeigt den Stand seiner Erstellung. Er wurde nicht mit '
-                    'den aktuellen Katalogbewertungen abgeglichen.')
-        if portfolio.get('text'):
-            st.markdown(urteile_farbig(portfolio['text']), unsafe_allow_html=True)
-        if issue := portfolio.get('storage_error') or portfolio.get('reason'):
+            st.info('Historische Momentaufnahme: Dieser Bericht wurde nicht mit den '
+                    'aktuellen Katalogbewertungen abgeglichen.',
+                    icon=':material/history:')
+        if report.get('text'):
+            st.markdown(urteile_farbig(report['text']), unsafe_allow_html=True)
+        if issue := report.get('storage_error') or report.get('reason'):
             st.warning(f"Portfolio-Hinweis: {issue}")
 
 if not results:
@@ -102,6 +110,8 @@ if not results:
         st.subheader('Noch keine Berichte in der Ansicht', icon=':material/manage_search:')
         st.write('Starte den Workflow oder lade Testdaten. Gespeicherte Auswertungen erscheinen hier unter „Datenbank“.')
         st.page_link('app_pages/scan.py', label='Zum Workflow', icon=':material/arrow_forward:')
+    if portfolio:
+        _render_portfolio_report(portfolio)
     st.stop()
 
 # Never carry an open report from a different source or filter into this view.
@@ -112,12 +122,13 @@ if st.session_state.get('_results_source') != source_signature:
 
 section_header('Risikobild', 'Bewertungen der Engine · zuerst die Evidenz prüfen.', help_key='risk_status')
 ampeln = [r.ampel for r in results]
-columns = st.columns(5)
-columns[0].metric('Signale', len(results))
-columns[1].metric('Neu / aktualisiert', sum(1 for r in results if r.id in fresh_ids))
-columns[2].metric('Kandidaten', ampeln.count('🟢'))
-columns[3].metric('Beobachtung', ampeln.count('🟡'))
-columns[4].metric('Risiko / Ausschluss', ampeln.count('🔴') + ampeln.count('⛔'))
+columns = st.columns(4)
+columns[0].metric('Signale', len(results),
+                  f"{sum(1 for r in results if r.id in fresh_ids)} neu / aktualisiert",
+                  delta_color='off')
+columns[1].metric('Kandidaten', ampeln.count('🟢'))
+columns[2].metric('Beobachtung', ampeln.count('🟡'))
+columns[3].metric('Risiko / Ausschluss', ampeln.count('🔴') + ampeln.count('⛔'))
 st.caption(f"Vorprüfung ohne vollständige Trade-Forensik: {ampeln.count('⚪')} · leere Werte sind keine Entwarnung.")
 
 with st.container(border=True):
@@ -160,6 +171,9 @@ if st.session_state.get('report_signal_id') not in {r.id for r in visible}:
 render_report_panel(visible)
 if selected is not None:
     render_detail(selected)
+
+if portfolio:
+    _render_portfolio_report(portfolio)
 
 if visible:
     with st.expander('Urteile im Überblick', expanded=False, icon=':material/summarize:'):
