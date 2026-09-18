@@ -21,8 +21,13 @@ CONFIG_DIR = ROOT / "config"
 PROMPTS_DIR = CONFIG_DIR / "prompts"
 SETTINGS_FILE = CONFIG_DIR / "app_settings.json"
 KNOWN_SIGNALS_FILE = DATA_DIR / "known_signals.json"
+CONTRACT_SPECS_FILE = DATA_DIR / "contract_specs.json"
+FX_RATES_DIR = DATA_DIR / "fx_rates"
 
 MQL5_BASE = "https://www.mql5.com"
+
+# mtime-gebundener Cache fuer load_known_signals (siehe Docstring dort).
+_KNOWN_SIGNALS_CACHE: dict = {}
 
 # LLM — GLM-Zugang. WICHTIG (gelernt aus dem elearning-Projekt):
 # Es gibt zwei Endpunkte mit getrennten Kontingenten:
@@ -74,6 +79,16 @@ for _d in (DATA_DIR, RUNS_DIR, TRADES_DIR, STATS_DIR, PROMPTS_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 
+def llm_aktiv(settings: dict) -> bool:
+    """Laufen KI-Berichte in diesem Lauf? llm_stufe1/llm_stufe2 wirken gemeinsam.
+
+    Die beiden Schluessel existieren historisch einzeln, werden aber nirgends
+    getrennt ausgewertet (Trade-/Risiko-Analyse und Gesamtbericht bilden eine
+    Einheit). Diese Funktion macht die Eine-Schalter-Semantik explizit.
+    """
+    return bool(settings.get("llm_stufe1") or settings.get("llm_stufe2"))
+
+
 def load_settings() -> dict:
     settings = dict(DEFAULT_SETTINGS)
     if SETTINGS_FILE.exists():
@@ -90,6 +105,22 @@ def save_settings(settings: dict) -> None:
 
 
 def load_known_signals() -> dict:
-    if KNOWN_SIGNALS_FILE.exists():
-        return json.loads(KNOWN_SIGNALS_FILE.read_text(encoding="utf-8"))
-    return {}
+    """Ausschluss-/Watchlist-Daten mit mtime-Cache.
+
+    ampel_for und report_basis_for rufen dies je Ergebniszeile; die Datei
+    ist winzig, aber haeufige Disk-I/O ist unnoetig. Der Cache ist an
+    (Pfad, mtime_ns) gebunden — Aenderungen an der Datei greifen sofort.
+    """
+    path = KNOWN_SIGNALS_FILE
+    try:
+        key = (str(path), path.stat().st_mtime_ns)
+    except OSError:
+        _KNOWN_SIGNALS_CACHE.clear()
+        return {}
+    cached = _KNOWN_SIGNALS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    data = json.loads(path.read_text(encoding="utf-8"))
+    _KNOWN_SIGNALS_CACHE.clear()
+    _KNOWN_SIGNALS_CACHE[key] = data
+    return data

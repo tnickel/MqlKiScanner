@@ -46,6 +46,12 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 3. **XAUUSD-Kontraktgröße: 1 Lot = 100 USD je 1 USD Kursbewegung.**
    Exposure-Rechnung: Peak-Lots × 100 × Schockbewegung. (Dieser Faktor wurde in
    der Reihe einmal falsch angesetzt und führte zu einer Fehleinschätzung.)
+   Weitere Instrumente (Krypto, Silber, Öl, DE40/USTEC/CHINA50, XAUEUR) seit
+   09/2026 belegt in `data/contract_specs.json` (Quelle je Eintrag, Stand:
+   Tickmill; Öl `cross_broker=false` — Tickmill 1 Barrel/Lot, andere 100!).
+   Fremdwährungs-Quotes (FX-Kreuze, EUR-Gold, DE40) werden mit EZB-
+   Referenzkursen je Handelstag nach USD umgerechnet (`src/mqlkiscanner/
+   fx_rates.py`, Cache `data/fx_rates/`, Details doc/02 Abschnitt 5a/5b).
 4. **Pflicht-Test-Batterie VOR jedem positiven Urteil** (Spec: `doc/03_forensik-tests.md`):
    a) Martingale-Signatur: Lot(i+1)/Lot(i) nach Verlust — Median > 1,3x = Flag
    b) Peak-Exposure: max. gleichzeitig offene Positionen + aggregiertes
@@ -56,7 +62,14 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 5. **CSV-Formate:** zwei Varianten — Positions-Export (11 Spalten, Profit =
    Spalte 10, Tausendertrennzeichen als Leerzeichen in Zahlen, z. B. "1 403.03")
    und MT4-Orderbuch (13 Spalten, Profit = Spalte 11, Kommentar = Spalte 12).
-   Parser in `scripts/reference/` behandeln beides.
+   Parser in `scripts/reference/` behandeln beides. **Export-Artefakte, die
+   der Produktiv-Parser (`src/mqlkiscanner/parser.py`) bekannt ist:** (a)
+   MT4-Orderbuch endet mit einer Summenzeile (Typ Buy/Sell, Symbol wörtlich
+   `profit`, keine Preise, Gesamtsummen in Commission/Profit) — wird
+   übersprungen, sonst blockiert sie ganze Signale; (b) MT5-Export enthält
+   vereinzelt Zeilen mit NUR Zeitstempel — ebenfalls Überspringen; Inhalt
+   ohne Typ bleibt ein lauter Fehler. Tests:
+   `tests/test_parser_export_artefakte.py`, Details doc/02 Abschnitt 3.
 6. **Scraping behutsam:** Rate-Limit einbauen (wenige Requests/Minute,
    Pausen zwischen Signalen) — automatisiertes Abrufen kann gegen MQL5-ToS
    verstoßen (Accountsperren-Risiko). Login-Daten nie in Code/Repo (env vars).

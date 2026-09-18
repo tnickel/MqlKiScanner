@@ -14,8 +14,14 @@ from . import compare, parser, stats
 from .forensics import baskets, drawdown, exposure, martingale, news, stops
 
 
-def analyze(path: str, stress_move: float | None = None) -> dict:
-    """Vollstaendige Analyse eines Trade-Exports -> Befund-Dictionary."""
+def analyze(path: str, stress_move: float | None = None,
+            broker: str | None = None) -> dict:
+    """Vollstaendige Analyse eines Trade-Exports -> Befund-Dictionary.
+
+    broker: Broker-/Serverkennung des Signals (z. B. "PepperstoneKE-MT5-Live01").
+    Sie schraenkt Broker-abhaengige Kontraktspecs ein (data/contract_specs.json,
+    cross_broker=false) — ohne Angabe gelten nur brancheneinheitliche Kontrakte.
+    """
     parsed = parser.load_export(path)
     report = {
         "source": str(path),
@@ -25,7 +31,7 @@ def analyze(path: str, stress_move: float | None = None) -> dict:
         "stats": stats.compute(parsed),
         "forensics": {
             "martingale": martingale.run(parsed),
-            "exposure": exposure.run(parsed, stress_move=stress_move),
+            "exposure": exposure.run(parsed, stress_move=stress_move, broker=broker),
             "stops": stops.run(parsed),
             "drawdown": drawdown.run(parsed),
             "baskets": baskets.run(parsed),
@@ -40,8 +46,10 @@ def compare_twin(mt4_path: str, mt5_path: str, since=None) -> dict:
     return compare.run(parser.load_export(mt4_path), parser.load_export(mt5_path), since=since)
 
 
-def analyze_to_json(path: str, out_path: str | None = None, stress_move: float | None = None) -> str:
-    report = analyze(path, stress_move=stress_move)
+def analyze_to_json(path: str, out_path: str | None = None,
+                    stress_move: float | None = None,
+                    broker: str | None = None) -> str:
+    report = analyze(path, stress_move=stress_move, broker=broker)
     text = json.dumps(report, ensure_ascii=False, indent=2, default=str)
     if out_path:
         Path(out_path).write_text(text, encoding="utf-8")

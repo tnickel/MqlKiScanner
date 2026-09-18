@@ -60,6 +60,26 @@ def _row_number(row: list[str], idx: int) -> Optional[float]:
     return parse_number(row[idx])
 
 
+def profit_idx_for(fmt: str) -> int:
+    return 11 if fmt == "mt4_orderbook" else 10
+
+
+def _is_mt4_summary_row(row: list[str], fmt: str) -> bool:
+    """MT4-Orderbuch-Footer: 'Buy;0.10;profit;;;;<close>;;;<comm>;<gesamtsumme>'.
+
+    Erkannt an Typ Buy/Sell MIT Symbol 'profit' (case-insensitiv) und leeren
+    Preisfeldern. Ein echter Trade ohne Preise bleibt ein Fehler; ein echtes
+    Instrument mit Namen 'profit' gibt es nicht — die leeren Preise sichern
+    die Erkennung gegen False Positives ab.
+    """
+    row_type = row[1].strip()
+    if row_type not in FILLED_TYPES or row[3].strip().casefold() != "profit":
+        return False
+    if fmt == "mt4_orderbook":
+        return not (row[4].strip() or row[8].strip())
+    return not (row[4].strip() or row[7].strip())
+
+
 def load_export(path: str) -> ParsedExport:
     """Laedt einen MQL5-Trade-Export (CSV, beide Formate) bzw. ein JSON-Excerpt."""
     if path.lower().endswith(".json"):
@@ -80,6 +100,7 @@ def load_export(path: str) -> ParsedExport:
     except ValueError as exc:
         raise ValueError(f"{path}: {exc}") from exc
     expected_columns = 13 if fmt == "mt4_orderbook" else 11
+    profit_idx = profit_idx_for(fmt)
     result = ParsedExport(source_path=path, source_format=fmt)
 
     for line, row in enumerate(rows[1:], start=2):
@@ -89,9 +110,24 @@ def load_export(path: str) -> ParsedExport:
             raise ValueError(f"{path}: Zeile {line}: {len(row)} statt "
                              f"{expected_columns} Felder (unvollstaendiger Export)")
         row_type = row[1].strip()
+        if not row_type:
+            # MT5-Exporte enthalten vereinzelt Zeilen mit NUR einem Zeitstempel
+            # (Beleg: Signal 2271995, Zeilen 222/391 — kein Typ, Volumen, Symbol
+            # oder Geldwert). Solche Zeilen tragen keine analytische Information
+            # und werden uebersprungen; Inhalt ohne Typ bleibt ein lauter Fehler.
+            trade_fields = ([2, 3, 4, 7, 8, profit_idx] if fmt == "mt4_orderbook"
+                            else [2, 3, 4, 6, 7, profit_idx])
+            if any(row[idx].strip() for idx in trade_fields):
+                raise ValueError(f"{path}: Zeile {line}: Datensatz ohne Typ "
+                                 f"mit Inhalt (defekte Zeile)")
+            continue
+        if _is_mt4_summary_row(row, fmt):
+            # MT4-Orderbuch-Footer: Typ Buy/Sell, Symbol 'profit', keine Preise,
+            # Profit-Spalte = Gesamtsumme. Kein Trade — sonst verfaelscht die
+            # Summe als Riesen-Trade jede Statistik.
+            continue
         if row_type not in (*FILLED_TYPES, *PENDING_TYPES, "Balance", "Credit"):
             raise ValueError(f"{path}: Zeile {line}: unbekannter Datensatztyp {row_type!r}")
-        profit_idx = 11 if fmt == "mt4_orderbook" else 10
         required = [0, 1]
         if row_type in FILLED_TYPES:
             required += [2, 3, 4, 7, 8, profit_idx] if fmt == "mt4_orderbook" else [2, 3, 4, 6, 7, profit_idx]
@@ -124,7 +160,7 @@ def load_export(path: str) -> ParsedExport:
                 raise ValueError(f"{path}: Zeile {line}: ungueltiges Volumen oder Handelszeitraum")
             result.trades.append(trade)
         elif row_type == "Balance":
-            amount = _row_number(row, 11 if fmt == "mt4_orderbook" else 10)
+            amount = _row_number(row, profit_idx)
             if amount is not None:
                 result.balances.append(BalanceRow(time=parse_time(row[0]), amount=amount))
         elif row_type in PENDING_TYPES:

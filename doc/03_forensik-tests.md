@@ -85,6 +85,20 @@ meldet `contract_complete=False`, `missing_contract_symbols` und eine
 konkrete Warnung; die Bewertung bleibt unvollständig. Die Erkennung als
 Index für andere Analysen bleibt davon unabhängig.
 
+**Umsetzung seit 09/2026 (belegte statt fehlende Werte):**
+
+- Brokerspezifikationen können in `data/contract_specs.json` hinterlegt
+  werden (Quelle mit Abrufdatum je Eintrag, Stand: Tickmill; siehe
+  doc/02 Abschnitt 5a). Einträge mit `cross_broker=false` — bekanntester
+  Fall Öl: Tickmill 1 Barrel je Lot, andere Broker 100 — gelten nur bei
+  Übereinstimmung mit dem `broker_server` des Signals; andernfalls
+  verweigert die Engine mit konkreter Anleitung statt still zu rechnen.
+- Die "belegte historische Umrechnung nach USD" ist realisiert: EZB-
+  Referenzkurse (`fx_rates.py`, doc/02 Abschnitt 5b) je Handelstag, mit
+  Kursdatum je Symbol im Befund (`fx_conversion`). Fremdwaehrungs-Symbole
+  sind damit voll bewertbar; fehlt ein Kurs (offline, Kalenderlücke,
+  vor 1999), bleibt die alte ehrliche Sperre mit konkretem Grund.
+
 Der historische Schockanteil verwendet das zum jeweiligen Zeitpunkt
 vorhandene Kapital. Kontobewegungen mit identischem Zeitstempel werden
 als ein Nettofluss verarbeitet, weil ihre Reihenfolge innerhalb der

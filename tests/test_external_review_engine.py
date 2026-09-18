@@ -28,7 +28,7 @@ def test_non_us_index_does_not_invent_contract_or_native_currency(symbol):
     assert result["symbol_class"] == "INDEX"
     assert result["contract_complete"] is False
     assert result["missing_contract_symbols"]
-    assert result["missing_conversion_symbols"] == []  # even the currency is unproven
+    assert result["foreign_quote_symbols"] == []  # even the currency is unproven
     assert result["shock_usd"] is None
     assert result["shock_pct_max"] is None
     assert result["usd_per_unit_per_lot"] is None
@@ -64,7 +64,7 @@ def test_fx_quote_restriction_is_deliberate_and_preserves_native_units():
     result = exposure.run(parsed([trade(symbol="USDJPY")]))
     assert result["contract_complete"] is True
     assert result["missing_contract_symbols"] == []
-    assert result["missing_conversion_symbols"] == ["USDJPY"]
+    assert result["foreign_quote_symbols"] == ["USDJPY"]
     assert result["shock_usd"] is None
     assert result["per_symbol_scenarios"]["USDJPY"]["quote_currency"] == "JPY"
     assert result["per_symbol_scenarios"]["USDJPY"]["stress_pips"] == 500
