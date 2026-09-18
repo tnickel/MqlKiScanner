@@ -22,6 +22,18 @@ def test_results_table_includes_report_creation_date():
     assert frame.loc[0, 'Bericht vom'] == pd.Timestamp('2026-09-18 17:42:00')
 
 
+def test_results_table_shows_more_rows(monkeypatch):
+    captured = {}
+
+    def dataframe(*args, **kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(selection=SimpleNamespace(rows=[]))
+
+    monkeypatch.setattr(app_ui.st, 'dataframe', dataframe)
+    app_ui.render_results_table([pipeline.ScanResult(id=123, name='Tall table')])
+    assert captured['height'] == 560
+
+
 @pytest.fixture
 def distinct_snapshots(live_reports, monkeypatch, tmp_path):
     _, source, _ = live_reports
