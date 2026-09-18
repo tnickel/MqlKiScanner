@@ -97,6 +97,7 @@ class ScanResult:
     trade_analyse: str = ""         # Prompt 1: Strategie aus den Trades (glm-5.3)
     risiko_analyse: str = ""        # Prompt 2: Risiko-Profil aus Forensik (Flash)
     gesamtbericht: str = ""         # Prompt 3: ausfuehrlicher Gesamtbericht (glm-5.3)
+    gesamtbericht_at: str = ""      # Erstellungszeitpunkt des enthaltenen Gesamtberichts
     kurzfassung: str = ""           # Kurzzeile aus dem Gesamtbericht (fuer Tabelle)
     llm_fehler: str = ""
     fehler: str = ""
@@ -120,6 +121,7 @@ class ScanResult:
                            ("nein" if self.martingale_flag is not None else "")),
             "Stop": self.stop_nachweis, "Score": self.score,
             "Kurzfassung": self.kurzfassung, "Urteil": self.urteil,
+            "Bericht vom": self.gesamtbericht_at or None,
             "Fehler": self.fehler,
         }
 
@@ -202,6 +204,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             trade_analyse=row.get("trade_analyse") or "",
             risiko_analyse=row.get("risiko_analyse") or "",
             gesamtbericht=row.get("gesamtbericht") or "",
+            gesamtbericht_at=row.get("gesamt_at") or "",
             fehler=last_fehler or "",
         )
         if forensik_stale and f:
@@ -371,11 +374,15 @@ def restore_current_reports(result: ScanResult, settings: dict) -> bool:
         refresh_report_verdict(result, settings)
     basis = report_basis_for(result, settings) if result.forensik_vorhanden and not result.fehler else None
     stale = False
+    gesamtbericht_at = ""
     for kind in ("trade_analyse", "risiko_analyse", "gesamtbericht"):
         previous = db.get_latest_analysis(result.id, kind)
         current = db.get_latest_analysis(result.id, kind, basis=basis) if basis else None
         setattr(result, kind, current["text"] if current else "")
+        if kind == "gesamtbericht" and current:
+            gesamtbericht_at = current["created_at"] or ""
         stale = stale or bool(previous and current is None)
+    result.gesamtbericht_at = gesamtbericht_at
     result.kurzfassung = _extract_kurzfassung(result.gesamtbericht)
     result.berichte_basis = basis or ""
     result.bericht_hinweis = (
