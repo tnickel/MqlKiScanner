@@ -88,7 +88,8 @@ def _render_portfolio_report(report: dict) -> None:
                        if catalog_portfolio else 'Portfolio-Vorschlag')
     section_header(
         portfolio_title,
-        'Optionale KI-Einordnung über alle sichtbaren Signale.',
+        'Bericht über die bei seiner Erstellung berücksichtigten Signale. '
+        'Die Tabellenfilter verändern ihn nicht.',
         help_key='portfolio_report',
     )
     with st.expander('Ausführlichen Portfolio-Bericht öffnen', expanded=False,
