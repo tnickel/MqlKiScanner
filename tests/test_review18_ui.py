@@ -2,12 +2,24 @@
 from types import SimpleNamespace
 from time import sleep as real_sleep
 
+import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
 from conftest import ROOT
 from mqlkiscanner import app_ui, config, pipeline
 from test_review15_reports import live_reports as live_reports
+
+
+def test_results_table_includes_report_creation_date():
+    result = pipeline.ScanResult(
+        id=123,
+        name='Dated report',
+        gesamtbericht='Report',
+        gesamtbericht_at='2026-09-18 17:42:00',
+    )
+    frame = app_ui.results_to_dataframe([result])
+    assert frame.loc[0, 'Bericht vom'] == pd.Timestamp('2026-09-18 17:42:00')
 
 
 @pytest.fixture

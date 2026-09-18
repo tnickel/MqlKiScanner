@@ -188,14 +188,16 @@ def store_scan_result(signal_id: int, signal: dict, trades_path: str = "",
 
 
 def store_analysis(signal_id: int | None, kind: str, model: str, tokens: int, text: str,
-                   *, basis: str | None = None) -> None:
+                   *, basis: str | None = None) -> str:
     if kind == "portfolio" and signal_id == 0:
         signal_id = None  # Kompatibilität für bisherige Aufrufer.
+    created_at = _now()
     with _connect() as conn:
         conn.execute(
             "INSERT INTO analyses (signal_id, kind, model, tokens, text, created_at, basis) "
             "VALUES (?,?,?,?,?,?,?)",
-            (signal_id, kind, model, tokens, text, _now(), basis))
+            (signal_id, kind, model, tokens, text, created_at, basis))
+    return created_at
 
 
 def get_latest_analysis(signal_id: int | None, kind: str, *, basis: str | None = None) -> dict | None:
