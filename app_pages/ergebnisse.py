@@ -11,9 +11,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import streamlit as st
 
 from mqlkiscanner import config, db, pipeline, scan_state
-from mqlkiscanner.app_ui import (clear_report_selection, render_detail, render_report_panel,
-                                 render_portfolio_pdf_viewer, render_results_table,
-                                 results_to_dataframe)
+from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, render_detail,
+                                 render_report_panel, render_portfolio_pdf_viewer,
+                                 render_results_table, results_to_dataframe)
 from mqlkiscanner.ui_design import (apply_theme, info_button, page_header, section_header,
                                     urteile_farbig)
 
@@ -145,8 +145,8 @@ with st.container(border=True):
                    help_key='results_filter')
     c1, c2, c3 = st.columns([2, 1, 1])
     query = c1.text_input('Name oder Signal-ID', placeholder='Signal suchen …', key='results_search')
-    view = c2.segmented_control('Tabellenansicht', ['Kompakt', 'Alle Kennzahlen'], default='Kompakt',
-                                key='results_view')
+    view = c2.segmented_control('Tabellenansicht', ['Kompakt', 'Alle Kennzahlen', 'Ampel-Matrix'],
+                                default='Kompakt', key='results_view')
     only_fresh = c3.toggle('Nur NEU', value=False, key='results_only_fresh',
                            disabled=not fresh_ids)
     labels = {'🟢': 'Kandidat', '🟡': 'Beobachtung', '🔴': 'Risiko-Flag', '⛔': 'Ausgeschlossen', '⚪': 'Vorprüfung'}
@@ -163,9 +163,15 @@ with st.container(border=True):
         signature = sha1((source_signature + repr([
             (r.source_kind, r.id, r.trades_path, r.trades_sha256, r.name) for r in visible])
                           + repr(sorted(show_fresh or []))).encode()).hexdigest()[:12]
-        selected = render_results_table(
-            visible, key=f'ergebnisse_table_{signature}', compact=view != 'Alle Kennzahlen',
-            fresh_ids=show_fresh)
+        if view == 'Ampel-Matrix':
+            render_ampel_matrix(visible, config.load_settings())
+            selected = None
+            st.caption('Zeilen-Auswahl und Detailansicht sind in den Ansichten '
+                       '„Kompakt“ und „Alle Kennzahlen“ verfügbar.')
+        else:
+            selected = render_results_table(
+                visible, key=f'ergebnisse_table_{signature}', compact=view != 'Alle Kennzahlen',
+                fresh_ids=show_fresh)
         with st.container(horizontal=True, vertical_alignment='center', gap='xsmall'):
             csv = results_to_dataframe(visible, fresh_ids=show_fresh).drop(
                 columns=['Bericht'], errors='ignore').to_csv(index=False, sep=';').encode('utf-8-sig')

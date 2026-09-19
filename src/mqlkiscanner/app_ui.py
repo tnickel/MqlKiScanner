@@ -2,12 +2,14 @@
 """Gemeinsame UI-Bausteine fuer die Streamlit-Seiten (Tabelle + Detail)."""
 from __future__ import annotations
 
+import html as _html
 from copy import copy
 from typing import TYPE_CHECKING
 
 import pandas as pd
 import streamlit as st
 from mqlkiscanner import config
+from mqlkiscanner.ampel_matrix import KRITERIEN, LABELS, kriterien_matrix
 from mqlkiscanner.pdf_reports import (
     PdfRenderError,
     materialize_portfolio_pdf,
@@ -217,6 +219,50 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
     if event.selection.rows:
         return results[event.selection.rows[0]]
     return None
+
+
+def render_ampel_matrix(results, settings: dict | None = None) -> None:
+    """Ampel-Matrix: Signal × Testkriterium mit Tooltips je Zelle.
+
+    Spaltenkopf: Kriterium + ⓘ (title-Tooltip mit der Beschreibung).
+    Zelle: Ampel-Emoji (title-Tooltip mit exakter Berechnung). Aller
+    dynamische Text wird HTML-escaped — Signalnamen und Engine-Details
+    duerfen beliebige Zeichen enthalten.
+    """
+    settings = settings if settings is not None else config.load_settings()
+    esc = _html.escape
+    zellen_style = ("border:1px solid rgba(128,128,128,0.35);"
+                    "padding:4px 8px;white-space:nowrap;text-align:center;")
+    kopf = ['<th style="border:1px solid rgba(128,128,128,0.35);padding:4px 8px;'
+            'text-align:left;white-space:nowrap;">Signal</th>']
+    for kriterium in KRITERIEN:
+        kopf.append(
+            f'<th style="{zellen_style}" title="{esc(kriterium.titel)}">'
+            f'{esc(kriterium.titel)} '
+            f'<span style="cursor:help;opacity:.7" '
+            f'title="{esc(kriterium.beschreibung)}">&#9432;</span></th>')
+    zeilen = []
+    for result in results:
+        matrix = kriterien_matrix(result, settings)
+        zeile = [f'<th style="border:1px solid rgba(128,128,128,0.35);'
+                 f'padding:4px 8px;text-align:left;white-space:nowrap;" '
+                 f'title="{esc(result.urteil or "")}">'
+                 f'{esc(result.ampel)} {esc(result.name or f"#{result.id}")}</th>']
+        for kriterium in KRITERIEN:
+            zelle = matrix[kriterium.key]
+            tooltip = f"{zelle.ampel} {LABELS[zelle.ampel]} — {zelle.kurz}. " \
+                      f"Berechnung: {zelle.detail}"
+            zeile.append(f'<td style="{zellen_style}" '
+                         f'title="{esc(tooltip)}">{zelle.ampel}</td>')
+        zeilen.append("<tr>" + "".join(zeile) + "</tr>")
+    tabelle = ('<div style="overflow-x:auto"><table style="border-collapse:collapse;'
+               'font-size:.95em"><thead><tr>' + "".join(kopf) +
+               "</tr></thead><tbody>" + "".join(zeilen) + "</tbody></table></div>")
+    st.markdown(tabelle, unsafe_allow_html=True)
+    st.caption("🟢 erfüllt · 🟡 Beobachtung/knapp · 🟠 Warnflag · 🔴 verletzt · "
+               "⚪ keine Daten — Maus über ⓘ bzw. Ampel zeigt Bedeutung und "
+               "exakte Berechnung. Die Matrix zeigt Einzelbedingungen, das "
+               "Gesamturteil steht in der Spalte Ampel der anderen Ansichten.")
 
 
 def render_report_panel(results) -> None:
