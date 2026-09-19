@@ -8,6 +8,7 @@ import pytest
 import requests
 
 from mqlkiscanner import config, db, pipeline
+from mqlkiscanner.llm import prompts as llm_prompts
 from mqlkiscanner.llm.client import GlmClient, LlmError, LlmIncompleteResponseError
 from mqlkiscanner.mql5.ratelimit import Mql5HardStopError, Mql5ThrottleError
 
@@ -88,7 +89,7 @@ def test_exhausted_network_retry_marks_signal_and_continues(monkeypatch):
     pipe = pipeline.ScanPipeline()
     monkeypatch.setattr("mqlkiscanner.secrets_store.get_secret", lambda _: "dummy")
     monkeypatch.setattr("mqlkiscanner.llm.client.time.sleep", lambda _: None)
-    monkeypatch.setattr(pipeline.llm_prompts, "load_prompt", lambda _: "{kandidat_json}")
+    monkeypatch.setattr(llm_prompts, "load_prompt", lambda _: "{kandidat_json}")
     calls = []
 
     def post(*args, **kwargs):
@@ -114,7 +115,7 @@ def test_exhausted_network_retry_marks_signal_and_continues(monkeypatch):
 def test_truncated_summary_is_not_saved_as_complete(monkeypatch):
     pipe = pipeline.ScanPipeline()
     monkeypatch.setattr("mqlkiscanner.secrets_store.get_secret", lambda _: "dummy")
-    monkeypatch.setattr(pipeline.llm_prompts, "load_prompt", lambda key: key)
+    monkeypatch.setattr(llm_prompts, "load_prompt", lambda key: key)
 
     def post(*args, **kwargs):
         prompt = json.loads(kwargs["data"])["messages"][-1]["content"]

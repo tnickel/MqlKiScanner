@@ -28,7 +28,7 @@ from . import fx_rates
 from .analysis_version import FORENSICS_VERSION
 from .engine import analyze as analyze_export
 from .llm import client as llm_client
-from .llm import prompts as llm_prompts
+from .llm import prompt_fill
 from .mql5 import crawler, exporter, signal_stats
 from .mql5.errors import Mql5CredentialsMissingError
 from .mql5.ratelimit import Mql5HardStopError, is_hard_mql5_failure
@@ -279,10 +279,15 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
 
 
 def _kriterien_text(settings: dict) -> str:
-    return (f"- Harte Schranke: max. {settings.get('schranke_eq_dd_pct', 30)} % Equity-Drawdown\n"
+    return (f"- Harte Schranke: max. {settings.get('schranke_eq_dd_pct', 30)} % Drawdown — "
+            "gewertet wird das MAXIMUM aus Plattform-EQ-DD und aus den Trades "
+            "rekonstruiertem Trading-DD\n"
             f"- Mindest-Ertrag: {settings.get('min_ertrag_pct_monat', 5)} %/Monat\n"
             "- Risiko VOR Ertrag; Stop-Loss muss BEWIESEN sein (Orderbuch oder "
             "eindeutige Cluster-Signatur), nicht nur behauptet\n"
+            "- Schockszenario (Peak-Exposure in USD) ist ein Stress-Szenario zur "
+            "Gewichtung und Warnung — kein gemessener Verlust und allein KEIN "
+            "Ablehnungsgrund\n"
             "- Keine positive Einstufung vor vollstaendiger Forensik-Batterie")
 
 
@@ -299,6 +304,7 @@ def _kandidat_json(r: ScanResult) -> str:
         "broker_server": r.broker_server,
         "assets": r.symbole,
         "score_engine": r.score, "ampel": r.ampel,
+        "urteil": r.urteil,
         "schranke_verletzt": r.schranke_verletzt,
     }, ensure_ascii=False)
 
@@ -348,6 +354,7 @@ def report_basis_for(result: ScanResult, settings: dict) -> str | None:
     facts = json.loads(_kandidat_json(result))
     # Derived display fields are reconstructed from the same facts/criteria.
     facts.pop("ampel", None)
+    facts.pop("urteil", None)
     facts.pop("schranke_verletzt", None)
     forensics = json.loads(_forensik_json(result))
     forensics["martingale_evidenz"] = result.martingale_evidenz or []
@@ -789,9 +796,8 @@ class ScanPipeline:
                 "kurzfassung": r.kurzfassung,
                 "gesamtbericht": r.gesamtbericht or "(nicht erstellt)",
             })
-        prompt = (llm_prompts.load_prompt("portfolio")
-                  .replace("{kandidaten_json}", json.dumps(eintraege, ensure_ascii=False))
-                  .replace("{kriterien}", kriterien))
+        prompt = prompt_fill.build_portfolio_prompt(
+            json.dumps(eintraege, ensure_ascii=False), kriterien)
         model_strong = self.settings.get("model_stufe2", config.MODEL_STUFE2)
         log(f"→ Portfolio: {len(eintraege)} Signal-Berichte "
             f"({len(prompt):,} Zeichen) an {model_strong} …")

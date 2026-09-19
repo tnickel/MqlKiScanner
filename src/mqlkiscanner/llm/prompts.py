@@ -130,12 +130,23 @@ Danach Abschnitte mit ## -Ueberschriften:
    Positions sizing, Körbe, Haltezeiten, Session-Muster, Monatsverlauf.
 3. **Risikoanalyse** — Drawdown (Trading-DD vs. Plattform-EQ-DD),
    Verlustserien mit Summen, Peak-Exposure mit Dollar-Schockszenario,
-   Martingale-Befund, Stop-Loss-Nachweis oder dessen Fehlen.
+   Martingale-Befund, Stop-Loss-Nachweis oder dessen Fehlen. Das
+   Schockszenario ist ein Stress-Szenario, kein gemessener Verlust: es
+   begruendet Gewichtung und Warnung, niemals allein die Ablehnung.
 4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
    praktische Risiken beim Kopieren.
 5. **Urteil** — genau eines von EMPFEHLUNG | WATCHLIST | ABLEHNUNG plus
-   Risiko-Score 1-10 (hoch = riskant) und die drei wichtigsten Gruende.
-   Die oben eingesetzten Nutzer-Kriterien sind verbindlich. Eine von der
+   deinem EIGENEN Risiko-Score 1-10 (hoch = riskant; klar als
+   "Risiko-Score (LLM-Urteil)" bezeichnen) und separat dem Engine-Score
+   aus dem Kandidaten-JSON als "Engine-Risiko-Score" — nie vermischen.
+   Dazu die drei wichtigsten Gruende.
+   Die oben eingesetzten Nutzer-Kriterien sind verbindlich. Die
+   Engine-Ampel im Kandidaten-JSON ist bindend und bedeutet: ⛔ = auf der
+   Ausschlussliste (Grund steht im Feld "urteil"), 🔴 = Martingale-
+   Signatur oder verletzte Drawdown-Schranke, 🟡 = Beobachtung,
+   🟢 = Kandidat. ⛔ und 🔴 bedeuten AUTOMATISCHE ABLEHNUNG — auch wenn
+   die Einzeldaten besser aussehen; das Urteil darf die Engine-Ampel nie
+   aufwerten (aus ⛔/🔴 wird nie WATCHLIST oder EMPFEHLUNG). Eine von der
    Engine markierte Drawdown-Schrankenverletzung bedeutet AUTOMATISCHE
    ABLEHNUNG. Ertrag unter der dort genannten Monatsschwelle bedeutet
    Ablehnung; ohne Stop-Nachweis keine Empfehlung.
@@ -179,7 +190,9 @@ Danach Abschnitte mit ## -Ueberschriften:
    gewaehltem Signal: Rolle, ungefaehre Gewichtung in Prozent des
    Kopierbudgets und warum die Kombination diversifiziert ist
    (unterschiedliche Assets, Maerkte, Strategie-Typen, Handelszeiten).
-   Aussortierte Signale mit je einem Satz Grund.
+   JE aufgenommenes Signal als eigene Listenzeile im festen Muster:
+   `- NAME — GEWICHT % — Rolle` (maschinenlesbar, exakt so formatiert).
+   Aussortierte Signale mit je einem Satz Grund (ohne Gewichtung).
 4. **Gesamtrisiko des Mixes** — Wo bleibt Risiko trotz Einzel-Eignung
    (gemeinsame Gold-/USD-Exposure, Grid-Klumpen, Copy-Slippage auf
    kleinem Konto)? Was muss laufend beobachtet werden?
@@ -188,9 +201,21 @@ Danach Abschnitte mit ## -Ueberschriften:
 
 Bindende Regeln: Risiko VOR Ertrag. Kein Signal ohne Stop-Nachweis wird
 Ertragstraeger. Ein Signal mit Martingale-Flag oder verletzter
-Drawdown-Schranke wird nie aufgenommen. Liegt nur ein Signal vor: einzeln
-bewerten und fehlende Diversifikation explizit benennen. Keine
-Anlageberatung im rechtlichen Sinn, keine Emojis.
+Drawdown-Schranke wird nie aufgenommen. Die Engine-Ampel je Eintrag ist
+bindend: ⛔ = Ausgeschlossen-Liste (Grund im Feld "urteil"), 🔴 =
+Martingale-Signatur oder verletzte Schranke, 🟡 = Beobachtung, 🟢 =
+Kandidat. Signale mit ⛔ oder 🔴 werden NIE aufgenommen — nennt ihr
+Gesamtbericht ein weicheres Urteil (z. B. Watchlist) oder bessere
+Einzelwerte, aendert das nichts; bei Widerspruch zwischen Engine-Feldern
+(ampel, urteil, schranke_verletzt) und Berichtstext gilt das
+Engine-Feld. Das Schockszenario ist ein hypothetisches Stressszenario,
+kein gemessener Verlust und keine Verlustobergrenze: es begruendet
+Gewichtung und Beobachtung, aber niemals allein eine Ablehnung.
+Kurzfassung, Bewertung je Signal und Portfolio-Vorschlag muessen
+dieselbe Auswahl mit denselben Gewichten nennen — widerspruechliche
+Aussagen innerhalb des Berichts sind unzulaessig. Liegt nur ein Signal
+vor: einzeln bewerten und fehlende Diversifikation explizit benennen.
+Keine Anlageberatung im rechtlichen Sinn, keine Emojis.
 """
 
 

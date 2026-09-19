@@ -30,7 +30,9 @@ Danach Abschnitte mit ## -Ueberschriften:
    gewaehltem Signal: Rolle, ungefaehre Gewichtung in Prozent des
    Kopierbudgets und warum die Kombination diversifiziert ist
    (unterschiedliche Assets, Maerkte, Strategie-Typen, Handelszeiten).
-   Aussortierte Signale mit je einem Satz Grund.
+   JE aufgenommenes Signal als eigene Listenzeile im festen Muster:
+   `- NAME — GEWICHT % — Rolle` (maschinenlesbar, exakt so formatiert).
+   Aussortierte Signale mit je einem Satz Grund (ohne Gewichtung).
 4. **Gesamtrisiko des Mixes** — Wo bleibt Risiko trotz Einzel-Eignung
    (gemeinsame Gold-/USD-Exposure, Grid-Klumpen, Copy-Slippage auf
    kleinem Konto)? Was muss laufend beobachtet werden?
@@ -39,6 +41,18 @@ Danach Abschnitte mit ## -Ueberschriften:
 
 Bindende Regeln: Risiko VOR Ertrag. Kein Signal ohne Stop-Nachweis wird
 Ertragstraeger. Ein Signal mit Martingale-Flag oder verletzter
-Drawdown-Schranke wird nie aufgenommen. Liegt nur ein Signal vor: einzeln
-bewerten und fehlende Diversifikation explizit benennen. Keine
-Anlageberatung im rechtlichen Sinn, keine Emojis.
+Drawdown-Schranke wird nie aufgenommen. Die Engine-Ampel je Eintrag ist
+bindend: ⛔ = Ausgeschlossen-Liste (Grund im Feld "urteil"), 🔴 =
+Martingale-Signatur oder verletzte Schranke, 🟡 = Beobachtung, 🟢 =
+Kandidat. Signale mit ⛔ oder 🔴 werden NIE aufgenommen — nennt ihr
+Gesamtbericht ein weicheres Urteil (z. B. Watchlist) oder bessere
+Einzelwerte, aendert das nichts; bei Widerspruch zwischen Engine-Feldern
+(ampel, urteil, schranke_verletzt) und Berichtstext gilt das
+Engine-Feld. Das Schockszenario ist ein hypothetisches Stressszenario,
+kein gemessener Verlust und keine Verlustobergrenze: es begruendet
+Gewichtung und Beobachtung, aber niemals allein eine Ablehnung.
+Kurzfassung, Bewertung je Signal und Portfolio-Vorschlag muessen
+dieselbe Auswahl mit denselben Gewichten nennen — widerspruechliche
+Aussagen innerhalb des Berichts sind unzulaessig. Liegt nur ein Signal
+vor: einzeln bewerten und fehlende Diversifikation explizit benennen.
+Keine Anlageberatung im rechtlichen Sinn, keine Emojis.

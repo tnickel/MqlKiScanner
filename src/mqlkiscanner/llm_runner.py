@@ -7,7 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from . import db
-from .llm import client as llm_client, prompts as llm_prompts
+from .llm import client as llm_client
+from .llm import prompt_fill
 from .parser import load_export
 from .trade_data import build_trade_payload
 
@@ -15,7 +16,7 @@ from .trade_data import build_trade_payload
 def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
     # Pipeline owns the report contract; import after its module is initialized.
     from .pipeline import (
-        _extract_kurzfassung, _forensik_json, _kandidat_json, _kriterien_text,
+        _extract_kurzfassung, _kriterien_text,
         refresh_report_verdict, report_basis_for,
     )
 
@@ -97,13 +98,8 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
                 n_trades = payload.get("meta", {}).get("trades", 0)
             model_strong = pipe.settings.get("model_stufe2", "glm-5.3")
             model_flash = pipe.settings.get("model_stufe1", "glm-5.3-flash")
-            trade_prompt = (llm_prompts.load_prompt("trade_analyse")
-                            .replace("{kandidat_json}", _kandidat_json(result))
-                            .replace("{trades_json}", trades_json))
-            risk_prompt = (llm_prompts.load_prompt("risiko_analyse")
-                           .replace("{kandidat_json}", _kandidat_json(result))
-                           .replace("{forensik_json}", _forensik_json(result))
-                           .replace("{kriterien}", kriterien))
+            trade_prompt = prompt_fill.build_trade_prompt(result, trades_json)
+            risk_prompt = prompt_fill.build_risk_prompt(result, kriterien)
         except Exception as exc:
             record_failure(exc, "Berichtsvorbereitung fehlgeschlagen")
             if isinstance(exc, (llm_client.LlmNoBalanceError, llm_client.LlmBudgetError)):
@@ -167,12 +163,8 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             return stopped()
 
         try:
-            prompt = (llm_prompts.load_prompt("gesamtbericht")
-                      .replace("{kandidat_json}", _kandidat_json(result))
-                      .replace("{forensik_json}", _forensik_json(result))
-                      .replace("{trade_analyse}", result.trade_analyse)
-                      .replace("{risiko_analyse}", result.risiko_analyse)
-                      .replace("{kriterien}", kriterien))
+            prompt = prompt_fill.build_gesamtbericht_prompt(
+                result, kriterien, result.trade_analyse, result.risiko_analyse)
             log(f"→ [3/3] Gesamtbericht für {result.name}: {len(prompt):,} Zeichen …")
             progress(f"Gesamtbericht 3/3: {result.name} · warte auf Modellantwort")
             result.gesamtbericht = pipe.llm.chat(prompt, stufe=2, max_tokens=24576, meta_out={})
