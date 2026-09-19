@@ -83,6 +83,7 @@ class ScanResult:
     martingale_evidenz: list | None = None
     stop_nachweis: str = ""
     stop_evidence: str | None = None  # direct | cluster | partial | none; nie aus Freitext ableiten
+    kapitalbasis_usd: float | None = None  # Signalseite "Initial Deposit" (kann negativ sein)
     broker_server: str | None = None
     symbole: str = ""               # gehandelte Assets ("XAUUSD, US30, ...")
     # Bewertung
@@ -203,6 +204,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             martingale_evidenz=f.get("martingale_evidenz") or [],
             stop_nachweis=f.get("stop_nachweis") or "",
             stop_evidence=f.get("stop_evidence"),
+            kapitalbasis_usd=stats.get("initial_deposit_usd"),
             broker_server=stats.get("broker_server"),
             symbole=f.get("symbole") or "",
             score=None if forensik_stale else f.get("score"),
@@ -258,6 +260,14 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
         return "⛔", f"Ausgeschlossen (Liste): {excluded[result.id].get('grund', '')}"
     if result.martingale_flag:
         return "🔴", "Martingale-Signatur nachgewiesen (Ablehnung)"
+    if result.kapitalbasis_usd is not None and result.kapitalbasis_usd <= 0:
+        betrag = f"{result.kapitalbasis_usd:+,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return "🔴", (
+            f"Kapitalbasis negativ: die Signalseite nennt einen Initial Deposit "
+            f"von {betrag} USD (von MQL5 rueckwaerts aus "
+            "Kontostand, Profit, Deposits und Withdrawals abgeleitet — entnommenes "
+            "Kapital uebertraf den Signalstart). Das Startkapital ist nicht "
+            "belegbar, Drawdown- und Schockpruefung sind unmoeglich — harte Ablehnung.")
     if result.fehler and not result.forensik_vorhanden:
         return "⚪", f"Fehler: {result.fehler}"
     if result.fehler:
@@ -572,6 +582,8 @@ class ScanPipeline:
             if res.wochen is None:
                 res.wochen = stats.get("weeks")
             res.broker_server = stats.get("broker_server")
+            # Webseiten-Kapitalbasis (kann negativ sein — eigene rote Regel)
+            res.kapitalbasis_usd = stats.get("initial_deposit_usd")
             log(f"✓ Kennzahlen: EQ-DD {res.dd_equity_pct} % · PF {res.pf} · "
                 f"Ertrag {res.ertrag_monat_pct} %/Monat")
             # Eine öffentliche Kennzahlen-Seite belegt keinen funktionierenden

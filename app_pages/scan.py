@@ -203,6 +203,20 @@ def _stamped(text: str) -> str:
     return f"{datetime.now().strftime('%H:%M:%S')} · {text}"
 
 
+def _station_kennzahlen(results) -> tuple[int, int, int]:
+    """(entschieden, nur Vorprüfung, Probleme) für die Forensik-Station.
+
+    Entscheiden heißt: die Ampel trägt ein fertiges Urteil (🟢 🟡 🔴 ⛔) —
+    auch ein Signal, das wegen negativer Kapitalbasis oder ohne Forensik
+    hart abgelehnt wurde, ist damit GEPRÜFT und zählt nicht als Problem.
+    Probleme sind ausschließlich ⚪-Ampeln mit Fehlermeldung (Prüfung
+    gescheitert), Vorprüfung ⚪-Ampeln ohne Fehlermeldung.
+    """
+    entschieden = sum(r.ampel in ("🟢", "🟡", "🔴", "⛔") for r in results)
+    probleme = sum(r.ampel == "⚪" and bool(r.fehler) for r in results)
+    return entschieden, len(results) - entschieden - probleme, probleme
+
+
 def _recent_log_lines(n: int = 3) -> list[str]:
     lines: list[str] = []
     logs = st.session_state.get("scan_logs") or {}
@@ -680,24 +694,22 @@ if command:
             r.urteil = (r.urteil or "") + " | bereits bewertet — unverändert übernommen"
             results.append(r)
         control["new_ids"] = new_ids
-        good = sum(r.forensik_vorhanden and not r.fehler for r in results)
-        errors = sum(bool(r.fehler) for r in results)
-        preview = len(results) - good - errors
+        entschieden, vorpruefung, probleme = _station_kennzahlen(results)
         zusatz = f" · {len(uebernommen)} übernommen" if uebernommen else ""
         if stopped_early:
             w_step("forensik", "warning", done=n_export,
-                   detail=(f"Abbruch zum Account-Schutz · {good} geprüft · "
-                           f"{preview} Vorprüfung · {errors} Probleme{zusatz}"))
+                   detail=(f"Abbruch zum Account-Schutz · {entschieden} geprüft · "
+                           f"{vorpruefung} Vorprüfung · {probleme} Probleme{zusatz}"))
         elif stop_gefordert:
             w_step("forensik", "warning", done=n_export,
-                   detail=(f"Abbruch per Stop-Button · {good} geprüft · "
-                           f"{preview} Vorprüfung · {errors} Probleme{zusatz}"))
+                   detail=(f"Abbruch per Stop-Button · {entschieden} geprüft · "
+                           f"{vorpruefung} Vorprüfung · {probleme} Probleme{zusatz}"))
         else:
             w_step(
                 "forensik", done=n_export,
-                status="complete" if good == len(results) else "error" if errors == len(results) else "warning",
-                detail=(f"{good} gründlich geprüft · {preview} nur Vorprüfung · "
-                        f"{errors} mit Problemen{zusatz}"),
+                status="complete" if entschieden == len(results) else "error" if probleme == len(results) else "warning",
+                detail=(f"{entschieden} gründlich geprüft · {vorpruefung} nur Vorprüfung · "
+                        f"{probleme} mit Problemen{zusatz}"),
             )
 
     def w_run_llm(targets: list[pipeline.ScanResult], cfg) -> None:

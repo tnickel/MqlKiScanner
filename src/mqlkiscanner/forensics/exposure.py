@@ -335,11 +335,20 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
     # Kapitalbasis-Diagnose: konkreter Grund statt Sammel-Meldung. Ohne
     # belastbares Konto ist der Schock-in-Prozent (30-%-Regel) nicht berechenbar.
     if not capital_history_complete:
+        seiten_hinweis = ""
+        if kapitalbasis_usd is not None and kapitalbasis_usd <= 0:
+            seiten_hinweis = (
+                f" Die Signalseite nennt keine nutzbare Kapitalbasis (Initial "
+                f"Deposit {kapitalbasis_usd:+,.2f} USD — MQL5 leitet den Wert "
+                "rueckwaerts aus Kontostand, Profit, Deposits und Withdrawals "
+                "her; negativ heisst: entnommenes Kapital uebertraf den "
+                "Signalstart, die echte Basis ist nicht belegbar).")
         warnings.append(
             "Kapitalbasis unbekannt: keine Einzahlungen vor dem ersten Trade im "
             f"Export (Startkapital {initial_capital:+.2f} — z. B. Historie gekuerzt "
             "oder Auszahlung vor Handelsbeginn). Schockanteil in Prozent und die "
-            "30-%-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorprüfung.")
+            "30-%-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorprüfung."
+            + seiten_hinweis)
     elif account_dipped_negative:
         warnings.append(
             "Kontostand war bei offenen Positionen <= 0 (z. B. Auszahlung mitten "

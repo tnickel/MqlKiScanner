@@ -53,6 +53,12 @@ HARTREGELN: list[tuple[str, str]] = [
     ("⛔ Ausgeschlossen (Liste)",
      "Signal steht in data/known_signals.json. Überschreibt alles — auch "
      "besser aussehende aktuelle Werte, bis der Eintrag entfernt wird."),
+    ("🔴 Kapitalbasis negativ",
+     "Die Signalseite nennt einen negativen Initial Deposit. MQL5 leitet "
+     "den Wert rückwärts aus Kontostand, Profit, Deposits und Withdrawals "
+     "her: negativ heisst, das entnommene Kapital übertraf den Signalstart. "
+     "Das Startkapital ist nicht belegbar — Drawdown- und Schockprüfung "
+     "sind unmöglich, harte Ablehnung."),
     ("🔴 Drawdown-Schranke verletzt",
      "max(Equity-DD, Trading-DD) über der Schranke — harte Ablehnung."),
     ("🔴 Martingale-Signatur nachgewiesen",

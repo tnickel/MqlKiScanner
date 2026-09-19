@@ -202,8 +202,12 @@ def test_step3_nur_neue_skips_known_and_keeps_old_verdicts(mocked_crawler, monke
 
     def fake_analyze(self, session, cand, log, should_stop=None):
         called.append(cand["id"])
-        return pipeline.ScanResult(id=cand["id"], name=cand.get("name", ""),
-                                   forensik_vorhanden=True)
+        result = pipeline.ScanResult(id=cand["id"], name=cand.get("name", ""),
+                                     forensik_vorhanden=True,
+                                     stop_evidence="none",
+                                     stop_nachweis="kein Nachweis")
+        result.ampel, result.urteil = pipeline.ampel_for(result, {})
+        return result
 
     monkeypatch.setattr(pipeline.ScanPipeline, "analyze_candidate", fake_analyze)
     monkeypatch.setattr(pipeline.Mql5Session, "has_credentials",

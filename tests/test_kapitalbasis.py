@@ -11,6 +11,7 @@ Webseite erklaeren (Deckung auf den Cent).
 """
 from __future__ import annotations
 
+from mqlkiscanner import db, pipeline
 from mqlkiscanner.engine import analyze
 from mqlkiscanner.forensics import drawdown, exposure
 from mqlkiscanner.mql5.signal_stats import parse_detail_html
@@ -134,24 +135,23 @@ def test_kennzahlen_ohne_kontobasis_bleiben_none():
 # ------------------------------------------------------------ Pipeline-Check
 
 def test_pipeline_konsistenzcheck_grenzen():
-    from mqlkiscanner.pipeline import _kapitalbasis_abgleich
     dd = {"startkapital_quelle": "signalseite_initial_deposit",
           "end_balance_real": 574.41}
     # Deckung auf den Cent:
-    ok, meldung = _kapitalbasis_abgleich(dd, {"balance_usd": 574.41})
+    ok, meldung = pipeline._kapitalbasis_abgleich(dd, {"balance_usd": 574.41})
     assert ok and meldung == ""
     # Innerhalb der Toleranz (max(5 USD, 2 %)):
-    ok, meldung = _kapitalbasis_abgleich(dd, {"balance_usd": 578.0})
+    ok, meldung = pipeline._kapitalbasis_abgleich(dd, {"balance_usd": 578.0})
     assert ok
     # Ausserhalb der Toleranz:
-    ok, meldung = _kapitalbasis_abgleich(dd, {"balance_usd": 700.0})
+    ok, meldung = pipeline._kapitalbasis_abgleich(dd, {"balance_usd": 700.0})
     assert not ok and "Kapitalbasis unbestätigt" in meldung
     # Webseite ohne Balance-Wert:
-    ok, meldung = _kapitalbasis_abgleich(dd, {"balance_usd": None})
+    ok, meldung = pipeline._kapitalbasis_abgleich(dd, {"balance_usd": None})
     assert not ok and "Balance" in meldung
     # CSV-Einzahlungen: kein Check, kein Meckern (auch bei Drift):
     dd_csv = dict(dd, startkapital_quelle="csv_einzahlungen")
-    ok, meldung = _kapitalbasis_abgleich(dd_csv, {"balance_usd": 9999.0})
+    ok, meldung = pipeline._kapitalbasis_abgleich(dd_csv, {"balance_usd": 9999.0})
     assert ok and meldung == ""
 
 
@@ -167,3 +167,63 @@ def test_exposure_run_signatur_behaelt_kapitalbasis_bei():
     assert "kapitalbasis_usd" in params and "kapitalbasis_quelle" in params
     dd_params = inspect.signature(drawdown.run).parameters
     assert "kapitalbasis_usd" in dd_params
+
+
+def test_negativer_initial_deposit_wird_im_befund_erwaehnt(tmp_path):
+    """Belegfall SEA #1496203: Seite nennt -461,33 USD (abgeleitet) — die
+    Warnung muss das benennen, statt nur 'keine Einzahlungen im Export'."""
+    report = analyze(_orderbook(tmp_path, _TRADES), broker="ICMarketsSC-Live15",
+                     kapitalbasis_usd=-461.33,
+                     kapitalbasis_quelle="signalseite_initial_deposit")
+    expo = report["forensics"]["exposure"]
+    assert expo["capital_history_complete"] is False
+    warnung = next(w for w in expo["warnings"] if "Kapitalbasis unbekannt" in w)
+    assert "keine nutzbare Kapitalbasis" in warnung
+    assert "-461.33" in warnung
+
+
+# ------------------------------------------------- Rote Regel: Basis negativ
+
+def test_negativer_initial_deposit_fuehrt_zu_rot_mit_begruendung():
+    result = pipeline.ScanResult(id=1, name="Negativ", kapitalbasis_usd=-461.33,
+                                 fehler="ValueError: Forensik unvollständig")
+    ampel, urteil = pipeline.ampel_for(result, {})
+    assert ampel == "🔴"
+    assert "Kapitalbasis negativ" in urteil
+    assert "-461,33" in urteil
+    assert "nicht belegbar" in urteil
+
+
+def test_positiver_oder_fehlender_initial_deposit_kein_sonderfall():
+    assert pipeline.ampel_for(
+        pipeline.ScanResult(id=2, name="Positiv", kapitalbasis_usd=506.08), {})[0] == "⚪"
+    assert pipeline.ampel_for(
+        pipeline.ScanResult(id=3, name="Ohne"), {})[0] == "⚪"
+
+
+def test_ausschlussliste_steht_vor_kapitalbasis(monkeypatch):
+    monkeypatch.setattr(pipeline.config, "load_known_signals", lambda: {
+        "ausgeschlossen": [{"id": 4, "name": "X", "grund": "Testgrund"}]})
+    result = pipeline.ScanResult(id=4, name="X", kapitalbasis_usd=-1.0)
+    ampel, urteil = pipeline.ampel_for(result, {})
+    assert ampel == "⛔" and "Testgrund" in urteil
+
+
+def test_kapitalbasis_aus_db_restauriert_rot(monkeypatch):
+    """App-Neustart: stats.initial_deposit_usd < 0 muss die rote Ampel
+    reproduzieren, ohne dass Forensik vorhanden ist."""
+    db.init_db()
+    db.store_scan_result(777001, {
+        "name": "Negativ-DB", "platform": "MT4",
+        "stats": {"forensik_ok": False,
+                  "last_fehler": "ValueError: Forensik unvollständig",
+                  "initial_deposit_usd": -461.33, "balance_usd": 3593.43}})
+    res = next(r for r in pipeline.results_from_db({}) if r.id == 777001)
+    assert res.kapitalbasis_usd == -461.33
+    assert res.ampel == "🔴"
+    assert "Kapitalbasis negativ" in res.urteil
+
+
+def test_regelwerk_nennt_kapitalbasis_regel():
+    from mqlkiscanner.regelwerk import regelwerk_markdown
+    assert "Kapitalbasis negativ" in regelwerk_markdown({})
