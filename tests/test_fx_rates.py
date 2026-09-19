@@ -241,3 +241,75 @@ def test_ecb_csv_with_na_and_trailing_columns_parses(tmp_path):
     schreibe_kurse(tmp_path, text)
     assert fx_rates.usd_per("CAD", date(2024, 1, 3)) is None  # N/A -> kein Kurs
     assert fx_rates.usd_per("XXXX", date(2024, 1, 3))["rate"] == pytest.approx(1.0960 / 9.9)
+
+
+# --------------------------------------------------- Inhaltsbasierte Auffrischung
+def _zip_antwort(csv_text: str):
+    """requests.get-Ersatz: echte ZIP-Antwort mit einer ECB-CSV."""
+    import io as _io
+    import zipfile as _zip
+
+    buffer = _io.BytesIO()
+    with _zip.ZipFile(buffer, "w") as archive:
+        archive.writestr("eurofxref-hist.csv", csv_text)
+    buffer.seek(0)
+
+    class Antwort:
+        content = buffer.getvalue()
+
+        def raise_for_status(self):
+            return None
+
+    return Antwort()
+
+
+def test_veraltete_datei_wird_nachgeladen(tmp_path, monkeypatch):
+    """Belegfall 20.09.2026: Datei endet 2024, heutige Trades brauchen Kurse —
+    die inhaltsbasierte Pruefung muss den Download ausloesen."""
+    monkeypatch.setattr(fx_rates, "_DOWNLOAD_TRIED", False)
+    schreibe_kurse(tmp_path)  # Kurse enden 2024-01-04
+    frisch = ("Date,USD,CAD\n"
+              f"{date.today().isoformat()},1.0900,1.4600\n")
+    aufgerufen = []
+    monkeypatch.setattr(fx_rates.requests, "get",
+                        lambda url, timeout: aufgerufen.append(url)
+                        or _zip_antwort(frisch))
+    fx_rates.load()
+    assert aufgerufen, "Veraltete Datei hat keinen Download ausgeloest"
+    status = fx_rates.status()
+    assert status["letzte_kursdatum"] == date.today().isoformat()
+    fx = fx_rates.usd_per("CAD", date.today())
+    assert fx is not None and fx["date"] == date.today().isoformat()
+
+
+def test_frische_datei_loest_keinen_download_aus(tmp_path, monkeypatch):
+    heutiger_kurs = ("Date,USD,CAD\n"
+                     f"{date.today().isoformat()},1.0900,1.4600\n")
+    schreibe_kurse(tmp_path, heutiger_kurs)
+
+    def verweigert(*args, **kwargs):
+        raise AssertionError("Download haette nicht ausgeloest werden duerfen")
+
+    monkeypatch.setattr(fx_rates.requests, "get", verweigert)
+    monkeypatch.setattr(fx_rates, "_DOWNLOAD_TRIED", False)
+    fx = fx_rates.usd_per("CAD", date.today())
+    assert fx is not None and fx["date"] == date.today().isoformat()
+
+
+def test_download_fehler_laesst_alte_datei_und_tabelle_bestehen(tmp_path, monkeypatch):
+    monkeypatch.setattr(fx_rates, "_DOWNLOAD_TRIED", False)
+    schreibe_kurse(tmp_path)
+
+    def scheitert(*args, **kwargs):
+        raise ConnectionError("offline")
+
+    monkeypatch.setattr(fx_rates.requests, "get", scheitert)
+    fx = fx_rates.usd_per("CAD", date(2024, 1, 3))
+    assert fx is not None and fx["date"] == "2024-01-03"
+    assert fx_rates.status()["letzte_kursdatum"] == "2024-01-04"
+
+
+def test_datei_letzter_kurstag_liest_erste_datenzeile(tmp_path):
+    schreibe_kurse(tmp_path, "Date,USD\n2024-01-09,1.09\n2024-01-08,1.08\n")
+    assert fx_rates._datei_letzter_kurstag(
+        tmp_path / "data" / "fx_rates" / "eurofxref-hist.csv") == date(2024, 1, 9)

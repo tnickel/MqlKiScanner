@@ -2,9 +2,10 @@
 """EZB-Euro-Referenzkurse: belegte historische Umrechnung nach USD.
 
 Quelle: eurofxref-hist.zip (EZB, taegliche Referenzkurse seit 1999,
-EUR-Basis: "1 EUR = X CCY"). Die Datei wird einmal geladen und lokal unter
-data/fx_rates/ gecacht; Aenderungen historischer Kurse gibt es nicht,
-deshalb ist auch eine aeltere Datei weiterhin verwendbar.
+EUR-Basis: "1 EUR = X CCY"). Die Datei wird lokal unter data/fx_rates/
+gecached und bei Bedarf nachgeladen: Die Historie waechst taeglich, und
+frische Trades brauchen frische Kurse — eine alte Datei ist fuer die
+Vergangenheit weiterhin korrekt, fuer den aktuellen Rand aber nicht.
 
 Konventionen (gehen als Herkunft in die Befunde ein):
 - Kurs zum Handelstag. Fehlt der Tag (Wochenende, TARGET-Feiertag), gilt
@@ -21,9 +22,10 @@ import bisect
 import csv as _csv
 import io
 import os
+import re
 import time
 import zipfile
-from datetime import date
+from datetime import date, timedelta
 
 import requests
 
@@ -33,6 +35,9 @@ ECB_HISTORY_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.zip"
 CSV_NAME = "eurofxref-hist.csv"
 MAX_WALKBACK_DAYS = 10
 REFRESH_DAYS = 30
+# Wochenend- und Feiertags-Toleranz: Ein fehlender letzter Verkuendigungstag
+# bis 4 Tage Rueckstand ist normal (Wochenende, TARGET-Feiertage).
+MAX_DATE_LAG_DAYS = 4
 
 _TABLE: dict = {}          # Cache: {(pfad, mtime_ns): {waehrung: (daten, kurse)}}
 _DOWNLOAD_TRIED = False    # einmal pro Prozess; kein Retry-Sturm bei Offline
@@ -40,6 +45,23 @@ _DOWNLOAD_TRIED = False    # einmal pro Prozess; kein Retry-Sturm bei Offline
 
 def csv_path() -> "os.PathLike":
     return config.FX_RATES_DIR / CSV_NAME
+
+
+def _datei_letzter_kurstag(path) -> date | None:
+    """Neuester Verkuendigungstag aus den ersten Zeilen der Datei.
+
+    Die EZB-Datei beginnt mit dem NEUESTEN Tag — der aktuelle Rand steht
+    also direkt in Zeile 2, ohne die ganze Datei zu parsen. Das Trennzeichen
+    ist egal: gezaehlt wird das fuehrende ISO-Datum.
+    """
+    try:
+        with open(path, encoding="utf-8-sig") as fh:
+            fh.readline()  # Kopfzeile
+            zeile = fh.readline()
+        match = re.match(r"\s*(\d{4}-\d{2}-\d{2})", zeile)
+        return date.fromisoformat(match.group(1)) if match else None
+    except (OSError, ValueError):
+        return None
 
 
 def _parse_csv(text: str) -> dict[str, tuple[list[str], list[float]]]:
@@ -84,8 +106,11 @@ def _load_file(path) -> dict | None:
 
 
 def _refresh(max_age_days: float = REFRESH_DAYS, force: bool = False) -> None:
-    """Historie herunterladen, wenn Datei fehlt oder alt ist.
+    """Historie herunterladen, wenn die Datei inhaltlich veraltet ist.
 
+    Veraltet heisst: Der neueste Verkuendigungstag in der Datei liegt mehr
+    als MAX_DATE_LAG_DAYS zurueck (Wochenende/Feiertage zugelassen), oder
+    die Datei fehlt/ist unlesbar, oder sie ist aelter als max_age_days.
     Scheitert der Download (offline, abgelehnt, defekte Antwort), bleibt es
     still: Eine vorhandene Datei wird weitergenutzt, sonst ohne Kurse
     weitergearbeitet (Exposure bleibt dann ehrlich gesperrt).
@@ -93,11 +118,14 @@ def _refresh(max_age_days: float = REFRESH_DAYS, force: bool = False) -> None:
     global _DOWNLOAD_TRIED
     if _DOWNLOAD_TRIED and not force:
         return
-    _DOWNLOAD_TRIED = True
     path = config.FX_RATES_DIR / CSV_NAME
-    if not force and path.exists() and \
+    letzter_tag = _datei_letzter_kurstag(path) if path.exists() else None
+    inhaltlich_veraltet = letzter_tag is None or \
+        letzter_tag < date.today() - timedelta(days=MAX_DATE_LAG_DAYS)
+    if not force and path.exists() and not inhaltlich_veraltet and \
             (time.time() - path.stat().st_mtime) < max_age_days * 86400:
         return
+    _DOWNLOAD_TRIED = True
     try:
         response = requests.get(ECB_HISTORY_URL, timeout=60)
         response.raise_for_status()
