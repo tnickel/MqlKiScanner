@@ -15,6 +15,11 @@ def _pdf_buttons(at: AppTest):
             if any((button.key or "").startswith(prefix) for prefix in prefixes)]
 
 
+def _pdf_downloads(at: AppTest):
+    return [button for button in at.get("download_button")
+            if (button.key or "").endswith("_download")]
+
+
 def test_table_opens_pdf_report_and_detail_offers_all_pdfs_for_repeated_ids(monkeypatch):
     first = pipeline.ScanResult(
         id=900001, name="Snapshot A", trades_path=r"C:\a.csv",
@@ -64,6 +69,8 @@ def test_table_opens_pdf_report_and_detail_offers_all_pdfs_for_repeated_ids(monk
     assert f"detail_trade_{second_token}" in keys
     assert f"detail_risk_{second_token}" in keys
     assert f"detail_final_{second_token}" in keys
+    download_keys = {item.key for item in _pdf_downloads(at)}
+    assert {f"{key}_download" for key in keys} <= download_keys
 
 
 def test_report_panel_offers_final_and_intermediate_pdfs_for_exact_snapshot():
@@ -86,6 +93,7 @@ def test_report_panel_offers_final_and_intermediate_pdfs_for_exact_snapshot():
     labels = {item.label for item in _pdf_buttons(at)}
     assert {"Gesamtbericht anzeigen", "Trade-Analyse anzeigen",
             "Risiko-Analyse anzeigen"} <= labels
+    assert all(item.label == "PDF speichern" for item in _pdf_downloads(at))
     button = at.button(key=f"report_panel_final_{snapshot_token(*identity)}")
     button.click().run()
     assert not at.exception
@@ -105,6 +113,7 @@ def test_portfolio_pdf_is_visible_on_scan_and_results_pages():
     scan.run()
     assert not scan.exception
     assert any(item.key == "scan_portfolio_pdf" for item in _pdf_buttons(scan))
+    assert any(item.key == "scan_portfolio_pdf_download" for item in _pdf_downloads(scan))
 
     results = AppTest.from_file(str(ROOT / "streamlit_app.py"), default_timeout=30)
     results.session_state["scan_results"] = [result]
@@ -114,6 +123,8 @@ def test_portfolio_pdf_is_visible_on_scan_and_results_pages():
     results.selectbox(key="results_run").set_value("Aktuelle Sitzung").run()
     assert not results.exception
     assert any(item.key == "results_portfolio_pdf_source" for item in _pdf_buttons(results))
+    assert any(item.key == "results_portfolio_pdf_source_download"
+               for item in _pdf_downloads(results))
 
 
 def test_prompt_tab_explains_engine_inputs_models_and_outputs():

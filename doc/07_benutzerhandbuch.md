@@ -79,8 +79,9 @@ und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
   `02-risiko-analyse.pdf`, `03-gesamtbericht.pdf` und
   `portfolio/<Zeitpunkt-Version>/portfolio-gesamtbericht.pdf`.
 - **PDF anzeigen** blendet die gespeicherte Datei direkt in der Scan- oder
-  Ergebnisseite ein; ein manueller Download ist nicht nötig. Die PDFs entstehen
-  ausschließlich aus dem gespeicherten Text und lösen keinen neuen KI-Aufruf aus.
+  Ergebnisseite ein. Direkt daneben lädt **PDF speichern** dieselbe Datei auf
+  Wunsch herunter. Die PDFs entstehen ausschließlich aus dem gespeicherten Text
+  und lösen bei beiden Aktionen keinen neuen KI-Aufruf aus.
 
 ## 5. Analysevorlagen
 
