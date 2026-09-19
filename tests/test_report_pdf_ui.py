@@ -1,4 +1,4 @@
-"""Streamlit exposes each stored report as a PDF without losing row identity."""
+"""Streamlit displays each stored PDF without losing row identity."""
 from __future__ import annotations
 
 from streamlit.testing.v1 import AppTest
@@ -8,8 +8,11 @@ from mqlkiscanner import pipeline
 from mqlkiscanner.pdf_reports import snapshot_token
 
 
-def _downloads(at: AppTest):
-    return at.get("download_button")
+def _pdf_buttons(at: AppTest):
+    prefixes = ("report_panel_", "detail_", "scan_portfolio_pdf",
+                "results_portfolio_pdf")
+    return [button for button in at.button
+            if any((button.key or "").startswith(prefix) for prefix in prefixes)]
 
 
 def test_table_opens_pdf_report_and_detail_offers_all_pdfs_for_repeated_ids(monkeypatch):
@@ -47,14 +50,14 @@ def test_table_opens_pdf_report_and_detail_offers_all_pdfs_for_repeated_ids(monk
     at.session_state["rows"] = [first, second]
     at.run()
     assert not at.exception
-    downloads = _downloads(at)
+    buttons = _pdf_buttons(at)
     assert list(captured["frame"]["Bericht"]) == [
         ":material/picture_as_pdf: Öffnen",
         ":material/picture_as_pdf: Öffnen",
     ]
     second_token = snapshot_token(second.source_kind, second.id, second.trades_path,
                                   second.trades_sha256, second.name)
-    keys = {item.key for item in downloads}
+    keys = {item.key for item in buttons}
     assert f"report_panel_final_{second_token}" in keys
     assert f"report_panel_trade_{second_token}" in keys
     assert f"report_panel_risk_{second_token}" in keys
@@ -80,8 +83,14 @@ def test_report_panel_offers_final_and_intermediate_pdfs_for_exact_snapshot():
     at.session_state["report_result_identity"] = identity
     at.run()
     assert not at.exception
-    labels = {item.label for item in _downloads(at)}
-    assert {"Gesamtbericht als PDF", "Trade-Analyse PDF", "Risiko-Analyse PDF"} <= labels
+    labels = {item.label for item in _pdf_buttons(at)}
+    assert {"Gesamtbericht anzeigen", "Trade-Analyse anzeigen",
+            "Risiko-Analyse anzeigen"} <= labels
+    button = at.button(key=f"report_panel_final_{snapshot_token(*identity)}")
+    button.click().run()
+    assert not at.exception
+    assert at.session_state[f"{button.key}_visible"] is True
+    assert any("Automatisch gespeichert:" in item.value for item in at.caption)
 
 
 def test_portfolio_pdf_is_visible_on_scan_and_results_pages():
@@ -95,7 +104,7 @@ def test_portfolio_pdf_is_visible_on_scan_and_results_pages():
     scan.session_state["portfolio_result"] = portfolio
     scan.run()
     assert not scan.exception
-    assert any(item.key == "scan_portfolio_pdf" for item in _downloads(scan))
+    assert any(item.key == "scan_portfolio_pdf" for item in _pdf_buttons(scan))
 
     results = AppTest.from_file(str(ROOT / "streamlit_app.py"), default_timeout=30)
     results.session_state["scan_results"] = [result]
@@ -104,7 +113,7 @@ def test_portfolio_pdf_is_visible_on_scan_and_results_pages():
     results.run().switch_page("app_pages/ergebnisse.py").run()
     results.selectbox(key="results_run").set_value("Aktuelle Sitzung").run()
     assert not results.exception
-    assert any(item.key == "results_portfolio_pdf_source" for item in _downloads(results))
+    assert any(item.key == "results_portfolio_pdf_source" for item in _pdf_buttons(results))
 
 
 def test_prompt_tab_explains_engine_inputs_models_and_outputs():

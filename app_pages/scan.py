@@ -26,7 +26,7 @@ import streamlit as st
 
 from mqlkiscanner import config, db, pipeline, scan_state, scan_worker, secrets_store
 from mqlkiscanner.app_ui import (
-    render_portfolio_pdf_download,
+    render_portfolio_pdf_viewer,
     render_report_panel,
     render_results_table,
 )
@@ -219,14 +219,14 @@ def _live_status() -> None:
     steps_state = {sid: dict(step) for sid, step in workflow["steps"].items()}
     overall = sum(_step_fraction(s) for s in steps_state.values()) / len(STEPS)
     status = workflow["status"]
-    laufend = next(((nr, title) for nr, (sid, title, *_rest) in enumerate(STEPS, 1)
+    laufend = next(((sid, nr, title) for nr, (sid, title, *_rest) in enumerate(STEPS, 1)
                     if steps_state[sid]["status"] == "running"), None)
 
     # Statuszeile: Was läuft gerade, wie lange schon.
     dot = {"running": "running", "complete": "complete",
            "warning": "warning", "error": "error"}.get(status, "")
     if status == "running":
-        headline = (f"Station {laufend[0]} von {len(STEPS)} · {laufend[1]}"
+        headline = (f"Station {laufend[1]} von {len(STEPS)} · {laufend[2]}"
                     if laufend else "Workflow startet …")
     else:
         headline = {
@@ -276,12 +276,21 @@ def _live_status() -> None:
     strip.append("</div></div>")
     chips = []
     if clock := _elapsed_text(workflow):
-        chips.append(f'<span class="mks-clock" title="Gesamte Laufzeit">⏱ {clock}</span>')
-    if warte is not None:
         chips.append(
-            f'<span class="mks-clock mks-clock--wait" title="So lange läuft die aktuelle '
-            f'Meldung bereits — zählt jede Sekunde hoch, bis die nächste Meldung kommt '
-            f'(z. B. Antwort des KI-Modells oder nächstes Signal).">⏳ {_mmss(warte)}</span>')
+            f'<span class="mks-clock" title="Summe der Laufzeit aller Stationen">'
+            f'Σ Gesamt {clock}</span>')
+    if warte is not None:
+        is_llm_wait = bool(laufend and laufend[0] in ("llm", "portfolio"))
+        wait_label = "LLM-Antwort" if is_llm_wait else "Aktueller Schritt"
+        wait_title = (
+            "Wartezeit auf die aktuelle LLM-Antwort; zählt bis zur nächsten "
+            "Modellantwort oder Statusmeldung."
+            if is_llm_wait else
+            "Laufzeit der aktuellen Meldung; zählt bis zum nächsten Arbeitsschritt."
+        )
+        chips.append(
+            f'<span class="mks-clock mks-clock--wait" title="{wait_title}">'
+            f'{wait_label} {_mmss(warte)}</span>')
     if chips:
         strip.append(f'<div class="mks-strip__side">{"".join(chips)}</div>')
     strip.append("</div>")
@@ -1032,7 +1041,7 @@ if st.session_state.get("portfolio_bericht"):
         portfolio_result = st.session_state.get("portfolio_result") or {
             "text": st.session_state.portfolio_bericht,
         }
-        render_portfolio_pdf_download(portfolio_result, key="scan_portfolio_pdf")
+        render_portfolio_pdf_viewer(portfolio_result, key="scan_portfolio_pdf")
         st.markdown(urteile_farbig(st.session_state.portfolio_bericht),
                     unsafe_allow_html=True)
         if issue := portfolio_result.get("storage_error") or portfolio_result.get("reason"):

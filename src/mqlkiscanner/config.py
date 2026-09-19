@@ -15,6 +15,7 @@ SRC = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 RUNS_DIR = DATA_DIR / "runs"
+REPORTS_DIR = DATA_DIR / "reports"
 TRADES_DIR = DATA_DIR / "trades"
 STATS_DIR = DATA_DIR / "stats"
 CONFIG_DIR = ROOT / "config"
@@ -75,7 +76,7 @@ DEFAULT_SETTINGS: dict = {
     "model_stufe2": MODEL_STUFE2,
 }
 
-for _d in (DATA_DIR, RUNS_DIR, TRADES_DIR, STATS_DIR, PROMPTS_DIR):
+for _d in (DATA_DIR, RUNS_DIR, REPORTS_DIR, TRADES_DIR, STATS_DIR, PROMPTS_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 

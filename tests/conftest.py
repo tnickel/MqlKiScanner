@@ -39,6 +39,7 @@ def isolated_app_storage(tmp_path, monkeypatch):
     for name, relative in {
         "DATA_DIR": "data",
         "RUNS_DIR": "data/runs",
+        "REPORTS_DIR": "data/reports",
         "TRADES_DIR": "data/trades",
         "STATS_DIR": "data/stats",
         "CONFIG_DIR": "config",
