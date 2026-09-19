@@ -17,7 +17,7 @@ pip install -r requirements.txt
 ```
 
 Windows-Schnellstart: `start.bat` doppelklicken (legt ggf. venv an und
-startet Streamlit unter http://localhost:8501).
+startet Streamlit unter http://localhost:8504).
 
 ## 2. Geheimnisse setzen
 
@@ -72,12 +72,15 @@ und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
   Übernahmen und reine Portfolio-Läufe erzeugen keine NEU-Markierung.
 - Detailansicht: Kennzahlen, Forensik, LLM-Texte, Link zur MQL5-Seite.
 - Die Tabellenspalte **Bericht & PDF** öffnet für jedes Signal den gespeicherten
-  Gesamtbericht mit PDF-Download. Gleichlautende Signal-IDs aus verschiedenen
-  CSV-Momentaufnahmen bleiben über ihren Snapshot getrennt.
-- In der Detail-/Berichtsansicht lassen sich Trade-Analyse, Risiko-Analyse und
-  Gesamtbericht einzeln als PDF laden. Der Portfolio-Gesamtbericht ist auf der
-  Scan- und Ergebnisseite als PDF verfügbar. Die PDFs werden ausschließlich
-  aus dem bereits gespeicherten Text erzeugt und lösen keinen neuen KI-Aufruf aus.
+  Gesamtbericht. Gleichlautende Signal-IDs aus verschiedenen CSV-Momentaufnahmen
+  bleiben über ihren Snapshot getrennt.
+- Alle vorhandenen PDFs werden automatisch unter `data/reports/` gespeichert:
+  `signale/<ID-Name>/<Snapshot>/01-trade-analyse.pdf`,
+  `02-risiko-analyse.pdf`, `03-gesamtbericht.pdf` und
+  `portfolio/<Zeitpunkt-Version>/portfolio-gesamtbericht.pdf`.
+- **PDF anzeigen** blendet die gespeicherte Datei direkt in der Scan- oder
+  Ergebnisseite ein; ein manueller Download ist nicht nötig. Die PDFs entstehen
+  ausschließlich aus dem gespeicherten Text und lösen keinen neuen KI-Aufruf aus.
 
 ## 5. Analysevorlagen
 

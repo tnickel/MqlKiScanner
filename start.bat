@@ -13,15 +13,16 @@ rem ============================================================
 
 rem ---- Projektverzeichnis = Ordner dieser Datei ----
 cd /d "%~dp0"
+set "PORT=8504"
 
 rem -----------------------------------------------------------
 rem  SCHRITT 0: Alte Instanzen beenden (sonst "Port not available")
 rem -----------------------------------------------------------
 echo Pruefe auf laufende Alt-Instanzen ...
 
-rem a) Jeden Prozess beenden, der auf Port 8501 hoert
+rem a) Jeden Prozess beenden, der auf dem App-Port hoert
 rem    (Get-NetTCPConnection: sprachunabhaengig, kein LISTENING/ABHOEREN-Matching)
-powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8501 -State Listen -ErrorAction SilentlyContinue | Select-Object -Unique OwningProcess | ForEach-Object { $pn = (Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).ProcessName; Write-Host ('  Beende PID ' + $_.OwningProcess + ' (' + $pn + ') - belegt Port 8501'); Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort %PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -Unique OwningProcess | ForEach-Object { $pn = (Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).ProcessName; Write-Host ('  Beende PID ' + $_.OwningProcess + ' (' + $pn + ') - belegt Port %PORT%'); Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
 
 rem b) Streamlit-Wrapper (pip-Shim) beenden
 taskkill /F /IM streamlit.exe >nul 2>&1
@@ -33,7 +34,7 @@ powershell -NoProfile -Command "$me = $PID; Get-CimInstance Win32_Process | Wher
 
 rem Kurz warten, bis Windows den Port wirklich freigibt (bis zu ~15 s),
 rem PATH-sicher per PowerShell (kein Kollision mit GNU-timeout in manchen PATHs)
-powershell -NoProfile -Command "$deadline = (Get-Date).AddSeconds(15); while ((Get-Date) -lt $deadline) { $c = Get-NetTCPConnection -LocalPort 8501 -State Listen -ErrorAction SilentlyContinue; if (-not $c) { Write-Host '  Port 8501 ist frei.'; exit 0 }; Start-Sleep -Milliseconds 500 }; Write-Host '  HINWEIS: Port 8501 immer noch belegt - Startversuch trotzdem.'"
+powershell -NoProfile -Command "$deadline = (Get-Date).AddSeconds(15); while ((Get-Date) -lt $deadline) { $c = Get-NetTCPConnection -LocalPort %PORT% -State Listen -ErrorAction SilentlyContinue; if (-not $c) { Write-Host '  Port %PORT% ist frei.'; exit 0 }; Start-Sleep -Milliseconds 500 }; Write-Host '  HINWEIS: Port %PORT% immer noch belegt - Startversuch trotzdem.'"
 
 rem -----------------------------------------------------------
 rem  SCHRITT 1: Python finden (bevorzugt .venv, sonst System)
@@ -58,7 +59,7 @@ for /f "tokens=*" %%v in ('%PYTHON% --version 2^>^&1') do echo Python gefunden: 
 rem -----------------------------------------------------------
 rem  SCHRITT 2: Abhaengigkeiten pruefen / bei Bedarf installieren
 rem -----------------------------------------------------------
-%PYTHON% -c "import streamlit, requests, bs4, pandas; assert tuple(map(int, streamlit.__version__.split('.')[:2])) >= (1, 63)" >nul 2>nul
+%PYTHON% -c "import importlib.util, streamlit, requests, bs4, pandas; assert tuple(map(int, streamlit.__version__.split('.')[:2])) >= (1, 63); assert importlib.util.find_spec('streamlit_pdf')" >nul 2>nul
 if errorlevel 1 (
   echo.
   echo [Setup] Abhaengigkeiten fehlen oder sind veraltet - installiere requirements.txt
@@ -76,7 +77,7 @@ if errorlevel 1 (
 
 echo.
 echo ================================================
-echo   MqlKiScanner startet auf http://localhost:8501
+echo   MqlKiScanner startet auf http://localhost:%PORT%
 echo   Der Browser oeffnet sich automatisch.
 echo   Beenden: dieses Fenster schliessen oder Strg+C
 echo ================================================
@@ -85,7 +86,7 @@ echo.
 rem -----------------------------------------------------------
 rem  SCHRITT 3: App starten (headless=false => Browser oeffnet sich)
 rem -----------------------------------------------------------
-%PYTHON% -m streamlit run streamlit_app.py --server.port 8501 --server.headless=false
+%PYTHON% -m streamlit run streamlit_app.py --server.port %PORT% --server.headless=false
 
 echo.
 echo App beendet.
