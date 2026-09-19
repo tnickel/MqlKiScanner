@@ -31,7 +31,7 @@ Die Textsuche findet Signalnamen oder IDs. Im Statusfilter sind mehrere Einstufu
 
 **Eine Zeile auswählen** öffnet darunter die Details. „Bericht“ zeigt den vorhandenen Gesamtbericht. Diese Aktionen starten keine Analyse.
 
-**Kompakt** konzentriert sich auf Risiko, Stop-Nachweis und Urteil. „Alle Kennzahlen“ ergänzt Handelsstatistik, Volumen und Plattformdaten. **Ampel-Matrix** zeigt je Signal eine Ampel pro Testkriterium. Eine leere Zelle bedeutet fehlende Daten, nicht null Risiko.
+**Kompakt** konzentriert sich auf Risiko, Stop-Nachweis und Urteil. „Alle Kennzahlen“ ergänzt Handelsstatistik, Volumen und Plattformdaten. **Ampeln** (die Ampel-Matrix) zeigt je Signal eine Ampel pro Testkriterium. Eine leere Zelle bedeutet fehlende Daten, nicht null Risiko.
 """),
     "ampel_matrix": ("Die Ampel-Matrix: je Kriterium eine Ampel", """
 Die Matrix bewertet **einzelne Testkriterien** getrennt — sie ersetzt nicht das Gesamturteil (Spalte „Ampel“), zeigt aber, welche Bedingung die Einstufung treibt.
