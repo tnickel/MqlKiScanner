@@ -40,6 +40,14 @@ def normalize_symbol(symbol: str) -> str:
     for core in _KNOWN:
         if value.startswith(core) and _BROKER_SUFFIX.fullmatch(value[len(core):]):
             return _INDEX_ALIASES.get(core, core)
+    # Contract specs extend the set of explicitly recognized instruments.
+    # Preserve an alias as the canonical display key because several
+    # broker-specific specs may intentionally share it (e.g. USOUSD).
+    for spec_name, entry in load_specs().items():
+        for known_name in (spec_name, *(entry.get("aliases") or [])):
+            known = str(known_name).upper()
+            if value.startswith(known) and _BROKER_SUFFIX.fullmatch(value[len(known):]):
+                return known
     return value
 
 

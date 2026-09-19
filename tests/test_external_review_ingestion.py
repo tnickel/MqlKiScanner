@@ -55,6 +55,13 @@ def test_detail_html_preserves_grouped_metrics():
     assert stats["monthly_growth_pct"] == pytest.approx(1005.25)
 
 
+@pytest.mark.parametrize("server", ["VTMarkets-Live2", "VTMarkets-Live 2"])
+def test_detail_html_accepts_broker_server_with_optional_space(server):
+    stats = parse_detail_html(
+        f"<p>The provider's quotes from \"{server}\" are used for comparison.</p>")
+    assert stats["broker_server"] == server
+
+
 @pytest.mark.parametrize("card_weeks,expected_weeks", [(None, 1085), (52, 52)])
 def test_live_pipeline_persists_detail_metrics_and_preserves_card_age(
         tmp_path, monkeypatch, card_weeks, expected_weeks):
