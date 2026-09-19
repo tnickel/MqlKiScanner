@@ -43,7 +43,7 @@ copy .env.example .env   # Keys eintragen — oder später in der Admin-UI
 streamlit run streamlit_app.py
 ```
 
-Windows: `start.bat` doppelklicken → http://localhost:8501
+Windows: `start.bat` doppelklicken → http://localhost:8504
 
 Ohne MQL5-Login: **Testdaten** aus `data/raw/` (Engine-Verifikation).  
 Ohne GLM-Key: Scan + Forensik laufen, KI-Schritt ist optional.
