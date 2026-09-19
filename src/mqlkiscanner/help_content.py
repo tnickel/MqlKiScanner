@@ -31,7 +31,18 @@ Die Textsuche findet Signalnamen oder IDs. Im Statusfilter sind mehrere Einstufu
 
 **Eine Zeile auswählen** öffnet darunter die Details. „Bericht“ zeigt den vorhandenen Gesamtbericht. Diese Aktionen starten keine Analyse.
 
-**Kompakt** konzentriert sich auf Risiko, Stop-Nachweis und Urteil. „Alle Kennzahlen“ ergänzt Handelsstatistik, Volumen und Plattformdaten. Eine leere Zelle bedeutet fehlende Daten, nicht null Risiko.
+**Kompakt** konzentriert sich auf Risiko, Stop-Nachweis und Urteil. „Alle Kennzahlen“ ergänzt Handelsstatistik, Volumen und Plattformdaten. **Ampel-Matrix** zeigt je Signal eine Ampel pro Testkriterium. Eine leere Zelle bedeutet fehlende Daten, nicht null Risiko.
+"""),
+    "ampel_matrix": ("Die Ampel-Matrix: je Kriterium eine Ampel", """
+Die Matrix bewertet **einzelne Testkriterien** getrennt — sie ersetzt nicht das Gesamturteil (Spalte „Ampel“), zeigt aber, welche Bedingung die Einstufung treibt.
+
+**Farben:** 🟢 erfüllt/bewiesen · 🟡 teilweise, knapp oder unabgeklärt · 🟠 Warnflag ohne harte Verletzung · 🔴 harte Verletzung/nachgewiesen · ⚪ keine Daten (entlastet nicht).
+
+**ⓘ im Spaltenkopf** erklärt das Kriterium. **Maus über der Ampel-Zelle** zeigt die exakte Berechnung, z. B. „max(EQ-DD 3,80 %, Trading-DD 4,57 %) = 4,57 % hält die Schranke 30 % mit 25,4 Punkten Abstand ein“.
+
+Die Kriterien: Drawdown-Schranke (max aus Equity-DD und Trading-DD), Martingale-Signatur, Stop-Nachweis (bewiesen/behauptet), Ertrag pro Monat, Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
+
+Beim Scan wird die Matrix mit allen Herleitungen als Snapshot in der Datenbank gespeichert; die Anzeige rechnet sie aus den gespeicherten Werten mit den aktuellen Grenzwerten neu.
 """),
     "risk_status": ("Was die Einstufungen aussagen", """
 **Grün · Kandidat:** Die aktuelle Engine findet Forensikdaten, einen Risiko-Score unter 5 und ausreichenden monatlichen Ertrag. Das ist ein Prüfkandidat, keine Garantie. Prüfe den Stop-Nachweis separat.

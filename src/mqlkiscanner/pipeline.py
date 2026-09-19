@@ -25,6 +25,7 @@ import requests
 from . import config, scoring
 from . import db
 from . import fx_rates
+from .ampel_matrix import matrix_payload
 from .analysis_version import FORENSICS_VERSION
 from .engine import analyze as analyze_export
 from .llm import client as llm_client
@@ -709,6 +710,10 @@ class ScanPipeline:
                     # Score nur bei vollstaendiger Forensik — Design-Regel:
                     # kein Score vor bestandener Batterie.
                     "score": res.score if res.forensik_vorhanden else None,
+                    # Ampel-Matrix als Audit-Snapshot: je Testkriterium die
+                    # Zellen-Ampel samt exakter Berechnung (Nachvollzieh-
+                    # barkeit; Anzeige rechnet aus den Werten aktuell neu).
+                    "kriterien_matrix": matrix_payload(res, self.settings),
                     "ampel": res.ampel}
             saved_trades_path = db.store_scan_result(res.id, {
                 "name": res.name, "platform": res.platform, "url": res.url,
