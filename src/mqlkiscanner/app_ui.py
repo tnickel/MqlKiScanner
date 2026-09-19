@@ -224,39 +224,48 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
 def render_ampel_matrix(results, settings: dict | None = None) -> None:
     """Ampel-Matrix: Signal × Testkriterium mit Tooltips je Zelle.
 
-    Spaltenkopf: Kriterium + ⓘ (title-Tooltip mit der Beschreibung).
-    Zelle: Ampel-Emoji (title-Tooltip mit exakter Berechnung). Aller
-    dynamische Text wird HTML-escaped — Signalnamen und Engine-Details
-    duerfen beliebige Zeichen enthalten.
+    Kompakt genug fuer die Containerbreite (kein horizontales Scrollen):
+    Kopfzeilen duerfen umbrechen, die Signalspalte ist mit Ellipse
+    begrenzt (vollstaendiger Name steht im Tooltip). Spaltenkopf:
+    Kriterium + ⓘ (title-Tooltip mit der Beschreibung). Zelle: Ampel-
+    Emoji (title-Tooltip mit exakter Berechnung). Aller dynamische Text
+    wird HTML-escaped — Signalnamen und Engine-Details duerfen beliebige
+    Zeichen enthalten.
     """
     settings = settings if settings is not None else config.load_settings()
     esc = _html.escape
-    zellen_style = ("border:1px solid rgba(128,128,128,0.35);"
-                    "padding:4px 8px;white-space:nowrap;text-align:center;")
-    kopf = ['<th style="border:1px solid rgba(128,128,128,0.35);padding:4px 8px;'
-            'text-align:left;white-space:nowrap;">Signal</th>']
+    rahmen = "border:1px solid rgba(128,128,128,0.35);padding:3px 6px;"
+    zellen_style = rahmen + "text-align:center;"
+    kopf = [f'<th style="{rahmen}text-align:left;width:11em;max-width:11em;">'
+            f'Signal</th>']
     for kriterium in KRITERIEN:
         kopf.append(
-            f'<th style="{zellen_style}" title="{esc(kriterium.titel)}">'
+            f'<th style="{rahmen}text-align:center;font-weight:600;" '
+            f'title="{esc(kriterium.titel)}">'
             f'{esc(kriterium.titel)} '
             f'<span style="cursor:help;opacity:.7" '
             f'title="{esc(kriterium.beschreibung)}">&#9432;</span></th>')
     zeilen = []
     for result in results:
         matrix = kriterien_matrix(result, settings)
-        zeile = [f'<th style="border:1px solid rgba(128,128,128,0.35);'
-                 f'padding:4px 8px;text-align:left;white-space:nowrap;" '
-                 f'title="{esc(result.urteil or "")}">'
-                 f'{esc(result.ampel)} {esc(result.name or f"#{result.id}")}</th>']
+        name = result.name or f"#{result.id}"
+        tooltip = f"{result.ampel} {name}"
+        if result.urteil:
+            tooltip += f" — {result.urteil}"
+        zeile = [f'<th scope="row" style="{rahmen}text-align:left;'
+                 f'max-width:11em;overflow:hidden;text-overflow:ellipsis;'
+                 f'white-space:nowrap;" title="{esc(tooltip)}">'
+                 f'{esc(result.ampel)} {esc(name)}</th>']
         for kriterium in KRITERIEN:
             zelle = matrix[kriterium.key]
-            tooltip = f"{zelle.ampel} {LABELS[zelle.ampel]} — {zelle.kurz}. " \
-                      f"Berechnung: {zelle.detail}"
+            zell_tooltip = f"{zelle.ampel} {LABELS[zelle.ampel]} — {zelle.kurz}. " \
+                           f"Berechnung: {zelle.detail}"
             zeile.append(f'<td style="{zellen_style}" '
-                         f'title="{esc(tooltip)}">{zelle.ampel}</td>')
+                         f'title="{esc(zell_tooltip)}">{zelle.ampel}</td>')
         zeilen.append("<tr>" + "".join(zeile) + "</tr>")
-    tabelle = ('<div style="overflow-x:auto"><table style="border-collapse:collapse;'
-               'font-size:.95em"><thead><tr>' + "".join(kopf) +
+    tabelle = ('<div style="overflow-x:auto"><table style="width:100%;'
+               'border-collapse:collapse;font-size:.9em;table-layout:auto">'
+               '<thead><tr>' + "".join(kopf) +
                "</tr></thead><tbody>" + "".join(zeilen) + "</tbody></table></div>")
     st.markdown(tabelle, unsafe_allow_html=True)
     st.caption("🟢 erfüllt · 🟡 Beobachtung/knapp · 🟠 Warnflag · 🔴 verletzt · "
