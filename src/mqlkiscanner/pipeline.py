@@ -95,9 +95,14 @@ class ScanResult:
     berichte_basis: str = ""        # Datengrundlage der im Ergebnis enthaltenen KI-Texte
     bericht_hinweis: str = ""
     trade_analyse: str = ""         # Prompt 1: Strategie aus den Trades (glm-5.3)
+    trade_analyse_at: str = ""
+    trade_analyse_model: str = ""
     risiko_analyse: str = ""        # Prompt 2: Risiko-Profil aus Forensik (Flash)
+    risiko_analyse_at: str = ""
+    risiko_analyse_model: str = ""
     gesamtbericht: str = ""         # Prompt 3: ausfuehrlicher Gesamtbericht (glm-5.3)
     gesamtbericht_at: str = ""      # Erstellungszeitpunkt des enthaltenen Gesamtberichts
+    gesamtbericht_model: str = ""
     kurzfassung: str = ""           # Kurzzeile aus dem Gesamtbericht (fuer Tabelle)
     llm_fehler: str = ""
     fehler: str = ""
@@ -374,15 +379,13 @@ def restore_current_reports(result: ScanResult, settings: dict) -> bool:
         refresh_report_verdict(result, settings)
     basis = report_basis_for(result, settings) if result.forensik_vorhanden and not result.fehler else None
     stale = False
-    gesamtbericht_at = ""
     for kind in ("trade_analyse", "risiko_analyse", "gesamtbericht"):
         previous = db.get_latest_analysis(result.id, kind)
         current = db.get_latest_analysis(result.id, kind, basis=basis) if basis else None
         setattr(result, kind, current["text"] if current else "")
-        if kind == "gesamtbericht" and current:
-            gesamtbericht_at = current["created_at"] or ""
+        setattr(result, f"{kind}_at", (current["created_at"] or "") if current else "")
+        setattr(result, f"{kind}_model", (current["model"] or "") if current else "")
         stale = stale or bool(previous and current is None)
-    result.gesamtbericht_at = gesamtbericht_at
     result.kurzfassung = _extract_kurzfassung(result.gesamtbericht)
     result.berichte_basis = basis or ""
     result.bericht_hinweis = (
