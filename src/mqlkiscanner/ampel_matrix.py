@@ -90,10 +90,10 @@ KRITERIEN: list[Kriterium] = [
     Kriterium(
         "schock", "Schock vs. Konto",
         "Stress-Szenario, KEIN gemessener Verlust: Peak-Netto-Exposure im "
-        "50-USD-Schock, bezogen auf die Konto-Referenz zum Spitzenzeitpunkt "
-        "(Peak-Konto, falls vorhanden). Grün = unter 30 %, gelb = 30–100 %, "
-        "orange = über 100 % des Referenzkontos. Begründet Gewichtung und "
-        "Beobachtung — allein nie einen Ausschluss."),
+        "50-USD-Schock, ins Verhältnis zum Kontostand am Expositionspeak "
+        "gesetzt. Grün = unter 30 %, gelb = 30–100 %, orange = über 100 % "
+        "des Kontos. Begründet Gewichtung und Beobachtung — allein nie "
+        "einen Ausschluss."),
     Kriterium(
         "serie", "Verlustserie",
         "Längste Serie aufeinanderfolgender Trades ohne positiven Profit "
@@ -211,16 +211,17 @@ def _score_zelle(r) -> Zelle:
 
 
 def _schock_zelle(r) -> Zelle:
-    basis = ("Peak-Konto" if r.shock_pct_peak_account is not None
-             else ("Maximum" if r.shock_pct_max is not None else None))
-    wert = r.shock_pct_peak_account if r.shock_pct_peak_account is not None \
-        else r.shock_pct_max
+    # shock_pct_max = Schock in % des Kontos am Expositionspeak (die Felder
+    # shock_pct_peak_account/-usd sind USD-Betraege am Peak, keine Prozent!).
+    wert = r.shock_pct_max
     if wert is None:
         return Zelle(KEINE_DATEN, "kein Schockwert",
                      "Schockszenario nicht berechnet (Exposure- oder "
                      "Kontodaten unvollständig).")
+    zeit = (f"am {r.shock_pct_peak_time}" if r.shock_pct_peak_time
+            else "am Expositionspeak")
     kontext = (f"50-USD-Schock über Peak-Netto-Lots ≈ {_num(r.shock_usd, 0)} USD "
-               f"≈ {_num(wert, 1)} % der Konto-Referenz ({basis}-Bezug)")
+               f"= {_num(wert, 1)} % des Kontos {zeit}")
     if wert < 30:
         return Zelle(GRUEN, f"{_num(wert, 1)} %",
                      f"{kontext} — beherrschbar. Stress-Szenario, kein "

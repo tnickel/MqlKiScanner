@@ -67,7 +67,8 @@ def _max_drawdown(points: list[tuple], start: float) -> dict:
     }
 
 
-def run(parsed: ParsedExport) -> dict:
+def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
+        kapitalbasis_quelle: str | None = None) -> dict:
     trades = parsed.trades
     if not trades:
         return {"test": "drawdown"}
@@ -77,27 +78,44 @@ def run(parsed: ParsedExport) -> dict:
     # Bereits vor Handelsbeginn entnommenes Kapital stand nie fuer Trades
     # bereit. Nur spaetere Flows bleiben aus der virtuellen Kurve heraus.
     deposits_start = math.fsum(b.amount for b in balances if b.time <= first_open)
+    # Externe Kapitalbasis (Signalseite "Initial Deposit"): greift NUR, wenn
+    # der Export selbst keine Einzahlung vor dem ersten Trade enthaelt
+    # (MT4-Orderbuch beginnt mit der Signalhistorie). Die Webseite belegt
+    # das Startkapital des Signal-Kontos unabhaengig davon.
+    injected = 0.0
+    startkapital_quelle = "csv_einzahlungen"
+    if deposits_start <= 0 and kapitalbasis_usd is not None and kapitalbasis_usd > 0:
+        injected = float(kapitalbasis_usd)
+        startkapital_quelle = kapitalbasis_quelle or "extern"
+    startkapital = deposits_start + injected
     deposits_total = sum(b.amount for b in balances if b.amount > 0)
     withdrawals_total = sum(b.amount for b in balances if b.amount < 0)
 
     trading_points = [(t.close_time, t.net) for t in sorted(trades, key=lambda t: t.close_time)]
-    trading = _max_drawdown(trading_points, deposits_start)
+    trading = _max_drawdown(trading_points, startkapital)
 
+    # Balance-Kurve: CSV-Buchungen buchen sich selbst; die injizierte Basis
+    # ist keine Zeile und geht deshalb als Startwert ein.
     balance_points = [(b.time, b.amount) for b in balances] + trading_points
     balance_points.sort(key=lambda p: p[0])
-    balance = _max_drawdown(balance_points, 0.0)
+    balance = _max_drawdown(balance_points, injected)
 
     flows_total = deposits_total + withdrawals_total
     net_total = sum(t.net for t in trades)
     return {
         "test": "drawdown",
         "start_capital": round(deposits_start, 2),
+        "startkapital": round(startkapital, 2),
+        "startkapital_quelle": startkapital_quelle,
         "deposits_total": round(deposits_total, 2),
         "withdrawals_total": round(withdrawals_total, 2),
         "flows_total": round(flows_total, 2),
         "net_total": round(net_total, 2),
         # flows_total enthaelt deposits_start bereits (alle positiven Balance-Zeilen).
         "end_balance_estimated": round(flows_total + net_total, 2),
+        # Tatsaechlicher Kontostand am CSV-Ende inkl. injizierter Basis —
+        # Anker fuer den Abgleich mit dem Webseiten-Kontostand.
+        "end_balance_real": round(flows_total + net_total + injected, 2),
         "trading_dd": trading,      # ANKER fuer Plattform-Abgleich
         "balance_dd": balance,      # Diagnostik (Auszahlungs-Artefakte moeglich)
     }

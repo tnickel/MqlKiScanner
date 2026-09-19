@@ -125,6 +125,14 @@ def parse_detail_html(html: str) -> dict:
         "initial_deposit": values.get("Initial Deposit:", ""),
         "withdrawals": values.get("Withdrawals:", ""),
         "deposits": values.get("Deposits:", ""),
+        # Numerische Kontobasis: die Signalseite belegt das Startkapital auch
+        # dann, wenn der Trade-Export keine Einzahlung vor dem ersten Trade
+        # enthaelt (MT4-Orderbuch beginnt mit der Signalhistorie).
+        "initial_deposit_usd": _number(values.get("Initial Deposit:", "")),
+        "balance_usd": _number(values.get("Balance:", "")),
+        "withdrawals_usd": _number(values.get("Withdrawals:", "")),
+        "deposits_usd": _number(values.get("Deposits:", "")),
+        "profit_usd": _number(values.get("Profit:", "")),
         "weeks": _number(values.get("Weeks:", "")),
         "trades": _number(values.get("Trades:", "")),
         "profit_trades_pct": _number(values.get("Profit Trades:", "")),
