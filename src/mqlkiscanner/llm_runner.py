@@ -23,6 +23,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             if r.source_kind == "live" and r.forensik_vorhanden and not r.fehler]
     total = len(jobs) * 3
     done = failed = 0
+    current_signal = 0
     updated_ids: list[int] = []
 
     def mark_updated(result):
@@ -31,7 +32,8 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
 
     def progress(message):
         if on_progress:
-            on_progress(done, total, message)
+            prefix = f"Signal {current_signal}/{len(jobs)} · " if current_signal else ""
+            on_progress(done, total, prefix + message)
 
     def summary(reason=""):
         return {"completed": done, "total": total, "failed": failed,
@@ -52,7 +54,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
         return summary("Keine geeigneten Forensik-Ergebnisse")
 
     kriterien = _kriterien_text(pipe.settings)
-    for result in jobs:
+    for current_signal, result in enumerate(jobs, 1):
         if should_stop and should_stop():
             return stopped()
         result.llm_fehler = ""

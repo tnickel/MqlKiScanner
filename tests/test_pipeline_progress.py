@@ -54,6 +54,7 @@ def test_llm_progress_starts_at_zero_and_counts_saved_answers():
     assert [done for done, _, _ in events] == sorted(done for done, _, _ in events)
     starts = [event for event in events if "warte auf Modellantwort" in event[2]]
     assert [done for done, _, _ in starts] == [0, 2]
+    assert all("Signal 1/1" in event[2] for event in starts)
     assert {call[1]["stufe"] for call in fake.calls[:2]} == {1, 2}
     assert fake.calls[2][1]["stufe"] == 2
     for kind in ("trade_analyse", "risiko_analyse", "gesamtbericht"):
@@ -117,6 +118,18 @@ def test_run_llm_stops_between_signals_on_stop_request():
     assert summary["completed"] == 3 and summary["total"] == 6
     assert summary["failed"] == 0 and summary["skipped"] == 3
     assert "Stop" in summary["reason"]
+
+
+def test_llm_progress_names_current_signal_and_total():
+    fake = FakeLlm()
+    pipe = _pipe_with_llm(fake, signal_ids=(111, 222))
+    results = [pipeline.ScanResult(id=111, name="A", forensik_vorhanden=True),
+               pipeline.ScanResult(id=222, name="B", forensik_vorhanden=True)]
+    events = []
+    pipe.run_llm(results, pipeline.StepLog(), lambda *event: events.append(event))
+    messages = [message for _, _, message in events]
+    assert any(message.startswith("Signal 1/2 ·") for message in messages)
+    assert any(message.startswith("Signal 2/2 ·") for message in messages)
 
 
 def test_run_llm_stop_before_summary_keeps_partial_reports():
