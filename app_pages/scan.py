@@ -279,6 +279,12 @@ def _live_status() -> None:
         chips.append(
             f'<span class="mks-clock" title="Summe der Laufzeit aller Stationen">'
             f'Σ Gesamt {clock}</span>')
+    llm_step = steps_state["llm"]
+    if llm_step["status"] == "running" and llm_step.get("signal_total"):
+        chips.append(
+            f'<span class="mks-clock" title="Aktuell bearbeitetes Signal von allen '
+            f'Signalen, für die neue KI-Berichte erstellt werden">'
+            f'Signale {llm_step.get("signal_current", 0)}/{llm_step["signal_total"]}</span>')
     if warte is not None:
         is_llm_wait = bool(laufend and laufend[0] in ("llm", "portfolio"))
         wait_label = "LLM-Antwort" if is_llm_wait else "Aktueller Schritt"
@@ -734,21 +740,35 @@ if command:
             logs["llm"] = logs.get("llm", []) + [_stamped(reason)]
             w_step("llm", "skipped", detail=reason, total=total)
             return
-        w_step("llm", "running", total=total, detail="Trade-Analyse wird vorbereitet")
+        w_step("llm", "running", total=total, signal_current=0,
+               signal_total=len(jobs), detail="Trade-Analyse wird vorbereitet")
+
+        def w_llm_progress(done: int, prompt_total: int, text: str) -> None:
+            values = {"done": done, "total": prompt_total, "detail": text}
+            prefix = text.partition(" · ")[0]
+            if prefix.startswith("Signal ") and "/" in prefix:
+                current, signal_total = prefix.removeprefix("Signal ").split("/", 1)
+                if current.isdigit() and signal_total.isdigit():
+                    values.update(signal_current=int(current),
+                                  signal_total=int(signal_total))
+            w_step("llm", **values)
+
         summary = pipe.run_llm(
             jobs, w_log_for("llm"),
-            on_progress=lambda done, total, text: w_step("llm", done=done, total=total, detail=text),
+            on_progress=w_llm_progress,
             should_stop=lambda: bool(control.get("stop")),
         )
         control["refreshed_ids"] = list(dict.fromkeys(
             [*control["refreshed_ids"], *summary.get("updated_ids", [])]))
         completed, total = summary["completed"], summary["total"]
         failed, skipped = summary["failed"], summary["skipped"]
+        signals_bearbeitet = workflow["steps"]["llm"].get("signal_current", 0)
         if (summary.get("reason") or "").startswith("Abbruch"):
             state = "warning"
         else:
             state = "complete" if completed == total else "warning" if completed else "error"
         detail = (
+            f"{signals_bearbeitet}/{len(jobs)} Signale bearbeitet · "
             f"{completed}/{total} Berichte gespeichert · {failed} fehlgeschlagen · "
             f"{skipped} nicht ausgeführt · {pipe.llm.usage.total_tokens:,} Tokens"
         )
