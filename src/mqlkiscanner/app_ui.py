@@ -58,8 +58,8 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
     column_order = None
     if compact:
         column_order = (["Stand"] if fresh_ids is not None else []) + [
-            "Ampel", "Name", "EQ-DD %", "Trading-DD %", "Ertrag/Monat %",
-            "Stop", "Score", "Urteil", "Bericht vom", "Bericht", "Link"]
+            "Ampel", "Name", "Stop", "Trading-DD %", "EQ-DD %", "Ertrag/Monat %",
+            "Score", "Urteil", "Bericht vom", "Bericht", "Link"]
 
     event = st.dataframe(
         df,
@@ -73,7 +73,9 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             "Stand": st.column_config.TextColumn(
                 "Stand", width="small",
                 help="NEU = im letzten Lauf dieser Sitzung aktualisiert"),
-            "Ampel": st.column_config.TextColumn("", width="small"),
+            "Ampel": st.column_config.TextColumn(
+                "Status", width="small",
+                help="Kandidat, Beobachtung, Risiko, Ausschluss oder Vorprüfung"),
             "ID": st.column_config.NumberColumn("ID", format="%d"),
             "Name": st.column_config.TextColumn("Name", width="medium", pinned=True),
             "Platform": st.column_config.TextColumn("Plattform", width="small"),
@@ -150,34 +152,73 @@ def render_report_panel(results) -> None:
 
 def render_detail(result) -> None:
     """Detailansicht eines ScanResults: Kennzahlen, Teilergebnisse, Bericht."""
-    st.subheader(f"{result.ampel} {result.name} · #{result.id}")
-    if result.url:
-        st.markdown(f"[Signal auf MQL5 öffnen]({result.url})")
+    with st.container(horizontal=True, vertical_alignment="center"):
+        st.subheader(f"{result.ampel} {result.name} · #{result.id}")
+        if result.url:
+            st.link_button("Auf MQL5 öffnen", result.url, icon=":material/open_in_new:")
+
+    labels = {
+        "🟢": ("Kandidat", "green"),
+        "🟡": ("Beobachtung", "orange"),
+        "🔴": ("Risiko-Flag", "red"),
+        "⛔": ("Ausgeschlossen", "red"),
+        "⚪": ("Vorprüfung", "gray"),
+    }
+    label, color = labels.get(result.ampel, ("Unklar", "gray"))
+    with st.container(border=True):
+        with st.container(horizontal=True, vertical_alignment="center"):
+            st.badge(label, color=color)
+            if result.trading_dd_pct is not None:
+                st.badge(
+                    "Drawdown-Grenze eingehalten"
+                    if result.trading_dd_pct <= 30 else "Drawdown-Grenze überschritten",
+                    color="green" if result.trading_dd_pct <= 30 else "red",
+                )
+            st.badge(
+                "Ertragsziel erreicht"
+                if result.ertrag_monat_pct is not None and result.ertrag_monat_pct > 5
+                else "Ertragsziel nicht belegt",
+                color="green"
+                if result.ertrag_monat_pct is not None and result.ertrag_monat_pct > 5
+                else "gray",
+            )
+        st.markdown("**Urteil**")
+        st.write(result.urteil or "Noch kein belastbares Urteil vorhanden.")
+
+    with st.container(border=True):
+        section_header("Schutz und Stop-Nachweis", "Kernfrage: bewiesen oder nur behauptet?",
+                       help_key="stop_evidence")
+        st.markdown(result.stop_nachweis or "Kein Nachweis in den vorliegenden Daten.")
 
     section_header("Risiko und Ertrag", "Historische Kennzahlen · fehlende Daten erscheinen als Strich.", help_key="risk_metrics")
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Risiko-Score", f"{result.score:.1f}" if result.score is not None else "—")
-    col2.metric("Trading-DD max. relativ",
-                f"{result.trading_dd_pct:.1f} %" if result.trading_dd_pct is not None else "—")
-    col3.metric("EQ-DD (Plattform)",
-                f"{result.dd_equity_pct:.1f} %" if result.dd_equity_pct is not None else "—")
-    col4.metric("Ertrag/Monat",
-                f"{result.ertrag_monat_pct:.1f} %" if result.ertrag_monat_pct is not None else "—")
+    with st.container(horizontal=True):
+        st.metric("Risiko-Score", f"{result.score:.1f}" if result.score is not None else "—",
+                  border=True)
+        st.metric("Trading-DD max.",
+                  f"{result.trading_dd_pct:.1f} %" if result.trading_dd_pct is not None else "—",
+                  border=True)
+        st.metric("EQ-DD (Plattform)",
+                  f"{result.dd_equity_pct:.1f} %" if result.dd_equity_pct is not None else "—",
+                  border=True)
+        st.metric("Ertrag / Monat",
+                  f"{result.ertrag_monat_pct:.1f} %" if result.ertrag_monat_pct is not None else "—",
+                  border=True)
 
     section_header("Positionierung und Belastung", help_key="exposure")
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Winrate", f"{result.winrate_pct:.1f} %" if result.winrate_pct is not None else "—")
-    col2.metric("Max. Verlustserie",
-                f"{result.max_verlustserie}" if result.max_verlustserie is not None else "—",
-                f"{result.verlustserie_usd:.0f} USD" if result.verlustserie_usd is not None else None)
-    col3.metric("Peak-Positionen", f"{result.peak_positionen}" if result.peak_positionen is not None else "—")
-    col4.metric("50-USD-Schock",
-                f"{result.shock_usd:,.0f} USD".replace(",", ".") if result.shock_usd is not None else "—")
-
-    st.markdown(f"**Urteil:** {result.urteil}")
-    with st.container(border=True):
-        section_header("Schutz und Stop-Nachweis", help_key="stop_evidence")
-        st.markdown(result.stop_nachweis or "Kein Nachweis in den vorliegenden Daten.")
+    with st.container(horizontal=True):
+        st.metric("Winrate", f"{result.winrate_pct:.1f} %" if result.winrate_pct is not None else "—",
+                  border=True)
+        st.metric("Max. Verlustserie",
+                  f"{result.max_verlustserie}" if result.max_verlustserie is not None else "—",
+                  f"{result.verlustserie_usd:.0f} USD" if result.verlustserie_usd is not None else None,
+                  border=True)
+        st.metric("Peak-Positionen",
+                  f"{result.peak_positionen}" if result.peak_positionen is not None else "—",
+                  border=True)
+        st.metric("50-USD-Schock",
+                  f"{result.shock_usd:,.0f} USD".replace(",", ".")
+                  if result.shock_usd is not None else "—",
+                  border=True)
     if result.martingale_evidenz:
         st.markdown("**Martingale-Evidenz:** " + "; ".join(result.martingale_evidenz))
     if result.fehler:

@@ -1,7 +1,7 @@
-# High-end Fintech Dark Marble Theme
+# Calm forensic dashboard theme
 [theme]
 base = "dark"
-primaryColor = "#00D2D3"
+primaryColor = "#20C5C7"
 backgroundColor = "#0A111E"
 secondaryBackgroundColor = "#142135"
 textColor = "#F1F5F9"
@@ -11,8 +11,8 @@ codeBackgroundColor = "#0F1A2A"
 codeTextColor = "#CBD5E1"
 showWidgetBorder = true
 showSidebarBorder = true
-baseRadius = "12px"
-buttonRadius = "8px"
+baseRadius = "14px"
+buttonRadius = "10px"
 font = "sans-serif"
 baseFontSize = 15
 headingFontSizes = ["36px", "27px", "21px", "18px", "16px", "14px"]

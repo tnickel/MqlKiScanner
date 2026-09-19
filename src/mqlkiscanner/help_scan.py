@@ -11,15 +11,15 @@ HELP_SCAN = {
 3. **Computer prüft** — Webseiten-Kennzahlen und CSV-Handelsdaten rechnen (Drawdown, Exposure, Stop-Nachweis).
 4. **KI berichtet** — optional drei Texte je Signal (Trade + Risiko parallel, danach Endbericht).
 
-**Die vier Statuskarten** zeigen denselben Ablauf etwas feiner:
-Signale holen → Auswahl treffen → Prüfen & speichern → KI-Bericht.
+**Die fünf Stationen** zeigen denselben Ablauf im Detail:
+Signale holen → Auswahl treffen → Prüfen & speichern → KI-Bericht → Portfolio.
 
 **Farben:** Blau = läuft gerade · Grün = fertig · Orange = fertig mit Lücken · Rot = Fehler · Grau = wartet oder übersprungen.
 Grün bedeutet nur: der Schritt ist technisch durch — nicht, dass ein Signal „sicher“ ist.
 
 **Fortschrittsbalken** zählen erledigte Arbeitseinheiten (Seiten, Dateien, Berichte), keine Uhrzeit.
 """),
-    "scan_start": ("Starte Workflow", """
+    "scan_start": ("Analyse starten", """
 **Dieser Knopf startet den kompletten Online-Durchlauf.**
 
 Der Scanner holt Signallisten, filtert nach Ihren Einstellungen, lädt Handelsdaten, speichert sie, prüft sie rechnerisch und kann danach KI-Berichte schreiben.
@@ -55,7 +55,7 @@ Das ist nur eine Vorauswahl — noch keine Risikobewertung.
     "scan_llm_settings": ("KI am Ende des Workflows", """
 **An:** Nach dem Rechnen versucht der Workflow, KI-Berichte zu schreiben (braucht Key und Kontingent).
 
-**Aus:** Der Workflow endet nach der rechnerischen Prüfung. KI können Sie später unter „Weitere Möglichkeiten“ nachziehen.
+**Aus:** Der Workflow endet nach der rechnerischen Prüfung. KI können Sie später unter „Testdaten und Expertenfunktionen“ nachziehen.
 """),
     "scan_save": ("Einstellungen speichern", """
 Speichert Suchumfang, Filter und KI-Schalter als Standard für später.
@@ -69,9 +69,16 @@ Ohne MQL5-Zugang können Sie trotzdem Testdaten prüfen. Hinterlegte Zugänge si
 
 Bei wiederholter Drosselung oder Login-Sperre bricht der Workflow weitere MQL5-Exporte ab (Fail-Fast), statt den Account weiter zu belasten.
 """),
+    "scan_reuse": ("Vorhandene Bewertungen übernehmen", """
+**An:** Bereits vollständig geprüfte Signale werden nicht erneut von MQL5 geladen. Das spart Zeit und schont den Zugang.
+
+Fehlende oder nicht mehr passende KI-Berichte können trotzdem ergänzt werden. Der Portfolio-Vorschlag berücksichtigt weiterhin alle geeigneten Signale.
+
+**Aus:** Alle ausgewählten Signale werden erneut geladen und forensisch geprüft.
+"""),
     "scan_results": ("Ergebnisse richtig lesen", """
 **Datensätze** = verarbeitete Signale. **Gründlich geprüft** = mit Trade-Analyse.
-**Kandidaten** = aktuell grün eingestuft. **Fehler / Vorprüfung** = unvollständig oder fehlerhaft.
+**Kandidaten** = aktuell grün eingestuft. **Probleme** = unvollständig oder mit abgebrochener Prüfung.
 
 Grün ist ein Prüfkandidat, keine Garantie. Schauen Sie zuerst auf Drawdown, Exposure und Stop-Nachweis.
 Ein fertiger Workflow ersetzt keine eigene Entscheidung.
