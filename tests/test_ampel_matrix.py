@@ -218,7 +218,7 @@ def test_ergebnisse_seite_rendert_ampel_matrix_ansicht():
         "symbole": "XAUUSD",
     })
     at = AppTest.from_file(str(ROOT / "streamlit_app.py"), default_timeout=60)
-    at.session_state["results_view"] = "Ampel-Matrix"
+    at.session_state["results_view"] = "Ampeln"
     at.run()
     assert not at.exception, at.exception
     at.switch_page("app_pages/ergebnisse.py").run()

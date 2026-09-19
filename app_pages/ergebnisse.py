@@ -143,9 +143,9 @@ st.caption(
 with st.container(border=True):
     section_header('Signale vergleichen', 'Filtern, dann eine Zeile für die vollständige Risikoprüfung auswählen.',
                    help_key='results_filter')
-    c1, c2, c3 = st.columns([2, 1, 1])
+    c1, c2, c3 = st.columns([1.5, 1.7, 0.8])
     query = c1.text_input('Name oder Signal-ID', placeholder='Signal suchen …', key='results_search')
-    view = c2.segmented_control('Tabellenansicht', ['Kompakt', 'Alle Kennzahlen', 'Ampel-Matrix'],
+    view = c2.segmented_control('Tabellenansicht', ['Kompakt', 'Alle Kennzahlen', 'Ampeln'],
                                 default='Kompakt', key='results_view')
     only_fresh = c3.toggle('Nur NEU', value=False, key='results_only_fresh',
                            disabled=not fresh_ids)
@@ -163,7 +163,7 @@ with st.container(border=True):
         signature = sha1((source_signature + repr([
             (r.source_kind, r.id, r.trades_path, r.trades_sha256, r.name) for r in visible])
                           + repr(sorted(show_fresh or []))).encode()).hexdigest()[:12]
-        if view == 'Ampel-Matrix':
+        if view == 'Ampeln':
             render_ampel_matrix(visible, config.load_settings())
             selected = None
             st.caption('Zeilen-Auswahl und Detailansicht sind in den Ansichten '
