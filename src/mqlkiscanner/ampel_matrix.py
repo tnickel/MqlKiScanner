@@ -105,7 +105,9 @@ KRITERIEN: list[Kriterium] = [
         "Manuell kuratierte Liste (data/known_signals.json) aus der "
         "Analyse-Reihe: rot = ausgeschlossen (Grund im Tooltip; überschreibt "
         "alles), gelb = Watchlist/Beobachtung, grün = nicht gelistet. "
-        "Ausschlüsse bleiben wirksam, bis die Liste gepflegt wird."),
+        "Regelwerk der Kriterien (Schranke, Martingale/Grid, Ertrag, "
+        "Qualität, grenznahe Kombination, Copy-Fragilität) siehe "
+        "Ergebnisse-Seite, Abschnitt „Regelwerk · Ausschlussliste“."),
 ]
 
 

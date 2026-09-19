@@ -89,6 +89,13 @@ Die Engine berechnet die Kennzahlen. KI-Texte interpretieren Daten und können t
 
 **Schließen** blendet den Bericht aus und löscht keine Ergebnisse.
 """),
+    "ausschlussliste": ("Regelwerk der Ausschlussliste", """
+Die **Ausschlussliste** (`data/known_signals.json`) wird manuell aus der forensischen Analyse-Reihe gepflegt; jeder Eintrag trägt seinen gemessenen Grund. Ein Signal kommt darauf, wenn mindestens eines dieser Kriterien klar erfüllt ist: **Drawdown-Schranke verletzt**, **Martingale/Grid ohne bewiesenen Stop**, **Ertrag dauerhaft unter der Schwelle**, **schwach belegter Edge (PF/Sharpe/Winrate)**, **grenznahe Risikokombination** (formal unter der Schranke, aber nahe dran plus tiefe Verlustserie) oder **Copy-Fragilität/Kurzlebigkeit**.
+
+Die harten Regeln (Schranke, Martingale, Stop-Nachweis, Score/Ertrag) urteilt die Engine zusätzlich automatisch bei jedem Lauf. Ein Listen-Eintrag überlebt bessere Neuberechnungen; Wiederaufnahme nur, wenn neue Forensik den Grund entkräftet und der Eintrag entfernt wird.
+
+Das vollständige Regelwerk samt aktueller Ausschlüsse steht auf der **Ergebnisse-Seite** im Abschnitt „Regelwerk · Ausschlussliste“ — bei ausgeschlossenen Signalen auch direkt in der Detailansicht.
+"""),
     "portfolio_report": ("Der Portfolio-Vorschlag (Station 5)", """
 Der **Portfolio-Vorschlag** ist ein zusätzlicher KI-Bericht, der ALLE geprüften Signale zusammen ansieht: Kennzahlen, Forensik, gehandelte Assets und die Gesamtberichte. Er empfiehlt eine Depot-Kombination mit Rollen (Ertragsträger/Risikoträger), Gewichtung und Diversifikations-Begründung über unterschiedliche Assets und Strategie-Typen.
 

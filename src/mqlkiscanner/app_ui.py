@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 import streamlit as st
 from mqlkiscanner import config
+from mqlkiscanner import regelwerk
 from mqlkiscanner.ampel_matrix import KRITERIEN, LABELS, kriterien_matrix
 from mqlkiscanner.pdf_reports import (
     PdfRenderError,
@@ -356,6 +357,19 @@ def render_detail(result) -> None:
             )
         st.markdown("**Urteil**")
         st.write(result.urteil or "Noch kein belastbares Urteil vorhanden.")
+
+    if result.ampel == "⛔":
+        eintrag = regelwerk.ausgeschlossen_eintrag(result.id)
+        grund = (eintrag or {}).get("grund", "")
+        with st.container(border=True):
+            section_header("Regelwerk · Ausschlussliste",
+                           "Warum steht dieses Signal auf der Liste?",
+                           help_key="ausschlussliste")
+            if grund:
+                st.markdown(f"**Gemessener Grund:** {_html.escape(grund)}")
+            with st.expander("Vollständiges Regelwerk anzeigen",
+                             expanded=False, icon=":material/gavel:"):
+                st.markdown(regelwerk.regelwerk_markdown())
 
     with st.container(border=True):
         section_header("Schutz und Stop-Nachweis", "Kernfrage: bewiesen oder nur behauptet?",
