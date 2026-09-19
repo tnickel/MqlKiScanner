@@ -123,6 +123,8 @@ def test_scan_page_shows_waiting_stopwatch_for_long_model_calls():
     assert not at.exception, at.exception
     page = "\n".join(m.value for m in at.markdown)
     assert "mks-clock--wait" in page, "Warte-Stoppuhr fehlt"
+    assert "Σ Gesamt" in page
+    assert "LLM-Antwort" in page
     assert "02:30" in page, "Stoppuhr zeigt nicht 150 s als 02:30 an"
     assert "keine neue Meldung" in page, "Langwarte-Hinweis fehlt ab 2 Minuten"
     keeper.join(timeout=16)

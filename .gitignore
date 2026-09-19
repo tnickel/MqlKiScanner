@@ -25,6 +25,7 @@ data/stats/
 data/trades/
 data/trade_snapshots/
 data/runs/
+data/reports/
 data/*.db
 data/*.db-*
 

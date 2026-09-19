@@ -94,6 +94,7 @@ class ScanResult:
     trades_sha256: str = ""         # Inhalt des unveränderlichen Trade-Snapshots
     berichte_basis: str = ""        # Datengrundlage der im Ergebnis enthaltenen KI-Texte
     bericht_hinweis: str = ""
+    pdf_fehler: str = ""
     trade_analyse: str = ""         # Prompt 1: Strategie aus den Trades (glm-5.3)
     trade_analyse_at: str = ""
     trade_analyse_model: str = ""
@@ -207,9 +208,14 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             trades_path=row.get("trades_path") or "",
             trades_sha256=row.get("trades_sha256") or "",
             trade_analyse=row.get("trade_analyse") or "",
+            trade_analyse_at=row.get("trade_at") or "",
+            trade_analyse_model=row.get("trade_model") or "",
             risiko_analyse=row.get("risiko_analyse") or "",
+            risiko_analyse_at=row.get("risiko_at") or "",
+            risiko_analyse_model=row.get("risiko_model") or "",
             gesamtbericht=row.get("gesamtbericht") or "",
             gesamtbericht_at=row.get("gesamt_at") or "",
+            gesamtbericht_model=row.get("gesamt_model") or "",
             fehler=last_fehler or "",
         )
         if forensik_stale and f:
@@ -222,6 +228,12 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             res.schranke_verletzt = max(eq, real) > limit
         if res.gesamtbericht:
             res.kurzfassung = _extract_kurzfassung(res.gesamtbericht)
+        if any((res.trade_analyse, res.risiko_analyse, res.gesamtbericht)):
+            try:
+                from .pdf_reports import materialize_result_pdfs
+                materialize_result_pdfs(res)
+            except Exception as exc:
+                res.pdf_fehler = f"PDF-Speicherung fehlgeschlagen: {type(exc).__name__}: {exc}"
         res.ampel, res.urteil = ampel_for(res, settings)
         if forensik_stale and last_fehler:
             res.urteil = f"Fehler (Forensik veraltet): {last_fehler}"
@@ -817,10 +829,19 @@ class ScanPipeline:
             f"{self.llm.usage.total_tokens:,} Tokens")
         if on_progress:
             on_progress(1, total, storage_error or "Portfolio-Vorschlag fertig")
-        return {"text": text, "zeichen": meta.get("zeichen", len(text)),
+        summary = {"text": text, "zeichen": meta.get("zeichen", len(text)),
                 "tokens": self.llm.usage.total_tokens, "model": model_strong,
                 "created_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
                 "reason": storage_error, "storage_error": storage_error}
+        try:
+            from .pdf_reports import materialize_portfolio_pdf
+            materialize_portfolio_pdf(summary)
+        except Exception as exc:
+            pdf_error = f"Portfolio-PDF nicht gespeichert: {type(exc).__name__}: {exc}"
+            summary["storage_error"] = "; ".join(filter(None, (storage_error, pdf_error)))
+            summary["reason"] = summary["storage_error"]
+            log(f"  {pdf_error}")
+        return summary
 
     # ------------------------------------------------------ Hilfen
     @staticmethod
@@ -906,6 +927,25 @@ class ScanPipeline:
     @staticmethod
     def save_run(results: list[ScanResult], logs: dict[str, list[str]],
                  portfolio: dict | None = None) -> str:
+        from .pdf_reports import materialize_portfolio_pdf, materialize_result_pdfs
+        portfolio = dict(portfolio) if portfolio is not None else None
+        for result in results:
+            try:
+                materialize_result_pdfs(result)
+                result.pdf_fehler = ""
+            except Exception as exc:
+                result.pdf_fehler = (
+                    f"PDF-Speicherung fehlgeschlagen: {type(exc).__name__}: {exc}")
+                logs.setdefault("pdf", []).append(
+                    f"Signal #{result.id}: {result.pdf_fehler}")
+        if portfolio and portfolio.get("text"):
+            try:
+                materialize_portfolio_pdf(portfolio)
+            except Exception as exc:
+                error = f"Portfolio-PDF nicht gespeichert: {type(exc).__name__}: {exc}"
+                portfolio["storage_error"] = "; ".join(
+                    filter(None, (portfolio.get("storage_error"), error)))
+                logs.setdefault("pdf", []).append(error)
         stamp = datetime.now().strftime("%Y-%m-%d_%H%M%S_%f") + "_" + uuid4().hex[:8]
         run_dir = config.RUNS_DIR / stamp
         run_dir.mkdir(parents=True, exist_ok=False)

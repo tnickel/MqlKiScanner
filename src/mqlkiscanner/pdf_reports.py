@@ -1,8 +1,10 @@
-"""Deterministic, on-demand PDF rendering for stored analysis texts."""
+"""Deterministic rendering and durable storage for analysis PDFs."""
 from __future__ import annotations
 
 import html
+import os
 import re
+import tempfile
 import unicodedata
 from dataclasses import dataclass
 from hashlib import sha256
@@ -30,6 +32,8 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+
+from . import config
 
 REPORT_TITLES = {
     "trade_analyse": "Trade-Analyse",
@@ -138,6 +142,128 @@ def report_filename(
     name_part = f"-{_slug(signal_name, 'unbenannt')}" if signal_name else ""
     snapshot_part = f"-{_slug(snapshot, 'snapshot')[:16]}" if snapshot else ""
     return f"mqlki-{signal_part}{name_part}-{kind_slug}{snapshot_part}.pdf"
+
+
+def result_snapshot_token(result) -> str:
+    """Identify one exact signal/trade snapshot independently of its display row."""
+    digest = getattr(result, "trades_sha256", "")
+    if digest:
+        return digest[:10]
+    return snapshot_token(
+        getattr(result, "source_kind", "live"),
+        getattr(result, "id", None),
+        getattr(result, "trades_path", ""),
+        digest,
+        getattr(result, "name", ""),
+    )
+
+
+def result_pdf_spec(result, kind: str) -> tuple[PdfReport, str]:
+    """Build immutable PDF inputs for one exact result snapshot."""
+    report = PdfReport(
+        kind=kind,
+        body=getattr(result, kind, ""),
+        signal_id=getattr(result, "id", None),
+        signal_name=getattr(result, "name", ""),
+        created_at=getattr(result, f"{kind}_at", "") or None,
+        model=getattr(result, f"{kind}_model", "") or None,
+    )
+    filename = report_filename(
+        kind,
+        signal_id=report.signal_id,
+        signal_name=report.signal_name,
+        snapshot=result_snapshot_token(result),
+    )
+    return report, filename
+
+
+def portfolio_pdf_spec(report: dict) -> tuple[PdfReport, str]:
+    """Build immutable PDF inputs from one stored portfolio report."""
+    pdf_report = PdfReport(
+        kind="portfolio",
+        body=str(report.get("text") or ""),
+        created_at=report.get("created_at"),
+        model=report.get("model"),
+    )
+    return pdf_report, report_filename("portfolio")
+
+
+_STORED_FILENAMES = {
+    "trade_analyse": "01-trade-analyse.pdf",
+    "risiko_analyse": "02-risiko-analyse.pdf",
+    "gesamtbericht": "03-gesamtbericht.pdf",
+    "portfolio": "portfolio-gesamtbericht.pdf",
+}
+
+
+def report_storage_path(
+    report: PdfReport,
+    *,
+    snapshot: str = "",
+    root: Path | None = None,
+) -> Path:
+    """Return the durable, human-readable path for one report version."""
+    base = Path(root) if root is not None else config.REPORTS_DIR
+    if report.kind not in _STORED_FILENAMES:
+        raise PdfRenderError(f"Unbekannte Berichtsart: {report.kind}")
+    if report.kind == "portfolio":
+        version = snapshot_token(report.created_at, report.model, report.body)
+        date = _slug(report.created_at or "ohne-datum", "ohne-datum")[:19]
+        return base / "portfolio" / f"{date}-{version}" / _STORED_FILENAMES[report.kind]
+    signal_id = report.signal_id if report.signal_id is not None else "ohne-id"
+    signal = f"{signal_id}-{_slug(report.signal_name, 'unbenannt')}"
+    version = _slug(snapshot, "snapshot") if snapshot else snapshot_token(
+        report.signal_id, report.signal_name, report.created_at, report.model, report.body)
+    return base / "signale" / signal / version / _STORED_FILENAMES[report.kind]
+
+
+def persist_report_pdf(
+    report: PdfReport,
+    *,
+    snapshot: str = "",
+    root: Path | None = None,
+) -> Path:
+    """Render and atomically persist one report, replacing stale bytes if needed."""
+    path = report_storage_path(report, snapshot=snapshot, root=root)
+    payload = render_report_pdf(report)
+    if path.is_file() and path.read_bytes() == payload:
+        return path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", dir=path.parent, suffix=".tmp", delete=False
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    except OSError as exc:
+        raise PdfRenderError(f"PDF konnte nicht unter {path} gespeichert werden: {exc}") from exc
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+    return path
+
+
+def materialize_result_pdfs(result, *, root: Path | None = None) -> dict[str, Path]:
+    """Persist every report currently available for one signal snapshot."""
+    paths: dict[str, Path] = {}
+    snapshot = result_snapshot_token(result)
+    for kind in ("trade_analyse", "risiko_analyse", "gesamtbericht"):
+        report, _ = result_pdf_spec(result, kind)
+        if report.body.strip():
+            paths[kind] = persist_report_pdf(report, snapshot=snapshot, root=root)
+    return paths
+
+
+def materialize_portfolio_pdf(report: dict, *, root: Path | None = None) -> Path | None:
+    """Persist one portfolio report if it contains report text."""
+    pdf_report, _ = portfolio_pdf_spec(report)
+    if not pdf_report.body.strip():
+        return None
+    return persist_report_pdf(pdf_report, root=root)
 
 
 def _font_safe(text: str) -> str:

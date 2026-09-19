@@ -7,8 +7,11 @@ import pytest
 
 from mqlkiscanner import app_ui, pipeline
 from mqlkiscanner.pdf_reports import (
+    materialize_portfolio_pdf,
+    materialize_result_pdfs,
     PdfRenderError,
     PdfReport,
+    persist_report_pdf,
     render_report_pdf,
     report_filename,
 )
@@ -95,3 +98,51 @@ def test_portfolio_pdf_specs_do_not_mix_sources():
     assert "ARCHIVBERICHT" in _text(render_report_pdf(archived))
     assert "AKTUELLER BERICHT" not in _text(render_report_pdf(archived))
     assert "AKTUELLER BERICHT" in _text(render_report_pdf(current))
+
+
+def test_reports_are_persisted_in_signal_snapshot_structure(tmp_path):
+    result = pipeline.ScanResult(
+        id=900001, name="Gold Größe", trades_sha256="a" * 64,
+        trade_analyse="Trade", risiko_analyse="Risiko", gesamtbericht="Final")
+    paths = materialize_result_pdfs(result, root=tmp_path)
+    assert set(paths) == {"trade_analyse", "risiko_analyse", "gesamtbericht"}
+    assert paths["trade_analyse"] == (
+        tmp_path / "signale" / "900001-gold-groesse" / ("a" * 10)
+        / "01-trade-analyse.pdf")
+    assert paths["risiko_analyse"].is_file()
+    assert paths["gesamtbericht"].read_bytes().startswith(b"%PDF-")
+
+
+def test_portfolio_versions_are_persisted_separately(tmp_path):
+    first = {"text": "Portfolio A", "created_at": "2026-09-19 10:00:00", "model": "m"}
+    second = {"text": "Portfolio B", "created_at": "2026-09-19 11:00:00", "model": "m"}
+    first_path = materialize_portfolio_pdf(first, root=tmp_path)
+    second_path = materialize_portfolio_pdf(second, root=tmp_path)
+    assert first_path is not None and first_path.is_file()
+    assert second_path is not None and second_path.is_file()
+    assert first_path != second_path
+    assert first_path.name == second_path.name == "portfolio-gesamtbericht.pdf"
+
+
+def test_persist_replaces_stale_bytes_for_same_report_path(tmp_path):
+    first = PdfReport("gesamtbericht", "Erste Fassung", 42, "Signal")
+    second = PdfReport("gesamtbericht", "Zweite Fassung", 42, "Signal")
+    path = persist_report_pdf(first, snapshot="same", root=tmp_path)
+    first_bytes = path.read_bytes()
+    same_path = persist_report_pdf(second, snapshot="same", root=tmp_path)
+    assert same_path == path
+    assert same_path.read_bytes() != first_bytes
+    assert "Zweite Fassung" in _text(same_path.read_bytes())
+
+
+def test_save_run_materializes_all_available_pdfs():
+    result = pipeline.ScanResult(
+        id=77, name="Persistiert", trades_sha256="b" * 64,
+        trade_analyse="Trade", risiko_analyse="Risiko", gesamtbericht="Final")
+    portfolio = {
+        "text": "Portfolio", "created_at": "2026-09-19 11:30:00", "model": "m",
+    }
+    pipeline.ScanPipeline.save_run([result], {}, portfolio)
+    root = pipeline.config.REPORTS_DIR
+    assert len(list((root / "signale").rglob("*.pdf"))) == 3
+    assert len(list((root / "portfolio").rglob("*.pdf"))) == 1

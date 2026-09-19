@@ -12,7 +12,7 @@ import streamlit as st
 
 from mqlkiscanner import config, db, pipeline, scan_state
 from mqlkiscanner.app_ui import (clear_report_selection, render_detail, render_report_panel,
-                                 render_portfolio_pdf_download, render_results_table,
+                                 render_portfolio_pdf_viewer, render_results_table,
                                  results_to_dataframe)
 from mqlkiscanner.ui_design import (apply_theme, info_button, page_header, section_header,
                                     urteile_farbig)
@@ -98,7 +98,7 @@ def _render_portfolio_report(report: dict) -> None:
         st.markdown('**Strategie-Mix, Assets und Gewichtung**')
         st.caption(f"Stand: {report.get('created_at') or 'nicht gespeichert'} · "
                    f"Modell: {report.get('model') or 'nicht gespeichert'} · Keine Anlageberatung.")
-        render_portfolio_pdf_download(
+        render_portfolio_pdf_viewer(
             report, key=f"results_portfolio_pdf_{'catalog' if catalog_portfolio else 'source'}")
         if catalog_portfolio:
             st.info('Historische Momentaufnahme: Dieser Bericht wurde nicht mit den '
