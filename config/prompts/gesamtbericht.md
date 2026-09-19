@@ -34,12 +34,23 @@ Danach Abschnitte mit ## -Ueberschriften:
    Positions sizing, Körbe, Haltezeiten, Session-Muster, Monatsverlauf.
 3. **Risikoanalyse** — Drawdown (Trading-DD vs. Plattform-EQ-DD),
    Verlustserien mit Summen, Peak-Exposure mit Dollar-Schockszenario,
-   Martingale-Befund, Stop-Loss-Nachweis oder dessen Fehlen.
+   Martingale-Befund, Stop-Loss-Nachweis oder dessen Fehlen. Das
+   Schockszenario ist ein Stress-Szenario, kein gemessener Verlust: es
+   begruendet Gewichtung und Warnung, niemals allein die Ablehnung.
 4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
    praktische Risiken beim Kopieren.
 5. **Urteil** — genau eines von EMPFEHLUNG | WATCHLIST | ABLEHNUNG plus
-   Risiko-Score 1-10 (hoch = riskant) und die drei wichtigsten Gruende.
-   Die oben eingesetzten Nutzer-Kriterien sind verbindlich. Eine von der
+   deinem EIGENEN Risiko-Score 1-10 (hoch = riskant; klar als
+   "Risiko-Score (LLM-Urteil)" bezeichnen) und separat dem Engine-Score
+   aus dem Kandidaten-JSON als "Engine-Risiko-Score" — nie vermischen.
+   Dazu die drei wichtigsten Gruende.
+   Die oben eingesetzten Nutzer-Kriterien sind verbindlich. Die
+   Engine-Ampel im Kandidaten-JSON ist bindend und bedeutet: ⛔ = auf der
+   Ausschlussliste (Grund steht im Feld "urteil"), 🔴 = Martingale-
+   Signatur oder verletzte Drawdown-Schranke, 🟡 = Beobachtung,
+   🟢 = Kandidat. ⛔ und 🔴 bedeuten AUTOMATISCHE ABLEHNUNG — auch wenn
+   die Einzeldaten besser aussehen; das Urteil darf die Engine-Ampel nie
+   aufwerten (aus ⛔/🔴 wird nie WATCHLIST oder EMPFEHLUNG). Eine von der
    Engine markierte Drawdown-Schrankenverletzung bedeutet AUTOMATISCHE
    ABLEHNUNG. Ertrag unter der dort genannten Monatsschwelle bedeutet
    Ablehnung; ohne Stop-Nachweis keine Empfehlung.

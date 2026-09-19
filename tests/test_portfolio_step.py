@@ -2,6 +2,7 @@
 """Station 5: Portfolio-Vorschlag — Pipeline-Level und UI-Einzelschritt."""
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,6 +10,7 @@ from streamlit.testing.v1 import AppTest
 
 from conftest import warte_auf_lauf
 from mqlkiscanner import db, pipeline
+from mqlkiscanner.llm import prompts as llm_prompts
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -88,6 +90,48 @@ def test_run_portfolio_stops_before_model_call():
         pipeline.StepLog(), should_stop=lambda: True)
     assert summary["text"] == "" and "Stop" in summary["reason"]
     assert not fake.calls
+
+
+def test_kandidat_json_traegt_ampel_und_urteil():
+    result = pipeline.ScanResult(id=9, name="Y", ampel="🟢",
+                                 urteil="Kandidat: Forensik bestanden")
+    payload = json.loads(pipeline._kandidat_json(result))
+    assert payload["ampel"] == "🟢"
+    assert payload["urteil"] == "Kandidat: Forensik bestanden"
+
+
+def test_report_basis_ignoriert_urteil():
+    result = pipeline.ScanResult(id=7, name="X")
+    result.trades_sha256 = "abc123"
+    basis = pipeline.report_basis_for(result, {})
+    result.urteil = "geaendertes Urteil"
+    assert pipeline.report_basis_for(result, {}) == basis
+
+
+def test_run_portfolio_payload_enthaelt_ausschluss_urteil(monkeypatch):
+    monkeypatch.setattr(pipeline.config, "load_known_signals", lambda: {
+        "ausgeschlossen": [{"id": 424242, "name": "Testsignal", "grund": "Testgrund"}]})
+    fake = FakeLlm()
+    pipe = _pipe_with_llm(fake)
+    results = [pipeline.ScanResult(id=424242, name="Testsignal",
+                                   forensik_vorhanden=True, gesamtbericht="B")]
+    results[0].berichte_basis = pipeline.report_basis_for(results[0], pipe.settings)
+    pipe.run_portfolio(results, pipeline.StepLog())
+    assert fake.calls, "Portfolio-Prompt wurde nicht gesendet"
+    prompt = fake.calls[0][0]
+    block = prompt.split("## Alle Signale\n")[1].split("\n\n## Aufgabe")[0]
+    entry = json.loads(block)[0]
+    assert entry["kandidat"]["ampel"] == "⛔"
+    assert entry["kandidat"]["urteil"].startswith("Ausgeschlossen (Liste): Testgrund")
+
+
+def test_prompt_defaults_binden_engine_ampel():
+    gesamt = " ".join(llm_prompts.DEFAULT_GESAMTBERICHT.split())
+    portfolio = " ".join(llm_prompts.DEFAULT_PORTFOLIO.split())
+    assert "Ausschlussliste" in gesamt
+    assert "nie aufwerten" in gesamt
+    assert "NIE aufgenommen" in portfolio
+    assert "kein gemessener Verlust" in portfolio
 
 
 def _scan_page() -> AppTest:

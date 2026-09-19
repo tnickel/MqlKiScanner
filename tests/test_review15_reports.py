@@ -10,6 +10,7 @@ from unittest.mock import Mock
 import pytest
 
 from mqlkiscanner import db, pipeline
+from mqlkiscanner.llm import prompts as llm_prompts
 
 
 @pytest.fixture
@@ -146,7 +147,7 @@ def test_changed_criteria_refresh_flags_in_generated_prompt(live_reports, monkey
     result = scan()
     pipe.run_llm([result], lambda _: None)
     pipe.settings["schranke_eq_dd_pct"] = 3
-    monkeypatch.setattr(pipeline.llm_prompts, "load_prompt", lambda kind: "{kandidat_json}")
+    monkeypatch.setattr(llm_prompts, "load_prompt", lambda kind: "{kandidat_json}")
     pipe.llm.chat.reset_mock()
     assert pipe.run_llm([result], lambda _: None)["completed"] == 3
     sent = json.loads(pipe.llm.chat.call_args_list[0].args[0])

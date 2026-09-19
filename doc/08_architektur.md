@@ -17,6 +17,16 @@ Pipeline (pipeline.py) — Crawl → Export → Forensik → Score → optional 
 
 **Regel:** Die Engine rechnet alle Zahlen. Das LLM interpretiert nur
 Befund-JSONs — keine Roh-Trades, keine Credentials im Prompt.
+**Bindung:** Die Engine-Ampel (`ampel` + `urteil`, Teil jedes
+Kandidaten-JSONs) ist für alle LLM-Berichte verbindlich: ⛔ (Ausschlussliste)
+und 🔴 (Martingale/Schranke) bedeuten automatische Ablehnung; ein
+Gesamtbericht darf das nicht aufwerten, der Portfolio-Vorschlag darf solche
+Signale nie aufnehmen. Das Schockszenario ist ein Stressszenario, kein
+gemessener Verlust, und allein kein Ablehnungsgrund. (Hintergrund: Der
+Portfolio-Bericht vom 19.09.2026 empfahl das ausgeschlossene Kenni
+Breakout und sortierte Gold Spike über das Schockszenario aus, weil der
+LLM-Payload Ampel/Ausschluss-Grund nicht enthielt — behoben durch
+`urteil` im Payload plus bindende Regeln in Prompt 3/4.)
 
 ## Datenfluss (Live-Scan)
 
@@ -55,3 +65,13 @@ Befund-JSONs — keine Roh-Trades, keine Credentials im Prompt.
 - `scripts/verify_engine.py` — Anker gegen `data/raw/`
 - `tests/` — Unit, Pipeline, Streamlit AppTest
 - `pytest.ini` begrenzt die Sammlung auf `tests/`
+- **Prompt-Mechanismus (immer, 0 Token):** `tests/test_prompt_fill.py`
+  sichert Füllung/Builder (Injection-Schutz, Platzhalter-Guard) und die
+  Bericht-Parser (`tests/bericht_parse.py`).
+- **Prompt-Regression (opt-in, echte glm-5.3-Aufrufe):**
+  `pytest -m llm` — 4 Tests gegen die bindenden Regeln
+  (Ausschluss ⇒ ABLEHNUNG; kein Stop ⇒ nie EMPFEHLUNG; Portfolio nimmt
+  ⛔/🔴 nie auf und bleibt intern konsistent; Schockszenario allein ist
+  kein Ablehnungsgrund). Im Standard-Build deselektiert (`addopts` in
+  `pytest.ini`); ausführen, wann immer an Vorlagen, Payloads, Buildern
+  oder Ampel-Bindung etwas geändert wird.
