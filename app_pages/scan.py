@@ -25,7 +25,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import streamlit as st
 
 from mqlkiscanner import config, db, pipeline, scan_state, scan_worker, secrets_store
-from mqlkiscanner.app_ui import render_report_panel, render_results_table
+from mqlkiscanner.app_ui import (
+    render_portfolio_pdf_download,
+    render_report_panel,
+    render_results_table,
+)
 from mqlkiscanner.ui_design import (
     action_button, apply_theme, page_header, section_header, urteile_farbig,
     workflow_stepper_html,
@@ -922,6 +926,17 @@ if command:
 def _problem_art(result) -> tuple[str, str, str]:
     """Kategorie + Handlungs-Hinweis für ein Problem-Ergebnis (Badge-Label, Icon, Hinweis)."""
     text = result.fehler or ""
+    if "cross_broker=false" in text:
+        return (
+            "Broker-Kontrakt nicht verifiziert",
+            ":material/fact_check:",
+            "Das Instrument wurde erkannt und ein Broker-Suffix bereits entfernt. "
+            "Die Sperre betrifft die Kontraktgröße: Bei Öl und einigen CFDs kann "
+            "1 Lot je Broker stark unterschiedliche Einheiten bedeuten. Deshalb "
+            "darf die Engine den bekannten Wert eines anderen Brokers nicht übernehmen. "
+            "Broker/Server und dessen MT5-Kontraktspezifikation prüfen; nur den belegten "
+            "Broker anschließend in data/contract_specs.json ergänzen.",
+        )
     if "Kontraktspec" in text:
         return (
             "Instrument nicht freigegeben",
@@ -1014,8 +1029,11 @@ if st.session_state.get("portfolio_bericht"):
         st.subheader(":material/pie_chart: Portfolio-Vorschlag (Station 5)")
         st.caption("KI-Empfehlung über alle geprüften Signale: Strategie-Mix, Assets, "
                    "Gewichtung. Keine Anlageberatung.")
+        portfolio_result = st.session_state.get("portfolio_result") or {
+            "text": st.session_state.portfolio_bericht,
+        }
+        render_portfolio_pdf_download(portfolio_result, key="scan_portfolio_pdf")
         st.markdown(urteile_farbig(st.session_state.portfolio_bericht),
                     unsafe_allow_html=True)
-        portfolio_result = st.session_state.get("portfolio_result") or {}
         if issue := portfolio_result.get("storage_error") or portfolio_result.get("reason"):
             st.warning(f"Portfolio-Hinweis: {issue}")
