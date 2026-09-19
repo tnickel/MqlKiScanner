@@ -94,7 +94,9 @@ def test_scan_page_shows_problems_with_explanations():
     buttons[0].click().run()
     assert not at.exception, at.exception
     text = "\n".join(m.value for m in at.markdown) + "\n".join(c.value for c in at.caption)
-    assert "Instrument nicht freigegeben" in text, "Kategorie Kontraktspec fehlt im Dialog"
+    assert "Broker-Kontrakt nicht verifiziert" in text, \
+        "Brokerabhängige Kontraktspec wird missverständlich als unbekanntes Instrument gezeigt"
+    assert "Broker-Suffix bereits entfernt" in text
     assert "Kapitalbasis unbekannt" in text, "Kategorie Kapitalbasis fehlt im Dialog"
     assert "contract_specs.json" in text, "Handlungs-Hinweis zum Freigeben fehlt"
 

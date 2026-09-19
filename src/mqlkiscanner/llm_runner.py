@@ -130,6 +130,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
         for stage, text, exc in outcomes:
             if exc is None:
                 setattr(result, stage[0], text)
+                setattr(result, f"{stage[0]}_model", stage[5])
                 result.berichte_basis = basis
                 result.bericht_hinweis = ""
 
@@ -142,12 +143,13 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
                     abort_error = abort_error or exc
                 continue
             try:
-                db.store_analysis(result.id, field, model, pipe.llm.usage.total_tokens, text,
-                                  basis=basis)
+                created_at = db.store_analysis(
+                    result.id, field, model, pipe.llm.usage.total_tokens, text, basis=basis)
             except Exception as storage_error:
                 record_failure(RuntimeError(f"{label} nicht gespeichert: {storage_error}"),
                                "Speicherfehler")
             else:
+                setattr(result, f"{field}_at", created_at)
                 done += 1
                 mark_updated(result)
                 log(f"  ✓ {label} gespeichert: {result.name}")
@@ -173,6 +175,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             progress(f"Gesamtbericht 3/3: {result.name} · warte auf Modellantwort")
             result.gesamtbericht = pipe.llm.chat(prompt, stufe=2, max_tokens=24576, meta_out={})
             result.gesamtbericht_at = datetime.now().isoformat(sep=" ", timespec="seconds")
+            result.gesamtbericht_model = model_strong
             result.kurzfassung = _extract_kurzfassung(result.gesamtbericht)
             result.berichte_basis = basis
         except Exception as exc:

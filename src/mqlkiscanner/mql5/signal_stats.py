@@ -30,7 +30,10 @@ LABELS = (
 )
 
 _LABEL_RE = re.compile(r"^(?:" + "|".join(re.escape(label) for label in LABELS) + r")\s*$")
-_BROKER_RE = re.compile(r"\b([A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*)-(Live|Demo|Real)(\d+)\b")
+_BROKER_RE = re.compile(
+    r"\b([A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*)-(Live|Demo|Real)\s*(\d+)\b",
+    re.IGNORECASE,
+)
 _LEVERAGE_RE = re.compile(r"\b1:(\d{1,5})\b")
 
 

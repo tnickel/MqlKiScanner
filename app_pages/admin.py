@@ -24,10 +24,15 @@ def _changed(values: dict, saved: dict) -> bool:
     return any(value != saved.get(name) for name, value in values.items())
 
 
-def _draft_status(changed: bool) -> None:
+def _draft_status(
+    changed: bool,
+    *,
+    clean_label: str = "Gespeicherte Werte",
+    clean_color: str = "green",
+) -> None:
     st.badge(
-        "Ungespeicherte Änderungen" if changed else "Gespeicherte Werte",
-        color="orange" if changed else "green",
+        "Ungespeicherte Änderungen" if changed else clean_label,
+        color="orange" if changed else clean_color,
         icon=":material/edit:" if changed else ":material/check_circle:",
     )
 
@@ -107,7 +112,17 @@ with access_tab:
                                  placeholder="Leer lassen = unverändert")
         new_pass = st.text_input("Passwort", type="password", key="admin_mql5_pass",
                                  placeholder="Leer lassen = unverändert")
-        _draft_status(bool(new_user.strip() or new_pass))
+        mql_complete = bool(secret_status["mql5_user"] and secret_status["mql5_pass"])
+        mql_partial = bool(secret_status["mql5_user"] or secret_status["mql5_pass"])
+        _draft_status(
+            bool(new_user.strip() or new_pass),
+            clean_label=(
+                "Zugangsdaten hinterlegt" if mql_complete
+                else "Zugangsdaten unvollständig" if mql_partial
+                else "Keine Zugangsdaten hinterlegt"
+            ),
+            clean_color="green" if mql_complete else "orange" if mql_partial else "gray",
+        )
         if action_button("MQL5-Zugang speichern", key="admin_mql5_save", type="primary",
                          help_key="settings_mql5", icon=":material/save:"):
             fields = {}
@@ -153,7 +168,11 @@ with access_tab:
         st.caption("Wirksamer Key: " + ("vorhanden" if secret_status["glm_api_key"] else "nicht hinterlegt"))
         new_key = st.text_input("Neuen API-Key hinterlegen", type="password",
                                 key="admin_key_input", placeholder="Leer lassen = unverändert")
-        _draft_status(bool(new_key.strip()))
+        _draft_status(
+            bool(new_key.strip()),
+            clean_label="KI-Key hinterlegt" if secret_status["glm_api_key"] else "Kein KI-Key hinterlegt",
+            clean_color="green" if secret_status["glm_api_key"] else "gray",
+        )
         if action_button("Key lokal speichern", key="admin_key_save", type="primary",
                          help_key="settings_key", icon=":material/save:"):
             if new_key.strip():
@@ -329,8 +348,48 @@ with scan_tab:
 
 with prompts_tab:
     with st.container(border=True):
-        section_header("Analysevorlagen", "Vier Texte, ein nachvollziehbarer Weg vom Befund zum Portfolio-Vorschlag.",
-                       help_key="settings_prompts")
+        section_header(
+            "Vom Engine-Befund zum Bericht",
+            "Vier Vorlagen übersetzen bereits berechnete Fakten in verständliche Texte.",
+            help_key="settings_prompts",
+        )
+        st.info(
+            "**Die Engine rechnet, die KI interpretiert.** Drawdown, Exposure, "
+            "Martingale-Signatur, Stop-Evidenz und Risikostatus stehen vor jedem "
+            "Prompt fest. Keine Vorlage darf diese Werte neu berechnen.",
+            icon=":material/calculate:",
+        )
+        st.markdown("**Ablauf pro Signal**")
+        engine_card, arrow_one, parallel_card, arrow_two, final_card = st.columns(
+            [1.15, .18, 1.6, .18, 1.15], vertical_alignment="center", wrap=False)
+        with engine_card.container(border=True):
+            st.badge("ENGINE", color="blue", icon=":material/memory:")
+            st.markdown("**Forensische Fakten**")
+            st.caption("CSV + MQL5-Daten → feste Kennzahlen, Evidenz und Risikokriterien")
+        arrow_one.markdown("### →")
+        with parallel_card.container(border=True):
+            st.badge("PARALLEL", color="gray", icon=":material/call_split:")
+            st.markdown("**1 · Trade-Analyse** · starkes Modell")
+            st.caption("Handelsweise aus den Trades")
+            st.markdown("**2 · Risiko-Analyse** · schnelles Modell")
+            st.caption("Risikoprofil aus dem Engine-Befund")
+        arrow_two.markdown("### →")
+        with final_card.container(border=True):
+            st.badge("FINAL", color="green", icon=":material/description:")
+            st.markdown("**3 · Gesamtbericht**")
+            st.caption("Beide Analysen + dieselben Engine-Fakten → Signalurteil")
+        with st.container(horizontal=True, vertical_alignment="center"):
+            st.markdown("**Danach:**")
+            st.badge("4 · Portfolio", color="green", icon=":material/pie_chart:")
+            st.caption(
+                "Alle fertigen Signalberichte und Engine-Befunde werden zu einem "
+                "globalen Portfolio-Gesamtbericht zusammengeführt."
+            )
+        st.caption(
+            "Stufe 1 ist auf schnelle Risikoprofile ausgelegt. Stufe 2 formuliert "
+            "die tiefe Trade-Analyse, beide finalen Berichte und den Portfolio-Vorschlag."
+        )
+
         labels = {"trade_analyse": "1 · Trade-Analyse", "risiko_analyse": "2 · Risikoprofil",
                   "gesamtbericht": "3 · Gesamtbericht", "portfolio": "4 · Portfolio-Vorschlag"}
         placeholders = {
@@ -339,6 +398,42 @@ with prompts_tab:
             "gesamtbericht": ("kandidat_json", "forensik_json", "trade_analyse", "risiko_analyse", "kriterien"),
             "portfolio": ("kandidaten_json", "kriterien"),
         }
+        prompt_flow = {
+            "trade_analyse": {
+                "why": "Erkennt Handelslogik und Muster, ohne Risikokennzahlen neu zu rechnen.",
+                "input": "Kandidatendaten + vorbereitete Trades",
+                "output": "Zwischenbericht: Handelsweise",
+            },
+            "risiko_analyse": {
+                "why": "Ordnet die bereits berechneten Forensik-Befunde vorsichtig ein.",
+                "input": "Kandidat + Forensik + Grenzwerte",
+                "output": "Zwischenbericht: Risikoprofil",
+            },
+            "gesamtbericht": {
+                "why": "Verdichtet beide Sichtweisen zu einem nachvollziehbaren Signalurteil.",
+                "input": "Engine-Fakten + beide Zwischenberichte",
+                "output": "Finaler Gesamtbericht je Signal",
+            },
+            "portfolio": {
+                "why": "Vergleicht geeignete Signale und prüft Diversifikation statt Einzelmarketing.",
+                "input": "Alle Signalbefunde + Gesamtberichte",
+                "output": "Finaler Portfolio-Gesamtbericht",
+            },
+        }
+        st.markdown("**Alle vier Vorlagen auf einen Blick**")
+        st.table([
+            {
+                "Vorlage": labels[key],
+                "Warum": prompt_flow[key]["why"],
+                "Eingang": prompt_flow[key]["input"],
+                "Modell": (settings["model_stufe1"] if key == "risiko_analyse"
+                           else settings["model_stufe2"]),
+                "Ausgang": prompt_flow[key]["output"],
+            }
+            for key in ("trade_analyse", "risiko_analyse", "gesamtbericht", "portfolio")
+        ])
+        st.space("small")
+        st.markdown("**Vorlage verstehen und bearbeiten**")
         prompt_key = st.segmented_control("Vorlage auswählen", list(llm_prompts.PROMPT_FILES),
                                           format_func=lambda key: labels.get(key, key), default="trade_analyse",
                                           key="admin_prompt_choice")
@@ -346,8 +441,23 @@ with prompts_tab:
             current = llm_prompts.load_prompt(prompt_key)
             modified = current.strip() != llm_prompts.DEFAULTS[prompt_key].strip()
             model = settings["model_stufe1"] if prompt_key == "risiko_analyse" else settings["model_stufe2"]
-            st.caption(f"Verwendetes Modell: {model} · Gespeichert: "
-                       + ("eigene Vorlage" if modified else "Standardvorlage"))
+            flow = prompt_flow[prompt_key]
+            purpose, source, model_card, output = st.columns(4)
+            with purpose.container(border=True):
+                st.caption("WARUM")
+                st.write(flow["why"])
+            with source.container(border=True):
+                st.caption("EINGANG")
+                st.write(flow["input"])
+            with model_card.container(border=True):
+                st.caption("MODELL")
+                st.write(model)
+                st.badge("Stufe 1" if prompt_key == "risiko_analyse" else "Stufe 2",
+                         color="blue")
+            with output.container(border=True):
+                st.caption("AUSGANG")
+                st.write(flow["output"])
+            st.caption("Gespeichert: " + ("eigene Vorlage" if modified else "Standardvorlage"))
             required = ["{" + name + "}" for name in placeholders[prompt_key]]
             st.caption("Pflicht-Platzhalter: " + ", ".join(f"`{item}`" for item in required))
             edited = st.text_area("Vorlage bearbeiten", value=current, height=420,

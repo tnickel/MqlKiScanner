@@ -38,7 +38,7 @@ Ohne GLM-Key: Scan und Forensik laufen, KI-Berichte entfallen.
 
 ## 3. Workflow (Scan-Seite)
 
-1. **Starte Workflow** — holt Signallisten (MT4+MT5), filtert, exportiert
+1. **Analyse starten** — holt Signallisten (MT4+MT5), filtert, exportiert
    Trades der Top-N, rechnet Forensik, speichert in SQLite.
 2. Optional: **KI-Berichte** (Trade-/Risiko-Analyse parallel, dann Gesamtbericht).
 3. Einstellungen: Listen-Seiten, Max. Signale gründlich prüfen (Standard 30),
@@ -71,8 +71,23 @@ und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
   Kennzahlen, Befunde oder Signalberichte neu gespeichert wurden. Unveränderte
   Übernahmen und reine Portfolio-Läufe erzeugen keine NEU-Markierung.
 - Detailansicht: Kennzahlen, Forensik, LLM-Texte, Link zur MQL5-Seite.
+- Die Tabellenspalte **Bericht & PDF** öffnet für jedes Signal den gespeicherten
+  Gesamtbericht mit PDF-Download. Gleichlautende Signal-IDs aus verschiedenen
+  CSV-Momentaufnahmen bleiben über ihren Snapshot getrennt.
+- In der Detail-/Berichtsansicht lassen sich Trade-Analyse, Risiko-Analyse und
+  Gesamtbericht einzeln als PDF laden. Der Portfolio-Gesamtbericht ist auf der
+  Scan- und Ergebnisseite als PDF verfügbar. Die PDFs werden ausschließlich
+  aus dem bereits gespeicherten Text erzeugt und lösen keinen neuen KI-Aufruf aus.
 
-## 5. Typische Stolpersteine
+## 5. Analysevorlagen
+
+Unter **Einstellungen → Analysevorlagen** zeigt ein Ablaufbild, welche
+berechneten Engine-Fakten in die vier Vorlagen fließen, welches Modell sie
+verwendet und welcher Bericht daraus entsteht. Die Engine berechnet alle
+Kennzahlen; die KI interpretiert sie nur. Pflicht-Platzhalter bleiben beim
+Bearbeiten geschützt und werden vor dem Speichern geprüft.
+
+## 6. Typische Stolpersteine
 
 | Symptom | Ursache / Hilfe |
 |---|---|
@@ -82,7 +97,7 @@ und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
 | Viele „mit Fehlern“ | Export fehlgeschlagen — Log in Schritt 3 prüfen |
 | Nur Vorprüfung | Kein Login oder Export übersprungen |
 
-## 6. Verifikation
+## 7. Verifikation
 
 ```bash
 python scripts/verify_engine.py
