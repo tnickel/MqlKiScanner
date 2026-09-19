@@ -48,8 +48,8 @@ def render_result_pdf_viewer(
     label: str | None = None,
     type: str = "secondary",
 ) -> None:
-    """Persist one PDF and show it inline only after its button is clicked."""
-    report, _ = result_pdf_spec(result, kind)
+    """Persist one PDF and offer separate inline-view and save actions."""
+    report, filename = result_pdf_spec(result, kind)
     path = None
     error = ""
     if report.body.strip():
@@ -59,14 +59,24 @@ def render_result_pdf_viewer(
             error = str(exc)
     visible_key = f"{key}_visible"
     visible = bool(st.session_state.get(visible_key))
-    if st.button(
-        ("PDF schließen" if visible else
-         (label or f"{report.kind.replace('_', ' ').title()} anzeigen")),
-        key=key,
-        type=type,
-        icon=":material/picture_as_pdf:",
-        disabled=not bool(report.body.strip()) or bool(error),
-    ):
+    disabled = not bool(report.body.strip()) or bool(error)
+    actions = st.container(horizontal=True, vertical_alignment="center")
+    clicked = actions.button(
+        "PDF schließen" if visible else
+        (label or f"{report.kind.replace('_', ' ').title()} anzeigen"),
+        key=key, type=type, icon=":material/picture_as_pdf:", disabled=disabled)
+    actions.download_button(
+        "PDF speichern",
+        data=(lambda path=path: path.read_bytes()) if path is not None else b"",
+        file_name=filename,
+        mime="application/pdf",
+        key=f"{key}_download",
+        type="secondary",
+        icon=":material/download:",
+        disabled=disabled,
+        on_click="ignore",
+    )
+    if clicked:
         visible = not visible
         st.session_state[visible_key] = visible
     if error:
@@ -78,7 +88,7 @@ def render_result_pdf_viewer(
 
 def render_portfolio_pdf_viewer(report: dict, *, key: str) -> None:
     """Persist and toggle the portfolio PDF inside the page."""
-    pdf_report, _ = portfolio_pdf_spec(report)
+    pdf_report, filename = portfolio_pdf_spec(report)
     path = None
     error = ""
     if pdf_report.body.strip():
@@ -88,13 +98,23 @@ def render_portfolio_pdf_viewer(report: dict, *, key: str) -> None:
             error = str(exc)
     visible_key = f"{key}_visible"
     visible = bool(st.session_state.get(visible_key))
-    if st.button(
+    disabled = not bool(pdf_report.body.strip()) or bool(error)
+    actions = st.container(horizontal=True, vertical_alignment="center")
+    clicked = actions.button(
         "PDF schließen" if visible else "Portfolio-Gesamtbericht anzeigen",
-        key=key,
-        type="primary",
-        icon=":material/picture_as_pdf:",
-        disabled=not bool(pdf_report.body.strip()) or bool(error),
-    ):
+        key=key, type="primary", icon=":material/picture_as_pdf:", disabled=disabled)
+    actions.download_button(
+        "PDF speichern",
+        data=(lambda path=path: path.read_bytes()) if path is not None else b"",
+        file_name=filename,
+        mime="application/pdf",
+        key=f"{key}_download",
+        type="secondary",
+        icon=":material/download:",
+        disabled=disabled,
+        on_click="ignore",
+    )
+    if clicked:
         visible = not visible
         st.session_state[visible_key] = visible
     if error:
