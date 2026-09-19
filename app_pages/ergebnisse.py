@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 import streamlit as st
 
-from mqlkiscanner import config, db, pipeline, scan_state
+from mqlkiscanner import config, db, pipeline, regelwerk, scan_state
 from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, render_detail,
                                  render_report_panel, render_portfolio_pdf_viewer,
                                  render_results_table, results_to_dataframe)
@@ -187,6 +187,14 @@ if st.session_state.get('report_signal_id') not in {r.id for r in visible}:
 render_report_panel(visible)
 if selected is not None:
     render_detail(selected)
+
+with st.expander('Regelwerk · Ausschlussliste', expanded=False,
+                 icon=':material/gavel:'):
+    section_header('Warum ist ein Signal ausgeschlossen?',
+                   'Harte Engine-Regeln plus die kuratierten Kriterien '
+                   'hinter data/known_signals.json.',
+                   help_key='ausschlussliste')
+    st.markdown(regelwerk.regelwerk_markdown(config.load_settings()))
 
 if portfolio:
     _render_portfolio_report(portfolio)
