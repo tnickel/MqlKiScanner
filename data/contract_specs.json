@@ -78,6 +78,19 @@
         "uebrige_retail_broker_ueblich": 100.0
       }
     },
+    "USOUSD_VTMARKETS": {
+      "contract_size": 1000.0,
+      "quote_currency": "USD",
+      "class": "ENERGY",
+      "stress_move": 10.0,
+      "unit_label": "USD Kursbewegung",
+      "cross_broker": false,
+      "brokers": ["vtmarkets"],
+      "aliases": ["USOUSD"],
+      "source": "https://get.vtmarkets.help/hc/en-us/articles/56126804545561-How-does-dynamic-leverage-affect-my-trading",
+      "retrieved": "2026-09-19",
+      "note": "VT Markets rechnet im offiziellen USOUSD-Beispiel 1 Lot mit 1.000 Contract Units. USOUSD ist WTI Crude Oil Cash und wird im Beispiel in USD bepreist. Die öffentliche Quelle nennt die Einheit nicht ausdrücklich Barrel; im Zweifel im MT5-Dialog 'Specification' auf dem konkreten VTMarkets-Live-Server gegenprüfen."
+    },
     "DE40": {
       "contract_size": 1.0,
       "quote_currency": "EUR",
