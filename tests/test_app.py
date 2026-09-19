@@ -47,9 +47,9 @@ def test_scan_page_renders_steps():
     at = _run_main()
     body = _body(at)
     assert "Signale holen" in body and "KI-Bericht" in body and "Portfolio" in body
-    assert "Starte Workflow" in body
-    # Sektionskopf der Lauf-Zentrale (Titel ist ein subheader, hier die Caption)
-    assert "der komplette Ablauf an einem Ort" in body
+    assert at.button(key="scan_start").label == "Analyse starten"
+    # Sektionskopf der Analyse-Zentrale (Titel ist ein subheader, hier die Caption)
+    assert "fünf nachvollziehbare Stationen" in body
     assert "Signallisten und Handelsdaten von MQL5 laden" in body
     # Die alte Story-Reihe ist entfernt: Beschreibungen stecken jetzt im Stepper.
     assert body.count("Signallisten und Handelsdaten") == 1
