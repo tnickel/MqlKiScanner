@@ -340,6 +340,33 @@ def _stop_evidence_text(stops: dict) -> str:
     return stops.get("verdict", "kein Nachweis")
 
 
+def _kapitalbasis_abgleich(drawdown_befund: dict, stats: dict) -> tuple[bool, str]:
+    """Deckung auf den Cent (AGENTS.md): Eine von der Signalseite injizierte
+    Kapitalbasis ("Initial Deposit") muss den rekonstruierten Endkontostand
+    erklaeren (Basis + alle CSV-Fluesse + Netto == Webseiten-Balance).
+
+    Returns (ok, fehlermeldung). Bei Kapitalbasis aus CSV-Einzahlungen ent-
+    faellt der Check — ein aelterer Cache-Export darf real abweichen, ohne
+    die Bewertung umzuwerfen.
+    """
+    if drawdown_befund.get("startkapital_quelle", "csv_einzahlungen") == "csv_einzahlungen":
+        return True, ""
+    web_kontostand = stats.get("balance_usd")
+    real = drawdown_befund.get("end_balance_real")
+    if web_kontostand is None:
+        return False, ("Kapitalbasis aus Signalseite unbestätigt: die "
+                       "Kennzahlen-Seite enthielt keinen 'Balance'-Wert — "
+                       "Startkapital nicht belastbar, bleibt Vorprüfung.")
+    differenz = abs(float(real) - float(web_kontostand))
+    if differenz > max(5.0, abs(float(web_kontostand)) * 0.02):
+        return False, ("Kapitalbasis unbestätigt: rekonstruierter Endkontostand "
+                       f"{real:.2f} USD weicht um {differenz:.2f} USD vom "
+                       f"Webseiten-Kontostand {float(web_kontostand):.2f} USD ab "
+                       "(Toleranz max(5 USD, 2 %)) — Trade-Export und Signalseite "
+                       "passen nicht zusammen (Cache-Export? Historie gekürzt?).")
+    return True, ""
+
+
 def report_basis_for(result: ScanResult, settings: dict) -> str | None:
     """Stable identity of the facts and criteria used for signal reports.
 
@@ -528,6 +555,7 @@ class ScanPipeline:
 
     def _analyze_candidate_once(self, session: Mql5Session, cand: dict,
                           log: LogCb) -> ScanResult:
+        stats: dict = {}  # bleibt leer, wenn die Kennzahlen-Seite fehlschlaegt
         res = ScanResult(id=cand["id"], name=cand.get("name") or str(cand["id"]),
                          platform=cand.get("platform") or "", url=cand.get("url", ""),
                          autor=cand.get("autor") or "",
@@ -583,7 +611,13 @@ class ScanPipeline:
                     else "nicht verfuegbar (offline?) — FX-Kreuze bleiben ohne USD-Schock"))
                 # Broker mitgeben: cross_broker=false-Kontraktspecs (z. B. Oel)
                 # gelten nur fuer den gelisteten Broker des Signals.
-                report = analyze_export(path, broker=res.broker_server)
+                # Kapitalbasis von der Signalseite ("Initial Deposit"): greift
+                # nur, wenn der Export keine Einzahlung vor dem ersten Trade
+                # enthaelt (MT4-Orderbuch beginnt mit der Signalhistorie).
+                report = analyze_export(
+                    path, broker=res.broker_server,
+                    kapitalbasis_usd=stats.get("initial_deposit_usd"),
+                    kapitalbasis_quelle="signalseite_initial_deposit")
             except Mql5CredentialsMissingError:
                 log("Trade-Export übersprungen (kein MQL5-Login) — "
                     "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
@@ -591,6 +625,14 @@ class ScanPipeline:
                 st, fx = report["stats"], report["forensics"]
                 if not st.get("trades"):
                     raise ValueError("Forensik unvollständig: keine abgeschlossenen Trades im Export.")
+                # Deckung auf den Cent (AGENTS.md): Wurde die Kapitalbasis von
+                # der Signalseite injiziert, muss der rekonstruierte Endkon-
+                # tostand die Webseiten-Balance erklaeren. Bei CSV-Einzahlungen
+                # entfaellt der Check (aelterer Cache-Export darf real abwei-
+                # chen, ohne die Bewertung umzuwerfen).
+                ok, meldung = _kapitalbasis_abgleich(fx["drawdown"], stats)
+                if not ok:
+                    raise ValueError(meldung)
                 res.forensik_vorhanden = True
                 res.symbole = ", ".join(sorted(st.get("symbols", {})))
                 td = fx["drawdown"]["trading_dd"]
@@ -668,6 +710,9 @@ class ScanPipeline:
                 # Expliziter Vollstaendigkeitsstatus (verhindert Gruen aus alter Forensik).
                 "forensik_ok": bool(res.forensik_vorhanden),
                 "forensik_version": res.forensik_version,
+                # Webseiten-Kontobasis (Audit: woher die Kapitalbasis kommt)
+                "initial_deposit_usd": stats.get("initial_deposit_usd"),
+                "balance_usd": stats.get("balance_usd"),
             }
             if res.fehler and not res.forensik_vorhanden:
                 stats_payload["last_fehler"] = res.fehler
@@ -706,6 +751,13 @@ class ScanPipeline:
                     "stop_nachweis": res.stop_nachweis,
                     "stop_evidence": res.stop_evidence,
                     "symbole": res.symbole,
+                    # Kapitalbasis samt Herkunft (Audit-Snapshot)
+                    "kapitalbasis": {
+                        "usd": fx["drawdown"].get("startkapital"),
+                        "quelle": fx["drawdown"].get("startkapital_quelle"),
+                        "end_balance_real": fx["drawdown"].get("end_balance_real"),
+                        "webseite_balance_usd": stats.get("balance_usd"),
+                    },
                     "fx_kursquelle": expo.get("fx_conversion", {}).get("quelle"),
                     # Score nur bei vollstaendiger Forensik — Design-Regel:
                     # kein Score vor bestandener Batterie.

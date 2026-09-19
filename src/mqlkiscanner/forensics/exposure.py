@@ -202,7 +202,8 @@ def _snapshot(net_by_symbol: dict[str, float], long_vol: float, short_vol: float
 
 
 def run(parsed: ParsedExport, stress_move: float | None = None,
-        broker: str | None = None) -> dict:
+        broker: str | None = None, kapitalbasis_usd: float | None = None,
+        kapitalbasis_quelle: str | None = None) -> dict:
     trades = parsed.trades
     if not trades:
         return {"test": "exposure", "flag": False, "temporal_risk_available": False}
@@ -267,6 +268,16 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
     # paralleler Eroeffnungen noch zeitgleicher Korb-Exits ist im CSV belegt.
     # Ein Close verbucht sein Netto erst beim Entfernen der Position; damit
     # kann spaeterer Gewinn die historische Belastung nicht verkleinern.
+    first_open = min(t.open_time for t in trades)
+    # Externe Kapitalbasis (Signalseite "Initial Deposit"): greift NUR, wenn
+    # der Export keine Einzahlung vor dem ersten Trade enthaelt. Sie wird als
+    # Buchung VOR dem ersten Open gefuehrt (kind 0 schlaegt kind 1), damit
+    # Schock-in-Prozent gegen das reale Konto gerechnet wird.
+    startkapital_quelle = "csv_einzahlungen"
+    if kapitalbasis_usd is not None and kapitalbasis_usd > 0 \
+            and not any(b.amount > 0 and b.time <= first_open for b in parsed.balances):
+        events.append((first_open, 0, 0, float(kapitalbasis_usd)))
+        startkapital_quelle = kapitalbasis_quelle or "extern"
     events.sort(key=lambda e: (e[0], e[1]))
 
     open_count = 0
@@ -277,8 +288,9 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
     risk_snap: dict | None = None
     relative_snap: dict | None = None
     account = 0.0
-    first_open = min(t.open_time for t in trades)
     initial_capital = math.fsum(b.amount for b in parsed.balances if b.time <= first_open)
+    if startkapital_quelle != "csv_einzahlungen":
+        initial_capital += float(kapitalbasis_usd)
     capital_history_complete = initial_capital > 0
     temporal_risk_available = capital_history_complete and conversion_complete
     account_dipped_negative = False
@@ -396,6 +408,8 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
                                          "ezb_kursdatum": fx["date"]}
     result: dict = {
         "test": "exposure",
+        "startkapital": round(initial_capital, 2),
+        "startkapital_quelle": startkapital_quelle,
         "peak_open_positions": peak_count,
         "peak_count_time": (count_snap["time"].isoformat(sep=" ")
                             if count_snap["time"] else None),

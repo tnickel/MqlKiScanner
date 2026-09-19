@@ -20,8 +20,10 @@ def _result(**kwargs) -> pipeline.ScanResult:
         id=111111, name="Mustersignal", dd_equity_pct=3.8, trading_dd_pct=4.57,
         martingale_flag=False, martingale_evidenz=[], stop_evidence="direct",
         stop_nachweis="Orderbuch: 383/383 mit SL", ertrag_monat_pct=21.5,
-        score=3.9, shock_usd=600.0, shock_pct_peak_account=17.4,
+        score=3.9, shock_usd=600.0,
         max_verlustserie=7, verlustserie_usd=-120.0, forensik_vorhanden=True,
+        shock_pct_max=17.5, shock_pct_peak_time="2026-08-19 16:12:32",
+        shock_pct_peak_account=1966.84,  # Kontostand in USD am Peak (kein %!)
     )
     base.update(kwargs)
     return pipeline.ScanResult(**base)
@@ -94,20 +96,23 @@ def test_score_grenzwerte():
     assert _matrix(_result(score=None))["score"].ampel == KEINE_DATEN
 
 
-def test_schock_nimmt_peak_konto_und_fallt_auf_maximum_zurueck():
-    matrix = _matrix(_result(shock_pct_peak_account=290.0, shock_pct_max=50.0))
+def test_schock_nutzt_shock_pct_max_nicht_kontostand_feld():
+    """shock_pct_peak_account ist ein USD-Kontostand, kein Prozentwert —
+    die Zelle darf nur shock_pct_max als Prozent interpretieren."""
+    matrix = _matrix(_result(shock_pct_max=128.53, shock_pct_peak_account=466.78))
     assert matrix["schock"].ampel == ORANGE
-    assert "290,0" in matrix["schock"].detail
-    matrix = _matrix(_result(shock_pct_peak_account=None, shock_pct_max=50.0))
+    assert "128,5 %" in matrix["schock"].detail
+    assert "466,78" not in matrix["schock"].detail  # Kontostand ist kein %
+    matrix = _matrix(_result(shock_pct_max=30.5058))
     assert matrix["schock"].ampel == GELB
-    assert "Maximum" in matrix["schock"].detail
+    assert "30,5 %" in matrix["schock"].detail
     assert "kein gemessener Verlust" in matrix["schock"].detail
-    f = lambda wert: _matrix(_result(shock_pct_peak_account=wert,
-                                     shock_pct_max=None))["schock"].ampel
+    f = lambda wert: _matrix(_result(shock_pct_max=wert))["schock"].ampel
     assert f(29.9) == GRUEN
     assert f(30.0) == GELB
     assert f(100.0) == GELB
     assert f(100.1) == ORANGE
+    assert _matrix(_result(shock_pct_max=None))["schock"].ampel == KEINE_DATEN
 
 
 def test_verlustserie_grenzwerte():
