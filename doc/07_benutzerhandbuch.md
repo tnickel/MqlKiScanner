@@ -49,6 +49,11 @@ weiterhin alle geeigneten Ergebnisse: passende vorhandene Berichte werden
 wiederverwendet, fehlende oder veraltete erstellt. **Vorhandene Berichte neu
 erstellen** erzeugt auch die Berichte übernommener Signale neu.
 
+Während der KI-Berichte zeigt **Signale X/Y**, welches Signal von allen neu zu
+berichtenden Signalen gerade bearbeitet wird. Der Zähler springt beispielsweise
+von `5/60` auf `6/60`. Bereits vorhandene und deshalb übersprungene Berichte
+zählen nicht in dieses Y hinein.
+
 ### Ampel
 
 | Symbol | Bedeutung |

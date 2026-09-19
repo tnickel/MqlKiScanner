@@ -117,7 +117,8 @@ def test_scan_page_shows_waiting_stopwatch_for_long_model_calls():
               activity="Schreibe Gesamtbericht für #2306053",
               activity_at=time_mod.time() - 150)
     wf["steps"]["llm"].update(status="running", total=81, done=45,
-                              detail="45/81 Berichte gespeichert")
+                              detail="45/81 Berichte gespeichert",
+                              signal_current=5, signal_total=60)
     at.session_state["scan_thread"] = keeper
     at.run()
     assert not at.exception, at.exception
@@ -125,6 +126,7 @@ def test_scan_page_shows_waiting_stopwatch_for_long_model_calls():
     assert "mks-clock--wait" in page, "Warte-Stoppuhr fehlt"
     assert "Σ Gesamt" in page
     assert "LLM-Antwort" in page
+    assert "Signale 5/60" in page
     assert "02:30" in page, "Stoppuhr zeigt nicht 150 s als 02:30 an"
     assert "keine neue Meldung" in page, "Langwarte-Hinweis fehlt ab 2 Minuten"
     keeper.join(timeout=16)
