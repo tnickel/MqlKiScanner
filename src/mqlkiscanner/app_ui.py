@@ -7,6 +7,12 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 import streamlit as st
+from mqlkiscanner.pdf_reports import (
+    PdfReport,
+    render_report_pdf,
+    report_filename,
+    snapshot_token,
+)
 from mqlkiscanner.ui_design import (action_button, section_header,
                                     urteile_farbig)
 
@@ -18,6 +24,80 @@ def _result_identity(result) -> tuple:
     """Different local CSV snapshots can share one signal ID (including zero)."""
     return (result.source_kind, result.id, result.trades_path,
             result.trades_sha256, result.name)
+
+
+def _result_snapshot_token(result) -> str:
+    return (result.trades_sha256[:10] if result.trades_sha256
+            else snapshot_token(*_result_identity(result)))
+
+
+def result_pdf_spec(result, kind: str) -> tuple[PdfReport, str]:
+    """Build immutable PDF inputs for one exact result snapshot."""
+    body = getattr(result, kind, "")
+    report = PdfReport(
+        kind=kind,
+        body=body,
+        signal_id=result.id,
+        signal_name=result.name,
+        created_at=getattr(result, f"{kind}_at", "") or None,
+        model=getattr(result, f"{kind}_model", "") or None,
+    )
+    filename = report_filename(
+        kind,
+        signal_id=result.id,
+        signal_name=result.name,
+        snapshot=_result_snapshot_token(result),
+    )
+    return report, filename
+
+
+def portfolio_pdf_spec(report: dict) -> tuple[PdfReport, str]:
+    """Build PDF inputs from the portfolio object belonging to the active source."""
+    pdf_report = PdfReport(
+        kind="portfolio",
+        body=str(report.get("text") or ""),
+        created_at=report.get("created_at"),
+        model=report.get("model"),
+    )
+    return pdf_report, report_filename("portfolio")
+
+
+def render_result_pdf_download(
+    result,
+    kind: str,
+    *,
+    key: str,
+    label: str | None = None,
+    type: str = "secondary",
+) -> None:
+    """Render a deferred download; PDF generation never invokes an LLM."""
+    report, filename = result_pdf_spec(result, kind)
+    st.download_button(
+        label or f"{report.kind.replace('_', ' ').title()} als PDF",
+        data=lambda report=report: render_report_pdf(report),
+        file_name=filename,
+        mime="application/pdf",
+        key=key,
+        type=type,
+        icon=":material/picture_as_pdf:",
+        disabled=not bool(report.body.strip()),
+        on_click="ignore",
+    )
+
+
+def render_portfolio_pdf_download(report: dict, *, key: str) -> None:
+    pdf_report, filename = portfolio_pdf_spec(report)
+    st.download_button(
+        "Portfolio-Gesamtbericht als PDF",
+        data=lambda report=pdf_report: render_report_pdf(report),
+        file_name=filename,
+        mime="application/pdf",
+        key=key,
+        type="primary",
+        icon=":material/picture_as_pdf:",
+        disabled=not bool(pdf_report.body.strip()),
+        on_click="ignore",
+    )
 
 
 def clear_report_selection() -> None:
@@ -34,7 +114,7 @@ def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataF
     if fresh_ids is not None:
         df.insert(0, "Stand", ["NEU" if r.id in fresh_ids else "" for r in results])
     df["Bericht vom"] = pd.to_datetime(df["Bericht vom"], errors="coerce")
-    df["Bericht"] = ":material/description: Bericht"
+    df["Bericht"] = ":material/picture_as_pdf: Öffnen"
     return df
 
 
@@ -105,7 +185,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 help="Erstellungszeitpunkt des angezeigten Gesamtberichts"),
             "Fehler": st.column_config.TextColumn(None, width="small"),
             "Bericht": st.column_config.ButtonColumn(
-                "Bericht", on_click=_open_report, key=f"{key}_bericht",
+                "Bericht & PDF", on_click=_open_report, key=f"{key}_bericht",
                 type="primary"),
             "Link": st.column_config.LinkColumn("MQL5", width="small"),
         },
@@ -137,6 +217,11 @@ def render_report_panel(results) -> None:
         if close_report:
             clear_report_selection()
             st.rerun()
+        with st.container(horizontal=True, vertical_alignment="center"):
+            render_result_pdf_download(
+                r, "gesamtbericht", key=f"report_panel_final_{_result_snapshot_token(r)}",
+                label="Gesamtbericht als PDF", type="primary")
+            st.caption("PDF aus dem gespeicherten Text · ohne neuen KI-Aufruf")
         if r.gesamtbericht:
             st.markdown(urteile_farbig(r.gesamtbericht), unsafe_allow_html=True)
         else:
@@ -148,6 +233,14 @@ def render_report_panel(results) -> None:
             st.caption(f"LLM-Hinweis: {r.llm_fehler}")
         if hint := getattr(r, "bericht_hinweis", ""):
             st.info(hint)
+        st.markdown("**Zwischenanalysen als PDF**")
+        with st.container(horizontal=True):
+            render_result_pdf_download(
+                r, "trade_analyse", key=f"report_panel_trade_{_result_snapshot_token(r)}",
+                label="Trade-Analyse PDF")
+            render_result_pdf_download(
+                r, "risiko_analyse", key=f"report_panel_risk_{_result_snapshot_token(r)}",
+                label="Risiko-Analyse PDF")
 
 
 def render_detail(result) -> None:
@@ -227,12 +320,21 @@ def render_detail(result) -> None:
     section_header("Analysen und Bericht", "KI-Texte mit den berechneten Befunden abgleichen.", help_key="reports")
     with st.expander("1 · Trade-Analyse — Handelsweise aus den Trades",
                      icon=":material/query_stats:"):
+        render_result_pdf_download(
+            result, "trade_analyse", key=f"detail_trade_{_result_snapshot_token(result)}",
+            label="Trade-Analyse als PDF")
         st.markdown(result.trade_analyse or "_Noch nicht erstellt (LLM-Lauf starten)._")
     with st.expander("2 · Risiko-Analyse — Forensik-Profil",
                      icon=":material/health_and_safety:"):
+        render_result_pdf_download(
+            result, "risiko_analyse", key=f"detail_risk_{_result_snapshot_token(result)}",
+            label="Risiko-Analyse als PDF")
         st.markdown(result.risiko_analyse or "_Noch nicht erstellt (LLM-Lauf starten)._")
     with st.expander("3 · Ausführlicher Gesamtbericht",
                      icon=":material/description:", expanded=True):
+        render_result_pdf_download(
+            result, "gesamtbericht", key=f"detail_final_{_result_snapshot_token(result)}",
+            label="Gesamtbericht als PDF", type="primary")
         if result.gesamtbericht:
             st.markdown(urteile_farbig(result.gesamtbericht), unsafe_allow_html=True)
         else:

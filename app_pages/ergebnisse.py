@@ -12,7 +12,8 @@ import streamlit as st
 
 from mqlkiscanner import config, db, pipeline, scan_state
 from mqlkiscanner.app_ui import (clear_report_selection, render_detail, render_report_panel,
-                                 render_results_table, results_to_dataframe)
+                                 render_portfolio_pdf_download, render_results_table,
+                                 results_to_dataframe)
 from mqlkiscanner.ui_design import (apply_theme, info_button, page_header, section_header,
                                     urteile_farbig)
 
@@ -97,6 +98,8 @@ def _render_portfolio_report(report: dict) -> None:
         st.markdown('**Strategie-Mix, Assets und Gewichtung**')
         st.caption(f"Stand: {report.get('created_at') or 'nicht gespeichert'} · "
                    f"Modell: {report.get('model') or 'nicht gespeichert'} · Keine Anlageberatung.")
+        render_portfolio_pdf_download(
+            report, key=f"results_portfolio_pdf_{'catalog' if catalog_portfolio else 'source'}")
         if catalog_portfolio:
             st.info('Historische Momentaufnahme: Dieser Bericht wurde nicht mit den '
                     'aktuellen Katalogbewertungen abgeglichen.',
@@ -116,7 +119,8 @@ if not results:
     st.stop()
 
 # Never carry an open report from a different source or filter into this view.
-source_signature = selected_run + '|' + '|'.join(str(r.id) for r in results)
+source_signature = selected_run + '|' + '|'.join(
+    repr((r.source_kind, r.id, r.trades_path, r.trades_sha256, r.name)) for r in results)
 if st.session_state.get('_results_source') != source_signature:
     clear_report_selection()
     st.session_state['_results_source'] = source_signature
@@ -156,7 +160,8 @@ with st.container(border=True):
     st.caption(f'{len(visible)} von {len(results)} Signalen · Tabelle und CSV verwenden dieselben Filter.')
     show_fresh = fresh_ids if selected_run.startswith('Datenbank') or selected_run == 'Aktuelle Sitzung' else None
     if visible:
-        signature = sha1((source_signature + repr([(r.id, r.name) for r in visible])
+        signature = sha1((source_signature + repr([
+            (r.source_kind, r.id, r.trades_path, r.trades_sha256, r.name) for r in visible])
                           + repr(sorted(show_fresh or []))).encode()).hexdigest()[:12]
         selected = render_results_table(
             visible, key=f'ergebnisse_table_{signature}', compact=view != 'Alle Kennzahlen',

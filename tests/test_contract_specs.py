@@ -61,6 +61,7 @@ def test_alias_and_broker_suffix_resolve(tmp_path):
     assert result["shock_usd"] == pytest.approx(5000.0)
     result = exposure.run(export_mit("BTCUSD.x", lots=1.0))
     assert result["shock_usd"] == pytest.approx(5000.0)
+    assert symbols.normalize_symbol("BTCUSD.x") == "BTCUSD"
 
 
 def test_cross_broker_false_needs_matching_broker(tmp_path):
@@ -77,6 +78,24 @@ def test_cross_broker_false_needs_matching_broker(tmp_path):
     # Kein Broker bekannt: ebenfalls verweigern.
     with pytest.raises(ValueError, match="cross_broker=false"):
         exposure.run(export_mit("USOUSD-ECN"))
+
+
+def test_same_oil_alias_selects_matching_broker_variant(tmp_path):
+    schreibe_specs(tmp_path, {
+        "XTIUSD": {
+            "contract_size": 1.0, "quote_currency": "USD", "stress_move": 10.0,
+            "cross_broker": False, "brokers": ["tickmill"], "aliases": ["USOUSD"],
+        },
+        "USOUSD_VTMARKETS": {
+            "contract_size": 1000.0, "quote_currency": "USD", "stress_move": 10.0,
+            "cross_broker": False, "brokers": ["vtmarkets"], "aliases": ["USOUSD"],
+        },
+    })
+    result = exposure.run(
+        export_mit("USOUSD-ECN", lots=3.0), broker="VTMarkets-Live 2")
+    assert result["shock_usd"] == pytest.approx(3.0 * 10.0 * 1000.0)
+    assert result["per_symbol_scenarios"]["USOUSD"]["contract_source"] == \
+        "contract_specs.json"
 
 
 def test_non_usd_quote_stays_soft_refused(tmp_path):
