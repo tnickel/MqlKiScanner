@@ -15,70 +15,50 @@ from mqlkiscanner.help_content import HELP_CONTENT
 @lru_cache(maxsize=1)
 def _stylesheet() -> str:
     assets_dir = Path(__file__).resolve().parents[2] / "assets"
-    
-    marble_file = assets_dir / "dark_marble_bg.jpg"
-    if not marble_file.exists():
-        marble_file = assets_dir / "dark_marble_texture.jpg"
-    marble_b64 = base64.b64encode(marble_file.read_bytes()).decode("ascii") if marble_file.exists() else ""
-    
+
     radar_file = assets_dir / "radar-grid.svg"
     radar_b64 = base64.b64encode(radar_file.read_bytes()).decode("ascii") if radar_file.exists() else ""
 
     return f"""<style>
-    /* Global Canvas: Deep Obsidian & Dark Marble Luxury Texture */
+    /* Calm forensic canvas: restrained contrast keeps evidence in focus. */
     .stApp {{
         background-color: #0A111E;
-        background-image: 
-            radial-gradient(ellipse at 85% 5%, rgba(0, 210, 211, 0.12), transparent 45%),
-            radial-gradient(ellipse at 15% 95%, rgba(245, 158, 11, 0.08), transparent 40%),
-            linear-gradient(180deg, rgba(10, 17, 30, 0.91) 0%, rgba(10, 17, 30, 0.97) 100%),
-            url('data:image/jpeg;base64,{marble_b64}');
-        background-size: auto, auto, auto, 1024px 1024px;
-        background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+        background-image:
+            radial-gradient(ellipse at 90% 0%, rgba(0, 210, 211, 0.07), transparent 32rem),
+            linear-gradient(180deg, #0A111E 0%, #0B1422 100%);
+        background-repeat: no-repeat;
         background-attachment: fixed;
     }}
 
-    /* Sidebar: Obsidian Glass over Marble */
+    /* Sidebar stays visually separate without competing texture. */
     [data-testid="stSidebar"] {{
         background-color: #080E1A !important;
-        background-image: 
-            radial-gradient(ellipse at 50% 0%, rgba(0, 210, 211, 0.09), transparent 50%),
-            linear-gradient(180deg, rgba(8, 14, 26, 0.88), rgba(8, 14, 26, 0.96)),
-            url('data:image/jpeg;base64,{marble_b64}') !important;
-        background-size: auto, auto, 1024px 1024px !important;
-        background-repeat: no-repeat, no-repeat, repeat !important;
+        background-image: linear-gradient(180deg, #080E1A, #0A1220) !important;
         border-right: 1px solid rgba(39, 62, 91, 0.6) !important;
     }}
 
-    /* Glassmorphism for all standard bordered containers */
+    /* Stable surfaces: no hover movement on informational cards. */
     [data-testid="stVerticalBlockBorderWrapper"] > div {{
-        background: linear-gradient(145deg, rgba(18, 30, 48, 0.78) 0%, rgba(12, 20, 34, 0.88) 100%) !important;
-        backdrop-filter: blur(14px) saturate(140%) !important;
-        -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
-        border: 1px solid rgba(56, 189, 248, 0.24) !important;
-        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05) !important;
+        background: #101C2D !important;
+        border: 1px solid rgba(71, 98, 130, 0.55) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
         border-radius: 14px !important;
-        transition: border-color 0.25s ease, box-shadow 0.25s ease;
-    }}
-    [data-testid="stVerticalBlockBorderWrapper"] > div:hover {{
-        border-color: rgba(56, 189, 248, 0.36) !important;
-        box-shadow: 0 6px 22px -2px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.07) !important;
     }}
 
-    /* Page Hero: Executive Glass Header */
+    /* Page hero establishes context once, then gets out of the way. */
     .st-key-page_hero {{
-        padding: 1.35rem 1.65rem;
-        border: 1px solid rgba(56, 189, 248, 0.25);
-        border-radius: 18px;
+        padding: 1.4rem 1.6rem;
+        border: 1px solid rgba(71, 98, 130, 0.62);
+        border-radius: 16px;
         background-color: #0E1A2C;
-        background-image: 
-            linear-gradient(90deg, #0E1A2C 28%, #0E1A2CB8 62%, #0E1A2C10),
+        background-image:
+            linear-gradient(90deg, #0E1A2C 30%, #0E1A2CEB 66%, #0E1A2C80),
             url('data:image/svg+xml;base64,{radar_b64}');
         background-position: center, right center;
-        background-size: cover, auto 125%;
+        background-size: cover, auto 115%;
         background-repeat: no-repeat;
-        margin-bottom: 0.8rem;
-        box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 210, 211, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        margin-bottom: 1rem;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
     }}
     .st-key-page_hero h1 {{
         letter-spacing: -.035em;
@@ -97,11 +77,11 @@ def _stylesheet() -> str:
         font-weight: 700;
     }}
     .st-key-page_hero img {{
-        max-height: 12rem;
+        max-height: 10.5rem;
         object-fit: cover;
-        border-radius: 14px;
-        border: 1px solid rgba(56, 189, 248, 0.3);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 210, 211, 0.15);
+        border-radius: 12px;
+        border: 1px solid rgba(71, 98, 130, 0.7);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32);
     }}
 
     /* Context help: quiet until needed, large enough for touch. */
@@ -138,25 +118,19 @@ def _stylesheet() -> str:
         color: #F8FAFC;
     }}
     .st-key-sidebar_brand img {{
-        border-radius: 12px;
-        border: 1px solid rgba(245, 158, 11, 0.35);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 14px rgba(245, 158, 11, 0.15);
+        border-radius: 10px;
+        border: 1px solid rgba(71, 98, 130, 0.65);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
         margin-bottom: 0.5rem;
     }}
 
-    /* Metrics & KPIs: Slate Glass with Glowing Accents */
+    /* Metrics: compact, legible and deliberately non-interactive. */
     [data-testid="stMetric"] {{
-        border: 1px solid rgba(56, 189, 248, 0.16) !important;
+        border: 1px solid rgba(71, 98, 130, 0.55) !important;
         border-radius: 14px !important;
-        background: linear-gradient(145deg, rgba(18, 32, 52, 0.75) 0%, rgba(11, 19, 32, 0.88) 100%) !important;
-        backdrop-filter: blur(12px) !important;
-        padding: 1.1rem 1.25rem !important;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
-    }}
-    [data-testid="stMetric"]:hover {{
-        border-color: rgba(0, 210, 211, 0.35) !important;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 10px rgba(0, 210, 211, 0.1) !important;
+        background: #101C2D !important;
+        padding: 1rem 1.1rem !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
     }}
     [data-testid="stMetricValue"] {{
         font-variant-numeric: tabular-nums;
@@ -409,33 +383,28 @@ def _stylesheet() -> str:
         50% {{ opacity: 1; }}
     }}
 
-    /* Action Buttons */
+    /* Actions: one clear accent, no decorative movement. */
     button[kind="primary"], .stButton > button[type="primary"] {{
-        background: linear-gradient(135deg, #00D2D3 0%, #0891B2 100%) !important;
+        background: #20C5C7 !important;
         color: #08111E !important;
         font-weight: 750 !important;
         border: 1px solid #67E8F9 !important;
         border-radius: 10px !important;
-        box-shadow: 0 4px 14px rgba(0, 210, 211, 0.35) !important;
-        transition: all 0.2s ease !important;
+        box-shadow: 0 2px 8px rgba(0, 210, 211, 0.2) !important;
     }}
     button[kind="primary"]:hover, .stButton > button[type="primary"]:hover {{
-        background: linear-gradient(135deg, #26E0E0 0%, #0E7490 100%) !important;
-        box-shadow: 0 6px 20px rgba(0, 210, 211, 0.5) !important;
-        transform: translateY(-1px) !important;
+        background: #4DD8D9 !important;
+        box-shadow: 0 3px 10px rgba(0, 210, 211, 0.28) !important;
     }}
     button[kind="secondary"], .stButton > button[type="secondary"] {{
-        background: linear-gradient(145deg, rgba(20, 35, 56, 0.8) 0%, rgba(12, 22, 36, 0.9) 100%) !important;
-        backdrop-filter: blur(10px) !important;
+        background: #132238 !important;
         color: #F1F5F9 !important;
-        border: 1px solid rgba(56, 189, 248, 0.22) !important;
+        border: 1px solid rgba(71, 98, 130, 0.72) !important;
         border-radius: 10px !important;
-        transition: all 0.2s ease !important;
     }}
     button[kind="secondary"]:hover, .stButton > button[type="secondary"]:hover {{
-        border-color: rgba(0, 210, 211, 0.45) !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
-        transform: translateY(-1px) !important;
+        background: #182A43 !important;
+        border-color: rgba(103, 232, 249, 0.5) !important;
     }}
     button:disabled, .stButton > button:disabled {{
         background: rgba(30, 41, 59, 0.62) !important;
@@ -458,9 +427,9 @@ def _stylesheet() -> str:
     }}
 
     /* Urteile in KI-Berichten: EMPFEHLUNG gruen · Watchlist gelb · Ablehnung rot */
-    .mks-urteil-gruen {{ color: #10B981; font-weight: 750; text-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }}
-    .mks-urteil-gelb {{ color: #F59E0B; font-weight: 750; text-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }}
-    .mks-urteil-rot {{ color: #F43F5E; font-weight: 750; text-shadow: 0 0 8px rgba(244, 63, 94, 0.3); }}
+    .mks-urteil-gruen {{ color: #34D399; font-weight: 750; }}
+    .mks-urteil-gelb {{ color: #FBBF24; font-weight: 750; }}
+    .mks-urteil-rot {{ color: #FB7185; font-weight: 750; }}
 
     [data-testid="stBottomBlockContainer"] {{
         background: rgba(8, 14, 26, 0.92) !important;
@@ -606,13 +575,13 @@ def page_header(eyebrow: str, title: str, description: str, *, image_path: str |
         if image_path and Path(image_path).exists():
             c_text, c_img = st.columns([1.55, 1.45], gap="medium", vertical_alignment="center")
             with c_text:
-                st.caption(f"✦ {eyebrow.upper()}")
+                st.caption(eyebrow.upper())
                 st.title(title)
                 st.markdown(description)
             with c_img:
                 st.image(str(image_path), width="stretch")
         else:
-            st.caption(f"✦ {eyebrow.upper()}")
+            st.caption(eyebrow.upper())
             st.title(title)
             st.markdown(description)
 

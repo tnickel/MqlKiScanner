@@ -37,31 +37,42 @@ defaults = {
 for key, val in defaults.items():
     st.session_state.setdefault(key, val)
 
+# Shared page objects keep navigation and in-app links in sync.
+scan_page = st.Page("app_pages/scan.py", title="Scan", icon=":material/radar:")
+results_page = st.Page(
+    "app_pages/ergebnisse.py", title="Ergebnisse", icon=":material/table_chart:"
+)
+settings_page = st.Page(
+    "app_pages/admin.py", title="Einstellungen", icon=":material/settings:"
+)
+
 # ------------------------------------------------------------------ Sidebar
 status = secrets_store.secret_status()
 settings = config.load_settings()
+emblem_path = ROOT / "assets" / "brand_emblem.jpg"
+if emblem_path.exists():
+    st.logo(str(emblem_path), size="large")
 with st.sidebar:
-    with st.container(key="sidebar_brand", gap="xsmall", horizontal_alignment="center"):
-        emblem_path = ROOT / "assets" / "brand_emblem.jpg"
-        if emblem_path.exists():
-            st.image(str(emblem_path), width=168)
+    with st.container(key="sidebar_brand", gap="xsmall"):
         st.caption("SIGNAL RESEARCH · FORENSIC RADAR")
-        st.header("MqlKiScanner", icon=":material/radar:")
-        st.markdown("**Risiko vor Ertrag.**")
+        st.header("MqlKiScanner")
+        st.caption("Risiko vor Ertrag")
     with st.container(border=True):
         with st.container(horizontal=True, vertical_alignment="center"):
-            st.markdown("**Verbindungen**")
+            st.markdown("**Systemstatus**")
             info_button("connections", key="sidebar_connections")
         mql_ready = status["mql5_user"] and status["mql5_pass"]
-        st.badge("MQL5 · hinterlegt" if mql_ready else "MQL5 · unvollständig",
+        st.badge("MQL5 bereit" if mql_ready else "MQL5-Zugang fehlt",
                  color="green" if mql_ready else "orange", icon=":material/person:")
-        st.badge("KI-Key · hinterlegt" if status["glm_api_key"] else "KI · optional, Key fehlt",
+        st.badge("KI bereit" if status["glm_api_key"] else "KI optional",
                  color="green" if status["glm_api_key"] else "gray", icon=":material/psychology:")
-        st.caption("Hinterlegte Zugänge sind noch kein Verbindungstest.")
+        if not mql_ready:
+            st.page_link(settings_page, label="Zugang einrichten",
+                         icon=":material/arrow_forward:")
     with st.container(border=True):
-        st.caption("PRÜFPRINZIP")
-        st.markdown("**Schutz muss belegt sein.**")
-        st.caption("Drawdown · Exposure · Stop-Nachweis")
+        st.caption("ENTSCHEIDUNGSREGEL")
+        st.markdown("**≤ 30 % Drawdown**  \n**> 5 % Ertrag / Monat**")
+        st.caption("Ein Stop zählt nur, wenn er belegt ist.")
     if st.session_state.last_run_file:
         st.caption(f"Letzter Lauf · {Path(st.session_state.last_run_file).parent.name}")
 
@@ -69,11 +80,11 @@ with st.sidebar:
 page = st.navigation(
     {
         "Arbeitsbereich": [
-            st.Page("app_pages/scan.py", title="Scan", icon=":material/radar:"),
-            st.Page("app_pages/ergebnisse.py", title="Ergebnisse", icon=":material/table_chart:"),
+            scan_page,
+            results_page,
         ],
         "Konfiguration": [
-            st.Page("app_pages/admin.py", title="Einstellungen", icon=":material/settings:"),
+            settings_page,
         ],
     },
     position="sidebar",
