@@ -18,8 +18,8 @@ from mqlkiscanner.ui_design import (apply_theme, info_button, page_header, secti
 
 apply_theme()
 hero_results_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_results_banner.jpg"
-page_header('Auswertung / Evidenz vor Entscheidung', 'Ergebnisse im Überblick',
-            'Alle gespeicherten Berichte aus der Datenbank — neu aktualisierte Läufe sind markiert.',
+page_header('ENTSCHEIDUNG', 'Risiken vergleichen, Evidenz prüfen',
+            'Erst Schutz und Drawdown beurteilen, dann den Ertrag. Neue Bewertungen sind klar markiert.',
             image_path=str(hero_results_banner) if hero_results_banner.exists() else None)
 st.session_state.setdefault('scan_results', [])
 st.session_state.setdefault('last_run_file', None)
@@ -27,7 +27,7 @@ st.session_state.setdefault('refreshed_signal_ids', None)
 scan_state.sync_worker_state(st.session_state)
 
 with st.container(border=True):
-    section_header('Datenstand', 'Datenbank, aktuelle Sitzung oder einen gespeicherten Lauf.',
+    section_header('Datenquelle', 'Aktueller Katalog, diese Sitzung oder eine historische Momentaufnahme.',
                    help_key='results_runs')
     runs = sorted(config.RUNS_DIR.glob('*/results.json'), reverse=True)
     options = ['Datenbank (alle Berichte)', 'Aktuelle Sitzung'] + [str(p) for p in runs[:12]]
@@ -121,19 +121,23 @@ if st.session_state.get('_results_source') != source_signature:
     clear_report_selection()
     st.session_state['_results_source'] = source_signature
 
-section_header('Risikobild', 'Bewertungen der Engine · zuerst die Evidenz prüfen.', help_key='risk_status')
+section_header('Entscheidungsübersicht', 'Status der gewählten Datenquelle · fehlende Evidenz ist keine Entwarnung.',
+               help_key='risk_status')
 ampeln = [r.ampel for r in results]
-columns = st.columns(4)
-columns[0].metric('Signale', len(results),
-                  f"{sum(1 for r in results if r.id in fresh_ids)} neu / aktualisiert",
-                  delta_color='off')
-columns[1].metric('Kandidaten', ampeln.count('🟢'))
-columns[2].metric('Beobachtung', ampeln.count('🟡'))
-columns[3].metric('Risiko / Ausschluss', ampeln.count('🔴') + ampeln.count('⛔'))
-st.caption(f"Vorprüfung ohne vollständige Trade-Forensik: {ampeln.count('⚪')} · leere Werte sind keine Entwarnung.")
+with st.container(horizontal=True):
+    st.metric('Signale', len(results), f"{ampeln.count('🟡')} Beobachtung",
+              delta_color='off', border=True, icon=':material/radar:')
+    st.metric('Kandidaten', ampeln.count('🟢'), border=True, icon=':material/check_circle:')
+    st.metric('Risiko / Ausschluss', ampeln.count('🔴') + ampeln.count('⛔'),
+              border=True, icon=':material/gpp_bad:')
+    st.metric('Ohne Vollprüfung', ampeln.count('⚪'), border=True, icon=':material/help:')
+st.caption(
+    f"{len(results)} Signale insgesamt · {sum(1 for r in results if r.id in fresh_ids)} "
+    "im letzten Lauf aktualisiert · leere Werte sind keine Entwarnung."
+)
 
 with st.container(border=True):
-    section_header('Signale vergleichen', 'Suchen → Zeile auswählen → Details und Bericht prüfen.',
+    section_header('Signale vergleichen', 'Filtern, dann eine Zeile für die vollständige Risikoprüfung auswählen.',
                    help_key='results_filter')
     c1, c2, c3 = st.columns([2, 1, 1])
     query = c1.text_input('Name oder Signal-ID', placeholder='Signal suchen …', key='results_search')
@@ -149,7 +153,7 @@ with st.container(border=True):
     visible = [r for r in results if (not statuses or r.ampel in statuses)
                and (not query.strip() or query.strip().casefold() in f'{r.name} {r.id}'.casefold())
                and (not apply_fresh or r.id in fresh_ids)]
-    st.caption(f'{len(visible)} von {len(results)} Signalen angezeigt · Tabellenansicht und Export verwenden dieselben Filter.')
+    st.caption(f'{len(visible)} von {len(results)} Signalen · Tabelle und CSV verwenden dieselben Filter.')
     show_fresh = fresh_ids if selected_run.startswith('Datenbank') or selected_run == 'Aktuelle Sitzung' else None
     if visible:
         signature = sha1((source_signature + repr([(r.id, r.name) for r in visible])

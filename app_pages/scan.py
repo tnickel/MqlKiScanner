@@ -61,7 +61,7 @@ def _new_workflow(mode: str | None = None) -> dict:
     return {
         "mode": mode, "status": "running" if mode else "idle",
         "started_at": datetime.now().isoformat(timespec="seconds") if mode else None,
-        "finished_at": None, "activity": "Bereit. Drücken Sie „Starte Workflow“.",
+        "finished_at": None, "activity": "Bereit. Starten Sie die Analyse.",
         "activity_at": None, "saved": False,
         "steps": {sid: {"status": "pending", "done": 0, "total": None,
                         "detail": "Noch nicht gestartet", "unit": unit}
@@ -148,18 +148,18 @@ settings = config.load_settings()
 running = command is not None or _thread_lebt
 hero_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_scan_banner.jpg"
 page_header(
-    "WORKFLOW",
-    "So prüft der Scanner Signale",
-    "Ein fester Ablauf: Daten holen → speichern → rechnerisch prüfen → "
-    "optional KI-Berichte und Portfolio-Vorschlag. Ein Knopf startet alles.",
+    "RISIKOPRÜFUNG",
+    "MQL5-Signale belastbar prüfen",
+    "Eine Analyse verbindet Handelsdaten, forensische Risikotests und optional "
+    "KI-Berichte. **Schutz muss belegt sein; 30 % Drawdown ist die harte Grenze.**",
     image_path=str(hero_banner) if hero_banner.exists() else None,
 )
 if reattached:
     st.info("Ein Workflow läuft bereits im Hintergrund. Der laufende Prozess wurde "
             "wieder verbunden; Status und Stop-Button steuern denselben Lauf.")
 section_header(
-    "Workflow-Zentrale",
-    "Starten, live verfolgen, stoppen — der komplette Ablauf an einem Ort.",
+    "Analyse starten",
+    "Ein Start, fünf nachvollziehbare Stationen, ein gespeicherter Ergebnisstand.",
     help_key="scan_workflow",
 )
 
@@ -226,7 +226,7 @@ def _live_status() -> None:
                     if laufend else "Workflow startet …")
     else:
         headline = {
-            "idle": "Bereit — ein Klick startet alle fünf Stationen",
+            "idle": "Bereit für die Analyse",
             "complete": "Workflow beendet — alle Stationen durch",
             "warning": "Workflow beendet — mit Hinweisen",
             "error": "Workflow beendet — mit Fehlern",
@@ -330,10 +330,15 @@ def _live_status() -> None:
 has_login = bool(secrets_store.get_secret("mql5_user") and secrets_store.get_secret("mql5_pass"))
 has_llm = bool(secrets_store.get_secret("glm_api_key"))
 with st.container(border=True, key="scan_control_panel"):
+    with st.container(horizontal=True, gap="small"):
+        st.badge("MQL5 bereit" if has_login else "MQL5-Zugang fehlt",
+                 icon=":material/lock:", color="green" if has_login else "orange")
+        st.badge("KI-Berichte aktiv" if has_llm else "KI optional",
+                 icon=":material/psychology:", color="green" if has_llm else "gray")
     start_zeile = st.columns([1.25, 1], gap="small", vertical_alignment="center")
     with start_zeile[0]:
         start = action_button(
-            "Starte Workflow",
+            "Analyse starten",
             key="scan_start",
             help_key="scan_start",
             type="primary",
@@ -353,38 +358,39 @@ with st.container(border=True, key="scan_control_panel"):
                      "kein harter Abbruch, fertige Teilergebnisse bleiben erhalten.",
             )
         else:
-            st.caption("Alle fünf Stationen laufen automatisch hintereinander — "
-                       "der Fortschritt darüber zeigt live, wo der Lauf gerade steht.")
+            st.caption("Die fünf Stationen laufen automatisch. Sie können den Lauf jederzeit "
+                       "kontrolliert stoppen.")
 
     _live_status()
+    if not has_login:
+        st.warning(
+            "Ohne MQL5-Zugang ist nur eine Vorprüfung möglich. Für belastbare "
+            "Stop- und Exposure-Befunde zuerst den Zugang unter Einstellungen ergänzen.",
+            icon=":material/warning:",
+        )
+    else:
+        st.caption(
+            f"Kontoschonender Abruf: mindestens {settings['rate_min_interval_s']:.1f} s "
+            f"zwischen Anfragen und {settings['rate_pause_zwischen_signalen_s']:.1f} s "
+            "Pause je Signal."
+        )
 
-    nur_neue = st.toggle(
-        "Nur neue Signale bewerten — alte Bewertungen übernehmen",
-        key="scan_nur_neue",
-        disabled=running,
-    )
-    st.caption(
-        "An: Bereits gründlich bewertete Signale werden nicht erneut von MQL5 "
-        "geladen. Die KI prüft für alle geeigneten Ergebnisse, ob passende Berichte "
-        "vorliegen; fehlende oder veraltete Berichte werden erstellt. "
-        "Der Portfolio-Vorschlag (Station 5) nutzt immer alle Signale."
-    )
-    with st.container(horizontal=True, gap="small"):
-        st.badge("MQL5-Zugang ok" if has_login else "MQL5-Zugang fehlt",
-                 icon=":material/lock:", color="blue" if has_login else "orange")
-        st.badge("KI-Key ok" if has_llm else "KI optional · Key fehlt",
-                 icon=":material/key:", color="blue" if has_llm else "gray")
-    st.caption(
-        f"Tempiertes Abrufen: {settings['rate_min_interval_s']:.1f} s Abstand · "
-        f"{settings['rate_pause_zwischen_signalen_s']:.1f} s Pause je Signal. "
-        "Ein Lauf dauert daher bewusst Minuten — die Uhr und die Meldungen oben "
-        "zeigen, dass er arbeitet."
-        if has_login else
-        "Ohne MQL5-Zugang unter Einstellungen können Listen geladen werden, "
-        "aber keine vollständigen Handelsdaten. Dann bleibt es bei einer Vorprüfung."
-    )
-
-with st.expander("Einstellungen für diesen Lauf", icon=":material/tune:", expanded=False):
+with st.expander("Analyseumfang anpassen", icon=":material/tune:", expanded=False):
+    with st.container(border=True):
+        section_header(
+            "Bereits geprüfte Signale",
+            "Standardmäßig werden vorhandene Bewertungen wiederverwendet.",
+            help_key="scan_reuse",
+        )
+        nur_neue = st.toggle(
+            "Nur neue Signale laden; vorhandene Bewertungen übernehmen",
+            key="scan_nur_neue",
+            disabled=running,
+        )
+        st.caption(
+            "Spart Zeit und MQL5-Anfragen. Fehlende oder veraltete KI-Berichte werden "
+            "trotzdem ergänzt; der Portfolio-Vorschlag berücksichtigt alle Signale."
+        )
     left, right = st.columns(2)
     with left.container(border=True, key="scan_scope"):
         section_header("Wie weit suchen?", "Weniger Seiten = schnellerer Lauf.", help_key="scan_scope")
@@ -427,7 +433,7 @@ with st.expander("Einstellungen für diesen Lauf", icon=":material/tune:", expan
             "An: ALLE Berichte werden neu erzeugt — vorhandene werden ersetzt "
             "(in der Datenbank bleibt die Historie erhalten)."
         )
-    st.caption("Sichtbare Werte gelten sofort. Speichern macht sie zum Standard für später.")
+    st.caption("Diese Werte gelten für den nächsten Lauf. Speichern übernimmt sie als Standard.")
     save_settings = action_button(
         "Einstellungen als Standard speichern",
         key="scan_save",
@@ -439,8 +445,8 @@ with st.expander("Einstellungen für diesen Lauf", icon=":material/tune:", expan
         f"Abrufabstand: {settings['rate_min_interval_s']:.1f} s · "
         f"Pause je Signal: {settings['rate_pause_zwischen_signalen_s']:.1f} s")
 
-with st.expander("Weitere Möglichkeiten", icon=":material/more_horiz:", expanded=False):
-    st.caption("Nur nötig, wenn Sie nicht den kompletten Online-Workflow wollen.")
+with st.expander("Testdaten und Expertenfunktionen", icon=":material/build:", expanded=False):
+    st.caption("Für Diagnose und gezielte Teilläufe; im Normalfall nicht erforderlich.")
     vcol, lcol = st.columns(2, gap="small")
     with vcol.container(border=True, key="scan_source_local", height="stretch"):
         st.markdown(":material/fact_check: **Nur Testdaten prüfen**")
@@ -973,7 +979,7 @@ def _probleme_dialog(probleme: list, gesamt: int) -> None:
 
 section_header(
     "Ergebnisse dieses Laufs",
-    "Fertig heißt: der Ablauf ist durch. Es ist noch keine Kaufempfehlung.",
+    "Ein abgeschlossener Lauf ist noch keine Empfehlung. Prüfen Sie zuerst die Risikoevidenz.",
     help_key="scan_results",
 )
 if st.session_state.scan_results:
@@ -991,6 +997,7 @@ if st.session_state.scan_results:
         if st.button(f"{len(probleme)} Probleme ansehen — was war los?",
                      key="scan_show_problems", icon=":material/warning:"):
             _probleme_dialog(probleme, len(results))
+    st.caption("Tipp: Eine Tabellenzeile auswählen, um die vollständige Risikoprüfung darunter zu öffnen.")
     render_report_panel(results)
     selected = render_results_table(results)
     if selected is not None:
