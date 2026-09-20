@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import datetime
 from hashlib import sha1
 from pathlib import Path
 
@@ -10,11 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 import streamlit as st
 
-from mqlkiscanner import config, db, downloader_sync, pipeline, regelwerk, scan_state
+from mqlkiscanner import (config, db, downloader_sync, pipeline, regelwerk,
+                          scan_state, scan_worker, tiefen_batch)
 from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, render_detail,
                                  render_downloader_docs_panel, render_report_panel,
                                  render_portfolio_pdf_viewer,
-                                 render_results_table, results_to_dataframe)
+                                 render_results_table, results_to_dataframe,
+                                 _gelbe_anzeige)
 from mqlkiscanner.ui_design import (action_button, aktivitaets_banner, apply_theme,
                                     info_button, page_header, section_header,
                                     urteile_farbig)
@@ -127,6 +130,75 @@ with st.container(border=True):
                 st.warning(f"Abgleich mit {len(summary['fehler'])} Hinweis(en): {bilanz}")
             else:
                 st.success(bilanz)
+
+@st.fragment(run_every=2.0)
+def _tiefen_batch_fenster() -> None:
+    """Live-Fortschritt der Batch-Erweiterte-KI-Analyse (tickt alle 2 s)."""
+    batch = tiefen_batch.aktiver_batch()
+    if batch is None:
+        return
+    total = max(1, batch["total"])
+    if tiefen_batch.batch_laeuft():
+        st.progress(
+            batch["done"] / total,
+            text=(f"Strategie {batch['done']}/{batch['total']} · "
+                  f"aktuell: {batch['aktuell'] or '—'} · "
+                  f"übersprungen: {batch['uebersprungen']} · "
+                  f"Fehler: {batch['fehler']}"),
+        )
+        if st.button("Batch stoppen (nach der aktuellen Strategie)",
+                     key="tiefe_batch_stop", icon=":material/stop_circle:"):
+            tiefen_batch.batch_stoppen()
+            st.rerun(scope="fragment")
+        return
+    dauer = str((batch.get("ende") or datetime.now()) - batch["start"]).split(".")[0]
+    art = "Abbruch per Stop" if batch["abgebrochen"] else "abgeschlossen"
+    (st.warning if batch["fehler"] else st.success)(
+        f"Batch {art}: {batch['done']}/{batch['total']} bearbeitet · "
+        f"{batch['uebersprungen']} übersprungen (bereits vorhanden) · "
+        f"{batch['fehler']} Fehler · Dauer {dauer}",
+        icon=":material/warning:" if batch["fehler"] else ":material/check_circle:",
+    )
+    if batch["fehler_liste"]:
+        with st.expander(f"{batch['fehler']} Fehler im Detail",
+                         icon=":material/error_outline:"):
+            for zeile in batch["fehler_liste"]:
+                st.caption(zeile)
+
+
+# Gelber Batch-Start: Erweiterte KI-Analyse für alle Signale der Quelle,
+# vorhandene werden übersprungen (fortsetzbar), läuft im Hintergrund-Thread.
+with st.container(border=True):
+    batch_spalte, batch_hinweis_spalte = st.columns([1, 2], gap="medium",
+                                                    vertical_alignment="center")
+    with batch_spalte:
+        _gelbe_anzeige("tiefe_batch_start", True)
+        batch_klick = st.button(
+            "🟡 Erweiterte KI-Analyse für alle Strategien starten",
+            key="tiefe_batch_start", type="primary",
+            icon=":material/auto_awesome:",
+            disabled=tiefen_batch.batch_laeuft() or scan_worker.active_run() is not None,
+        )
+    with batch_hinweis_spalte:
+        st.caption("Läuft über alle Signale dieser Quelle mit Trade-Daten. "
+                   "Vorhandene Tiefenanalysen werden übersprungen — dadurch "
+                   "fortsetzbar. Pro Strategie mehrere Minuten, verbraucht Tokens.")
+    if batch_klick:
+        ziele, gesehen = [], set()
+        for r in results:
+            if (getattr(r, 'source_kind', 'live') != 'live' or not r.id
+                    or not getattr(r, 'trades_path', '') or r.id in gesehen):
+                continue
+            gesehen.add(r.id)
+            ziele.append(r)
+        ok, meldung = tiefen_batch.batch_starten(ziele)
+        if ok:
+            st.toast(f"Batch gestartet: {len(ziele)} Strategien",
+                     icon=":material/auto_awesome:")
+            st.rerun()
+        else:
+            st.warning(meldung, icon=":material/info:")
+_tiefen_batch_fenster()
 
 # Das Portfolio stammt aus derselben Quelle wie die Signale. Alte Archive
 # ohne Portfolio erhalten keinen heutigen Bericht aus dem Live-Katalog.

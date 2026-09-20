@@ -148,6 +148,16 @@ Einstellungen; ohne Konfiguration grau „Downloader optional". Das Ergebnis
 wird 5 Minuten zwischengespeichert — Speichern im Admin-Bereich prüft sofort
 neu, ein Streamlit-Rerun löst keinen erneuten REST-Aufruf aus.
 
+**Batch über alle Strategien:** Auf der Ergebnisseite startet der gelbe Button
+**„🟡 Erweiterte KI-Analyse für alle Strategien starten“** einen Hintergrund-Lauf
+über alle Signale der gewählten Quelle mit Trade-Daten. Signale mit bereits
+vorhandener Tiefenanalyse werden übersprungen — der Lauf ist dadurch fortsetzbar
+(Stop/Neustart kostet nichts). Das Fortschrittsfenster zeigt Balken, Strategie
+n/X, den aktuellen Namen, Übersprungen-/Fehlerzähler und einen Stop-Button; jede
+fertige Analyse ist sofort in der Datenbank und erscheint als 🟡 in der
+Dokumente-Spalte. Ein Scan-Workflow kann während des Batches nicht gleichzeitig
+starten.
+
 **Automatischer Abgleich:** Jeder Analyse-Lauf holt in **Station 6** (nach dem
 Portfolio) Verläufe und PDFs für die Signale des Laufs. Ist der Downloader aus
 oder nicht konfiguriert, bleibt es bei einem Hinweis in der Station — der Lauf
