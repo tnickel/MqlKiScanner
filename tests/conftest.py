@@ -44,6 +44,7 @@ def isolated_app_storage(tmp_path, monkeypatch):
         "STATS_DIR": "data/stats",
         "CONFIG_DIR": "config",
         "PROMPTS_DIR": "config/prompts",
+        "DOWNLOADER_DIR": "data/downloader",
     }.items():
         path = tmp_path / relative
         path.mkdir(parents=True, exist_ok=True)
@@ -61,7 +62,8 @@ def isolated_app_storage(tmp_path, monkeypatch):
     monkeypatch.setattr(prompts, "PROMPT_FILES", {
         key: config.PROMPTS_DIR / f"{key}.md" for key in prompts.DEFAULTS
     })
-    for variable in ("MQLKISCANNER_GLM_KEY", "GLM_API_KEY", "MQL5_USER", "MQL5_PASS"):
+    for variable in ("MQLKISCANNER_GLM_KEY", "GLM_API_KEY", "MQL5_USER", "MQL5_PASS",
+                     "MQLDOWNLOADER_TOKEN", "MQLKISCANNER_DOWNLOADER_TOKEN"):
         monkeypatch.delenv(variable, raising=False)
 
     def reject_network(*args, **kwargs):

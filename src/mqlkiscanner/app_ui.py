@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import html as _html
 from copy import copy
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pandas as pd
 import streamlit as st
-from mqlkiscanner import config
+from mqlkiscanner import config, db, downloader_client
 from mqlkiscanner import regelwerk
 from mqlkiscanner.ampel_matrix import KRITERIEN, LABELS, kriterien_matrix
 from mqlkiscanner.pdf_reports import (
@@ -323,6 +324,170 @@ def render_report_panel(results) -> None:
             label="Risiko-Analyse anzeigen")
 
 
+def _downloader_versions(result) -> list[str]:
+    """API-Versionen, die für das Signal gefragt werden (Plattform oder beide)."""
+    version = downloader_client.platform_version(getattr(result, "platform", ""))
+    return [version] if version else ["mql4", "mql5"]
+
+
+def _dl_fetch_history(result) -> int:
+    """Abonnenten-Verlauf je Version holen und in die DB übernehmen.
+
+    404 zählt nicht als Fehler: Das Signal existiert im Downloader
+    schlicht nicht (z. B. nie geladen) — die betroffene Version wird
+    übersprungen. Rückgabe: Anzahl neuer Datenpunkte.
+    """
+    client = downloader_client.client_from_settings(config.load_settings())
+    stored = 0
+    for version in _downloader_versions(result):
+        try:
+            points = client.history(result.id, version)
+        except downloader_client.DownloaderNotFound:
+            continue
+        stored += db.store_history_points(result.id, version, points)
+    return stored
+
+
+def _dl_fetch_reports(result) -> list[str]:
+    """Testreport-PDFs je Version nach data/downloader/{id}/ spiegeln.
+
+    Unveränderte Dateien (gleicher Name + Größe, Datei vorhanden) werden
+    nicht erneut geladen. Rückgabe: diesmal neu geschriebene Pfade.
+    """
+    client = downloader_client.client_from_settings(config.load_settings())
+    known = {(row["version"], row["name"]): row
+             for row in db.list_downloader_reports(result.id)}
+    fresh: list[str] = []
+    for version in _downloader_versions(result):
+        try:
+            items = client.reports(result.id, version)
+        except downloader_client.DownloaderNotFound:
+            continue
+        for item in items:
+            name = Path(str(item.get("name") or "")).name
+            if not name.lower().endswith(".pdf"):
+                continue  # API liefert nur PDFs; Schutz vor unerwarteten Einträgen
+            size = item.get("sizeBytes")
+            row = known.get((version, name))
+            if (row is not None and Path(row["path"]).exists()
+                    and row["size_bytes"] is not None and size is not None
+                    and int(row["size_bytes"]) == int(size)):
+                continue
+            target = (config.DOWNLOADER_DIR / str(result.id) / "reports"
+                      / version / name)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(client.download_report(result.id, version, name))
+            db.store_downloader_report(result.id, version, name, str(target),
+                                       size_bytes=size,
+                                       last_modified=item.get("lastModified"))
+            fresh.append(str(target))
+    return fresh
+
+
+def _render_dl_history(result) -> None:
+    """Gespeicherten Abonnenten-Verlauf als Chart, Kennzahl und Tabelle."""
+    punkte = db.get_history(result.id)
+    if not punkte:
+        st.info("Noch kein Abonnenten-Verlauf gespeichert. "
+                "„Nutzer-Verlauf aktualisieren“ lädt ihn aus dem MqlDownloader.")
+        return
+    df = pd.DataFrame(punkte)
+    df["ts"] = pd.to_datetime(df["ts"], errors="coerce")
+    df = df.dropna(subset=["ts"]).sort_values("ts")
+    pivot = df.pivot_table(index="ts", columns="version",
+                           values="subscribers", aggfunc="last").sort_index()
+    st.line_chart(pivot, height=240)
+    with st.container(horizontal=True):
+        for version, gruppe in df.groupby("version"):
+            latest = gruppe.iloc[-1]
+            stand = latest["ts"].strftime("%d.%m.%Y %H:%M")
+            wert = ("—" if pd.isna(latest["subscribers"])
+                    else f"{int(latest['subscribers'])}")
+            st.metric(f"Abonnenten ({version})", wert,
+                      f"Stand {stand}", delta_color="off", border=True)
+    with st.expander("Datenpunkte anzeigen", icon=":material/table_rows:"):
+        tabelle = df[["version", "ts", "subscribers", "change"]].copy()
+        tabelle["ts"] = tabelle["ts"].dt.strftime("%d.%m.%Y %H:%M:%S")
+        tabelle.columns = ["Version", "Zeitpunkt", "Abonnenten", "Änderung"]
+        st.dataframe(tabelle, hide_index=True, height=260)
+
+
+def _render_dl_reports(result) -> None:
+    """Gespiegelte Testreport-PDFs mit Anzeige- und Speichern-Button."""
+    berichte = db.list_downloader_reports(result.id)
+    if not berichte:
+        st.info("Noch keine Testreport-PDFs gespiegelt. „Testberichte aktualisieren“ "
+                "lädt sie aus dem MqlDownloader.")
+        return
+    for index, item in enumerate(berichte):
+        key = f"dl_pdf_{result.id}_{item['version']}_{index}"
+        pfad = Path(item["path"])
+        visible_key = f"{key}_visible"
+        visible = bool(st.session_state.get(visible_key))
+        actions = st.container(horizontal=True, vertical_alignment="center")
+        clicked = actions.button(
+            "PDF schließen" if visible else f"{item['name']} anzeigen",
+            key=key, icon=":material/picture_as_pdf:")
+        groesse = (f"{item['size_bytes'] / 1024:.0f} kB"
+                   if item.get("size_bytes") else "Größe unbekannt")
+        stand = f" · Stand im Downloader: {item['last_modified']}" if item.get("last_modified") else ""
+        actions.caption(f"{item['version']} · {groesse}{stand}")
+        actions.download_button(
+            "PDF speichern",
+            data=(lambda p=pfad: p.read_bytes()) if pfad.exists() else b"",
+            file_name=item["name"], mime="application/pdf",
+            key=f"{key}_download", icon=":material/download:",
+            disabled=not pfad.exists(), on_click="ignore")
+        if clicked:
+            visible = not visible
+            st.session_state[visible_key] = visible
+        if visible and pfad.exists():
+            st.pdf(pfad, height=820, key=f"{key}_document")
+        elif visible:
+            st.warning("Die gespeicherte PDF-Datei fehlt auf der Platte. "
+                       "Bitte „Testberichte aktualisieren“ erneut ausführen.")
+
+
+def render_downloader_section(result) -> None:
+    """Abonnenten-Verlauf + Testreport-PDFs aus dem MqlDownloader (REST, lesend)."""
+    if not getattr(result, "id", 0):
+        return
+    section_header(
+        "MqlDownloader",
+        "Abonnenten-Verlauf und Testreport-PDFs aus dem lokalen Downloader-Netzwerkdienst.",
+        help_key="downloader_section",
+    )
+    settings = config.load_settings()
+    if not str(settings.get("downloader_base_url") or "").strip():
+        st.info("Der MqlDownloader ist nicht angebunden. Base-URL im Admin-Bereich "
+                "unter „MqlDownloader“ hinterlegen — danach lassen sich hier "
+                "Abonnenten-Verlauf und Testreport-PDFs je Signal laden.",
+                icon=":material/settings_ethernet:")
+        return
+    with st.container(border=True):
+        actions = st.container(horizontal=True, vertical_alignment="center")
+        if actions.button("Nutzer-Verlauf aktualisieren", key=f"dl_history_{result.id}",
+                          icon=":material/timeline:"):
+            try:
+                neu = _dl_fetch_history(result)
+                if not neu:
+                    st.toast("Keine neuen Abonnenten-Datenpunkte.", icon=":material/check:")
+            except downloader_client.DownloaderError as exc:
+                st.error(f"Abonnenten-Verlauf konnte nicht geladen werden: {exc}")
+        if actions.button("Testberichte aktualisieren", key=f"dl_reports_{result.id}",
+                          icon=":material/cloud_download:"):
+            try:
+                if not _dl_fetch_reports(result):
+                    st.toast("Keine neuen oder geänderten Testreport-PDFs.",
+                             icon=":material/check:")
+            except downloader_client.DownloaderError as exc:
+                st.error(f"Testberichte konnten nicht geladen werden: {exc}")
+        st.caption("Alles wird lokal gespiegelt (Ordner data/downloader/{Signal-ID} + "
+                   "Datenbank) und bleibt auch anzeigbar, wenn der Downloader aus ist.")
+        _render_dl_history(result)
+        _render_dl_reports(result)
+
+
 def render_detail(result) -> None:
     """Detailansicht eines ScanResults: Kennzahlen, Teilergebnisse, Bericht."""
     with st.container(horizontal=True, vertical_alignment="center"):
@@ -438,3 +603,4 @@ def render_detail(result) -> None:
         st.error(result.pdf_fehler)
     if hint := getattr(result, "bericht_hinweis", ""):
         st.info(hint)
+    render_downloader_section(result)

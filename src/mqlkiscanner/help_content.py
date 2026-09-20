@@ -103,4 +103,21 @@ Der Bericht steht in der Datenbank und bleibt auch über Sitzungen hinweg erhalt
 
 **Wichtig:** Risiko vor Ertrag — Signale ohne Stop-Nachweis, mit Martingale-Flag oder verletzter Drawdown-Schranke dürfen nicht als Ertragsträger aufgenommen werden. Der Vorschlag ist keine Anlageberatung; die Engine-Zahlen sind maßgeblich.
 """),
+    "downloader_section": ("MqlDownloader: Abonnenten-Verlauf und Testberichte", """
+Dieser Abschnitt kommt aus dem **MqlDownloader**, einem eigenen Netzwerkdienst im LAN
+(zu konfigurieren im Admin-Bereich unter „MqlDownloader“). Der Scanner holt zwei
+Datenarten: den **Abonnenten-Verlauf** (an welchen Tagen wie viele Nutzer das Signal
+abonniert hatten) und die **Testreport-PDFs**, die dem Downloader für diese Signal-ID
+vorliegen.
+
+Beide Abrufe sind rein lesend. Alles wird **lokal gespiegelt** — der Verlauf in der
+Datenbank, die PDFs unter `data/downloader/{Signal-ID}` — und bleibt dadurch auch
+anzeigbar, wenn der Downloader gerade aus ist. Unveränderte PDFs werden beim erneuten
+Aktualisieren nicht erneut geladen.
+
+Der Verlauf ist eine Marktbeobachtung (Vertrauen, Marketing, Wachstum), aber **keine
+Risikokennzahl**: Viele Abonnenten beweisen keine Qualität, und Wachstum allein sagt
+nichts über Stop-Nachweis oder Drawdown. Die Bewertung folgt weiterhin den
+Forensik-Kriterien; dieser Abschnitt liefert Zusatzkontext.
+"""),
 }

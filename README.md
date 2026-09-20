@@ -29,6 +29,8 @@ Entstanden aus einer forensischen Analyse-Reihe (u. a. Gold Spike, KiraCat, Pu
 - **Harte Schranke** auf max(Trading-DD, EQ-DD); Score mit 7 Dimensionen
 - **Optional GLM:** Trade-Analyse + Risiko parallel, dann Gesamtbericht
 - **SQLite-Persistenz** und Ergebnisse-UI mit NEU-Markierung
+- **MqlDownloader-Anbindung (optional):** Abonnenten-Verläufe und Testreport-PDFs
+  je Signal per REST-Interface, lokal gespiegelt und offline anzeigbar
 - **Rate-Limit / Fail-Fast** zum Schutz des MQL5-Accounts
 
 ## Schnellstart

@@ -92,6 +92,28 @@ neu erfunden).
       fehlen: automatisierte Alerts bei Anbieter-Stilbruch oder
       Copy-Abweichung > x %
 
+## Phase 6: MqlDownloader-Anbindung — ✅ abgeschlossen (20.09.2026)
+
+Anbindung an die REST-API des lokalen MqlDownloader-Dienstes (Doku:
+`MqlDownloader/doc/REST_API_Dokumentation.md`), rein lesend:
+
+- [x] REST-Client `downloader_client.py` — Base-URL (Default-Port 8089,
+      `/api/v1` wird ergänzt), optionaler Token (`X-API-Token`), Fehler
+      klar sortiert: Netz vs. Auth (401) vs. „nicht vorhanden" (404)
+- [x] Admin-Tab „MqlDownloader" — Base-URL + Token konfigurieren,
+      Verbindungstest per `GET /health` (Provider-Anzahl, API-Version,
+      `tokenRequired`-Warnung)
+- [x] Abonnenten-Verlauf je Signal (`/providers/{id}/{version}/history`)
+      → SQLite `subscriber_history`, Anzeige als Chart/Kennzahl/Tabelle
+      über „Nutzer-Verlauf aktualisieren" in der Signal-Detailansicht
+- [x] Testreport-PDFs je Signal (`/reports` + Download) → lokale Spiegelung
+      `data/downloader/{Signal-ID}/reports/{version}/` + SQLite
+      `downloader_reports`; unveränderte Dateien (gleiche Größe) werden
+      nicht erneut geladen; Einsicht per Button in der Detailansicht
+- [ ] Tradelisten aus dem Downloader (`/trades`) — bewusst offen: Die
+      Engine arbeitet mit den eigenen, verifizierten MQL5-Exporten;
+      Bedarf laut Nutzer noch unklar
+
 ## Bewusst außerhalb des Scopes
 
 - Kein Eigenhandel/Order-Routing — das Tool analysiert und bewertet nur

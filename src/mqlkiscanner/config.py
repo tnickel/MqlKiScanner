@@ -20,6 +20,7 @@ TRADES_DIR = DATA_DIR / "trades"
 STATS_DIR = DATA_DIR / "stats"
 CONFIG_DIR = ROOT / "config"
 PROMPTS_DIR = CONFIG_DIR / "prompts"
+DOWNLOADER_DIR = DATA_DIR / "downloader"  # je Signal-ID: {id}/reports/{version}/{name}.pdf
 SETTINGS_FILE = CONFIG_DIR / "app_settings.json"
 KNOWN_SIGNALS_FILE = DATA_DIR / "known_signals.json"
 CONTRACT_SPECS_FILE = DATA_DIR / "contract_specs.json"
@@ -46,6 +47,10 @@ GLM_BASE_URL = GLM_BASE_URL_CODING
 #   Stufe 2: starkes Modell nur fuer Finalisten (Verdict)
 MODEL_STUFE1 = "glm-5.3-flash"
 MODEL_STUFE2 = "glm-5.3"
+
+# MqlDownloader-REST-API (lesend, LAN; Doku: MqlDownloader/doc/REST_API_Dokumentation.md).
+# Default-Port 8089; "/api/v1" ergaenzt der Client automatisch, wenn nur Host:Port steht.
+DOWNLOADER_DEFAULT_BASE = "http://localhost:8089/api/v1"
 
 # Beide Einstellungsseiten verwenden dieselben Eingabegrenzen. Für Anzahl
 # und Vorfilter gibt es keine fachlich begründete obere Grenze.
@@ -74,9 +79,11 @@ DEFAULT_SETTINGS: dict = {
     "glm_base_url": GLM_BASE_URL,   # Coding-Plan-Endpunkt (Abo); umstellbar auf API-Endpunkt
     "model_stufe1": MODEL_STUFE1,
     "model_stufe2": MODEL_STUFE2,
+    "downloader_base_url": "",      # MqlDownloader-REST-Interface (leer = nicht angebunden)
 }
 
-for _d in (DATA_DIR, RUNS_DIR, REPORTS_DIR, TRADES_DIR, STATS_DIR, PROMPTS_DIR):
+for _d in (DATA_DIR, RUNS_DIR, REPORTS_DIR, TRADES_DIR, STATS_DIR, PROMPTS_DIR,
+           DOWNLOADER_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 

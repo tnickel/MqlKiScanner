@@ -12,7 +12,9 @@ Pipeline (pipeline.py) — Crawl → Export → Forensik → Score → optional 
         ├─► forensics/  Martingale, Exposure, Stops, Drawdown, Baskets, News
         ├─► scoring.py  7 Dimensionen + harte DD-Schranke
         ├─► llm/        GLM-Client (Zahlen nur als fertiges JSON)
-        └─► db.py       SQLite: Signale, Trades, Forensik, Analysen
+        ├─► downloader_client.py  MqlDownloader-REST (lesend): Verlauf + PDFs
+        └─► db.py       SQLite: Signale, Trades, Forensik, Analysen,
+                        Abonnenten-Verlauf, Downloader-PDFs
 ```
 
 **Regel:** Die Engine rechnet alle Zahlen. Das LLM interpretiert nur
@@ -52,6 +54,7 @@ LLM-Payload Ampel/Ausschluss-Grund nicht enthielt — behoben durch
 | `forensics/drawdown.py` | USD-Anker + `dd_pct_max_rel` für Risiko |
 | `mql5/session.py` | Rate-Limit, Cookie-HTTP, Export-Pfade |
 | `mql5/browser_session.py` | Selenium-Login, Cookie-Ernte, CSV-Download |
+| `downloader_client.py` | REST-Client für den MqlDownloader (Abonnenten-Verlauf, Testreport-PDFs; rein lesend, Fehler klar sortiert: Netz/Auth/404) |
 | `pipeline.py` | Orchestrierung, `forensik_ok`, Ampel |
 
 ## Konfiguration

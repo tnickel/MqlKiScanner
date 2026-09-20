@@ -88,6 +88,30 @@ und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
   Wunsch herunter. Die PDFs entstehen ausschließlich aus dem gespeicherten Text
   und lösen bei beiden Aktionen keinen neuen KI-Aufruf aus.
 
+### MqlDownloader: Nutzer-Verlauf und Testberichte
+
+Im **Admin-Bereich → MqlDownloader** wird die Base-URL des lokalen
+MqlDownloader-Dienstes konfiguriert (Standard `http://localhost:8089/api/v1`;
+`/api/v1` wird automatisch ergänzt, wenn nur Host:Port eingetragen ist) und
+optional ein API-Token hinterlegt. **Verbindung testen** führt einen
+Health-Check gegen `/health` aus und zeigt Provider-Anzahl und API-Version.
+
+Ist die Verbindung konfiguriert, erscheint in jeder Signal-Detailansicht der
+Abschnitt **MqlDownloader**:
+
+- **Nutzer-Verlauf aktualisieren** lädt die Abonnenten-Historie der Signal-ID
+  (welcher Tag, wie viele Abonnenten) und zeigt sie als Chart, Kennzahl und
+  Datenpunkt-Tabelle.
+- **Testberichte aktualisieren** spiegelt die im Downloader liegenden
+  Testreport-PDFs dieser Signal-ID; jede PDF lässt sich direkt einblenden und
+  über **PDF speichern** herunterladen.
+
+Alles wird lokal gespiegelt (`data/downloader/{Signal-ID}` plus SQLite) und
+bleibt auch dann anzeigbar, wenn der Downloader gerade aus ist. Unveränderte
+PDFs werden beim erneuten Aktualisieren nicht erneut geladen. Tradelisten holt
+der Scanner bewusst **nicht** vom Downloader — die Engine arbeitet mit den
+eigenen, verifizierten MQL5-Exporten.
+
 ## 5. Analysevorlagen
 
 Unter **Einstellungen → Analysevorlagen** zeigt ein Ablaufbild, welche
@@ -105,6 +129,7 @@ Bearbeiten geschützt und werden vor dem Speichern geprüft.
 | GLM 1113 Insufficient balance | Falscher Z.ai-Endpunkt (Coding vs. Pay-as-you-go) |
 | Viele „mit Fehlern“ | Export fehlgeschlagen — Log in Schritt 3 prüfen |
 | Nur Vorprüfung | Kein Login oder Export übersprungen |
+| Downloader nicht erreichbar | Läuft der MqlDownloader? Admin → „MqlDownloader“ → Verbindung testen |
 
 ## 7. Verifikation
 

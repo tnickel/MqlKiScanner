@@ -4,7 +4,8 @@
 HELP_SETTINGS = {
     "settings_overview": ("Einstellungen: speichern, prüfen, verwenden", """
 Die Einstellungen sind nach Aufgabe gruppiert. **Zugänge** verbinden MQL5 und die KI.
-**KI & Modelle** legt Modelle, Endpunkt und Token-Budget fest. **Scan & Risiko**
+**KI & Modelle** legt Modelle, Endpunkt und Token-Budget fest. **MqlDownloader** bindet
+den lokalen Downloader an (Abonnenten-Verläufe, Testreport-PDFs). **Scan & Risiko**
 bestimmt den Suchumfang und die Prüfgrenzen. **Analysevorlagen** steuert die drei KI-Texte.
 
 **So gehst du vor:** Werte in einem Bereich ändern → den Speichern-Button genau dieses
@@ -220,5 +221,31 @@ Sie verändert weder den Editor noch die gespeicherte Datei und löst keine KI-A
 
 Vergleiche hier Aufgabenstellung, Datengrundlagen und Platzhalter mit deinem eigenen Text.
 Erst **Standard wiederherstellen** überschreibt die ausgewählte Vorlage tatsächlich.
+"""),
+    "settings_downloader": ("MqlDownloader anbinden", """
+Der MqlDownloader ist ein eigener Netzwerkdienst im LAN, der Abonnenten-Verläufe
+und Testreport-PDFs je Signal-ID vorhält. Diese Seite kennt nur seine **Base-URL**
+(im Downloader standardmäßig Port **8089** mit Pfad `/api/v1`). Steht hier nur
+`http://rechner:8089`, ergänzt das Programm `/api/v1` automatisch.
+
+Ist im Downloader ein API-Token gesetzt, wird es zusätzlich benötigt — sonst bleibt
+das Feld leer. **Leere Felder lassen den vorhandenen Token unverändert**; gespeichert
+wird er wie alle Zugangsdaten nur lokal (Umgebung → .env → secrets.local.json).
+
+Die Daten sind rein lesend und werden beim Abruf **lokal gespiegelt** (Ordner
+`data/downloader/{Signal-ID}` plus Datenbank), sodass Verlauf und PDFs auch dann
+anzeigbar bleiben, wenn der Downloader gerade aus ist. Tradelisten holt der Scanner
+bewusst nicht aus dem Downloader — die Engine arbeitet mit den eigenen, verifizierten
+MQL5-Exporten.
+"""),
+    "settings_downloader_test": ("Was prüft der MqlDownloader-Test?", """
+Der Test ruft genau einen Endpunkt auf: `GET {Base-URL}/health`. Er prüft damit
+Erreichbarkeit, API-Version, Provider-Anzahl und, ob ein Token erforderlich ist.
+
+Der Test verwendet **immer die gespeicherte** Base-URL und den gespeicherten Token —
+ungespeicherte Eingaben werden gewarnt, nicht benutzt. Ein erfolgreicher Health-Check
+bestätigt die Netzwerkverbindung, nicht dass jedes Signal dort Daten hat: Ein Signal,
+das der Downloader nie geladen hat, liefert je Endpunkt eine leere Antwort (404),
+ohne dass die Verbindung defekt ist.
 """),
 }

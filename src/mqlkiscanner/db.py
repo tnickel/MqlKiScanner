@@ -9,6 +9,8 @@ Tabellen:
 - forensik    : Engine-Befund-JSON je Signal
 - analyses    : LLM-Teilergebnisse (kind = trade_analyse | risiko_analyse |
                 gesamtbericht), aktuelle Texte müssen zur Bewertungsbasis passen
+- subscriber_history : Abonnenten-Verlauf je Signal+Version (MqlDownloader)
+- downloader_reports : lokal gespiegelte Testreport-PDFs (MqlDownloader)
 
 Pfad: data/mqlkiscanner.db (gitignored). sqlite3 aus der Stdlib — kein
 Server noetig.
@@ -63,6 +65,25 @@ CREATE TABLE IF NOT EXISTS analyses (
     basis       TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_analyses_sig_kind ON analyses(signal_id, kind, id DESC);
+CREATE TABLE IF NOT EXISTS subscriber_history (
+    signal_id   INTEGER NOT NULL,
+    version     TEXT NOT NULL,
+    ts          TEXT NOT NULL,
+    subscribers INTEGER,
+    change      INTEGER,
+    fetched_at  TEXT,
+    PRIMARY KEY (signal_id, version, ts)
+);
+CREATE TABLE IF NOT EXISTS downloader_reports (
+    signal_id     INTEGER NOT NULL,
+    version       TEXT NOT NULL,
+    name          TEXT NOT NULL,
+    path          TEXT NOT NULL,
+    size_bytes    INTEGER,
+    last_modified TEXT,
+    fetched_at    TEXT,
+    PRIMARY KEY (signal_id, version, name)
+);
 """
 
 
@@ -268,3 +289,65 @@ def known_signal_ids() -> set[int]:
     with _connect() as conn:
         rows = conn.execute("SELECT signal_id FROM signals").fetchall()
     return {r["signal_id"] for r in rows}
+
+
+def store_history_points(signal_id: int, version: str, points: list[dict],
+                         *, fetched_at: str | None = None) -> int:
+    """Abonnenten-Punkte je Signal+Version ersetzen (Vollabgleich).
+
+    Ein Punkt ohne Zeitstempel wäre ohne Bezug — er wird übersprungen.
+    Rückgabe: Anzahl übernommener Punkte.
+    """
+    ts = fetched_at or _now()
+    kept = 0
+    with _connect() as conn:
+        for point in points:
+            stamp = str(point.get("timestamp") or "").strip()
+            if not stamp:
+                continue
+            conn.execute(
+                """INSERT INTO subscriber_history
+                   (signal_id, version, ts, subscribers, change, fetched_at)
+                   VALUES (?,?,?,?,?,?)
+                   ON CONFLICT(signal_id, version, ts) DO UPDATE SET
+                     subscribers=excluded.subscribers, change=excluded.change,
+                     fetched_at=excluded.fetched_at""",
+                (signal_id, version, stamp,
+                 point.get("subscribers"), point.get("change"), ts))
+            kept += 1
+    return kept
+
+
+def get_history(signal_id: int, version: str | None = None) -> list[dict]:
+    """Abonnenten-Verlauf aufsteigend; ohne Version alle Versionen gemischt."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT signal_id, version, ts, subscribers, change, fetched_at "
+            "FROM subscriber_history WHERE signal_id=? "
+            "AND (? IS NULL OR version=?) ORDER BY version, ts",
+            (signal_id, version, version)).fetchall()
+    return [dict(row) for row in rows]
+
+
+def store_downloader_report(signal_id: int, version: str, name: str, path: str,
+                            size_bytes: int | None = None,
+                            last_modified: str | None = None) -> None:
+    with _connect() as conn:
+        conn.execute(
+            """INSERT INTO downloader_reports
+               (signal_id, version, name, path, size_bytes, last_modified, fetched_at)
+               VALUES (?,?,?,?,?,?,?)
+               ON CONFLICT(signal_id, version, name) DO UPDATE SET
+                 path=excluded.path, size_bytes=excluded.size_bytes,
+                 last_modified=excluded.last_modified, fetched_at=excluded.fetched_at""",
+            (signal_id, version, name, path, size_bytes, last_modified, _now()))
+
+
+def list_downloader_reports(signal_id: int) -> list[dict]:
+    """Lokal gespiegelte Downloader-PDFs je Signal (Version, Name sortiert)."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT version, name, path, size_bytes, last_modified, fetched_at "
+            "FROM downloader_reports WHERE signal_id=? ORDER BY version, name",
+            (signal_id,)).fetchall()
+    return [dict(row) for row in rows]

@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, secrets_store
+from mqlkiscanner import config, secrets_store, downloader_client
 from mqlkiscanner.llm import client as llm_client
 from mqlkiscanner.llm import prompts as llm_prompts
 from mqlkiscanner.mql5.session import Mql5Session
@@ -96,8 +96,8 @@ with st.container(horizontal=True):
              color="green" if secret_status["glm_api_key"] else "orange")
     st.badge("Lokale Engine ohne KI-Key nutzbar", color="blue")
 
-access_tab, models_tab, scan_tab, prompts_tab = st.tabs(
-    ["Zugänge", "KI & Modelle", "Scan & Risiko", "Analysevorlagen"]
+access_tab, models_tab, downloader_tab, scan_tab, prompts_tab = st.tabs(
+    ["Zugänge", "KI & Modelle", "MqlDownloader", "Scan & Risiko", "Analysevorlagen"]
 )
 
 with access_tab:
@@ -281,6 +281,113 @@ with models_tab:
                                      f"KI-Test fehlgeschlagen ({type(exc).__name__}). Zugang, Endpunkt und Modell prüfen.")
                         status.update(label="KI-Test fehlgeschlagen", state="error", expanded=False)
         _render_test_result("_admin_llm_result")
+
+with downloader_tab:
+    with st.container(border=True):
+        section_header("MqlDownloader REST-Interface",
+                       "Adresse und Zugang des lokalen Downloaders — Quelle der "
+                       "Abonnenten-Verläufe und Testreport-PDFs je Signal-ID.",
+                       help_key="settings_downloader")
+        saved_downloader_base = str(settings.get("downloader_base_url") or "")
+        downloader_base = st.text_input(
+            "Base-URL", value=saved_downloader_base,
+            placeholder=config.DOWNLOADER_DEFAULT_BASE, key="admin_downloader_base")
+        st.caption(f"Standard: {config.DOWNLOADER_DEFAULT_BASE} · „/api/v1“ wird ergänzt, "
+                   "wenn nur Host:Port eingetragen ist.")
+        downloader_token = st.text_input(
+            "API-Token", type="password", key="admin_downloader_token",
+            placeholder="Leer lassen = unverändert")
+        token_active = secrets_store.get_secret("downloader_token")
+        st.caption("Token: " + ("hinterlegt" if token_active
+                                else "nicht hinterlegt (Downloader ohne Token-Schutz)"))
+        downloader_dirty = (downloader_base.strip() != saved_downloader_base
+                            or bool(downloader_token.strip()))
+        _draft_status(downloader_dirty,
+                      clean_label="Verbindung konfiguriert" if saved_downloader_base
+                      else "Nicht konfiguriert",
+                      clean_color="green" if saved_downloader_base else "gray")
+        save_column, token_column = st.columns(2)
+        with save_column:
+            if action_button("MqlDownloader-Verbindung speichern", key="admin_downloader_save",
+                             type="primary", help_key="settings_downloader",
+                             icon=":material/save:"):
+                try:
+                    normalized = downloader_client.normalize_base_url(downloader_base)
+                except (downloader_client.DownloaderError, ValueError):
+                    normalized = ""
+                if downloader_base.strip() and not normalized:
+                    st.error("Eine vollständige HTTP(S)-Base-URL verwenden, "
+                             "z. B. http://rechner:8089/api/v1")
+                else:
+                    if downloader_token.strip():
+                        secrets_store.save_secrets(downloader_token=downloader_token.strip())
+                    # Reload on save: nie eine alte Kopie anderer Einstellungen schreiben.
+                    config.save_settings({**config.load_settings(),
+                                          "downloader_base_url": normalized})
+                    _finish("MqlDownloader-Verbindung gespeichert. "
+                            "Bitte die gespeicherte Verbindung testen.",
+                            widget_updates=({"admin_downloader_token": ""}
+                                            if downloader_token.strip() else None),
+                            clear_result="_admin_downloader_result")
+        with token_column:
+            if action_button("Token entfernen", key="admin_downloader_token_remove",
+                             help_key="settings_downloader", icon=":material/delete:",
+                             disabled=not token_active):
+                secrets_store.save_secrets(downloader_token="")
+                _finish("Token entfernt. Ist im Downloader keiner gesetzt, bleibt die "
+                        "Verbindung voll nutzbar.",
+                        widget_updates={"admin_downloader_token": ""},
+                        clear_result="_admin_downloader_result")
+
+    with st.container(border=True):
+        section_header("Verbindung prüfen", "Health-Check gegen den gespeicherten Downloader.",
+                       help_key="settings_downloader_test")
+        if downloader_dirty:
+            st.warning("Es gibt ungespeicherte Änderungen. Der Test verwendet "
+                       "weiterhin die gespeicherten Werte.")
+        if action_button("Gespeicherte Downloader-Verbindung testen", key="admin_downloader_test",
+                         help_key="settings_downloader_test", icon=":material/network_check:"):
+            saved = config.load_settings()
+            if not str(saved.get("downloader_base_url") or "").strip():
+                _test_result("_admin_downloader_result", False, "Zuerst eine Base-URL speichern.")
+            else:
+                with st.status("MqlDownloader wird geprüft …", expanded=True) as status:
+                    st.write(f"Health-Check gegen {saved['downloader_base_url']}/health. "
+                             "Der Test liest nur und verbraucht keine MQL5-Ressourcen.")
+                    try:
+                        info = downloader_client.client_from_settings(saved).health()
+                        if str(info.get("status", "")).lower() != "ok":
+                            raise downloader_client.DownloaderError(
+                                f"Unerwarteter Status: {info.get('status')!r}")
+                        needed = bool(info.get("tokenRequired"))
+                        token_there = bool(secrets_store.get_secret("downloader_token"))
+                        _test_result(
+                            "_admin_downloader_result", True,
+                            f"Downloader erreichbar · {info.get('providers', '?')} Provider · "
+                            f"API-Version {info.get('apiVersion', '?')} · "
+                            + ("Token erforderlich und hinterlegt" if needed and token_there
+                               else "Token erforderlich, aber keiner hinterlegt!" if needed
+                               else "kein Token erforderlich"))
+                        status.update(label="Downloader-Verbindung bestätigt",
+                                      state="complete", expanded=False)
+                    except downloader_client.DownloaderNotConfigured:
+                        _test_result("_admin_downloader_result", False,
+                                     "Zuerst eine Base-URL speichern.")
+                        status.update(label="Verbindungstest fehlgeschlagen",
+                                      state="error", expanded=False)
+                    except downloader_client.DownloaderAuthError as exc:
+                        _test_result("_admin_downloader_result", False, str(exc))
+                        status.update(label="Token abgelehnt", state="error", expanded=False)
+                    except downloader_client.DownloaderConnectionError as exc:
+                        _test_result("_admin_downloader_result", False, str(exc))
+                        status.update(label="Downloader nicht erreichbar", state="error", expanded=False)
+                    except Exception as exc:
+                        _test_result("_admin_downloader_result", False,
+                                     f"Verbindungstest fehlgeschlagen ({type(exc).__name__}). "
+                                     "Base-URL und Downloader prüfen.")
+                        status.update(label="Verbindungstest fehlgeschlagen",
+                                      state="error", expanded=False)
+        _render_test_result("_admin_downloader_result")
 
 with scan_tab:
     filters_column, risk_column = st.columns(2, gap="medium")
