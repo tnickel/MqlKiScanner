@@ -463,9 +463,11 @@ def render_report_panel(results) -> None:
             with st.expander("Text der Tiefenanalyse", icon=":material/notes:"):
                 st.markdown(urteile_farbig(r.tiefenanalyse), unsafe_allow_html=True)
         else:
-            st.caption("Noch keine Erweiterte KI-Analyse vorhanden — sie wird "
-                       "manuell gestartet: Zeile in der Tabelle anwählen und in "
-                       "der Detailansicht „Erweiterte KI Analyse machen“ drücken.")
+            st.caption("In dieser Quelle keine Tiefenanalyse enthalten. Sitzung "
+                       "und Archiv sind Momentaufnahmen und nehmen später "
+                       "erstellte Analysen nicht auf — wechsle oben zur Quelle "
+                       "„Datenbank (alle Berichte)“, oder starte sie per "
+                       "„Erweiterte KI Analyse machen“ in der Detailansicht.")
 
 
 def _downloader_versions(result) -> list[str]:
@@ -837,8 +839,10 @@ def render_detail(result) -> None:
                 st.markdown(urteile_farbig(result.tiefenanalyse),
                             unsafe_allow_html=True)
         else:
-            st.info("Noch keine Erweiterte KI-Analyse vorhanden. Sie wird je "
-                    "Signal manuell gestartet und bleibt in der Datenbank "
-                    "erhalten — sie ändert nicht die Ampelbewertung.")
+            st.info("In dieser Quelle ist keine Erweiterte KI-Analyse enthalten. "
+                    "Sitzung und Archiv sind Momentaufnahmen und nehmen später "
+                    "erstellte Analysen nicht auf — wechsle zur Quelle "
+                    "„Datenbank (alle Berichte)“, oder starte sie hier per "
+                    "„Erweiterte KI Analyse machen“.", icon=":material/history:")
 
     render_downloader_section(result)
