@@ -239,7 +239,8 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             res.schranke_verletzt = max(eq, real, bal) > limit
         if res.gesamtbericht:
             res.kurzfassung = _extract_kurzfassung(res.gesamtbericht)
-        if any((res.trade_analyse, res.risiko_analyse, res.gesamtbericht)):
+        if any((res.trade_analyse, res.risiko_analyse, res.gesamtbericht,
+                res.tiefenanalyse)):
             try:
                 from .pdf_reports import materialize_result_pdfs
                 materialize_result_pdfs(res)

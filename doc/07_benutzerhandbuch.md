@@ -113,10 +113,15 @@ der Scanner bewusst **nicht** vom Downloader — die Engine arbeitet mit den
 eigenen, verifizierten MQL5-Exporten.
 
 In der Ergebnistabelle zeigt die letzte Spalte **Dokumente** je Signal ein
-📄-Icon mit der PDF-Anzahl; ein Klick öffnet die PDFs des Signals direkt
-darunter (eingebettet lesbar, mit Speichern-Button). Zellen ohne Icon
-bedeuten: noch nichts gespiegelt — kein Abgleich gelaufen oder der Downloader
-hat für diese ID keine PDFs.
+📄-Icon mit der Gesamtzahl aller PDFs des Signals — **eigene Berichte**
+(Trade-/Risiko-Analyse, Gesamtbericht, Tiefenanalyse) plus die gespiegelten
+**Downloader-PDFs**. Ein Klick öffnet das Dokumente-Fenster: eigene Berichte
+und Downloader-Testreports getrennt gruppiert, jeweils direkt einbettbar und
+mit Speichern-Button. Die Tiefenanalyse erscheint zusätzlich im „Bericht & PDF“-Panel
+(„Öffnen“) und in der Detailansicht. Anzeige-Buttons **langer** Dokumente sind
+**gelb** markiert (Berichte ab 8 000 Zeichen, Downloader-PDFs ab 100 kB) — so
+lassen sich kurze und lange Dokumente auf einen Blick unterscheiden; die
+Tiefenanalyse ist typischerweise gelb.
 
 Daneben zeigen drei Spalten den Abonnenten-Stand aus dem Downloader-Spiegel:
 **Abonnenten** (aktuelle Zahl), **30 Tage** und **7 Tage** (Anstieg 🟢 +x /

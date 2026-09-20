@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html as _html
+import re
 from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -44,6 +45,27 @@ def _display_path(path) -> str:
         return str(path)
 
 
+# Laengen-Markierung: Dokumente ab dieser Groesse gelten als "lang" und ihre
+# Anzeige-Buttons werden gelb gefaerbt — kurze und lange Dokumente sind so auf
+# einen Blick unterscheidbar (Nutzer-Wunsch; die Tiefenanalyse ist typischer-
+# weise lang). Zeichen fuer Bericht-Texte, kB fuer Downloader-PDF-Groessen.
+_LANG_ZEICHEN = 8000
+_LANG_KB = 100
+
+
+def _gelbe_anzeige(key: str, lang: bool) -> None:
+    """Faerbt den Button mit dem Widget-Key gelb, wenn das Dokument lang ist."""
+    if not lang:
+        return
+    safe = re.sub(r"[^A-Za-z0-9_-]", "", key)
+    st.markdown(
+        f"<style>.st-key-{safe} button{{background:rgba(255,193,7,.16)!important;"
+        f"color:#ffd76a!important;border:1px solid rgba(255,193,7,.6)!important;}}"
+        f"</style>",
+        unsafe_allow_html=True,
+    )
+
+
 def render_result_pdf_viewer(
     result,
     kind: str,
@@ -56,6 +78,8 @@ def render_result_pdf_viewer(
     report, filename = result_pdf_spec(result, kind)
     path = None
     error = ""
+    lang = len(report.body) >= _LANG_ZEICHEN
+    _gelbe_anzeige(key, lang)
     if report.body.strip():
         try:
             path = persist_report_pdf(report, snapshot=_result_snapshot_token(result))
@@ -68,7 +92,8 @@ def render_result_pdf_viewer(
     clicked = actions.button(
         "PDF schließen" if visible else
         (label or f"{report.kind.replace('_', ' ').title()} anzeigen"),
-        key=key, type=type, icon=":material/picture_as_pdf:", disabled=disabled)
+        key=key, type=type, icon=":material/picture_as_pdf:", disabled=disabled,
+        help="Langes Dokument — gelb markiert." if lang else None)
     actions.download_button(
         "PDF speichern",
         data=(lambda path=path: path.read_bytes()) if path is not None else b"",
@@ -220,8 +245,16 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                         for r in results]
     df["30 Tage"] = [_abo_delta_zelle(abo[r.id]["tage30"]) for r in results]
     df["7 Tage"] = [_abo_delta_zelle(abo[r.id]["tage7"]) for r in results]
-    df["Dokumente"] = [f"📄 {docs_counts[r.id]}" if docs_counts.get(r.id) else ""
-                       for r in results]
+
+    def _dokumente_zelle(r) -> str:
+        """Eigene Bericht-PDFs + gespiegelte Downloader-PDFs in einer Zahl."""
+        eigene = sum(bool(getattr(r, feld, "")) for feld in
+                     ("trade_analyse", "risiko_analyse", "gesamtbericht",
+                      "tiefenanalyse"))
+        gesamt = eigene + docs_counts.get(r.id, 0)
+        return f"📄 {gesamt}" if gesamt else ""
+
+    df["Dokumente"] = [_dokumente_zelle(r) for r in results]
 
     def _open_report():
         click = st.session_state.get(f"{key}_bericht")  # ButtonColumn-Click-Info
@@ -311,7 +344,9 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 help="Klick: Verlauf der letzten 7 Tage anzeigen",
                 on_click=_open_abo("7"), key=f"{key}_abo_7"),
             "Dokumente": st.column_config.ButtonColumn(
-                "Dokumente", help="Testreport-PDFs aus dem MqlDownloader öffnen",
+                "Dokumente",
+                help="Alle PDFs des Signals öffnen: eigene Berichte (inkl. "
+                     "Tiefenanalyse) + Testreports aus dem MqlDownloader",
                 on_click=_open_docs, key=f"{key}_docs"),
         },
     )
@@ -419,6 +454,18 @@ def render_report_panel(results) -> None:
         render_result_pdf_viewer(
             r, "risiko_analyse", key=f"report_panel_risk_{_result_snapshot_token(r)}",
             label="Risiko-Analyse anzeigen")
+        st.markdown("**Erweiterte KI-Analyse (Tiefenanalyse)**")
+        if r.tiefenanalyse:
+            render_result_pdf_viewer(
+                r, "tiefenanalyse",
+                key=f"report_panel_tiefe_{_result_snapshot_token(r)}",
+                label="Tiefenanalyse anzeigen")
+            with st.expander("Text der Tiefenanalyse", icon=":material/notes:"):
+                st.markdown(urteile_farbig(r.tiefenanalyse), unsafe_allow_html=True)
+        else:
+            st.caption("Noch keine Erweiterte KI-Analyse vorhanden — sie wird "
+                       "manuell gestartet: Zeile in der Tabelle anwählen und in "
+                       "der Detailansicht „Erweiterte KI Analyse machen“ drücken.")
 
 
 def _downloader_versions(result) -> list[str]:
@@ -540,11 +587,21 @@ def render_downloader_section(result) -> None:
         _render_dl_reports(result)
 
 
-def render_downloader_docs_panel(results) -> None:
-    """Vom 📄-Icon in der Ergebnistabelle geöffnet: Testreport-PDFs je Signal.
+_DOK_ARTEN = (
+    ("trade_analyse", "1 · Trade-Analyse"),
+    ("risiko_analyse", "2 · Risiko-Analyse"),
+    ("gesamtbericht", "3 · Gesamtbericht"),
+    ("tiefenanalyse", "ℹ️ Erweiterte KI-Analyse (Tiefenanalyse)"),
+)
 
-    Alle gespiegelten PDFs des Signals werden direkt lesbar eingebettet —
-    Klick auf das Icon genügt, kein zweiter Öffnen-Klick nötig.
+
+def render_downloader_docs_panel(results) -> None:
+    """Vom 📄-Icon in der Ergebnistabelle geöffnet: alle PDFs je Signal.
+
+    Zwei Gruppen: die lokal erzeugten Bericht-PDFs (Trade-/Risiko-Analyse,
+    Gesamtbericht, Tiefenanalyse) und die aus dem MqlDownloader gespiegelten
+    Testreport-PDFs. Alles liegt in der Datenbank bzw. auf der Platte und
+    bleibt damit über Sitzungen hinweg abrufbar.
     """
     doc_id = st.session_state.get("downloader_doc_signal_id")
     if doc_id is None:
@@ -559,6 +616,8 @@ def render_downloader_docs_panel(results) -> None:
         st.session_state.pop("downloader_doc_identity", None)
         return
     berichte = db.list_downloader_reports(doc_id)
+    eigene = [(art, label) for art, label in _DOK_ARTEN
+              if getattr(match, art, "")]
     with st.container(border=True):
         kopf = st.container(horizontal=True, vertical_alignment="center")
         kopf.markdown(f"### :material/folder_open: Dokumente — {match.name} (#{doc_id})")
@@ -568,32 +627,56 @@ def render_downloader_docs_panel(results) -> None:
                 st.session_state.pop("downloader_doc_signal_id", None)
                 st.session_state.pop("downloader_doc_identity", None)
                 st.rerun()
-        st.caption("Gespiegelte Testreport-PDFs aus dem MqlDownloader — lokal "
-                   "gespeichert, auch offline lesbar.")
-        if not berichte:
-            st.info("Für dieses Signal sind keine PDFs gespiegelt. Erst den "
-                    "MqlDownloader-Abgleich ausführen (Station 6 oder der Button "
-                    "auf dieser Seite) — oder im Downloader liegt schlicht keines vor.")
+        if not berichte and not eigene:
+            st.info("Weder eigene Bericht-PDFs noch gespiegelte Downloader-PDFs "
+                    "vorhanden. KI-Berichte entstehen im Workflow bzw. per "
+                    "„Erweiterte KI Analyse machen“ (Detailansicht); "
+                    "Downloader-PDFs über den MqlDownloader-Abgleich.")
             return
-        for index, item in enumerate(berichte):
-            pfad = Path(item["path"])
-            groesse = (f"{item['size_bytes'] / 1024:.0f} kB"
-                       if item.get("size_bytes") else "Größe unbekannt")
-            stand = (f" · Stand im Downloader: {item['last_modified']}"
-                     if item.get("last_modified") else "")
-            aktionen = st.container(horizontal=True, vertical_alignment="center")
-            aktionen.markdown(f"**{item['name']}**")
-            aktionen.caption(f"{item['version']} · {groesse}{stand}")
-            aktionen.download_button(
-                "PDF speichern",
-                data=(lambda p=pfad: p.read_bytes()) if pfad.exists() else b"",
-                file_name=item["name"], mime="application/pdf",
-                key=f"docs_panel_{doc_id}_{index}_download", icon=":material/download:",
-                disabled=not pfad.exists(), on_click="ignore")
-            if pfad.exists():
-                st.pdf(pfad, height=820, key=f"docs_panel_{doc_id}_{index}_document")
-            else:
-                st.warning("Die Datei fehlt auf der Platte — Abgleich erneut ausführen.")
+        if eigene:
+            st.markdown("**Eigene Berichte**")
+            for art, label in eigene:
+                render_result_pdf_viewer(
+                    match, art,
+                    key=f"docs_panel_lokal_{art}_{_result_snapshot_token(match)}",
+                    label=f"{label} anzeigen")
+        if berichte:
+            st.markdown("**Testreport-PDFs (MqlDownloader-Spiegel)**")
+            for index, item in enumerate(berichte):
+                key = f"docs_panel_{doc_id}_{index}"
+                pfad = Path(item["path"])
+                groesse_kb = (item["size_bytes"] / 1024
+                              if item.get("size_bytes") else 0)
+                groesse = (f"{groesse_kb:.0f} kB" if item.get("size_bytes")
+                           else "Größe unbekannt")
+                lang = groesse_kb >= _LANG_KB
+                _gelbe_anzeige(key, lang)
+                stand = (f" · Stand im Downloader: {item['last_modified']}"
+                         if item.get("last_modified") else "")
+                visible_key = f"{key}_visible"
+                visible = bool(st.session_state.get(visible_key))
+                aktionen = st.container(horizontal=True, vertical_alignment="center")
+                aktionen.markdown(f"**{item['name']}**")
+                aktionen.caption(f"{item['version']} · {groesse}{stand}")
+                geklickt = aktionen.button(
+                    "PDF schließen" if visible else f"{item['name']} anzeigen",
+                    key=key, icon=":material/picture_as_pdf:",
+                    help="Langes Dokument — gelb markiert." if lang else None)
+                aktionen.download_button(
+                    "PDF speichern",
+                    data=(lambda p=pfad: p.read_bytes()) if pfad.exists() else b"",
+                    file_name=item["name"], mime="application/pdf",
+                    key=f"{key}_download",
+                    icon=":material/download:",
+                    disabled=not pfad.exists(), on_click="ignore")
+                if geklickt:
+                    visible = not visible
+                    st.session_state[visible_key] = visible
+                if visible and pfad.exists():
+                    st.pdf(pfad, height=820, key=f"{key}_document")
+                elif visible:
+                    st.warning("Die Datei fehlt auf der Platte — Abgleich erneut "
+                               "ausführen.")
 
 
 def render_detail(result) -> None:
