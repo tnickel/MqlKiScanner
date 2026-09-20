@@ -9,6 +9,7 @@
 | `data/mql5_cookies.json` | Session-Cookies = Login |
 | `data/chrome_profile/`, `data/chrome_profile_accounts/` | Browser-Profile mit Login-Zustand |
 | `data/*.db`, `data/trades/`, `data/trade_snapshots/`, `data/runs/` | lokale Scan-Artefakte einschließlich unveränderlicher CSV-Kopien |
+| `data/downloader/` | MqlDownloader-Spiegel: Abonnenten-Verläufe + analysierte PDFs (private Nutzerdaten, nie committen) |
 | `.streamlit/secrets.toml` | Streamlit-Secrets |
 
 Alle Einträge stehen in `.gitignore`. Vor jedem Push:
@@ -16,11 +17,13 @@ Alle Einträge stehen in `.gitignore`. Vor jedem Push:
 ```bash
 git status
 git check-ignore -v data/mql5_cookies.json config/secrets.local.json .env
-git ls-files | findstr /i "cookie secret .env chrome_profile"
+git ls-files | findstr /i "cookie secret .env chrome_profile downloader"
 ```
 
 Erwartet: Ignore greift; `git ls-files` zeigt **keine** der Secret-Dateien
-(außer `.env.example` und `secrets_store.py` ohne Klartexte).
+(außer `.env.example` und `secrets_store.py` ohne Klartexte). **Niemals
+`git add -A` / `git add .` benutzen** — unter `data/` liegen live Nutzerdaten
+(Downloader-Spiegel), gezielt einzelne Dateien addieren.
 
 ## Laden von Geheimnissen
 

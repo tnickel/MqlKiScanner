@@ -14,6 +14,8 @@ Never commit:
 - `.env`, `config/secrets.local.json`
 - `data/mql5_cookies.json`, `data/chrome_profile/`
 - SQLite DBs and trade caches under `data/`
+- `data/downloader/` — mirrored subscriber histories and analysis PDFs
+  pulled from the user's local MqlDownloader (private user data)
 
 Use `.env.example` as a template only.
 
