@@ -158,8 +158,13 @@ bleibt erhalten. Secrets liegen wie immer nur im secrets_store (nie im Repo).
 - PDFs werden serverseitig auf Magic-Bytes geprüft und ausschließlich inline
   mit `X-Content-Type-Options: nosniff` ausgeliefert; die Ansicht erfordert
   eine eingeloggte Browsersitzung.
-- Produktiv-Grenze beachten: nginx `client_max_body_size 10m` — deshalb
-  clientseitiges 8-MB-Limit je Dokument (Base64 bläht ~33 % auf).
+- Grenzen: Server validiert max. 12 MB je Dokument; nginx (monitor.tnickel-ki.de,
+  `client_max_body_size 200m`) ist großzügiger — der Scanner-Cap von 8 MB
+  bleibt als Reserve für den Base64-Overhead (~33 %) bestehen.
+- Produktiv-URL des Monitors: **https://monitor.tnickel-ki.de** (proxyt alles
+  auf 8080). Andere Domains auf dem Server (z. B. die Homepage) geben nur
+  eine Pfad-Allowlist frei — dort antwortet `/api/kiscanner` mit nginx-404,
+  das ist kein Fehler der Integration.
 
 ## 8. Betrieb & Known Issues
 
