@@ -457,7 +457,8 @@ with prompts_tab:
     with st.container(border=True):
         section_header(
             "Vom Engine-Befund zum Bericht",
-            "Vier Vorlagen übersetzen bereits berechnete Fakten in verständliche Texte.",
+            "Fünf Vorlagen übersetzen bereits berechnete Fakten in verständliche Texte — "
+            "vier im Workflow, eine als manuelle Vollanalyse.",
             help_key="settings_prompts",
         )
         st.info(
@@ -496,14 +497,24 @@ with prompts_tab:
             "Stufe 1 ist auf schnelle Risikoprofile ausgelegt. Stufe 2 formuliert "
             "die tiefe Trade-Analyse, beide finalen Berichte und den Portfolio-Vorschlag."
         )
+        st.warning(
+            "ℹ️ Sonderrolle „Tiefenanalyse“ (Erweiterte KI-Analyse): Diese Vorlage "
+            "gehört NICHT zum Workflow. Sie wird je Signal über den Button "
+            "„Erweiterte KI Analyse machen“ in der Detailansicht gestartet — mit "
+            "vollständigen Trade-Daten, dem Stufe-2-Modell und eigener PDF-Ausgabe.",
+            icon=":material/info:",
+        )
 
         labels = {"trade_analyse": "1 · Trade-Analyse", "risiko_analyse": "2 · Risikoprofil",
-                  "gesamtbericht": "3 · Gesamtbericht", "portfolio": "4 · Portfolio-Vorschlag"}
+                  "gesamtbericht": "3 · Gesamtbericht", "portfolio": "4 · Portfolio-Vorschlag",
+                  "tiefenanalyse": "ℹ️ Tiefenanalyse"}
         placeholders = {
             "trade_analyse": ("kandidat_json", "trades_json"),
             "risiko_analyse": ("kandidat_json", "forensik_json", "kriterien"),
             "gesamtbericht": ("kandidat_json", "forensik_json", "trade_analyse", "risiko_analyse", "kriterien"),
             "portfolio": ("kandidaten_json", "kriterien"),
+            "tiefenanalyse": ("kandidat_json", "forensik_json", "trades_json",
+                              "signal_name", "signal_url"),
         }
         prompt_flow = {
             "trade_analyse": {
@@ -526,8 +537,13 @@ with prompts_tab:
                 "input": "Alle Signalbefunde + Gesamtberichte",
                 "output": "Finaler Portfolio-Gesamtbericht",
             },
+            "tiefenanalyse": {
+                "why": "Manuelle Vollanalyse EINES Signals: Risiko, System-Typ, Performance-Forensik.",
+                "input": "Kandidat + Forensik + vollständige Trade-Daten + Name/URL",
+                "output": "Tiefenanalyse-Bericht als eigenes PDF",
+            },
         }
-        st.markdown("**Alle vier Vorlagen auf einen Blick**")
+        st.markdown("**Alle Vorlagen auf einen Blick**")
         st.table([
             {
                 "Vorlage": labels[key],
@@ -537,7 +553,8 @@ with prompts_tab:
                            else settings["model_stufe2"]),
                 "Ausgang": prompt_flow[key]["output"],
             }
-            for key in ("trade_analyse", "risiko_analyse", "gesamtbericht", "portfolio")
+            for key in ("trade_analyse", "risiko_analyse", "gesamtbericht",
+                        "portfolio", "tiefenanalyse")
         ])
         st.space("small")
         st.markdown("**Vorlage verstehen und bearbeiten**")
@@ -549,6 +566,13 @@ with prompts_tab:
             modified = current.strip() != llm_prompts.DEFAULTS[prompt_key].strip()
             model = settings["model_stufe1"] if prompt_key == "risiko_analyse" else settings["model_stufe2"]
             flow = prompt_flow[prompt_key]
+            if prompt_key == "tiefenanalyse":
+                st.warning(
+                    "ℹ️ Gelb markierte Sonderrolle: Die Tiefenanalyse ist die "
+                    "Erweiterte KI-Analyse — manuell je Signal aus der "
+                    "Detailansicht gestartet, mit vollständigen Trade-Daten im "
+                    "Prompt und eigener PDF-Ausgabe (04-tiefenanalyse.pdf).",
+                    icon=":material/info:")
             purpose, source, model_card, output = st.columns(4)
             with purpose.container(border=True):
                 st.caption("WARUM")

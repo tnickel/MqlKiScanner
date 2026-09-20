@@ -148,4 +148,36 @@ Die PDFs sind lokale Spiegelkopien (`data/downloader/{Signal-ID}`) und bleiben d
 auch lesbar, wenn der Downloader gerade aus ist. Die Bewertung eines Signals wird
 davon nicht berührt.
 """),
+    "tiefenanalyse": ("Erweiterte KI-Analyse (Tiefenanalyse)", """
+Die Erweiterte KI-Analyse ist eine **manuelle Vollanalyse** für ein einzelnes Signal —
+gestartet über den Button „Erweiterte KI Analyse machen“. Sie läuft bewusst nicht im
+Workflow, weil sie deutlich mehr Tokens verbraucht als die Standard-Berichte.
+
+**Was das Modell bekommt:** die vollständigen Trade-Daten (Statistiken plus
+Beispiel-Trades aus dem Export), die Signal-Kennzahlen von der MQL5-Seite, die
+maschinelle Forensik sowie Signalname und -Link (im Prompt per Platzhalter
+eingesetzt). Die Vorlage ist im Admin-Bereich unter „Analysevorlagen →
+ℹ️ Tiefenanalyse“ editierbar (gelb markierte Sonderrolle).
+
+**Ergebnis:** ein ausführlicher Bericht (Risikomanagement, Grid-/Martingale-Prüfung,
+Strategie-Typ, Risiko-Score 1–10, Performance-Forensik, Userbewertungen) als eigenes
+PDF (`04-tiefenanalyse.pdf`) plus lesbarer Text — dauerhaft in der Datenbank
+gespeichert und über Sitzungen hinweg abrufbar.
+
+**Wichtig:** Auch diese Analyse ändert NICHT die Ampel, den Score oder das Urteil.
+Sie ist Zusatzkontext für die eigene Einschätzung; maßgeblich bleiben die
+Engine-Befunde. Das Modell rechnet auf Trade-Basis (z. B. Verlustwahrscheinlichkeit)
+und muss seine Datengrundlage nennen.
+"""),
+    "tiefenanalyse_start": ("Was passiert beim Start der Erweiterten KI-Analyse?", """
+Der Button baut den Tiefenanalyse-Prompt (Vorlage: Admin → Analysevorlagen →
+ℹ️ Tiefenanalyse) mit den Daten dieses Signals und sendet ihn an das Stufe-2-Modell
+(einstellbar unter „KI & Modelle“). Der Lauf kostet Tokens aus dem Lauf-Budget und
+dauert mehrere Minuten — das Statusfenster währenddessen nicht schließen.
+
+Voraussetzungen: GLM-Key hinterlegt und ein lesbarer Trade-Export für das Signal.
+Ohne Trades startet die Analyse bewusst nicht — die Auswertung der Tradeliste ist
+Kern der Aufgabe. Danach erscheinen PDF und Text direkt unter dem Button; ein erneuter
+Klick erstellt eine neue Version (die alte bleibt in der Datenbank).
+"""),
 }

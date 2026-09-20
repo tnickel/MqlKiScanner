@@ -78,7 +78,11 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 
 1. **Code rechnet ALLE Zahlen; das LLM bekommt nur fertige Befunde als JSON**
    und formuliert/liefert Interpretation. LLM rechnet nie selbst
-   (Halluzinationsrisiko bei Arithmetik).
+   (Halluzinationsrisiko bei Arithmetik). **Ausnahme (Nutzer-Wunsch, 20.09.2026):**
+   Prompt 5 „Tiefenanalyse" (manuelle Erweiterte KI-Analyse) darf auf
+   Trade-Basis rechnen (z. B. Verlustwahrscheinlichkeit) — die Vorlage
+   verlangt Grundlage und Annahmen; Ampel/Score/Urteil bleiben davon
+   unberührt.
 2. Kein Kandidat erhält eine positive Einstufung vor bestandener Pflicht-Tests.
 3. Signalnamen lügen ("Low Risk", "Stable", "Hedge") — Drawdown + Exposure zählen.
 4. Abonnentenzahl korreliert mit Marketing/Alter, nicht mit Qualität

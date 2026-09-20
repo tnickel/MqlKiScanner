@@ -139,6 +139,25 @@ selbst scheitert daran nicht. Auf der Ergebnisseite gleicht der Button
 Berichte bleiben unberührt; frische Verlaufsdaten sind Zusatzkontext, keine
 Risikokennzahl, und erzeugen keine „NEU“-Markierung.
 
+### Erweiterte KI-Analyse (Tiefenanalyse)
+
+Zusätzlich zu den Workflow-Berichten gibt es eine **manuelle Vollanalyse**:
+Signal in der Tabelle anwählen → in der Detailansicht den Button
+**„Erweiterte KI Analyse machen“** drücken. Dabei geht der Tiefenanalyse-Prompt
+(Prompt 5) mit den **vollständigen Trade-Daten** (Statistiken + Beispiel-Trades
+aus dem Export), den Signal-Kennzahlen, der Engine-Forensik sowie **Signalname
+und -Link** (als Platzhalter `{signal_name}` / `{signal_url}` eingesetzt, kein
+fester Anbietername im Prompt) an das starke Modell (Stufe 2).
+
+Die Analyse deckt Risikomanagement (Stop-Loss-Gebrauch, Drawdown,
+Verlustwahrscheinlichkeit), Grid-/Martingale-Prüfung, Strategie-Typ,
+Risiko-Score 1–10, Performance-Forensik und — falls vorhanden —
+Userbewertungen ab. Ergebnis: ein eigenes PDF (`04-tiefenanalyse.pdf`) plus
+lesbarer Text, dauerhaft in der Datenbank; ein erneuter Klick erzeugt eine
+neue Version. Die Vorlage ist editierbar unter **Einstellungen →
+Analysevorlagen → ℹ️ Tiefenanalyse** (gelb markierte Sonderrolle, gehört
+nicht zum Workflow). Auch diese Analyse ändert nie Ampel, Score oder Urteil.
+
 ## 5. Analysevorlagen
 
 Unter **Einstellungen → Analysevorlagen** zeigt ein Ablaufbild, welche

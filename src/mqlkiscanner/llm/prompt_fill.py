@@ -35,6 +35,7 @@ from . import prompts as llm_prompts
 KNOWN_PLACEHOLDERS = frozenset((
     "{kandidat_json}", "{kandidaten_json}", "{forensik_json}",
     "{trades_json}", "{trade_analyse}", "{risiko_analyse}", "{kriterien}",
+    "{signal_name}", "{signal_url}",
 ))
 
 _PLACEHOLDER_RE = re.compile(r"\{[a-z_][a-z_0-9-]{1,39}\}")
@@ -109,3 +110,26 @@ def build_portfolio_prompt(eintraege_json: str, kriterien: str) -> str:
         ("{kandidaten_json}", "{kriterien}"), "portfolio")
     return fill_prompt(template, {"{kandidaten_json}": eintraege_json,
                                   "{kriterien}": kriterien})
+
+
+def build_tiefenanalyse_prompt(result, trades_json: str) -> str:
+    """Prompt 5 — Erweiterte KI-Analyse (manuell, starkes Modell, mit Trades).
+
+    {signal_name}/{signal_url} ersetzen den festen Anbieter-Namen bzw. Link;
+    die URL kommt vom Ergebnis und faellt auf das Standard-MQL5-Muster
+    zurueck (https://www.mql5.com/en/signals/{ID}), plattformunabhaengig.
+    """
+    from ..pipeline import _forensik_json, _kandidat_json  # kein Kreisimport
+    template = assert_template_covered(
+        llm_prompts.load_prompt("tiefenanalyse"),
+        ("{kandidat_json}", "{forensik_json}", "{trades_json}",
+         "{signal_name}", "{signal_url}"), "tiefenanalyse")
+    url = getattr(result, "url", "") or (
+        f"https://www.mql5.com/en/signals/{result.id}" if getattr(result, "id", None) else "")
+    return fill_prompt(template, {
+        "{kandidat_json}": _kandidat_json(result),
+        "{forensik_json}": _forensik_json(result),
+        "{trades_json}": trades_json,
+        "{signal_name}": getattr(result, "name", "") or "Unbenanntes Signal",
+        "{signal_url}": url,
+    })

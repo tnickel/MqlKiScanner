@@ -262,7 +262,13 @@ def list_catalog() -> list[dict]:
                    (SELECT created_at FROM analyses a WHERE a.signal_id=s.signal_id
                       AND a.kind='gesamtbericht' ORDER BY a.id DESC LIMIT 1) AS gesamt_at,
                    (SELECT model FROM analyses a WHERE a.signal_id=s.signal_id
-                      AND a.kind='gesamtbericht' ORDER BY a.id DESC LIMIT 1) AS gesamt_model
+                      AND a.kind='gesamtbericht' ORDER BY a.id DESC LIMIT 1) AS gesamt_model,
+                   (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
+                      AND a.kind='tiefenanalyse' ORDER BY a.id DESC LIMIT 1) AS tiefenanalyse,
+                   (SELECT created_at FROM analyses a WHERE a.signal_id=s.signal_id
+                      AND a.kind='tiefenanalyse' ORDER BY a.id DESC LIMIT 1) AS tiefe_at,
+                   (SELECT model FROM analyses a WHERE a.signal_id=s.signal_id
+                      AND a.kind='tiefenanalyse' ORDER BY a.id DESC LIMIT 1) AS tiefe_model
             FROM signals s
             LEFT JOIN trade_files t ON t.signal_id = s.signal_id
             LEFT JOIN forensik f ON f.signal_id = s.signal_id

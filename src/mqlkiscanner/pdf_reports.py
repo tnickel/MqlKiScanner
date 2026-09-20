@@ -40,6 +40,7 @@ REPORT_TITLES = {
     "risiko_analyse": "Risiko-Analyse",
     "gesamtbericht": "Gesamtbericht",
     "portfolio": "Portfolio-Gesamtbericht",
+    "tiefenanalyse": "Tiefenanalyse",
 }
 INTERMEDIATE_KINDS = {"trade_analyse", "risiko_analyse"}
 
@@ -193,6 +194,7 @@ _STORED_FILENAMES = {
     "risiko_analyse": "02-risiko-analyse.pdf",
     "gesamtbericht": "03-gesamtbericht.pdf",
     "portfolio": "portfolio-gesamtbericht.pdf",
+    "tiefenanalyse": "04-tiefenanalyse.pdf",
 }
 
 
@@ -251,7 +253,7 @@ def materialize_result_pdfs(result, *, root: Path | None = None) -> dict[str, Pa
     """Persist every report currently available for one signal snapshot."""
     paths: dict[str, Path] = {}
     snapshot = result_snapshot_token(result)
-    for kind in ("trade_analyse", "risiko_analyse", "gesamtbericht"):
+    for kind in ("trade_analyse", "risiko_analyse", "gesamtbericht", "tiefenanalyse"):
         report, _ = result_pdf_spec(result, kind)
         if report.body.strip():
             paths[kind] = persist_report_pdf(report, snapshot=snapshot, root=root)

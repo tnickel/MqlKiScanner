@@ -107,6 +107,9 @@ class ScanResult:
     gesamtbericht_at: str = ""      # Erstellungszeitpunkt des enthaltenen Gesamtberichts
     gesamtbericht_model: str = ""
     kurzfassung: str = ""           # Kurzzeile aus dem Gesamtbericht (fuer Tabelle)
+    tiefenanalyse: str = ""         # Prompt 5: Erweiterte KI-Analyse (manuell, mit Trades)
+    tiefenanalyse_at: str = ""
+    tiefenanalyse_model: str = ""
     llm_fehler: str = ""
     fehler: str = ""
     source_kind: str = "live"  # Demo-Ergebnisse nie in den Live-Katalog übernehmen.
@@ -219,6 +222,9 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             gesamtbericht=row.get("gesamtbericht") or "",
             gesamtbericht_at=row.get("gesamt_at") or "",
             gesamtbericht_model=row.get("gesamt_model") or "",
+            tiefenanalyse=row.get("tiefenanalyse") or "",
+            tiefenanalyse_at=row.get("tiefe_at") or "",
+            tiefenanalyse_model=row.get("tiefe_model") or "",
             fehler=last_fehler or "",
         )
         if forensik_stale and f:

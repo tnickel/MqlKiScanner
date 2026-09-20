@@ -6,7 +6,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
-from . import db
+from . import config, db
 from .llm import client as llm_client
 from .llm import prompt_fill
 from .parser import load_export
@@ -192,3 +192,59 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
 
     progress(f"{done}/{total} Prompts fertig · {failed} fehlgeschlagen")
     return summary("Einzelne Modellaufrufe oder Speicherungen fehlgeschlagen" if failed else "")
+
+
+def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) -> dict:
+    """Erweiterte KI-Analyse (Prompt 5) für EIN Signal — manuell gestartet.
+
+    Anders als die Workflow-Berichte läuft diese Analyse NICHT im Lauf,
+    sondern per Button in der Signal-Detailansicht. Starkes Modell
+    (Stufe 2) und die vollständigen Trade-Daten im Prompt, weil die
+    Aufgabe die Auswertung der Trades selbst verlangt. Ergebnis landet
+    als kind='tiefenanalyse' in der Datenbank und am Ergebnis-Objekt
+    (dort erzeugt der PDF-Mechanismus wie üblich das Dokument).
+    """
+    from .pipeline import report_basis_for  # später Import: kein Kreisimport
+
+    settings = {**config.load_settings(), **(settings or {})}
+    if not getattr(result, "trades_path", ""):
+        raise llm_client.LlmError(
+            "Keine Trade-Daten zu diesem Signal — die Erweiterte KI-Analyse "
+            "wertet die Tradeliste aus und braucht den Export.")
+    client = llm_client.GlmClient(
+        model_stufe1=settings.get("model_stufe1", config.MODEL_STUFE1),
+        model_stufe2=settings.get("model_stufe2", config.MODEL_STUFE2),
+        max_total_tokens=int(settings.get("llm_max_total_tokens", 5_000_000)),
+        base_url=settings.get("glm_base_url") or None,
+    )
+    if not client.has_key:
+        raise llm_client.LlmError(
+            "Kein GLM-Key gesetzt (Admin-Bereich → Zugänge). "
+            "Die Erweiterte KI-Analyse ist optional.")
+    try:
+        payload = build_trade_payload(load_export(result.trades_path))
+    except (OSError, ValueError, csv.Error) as exc:
+        raise llm_client.LlmError(
+            f"Trade-Export nicht lesbar: {type(exc).__name__}: {exc}") from exc
+    trades_json = json.dumps(payload, ensure_ascii=False)
+    if log:
+        log(f"Trade-Daten geladen ({payload.get('meta', {}).get('trades', 0)} Trades) — "
+            "Tiefenanalyse-Prompt wird gebaut …")
+    prompt = prompt_fill.build_tiefenanalyse_prompt(result, trades_json)
+    if log:
+        log(f"Modellaufruf Stufe 2 gestartet ({len(prompt):,} Zeichen Prompt) — "
+            "dauert einige Minuten.")
+    text = client.chat(prompt, stufe=2, max_tokens=24576, meta_out={})
+    model = settings.get("model_stufe2", config.MODEL_STUFE2)
+    try:
+        basis = report_basis_for(result, settings)
+    except Exception:
+        basis = None
+    created_at = db.store_analysis(result.id, "tiefenanalyse", model,
+                                   client.usage.total_tokens, text, basis=basis)
+    result.tiefenanalyse = text
+    result.tiefenanalyse_at = created_at
+    result.tiefenanalyse_model = model
+    if log:
+        log("Erweiterte KI-Analyse gespeichert (Datenbank + PDF-Basis).")
+    return {"text": text, "model": model, "created_at": created_at}

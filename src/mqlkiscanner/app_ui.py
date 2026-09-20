@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 import streamlit as st
-from mqlkiscanner import config, db, downloader_client, downloader_sync
+from mqlkiscanner import config, db, downloader_client, downloader_sync, llm_runner
 from mqlkiscanner import regelwerk
 from mqlkiscanner.ampel_matrix import KRITERIEN, LABELS, kriterien_matrix
 from mqlkiscanner.pdf_reports import (
@@ -711,4 +711,45 @@ def render_detail(result) -> None:
         st.error(result.pdf_fehler)
     if hint := getattr(result, "bericht_hinweis", ""):
         st.info(hint)
+
+    with st.container(border=True):
+        section_header(
+            "Erweiterte KI-Analyse (Tiefenanalyse)",
+            "Manuelle Vollanalyse: vollständige Trade-Daten + Signal-Kennzahlen "
+            "an das starke Modell. Verbraucht Tokens und dauert einige Minuten.",
+            help_key="tiefenanalyse",
+        )
+        if action_button(
+                "Erweiterte KI Analyse machen",
+                key=f"tiefe_start_{_result_snapshot_token(result)}",
+                help_key="tiefenanalyse_start", type="primary",
+                icon=":material/psychology:"):
+            with st.status("Erweiterte KI-Analyse läuft — bitte Fenster offen lassen.",
+                           expanded=True) as status:
+                try:
+                    llm_runner.run_tiefenanalyse_einzeln(
+                        result, log=lambda m: st.write(m))
+                    status.update(label="Erweiterte KI-Analyse fertig — "
+                                  "PDF und Text stehen unten bereit.",
+                                  state="complete", expanded=False)
+                except Exception as exc:
+                    status.update(label="Erweiterte KI-Analyse fehlgeschlagen",
+                                  state="error", expanded=False)
+                    st.error(str(exc))
+        if result.tiefenanalyse:
+            render_result_pdf_viewer(
+                result, "tiefenanalyse",
+                key=f"detail_tiefe_{_result_snapshot_token(result)}",
+                label="Tiefenanalyse-PDF anzeigen", type="primary")
+            st.caption(f"Stand: {result.tiefenanalyse_at or '—'} · "
+                       f"Modell: {result.tiefenanalyse_model or '—'}")
+            with st.expander("Text der Erweiterten KI-Analyse",
+                             icon=":material/notes:"):
+                st.markdown(urteile_farbig(result.tiefenanalyse),
+                            unsafe_allow_html=True)
+        else:
+            st.info("Noch keine Erweiterte KI-Analyse vorhanden. Sie wird je "
+                    "Signal manuell gestartet und bleibt in der Datenbank "
+                    "erhalten — sie ändert nicht die Ampelbewertung.")
+
     render_downloader_section(result)

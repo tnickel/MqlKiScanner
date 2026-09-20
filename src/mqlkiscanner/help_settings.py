@@ -180,12 +180,18 @@ Mindestabstand; Exportpausen und der Drosselungs-Backoff betreffen die Export- b
 Datenabrufe. Dieser Speichern-Button ändert weder Scanfilter noch Risiko- oder Modelleinstellungen.
 """),
     "settings_prompts": ("Analysevorlagen: welcher Text entsteht wo?", """
-Die drei Vorlagen bauen aufeinander auf:
+Die Vorlagen bauen aufeinander auf:
 
 1. **Trade-Analyse:** Stufe 2 beschreibt Handelsmuster anhand von Engine-Statistiken
    und ausgewählten Beispiel-Trades.
 2. **Risikoprofil:** Stufe 1 interpretiert die Forensik-Befunde und Kriterien.
 3. **Gesamtbericht:** Stufe 2 führt Kandidatendaten, Forensik und beide Texte zusammen.
+4. **Portfolio-Vorschlag:** Stufe 2 bewertet alle Signale als Depot-Mix.
+5. **ℹ️ Tiefenanalyse (gelb markiert):** die Erweiterte KI-Analyse — läuft bewusst
+   NICHT im Workflow, sondern wird je Signal manuell über den Button
+   „Erweiterte KI Analyse machen" in der Detailansicht gestartet, mit
+   vollständigen Trade-Daten ({trades_json}), Signalname ({signal_name}) und
+   Signal-Link ({signal_url}) im Prompt.
 
 Platzhalter in geschweiften Klammern werden durch Daten ersetzt. Sie müssen unverändert
 enthalten bleiben, damit die jeweilige Datengrundlage an das Modell übergeben wird.

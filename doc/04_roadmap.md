@@ -129,6 +129,28 @@ Anbindung an die REST-API des lokalen MqlDownloader-Dienstes (Doku:
       Engine arbeitet mit den eigenen, verifizierten MQL5-Exporten;
       Bedarf laut Nutzer noch unklar
 
+## Phase 7: Erweiterte KI-Analyse (Tiefenanalyse) — ✅ abgeschlossen (20.09.2026)
+
+Manuelle Vollanalyse je Signal, außerhalb des Workflows:
+
+- [x] Prompt 5 `tiefenanalyse.md` — editierbar wie alle Vorlagen; die
+      Sonderrolle ist im Admin-Tab **gelb markiert mit ℹ️**; fester
+      Anbietername/Link des Nutzers durch Platzhalter ersetzt:
+      `{signal_name}`, `{signal_url}` (URL-Fallback
+      `https://www.mql5.com/en/signals/{ID}`), plus `{kandidat_json}`,
+      `{forensik_json}`, `{trades_json}`
+- [x] Button **„Erweiterte KI Analyse machen“** in der Signal-Detailansicht;
+      Stufe-2-Modell mit **vollständigen Trade-Daten** im Prompt (die
+      Aufgabe verlangt Trade-Auswertung); ohne Trade-Export/Key bewusst
+      Abbruch mit Begründung
+- [x] Ergebnis als `kind='tiefenanalyse'` in SQLite + eigenes PDF
+      `04-tiefenanalyse.pdf` (gleicher PDF-Mechanismus wie die
+      übrigen Berichte), Text + PDF in der Detailansicht abrufbar
+- [x] Ändert niemals Ampel/Score/Urteil (gleiche Grundregel wie der
+      Downloader-Abgleich); LLM rechnet hier ausnahmsweise auf
+      Trade-Basis (Verlustwahrscheinlichkeit) auf ausdrücklichen
+      Nutzer-Wunsch — die Vorlage verlangt Grundlage und Annahmen
+
 ## Bewusst außerhalb des Scopes
 
 - Kein Eigenhandel/Order-Routing — das Tool analysiert und bewertet nur
