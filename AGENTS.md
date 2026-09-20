@@ -109,7 +109,11 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
   Forensik (`forensics/`), MQL5-Zugriff (`mql5/` — Crawler, Session, Exporter,
   Rate-Limit), LLM-Layer (`llm/`), SQLite (`db.py`), Ampel-Matrix
   (`ampel_matrix.py`), Ausschluss-Regelwerk (`regelwerk.py`),
-  PDF-Berichte (`pdf_reports.py`), EZB-Kurse (`fx_rates.py`)
+  PDF-Berichte (`pdf_reports.py`), EZB-Kurse (`fx_rates.py`),
+  MqlDownloader-Anbindung (`downloader_client.py`, `downloader_sync.py`),
+  Tradeserver-Sync zum MqlTradeMonitor (`tradeserver_client.py`,
+  `tradeserver_sync.py` — Einmal-Protokoll v1 unter /api/kiscanner,
+  Doku `doc/06_tradeserver-sync.md`; bewertet nie neu)
 - `config/prompts/` — editierbare LLM-Prompts
 - `tests/` — pytest (634 Tests grün; LLM-Regressionstests opt-in via
   `pytest -m llm`, echte Modellaufrufe)
@@ -126,6 +130,14 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   → Fehler 1113, siehe `config.py`)
 - ✅ LLM-Layer ist optional: Engine läuft ohne Key komplett (Scan + Forensik
   + Ampel-Ausgabe)
+- ✅ Tradeserver-Sync (20.09.2026): Einmallauf zum MqlTradeMonitor
+  (Spring-Boot, D:\AntiGravitySoftware\GitWorkspace\MqlTradeMonitor) —
+  Button „Tradeserver-Sync“ auf der Ergebnisseite überträgt die Tabelle
+  + alle PDFs (eigne Berichte, Portfolio, Downloader-Spiegel; SHA-256-Diff)
+  über das Sonderprotokoll v1 (/api/kiscanner, X-User-Key-Handshake);
+  danach wird die Verbindung getrennt. Server zeigt Kachel „🔬 MqlKiScanner“
+  + Seite /kiscanner. Konfiguration: Admin → Tradeserver (Base-URL +
+  API-Key im secrets_store). Doku: `doc/06_tradeserver-sync.md`
 
 Noch offen (Phase 5 Betrieb):
 

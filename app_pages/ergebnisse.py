@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import streamlit as st
 
 from mqlkiscanner import (config, db, downloader_sync, pipeline, regelwerk,
-                          scan_state, scan_worker, tiefen_batch)
+                          scan_state, scan_worker, tiefen_batch, tradeserver_sync)
 from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, render_detail,
                                  render_downloader_docs_panel, render_report_panel,
                                  render_portfolio_pdf_viewer,
@@ -130,6 +130,65 @@ with st.container(border=True):
                 st.warning(f"Abgleich mit {len(summary['fehler'])} Hinweis(en): {bilanz}")
             else:
                 st.success(bilanz)
+
+    # Einmal-Sync zum Tradeserver (MqlTradeMonitor): Tabelle + PDFs übertragen,
+    # danach wird die Verbindung wieder getrennt. Bewertet nie neu.
+    ts_spalte, ts_hinweis = st.columns([1, 2], gap="medium",
+                                       vertical_alignment="center")
+    with ts_spalte:
+        ts_klick = action_button(
+            "Tradeserver-Sync", key="results_tradeserver_sync",
+            help_key="tradeserver_sync", icon=":material/cloud_upload:",
+            disabled=not any(getattr(r, 'source_kind', 'live') == 'live'
+                             for r in results))
+    with ts_hinweis:
+        st.caption('Überträgt diese Tabelle und alle zugehörigen PDFs zum '
+                   'MqlTradeMonitor (Kachel „MqlKiScanner“) — verbinden, übertragen, '
+                   'trennen.')
+    if ts_klick:
+        if not tradeserver_sync.konfiguriert():
+            st.info('Kein Tradeserver konfiguriert. Base-URL und API-Key im '
+                    'Admin-Bereich unter „Tradeserver“ hinterlegen.',
+                    icon=':material/settings_ethernet:')
+        elif not any(getattr(r, 'source_kind', 'live') == 'live' for r in results):
+            st.info('Keine Live-Signale in dieser Quelle zum Übertragen.')
+        else:
+            with st.status('Tradeserver-Sync läuft …', expanded=True) as status:
+                st.write('Anmeldung, Tabellen-Snapshot, Dokumente (nur Änderungen), '
+                         'Abschluss — danach ist die Verbindung wieder getrennt.')
+                banner = aktivitaets_banner('Tradeserver-Sync läuft …')
+                try:
+                    ts_summary = tradeserver_sync.sync_alle(
+                        results, portfolio,
+                        fresh_ids=fresh_ids,
+                        progress=lambda done, total, label: st.write(
+                            f'Dokument {done}/{total} · {label}'))
+                finally:
+                    banner.empty()
+                if ts_summary['abgebrochen']:
+                    st.write('Abbruch: ' + str(ts_summary['abgebrochen']))
+                    status.update(label='Sync abgebrochen', state='error', expanded=False)
+                else:
+                    status.update(label='Sync abgeschlossen', state='complete', expanded=False)
+            groesse_mb = ts_summary['bytes'] / 1024 / 1024
+            ts_bilanz = (f"{ts_summary['signale']} Signale übertragen "
+                         f"({ts_summary['gespeichert']} gespeichert, "
+                         f"{ts_summary['geloescht']} am Server entfernt) · "
+                         f"{ts_summary['uebertragen']} PDFs übertragen, "
+                         f"{ts_summary['uebersprungen']} unverändert "
+                         f"({groesse_mb:.1f} MB) · Dauer {ts_summary['dauer_s']} s · "
+                         "Verbindung danach getrennt.")
+            if ts_summary['abgebrochen']:
+                st.warning('Sync abgebrochen — der Server behält den letzten '
+                           'vollständigen Stand. ' + str(ts_summary['abgebrochen']))
+            elif ts_summary['fehler']:
+                st.warning(f"Sync mit {len(ts_summary['fehler'])} Hinweis(en): "
+                           f"{ts_bilanz}")
+                with st.expander('Hinweise im Detail', icon=':material/error_outline:'):
+                    for zeile in ts_summary['fehler']:
+                        st.caption(zeile)
+            else:
+                st.success(ts_bilanz)
 
 @st.fragment(run_every=2.0)
 def _tiefen_batch_fenster() -> None:

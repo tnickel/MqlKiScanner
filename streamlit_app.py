@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import streamlit as st  # noqa: E402
 
-from mqlkiscanner import config, downloader_sync, secrets_store  # noqa: E402
+from mqlkiscanner import config, downloader_sync, secrets_store, tradeserver_sync  # noqa: E402
 from mqlkiscanner.ui_design import apply_theme, info_button  # noqa: E402
 
 st.set_page_config(
@@ -77,6 +77,19 @@ with st.sidebar:
                        f"{dl_status['geprueft']:%H:%M}")
         else:
             st.badge("Downloader offline", color="red", icon=":material/sync_disabled:")
+            st.page_link(settings_page, label="Verbindung prüfen",
+                         icon=":material/arrow_forward:")
+        # Tradeserver (MqlTradeMonitor): Einmal-Sync-Ziel für Tabelle + PDFs.
+        ts_status = tradeserver_sync.verbindungs_status(timeout=3.0)
+        if not ts_status["konfiguriert"]:
+            st.badge("Tradeserver optional", color="gray", icon=":material/cloud_upload:")
+        elif ts_status["ok"]:
+            st.badge("Tradeserver verbunden", color="green", icon=":material/cloud_upload:")
+            st.caption(f"{ts_status['service'] or 'MqlTradeMonitor'} · geprüft "
+                       f"{ts_status['geprueft']:%H:%M}")
+        else:
+            st.badge("Tradeserver nicht erreichbar", color="red",
+                     icon=":material/cloud_off:")
             st.page_link(settings_page, label="Verbindung prüfen",
                          icon=":material/arrow_forward:")
         if not mql_ready:

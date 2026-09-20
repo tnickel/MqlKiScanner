@@ -11,7 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, secrets_store, downloader_client, downloader_sync
+from mqlkiscanner import (config, db, secrets_store, downloader_client, downloader_sync,
+                          tradeserver_client, tradeserver_sync)
 from mqlkiscanner.llm import client as llm_client
 from mqlkiscanner.llm import prompts as llm_prompts
 from mqlkiscanner.mql5.session import Mql5Session
@@ -100,10 +101,17 @@ with st.container(horizontal=True):
                    else "MqlDownloader nicht erreichbar"),
              color="green" if dl_start["ok"]
              else ("gray" if not dl_start["konfiguriert"] else "red"))
+    ts_start = tradeserver_sync.verbindungs_status()
+    st.badge("Tradeserver verbunden" if ts_start["ok"]
+             else ("Tradeserver nicht konfiguriert" if not ts_start["konfiguriert"]
+                   else "Tradeserver nicht erreichbar"),
+             color="green" if ts_start["ok"]
+             else ("gray" if not ts_start["konfiguriert"] else "red"))
     st.badge("Lokale Engine ohne KI-Key nutzbar", color="blue")
 
-access_tab, models_tab, downloader_tab, scan_tab, prompts_tab = st.tabs(
-    ["Zugänge", "KI & Modelle", "MqlDownloader", "Scan & Risiko", "Analysevorlagen"]
+access_tab, models_tab, downloader_tab, tradeserver_tab, scan_tab, prompts_tab = st.tabs(
+    ["Zugänge", "KI & Modelle", "MqlDownloader", "Tradeserver", "Scan & Risiko",
+     "Analysevorlagen"]
 )
 
 with access_tab:
@@ -396,6 +404,132 @@ with downloader_tab:
                         status.update(label="Verbindungstest fehlgeschlagen",
                                       state="error", expanded=False)
         _render_test_result("_admin_downloader_result")
+
+with tradeserver_tab:
+    with st.container(border=True):
+        section_header("MqlTradeMonitor-Tradeserver",
+                       "Adresse und API-Key des Tradeservers — Ziel des Einmal-Syncs "
+                       "für Signal-Tabelle und PDF-Dokumente (Kachel „MqlKiScanner“).",
+                       help_key="settings_tradeserver")
+        saved_ts_base = str(settings.get("tradeserver_base_url") or "")
+        ts_base = st.text_input(
+            "Base-URL", value=saved_ts_base,
+            placeholder=config.TRADESERVER_DEFAULT_BASE, key="admin_tradeserver_base")
+        st.caption(f"Beispiel: {config.TRADESERVER_DEFAULT_BASE} — feste IP/Port des "
+                   "Tradeservers; „/api/kiscanner“ hängt der Sync selbst an.")
+        ts_key = st.text_input(
+            "API-Key", type="password", key="admin_tradeserver_key",
+            placeholder="Leer lassen = unverändert")
+        ts_key_active = secrets_store.get_secret("tradeserver_api_key")
+        st.caption("API-Key: " + ("hinterlegt" if ts_key_active
+                                  else "nicht hinterlegt — der Tradeserver lehnt "
+                                       "jeden Sync ohne Key ab"))
+        ts_dirty = (ts_base.strip() != saved_ts_base or bool(ts_key.strip()))
+        _draft_status(ts_dirty,
+                      clean_label="Verbindung konfiguriert" if saved_ts_base
+                      else "Nicht konfiguriert",
+                      clean_color="green" if saved_ts_base else "gray")
+        ts_save_column, ts_key_column = st.columns(2)
+        with ts_save_column:
+            if action_button("Tradeserver-Verbindung speichern", key="admin_tradeserver_save",
+                             type="primary", help_key="settings_tradeserver",
+                             icon=":material/save:"):
+                try:
+                    ts_normalized = tradeserver_client.normalize_base_url(ts_base)
+                except tradeserver_client.TradeserverError:
+                    ts_normalized = ""
+                if ts_base.strip() and not ts_normalized:
+                    st.error("Eine vollständige HTTP(S)-Base-URL verwenden, "
+                             "z. B. http://192.0.2.10:8080")
+                else:
+                    if ts_key.strip():
+                        secrets_store.save_secrets(tradeserver_api_key=ts_key.strip())
+                    # Reload on save: nie eine alte Kopie anderer Einstellungen schreiben.
+                    config.save_settings({**config.load_settings(),
+                                          "tradeserver_base_url": ts_normalized})
+                    tradeserver_sync.status_cache_leeren()
+                    _finish("Tradeserver-Verbindung gespeichert. "
+                            "Bitte die gespeicherte Verbindung testen.",
+                            widget_updates=({"admin_tradeserver_key": ""}
+                                            if ts_key.strip() else None),
+                            clear_result="_admin_tradeserver_result")
+        with ts_key_column:
+            if action_button("API-Key entfernen", key="admin_tradeserver_key_remove",
+                             help_key="settings_tradeserver", icon=":material/delete:",
+                             disabled=not ts_key_active):
+                secrets_store.save_secrets(tradeserver_api_key="")
+                tradeserver_sync.status_cache_leeren()
+                _finish("API-Key entfernt. Ohne Key nimmt der Tradeserver "
+                        "keine Daten mehr an.",
+                        widget_updates={"admin_tradeserver_key": ""},
+                        clear_result="_admin_tradeserver_result")
+
+    with st.container(border=True):
+        section_header("Verbindung prüfen", "Ping gegen den gespeicherten Tradeserver "
+                       "(prüft Erreichbarkeit und API-Key, überträgt keine Daten).",
+                       help_key="settings_tradeserver_test")
+        if ts_dirty:
+            st.warning("Es gibt ungespeicherte Änderungen. Der Test verwendet "
+                       "weiterhin die gespeicherten Werte.")
+        if action_button("Gespeicherte Tradeserver-Verbindung testen",
+                         key="admin_tradeserver_test",
+                         help_key="settings_tradeserver_test", icon=":material/network_check:"):
+            saved = config.load_settings()
+            if not str(saved.get("tradeserver_base_url") or "").strip():
+                _test_result("_admin_tradeserver_result", False,
+                             "Zuerst eine Base-URL speichern.")
+            else:
+                with st.status("Tradeserver wird geprüft …", expanded=True) as status:
+                    st.write(f"Ping gegen {saved['tradeserver_base_url']}/api/kiscanner/ping. "
+                             "Der Test liest nur und startet keinen Sync.")
+                    try:
+                        info = tradeserver_client.client_from_settings(saved).ping()
+                        if str(info.get("status", "")).lower() != "ok":
+                            raise tradeserver_client.TradeserverError(
+                                f"Unerwarteter Status: {info.get('status')!r}")
+                        _test_result(
+                            "_admin_tradeserver_result", True,
+                            f"Tradeserver erreichbar · Dienst {info.get('service', '?')} · "
+                            f"API {info.get('kiscannerApi', '?')} · API-Key akzeptiert")
+                        status.update(label="Tradeserver-Verbindung bestätigt",
+                                      state="complete", expanded=False)
+                    except tradeserver_client.TradeserverNotConfigured:
+                        _test_result("_admin_tradeserver_result", False,
+                                     "Zuerst eine Base-URL speichern.")
+                        status.update(label="Verbindungstest fehlgeschlagen",
+                                      state="error", expanded=False)
+                    except tradeserver_client.TradeserverAuthError as exc:
+                        _test_result("_admin_tradeserver_result", False, str(exc))
+                        status.update(label="API-Key abgelehnt", state="error", expanded=False)
+                    except tradeserver_client.TradeserverConnectionError as exc:
+                        _test_result("_admin_tradeserver_result", False, str(exc))
+                        status.update(label="Tradeserver nicht erreichbar",
+                                      state="error", expanded=False)
+                    except Exception as exc:
+                        _test_result("_admin_tradeserver_result", False,
+                                     f"Verbindungstest fehlgeschlagen ({type(exc).__name__}). "
+                                     "Base-URL und Tradeserver prüfen.")
+                        status.update(label="Verbindungstest fehlgeschlagen",
+                                      state="error", expanded=False)
+        _render_test_result("_admin_tradeserver_result")
+
+    with st.container(border=True):
+        section_header("Sync-Historie", "Die letzten Läufe des Tradeserver-Syncs.",
+                       help_key="tradeserver_sync")
+        runs = db.list_tradeserver_sync_runs(limit=8)
+        if not runs:
+            st.caption("Noch kein Sync gelaufen. Der Sync-Button steht auf der "
+                       "Ergebnisseite neben dem MqlDownloader-Abgleich.")
+        else:
+            for run in runs:
+                summary = run.get("summary") or {}
+                detail = (f"{summary.get('signale', '?')} Signale · "
+                          f"{summary.get('uebertragen', 0)} PDFs übertragen · "
+                          f"{summary.get('uebersprungen', 0)} unverändert")
+                zustand = ("abgebrochen" if run["status"] == "abgebrochen" else "ok")
+                st.caption(f"{run['started_at']} · {zustand} · {detail}"
+                           + (f" · Abbruch: {summary['abgebrochen']}"
+                              if summary.get("abgebrochen") else ""))
 
 with scan_tab:
     filters_column, risk_column = st.columns(2, gap="medium")

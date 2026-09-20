@@ -180,4 +180,36 @@ Ohne Trades startet die Analyse bewusst nicht — die Auswertung der Tradeliste 
 Kern der Aufgabe. Danach erscheinen PDF und Text direkt unter dem Button; ein erneuter
 Klick erstellt eine neue Version (die alte bleibt in der Datenbank).
 """),
+    "tradeserver_sync": ("Der Tradeserver-Sync (MqlTradeMonitor)", """
+Der Sync überträgt die aktuell angezeigte Signal-Tabelle samt aller zugehörigen PDFs
+(eigene Berichte inklusive Tiefenanalyse, Portfolio-Gesamtbericht und die gespiegelten
+Downloader-Testreports) zum **MqlTradeMonitor-Tradeserver**. Dort erscheint eine
+eigene Kachel „MqlKiScanner“, die den Verbindungsstand anzeigt, und hinter der Kachel
+die Tabelle mit derselben Ampel-/Score-Darstellung wie hier — inklusive betrachtbarer
+PDFs.
+
+**Einmallauf, keine Dauerverbindung:** Klick auf den Sync-Button baut die Verbindung
+auf, durchläuft das feste Protokoll (Anmeldung → Tabelle → Dokumente → Abschluss) und
+trennt danach wieder. Unveränderte PDFs werden per Prüfsumme erkannt und übersprungen.
+Der Sync **bewertet nie neu** und schreibt nichts in die Fachtabellen — er legt lokal
+nur eine Lauf-Historie an. Base-URL und API-Key werden im Admin-Bereich unter
+„Tradeserver“ gepflegt (der Key muss zu einem Benutzer des Tradeservers passen).
+"""),
+    "settings_tradeserver": ("Tradeserver-Verbindung (MqlTradeMonitor)", """
+Ziel des Daten-Syncs ist der Spring-Boot-Tradeserver **MqlTradeMonitor** (feste
+Server-IP, Port 8080, z. B. `http://192.0.2.10:8080`; im Produktivbetrieb liegt
+ihm ggf. ein HTTPS-Reverse-Proxy vor). Der MqlKiScanner ist kein MetaTrader-EA und
+nutzt deshalb ein eigenes Protokoll unter `{Base-URL}/api/kiscanner`.
+
+**API-Key:** im Tradeserver beim gewünschten Benutzer hinterlegt (Admin-Oberfläche,
+Feld „API-Key“). Derselbe Key wird hier gespeichert und bei jedem Sync-Aufruf im
+Header `X-User-Key` mitgesendet — ohne gültigen Key lehnt der Server alles ab. Der
+Key liegt wie alle Zugangsdaten nur lokal (nie im Repository).
+"""),
+    "settings_tradeserver_test": ("Tradeserver-Verbindungstest", """
+Der Test ruft `{Base-URL}/api/kiscanner/ping` mit dem gespeicherten API-Key auf und
+prüft damit Erreichbarkeit **und** Schlüssel in einem Schritt — mehr nicht: Es werden
+keine Daten übertragen und kein Sync-Lauf gestartet. Steht der Test auf „erreichbar“,
+funktioniert auch der Sync-Button auf der Ergebnisseite.
+"""),
 }

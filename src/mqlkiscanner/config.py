@@ -52,6 +52,11 @@ MODEL_STUFE2 = "glm-5.3"
 # Default-Port 8089; "/api/v1" ergaenzt der Client automatisch, wenn nur Host:Port steht.
 DOWNLOADER_DEFAULT_BASE = "http://localhost:8089/api/v1"
 
+# MqlTradeMonitor-Tradeserver (Spring Boot, ROOT-WAR auf Port 8080; Doku:
+# doc/06_tradeserver-sync.md). Der Sync ist ein Einmallauf: Register-
+# Handshake → Tabelle + PDFs → Complete, danach keine Verbindung.
+TRADESERVER_DEFAULT_BASE = "http://192.0.2.10:8080"
+
 # Beide Einstellungsseiten verwenden dieselben Eingabegrenzen. Für Anzahl
 # und Vorfilter gibt es keine fachlich begründete obere Grenze.
 SCAN_INPUT_BOUNDS = {
@@ -80,6 +85,7 @@ DEFAULT_SETTINGS: dict = {
     "model_stufe1": MODEL_STUFE1,
     "model_stufe2": MODEL_STUFE2,
     "downloader_base_url": "",      # MqlDownloader-REST-Interface (leer = nicht angebunden)
+    "tradeserver_base_url": "",     # MqlTradeMonitor-Sync-Ziel (leer = kein Sync möglich)
 }
 
 for _d in (DATA_DIR, RUNS_DIR, REPORTS_DIR, TRADES_DIR, STATS_DIR, PROMPTS_DIR,

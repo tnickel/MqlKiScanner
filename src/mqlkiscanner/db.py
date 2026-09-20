@@ -84,6 +84,14 @@ CREATE TABLE IF NOT EXISTS downloader_reports (
     fetched_at    TEXT,
     PRIMARY KEY (signal_id, version, name)
 );
+CREATE TABLE IF NOT EXISTS tradeserver_sync_runs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at  TEXT NOT NULL,
+    finished_at TEXT,
+    base_url    TEXT,
+    status      TEXT,
+    summary_json TEXT
+);
 """
 
 
@@ -372,3 +380,39 @@ def downloader_report_counts(signal_ids: list[int]) -> dict[int, int]:
             f"WHERE signal_id IN ({placeholders}) GROUP BY signal_id",
             ids).fetchall()
     return {row["signal_id"]: row["n"] for row in rows}
+
+
+def store_tradeserver_sync_run(*, base_url: str, status: str,
+                               summary: dict | None = None) -> int:
+    """Lauf-Historie des Tradeserver-Syncs (append-only, nur Protokoll).
+
+    Der Sync schreibt ausschließlich hierhin — Ampeln, Urteile, Scores
+    und die Fachtabellen bleiben unberührt.
+    """
+    with _connect() as conn:
+        cursor = conn.execute(
+            "INSERT INTO tradeserver_sync_runs "
+            "(started_at, finished_at, base_url, status, summary_json) "
+            "VALUES (?,?,?,?,?)",
+            (_now(), _now(), str(base_url or ""), str(status or ""),
+             json.dumps(summary or {}, ensure_ascii=False)))
+        return int(cursor.lastrowid or 0)
+
+
+def list_tradeserver_sync_runs(limit: int = 10) -> list[dict]:
+    """Die letzten Sync-Läufe (neueste zuerst), für Anzeige/Erneut-Sync."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT id, started_at, finished_at, base_url, status, summary_json "
+            "FROM tradeserver_sync_runs ORDER BY id DESC LIMIT ?",
+            (max(1, int(limit)),)).fetchall()
+    runs = []
+    for row in rows:
+        eintrag = dict(row)
+        try:
+            eintrag["summary"] = json.loads(eintrag.pop("summary_json") or "{}")
+        except json.JSONDecodeError:
+            eintrag["summary"] = {}
+        runs.append(eintrag)
+    return runs
