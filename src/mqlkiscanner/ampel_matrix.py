@@ -56,11 +56,13 @@ def _num(wert: float | None, nachkommastellen: int = 2) -> str:
 KRITERIEN: list[Kriterium] = [
     Kriterium(
         "dd_schranke", "Drawdown-Schranke",
-        "Harte Nutzervorgabe: Das Maximum aus Plattform-Equity-DD und aus "
-        "den Trades rekonstruiertem Trading-DD darf die Schranke (Standard "
-        "30 %) nicht überschreiten. Grün = mit Puffer ≥ 5 Punkten eingehalten, "
-        "gelb = eingehalten, aber Puffer unter 5 Punkte, rot = verletzt. "
-        "Beide Werte fehlen → grau (keine Daten)."),
+        "Harte Nutzervorgabe: Das MAXIMUM aus Plattform-By-Equity-DD, "
+        "By-Balance-DD und aus den Trades rekonstruiertem Trading-DD darf "
+        "die Schranke (Standard 30 %) nicht überschreiten. Grün = mit Puffer "
+        "≥ 5 Punkten eingehalten, gelb = eingehalten, aber Puffer unter 5 "
+        "Punkte, rot = verletzt. Alle Werte fehlen → grau (keine Daten). "
+        "Der höchste der drei Werte entscheidet — MQL5's By Equity kann "
+        "deutlich niedriger als By Balance ausfallen."),
     Kriterium(
         "martingale", "Martingale",
         "Forensik-Test a) aus doc/03: Systematische Lot-Vergrößerung nach "
@@ -113,12 +115,17 @@ KRITERIEN: list[Kriterium] = [
 
 def _dd_zelle(r, settings) -> Zelle:
     limit = float(settings.get("schranke_eq_dd_pct", 30.0))
-    werte = {"EQ-DD": r.dd_equity_pct, "Trading-DD": r.trading_dd_pct}
+    # Konservativ: der HOECHSTE gemessene Drawdown entscheidet (By Equity,
+    # By Balance, aus Trades rekonstruiert) — Gold Spike: By Equity 3,8 %
+    # vs. By Balance 8,11 %.
+    werte = {"EQ-DD": r.dd_equity_pct, "Bal-DD": r.dd_balance_pct,
+             "Trading-DD": r.trading_dd_pct}
     vorhanden = {k: v for k, v in werte.items() if v is not None}
     if not vorhanden:
         return Zelle(KEINE_DATEN, "keine DD-Werte",
-                     "Weder Plattform-EQ-DD noch rekonstruierter Trading-DD "
-                     "vorhanden — Schranke nicht prüfbar.")
+                     "Weder Plattform-By-Equity-DD, By-Balance-DD noch "
+                     "rekonstruierter Trading-DD vorhanden — Schranke "
+                     "nicht prüfbar.")
     relevant = max(vorhanden.values())
     herleitung = "max(" + ", ".join(f"{k} {_num(v)} %" for k, v in vorhanden.items()) \
                  + f") = {_num(relevant)} %"

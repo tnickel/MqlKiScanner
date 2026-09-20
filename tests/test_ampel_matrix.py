@@ -232,3 +232,30 @@ def test_ergebnisse_seite_rendert_ampel_matrix_ansicht():
     assert "Drawdown-Schranke" in inhalt
     assert "Seiten-Test Signal" in inhalt
     assert "Berechnung:" in inhalt
+
+
+# --------------------------------------------------- Bal-DD in der Schranke
+
+def test_dd_schranke_nimmt_hoechsten_von_eq_bal_trading():
+    """Belegfall Gold Spike: By Equity 3,8 % vs. By Balance 8,11 % —
+    der hoehste Wert entscheidet, nicht der guenstigste."""
+    matrix = _matrix(_result(dd_equity_pct=3.8, dd_balance_pct=8.11,
+                             trading_dd_pct=4.57))
+    zelle = matrix["dd_schranke"]
+    assert zelle.ampel == GRUEN
+    assert "max(EQ-DD 3,80 %, Bal-DD 8,11 %, Trading-DD 4,57 %) = 8,11 %" in zelle.detail
+    assert "21,9 Punkten Abstand" in zelle.detail
+
+
+def test_dd_schranke_bal_dd_ueber_schranke_ist_rot():
+    matrix = _matrix(_result(dd_equity_pct=3.8, dd_balance_pct=31.0,
+                             trading_dd_pct=4.0))
+    assert matrix["dd_schranke"].ampel == ROT
+    assert "31,00 %" in matrix["dd_schranke"].detail
+
+
+def test_dd_schranke_ohne_bal_wie_bisher():
+    matrix = _matrix(_result(dd_equity_pct=None, dd_balance_pct=None,
+                             trading_dd_pct=34.0))
+    assert matrix["dd_schranke"].ampel == ROT
+    assert "max(Trading-DD 34,00 %)" in matrix["dd_schranke"].detail

@@ -224,11 +224,13 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         if forensik_stale and f:
             res.urteil = (f"Veraltete Forensik nach fehlgeschlagenem Neu-Lauf "
                           f"({last_fehler})")
-        if res.dd_equity_pct is not None or res.trading_dd_pct is not None:
+        if res.dd_equity_pct is not None or res.trading_dd_pct is not None \
+                or res.dd_balance_pct is not None:
             limit = float(settings.get("schranke_eq_dd_pct", 30.0))
             eq = float(res.dd_equity_pct) if res.dd_equity_pct is not None else 0.0
             real = float(res.trading_dd_pct) if res.trading_dd_pct is not None else 0.0
-            res.schranke_verletzt = max(eq, real) > limit
+            bal = float(res.dd_balance_pct) if res.dd_balance_pct is not None else 0.0
+            res.schranke_verletzt = max(eq, real, bal) > limit
         if res.gesamtbericht:
             res.kurzfassung = _extract_kurzfassung(res.gesamtbericht)
         if any((res.trade_analyse, res.risiko_analyse, res.gesamtbericht)):
@@ -291,8 +293,8 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
 
 def _kriterien_text(settings: dict) -> str:
     return (f"- Harte Schranke: max. {settings.get('schranke_eq_dd_pct', 30)} % Drawdown — "
-            "gewertet wird das MAXIMUM aus Plattform-EQ-DD und aus den Trades "
-            "rekonstruiertem Trading-DD\n"
+            "gewertet wird das MAXIMUM aus Plattform-By-Equity-DD, Plattform-"
+            "By-Balance-DD und aus den Trades rekonstruiertem Trading-DD\n"
             f"- Mindest-Ertrag: {settings.get('min_ertrag_pct_monat', 5)} %/Monat\n"
             "- Risiko VOR Ertrag; Stop-Loss muss BEWIESEN sein (Orderbuch oder "
             "eindeutige Cluster-Signatur), nicht nur behauptet\n"
@@ -423,10 +425,14 @@ def report_basis_for(result: ScanResult, settings: dict) -> str | None:
 
 def refresh_report_verdict(result: ScanResult, settings: dict) -> None:
     """Recompute settings-dependent flags before using a current report or prompt."""
-    if result.dd_equity_pct is not None or result.trading_dd_pct is not None:
+    if (result.dd_equity_pct is not None or result.trading_dd_pct is not None
+            or result.dd_balance_pct is not None):
         limit = float(settings.get("schranke_eq_dd_pct", 30.0))
+        # Konservativ: vom Plattform-Drawdown der HOECHSTE By-Equity-/
+        # By-Balance-Wert (Gold Spike: By Equity 3,8 % vs. By Balance 8,11 %).
         result.schranke_verletzt = max(result.dd_equity_pct or 0.0,
-                                      result.trading_dd_pct or 0.0) > limit
+                                       result.trading_dd_pct or 0.0,
+                                       result.dd_balance_pct or 0.0) > limit
     result.ampel, result.urteil = ampel_for(result, settings)
 
 
@@ -676,6 +682,7 @@ class ScanPipeline:
                 log("Risiko-Score berechnen …")
                 platform = {
                     "eq_dd_pct": res.dd_equity_pct or 0,
+                    "bal_dd_pct": res.dd_balance_pct or 0,
                     "weeks": res.wochen,
                     "broker_risk": 5.0,      # Default offshore; Detailpruefung manuell
                     "transparency_risk": 5.0,

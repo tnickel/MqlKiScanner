@@ -40,7 +40,7 @@ Die Matrix bewertet **einzelne Testkriterien** getrennt — sie ersetzt nicht da
 
 **ⓘ im Spaltenkopf** erklärt das Kriterium. **Maus über der Ampel-Zelle** zeigt die exakte Berechnung, z. B. „max(EQ-DD 3,80 %, Trading-DD 4,57 %) = 4,57 % hält die Schranke 30 % mit 25,4 Punkten Abstand ein“.
 
-Die Kriterien: Drawdown-Schranke (max aus Equity-DD und Trading-DD), Martingale-Signatur, Stop-Nachweis (bewiesen/behauptet), Ertrag pro Monat, Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
+Die Kriterien: Drawdown-Schranke (max aus By-Equity-DD, By-Balance-DD und Trading-DD — der höchste der drei zählt), Martingale-Signatur, Stop-Nachweis (bewiesen/behauptet), Ertrag pro Monat, Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
 
 Beim Scan wird die Matrix mit allen Herleitungen als Snapshot in der Datenbank gespeichert; die Anzeige rechnet sie aus den gespeicherten Werten mit den aktuellen Grenzwerten neu.
 """),

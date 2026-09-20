@@ -227,3 +227,45 @@ def test_kapitalbasis_aus_db_restauriert_rot(monkeypatch):
 def test_regelwerk_nennt_kapitalbasis_regel():
     from mqlkiscanner.regelwerk import regelwerk_markdown
     assert "Kapitalbasis negativ" in regelwerk_markdown({})
+
+
+# --------------------------------- Schranke: hoechster Plattform-DD zaehlt
+
+def test_schranke_nimmt_hoechsten_plattform_drawdown():
+    """Belegfall Gold Spike: By Equity 3,8 % vs. By Balance 8,11 % —
+    die Schranke wertet den hoechsten der drei Drawdowns."""
+    result = pipeline.ScanResult(id=51, name="GoldSpike-Muster",
+                                 dd_equity_pct=3.8, dd_balance_pct=8.11,
+                                 trading_dd_pct=4.57, forensik_vorhanden=True,
+                                 score=3.9, ertrag_monat_pct=15.9,
+                                 stop_evidence="direct")
+    pipeline.refresh_report_verdict(result, {})
+    assert result.schranke_verletzt is False
+    assert result.ampel == "🟢"
+
+    result.dd_balance_pct = 31.0
+    pipeline.refresh_report_verdict(result, {})
+    assert result.schranke_verletzt is True
+    assert result.ampel == "🔴"
+
+
+def test_scoring_schranke_mit_bal_dd():
+    from mqlkiscanner import scoring
+    report = {"stats": {"trades": 1},
+              "forensics": {"martingale": {"flag": False},
+                            "exposure": {"conversion_complete": True,
+                                         "temporal_risk_available": True,
+                                         "shock_pct_max": 10.0},
+                            "stops": {"stop_evidence": "direct"},
+                            "drawdown": {"trading_dd": {"dd_pct_max_rel": 4.57,
+                                                        "dd_usd": 157.2}}}}
+    platform = {"eq_dd_pct": 3.8, "bal_dd_pct": 31.0, "weeks": 46,
+                "broker_risk": 5.0, "transparency_risk": 5.0}
+    ev = scoring.evaluate(report, platform=platform, schranke_eq_dd_pct=30.0)
+    assert ev["schranke_eq_dd_verletzt"] is True
+    assert ev["schranke_dd_pct"] == 31.0
+    # Ohne Bal-DD (None -> 0): Trading-DD entscheidet wie bisher.
+    platform["bal_dd_pct"] = 0.0
+    ev = scoring.evaluate(report, platform=platform, schranke_eq_dd_pct=30.0)
+    assert ev["schranke_eq_dd_verletzt"] is False
+    assert ev["schranke_dd_pct"] == 4.57

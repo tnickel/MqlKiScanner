@@ -69,14 +69,18 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     f = report.get("forensics", {})
     s = report.get("stats", {})
 
-    # 1) Drawdown: max. relativer Trading-DD vs. Plattform-EQ-DD.
+    # 1) Drawdown: max. relativer Trading-DD vs. Plattform-Drawdowns.
     #    dd_pct (USD-Maximum) bleibt Anker; Score nutzt dd_pct_max_rel.
     #    Vorbehalt (eq_dd_caveat): Plattform-EQ-DD aus der Fruehphase auf einem
     #    Minikonto (Fall KiraCat, doc/01-Fusznote) — dann nur realer Trading-DD.
+    #    Konservativ: vom Plattformwert immer der HOECHSTE (By Equity oder
+    #    By Balance) — MQL5's By Equity kann niedriger ausfallen als By
+    #    Balance (Fall Gold Spike 3,8 % vs. 8,11 %).
     trading_dd = f.get("drawdown", {}).get("trading_dd", {}) or {}
     real_dd = _trading_dd_for_risk(trading_dd)
     eq_dd = float(platform.get("eq_dd_pct") or 0.0)
-    dd_reference = real_dd if platform.get("eq_dd_caveat") else max(real_dd, eq_dd)
+    bal_dd = float(platform.get("bal_dd_pct") or 0.0)
+    dd_reference = real_dd if platform.get("eq_dd_caveat") else max(real_dd, eq_dd, bal_dd)
     dd_dim = _interp(dd_reference, DD_MAP)
 
     # 2) Struktur: Stop-Nachweis, Martingale (Nachfolger + Korb-Leiter), Grid
@@ -144,20 +148,24 @@ def score(dims: dict[str, float], weights: dict[str, float] | None = None) -> fl
 def evaluate(report: dict, platform: dict | None = None,
              weights: dict[str, float] | None = None,
              schranke_eq_dd_pct: float = 30.0) -> dict:
-    """Score + Gate. Harte Schranke: max(Trading-DD, EQ-DD) > Schranke.
+    """Score + Gate. Harte Schranke: max(Trading-DD, EQ-DD, Bal-DD) > Schranke.
 
-    Ausnahme: platform['eq_dd_caveat'] (KiraCat-Fussnote) — dann nur Trading-DD.
-    Fehlt der Plattform-EQ-DD, greift trotzdem der rekonstruierte Trading-DD.
+    Vom Plattform-Drawdown zählt der HOECHSTE By-Equity-/By-Balance-Wert
+    (MQL5's By Equity kann deutlich niedriger als By Balance ausfallen —
+    Fall Gold Spike 3,8 % vs. 8,11 %). Ausnahme: platform['eq_dd_caveat']
+    (KiraCat-Fussnote) — dann nur Trading-DD. Fehlt der Plattform-EQ-DD,
+    greift trotzdem der rekonstruierte Trading-DD.
     """
     platform = platform or {}
     dims = dimension_inputs(report, platform)
     trading_dd = (report.get("forensics", {}).get("drawdown", {}) or {}).get("trading_dd") or {}
     real_dd = _trading_dd_for_risk(trading_dd)
     eq_dd = float(platform.get("eq_dd_pct") or 0.0)
+    bal_dd = float(platform.get("bal_dd_pct") or 0.0)
     if platform.get("eq_dd_caveat"):
         barrier_dd = real_dd
     else:
-        barrier_dd = max(real_dd, eq_dd)
+        barrier_dd = max(real_dd, eq_dd, bal_dd)
     barrier = barrier_dd > float(schranke_eq_dd_pct)
     return {
         "dimensions": dims,
