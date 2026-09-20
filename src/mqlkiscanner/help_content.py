@@ -120,4 +120,20 @@ Risikokennzahl**: Viele Abonnenten beweisen keine Qualität, und Wachstum allein
 nichts über Stop-Nachweis oder Drawdown. Die Bewertung folgt weiterhin den
 Forensik-Kriterien; dieser Abschnitt liefert Zusatzkontext.
 """),
+    "downloader_sync": ("Der MqlDownloader-Abgleich", """
+Der Abgleich holt aus dem lokalen MqlDownloader zwei Datenarten für die Signale der
+gewählten Quelle: den **Abonnenten-Verlauf** und die **Testreport-PDFs**. Er läuft an
+drei Stellen: automatisch als **Station 6** nach jeder Analyse, per Button hier auf der
+Ergebnisseite (ohne neuen Scan, ohne MQL5-Abruf) und je Signal in der Detailansicht.
+
+**Der Abgleich bewertet nie neu.** Ampeln, Urteile, Scores und Berichte bleiben
+unverändert; frische Verlaufsdaten sind Zusatzkontext, keine Risikokennzahl. Neue
+Signale erscheinen deshalb auch nicht als „NEU" — diese Markierung behalten
+Analyse-Läufe vorbehalten.
+
+**Wann braucht der Abgleich Aufmerksamkeit?** Ist der Downloader aus oder nicht
+konfiguriert, meldet die Station „Mit Hinweisen" (orange) beziehungsweise der Button
+einen Abbruch — bereits geladene Daten bleiben gespeichert, der Lauf selbst ist davon
+unabhängig. Beim nächsten erfolgreichen Abgleich wird einfach weitergesammelt.
+"""),
 }

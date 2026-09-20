@@ -110,6 +110,13 @@ Anbindung an die REST-API des lokalen MqlDownloader-Dienstes (Doku:
       `data/downloader/{Signal-ID}/reports/{version}/` + SQLite
       `downloader_reports`; unveränderte Dateien (gleiche Größe) werden
       nicht erneut geladen; Einsicht per Button in der Detailansicht
+- [x] Automatischer Abgleich als **Workflow-Station 6** nach der Analyse
+      (best-effort: Downloader aus/nicht konfiguriert = Stations-Hinweis,
+      nie ein Lauf-Fehler) plus Katalog-Abgleich per „MqlDownloader-Abgleich“-
+      Button auf der Ergebnisseite (ohne Scan, ohne MQL5-Abruf)
+- [x] Grundregel (Nutzer-Vorgabe): Der Abgleich bewertet NIE neu — Ampeln,
+      Urteile, Scores und Berichte bleiben unberührt, keine NEU-Markierung
+      (`downloader_sync.py`, getestet in `tests/test_downloader_client.py`)
 - [ ] Tradelisten aus dem Downloader (`/trades`) — bewusst offen: Die
       Engine arbeitet mit den eigenen, verifizierten MQL5-Exporten;
       Bedarf laut Nutzer noch unklar

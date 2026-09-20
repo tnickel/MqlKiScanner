@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, db, pipeline, scan_state, scan_worker, secrets_store
+from mqlkiscanner import config, db, downloader_sync, pipeline, scan_state, scan_worker, secrets_store
 from mqlkiscanner.app_ui import (
     render_portfolio_pdf_viewer,
     render_report_panel,
@@ -50,6 +50,8 @@ STEPS = (
      "Verständliche Texte und Endbericht je Signal schreiben"),
     ("portfolio", "Portfolio", "pie_chart", "Vorschlag",
      "Alle Berichte zusammenführen: Welche Strategien passen ins Depot?"),
+    ("downloader", "Abgleich", "sync", "Signale",
+     "Abonnenten-Verläufe und Testreport-PDFs aus dem MqlDownloader holen — nie eine Neubewertung"),
 )
 STATES = {
     "pending": ("Wartet", "gray", "schedule"),
@@ -822,6 +824,47 @@ if command:
             w_step("portfolio", "error",
                    detail=summary.get("reason") or "Kein Portfolio-Bericht erstellt")
 
+    def w_run_downloader(alle: list[pipeline.ScanResult], cfg) -> None:
+        """Station 6: Abgleich mit dem MqlDownloader (best-effort, nie Neubewertung)."""
+        if w_skip_if_stopped("downloader"):
+            return
+        ziele: list[tuple[int, str]] = []
+        gesehen: set[int] = set()
+        for r in alle:
+            if getattr(r, "source_kind", "live") != "live" or not r.id or r.id in gesehen:
+                continue
+            gesehen.add(r.id)
+            ziele.append((r.id, getattr(r, "platform", "") or ""))
+        if not downloader_sync.konfiguriert():
+            w_step("downloader", "skipped",
+                   detail="MqlDownloader nicht konfiguriert (Admin → MqlDownloader)")
+            return
+        if not ziele:
+            w_step("downloader", "skipped", detail="Keine Live-Signale im Lauf")
+            return
+        log = w_log_for("downloader")
+        w_step("downloader", "running", total=len(ziele),
+               detail="Abonnenten-Verläufe und Testreport-PDFs werden geholt …")
+        summary = downloader_sync.sync_many(
+            ziele,
+            progress=lambda done, total_, sid: w_step(
+                "downloader", done=done, total=total_,
+                detail=f"Signal {done}/{total_} (#{sid}) wird abgeglichen …"))
+        if summary["abgebrochen"]:
+            log("Abbruch: " + summary["abgebrochen"])
+            w_step("downloader", "warning", done=len(ziele),
+                   detail=f"Abgleich abgebrochen — Geladenes bleibt gespeichert. "
+                          f"{summary['abgebrochen'][:160]}")
+            return
+        for fehler in summary["fehler"]:
+            log("Hinweis: " + fehler)
+        log(f"{summary['signale']} Signale abgeglichen · {summary['verlaufspunkte']} "
+            f"Verlaufspunkte gesichert · {summary['neue_pdfs']} neue Testreport-PDFs.")
+        w_step("downloader", "warning" if summary["fehler"] else "complete", done=len(ziele),
+               detail=(f"{summary['signale']} Signale · {summary['verlaufspunkte']} "
+                       f"Verlaufspunkte gesichert · {summary['neue_pdfs']} neue PDFs"
+                       + (f" · {len(summary['fehler'])} Hinweise" if summary["fehler"] else "")))
+
     def _worker() -> None:
         current_step = {
             "llm": "llm", "local": "forensik", "step_listen": "listen",
@@ -840,6 +883,7 @@ if command:
                 if mode == "local":
                     w_step("llm", "skipped", detail="Lokaler Lauf ohne neuen KI-Aufruf")
                     w_step("portfolio", "skipped", detail="Lokaler Lauf ohne neuen KI-Aufruf")
+                    w_step("downloader", "skipped", detail="Lokaler Lauf ohne Downloader-Abgleich")
                     files = sorted(config.RAW_DIR.glob("*.csv")) + sorted(config.RAW_DIR.glob("*.json"))
                     if not files:
                         w_step("forensik", "skipped", detail="Keine Testdateien in data/raw vorhanden")
@@ -910,6 +954,8 @@ if command:
                                else "KI-Berichte für diesen Lauf ausgeschaltet")
                         w_step("portfolio", "skipped", detail=grund if gestoppt
                                else "Portfolio-Vorschlag für diesen Lauf ausgeschaltet")
+                    current_step = "downloader"
+                    w_run_downloader(results, run_config)
             except Exception as exc:
                 message = f"{type(exc).__name__}: {exc}"
                 logs.setdefault(current_step, []).append(_stamped(f"FEHLER: {message}"))

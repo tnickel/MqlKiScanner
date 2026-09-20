@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 import streamlit as st
-from mqlkiscanner import config, db, downloader_client
+from mqlkiscanner import config, db, downloader_client, downloader_sync
 from mqlkiscanner import regelwerk
 from mqlkiscanner.ampel_matrix import KRITERIEN, LABELS, kriterien_matrix
 from mqlkiscanner.pdf_reports import (
@@ -326,62 +326,17 @@ def render_report_panel(results) -> None:
 
 def _downloader_versions(result) -> list[str]:
     """API-Versionen, die für das Signal gefragt werden (Plattform oder beide)."""
-    version = downloader_client.platform_version(getattr(result, "platform", ""))
-    return [version] if version else ["mql4", "mql5"]
+    return downloader_sync.versions(getattr(result, "platform", ""))
 
 
 def _dl_fetch_history(result) -> int:
-    """Abonnenten-Verlauf je Version holen und in die DB übernehmen.
-
-    404 zählt nicht als Fehler: Das Signal existiert im Downloader
-    schlicht nicht (z. B. nie geladen) — die betroffene Version wird
-    übersprungen. Rückgabe: Anzahl neuer Datenpunkte.
-    """
-    client = downloader_client.client_from_settings(config.load_settings())
-    stored = 0
-    for version in _downloader_versions(result):
-        try:
-            points = client.history(result.id, version)
-        except downloader_client.DownloaderNotFound:
-            continue
-        stored += db.store_history_points(result.id, version, points)
-    return stored
+    """Abonnenten-Verlauf holen und spiegeln (Logik: downloader_sync)."""
+    return downloader_sync.sync_history(result.id, getattr(result, "platform", ""))
 
 
 def _dl_fetch_reports(result) -> list[str]:
-    """Testreport-PDFs je Version nach data/downloader/{id}/ spiegeln.
-
-    Unveränderte Dateien (gleicher Name + Größe, Datei vorhanden) werden
-    nicht erneut geladen. Rückgabe: diesmal neu geschriebene Pfade.
-    """
-    client = downloader_client.client_from_settings(config.load_settings())
-    known = {(row["version"], row["name"]): row
-             for row in db.list_downloader_reports(result.id)}
-    fresh: list[str] = []
-    for version in _downloader_versions(result):
-        try:
-            items = client.reports(result.id, version)
-        except downloader_client.DownloaderNotFound:
-            continue
-        for item in items:
-            name = Path(str(item.get("name") or "")).name
-            if not name.lower().endswith(".pdf"):
-                continue  # API liefert nur PDFs; Schutz vor unerwarteten Einträgen
-            size = item.get("sizeBytes")
-            row = known.get((version, name))
-            if (row is not None and Path(row["path"]).exists()
-                    and row["size_bytes"] is not None and size is not None
-                    and int(row["size_bytes"]) == int(size)):
-                continue
-            target = (config.DOWNLOADER_DIR / str(result.id) / "reports"
-                      / version / name)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(client.download_report(result.id, version, name))
-            db.store_downloader_report(result.id, version, name, str(target),
-                                       size_bytes=size,
-                                       last_modified=item.get("lastModified"))
-            fresh.append(str(target))
-    return fresh
+    """Testreport-PDFs spiegeln, unveränderte überspringen (downloader_sync)."""
+    return downloader_sync.sync_reports(result.id, getattr(result, "platform", ""))
 
 
 def _render_dl_history(result) -> None:

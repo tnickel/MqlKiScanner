@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 import requests
 
-from mqlkiscanner import app_ui, config, db, secrets_store
+from mqlkiscanner import app_ui, config, db, downloader_sync, secrets_store
 from mqlkiscanner import downloader_client as dc
 
 
@@ -186,18 +186,24 @@ class _Result:
 
 
 class _FakeClient:
+    """Antwortet nur für Signal #77; andere IDs liefern 404."""
+
     def __init__(self, history=None, reports=None):
         self.history_antwort = history or {}
         self.reports_antwort = reports or {}
         self.downloads: list[str] = []
 
     def history(self, signal_id, version):
+        if signal_id != 77:
+            raise dc.DownloaderNotFound("kein Eintrag")
         punkte = self.history_antwort.get(version)
         if punkte is None:
             raise dc.DownloaderNotFound("kein Eintrag")
         return punkte
 
     def reports(self, signal_id, version):
+        if signal_id != 77:
+            raise dc.DownloaderNotFound("kein Eintrag")
         items = self.reports_antwort.get(version)
         if items is None:
             raise dc.DownloaderNotFound("kein Eintrag")
@@ -261,3 +267,83 @@ def test_versionswahl_ohne_plattformfragt_beide(monkeypatch):
     assert app_ui._dl_fetch_history(_Result(platform="")) == 2
     versionen = {row["version"] for row in db.get_history(77)}
     assert versionen == {"mql4", "mql5"}
+
+
+# --- Batch-Abgleich (Workflow-Station 6 / Ergebnisseite) -----------------
+
+def test_versions_hilfe():
+    assert downloader_sync.versions("MT4") == ["mql4"]
+    assert downloader_sync.versions("mql5") == ["mql5"]
+    assert downloader_sync.versions("") == ["mql4", "mql5"]
+
+
+def test_konfiguriert_folgt_base_url():
+    assert downloader_sync.konfiguriert() is False
+    config.save_settings({**config.load_settings(),
+                          "downloader_base_url": "http://rechner:8089"})
+    assert downloader_sync.konfiguriert() is True
+
+
+def test_sync_many_sammelt_bilanz_und_toleraert_404():
+    db.init_db()
+    fake = _FakeClient(history={
+        "mql5": [{"timestamp": "2026-09-01T18:00:05", "subscribers": 42, "change": 0}],
+    }, reports={
+        "mql5": [{"name": "t_77.pdf", "sizeBytes": 12, "lastModified": "2026-09-20T10:00:00"}],
+    })
+    summary = downloader_sync.sync_many([(77, "MT5"), (78, "MT5")], client=fake)
+    assert summary["signale"] == 2          # 78 liefert 404 → trotzdem gezählt
+    assert summary["verlaufspunkte"] == 1
+    assert summary["neue_pdfs"] == 1
+    assert summary["abgebrochen"] is None
+    assert summary["fehler"] == []
+
+
+def test_sync_many_bricht_bei_verbindungsfehler_ab():
+    db.init_db()
+
+    class _AbbruchClient(_FakeClient):
+        def history(self, signal_id, version):
+            if signal_id == 79:
+                raise dc.DownloaderConnectionError("weg")
+            return []
+
+    aufgerufen: list[int] = []
+    summary = downloader_sync.sync_many(
+        [(78, "MT5"), (79, "MT5"), (80, "MT5")], client=_AbbruchClient(),
+        progress=lambda done, total, sid: aufgerufen.append(sid))
+    assert summary["abgebrochen"] == "weg"
+    assert 80 not in aufgerufen  # nach dem Abbruch keine weiteren Anfragen
+
+
+def test_sync_many_sammelt_einzelfehler_und_laeuft_weiter():
+    db.init_db()
+
+    class _EinzelClient(_FakeClient):
+        def history(self, signal_id, version):
+            if signal_id == 78:
+                raise dc.DownloaderError("HTTP 500 intern")
+            return []
+
+    summary = downloader_sync.sync_many([(78, "MT5"), (79, "MT5")], client=_EinzelClient())
+    assert summary["signale"] == 2
+    assert len(summary["fehler"]) == 1
+    assert summary["fehler"][0].startswith("#78")
+    assert summary["abgebrochen"] is None
+
+
+def test_abgleich_bewertet_nie_neu():
+    """Grundregel: Der Sync berührt Signale, Forensik und Analysen nicht."""
+    db.init_db()
+    db.upsert_signal(77, name="Alt", platform="MT5", abonnenten=10)
+    db.store_forensik(77, {"trading_dd_pct": 1.0})
+    fake = _FakeClient(history={
+        "mql5": [{"timestamp": "2026-09-02T18:00:05", "subscribers": 999, "change": 900}],
+    })
+    summary = downloader_sync.sync_many([(77, "MT5")], client=fake)
+    assert summary["verlaufspunkte"] == 1
+    signal = db.get_signal(77)
+    assert signal["name"] == "Alt"
+    assert signal["abonnenten"] == 10  # Plattformstand bleibt unberührt
+    # Frische Downloader-Daten landen ausschließlich in subscriber_history:
+    assert db.get_history(77)[0]["subscribers"] == 999

@@ -112,6 +112,17 @@ PDFs werden beim erneuten Aktualisieren nicht erneut geladen. Tradelisten holt
 der Scanner bewusst **nicht** vom Downloader — die Engine arbeitet mit den
 eigenen, verifizierten MQL5-Exporten.
 
+**Automatischer Abgleich:** Jeder Analyse-Lauf holt in **Station 6** (nach dem
+Portfolio) Verläufe und PDFs für die Signale des Laufs. Ist der Downloader aus
+oder nicht konfiguriert, bleibt es bei einem Hinweis in der Station — der Lauf
+selbst scheitert daran nicht. Auf der Ergebnisseite gleicht der Button
+**MqlDownloader-Abgleich** die Signale der gewählten Quelle ohne neuen Scan ab
+(nur REST im LAN, keine MQL5-Abrufe).
+
+**Grundregel:** Der Abgleich bewertet **nie** neu. Ampeln, Urteile, Scores und
+Berichte bleiben unberührt; frische Verlaufsdaten sind Zusatzkontext, keine
+Risikokennzahl, und erzeugen keine „NEU“-Markierung.
+
 ## 5. Analysevorlagen
 
 Unter **Einstellungen → Analysevorlagen** zeigt ein Ablaufbild, welche

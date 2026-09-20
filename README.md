@@ -30,7 +30,8 @@ Entstanden aus einer forensischen Analyse-Reihe (u. a. Gold Spike, KiraCat, Pu
 - **Optional GLM:** Trade-Analyse + Risiko parallel, dann Gesamtbericht
 - **SQLite-Persistenz** und Ergebnisse-UI mit NEU-Markierung
 - **MqlDownloader-Anbindung (optional):** Abonnenten-Verläufe und Testreport-PDFs
-  je Signal per REST-Interface, lokal gespiegelt und offline anzeigbar
+  je Signal per REST-Interface — automatisch als Station 6 nach jedem Lauf,
+  lokal gespiegelt und offline anzeigbar; Abgleich bewertet nie neu
 - **Rate-Limit / Fail-Fast** zum Schutz des MQL5-Accounts
 
 ## Schnellstart

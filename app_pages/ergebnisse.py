@@ -10,12 +10,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 import streamlit as st
 
-from mqlkiscanner import config, db, pipeline, regelwerk, scan_state
+from mqlkiscanner import config, db, downloader_sync, pipeline, regelwerk, scan_state
 from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, render_detail,
                                  render_report_panel, render_portfolio_pdf_viewer,
                                  render_results_table, results_to_dataframe)
-from mqlkiscanner.ui_design import (apply_theme, info_button, page_header, section_header,
-                                    urteile_farbig)
+from mqlkiscanner.ui_design import (action_button, apply_theme, info_button, page_header,
+                                    section_header, urteile_farbig)
 
 apply_theme()
 hero_results_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_results_banner.jpg"
@@ -75,6 +75,52 @@ with st.container(border=True):
             st.stop()
         st.caption(f'Archiv · {Path(selected_run).parent.name} · historische Momentaufnahme')
         fresh_ids = set()
+
+    # Leichter Abgleich gegen den MqlDownloader, ohne neuen Scan und ohne
+    # Neubewertung: nur Verlauf + PDFs, niemals Ampeln/Urteile/Scores.
+    abgleich_spalte, abgleich_hinweis = st.columns([1, 2], gap="medium",
+                                                   vertical_alignment="center")
+    with abgleich_spalte:
+        abgleich_klick = action_button(
+            "MqlDownloader-Abgleich", key="results_downloader_sync",
+            help_key="downloader_sync", icon=":material/sync:",
+            disabled=not any(getattr(r, 'source_kind', 'live') == 'live' for r in results))
+    with abgleich_hinweis:
+        st.caption('Holt Abonnenten-Verläufe und Testreport-PDFs für die Signale '
+                   'dieser Quelle aus dem lokalen Downloader — ohne MQL5-Abruf.')
+    if abgleich_klick:
+        ziele, gesehen = [], set()
+        for r in results:
+            if getattr(r, 'source_kind', 'live') != 'live' or not r.id or r.id in gesehen:
+                continue
+            gesehen.add(r.id)
+            ziele.append((r.id, getattr(r, 'platform', '') or ''))
+        if not downloader_sync.konfiguriert():
+            st.info('MqlDownloader ist nicht konfiguriert. Base-URL im Admin-Bereich '
+                    'unter „MqlDownloader“ hinterlegen.', icon=':material/settings_ethernet:')
+        elif not ziele:
+            st.info('Keine Live-Signale in dieser Quelle zum Abgleichen.')
+        else:
+            with st.status('MqlDownloader-Abgleich läuft …', expanded=True) as status:
+                st.write(f'{len(ziele)} Signale: Abonnenten-Verlauf + Testreport-PDF-Prüfung.')
+                summary = downloader_sync.sync_many(
+                    ziele, progress=lambda done, total, sid: st.write(
+                        f'Signal {done}/{total} · #{sid}'))
+                if summary['abgebrochen']:
+                    st.write('Abbruch: ' + summary['abgebrochen'])
+                    status.update(label='Abgleich abgebrochen', state='error', expanded=False)
+                else:
+                    status.update(label='Abgleich abgeschlossen', state='complete', expanded=False)
+            bilanz = (f"{summary['signale']} Signale · {summary['verlaufspunkte']} "
+                      f"Verlaufspunkte gesichert · {summary['neue_pdfs']} neue "
+                      "Testreport-PDFs · Bewertungen bleiben unberührt.")
+            if summary['abgebrochen']:
+                st.warning('Abgleich abgebrochen — bereits Geladenes bleibt gespeichert. '
+                           + str(summary['abgebrochen']))
+            elif summary['fehler']:
+                st.warning(f"Abgleich mit {len(summary['fehler'])} Hinweis(en): {bilanz}")
+            else:
+                st.success(bilanz)
 
 # Das Portfolio stammt aus derselben Quelle wie die Signale. Alte Archive
 # ohne Portfolio erhalten keinen heutigen Bericht aus dem Live-Katalog.
