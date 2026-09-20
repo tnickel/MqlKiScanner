@@ -54,12 +54,18 @@ _LANG_KB = 100
 
 
 def _gelbe_anzeige(key: str, lang: bool) -> None:
-    """Faerbt den Button mit dem Widget-Key gelb, wenn das Dokument lang ist."""
+    """Faerbt den Button mit dem Widget-Key gelb, wenn das Dokument lang ist.
+
+    Der Selektor muss das Theme uebertreffen, das sekundaere/primare Buttons
+    mit !important und Spezifitaet (0,2,1) faerbt — daher die Kette ueber
+    .stApp .stElementContainer (0,3,1).
+    """
     if not lang:
         return
     safe = re.sub(r"[^A-Za-z0-9_-]", "", key)
     st.markdown(
-        f"<style>.st-key-{safe} button{{background:rgba(255,193,7,.16)!important;"
+        f"<style>.stApp .stElementContainer.st-key-{safe} button{{"
+        f"background:rgba(255,193,7,.16)!important;"
         f"color:#ffd76a!important;border:1px solid rgba(255,193,7,.6)!important;}}"
         f"</style>",
         unsafe_allow_html=True,
