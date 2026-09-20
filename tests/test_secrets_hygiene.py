@@ -38,7 +38,7 @@ def test_save_secrets_schreibt_nur_die_gitignored_datei():
             f"{schluessel} ist in app_settings.json gelandet — Geheimnisse "
             "gehören nur in den secrets_store")
     # … und die beiden Dateien sind wirklich verschiedene Pfade.
-    assert config.SETTINGS_FILE != config.SECRETS_FILE
+    assert config.SETTINGS_FILE != secrets_store.SECRETS_FILE
 
 
 def test_gitignore_schuetzt_geheimnis_dateien():
