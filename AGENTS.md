@@ -99,10 +99,31 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 - `scripts/reference/` — **bewährte, funktionierende** Analyse-Skripte aus der
   Reihe (Parser, Forensik-Tests, News-Korrelation, MT4/MT5-Vergleich) — als
   Referenzimplementierung konsolidieren, nicht neu erfinden
-- `src/mqlkiscanner/` — Zielarchitektur des Tools (aufzubauen, siehe `doc/04_roadmap.md`)
+- `streamlit_app.py` + `app_pages/` — Streamlit-GUI (Scan, Ergebnisse, Admin)
+- `src/mqlkiscanner/` — **das Tool, gebaut und getestet** (Stand 20.09.2026):
+  Engine (`engine.py`, `pipeline.py`, `stats.py`, `scoring.py`, `parser.py`),
+  Forensik (`forensics/`), MQL5-Zugriff (`mql5/` — Crawler, Session, Exporter,
+  Rate-Limit), LLM-Layer (`llm/`), SQLite (`db.py`), Ampel-Matrix
+  (`ampel_matrix.py`), Ausschluss-Regelwerk (`regelwerk.py`),
+  PDF-Berichte (`pdf_reports.py`), EZB-Kurse (`fx_rates.py`)
+- `config/prompts/` — editierbare LLM-Prompts
+- `tests/` — pytest (634 Tests grün; LLM-Regressionstests opt-in via
+  `pytest -m llm`, echte Modellaufrufe)
 
-## Offene Entscheidungen (mit Nutzer klären)
+## Umsetzungsstand (Stand 20.09.2026)
 
-- [ ] Stack: Python + Streamlit (Empfehlung) oder Java + JavaFX
-- [ ] LLM-Anbieter + API-Key (2-Stufen: Flash + starkes Modell)
-- [ ] LLM-Layer erst nach funktionierendem Kern (Engine läuft ohne Key)
+Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
+
+- ✅ Stack: Python + Streamlit (`streamlit_app.py`, `app_pages/`)
+- ✅ LLM: GLM über Z.ai-API (OpenAI-kompatibel), zweistufig — Stufe 1
+  `glm-5.3-flash` (Massen-Profile im Scan), Stufe 2 `glm-5.3` (Finalisten);
+  Token-Budget je Lauf; Key via `GLM_API_KEY` (Env/`.env`/Admin-UI).
+  Coding-Plan-Endpunkt ist Default (Pay-as-you-go-Key auf dem Coding-Endpunkt
+  → Fehler 1113, siehe `config.py`)
+- ✅ LLM-Layer ist optional: Engine läuft ohne Key komplett (Scan + Forensik
+  + Ampel-Ausgabe)
+
+Noch offen (Phase 5 Betrieb):
+
+- [ ] Re-Scan als Kommandozeilen-Aufruf mit Diff gegen den letzten Lauf
+- [ ] Automatisierte Alerts (Anbieter-Stilbruch, Copy-Abweichung > x %)
