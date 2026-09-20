@@ -28,6 +28,8 @@ data/runs/
 data/reports/
 data/*.db
 data/*.db-*
+# MqlDownloader-Spiegel: Abonnenten-Verlaeufe + analysierte PDFs — NIE committen
+data/downloader/
 
 # temporaere Arbeitsdateien
 .tmp/
