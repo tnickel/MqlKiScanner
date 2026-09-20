@@ -216,6 +216,9 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
         model_stufe2=settings.get("model_stufe2", config.MODEL_STUFE2),
         max_total_tokens=int(settings.get("llm_max_total_tokens", 5_000_000)),
         base_url=settings.get("glm_base_url") or None,
+        # Tiefenanalyse-Prompts sind gross (Tradedaten) und die Antworten lang -
+        # der Client-Default von 300 s reicht hier gelegentlich nicht aus.
+        timeout=600,
     )
     if not client.has_key:
         raise llm_client.LlmError(
