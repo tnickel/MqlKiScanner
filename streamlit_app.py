@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import streamlit as st  # noqa: E402
 
-from mqlkiscanner import config, secrets_store  # noqa: E402
+from mqlkiscanner import config, downloader_sync, secrets_store  # noqa: E402
 from mqlkiscanner.ui_design import apply_theme, info_button  # noqa: E402
 
 st.set_page_config(
@@ -66,6 +66,19 @@ with st.sidebar:
                  color="green" if mql_ready else "orange", icon=":material/person:")
         st.badge("KI bereit" if status["glm_api_key"] else "KI optional",
                  color="green" if status["glm_api_key"] else "gray", icon=":material/psychology:")
+        # Erreichbarkeit des MqlDownloader: einmal beim Programmstart geprüft,
+        # danach 5 Min. gecacht (verbindungs_status verhindert REST-Flut).
+        dl_status = downloader_sync.verbindungs_status(timeout=3.0)
+        if not dl_status["konfiguriert"]:
+            st.badge("Downloader optional", color="gray", icon=":material/sync:")
+        elif dl_status["ok"]:
+            st.badge("Downloader verbunden", color="green", icon=":material/sync:")
+            st.caption(f"{dl_status['providers']} Provider · geprüft "
+                       f"{dl_status['geprueft']:%H:%M}")
+        else:
+            st.badge("Downloader offline", color="red", icon=":material/sync_disabled:")
+            st.page_link(settings_page, label="Verbindung prüfen",
+                         icon=":material/arrow_forward:")
         if not mql_ready:
             st.page_link(settings_page, label="Zugang einrichten",
                          icon=":material/arrow_forward:")

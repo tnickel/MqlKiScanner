@@ -128,6 +128,15 @@ Messpunkt gegen den nächstgelegenen Messpunkt vor 7 beziehungsweise 30
 Tagen, ±3 Tage Toleranz); liegt der Verlauf kürzer zurück, bleibt die Zelle
 leer statt eine Zahl zu erfinden.
 
+**Verbindungsstatus beim Start:** Beim Programmstart prüft der Scanner einmal,
+ob der MqlDownloader erreichbar ist, und zeigt das Ergebnis als Badge: grün
+**„Downloader verbunden"** (mit Provider-Anzahl und Prüfzeitpunkt) in der
+Sidebar unter „Systemstatus", auf der Scan-Seite und im Admin-Bereich. Ist der
+Dienst aus, erscheint rot **„Downloader offline"** mit Direktlink zu den
+Einstellungen; ohne Konfiguration grau „Downloader optional". Das Ergebnis
+wird 5 Minuten zwischengespeichert — Speichern im Admin-Bereich prüft sofort
+neu, ein Streamlit-Rerun löst keinen erneuten REST-Aufruf aus.
+
 **Automatischer Abgleich:** Jeder Analyse-Lauf holt in **Station 6** (nach dem
 Portfolio) Verläufe und PDFs für die Signale des Laufs. Ist der Downloader aus
 oder nicht konfiguriert, bleibt es bei einem Hinweis in der Station — der Lauf

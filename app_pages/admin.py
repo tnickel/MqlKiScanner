@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, secrets_store, downloader_client
+from mqlkiscanner import config, secrets_store, downloader_client, downloader_sync
 from mqlkiscanner.llm import client as llm_client
 from mqlkiscanner.llm import prompts as llm_prompts
 from mqlkiscanner.mql5.session import Mql5Session
@@ -94,6 +94,12 @@ with st.container(horizontal=True):
              and secret_status["mql5_pass"] else "orange")
     st.badge("KI-Key vorhanden" if secret_status["glm_api_key"] else "KI-Key fehlt",
              color="green" if secret_status["glm_api_key"] else "orange")
+    dl_start = downloader_sync.verbindungs_status()
+    st.badge("MqlDownloader verbunden" if dl_start["ok"]
+             else ("MqlDownloader nicht konfiguriert" if not dl_start["konfiguriert"]
+                   else "MqlDownloader nicht erreichbar"),
+             color="green" if dl_start["ok"]
+             else ("gray" if not dl_start["konfiguriert"] else "red"))
     st.badge("Lokale Engine ohne KI-Key nutzbar", color="blue")
 
 access_tab, models_tab, downloader_tab, scan_tab, prompts_tab = st.tabs(
@@ -324,6 +330,7 @@ with downloader_tab:
                     # Reload on save: nie eine alte Kopie anderer Einstellungen schreiben.
                     config.save_settings({**config.load_settings(),
                                           "downloader_base_url": normalized})
+                    downloader_sync.status_cache_leeren()
                     _finish("MqlDownloader-Verbindung gespeichert. "
                             "Bitte die gespeicherte Verbindung testen.",
                             widget_updates=({"admin_downloader_token": ""}
@@ -334,6 +341,7 @@ with downloader_tab:
                              help_key="settings_downloader", icon=":material/delete:",
                              disabled=not token_active):
                 secrets_store.save_secrets(downloader_token="")
+                downloader_sync.status_cache_leeren()
                 _finish("Token entfernt. Ist im Downloader keiner gesetzt, bleibt die "
                         "Verbindung voll nutzbar.",
                         widget_updates={"admin_downloader_token": ""},

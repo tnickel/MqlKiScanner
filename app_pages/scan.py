@@ -365,12 +365,19 @@ def _live_status() -> None:
 
 has_login = bool(secrets_store.get_secret("mql5_user") and secrets_store.get_secret("mql5_pass"))
 has_llm = bool(secrets_store.get_secret("glm_api_key"))
+dl_status = downloader_sync.verbindungs_status(timeout=3.0)
 with st.container(border=True, key="scan_control_panel"):
     with st.container(horizontal=True, gap="small"):
         st.badge("MQL5 bereit" if has_login else "MQL5-Zugang fehlt",
                  icon=":material/lock:", color="green" if has_login else "orange")
         st.badge("KI-Berichte aktiv" if has_llm else "KI optional",
                  icon=":material/psychology:", color="green" if has_llm else "gray")
+        st.badge("Downloader verbunden" if dl_status["ok"]
+                 else ("Downloader nicht konfiguriert" if not dl_status["konfiguriert"]
+                       else "Downloader offline"),
+                 icon=":material/sync:",
+                 color="green" if dl_status["ok"]
+                 else ("gray" if not dl_status["konfiguriert"] else "red"))
     start_zeile = st.columns([1.25, 1], gap="small", vertical_alignment="center")
     with start_zeile[0]:
         start = action_button(

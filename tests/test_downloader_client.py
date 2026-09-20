@@ -280,6 +280,81 @@ def test_versionswahl_ohne_plattformfragt_beide(monkeypatch):
     assert versionen == {"mql4", "mql5"}
 
 
+# --- Verbindungs-Start-Test (Sidebar/Scan-Seite, mit TTL-Cache) ----------
+
+class _ZaehlClient(_FakeClient):
+    """Health-fähiger Fake, der Aufrufe zählt und konfigurierbar scheitert."""
+
+    health_antwort = {"status": "ok", "providers": 176, "apiVersion": "v1",
+                      "tokenRequired": False}
+    health_fehler = None
+
+    def __init__(self):
+        self.health_aufrufe = 0
+
+    def health(self):
+        self.health_aufrufe += 1
+        if self.health_fehler is not None:
+            raise self.health_fehler
+        return dict(self.health_antwort)
+
+
+def test_starttest_nicht_konfiguriert_ohne_netzwerk():
+    downloader_sync.status_cache_leeren()
+    status = downloader_sync.verbindungs_status()
+    assert status["konfiguriert"] is False and status["ok"] is None
+    assert "Nicht konfiguriert" in status["detail"]
+
+
+def test_starttest_verbunden_und_gacacht(monkeypatch):
+    downloader_sync.status_cache_leeren()
+    config.save_settings({**config.load_settings(),
+                          "downloader_base_url": "http://rechner:8089"})
+    fake = _ZaehlClient()
+    monkeypatch.setattr(downloader_sync, "_client", lambda: fake)
+    status = downloader_sync.verbindungs_status()
+    assert status["ok"] is True and status["providers"] == 176
+    assert status["geprueft"] is not None
+    # Zweiter Aufruf (Streamlit-Rerun) bedient sich aus dem TTL-Cache:
+    assert downloader_sync.verbindungs_status()["ok"] is True
+    assert fake.health_aufrufe == 1
+    # force=True umgeht den Cache (manueller Test):
+    downloader_sync.verbindungs_status(force=True)
+    assert fake.health_aufrufe == 2
+
+
+def test_starttest_offline_und_cache_pro_url(monkeypatch):
+    downloader_sync.status_cache_leeren()
+    fake = _ZaehlClient()
+    fake.health_fehler = dc.DownloaderConnectionError("weg")
+    monkeypatch.setattr(downloader_sync, "_client", lambda: fake)
+    config.save_settings({**config.load_settings(),
+                          "downloader_base_url": "http://rechner:8089"})
+    status = downloader_sync.verbindungs_status()
+    assert status["ok"] is False and "weg" in status["detail"]
+    # Anderer Base-URL-Schlüssel → neuer Test, kein alter Cache:
+    config.save_settings({**config.load_settings(),
+                          "downloader_base_url": "http://anders:8089"})
+    fake.health_fehler = None
+    status = downloader_sync.verbindungs_status()
+    assert status["ok"] is True
+    assert fake.health_aufrufe == 2
+    downloader_sync.status_cache_leeren()
+
+
+def test_starttest_token_fehlt_ist_offline(monkeypatch):
+    downloader_sync.status_cache_leeren()
+    fake = _ZaehlClient()
+    fake.health_fehler = dc.DownloaderAuthError("Token erforderlich")
+    monkeypatch.setattr(downloader_sync, "_client", lambda: fake)
+    config.save_settings({**config.load_settings(),
+                          "downloader_base_url": "http://rechner:8089"})
+    status = downloader_sync.verbindungs_status()
+    assert status["ok"] is False
+    assert "Token" in status["detail"]
+    downloader_sync.status_cache_leeren()
+
+
 # --- Batch-Abgleich (Workflow-Station 6 / Ergebnisseite) -----------------
 
 def test_versions_hilfe():

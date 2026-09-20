@@ -140,6 +140,57 @@ def sync_many(entries: Iterable[tuple[int, str]], *,
 
 _TOLERANZ_TAGE = 3  # Fenster fuer den Vergleichspunkt (wie der Downloader selbst)
 
+# TTL-Cache fuer den Verbindungs-Start-Test: Streamlit rerendert staendig —
+# ohne Cache wuerde jede Seitenaktion einen REST-Aufruf ausloesen. Schluessel
+# ist die Base-URL, sodass ein Konfigurationswechsel sofort neu prueft.
+_STATUS_TTL_S = 300.0
+_STATUS_CACHE: dict[str, tuple[datetime, dict]] = {}
+
+
+def status_cache_leeren() -> None:
+    """Verbindungs-Test-Cache verwerfen (z. B. nach Speichern im Admin)."""
+    _STATUS_CACHE.clear()
+
+
+def verbindungs_status(force: bool = False, timeout: float = 3.0) -> dict:
+    """Erreichbarkeit des MqlDownloader — einmal beim Programmstart, dann gecacht.
+
+    Wird in der Sidebar (Systemstatus), auf der Scan-Seite und im Admin
+    angezeigt. ok=None bedeutet „nicht konfiguriert“ (kein Netzaufruf);
+    ok=True/False das Ergebnis des letzten /health-Tests. Der Cache gilt
+    5 Minuten je Base-URL; `force=True` (manueller Test) umgeht ihn.
+    """
+    base = str(config.load_settings().get("downloader_base_url") or "")
+    jetzt = datetime.now()
+    if not force:
+        cached = _STATUS_CACHE.get(base)
+        if cached and (jetzt - cached[0]).total_seconds() < _STATUS_TTL_S:
+            return cached[1]
+    if not base:
+        wert = {"konfiguriert": False, "ok": None,
+                "detail": "Nicht konfiguriert (Admin → MqlDownloader)",
+                "providers": None, "api_version": None, "geprueft": jetzt,
+                "token_required": None}
+    else:
+        try:
+            client = _client()
+            client.timeout = timeout
+            info = client.health()
+            ok = str(info.get("status", "")).lower() == "ok"
+            wert = {"konfiguriert": True, "ok": ok,
+                    "detail": ("Verbindung ok" if ok else
+                               f"Unerwarteter Status: {info.get('status')!r}"),
+                    "providers": info.get("providers"),
+                    "api_version": info.get("apiVersion"),
+                    "geprueft": jetzt,
+                    "token_required": bool(info.get("tokenRequired"))}
+        except downloader_client.DownloaderError as exc:
+            wert = {"konfiguriert": True, "ok": False, "detail": str(exc),
+                    "providers": None, "api_version": None, "geprueft": jetzt,
+                    "token_required": None}
+    _STATUS_CACHE[base] = (jetzt, wert)
+    return wert
+
 
 def _bilanz(reihe: list[tuple[datetime, int | None]], tage: int,
             aktuell: int | None) -> int | None:
