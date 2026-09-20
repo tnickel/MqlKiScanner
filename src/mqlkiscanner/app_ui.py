@@ -72,6 +72,17 @@ def _gelbe_anzeige(key: str, lang: bool) -> None:
     )
 
 
+def dokumente_zelle(normale: int, tiefenanalysen: int, downloader: int = 0) -> str:
+    """Tabellenzelle 'Dokumente': 📄 = normale Berichte + Downloader-PDFs,
+    🟡 = Erweiterte KI-Analysen (Tiefenanalysen) — auf einen Blick getrennt."""
+    teile = []
+    if normale + downloader:
+        teile.append(f"📄 {normale + downloader}")
+    if tiefenanalysen:
+        teile.append(f"🟡 {tiefenanalysen}")
+    return " · ".join(teile)
+
+
 def render_result_pdf_viewer(
     result,
     kind: str,
@@ -252,15 +263,15 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
     df["30 Tage"] = [_abo_delta_zelle(abo[r.id]["tage30"]) for r in results]
     df["7 Tage"] = [_abo_delta_zelle(abo[r.id]["tage7"]) for r in results]
 
-    def _dokumente_zelle(r) -> str:
-        """Eigene Bericht-PDFs + gespiegelte Downloader-PDFs in einer Zahl."""
-        eigene = sum(bool(getattr(r, feld, "")) for feld in
-                     ("trade_analyse", "risiko_analyse", "gesamtbericht",
-                      "tiefenanalyse"))
-        gesamt = eigene + docs_counts.get(r.id, 0)
-        return f"📄 {gesamt}" if gesamt else ""
-
-    df["Dokumente"] = [_dokumente_zelle(r) for r in results]
+    df["Dokumente"] = [
+        dokumente_zelle(
+            normale=sum(bool(getattr(r, feld, "")) for feld in
+                        ("trade_analyse", "risiko_analyse", "gesamtbericht")),
+            tiefenanalysen=1 if getattr(r, "tiefenanalyse", "") else 0,
+            downloader=docs_counts.get(r.id, 0),
+        )
+        for r in results
+    ]
 
     def _open_report():
         click = st.session_state.get(f"{key}_bericht")  # ButtonColumn-Click-Info
@@ -351,8 +362,9 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 on_click=_open_abo("7"), key=f"{key}_abo_7"),
             "Dokumente": st.column_config.ButtonColumn(
                 "Dokumente",
-                help="Alle PDFs des Signals öffnen: eigene Berichte (inkl. "
-                     "Tiefenanalyse) + Testreports aus dem MqlDownloader",
+                help="📄 Berichte + Testreports aus dem MqlDownloader · "
+                     "🟡 Erweiterte KI-Analysen (Tiefenanalysen). "
+                     "Klick: alle PDFs des Signals öffnen.",
                 on_click=_open_docs, key=f"{key}_docs"),
         },
     )

@@ -131,3 +131,12 @@ def test_katalog_laedt_tiefenanalyse():
     assert r.tiefenanalyse == "# Befund"
     assert r.tiefenanalyse_model == "glm-5.3"
     assert r.tiefenanalyse_at
+
+
+def test_dokumente_zelle_getrennte_zaehlung():
+    from mqlkiscanner.app_ui import dokumente_zelle
+    # NoPain-Fall: 3 normale Berichte + 1 Tiefenanalyse
+    assert dokumente_zelle(3, 1, 0) == "📄 3 · 🟡 1"
+    assert dokumente_zelle(3, 0, 1) == "📄 4"
+    assert dokumente_zelle(0, 1, 0) == "🟡 1"
+    assert dokumente_zelle(0, 0, 0) == ""
