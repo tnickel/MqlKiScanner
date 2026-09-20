@@ -217,8 +217,10 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
         max_total_tokens=int(settings.get("llm_max_total_tokens", 5_000_000)),
         base_url=settings.get("glm_base_url") or None,
         # Tiefenanalyse-Prompts sind gross (Tradedaten) und die Antworten lang -
-        # der Client-Default von 300 s reicht hier gelegentlich nicht aus.
-        timeout=600,
+        # gemessen ~64 Tokens/s: bis zu 131.072 Ausgabe-Tokens brauchen im
+        # Extremfall ~30+ Minuten, der Client-Default von 300 s wuerde den
+        # Aufruf vorzeitig abbrechen (Nutzer: Faktor 2, laengere Phasen ok).
+        timeout=2400,
     )
     if not client.has_key:
         raise llm_client.LlmError(
@@ -236,8 +238,12 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
     prompt = prompt_fill.build_tiefenanalyse_prompt(result, trades_json)
     if log:
         log(f"Modellaufruf Stufe 2 gestartet ({len(prompt):,} Zeichen Prompt) — "
-            "dauert einige Minuten.")
-    text = client.chat(prompt, stufe=2, max_tokens=24576, meta_out={})
+            "dauert einige Minuten, bei langen Antworten auch 15–30 Minuten.")
+    # Ausgabelimit bewusst grosszuegig (Nutzer-Vorgabe: Faktor 2, "wir haben
+    # genug Tokens"): glm-5.3 bezahlt Reasoning-Tokens aus demselben Budget -
+    # bei 24.576 brach die Antwort wiederholt mitten drin ab (finish_reason=
+    # length, ~64 Tokens/s gemessen). Zeitlimit proportional (Faktor 2).
+    text = client.chat(prompt, stufe=2, max_tokens=131072, meta_out={})
     model = settings.get("model_stufe2", config.MODEL_STUFE2)
     try:
         basis = report_basis_for(result, settings)
