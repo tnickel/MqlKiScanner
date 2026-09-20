@@ -12,7 +12,8 @@ import streamlit as st
 
 from mqlkiscanner import config, db, downloader_sync, pipeline, regelwerk, scan_state
 from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, render_detail,
-                                 render_report_panel, render_portfolio_pdf_viewer,
+                                 render_downloader_docs_panel, render_report_panel,
+                                 render_portfolio_pdf_viewer,
                                  render_results_table, results_to_dataframe)
 from mqlkiscanner.ui_design import (action_button, apply_theme, info_button, page_header,
                                     section_header, urteile_farbig)
@@ -169,6 +170,8 @@ source_signature = selected_run + '|' + '|'.join(
     repr((r.source_kind, r.id, r.trades_path, r.trades_sha256, r.name)) for r in results)
 if st.session_state.get('_results_source') != source_signature:
     clear_report_selection()
+    st.session_state.pop('downloader_doc_signal_id', None)
+    st.session_state.pop('downloader_doc_identity', None)
     st.session_state['_results_source'] = source_signature
 
 section_header('Entscheidungsübersicht', 'Status der gewählten Datenquelle · fehlende Evidenz ist keine Entwarnung.',
@@ -231,6 +234,7 @@ with st.container(border=True):
 if st.session_state.get('report_signal_id') not in {r.id for r in visible}:
     clear_report_selection()
 render_report_panel(visible)
+render_downloader_docs_panel(results)
 if selected is not None:
     render_detail(selected)
 

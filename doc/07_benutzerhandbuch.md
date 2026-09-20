@@ -112,6 +112,12 @@ PDFs werden beim erneuten Aktualisieren nicht erneut geladen. Tradelisten holt
 der Scanner bewusst **nicht** vom Downloader — die Engine arbeitet mit den
 eigenen, verifizierten MQL5-Exporten.
 
+In der Ergebnistabelle zeigt die letzte Spalte **Dokumente** je Signal ein
+📄-Icon mit der PDF-Anzahl; ein Klick öffnet die PDFs des Signals direkt
+darunter (eingebettet lesbar, mit Speichern-Button). Zellen ohne Icon
+bedeuten: noch nichts gespiegelt — kein Abgleich gelaufen oder der Downloader
+hat für diese ID keine PDFs.
+
 **Automatischer Abgleich:** Jeder Analyse-Lauf holt in **Station 6** (nach dem
 Portfolio) Verläufe und PDFs für die Signale des Laufs. Ist der Downloader aus
 oder nicht konfiguriert, bleibt es bei einem Hinweis in der Station — der Lauf

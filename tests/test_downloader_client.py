@@ -177,6 +177,16 @@ def test_downloader_reports_roundtrip():
     assert berichte[1]["size_bytes"] == 1300
 
 
+def test_report_counts_fuer_tabellenspalte():
+    db.init_db()
+    db.store_downloader_report(77, "mql5", "a.pdf", "/tmp/a.pdf", size_bytes=1)
+    db.store_downloader_report(77, "mql5", "b.pdf", "/tmp/b.pdf", size_bytes=1)
+    db.store_downloader_report(88, "mql4", "c.pdf", "/tmp/c.pdf", size_bytes=1)
+    assert db.downloader_report_counts([77, 88, 99]) == {77: 2, 88: 1}
+    assert db.downloader_report_counts([]) == {}
+    assert db.downloader_report_counts([0]) == {}
+
+
 # --- Abruf-Logik der Detail-Ansicht --------------------------------------
 
 @dataclass

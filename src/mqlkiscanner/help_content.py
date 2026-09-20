@@ -136,4 +136,16 @@ konfiguriert, meldet die Station „Mit Hinweisen" (orange) beziehungsweise der 
 einen Abbruch — bereits geladene Daten bleiben gespeichert, der Lauf selbst ist davon
 unabhängig. Beim nächsten erfolgreichen Abgleich wird einfach weitergesammelt.
 """),
+    "downloader_docs": ("Dokumente-Spalte: PDFs direkt aus der Tabelle", """
+Die letzte Tabellenspalte **Dokumente** zeigt je Signal ein 📄-Icon mit der Anzahl der
+gespiegelten Testreport-PDFs aus dem MqlDownloader. Ein Klick öffnet unter der Tabelle
+den Dokumentenbereich: Alle PDFs des Signals sind dort sofort lesbar eingebettet, mit
+Speichern-Button daneben. Kein PDF vorhanden, bleibt die Zelle leer — der Abgleich
+läuft dann erst noch (Station 6 oder Button auf dieser Seite), oder im Downloader
+liegt für diese Signal-ID schlicht keines.
+
+Die PDFs sind lokale Spiegelkopien (`data/downloader/{Signal-ID}`) und bleiben deshalb
+auch lesbar, wenn der Downloader gerade aus ist. Die Bewertung eines Signals wird
+davon nicht berührt.
+"""),
 }

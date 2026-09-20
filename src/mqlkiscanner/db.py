@@ -351,3 +351,18 @@ def list_downloader_reports(signal_id: int) -> list[dict]:
             "FROM downloader_reports WHERE signal_id=? ORDER BY version, name",
             (signal_id,)).fetchall()
     return [dict(row) for row in rows]
+
+
+def downloader_report_counts(signal_ids: list[int]) -> dict[int, int]:
+    """Anzahl gespiegelter Downloader-PDFs je Signal (fuer Tabellenspalte)."""
+    init_db()
+    ids = sorted({int(signal_id) for signal_id in signal_ids if signal_id})
+    if not ids:
+        return {}
+    placeholders = ",".join("?" * len(ids))
+    with _connect() as conn:
+        rows = conn.execute(
+            f"SELECT signal_id, COUNT(*) AS n FROM downloader_reports "
+            f"WHERE signal_id IN ({placeholders}) GROUP BY signal_id",
+            ids).fetchall()
+    return {row["signal_id"]: row["n"] for row in rows}

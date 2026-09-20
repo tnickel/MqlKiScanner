@@ -117,6 +117,9 @@ Anbindung an die REST-API des lokalen MqlDownloader-Dienstes (Doku:
 - [x] Grundregel (Nutzer-Vorgabe): Der Abgleich bewertet NIE neu — Ampeln,
       Urteile, Scores und Berichte bleiben unberührt, keine NEU-Markierung
       (`downloader_sync.py`, getestet in `tests/test_downloader_client.py`)
+- [x] „Dokumente“-Spalte (letzte Spalte der Ergebnistabelle): 📄-Icon mit
+      PDF-Anzahl je Signal, Klick öffnet alle gespiegelten PDFs direkt
+      lesbar unter der Tabelle (Scan- und Ergebnisseite)
 - [ ] Tradelisten aus dem Downloader (`/trades`) — bewusst offen: Die
       Engine arbeitet mit den eigenen, verifizierten MQL5-Exporten;
       Bedarf laut Nutzer noch unklar

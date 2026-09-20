@@ -156,6 +156,9 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 "Verifikations-Datensaetze laden.")
         return None
     df["Link"] = [f"https://www.mql5.com/en/signals/{r.id}" if r.id else "" for r in results]
+    docs_counts = db.downloader_report_counts([r.id for r in results])
+    df["Dokumente"] = [f"📄 {docs_counts[r.id]}" if docs_counts.get(r.id) else ""
+                       for r in results]
 
     def _open_report():
         click = st.session_state.get(f"{key}_bericht")  # ButtonColumn-Click-Info
@@ -163,11 +166,17 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             st.session_state["report_signal_id"] = results[click.row].id
             st.session_state["report_result_identity"] = _result_identity(results[click.row])
 
+    def _open_docs():
+        click = st.session_state.get(f"{key}_docs")  # ButtonColumn-Click-Info
+        if click is not None and getattr(click, "row", None) is not None:
+            st.session_state["downloader_doc_signal_id"] = results[click.row].id
+            st.session_state["downloader_doc_identity"] = _result_identity(results[click.row])
+
     column_order = None
     if compact:
         column_order = (["Stand"] if fresh_ids is not None else []) + [
             "Ampel", "Name", "Stop", "Trading-DD %", "EQ-DD %", "Ertrag/Monat %",
-            "Score", "Urteil", "Bericht vom", "Bericht", "Link"]
+            "Score", "Urteil", "Bericht vom", "Bericht", "Link", "Dokumente"]
 
     event = st.dataframe(
         df,
@@ -216,6 +225,9 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 "Bericht & PDF", on_click=_open_report, key=f"{key}_bericht",
                 type="primary"),
             "Link": st.column_config.LinkColumn("MQL5", width="small"),
+            "Dokumente": st.column_config.ButtonColumn(
+                "Dokumente", help="Testreport-PDFs aus dem MqlDownloader öffnen",
+                on_click=_open_docs, key=f"{key}_docs"),
         },
     )
     if event.selection.rows:
@@ -441,6 +453,62 @@ def render_downloader_section(result) -> None:
                    "Datenbank) und bleibt auch anzeigbar, wenn der Downloader aus ist.")
         _render_dl_history(result)
         _render_dl_reports(result)
+
+
+def render_downloader_docs_panel(results) -> None:
+    """Vom 📄-Icon in der Ergebnistabelle geöffnet: Testreport-PDFs je Signal.
+
+    Alle gespiegelten PDFs des Signals werden direkt lesbar eingebettet —
+    Klick auf das Icon genügt, kein zweiter Öffnen-Klick nötig.
+    """
+    doc_id = st.session_state.get("downloader_doc_signal_id")
+    if doc_id is None:
+        return
+    identity = st.session_state.get("downloader_doc_identity")
+    match = next((x for x in results
+                  if identity is not None and _result_identity(x) == identity), None)
+    if match is None:
+        match = next((x for x in results if x.id == doc_id), None)
+    if match is None:
+        st.session_state.pop("downloader_doc_signal_id", None)
+        st.session_state.pop("downloader_doc_identity", None)
+        return
+    berichte = db.list_downloader_reports(doc_id)
+    with st.container(border=True):
+        kopf = st.container(horizontal=True, vertical_alignment="center")
+        kopf.markdown(f"### :material/folder_open: Dokumente — {match.name} (#{doc_id})")
+        with kopf:
+            if action_button("Schließen", key=f"close_docs_{doc_id}",
+                             help_key="downloader_docs"):
+                st.session_state.pop("downloader_doc_signal_id", None)
+                st.session_state.pop("downloader_doc_identity", None)
+                st.rerun()
+        st.caption("Gespiegelte Testreport-PDFs aus dem MqlDownloader — lokal "
+                   "gespeichert, auch offline lesbar.")
+        if not berichte:
+            st.info("Für dieses Signal sind keine PDFs gespiegelt. Erst den "
+                    "MqlDownloader-Abgleich ausführen (Station 6 oder der Button "
+                    "auf dieser Seite) — oder im Downloader liegt schlicht keines vor.")
+            return
+        for index, item in enumerate(berichte):
+            pfad = Path(item["path"])
+            groesse = (f"{item['size_bytes'] / 1024:.0f} kB"
+                       if item.get("size_bytes") else "Größe unbekannt")
+            stand = (f" · Stand im Downloader: {item['last_modified']}"
+                     if item.get("last_modified") else "")
+            aktionen = st.container(horizontal=True, vertical_alignment="center")
+            aktionen.markdown(f"**{item['name']}**")
+            aktionen.caption(f"{item['version']} · {groesse}{stand}")
+            aktionen.download_button(
+                "PDF speichern",
+                data=(lambda p=pfad: p.read_bytes()) if pfad.exists() else b"",
+                file_name=item["name"], mime="application/pdf",
+                key=f"docs_panel_{doc_id}_{index}_download", icon=":material/download:",
+                disabled=not pfad.exists(), on_click="ignore")
+            if pfad.exists():
+                st.pdf(pfad, height=820, key=f"docs_panel_{doc_id}_{index}_document")
+            else:
+                st.warning("Die Datei fehlt auf der Platte — Abgleich erneut ausführen.")
 
 
 def render_detail(result) -> None:

@@ -26,6 +26,7 @@ import streamlit as st
 
 from mqlkiscanner import config, db, downloader_sync, pipeline, scan_state, scan_worker, secrets_store
 from mqlkiscanner.app_ui import (
+    render_downloader_docs_panel,
     render_portfolio_pdf_viewer,
     render_report_panel,
     render_results_table,
@@ -1101,6 +1102,7 @@ if st.session_state.scan_results:
             _probleme_dialog(probleme, len(results))
     st.caption("Tipp: Eine Tabellenzeile auswählen, um die vollständige Risikoprüfung darunter zu öffnen.")
     render_report_panel(results)
+    render_downloader_docs_panel(results)
     selected = render_results_table(results)
     if selected is not None:
         from mqlkiscanner.app_ui import render_detail
