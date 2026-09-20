@@ -670,10 +670,14 @@ def action_button(label: str, *, key: str, help_key: str, type: str = "secondary
     return clicked
 
 
-def section_header(title: str, description: str = "", help_key: str | None = None) -> None:
+def section_header(title: str, description: str = "", help_key: str | None = None,
+                   *, key: str | None = None) -> None:
+    """Titelzeile mit gelbem i. `key` überschreibt den Info-Button-Schlüssel,
+    wenn derselbe help_key mehrfach auf einer Seite vorkommt (sonst
+    StreamlitDuplicateElementKey)."""
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
         st.subheader(title, width="content")
         if help_key:
-            info_button(help_key, key=f"section_{help_key}")
+            info_button(help_key, key=key or f"section_{help_key}")
     if description:
         st.caption(description)

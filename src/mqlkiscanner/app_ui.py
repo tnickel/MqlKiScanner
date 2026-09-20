@@ -637,7 +637,10 @@ def render_detail(result) -> None:
         with st.container(border=True):
             section_header("Regelwerk · Ausschlussliste",
                            "Warum steht dieses Signal auf der Liste?",
-                           help_key="ausschlussliste")
+                           help_key="ausschlussliste",
+                           # Gleicher help_key wie im Seiten-Aufklapper — ohne
+                           # eigenen Key würde der ⓘ-Button doppelt registriert.
+                           key="section_ausschlussliste_detail")
             if grund:
                 st.markdown(f"**Gemessener Grund:** {_html.escape(grund)}")
             with st.expander("Vollständiges Regelwerk anzeigen",
