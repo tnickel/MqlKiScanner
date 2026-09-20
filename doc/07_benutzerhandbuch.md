@@ -118,6 +118,16 @@ darunter (eingebettet lesbar, mit Speichern-Button). Zellen ohne Icon
 bedeuten: noch nichts gespiegelt — kein Abgleich gelaufen oder der Downloader
 hat für diese ID keine PDFs.
 
+Daneben zeigen drei Spalten den Abonnenten-Stand aus dem Downloader-Spiegel:
+**Abonnenten** (aktuelle Zahl), **30 Tage** und **7 Tage** (Anstieg 🟢 +x /
+Rückgang 🔴 −x / neutral ⚪ 0; kein Vergleichspunkt im Fenster = leer).
+Ein Klick auf eine der Zahlen öffnet ein Fenster mit der Verlaufsgrafik —
+bei Abonnenten der Gesamtverlauf, bei 30/7 Tage der jeweilige Zeitraum.
+Die Bilanz rechnet der Scanner aus dem gespiegelten Verlauf (neuester
+Messpunkt gegen den nächstgelegenen Messpunkt vor 7 beziehungsweise 30
+Tagen, ±3 Tage Toleranz); liegt der Verlauf kürzer zurück, bleibt die Zelle
+leer statt eine Zahl zu erfinden.
+
 **Automatischer Abgleich:** Jeder Analyse-Lauf holt in **Station 6** (nach dem
 Portfolio) Verläufe und PDFs für die Signale des Laufs. Ist der Downloader aus
 oder nicht konfiguriert, bleibt es bei einem Hinweis in der Station — der Lauf

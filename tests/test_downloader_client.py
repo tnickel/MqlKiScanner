@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -357,3 +358,52 @@ def test_abgleich_bewertet_nie_neu():
     assert signal["abonnenten"] == 10  # Plattformstand bleibt unberührt
     # Frische Downloader-Daten landen ausschließlich in subscriber_history:
     assert db.get_history(77)[0]["subscribers"] == 999
+
+
+# --- Abo-Bilanz (Tabellenspalten Abonnenten / 30 Tage / 7 Tage) ----------
+
+def _punkte(paarliste):
+    """Verlaufspunkte relativ zu jetzt: [(Tage_zurück, Abonnenten), ...]."""
+    jetzt = datetime.now()
+    return [{"timestamp": (jetzt - timedelta(days=tage)).isoformat(timespec="seconds"),
+             "subscribers": s, "change": 0}
+            for tage, s in sorted(paarliste)]
+
+
+def test_abo_bilanz_aktuell_und_fenster():
+    db.init_db()
+    db.store_history_points(77, "mql5", _punkte([(100, 30), (31, 38), (7, 45), (0, 50)]))
+    z = downloader_sync.abo_bilanz([77], platformen={77: "MT5"})[77]
+    assert z["abonnenten"] == 50
+    assert z["tage7"] == 5        # 50 − 45 (Punkt vor 7 Tagen)
+    assert z["tage30"] == 12      # 50 − 38 (Punkt vor 31 Tagen, ±3-Tage-Fenster)
+    assert z["version"] == "mql5"
+    assert z["stand"] is not None
+
+
+def test_abo_bilanz_negativ_und_zu_kurzer_verlauf():
+    db.init_db()
+    db.store_history_points(77, "mql5", _punkte([(100, 60), (8, 55), (0, 50)]))
+    bilanz = downloader_sync.abo_bilanz([77], platformen={77: "MT5"})[77]
+    assert bilanz["tage7"] == -5         # 50 − 55 (Punkt vor 8 Tagen im Fenster)
+    assert bilanz["tage30"] is None      # Vergleichspunkt 100 Tage alt: außerhalb
+    assert downloader_sync.abo_bilanz([88])[88] == {
+        "abonnenten": None, "tage7": None, "tage30": None,
+        "stand": None, "version": None}
+
+
+def test_abo_bilanz_waehlt_plattformversion():
+    db.init_db()
+    db.store_history_points(77, "mql4", _punkte([(10, 7), (0.2, 9)]))
+    db.store_history_points(77, "mql5", _punkte([(10, 40), (0.1, 44)]))
+    assert downloader_sync.abo_bilanz([77], platformen={77: "MT4"})[77]["abonnenten"] == 9
+    # Ohne Plattform-Angabe: die Version mit dem neuesten Messpunkt.
+    assert downloader_sync.abo_bilanz([77], platformen={})[77]["abonnenten"] == 44
+
+
+def test_abo_delta_zelle_formatierung():
+    from mqlkiscanner.app_ui import _abo_delta_zelle
+    assert _abo_delta_zelle(5) == "🟢 +5"
+    assert _abo_delta_zelle(-4) == "🔴 -4"
+    assert _abo_delta_zelle(0) == "⚪ 0"
+    assert _abo_delta_zelle(None) == ""

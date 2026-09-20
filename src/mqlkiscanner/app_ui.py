@@ -133,6 +133,61 @@ def clear_report_selection() -> None:
     st.session_state.pop("report_result_identity", None)
 
 
+_ABO_FENSTER = {"gesamt": "Gesamtverlauf", "30": "letzte 30 Tage",
+                "7": "letzte 7 Tage"}
+
+
+def _abo_delta_zelle(wert: int | None) -> str:
+    """Tabellenzelle für 7-/30-Tage-Bilanz: + grün, − rot, 0 neutral."""
+    if wert is None:
+        return ""
+    if wert > 0:
+        return f"🟢 +{wert}"
+    if wert < 0:
+        return f"🔴 {wert}"
+    return f"⚪ {wert}"
+
+
+@st.dialog("Abonnenten-Verlauf", width="large")
+def _abo_verlauf_dialog(signal_id: int, name: str, fenster: str) -> None:
+    """Fenster mit dem gespiegelten Abonnenten-Verlauf (Gesamt / 30 / 7 Tage)."""
+    punkte = db.get_history(signal_id)
+    titel = _ABO_FENSTER.get(fenster, fenster)
+    st.caption(f"{name} (#{signal_id}) · {titel} · Quelle: MqlDownloader-Spiegel")
+    if not punkte:
+        st.info("Kein Verlauf gespeichert. Erst den MqlDownloader-Abgleich "
+                "ausführen (Station 6 oder Button auf dieser Seite).")
+        return
+    df = pd.DataFrame(punkte)
+    df["ts"] = pd.to_datetime(df["ts"], errors="coerce")
+    df = df.dropna(subset=["ts"]).sort_values("ts")
+    if fenster in ("30", "7"):
+        grenze = pd.Timestamp.now() - pd.Timedelta(days=int(fenster))
+        df = df[df["ts"] >= grenze]
+        if df.empty:
+            st.info(f"Keine Messpunkte in den letzten {fenster} Tagen — "
+                    "der Downloader sammelt hier erst noch.")
+            return
+    pivot = df.pivot_table(index="ts", columns="version",
+                           values="subscribers", aggfunc="last").sort_index()
+    st.line_chart(pivot, height=280)
+    with st.container(horizontal=True):
+        for version, gruppe in df.groupby("version"):
+            reihe = gruppe.sort_values("ts")
+            erster, letzter = reihe.iloc[0], reihe.iloc[-1]
+            if pd.isna(erster["subscribers"]) or pd.isna(letzter["subscribers"]):
+                delta_text, aktuell_text = "—", "—"
+            else:
+                delta = int(letzter["subscribers"]) - int(erster["subscribers"])
+                delta_text = f"{'+' if delta > 0 else ''}{delta} im Fenster"
+                aktuell_text = str(int(letzter["subscribers"]))
+            st.metric(f"{version} · aktuell", aktuell_text,
+                      delta_text, delta_color="off", border=True)
+    st.caption("Bilanz im Fenster = neuester Messpunkt gegen den ersten "
+               "Messpunkt des Fensters. Der Verlauf ist Marktbeobachtung "
+               "und ändert keine Bewertung.")
+
+
 def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataFrame:
     results = tuple(copy(r) for r in results)
     rows = [r.to_row() for r in results]
@@ -157,6 +212,14 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
         return None
     df["Link"] = [f"https://www.mql5.com/en/signals/{r.id}" if r.id else "" for r in results]
     docs_counts = db.downloader_report_counts([r.id for r in results])
+    abo = downloader_sync.abo_bilanz(
+        [r.id for r in results],
+        platformen={r.id: getattr(r, "platform", "") or "" for r in results})
+    df["Abonnenten"] = [(str(abo[r.id]["abonnenten"])
+                         if abo[r.id]["abonnenten"] is not None else "")
+                        for r in results]
+    df["30 Tage"] = [_abo_delta_zelle(abo[r.id]["tage30"]) for r in results]
+    df["7 Tage"] = [_abo_delta_zelle(abo[r.id]["tage7"]) for r in results]
     df["Dokumente"] = [f"📄 {docs_counts[r.id]}" if docs_counts.get(r.id) else ""
                        for r in results]
 
@@ -172,11 +235,21 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             st.session_state["downloader_doc_signal_id"] = results[click.row].id
             st.session_state["downloader_doc_identity"] = _result_identity(results[click.row])
 
+    def _open_abo(fenster: str):
+        def handler():
+            click = st.session_state.get(f"{key}_abo_{fenster}")
+            if click is not None and getattr(click, "row", None) is not None:
+                treffer = results[click.row]
+                _abo_verlauf_dialog(treffer.id, treffer.name or f"#{treffer.id}",
+                                    fenster)
+        return handler
+
     column_order = None
     if compact:
         column_order = (["Stand"] if fresh_ids is not None else []) + [
             "Ampel", "Name", "Stop", "Trading-DD %", "EQ-DD %", "Ertrag/Monat %",
-            "Score", "Urteil", "Bericht vom", "Bericht", "Link", "Dokumente"]
+            "Score", "Urteil", "Bericht vom", "Bericht", "Link",
+            "Abonnenten", "30 Tage", "7 Tage", "Dokumente"]
 
     event = st.dataframe(
         df,
@@ -225,6 +298,18 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 "Bericht & PDF", on_click=_open_report, key=f"{key}_bericht",
                 type="primary"),
             "Link": st.column_config.LinkColumn("MQL5", width="small"),
+            "Abonnenten": st.column_config.ButtonColumn(
+                "Abonnenten",
+                help="Klick: Gesamtverlauf der Abonnenten anzeigen (MqlDownloader)",
+                on_click=_open_abo("gesamt"), key=f"{key}_abo_gesamt"),
+            "30 Tage": st.column_config.ButtonColumn(
+                "30 Tage",
+                help="Klick: Verlauf der letzten 30 Tage anzeigen",
+                on_click=_open_abo("30"), key=f"{key}_abo_30"),
+            "7 Tage": st.column_config.ButtonColumn(
+                "7 Tage",
+                help="Klick: Verlauf der letzten 7 Tage anzeigen",
+                on_click=_open_abo("7"), key=f"{key}_abo_7"),
             "Dokumente": st.column_config.ButtonColumn(
                 "Dokumente", help="Testreport-PDFs aus dem MqlDownloader öffnen",
                 on_click=_open_docs, key=f"{key}_docs"),

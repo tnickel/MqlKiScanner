@@ -10,6 +10,7 @@ Ergebnisseite und den Detail-Buttons je Signal.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -135,3 +136,62 @@ def sync_many(entries: Iterable[tuple[int, str]], *,
         summary["verlaufspunkte"] += result["verlaufspunkte"]
         summary["neue_pdfs"] += result["neue_pdfs"]
     return summary
+
+
+_TOLERANZ_TAGE = 3  # Fenster fuer den Vergleichspunkt (wie der Downloader selbst)
+
+
+def _bilanz(reihe: list[tuple[datetime, int | None]], tage: int,
+            aktuell: int | None) -> int | None:
+    """Differenz: neuester Punkt gegen den Punkt vor ~tagen (±Toleranz)."""
+    if aktuell is None:
+        return None
+    ziel = datetime.now() - timedelta(days=tage)
+    kandidaten = [(ts, s) for ts, s in reihe
+                  if s is not None and abs((ts - ziel).total_seconds())
+                  <= _TOLERANZ_TAGE * 86400]
+    if not kandidaten:
+        return None
+    _, alt = min(kandidaten, key=lambda x: abs((x[0] - ziel).total_seconds()))
+    return aktuell - alt
+
+
+def abo_bilanz(signal_ids: Iterable[int],
+               platformen: dict[int, str] | None = None) -> dict[int, dict]:
+    """Aktuelle Abonnenten + 7-/30-Tage-Bilanz aus dem gespiegelten Verlauf.
+
+    Quelle ist ausschließlich die lokale Tabelle subscriber_history (kein
+    REST-Aufruf). Plattform-Version wird bevorzugt; ohne Angabe zählt die
+    Version mit dem neuesten Messpunkt. Fehlender Vergleichspunkt (Verlauf
+    zu kurz) ergibt None — kein geratener Wert.
+    """
+    platformen = platformen or {}
+    out: dict[int, dict] = {}
+    for signal_id in signal_ids:
+        leer = {"abonnenten": None, "tage7": None, "tage30": None,
+                "stand": None, "version": None}
+        versionen: dict[str, list[tuple[datetime, int | None]]] = {}
+        for p in db.get_history(signal_id):
+            try:
+                ts = datetime.fromisoformat(str(p["ts"]))
+            except ValueError:
+                continue
+            versionen.setdefault(p["version"], []).append(
+                (ts, p["subscribers"]))
+        if not versionen:
+            out[signal_id] = leer
+            continue
+        pref = downloader_client.platform_version(platformen.get(signal_id, ""))
+        if pref not in versionen:
+            pref = max(versionen,
+                       key=lambda v: max(ts for ts, _ in versionen[v]))
+        reihe = sorted(versionen[pref])
+        aktuell_ts, aktuell = reihe[-1]
+        out[signal_id] = {
+            "abonnenten": aktuell,
+            "tage7": _bilanz(reihe, 7, aktuell),
+            "tage30": _bilanz(reihe, 30, aktuell),
+            "stand": aktuell_ts,
+            "version": pref,
+        }
+    return out

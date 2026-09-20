@@ -120,6 +120,11 @@ Anbindung an die REST-API des lokalen MqlDownloader-Dienstes (Doku:
 - [x] „Dokumente“-Spalte (letzte Spalte der Ergebnistabelle): 📄-Icon mit
       PDF-Anzahl je Signal, Klick öffnet alle gespiegelten PDFs direkt
       lesbar unter der Tabelle (Scan- und Ergebnisseite)
+- [x] Abonnenten-Spalten in der Tabelle: **Abonnenten** (aktuell), **30 Tage**
+      und **7 Tage** als Bilanz (🟢 +/🔴 −/⚪ 0); Klick auf die Zahl öffnet
+      ein Fenster mit der Verlaufsgrafik (Gesamt-/30-/7-Tage-Ansicht);
+      Bilanz aus dem gespiegelten Verlauf, ±3-Tage-Fenster wie der
+      Downloader (`downloader_sync.abo_bilanz`)
 - [ ] Tradelisten aus dem Downloader (`/trades`) — bewusst offen: Die
       Engine arbeitet mit den eigenen, verifizierten MQL5-Exporten;
       Bedarf laut Nutzer noch unklar
