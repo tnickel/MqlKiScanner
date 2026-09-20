@@ -20,8 +20,8 @@ from mqlkiscanner.pdf_reports import (
     result_pdf_spec,
     result_snapshot_token,
 )
-from mqlkiscanner.ui_design import (action_button, section_header,
-                                    urteile_farbig)
+from mqlkiscanner.ui_design import (aktivitaets_banner, action_button,
+                                    section_header, urteile_farbig)
 
 if TYPE_CHECKING:
     from mqlkiscanner.pipeline import ScanResult
@@ -724,6 +724,7 @@ def render_detail(result) -> None:
                 key=f"tiefe_start_{_result_snapshot_token(result)}",
                 help_key="tiefenanalyse_start", type="primary",
                 icon=":material/psychology:"):
+            banner = aktivitaets_banner("Erweiterte KI-Analyse läuft …")
             with st.status("Erweiterte KI-Analyse läuft — bitte Fenster offen lassen.",
                            expanded=True) as status:
                 try:
@@ -736,6 +737,8 @@ def render_detail(result) -> None:
                     status.update(label="Erweiterte KI-Analyse fehlgeschlagen",
                                   state="error", expanded=False)
                     st.error(str(exc))
+                finally:
+                    banner.empty()
         if result.tiefenanalyse:
             render_result_pdf_viewer(
                 result, "tiefenanalyse",

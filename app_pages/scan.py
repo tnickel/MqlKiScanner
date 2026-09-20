@@ -32,8 +32,8 @@ from mqlkiscanner.app_ui import (
     render_results_table,
 )
 from mqlkiscanner.ui_design import (
-    action_button, apply_theme, page_header, section_header, urteile_farbig,
-    workflow_stepper_html,
+    action_button, aktivitaets_html, apply_theme, page_header, section_header,
+    urteile_farbig, workflow_stepper_html,
 )
 
 apply_theme()
@@ -354,6 +354,13 @@ def _live_status() -> None:
             + "</div>",
             unsafe_allow_html=True,
         )
+
+    # Festes Aktivitäts-Badge oben rechts: bleibt auch beim Weiterscrollen
+    # sichtbar und nennt die laufende Station (Fragment tickt jede Sekunde,
+    # also verschwindet das Badge automatisch mit dem Laufende).
+    if status == "running" and laufend:
+        st.markdown(aktivitaets_html(
+            f"Station {laufend[1]}: {laufend[2]} läuft …"), unsafe_allow_html=True)
 
     # Lauf beendet? Einmal die GANZE Seite neu laden: Ergebnisübernahme
     # (Session) + Endstand (Tabelle, Portfolio) rendern.

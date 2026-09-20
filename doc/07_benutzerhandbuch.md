@@ -128,6 +128,12 @@ Messpunkt gegen den nächstgelegenen Messpunkt vor 7 beziehungsweise 30
 Tagen, ±3 Tage Toleranz); liegt der Verlauf kürzer zurück, bleibt die Zelle
 leer statt eine Zahl zu erfinden.
 
+**Aktivitäts-Badge oben rechts:** Während Hintergrundsarbeit (Workflow,
+Erweiterte KI-Analyse, MqlDownloader-Abgleich) klebt ein gelbes Badge an der
+rechten oberen Bildschirmecke und nennt ein Stichwort, was gerade läuft —
+es bleibt sichtbar, auch wenn man weit nach unten scrollt, und verschwindet
+automatisch mit dem Ende der Arbeit.
+
 **Verbindungsstatus beim Start:** Beim Programmstart prüft der Scanner einmal,
 ob der MqlDownloader erreichbar ist, und zeigt das Ergebnis als Badge: grün
 **„Downloader verbunden"** (mit Provider-Anzahl und Prüfzeitpunkt) in der

@@ -15,8 +15,9 @@ from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, re
                                  render_downloader_docs_panel, render_report_panel,
                                  render_portfolio_pdf_viewer,
                                  render_results_table, results_to_dataframe)
-from mqlkiscanner.ui_design import (action_button, apply_theme, info_button, page_header,
-                                    section_header, urteile_farbig)
+from mqlkiscanner.ui_design import (action_button, aktivitaets_banner, apply_theme,
+                                    info_button, page_header, section_header,
+                                    urteile_farbig)
 
 apply_theme()
 hero_results_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_results_banner.jpg"
@@ -104,9 +105,13 @@ with st.container(border=True):
         else:
             with st.status('MqlDownloader-Abgleich läuft …', expanded=True) as status:
                 st.write(f'{len(ziele)} Signale: Abonnenten-Verlauf + Testreport-PDF-Prüfung.')
-                summary = downloader_sync.sync_many(
-                    ziele, progress=lambda done, total, sid: st.write(
-                        f'Signal {done}/{total} · #{sid}'))
+                banner = aktivitaets_banner('MqlDownloader-Abgleich läuft …')
+                try:
+                    summary = downloader_sync.sync_many(
+                        ziele, progress=lambda done, total, sid: st.write(
+                            f'Signal {done}/{total} · #{sid}'))
+                finally:
+                    banner.empty()
                 if summary['abgebrochen']:
                     st.write('Abbruch: ' + summary['abgebrochen'])
                     status.update(label='Abgleich abgebrochen', state='error', expanded=False)

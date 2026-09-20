@@ -460,11 +460,58 @@ def _stylesheet() -> str:
         .mks-step--running .mks-node::before {{ animation: none !important; }}
         .mks-rail i, .mks-mini i {{ transition: none !important; }}
     }}
+    .mks-aktivitaet {{
+        position: fixed; top: 4.6rem; right: 1rem; z-index: 999990;
+        display: flex; align-items: center; gap: .5rem;
+        background: rgba(255, 193, 7, .14);
+        border: 1px solid rgba(255, 193, 7, .55);
+        color: #ffd76a; padding: .34rem .85rem; border-radius: 999px;
+        font-size: .86rem; font-weight: 600;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, .35);
+        pointer-events: none; max-width: 22rem;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }}
+    .mks-aktivitaet i {{
+        width: .55rem; height: .55rem; border-radius: 50%;
+        background: #ffd76a; flex: none;
+        animation: mks-aktivitaet-puls 1.1s infinite ease-in-out;
+    }}
+    @keyframes mks-aktivitaet-puls {{
+        0%, 100% {{ opacity: .25; transform: scale(.75); }}
+        50% {{ opacity: 1; transform: scale(1.2); }}
+    }}
+    @media(prefers-reduced-motion:reduce) {{
+        .mks-aktivitaet i {{ animation: none !important; }}
+    }}
     </style>"""
 
 
 def apply_theme() -> None:
     st.html(_stylesheet())
+
+
+# ------------------------------------------------------ Aktivitaets-Banner
+# Fixes Badge oben rechts: Streamlit zeigt beim Laufen nur den kleinen
+# Lauf-Indikator in der Kopfzeile — scrollt der Nutzer weg, ist nichts
+# mehr sichtbar. Das Badge klebt an der Bildschirmecke und nennt ein
+# Stichwort, WAS gerade im Hintergrund getan wird.
+def aktivitaets_html(text: str) -> str:
+    """HTML des Aktivitäts-Badges (position:fixed, oben rechts)."""
+    return (f'<div class="mks-aktivitaet"><i aria-hidden="true"></i>'
+            f'{html.escape(text)}</div>')
+
+
+def aktivitaets_banner(text: str):
+    """Badge rendern; Rückgabe ist der Slot — nach der Arbeit `slot.empty()`.
+
+    Für synchron blockierende Aktionen im Seiten-Skript (z. B. Erweiterte
+    KI-Analyse): das Badge wird VOR der blockierenden Arbeit gemountet und
+    bleibt deshalb sichtbar, solange das Skript nicht weiterläuft.
+    """
+    slot = st.empty()
+    slot.markdown(aktivitaets_html(text), unsafe_allow_html=True)
+    return slot
 
 
 # ------------------------------------------------------- Workflow-Stepper
