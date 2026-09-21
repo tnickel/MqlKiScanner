@@ -43,6 +43,20 @@ Reihenfolge in `secrets_store.py`: Umgebung → `.env` →
 - Nur fertige Forensik-/Kennzahlen-JSONs
 - Token-Budget je Lauf konfigurierbar
 
+## Lokale Dienste und REST
+
+- **REST-API (MqlRealMonitor):** lauscht bewusst nur auf `127.0.0.1:8611`
+  (kein Fernzugriff), rein lesend, bewertet nie neu. Optionaler Token über
+  Env `MQLKISCANNER_REST_TOKEN` / secrets_store; Client sendet Header
+  `X-User-Key` (HMAC-Vergleich, nicht im Klartext).
+- **MqlDownloader / MqlTradeMonitor:** Token bzw. API-Key liegen nur im
+  secrets_store bzw. als Env (`MQLDOWNLOADER_TOKEN`), nie in Einstellungen
+  oder Repo (wird per `tests/test_secrets_hygiene.py` bewacht).
+- Sämtliche Abgleich-/Sync-Pfade (Downloader Station 6, Tradeserver-Sync,
+  REST-API, Ampel-Verlauf) schreiben **nie** Bewertungen um — Ampeln,
+  Urteile und Scores ändert ausschließlich die Engine innerhalb eines
+  Scan-Laufs.
+
 ## Öffentliches GitHub
 
 Dieses Projekt ist für öffentliche Nutzung gedacht. Bevor du forkst oder

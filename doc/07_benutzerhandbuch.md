@@ -38,10 +38,24 @@ Ohne GLM-Key: Scan und Forensik laufen, KI-Berichte entfallen.
 
 ## 3. Workflow (Scan-Seite)
 
-1. **Analyse starten** — holt Signallisten (MT4+MT5), filtert, exportiert
-   Trades der Top-N, rechnet Forensik, speichert in SQLite.
-2. Optional: **KI-Berichte** (Trade-/Risiko-Analyse parallel, dann Gesamtbericht).
-3. Einstellungen: Listen-Seiten, Max. Signale gründlich prüfen (Standard 30),
+Die Scan-Seite hat **zwei Start-Buttons** mit gemeinsamem Stationen-Ablauf
+(Signale holen → Auswahl → Prüfen & speichern → KI-Bericht → Portfolio →
+Abgleich):
+
+1. **Full-Scan** — der komplette Durchlauf über **alle** ausgewählten Signale:
+   holt Signallisten (MT4+MT5), filtert, exportiert Trades der Top-N, rechnet
+   Forensik, speichert in SQLite.
+2. **Gelb/Grün-Scan** — die regelmäßige Überwachungsrunde (z. B. monatlich):
+   prüft **nur** Signale, deren letzte gespeicherte Bewertung 🟢 (Kandidat)
+   oder 🟡 (Beobachtung) ist. Alle anderen Farben werden in diesem Lauf nicht
+   beachtet. Für jedes geprüfte Signal werden **immer alle KI-Stufen neu
+   erzeugt** (Trade-Analyse, Risiko-Analyse, Gesamtbericht; danach der
+   Portfolio-Vorschlag über die geprüften Signale) — unabhängig von den
+   Toggles „Nur neue Signale", „Vorhandene Berichte neu erstellen" und
+   „KI-Berichte". Braucht KI-Key und Kontingent.
+3. Optional: **KI-Berichte** (nur Full-Scan betreffend): Trade-/Risiko-Analyse
+   parallel, dann Gesamtbericht.
+4. Einstellungen: Listen-Seiten, Max. Signale gründlich prüfen (Standard 30),
    Mindestwochen, Abonnenten, Rate-Limits.
 
 **Nur neue** begrenzt das erneute Laden und Prüfen bei MQL5. Die KI berücksichtigt
@@ -68,6 +82,47 @@ Für Grün müssen alle Positionen einen SL im Orderbuch aufweisen oder es muss
 eine ausreichende statistische Stop-Signatur vorliegen. Ein fehlender oder
 nur teilweiser Stop-Nachweis ergibt höchstens Gelb, auch bei niedrigem Score
 und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
+
+### Ampel-Verlauf und Wechsel-Protokoll
+
+**Farben werden bei jedem Lauf aufgezeichnet:** Jeder erfolgreich gespeicherte
+Scan schreibt einen append-only Eintrag in die Farb-Chronik (Tabelle
+`ampel_verlauf`: Ampel, Score, Urteil und die komplette 8-Kriterien-Matrix
+als Snapshot). Die Chronik beginnt mit der Einführung der Aufzeichnung
+(21.09.2026) — ältere Läufe wurden bewusst **nicht** nachträglich importiert.
+
+Gegen den letzten Chronik-Eintrag wird bei jedem weiteren Scan verglichen.
+Wird protokolliert (Tabelle `ampel_wechsel`):
+
+- **Farbwechsel** (🟡→🟢, 🟢→🟡, 🟢→🔴, …), oder
+- **gekipptes Einzelkriterium bei gleicher Farbe** (Frühindikator — z. B.
+  DD-Puffer von 16 auf 2 Punkte geschrumpft, Farbe bleibt aber Gelb).
+
+Jeder Eintrag nennt **welches** Kriterium gekippt ist, den alten und neuen
+Zustand sowie die exakte Berechnung. Die Richtung wird eingefärbt:
+**📈 Verbesserung** (grün) · **📉 Verschlechterung** (rot) · **ℹ️ Einordnung**
+(gelb). Ein Verlust der Datenlage (Entscheidung → ⚪) zählt als
+Verschlechterung, neu erkannte harte Ablehnung (⚪ → 🔴) ebenfalls.
+
+Wo die Wechsel sichtbar sind:
+
+- **Scan-Seite, direkt nach dem Lauf:** jeder Wechsel des Laufs als eigene
+  Karte (rot/grün/gelb) mit allen Begründungen — Abschnitt
+  „⚡ Ampel-Wechsel in diesem Lauf".
+- **Ergebnisseite, Button „Wechsel-Protokoll (n)":** die dauerhafte
+  Wechselliste aller Läufe (neueste zuerst, Filter „nur Farbwechsel") plus
+  Wechsel-Historie je Signal als Farbband.
+
+**Wichtig zum Start:** Der erste Scan nach Einführung ist die **Baseline** —
+alle geprüften Signale erhalten ihren ersten Chronik-Eintrag; Wechsel
+erscheinen erst ab dem zweiten Scan (z. B. dem ersten Gelb/Grün-Scan einen
+Monat später).
+
+**Fehlgeschlagene Prüfungen schreiben nichts:** Bei einem Fehler (z. B.
+Export abgebrochen) bleibt der letzte gültige Stand Vergleichsbasis —
+temporäre Fehler erzeugen kein ⚪-Flackern in der Historie. Bewerten darf nur
+die Engine; der Ampel-Verlauf zeichnet das Engine-Ergebnis nur auf
+(Sync/Datenabgleich bewerten nie neu).
 
 ## 4. Ergebnisse
 
@@ -188,6 +243,36 @@ neue Version. Die Vorlage ist editierbar unter **Einstellungen →
 Analysevorlagen → ℹ️ Tiefenanalyse** (gelb markierte Sonderrolle, gehört
 nicht zum Workflow). Auch diese Analyse ändert nie Ampel, Score oder Urteil.
 
+### Tradeserver-Sync (MqlTradeMonitor)
+
+Der Button **„Tradeserver-Sync“** auf der Ergebnisseite überträgt die
+Ergebnistabelle und alle PDFs (eigene Berichte, Portfolio,
+Downloader-Spiegel; unveränderte Dateien per SHA-256-Diff) **einmalig** zum
+MqlTradeMonitor (Spring-Boot) — Sonderprotokoll v1 unter `/api/kiscanner`
+mit X-User-Key-Handshake; danach wird die Verbindung getrennt. Der Monitor
+zeigt daraufhin die Kachel „🔬 MqlKiScanner“ samt eigener Seite
+`/kiscanner`. Konfiguration: **Admin → Tradeserver** (Base-URL + API-Key im
+secrets_store). Der Sync **bewertet nie neu**. Details und Ablaufdiagramm:
+[`06_tradeserver-sync.md`](06_tradeserver-sync.md).
+
+### REST-API für den MqlRealMonitor
+
+Für den MqlRealMonitor läuft ein **schreibgeschützter** REST-Server als
+Daemon-Thread neben der Streamlit-App (Standard `http://127.0.0.1:8611`,
+bewusst nur localhost):
+
+| Endpunkt | Wirkung |
+|---|---|
+| `GET /api/v1/health` | Statusmeldung (Version, Dienst) |
+| `GET /api/v1/signals` | Signalliste mit Gesamt-Ampel; `?ampel=gruen,gelb` filtert serverseitig |
+
+Der Server liest ausschließlich die SQLite-Datenbank und **bewertet nie
+neu** — die Ampel wird exakt wie auf der Ergebnisseite aus den gespeicherten
+Werten abgeleitet. Es gibt keine Dauerverbindung: der Monitor fragt nur auf
+Knopfdruck ab. Auth optional über Header `X-User-Key` (Token via Env
+`MQLKISCANNER_REST_TOKEN` oder Admin-UI im secrets_store). Standalone ohne
+GUI: `python -m mqlkiscanner.rest_api`.
+
 ## 5. Analysevorlagen
 
 Unter **Einstellungen → Analysevorlagen** zeigt ein Ablaufbild, welche
@@ -206,6 +291,8 @@ Bearbeiten geschützt und werden vor dem Speichern geprüft.
 | Viele „mit Fehlern“ | Export fehlgeschlagen — Log in Schritt 3 prüfen |
 | Nur Vorprüfung | Kein Login oder Export übersprungen |
 | Downloader nicht erreichbar | Läuft der MqlDownloader? Admin → „MqlDownloader“ → Verbindung testen |
+| Gelb/Grün-Scan: „nichts zu prüfen“ | Kein Signal im Katalog ist aktuell 🟢/🟡 — erst einmal Full-Scan laufen lassen |
+| „Noch kein Wechsel protokolliert“ | Normal nach der Einführung: erster Scan = Baseline, Wechsel ab dem zweiten Scan |
 
 ## 7. Verifikation
 

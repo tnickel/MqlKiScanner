@@ -7,14 +7,20 @@ Streamlit UI (app_pages/, streamlit_app.py)
         │
         ▼
 Pipeline (pipeline.py) — Crawl → Export → Forensik → Score → optional LLM
-        │
+        │                   └─► ampel_verlauf.py  Farb-Chronik + Wechsel-
+        │                                       protokoll (append-only)
         ├─► mql5/     Session, Crawler, Stats, Exporter, Browser-Login
         ├─► forensics/  Martingale, Exposure, Stops, Drawdown, Baskets, News
         ├─► scoring.py  7 Dimensionen + harte DD-Schranke
+        ├─► ampel_matrix.py / regelwerk.py  8-Kriterien-Matrix, Ausschlüsse
         ├─► llm/        GLM-Client (Zahlen nur als fertiges JSON)
         ├─► downloader_client.py  MqlDownloader-REST (lesend): Verlauf + PDFs
+        ├─► tradeserver_client.py Einmal-Sync zum MqlTradeMonitor (v1)
         └─► db.py       SQLite: Signale, Trades, Forensik, Analysen,
-                        Abonnenten-Verlauf, Downloader-PDFs
+                        Abonnenten-Verlauf, Downloader-PDFs,
+                        Ampel-Verlauf (ampel_verlauf/ampel_wechsel)
+Nebenläufig: rest_api.py — schreibgeschützter HTTP-Server (127.0.0.1:8611)
+für den MqlRealMonitor, liest nur die DB, bewertet nie neu.
 ```
 
 **Regel:** Die Engine rechnet alle Zahlen. Das LLM interpretiert nur
@@ -32,6 +38,11 @@ LLM-Payload Ampel/Ausschluss-Grund nicht enthielt — behoben durch
 
 ## Datenfluss (Live-Scan)
 
+Zwei Start-Modi mit gemeinsamem Ablauf: **Full-Scan** (alle ausgewählten
+Signale) und **Gelb/Grün-Scan** (nur Signale mit letzter Bewertung 🟢/🟡 laut
+DB-Stand; erzwingt alle LLM-Stufen neu — Modus-Vertrag, Laufzeit-Toggles
+gelten dort nicht).
+
 1. **Listen:** `/en/signals/mt5` + `/en/signals/mt4` (ohne Login).
 2. **Vorfilter:** Wochen, Abonnenten → `data/candidates.json` (lokal).
 3. **Kennzahlen:** Signalseite HTML → Stats.
@@ -41,7 +52,10 @@ LLM-Payload Ampel/Ausschluss-Grund nicht enthielt — behoben durch
    - Fallback: Chrome klickt „History“ auf der Signal-Seite.
 5. **Forensik-Batterie** (Spec `doc/03`): Martingale, Peak-Exposure
    (Anzahl- + Volumen-/Schock-Peak), Stops, Drawdown.
-6. **Score + Ampel**, Persistenz in `data/mqlkiscanner.db`.
+6. **Score + Ampel**, Persistenz in `data/mqlkiscanner.db`; danach schreibt
+   `ampel_verlauf.py` den Chronik-Eintrag und prüft gegen den Vorgänger
+   (Farbwechsel ODER gekipptes Einzelkriterium → `ampel_wechsel` mit
+   Begründungen). Fehlgeschlagene Prüfungen schreiben keinen Eintrag.
 7. **LLM (optional):** Trade- + Risiko-Analyse parallel, dann Gesamtbericht.
 
 ## Wichtige Module
@@ -54,7 +68,15 @@ LLM-Payload Ampel/Ausschluss-Grund nicht enthielt — behoben durch
 | `forensics/drawdown.py` | USD-Anker + `dd_pct_max_rel` für Risiko |
 | `mql5/session.py` | Rate-Limit, Cookie-HTTP, Export-Pfade |
 | `mql5/browser_session.py` | Selenium-Login, Cookie-Ernte, CSV-Download |
+| `ampel_matrix.py` | 8-Kriterien-Matrix je Signal (Audit-Snapshot je Lauf) |
+| `ampel_verlauf.py` | Append-only Farb-Chronik + Wechsel-Protokoll mit Kriterium-Begründungen; bewertet selbst nichts |
+| `regelwerk.py` | Kuratierte Ausschlussliste (6 Kategorien) |
+| `fx_rates.py` | EZB-Referenzkurse zur USD-Umrechnung fremdwährungsquotierter Trades |
 | `downloader_client.py` | REST-Client für den MqlDownloader (Abonnenten-Verlauf, Testreport-PDFs; rein lesend, Fehler klar sortiert: Netz/Auth/404) |
+| `tradeserver_client.py` / `tradeserver_sync.py` | Einmal-Sync zum MqlTradeMonitor (Protokoll v1, `/api/kiscanner`, SHA-256-Diff; bewertet nie neu) |
+| `rest_api.py` | Schreibgeschützter REST-Server für den MqlRealMonitor (127.0.0.1:8611, `/api/v1`; bewertet nie neu) |
+| `pdf_reports.py` | PDF-Materialisierung eigener Berichte + Portfolio |
+| `tiefen_batch.py` | Hintergrund-Batch der Tiefenanalyse (Prompt 5, überspringt vorhandene) |
 | `pipeline.py` | Orchestrierung, `forensik_ok`, Ampel |
 
 ## Konfiguration

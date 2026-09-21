@@ -24,6 +24,13 @@ Entstanden aus einer forensischen Analyse-Reihe (u. a. Gold Spike, KiraCat, Pu
 ## Features
 
 - **MT4 + MT5** Signallisten crawlen, filtern, Top-N gründlich prüfen
+- **Zwei Scan-Modi:** **Full-Scan** (alles) und **Gelb/Grün-Scan** — die
+  Überwachungsrunde, die nur aktuell 🟢/🟡-Signale neu prüft (immer mit
+  allen KI-Stufen)
+- **Ampel-Verlauf:** Farben werden bei jedem Lauf append-only aufgezeichnet;
+  Farbwechsel und gekippte Einzelkriterien landen mit Begründung (alt→neu
+  je Kriterium) im **Wechsel-Protokoll** — als Wechselliste per Button
+  einsehbar
 - **Korrekte Export-URLs:** MT5 `/export/positions`, MT4 `/export/history` (Orderbuch mit S/L)
 - **Forensik-Batterie:** Martingale · Peak-Exposure (Anzahl- + Schock-Peak) · Stops · Drawdown
 - **Harte Schranke** auf max(Trading-DD, EQ-DD); Score mit 7 Dimensionen
@@ -32,6 +39,8 @@ Entstanden aus einer forensischen Analyse-Reihe (u. a. Gold Spike, KiraCat, Pu
 - **MqlDownloader-Anbindung (optional):** Abonnenten-Verläufe und Testreport-PDFs
   je Signal per REST-Interface — automatisch als Station 6 nach jedem Lauf,
   lokal gespiegelt und offline anzeigbar; Abgleich bewertet nie neu
+- **Tradeserver-Sync:** Einmal-Übertragung der Ergebnistabelle + aller PDFs
+  zum MqlTradeMonitor (Sonderprotokoll v1, SHA-256-Diff; bewertet nie neu)
 - **REST-API für MqlRealMonitor:** schreibgeschützt unter
   `http://127.0.0.1:8611/api/v1` (`/health`, `/signals?ampel=gruen,gelb`) —
   der MqlRealMonitor überwacht darüber nur noch Ampel grün/gelb

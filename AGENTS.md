@@ -104,7 +104,7 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
   Reihe (Parser, Forensik-Tests, News-Korrelation, MT4/MT5-Vergleich) — als
   Referenzimplementierung konsolidieren, nicht neu erfinden
 - `streamlit_app.py` + `app_pages/` — Streamlit-GUI (Scan, Ergebnisse, Admin)
-- `src/mqlkiscanner/` — **das Tool, gebaut und getestet** (Stand 20.09.2026):
+- `src/mqlkiscanner/` — **das Tool, gebaut und getestet** (Stand 21.09.2026):
   Engine (`engine.py`, `pipeline.py`, `stats.py`, `scoring.py`, `parser.py`),
   Forensik (`forensics/`), MQL5-Zugriff (`mql5/` — Crawler, Session, Exporter,
   Rate-Limit), LLM-Layer (`llm/`), SQLite (`db.py`), Ampel-Matrix
@@ -125,7 +125,7 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 - `tests/` — pytest (766 Tests grün; LLM-Regressionstests opt-in via
   `pytest -m llm`, echte Modellaufrufe)
 
-## Umsetzungsstand (Stand 20.09.2026)
+## Umsetzungsstand (Stand 21.09.2026)
 
 Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
 
