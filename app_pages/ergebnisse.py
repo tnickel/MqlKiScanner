@@ -17,7 +17,7 @@ from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, re
                                  render_downloader_docs_panel, render_report_panel,
                                  render_portfolio_pdf_viewer,
                                  render_results_table, results_to_dataframe,
-                                 _gelbe_anzeige)
+                                 render_wechsel_karten, _gelbe_anzeige)
 from mqlkiscanner.ui_design import (action_button, aktivitaets_banner, apply_theme,
                                     info_button, page_header, section_header,
                                     urteile_farbig)
@@ -324,6 +324,54 @@ st.caption(
     f"{len(results)} Signale insgesamt · {sum(1 for r in results if r.id in fresh_ids)} "
     "im letzten Lauf aktualisiert · leere Werte sind keine Entwarnung."
 )
+
+# Wechsel-Protokoll (Nutzer-Anforderung): Farben werden bei jedem Scan
+# aufgezeichnet; Wechsel speziell protokolliert und per Button einsehbar.
+try:
+    wechsel_gesamt = db.count_ampel_wechsel()
+except Exception:
+    wechsel_gesamt = 0
+
+
+@st.dialog('⚡ Ampel-Wechsel-Protokoll', width='large')
+def _wechsel_dialog() -> None:
+    """Dauerhafte Wechselliste: Farbwechsel und gekippte Kriterien mit Begründung."""
+    st.caption(
+        'Jeder Eintrag ist ein protokollierter Wechsel aus der Datenbank — '
+        'Farbwechsel (🟡→🟢, 🟢→🟡, …) oder ein gekipptes Einzelkriterium bei '
+        'gleichbleibender Farbe (Frühindikator). Chronik-Beginn war die '
+        'Einführung der Aufzeichnung; alte Läufe wurden bewusst nicht nachträglich importiert.')
+    nur_farbe = st.toggle('Nur Farbwechsel anzeigen', key='wechsel_nur_farbe')
+    wechsel = db.list_ampel_wechsel(limit=200, nur_farbwechsel=nur_farbe)
+    if not wechsel:
+        st.info('Keine Einträge für diesen Filter.', icon=':material/filter_alt:')
+        return
+    render_wechsel_karten(wechsel)
+    with st.expander('Wechsel-Historie je Signal', icon=':material/history:'):
+        chronik: dict[int, list] = {}
+        for w in reversed(wechsel):
+            chronik.setdefault(w['signal_id'], []).append(w)
+        for sid, eintraege in sorted(chronik.items()):
+            name = next((e.get('name') for e in eintraege if e.get('name')), f'#{sid}')
+            band = ' → '.join(e['ampel_neu'] for e in reversed(eintraege))
+            letzter = eintraege[-1]['ts'] if eintraege else ''
+            st.markdown(f"**{name}** · #{sid} · {band} "
+                        f"`{letzter}`")
+
+
+with st.container(border=True):
+    wcol, bcol = st.columns([1.6, 1], gap='small', vertical_alignment='center')
+    with wcol:
+        st.markdown(f":material/history: **{wechsel_gesamt} protokollierte Wechsel** "
+                    "— Farbwechsel und gekippte Kriterien, dauerhaft in der Datenbank.")
+    with bcol:
+        if st.button(f'Wechsel-Protokoll ansehen' + (f' ({wechsel_gesamt})' if wechsel_gesamt else ''),
+                     key='results_wechsel_open', icon=':material/history:',
+                     type='primary' if wechsel_gesamt else 'secondary',
+                     disabled=not wechsel_gesamt,
+                     help='Öffnet die Wechselliste: welcher Wechsel, wann, warum '
+                          '(je Kriterium alt → neu mit exakter Berechnung).'):
+            _wechsel_dialog()
 
 with st.container(border=True):
     section_header('Signale vergleichen', 'Filtern, dann eine Zeile für die vollständige Risikoprüfung auswählen.',

@@ -22,7 +22,7 @@ from typing import Callable
 
 import requests
 
-from . import config, scoring
+from . import ampel_verlauf, config, scoring
 from . import db
 from . import fx_rates
 from .ampel_matrix import matrix_payload
@@ -114,6 +114,7 @@ class ScanResult:
     fehler: str = ""
     source_kind: str = "live"  # Demo-Ergebnisse nie in den Live-Katalog übernehmen.
     persisted_this_run: bool = False  # Mindestens ein Versuch dieses analyze_candidate-Aufrufs gespeichert.
+    ampel_wechsel: dict | None = None  # Protokollierter Wechsel gegen den letzten Chronik-Eintrag (ampel_verlauf).
 
     def to_row(self) -> dict:
         return {
@@ -482,8 +483,10 @@ def _incomplete_forensics_reason(exposure: dict) -> str:
 
 
 class ScanPipeline:
-    def __init__(self, settings: dict | None = None):
+    def __init__(self, settings: dict | None = None, quelle: str = "full"):
         self.settings = {**config.load_settings(), **(settings or {})}
+        # Laufart für die Ampel-Chronik ("full" | "gelbgruen") — nur Protokoll.
+        self.quelle = quelle
         self.llm = llm_client.GlmClient(
             model_stufe1=self.settings.get("model_stufe1", config.MODEL_STUFE1),
             model_stufe2=self.settings.get("model_stufe2", config.MODEL_STUFE2),
@@ -803,6 +806,17 @@ class ScanPipeline:
             if saved_trades_path:
                 res.trades_path = saved_trades_path
                 res.trades_sha256 = db.file_sha256(saved_trades_path)
+            # Farb-Chronik fortschreiben und Wechsel gegen den Vorgänger prüfen
+            # (Nutzer-Anforderung: Farben immer aufzeichnen, Wechsel speziell
+            # protokollieren). Fehlgeschlagene Läufe schreiben keinen Eintrag.
+            if not res.fehler:
+                try:
+                    res.ampel_wechsel = ampel_verlauf.erfasse_bewertung(
+                        res, self.settings, quelle=self.quelle)
+                    if res.ampel_wechsel:
+                        log("⚡ AMPEL-WECHSEL " + ampel_verlauf.wechsel_kurztext(res.ampel_wechsel))
+                except Exception as exc:  # Chronik darf den Lauf nie brechen
+                    log(f"  Ampel-Verlauf nicht aufgezeichnet: {type(exc).__name__}: {exc}")
         except Exception as exc:  # DB-Fehler darf den Lauf nicht abbrechen
             storage_error = f"Speichern fehlgeschlagen: {type(exc).__name__}: {exc}"
             res.fehler = f"{res.fehler} | {storage_error}" if res.fehler else storage_error

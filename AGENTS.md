@@ -116,9 +116,13 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
   Doku `doc/06_tradeserver-sync.md`; bewertet nie neu),
   REST-API für den MqlRealMonitor (`rest_api.py` — schreibgeschützt,
   GET /api/v1/signals?ampel=gruen,gelb auf 127.0.0.1:8611, startet
-  als Daemon-Thread mit der Streamlit-App; bewertet nie neu)
+  als Daemon-Thread mit der Streamlit-App; bewertet nie neu),
+  Ampel-Verlauf (`ampel_verlauf.py` — Farb-Chronik je Lauf plus
+  protokollierte Wechsel mit Kriterium-Begründungen, Tabellen
+  `ampel_verlauf`/`ampel_wechsel`; bewertet selbst nichts, nur
+  Aufzeichnung des Engine-Ergebnisses)
 - `config/prompts/` — editierbare LLM-Prompts
-- `tests/` — pytest (634 Tests grün; LLM-Regressionstests opt-in via
+- `tests/` — pytest (766 Tests grün; LLM-Regressionstests opt-in via
   `pytest -m llm`, echte Modellaufrufe)
 
 ## Umsetzungsstand (Stand 20.09.2026)
@@ -141,6 +145,17 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   danach wird die Verbindung getrennt. Server zeigt Kachel „🔬 MqlKiScanner“
   + Seite /kiscanner. Konfiguration: Admin → Tradeserver (Base-URL +
   API-Key im secrets_store). Doku: `doc/06_tradeserver-sync.md`
+- ✅ Ampel-Verlauf + Re-Scan-Buttons (21.09.2026): Scan-Seite hat zwei
+  Start-Buttons — **Full-Scan** (alles) und **Gelb/Grün-Scan** (nur aktuell
+  🟢/🟡-Signale laut DB, IMMER alle LLM-Stufen neu; andere Farben werden
+  nicht beachtet). Jeder erfolgreich persistierte Scan schreibt die Ampel
+  in die append-only-Chronik (`ampel_verlauf`); gegen den Vorgänger wird
+  jeder Farbwechsel ODER jedes gekippte Einzelkriterium als `ampel_wechsel`
+  protokolliert (mit alt→neu je Kriterium und exakter Berechnung).
+  Lauf-Wechsel erscheinen direkt auf der Scan-Seite, das Gesamt-Protokoll
+  per Button „Wechsel-Protokoll“ auf der Ergebnisseite. Fehlgeschlagene
+  Prüfungen schreiben keinen Eintrag (kein ⚪-Flackern); Reimport alter
+  Läufe bewusst NEIN (Nutzer-Entscheidung).
 
 Noch offen (Phase 5 Betrieb):
 

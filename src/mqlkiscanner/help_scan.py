@@ -19,8 +19,8 @@ Grün bedeutet nur: der Schritt ist technisch durch — nicht, dass ein Signal �
 
 **Fortschrittsbalken** zählen erledigte Arbeitseinheiten (Seiten, Dateien, Berichte), keine Uhrzeit.
 """),
-    "scan_start": ("Analyse starten", """
-**Dieser Knopf startet den kompletten Online-Durchlauf.**
+    "scan_start": ("Full-Scan starten", """
+**Dieser Knopf startet den kompletten Online-Durchlauf über ALLE ausgewählten Signale.**
 
 Der Scanner holt Signallisten, filtert nach Ihren Einstellungen, lädt Handelsdaten, speichert sie, prüft sie rechnerisch und kann danach KI-Berichte schreiben.
 
@@ -28,7 +28,27 @@ Der Scanner holt Signallisten, filtert nach Ihren Einstellungen, lädt Handelsda
 
 Wenn „KI-Berichte nach dem Workflow“ an ist und ein KI-Key da ist, folgen drei Texte je geeignetem Signal. Trade- und Risiko-Analyse starten parallel; der Gesamtbericht danach. Dafür kann Kontingent anfallen. MQL5-Passwörter gehen nicht an die KI.
 
+Bei jedem geprüften Signal wird die Ampel in die Farb-Chronik aufgezeichnet; Wechsel gegen den Vorgänger werden protokolliert (Wechselliste unter „Ergebnisse“).
+
 Ergebnisse erscheinen danach auf dieser Seite und unter „Ergebnisse“.
+"""),
+    "scan_gelbgruen": ("Gelb/Grün-Scan starten", """
+**Regelmäßige Überwachung der Kandidaten und Beobachtungen.**
+
+Der Lauf prüft NUR Signale, die aktuell **🟢 (Kandidat)** oder **🟡 (Beobachtung)** sind — alle anderen Farben werden in diesem Lauf nicht beachtet. Welches Signal dazu zählt, steht in der Datenbank (letzte Bewertung).
+
+**Immer mit KI:** Für jedes dieser Signale werden ALLE KI-Stufen neu erzeugt (Trade-Analyse, Risiko-Analyse, Gesamtbericht) — unabhängig von den Toggles „Nur neue Signale“ und „Vorhandene Berichte neu erstellen“. Danach läuft der Portfolio-Vorschlag über die geprüften Signale. Braucht KI-Key und Kontingent.
+
+**Zweck:** Nach einigen Wochen prüfen, ob ein Gelbes grün geworden ist oder ein Grünes gelb — jede Änderung landet automatisch im Wechsel-Protokoll (Ergebnisseite, Button „Wechsel-Protokoll“).
+"""),
+    "wechsel_protokoll": ("Ampel-Wechsel-Protokoll", """
+**Jede Bewertungsänderung wird dauerhaft aufgezeichnet.**
+
+Bei jedem erfolgreich geprüften Signal schreibt der Scanner einen Chronik-Eintrag (Farbe, Score, Urteil, 8-Kriterien-Matrix). Ändert sich danach die Farbe ODER kippt eines der 8 Einzelkriterien, wird das als Wechsel protokolliert — mit alt/neu-Zustand und exakter Berechnung je Kriterium.
+
+**Einordnung:** 📉 rot = Verschlechterung · 📈 grün = Verbesserung · ℹ️ gelb = Einordnung (z. B. Kriterium gekippt, Farbe gleich — Frühindikator).
+
+Die Liste zeigt alle protokollierten Wechsel (neueste zuerst); die Wechsel-Historie je Signal als Farbband. Fehlgeschlagene Prüfungen schreiben keinen Eintrag — der letzte gültige Stand bleibt Vergleichsbasis. Die Chronik beginnt mit der Einführung der Aufzeichnung; alte Läufe wurden bewusst nicht nachträglich importiert.
 """),
     "scan_verify": ("Nur Testdaten prüfen", """
 **Prüft die vorhandenen Dateien in `data/raw`.** Kein MQL5-Abruf, kein neuer KI-Aufruf.

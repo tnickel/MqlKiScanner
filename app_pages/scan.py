@@ -30,6 +30,7 @@ from mqlkiscanner.app_ui import (
     render_portfolio_pdf_viewer,
     render_report_panel,
     render_results_table,
+    render_wechsel_karten,
 )
 from mqlkiscanner.ui_design import (
     action_button, aktivitaets_html, apply_theme, page_header, section_header,
@@ -129,9 +130,9 @@ if command:
     st.session_state.scan_workflow = workflow
     st.session_state.portfolio_result = None
     st.session_state.portfolio_bericht = ""
-    if command["mode"] in ("scan", "step_listen"):
+    if command["mode"] in ("scan", "gelbgruen", "step_listen"):
         st.session_state.scan_signals = []
-    if command["mode"] in ("scan", "step_listen", "step_kandidaten"):
+    if command["mode"] in ("scan", "gelbgruen", "step_listen", "step_kandidaten"):
         # Nachgelagerte Daten gehören zur vorherigen Auswahl. Auch bei einem
         # Fehler im neuen Abruf dürfen sie nicht als neuer Stand weiterlaufen.
         st.session_state.scan_candidates = []
@@ -139,7 +140,7 @@ if command:
             config.llm_aktiv(command["settings"])):
         workflow["steps"]["llm"].update(status="skipped", detail="KI-Berichte für diesen Lauf ausgeschaltet")
         workflow["steps"]["portfolio"].update(status="skipped", detail="Portfolio-Vorschlag für diesen Lauf ausgeschaltet")
-    if command["mode"] in ("scan", "step_listen"):
+    if command["mode"] in ("scan", "gelbgruen", "step_listen"):
         st.session_state.scan_results = []
         st.session_state.scan_logs = {}
         st.session_state.last_run_file = None
@@ -148,7 +149,7 @@ if command:
         # Eine neue Prüfung ersetzt die vorherige Ergebnismenge dieser Sitzung.
         st.session_state.scan_results = []
         st.session_state.portfolio_bericht = ""
-    if command["mode"] in ("scan", "local", "step_forensik"):
+    if command["mode"] in ("scan", "gelbgruen", "local", "step_forensik"):
         st.session_state.scan_new_ids = []
 
 settings = config.load_settings()
@@ -385,10 +386,10 @@ with st.container(border=True, key="scan_control_panel"):
                  icon=":material/sync:",
                  color="green" if dl_status["ok"]
                  else ("gray" if not dl_status["konfiguriert"] else "red"))
-    start_zeile = st.columns([1.25, 1], gap="small", vertical_alignment="center")
+    start_zeile = st.columns([1.15, 1.15, 1], gap="small", vertical_alignment="center")
     with start_zeile[0]:
         start = action_button(
-            "Analyse starten",
+            "Full-Scan",
             key="scan_start",
             help_key="scan_start",
             type="primary",
@@ -396,6 +397,14 @@ with st.container(border=True, key="scan_control_panel"):
             disabled=running,
         )
     with start_zeile[1]:
+        gelbgruen_start = action_button(
+            "Gelb/Grün-Scan",
+            key="scan_gelbgruen",
+            help_key="scan_gelbgruen",
+            icon=":material/monitor_heart:",
+            disabled=running,
+        )
+    with start_zeile[2]:
         if running:
             schon = bool(st.session_state.scan_control.get("stop"))
             st.button(
@@ -408,8 +417,8 @@ with st.container(border=True, key="scan_control_panel"):
                      "kein harter Abbruch, fertige Teilergebnisse bleiben erhalten.",
             )
         else:
-            st.caption("Die fünf Stationen laufen automatisch. Sie können den Lauf jederzeit "
-                       "kontrolliert stoppen.")
+            st.caption("Full-Scan prüft alles; Gelb/Grün-Scan nur 🟢/🟡-Signale "
+                       "mit allen KI-Stufen. Stop jederzeit möglich.")
 
     _live_status()
     if not has_login:
@@ -551,9 +560,10 @@ if save_settings:
     config.save_settings({k: v for k, v in run_settings.items()
                           if k not in ("nur_neue", "berichte_neu")})
     st.toast("Einstellungen gespeichert.", icon=":material/check:")
-if start or verify or llm_only:
+if start or gelbgruen_start or verify or llm_only:
     st.session_state.scan_command = {
-        "mode": "scan" if start else "local" if verify else "llm",
+        "mode": "scan" if start else "gelbgruen" if gelbgruen_start
+        else "local" if verify else "llm",
         "settings": run_settings,
     }
     st.rerun()
@@ -566,16 +576,24 @@ if start or verify or llm_only:
 if command:
     run_config = command["settings"] or run_settings
     mode = command["mode"]
+    if mode == "gelbgruen":
+        # Modus-Vertrag (Nutzer-Vorgabe): nur aktuell 🟢/🟡-Signale prüfen und
+        # dafür IMMER alle LLM-Stufen neu erzeugen — unabhängig von den
+        # Laufzeit-Toggles (nur_neue/berichte_neu/KI-Toggle gelten nicht).
+        run_config = {**run_config, "nur_neue": False, "berichte_neu": True,
+                      "llm_stufe1": True, "llm_stufe2": True}
     logs = st.session_state.scan_logs
     results = st.session_state.scan_results
     signals_vorhanden = st.session_state.get("scan_signals")
     candidates_vorhanden = st.session_state.get("scan_candidates")
     control = {"stop": False, "portfolio_bericht": "", "portfolio": None, "new_ids": [],
                "signals": signals_vorhanden or [], "candidates": candidates_vorhanden or [],
-               "last_run_file": None, "refreshed_ids": [], "copied": False}
+               "last_run_file": None, "refreshed_ids": [], "copied": False,
+               "ampel_wechsel": []}
     st.session_state.scan_control = control
-    st.session_state.scan_running = mode if mode != "scan" else "listen"
-    pipe = pipeline.ScanPipeline(run_config)
+    st.session_state.scan_running = mode if mode not in ("scan",) else "listen"
+    pipe = pipeline.ScanPipeline(run_config,
+                                 quelle="gelbgruen" if mode == "gelbgruen" else "full")
 
     def _touch_activity(text: str) -> None:
         """Neue Aktivität melden: Text plus Startzeitpunkt der Stoppuhr."""
@@ -630,6 +648,24 @@ if command:
     def w_run_forensik(cands: list[dict], cfg) -> None:
         if w_skip_if_stopped("forensik"):
             return
+        log = w_log_for("forensik")
+        if mode == "gelbgruen":
+            # Modus-Vertrag: nur Signale prüfen, deren aktuelle Bewertung
+            # (Datenbank-Stand) 🟢 oder 🟡 ist — alle anderen werden in
+            # diesem Lauf nicht beachtet. Bestimmung über results_from_db,
+            # damit dieselbe Ampel-Logik wie in der Anzeige entscheidet.
+            alt_ergebnisse = pipeline.results_from_db(cfg)
+            ziel_ids = {r.id for r in alt_ergebnisse
+                        if r.ampel in ("🟢", "🟡")
+                        and getattr(r, "source_kind", "live") == "live"}
+            vorher = len(cands)
+            cands = [c for c in cands if c["id"] in ziel_ids]
+            log(f"Gelb/Grün-Scan: {len(cands)} von {vorher} Kandidaten sind "
+                "aktuell 🟢/🟡 — nur diese werden geprüft.")
+            if not cands:
+                w_step("forensik", "skipped",
+                       detail="Keine 🟢/🟡-Signale in Auswahl und Katalog — nichts zu prüfen")
+                return
         n_export = min(len(cands), cfg["top_n_export"])
         if not n_export:
             w_step("forensik", "skipped", detail="Keine passenden Signale nach der Auswahl")
@@ -692,11 +728,13 @@ if command:
                     session, candidate, log, should_stop=lambda: bool(control.get("stop")))
                 results.append(result)
                 new_ids.append(result.id)
+                _merke_wechsel(result)
                 if result.persisted_this_run:
                     control["refreshed_ids"].append(result.id)
             except pipeline.Mql5HardStopError as exc:
                 if getattr(exc, "result", None) is not None:
                     results.append(exc.result)
+                    _merke_wechsel(exc.result)
                     if exc.result.persisted_this_run:
                         control["refreshed_ids"].append(exc.result.id)
                 log(str(exc))
@@ -728,6 +766,12 @@ if command:
                 detail=(f"{entschieden} gründlich geprüft · {vorpruefung} nur Vorprüfung · "
                         f"{probleme} mit Problemen{zusatz}"),
             )
+
+    def _merke_wechsel(r) -> None:
+        """Wechsel-Ereignis des Laufs einsammeln (Protokoll liegt zusätzlich in der DB)."""
+        ereignis = getattr(r, "ampel_wechsel", None)
+        if ereignis:
+            control["ampel_wechsel"].append(ereignis)
 
     def w_run_llm(targets: list[pipeline.ScanResult], cfg) -> None:
         if w_skip_if_stopped("llm"):
@@ -1125,8 +1169,17 @@ else:
     with st.container(border=True, key="scan_empty"):
         st.markdown(":material/insights: **Noch keine Ergebnisse.**")
         st.caption(
-            "Drücken Sie oben „Starte Workflow“. "
+            "Drücken Sie oben „Full-Scan“ oder „Gelb/Grün-Scan“. "
             "Oder unter „Weitere Möglichkeiten“ nur die Testdaten prüfen.")
+lauf_wechsel = (st.session_state.get("scan_control") or {}).get("ampel_wechsel") or []
+if lauf_wechsel:
+    section_header(
+        "⚡ Ampel-Wechsel in diesem Lauf",
+        "Jeder Wechsel ist dauerhaft protokolliert (Datenbank) — mit Begründung je Kriterium. "
+        "Das vollständige Protokoll aller Läufe steht auf der Ergebnisseite.",
+        help_key="wechsel_protokoll",
+    )
+    render_wechsel_karten(lauf_wechsel)
 if st.session_state.get("portfolio_bericht"):
     with st.container(border=True, key="portfolio_panel"):
         st.subheader(":material/pie_chart: Portfolio-Vorschlag (Station 5)")

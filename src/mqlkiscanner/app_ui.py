@@ -426,6 +426,55 @@ def render_ampel_matrix(results, settings: dict | None = None) -> None:
                "Gesamturteil steht in der Spalte Ampel der anderen Ansichten.")
 
 
+_RICHTUNG_LABEL = {"verbesserung": ("📈", "Verbesserung", st.success),
+                   "verschlechterung": ("📉", "Verschlechterung", st.error),
+                   "hinweis": ("ℹ️", "Einordnung", st.warning)}
+
+
+def render_wechsel_karten(wechsel: list[dict]) -> None:
+    """Wechsel-Protokoll als einzelne, deutlich sichtbare Karten rendern.
+
+    Je Karte: Farbwechsel (groß) bzw. gekipptes Kriterium, Signal, Zeitpunkt,
+    Laufart und je Kriterium alt → neu mit Kurzzustand und exakter
+    Berechnung (Nachvollziehbarkeit). Verschlechterungen rot, Verbesserungen
+    grün, reine Einordnungen/Kriteriumskippen gelb — so bleibt die Liste
+    auch ohne Lesen der Details erfassbar. Nicht horizontales Scrollen:
+    eine Karte je Ereignis, Text bricht um.
+    """
+    if not wechsel:
+        st.info("Noch kein Wechsel protokolliert. Die Chronik beginnt mit dem "
+                "nächsten Scan; jeder weitere Scan wird gegen den Vorgänger "
+                "verglichen.", icon=":material/history:")
+        return
+    quelle_label = {"full": "Full-Scan", "gelbgruen": "Gelb/Grün-Scan"}
+    for w in wechsel:
+        icon, label, karte = _RICHTUNG_LABEL.get(w.get("richtung", "hinweis"),
+                                                 _RICHTUNG_LABEL["hinweis"])
+        name = w.get("name") or f"#{w.get('signal_id')}"
+        pfeil = (f"{w.get('ampel_alt') or '—'} → {w.get('ampel_neu')}"
+                 if w.get("farbwechsel") else
+                 f"{w.get('ampel_neu')} (Farbe unverändert, Kriterium gekippt)")
+        score_text = ""
+        if w.get("score_alt") is not None and w.get("score_neu") is not None:
+            score_text = f" · Score {w['score_alt']:g} → {w['score_neu']:g}"
+        zeiten = (f"{w.get('ts') or ''} · "
+                  f"{quelle_label.get(w.get('quelle'), w.get('quelle') or '—')}")
+        body = [f"{icon} **{pfeil} · {name}** · #{w.get('signal_id')}"
+                f"{score_text} · {label}", f"*{zeiten}*"]
+        gruende = w.get("gruende") or []
+        if gruende:
+            body.append("**Geänderte Kriterien:**")
+            for g in gruende:
+                body.append(f"- {g.get('ampel_alt')} → {g.get('ampel_neu')} "
+                            f"**{g.get('titel')}**: {g.get('kurz_alt')} → "
+                            f"{g.get('kurz_neu')}")
+                if g.get("detail"):
+                    body.append(f"  - *{g['detail']}*")
+        elif w.get("urteil_neu"):
+            body.append(f"Neues Urteil: *{w['urteil_neu']}*")
+        karte("\n".join(body))
+
+
 def render_report_panel(results) -> None:
     """Ausfuehrlicher Gesamtbericht (per Bericht-Button in der Tabelle geoeffnet)."""
     report_id = st.session_state.get("report_signal_id")

@@ -47,7 +47,8 @@ def test_scan_page_renders_steps():
     at = _run_main()
     body = _body(at)
     assert "Signale holen" in body and "KI-Bericht" in body and "Portfolio" in body
-    assert at.button(key="scan_start").label == "Analyse starten"
+    assert at.button(key="scan_start").label == "Full-Scan"
+    assert at.button(key="scan_gelbgruen").label == "Gelb/Grün-Scan"
     # Sektionskopf der Analyse-Zentrale (Titel ist ein subheader, hier die Caption)
     assert "fünf nachvollziehbare Stationen" in body
     assert "Signallisten und Handelsdaten von MQL5 laden" in body
@@ -164,6 +165,48 @@ def test_results_page_renders_session_results():
     assert not at.exception, at.exception
     assert at.dataframe, "Result table is missing"
     assert list(at.dataframe[0].value["ID"]) == [1234567]
+
+
+def test_results_page_wechsel_protokoll_button_und_dialog():
+    """Wechsel werden protokolliert und per Button in der Wechselliste sichtbar."""
+    from datetime import datetime as _dt
+    from datetime import timedelta as _td
+
+    from mqlkiscanner import ampel_verlauf
+
+    class _Zeit(_dt):
+        _now = _dt(2026, 9, 21, 12, 0, 0)
+
+        @classmethod
+        def now(cls, tz=None):
+            return cls._now
+
+    settings = {"schranke_eq_dd_pct": 30.0, "min_ertrag_pct_monat": 5.0}
+    monkey = pytest.MonkeyPatch()
+    monkey.setattr(ampel_verlauf, "datetime", _Zeit)
+    try:
+        ampel_verlauf.erfasse_bewertung(
+            pipeline.ScanResult(id=7654321, name="Wechsel Signal", ampel="🟡",
+                                score=4.2, urteil="Forensik bestanden"), settings)
+        _Zeit._now += _td(seconds=1)
+        ampel_verlauf.erfasse_bewertung(
+            pipeline.ScanResult(id=7654321, name="Wechsel Signal", ampel="🟢",
+                                score=4.0, urteil="Kandidat"), settings)
+    finally:
+        monkey.undo()
+
+    at = _run_main()
+    at.session_state["scan_results"] = [pipeline.ScanResult(id=7654321, name="Wechsel Signal")]
+    at.switch_page("app_pages/ergebnisse.py").run()
+    assert not at.exception, at.exception
+    at.selectbox(key="results_run").set_value("Aktuelle Sitzung").run()
+    button = at.button(key="results_wechsel_open")
+    assert "(1)" in button.label and not button.disabled
+    button.click().run()
+    assert not at.exception, at.exception
+    body = _body(at)
+    assert "Wechsel Signal" in body and "🟡 → 🟢" in body
+    assert "protokollierte Wechsel" in body
 
 
 @pytest.mark.parametrize("api_key", ["", "fake-ui-test-key.DO-NOT-USE-987654321"])

@@ -11,6 +11,10 @@ Tabellen:
                 gesamtbericht), aktuelle Texte müssen zur Bewertungsbasis passen
 - subscriber_history : Abonnenten-Verlauf je Signal+Version (MqlDownloader)
 - downloader_reports : lokal gespiegelte Testreport-PDFs (MqlDownloader)
+- ampel_verlauf : Farb-Chronik je Signal und Lauf (append-only; Ampel, Score,
+                  Urteil, Kriterien-Matrix als Audit-Snapshot)
+- ampel_wechsel : protokollierte Wechsel (Farbe und/oder Kriterien gekippt)
+                  mit Begründungen — die Wechselliste der GUI
 
 Pfad: data/mqlkiscanner.db (gitignored). sqlite3 aus der Stdlib — kein
 Server noetig.
@@ -92,6 +96,29 @@ CREATE TABLE IF NOT EXISTS tradeserver_sync_runs (
     status      TEXT,
     summary_json TEXT
 );
+CREATE TABLE IF NOT EXISTS ampel_verlauf (
+    signal_id  INTEGER NOT NULL,
+    ts         TEXT NOT NULL,
+    quelle     TEXT NOT NULL,
+    ampel      TEXT NOT NULL,
+    score      REAL,
+    urteil     TEXT,
+    matrix     TEXT,
+    PRIMARY KEY (signal_id, ts)
+);
+CREATE TABLE IF NOT EXISTS ampel_wechsel (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    signal_id   INTEGER NOT NULL,
+    name        TEXT,
+    ts          TEXT NOT NULL,
+    quelle      TEXT NOT NULL,
+    ampel_alt   TEXT,
+    ampel_neu   TEXT NOT NULL,
+    farbwechsel INTEGER NOT NULL,
+    richtung    TEXT NOT NULL,
+    gruende     TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ampel_wechsel_ts ON ampel_wechsel(ts DESC);
 """
 
 
@@ -416,3 +443,105 @@ def list_tradeserver_sync_runs(limit: int = 10) -> list[dict]:
             eintrag["summary"] = {}
         runs.append(eintrag)
     return runs
+
+
+def store_ampel_verlauf(signal_id: int, ts: str, quelle: str, ampel: str,
+                        score: float | None, urteil: str, matrix: dict | None) -> None:
+    """Farb-Chronik: ein append-only Eintrag je erfolgreich geprüftem Lauf.
+
+    Kein UPDATE, kein DELETE — die Chronik darf nachträglich nicht verändert
+    werden. Zwei Einträge desselben Signals in derselben Sekunde können nicht
+    vorkommen (ein Signal wird je Lauf höchstens einmal geprüft); sollte es
+    doch kollidieren, gewinnt der zuerst geschriebene Eintrag (OR IGNORE).
+    """
+    with _connect() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO ampel_verlauf "
+            "(signal_id, ts, quelle, ampel, score, urteil, matrix) VALUES (?,?,?,?,?,?,?)",
+            (signal_id, ts, quelle, ampel, score, urteil,
+             json.dumps(matrix or {}, ensure_ascii=False)))
+
+
+def get_last_ampel_verlauf(signal_id: int) -> dict | None:
+    """Der neueste Chronik-Eintrag eines Signals (Vergleichsbasis für Wechsel)."""
+    init_db()
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT signal_id, ts, quelle, ampel, score, urteil, matrix "
+            "FROM ampel_verlauf WHERE signal_id=? ORDER BY ts DESC LIMIT 1",
+            (signal_id,)).fetchone()
+    if row is None:
+        return None
+    eintrag = dict(row)
+    try:
+        eintrag["matrix"] = json.loads(eintrag.get("matrix") or "{}")
+    except json.JSONDecodeError:
+        eintrag["matrix"] = {}
+    return eintrag
+
+
+def list_ampel_verlauf(signal_id: int, limit: int = 50) -> list[dict]:
+    """Farb-Chronik eines Signals, neueste zuerst (Anzeige in der GUI)."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT signal_id, ts, quelle, ampel, score, urteil FROM ampel_verlauf "
+            "WHERE signal_id=? ORDER BY ts DESC LIMIT ?",
+            (signal_id, max(1, int(limit)))).fetchall()
+    return [dict(row) for row in rows]
+
+
+def store_ampel_wechsel(signal_id: int, ts: str, quelle: str, ampel_alt: str | None,
+                        ampel_neu: str, farbwechsel: bool, richtung: str,
+                        gruende: list[dict], name: str = "") -> int:
+    """Ein protokollierter Wechsel (Farbe und/oder gekippte Kriterien).
+
+    Der Signalname wird zum Zeitpunkt des Wechsels mitgespeichert — das
+    Protokoll bleibt lesbar, selbst wenn das Signal später aus dem Katalog
+    fällt oder umbenannt wird.
+    """
+    with _connect() as conn:
+        cursor = conn.execute(
+            "INSERT INTO ampel_wechsel "
+            "(signal_id, name, ts, quelle, ampel_alt, ampel_neu, farbwechsel, richtung, gruende) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (signal_id, name, ts, quelle, ampel_alt, ampel_neu, int(farbwechsel),
+             richtung, json.dumps(gruende, ensure_ascii=False)))
+        return int(cursor.lastrowid or 0)
+
+
+def list_ampel_wechsel(limit: int = 200, nur_farbwechsel: bool = False,
+                       signal_id: int | None = None) -> list[dict]:
+    """Wechsel-Protokoll, neueste zuerst (die Wechselliste der GUI)."""
+    init_db()
+    clauses, args = [], []
+    if nur_farbwechsel:
+        clauses.append("farbwechsel=1")
+    if signal_id is not None:
+        clauses.append("signal_id=?")
+        args.append(signal_id)
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    args.append(max(1, int(limit)))
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT id, signal_id, name, ts, quelle, ampel_alt, ampel_neu, farbwechsel, "
+            f"richtung, gruende FROM ampel_wechsel {where} ORDER BY id DESC LIMIT ?",
+            args).fetchall()
+    wechsel = []
+    for row in rows:
+        eintrag = dict(row)
+        eintrag["farbwechsel"] = bool(eintrag["farbwechsel"])
+        try:
+            eintrag["gruende"] = json.loads(eintrag.pop("gruende") or "[]")
+        except json.JSONDecodeError:
+            eintrag["gruende"] = []
+        wechsel.append(eintrag)
+    return wechsel
+
+
+def count_ampel_wechsel() -> int:
+    """Gesamtzahl protokollierter Wechsel (Button-Badge der GUI)."""
+    init_db()
+    with _connect() as conn:
+        row = conn.execute("SELECT COUNT(*) AS n FROM ampel_wechsel").fetchone()
+    return int(row["n"]) if row else 0

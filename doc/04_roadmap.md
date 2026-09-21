@@ -85,12 +85,21 @@ neu erfunden).
 - [x] Datenhaltung: `data/runs/{zeitstempel}/results.json` je Lauf plus
       SQLite (`data/mqlkiscanner.db`) als zentrale Persistenz; fertige
       Läufe werden beim Neustart aus der DB übernommen
-- [ ] Wiederholungsmodus als Kommandozeilen-Aufruf mit Diff gegen den
-      letzten Lauf (Läufe gibt es bisher nur über die Scan-Seite der GUI)
+- [x] Re-Scan mit Diff (21.09.2026, GUI): Zwei Scan-Buttons — **Full-Scan**
+      (alles wie bisher) und **Gelb/Grün-Scan** (prüft nur aktuell 🟢/🟡-
+      Signale und erzwingt ALLE LLM-Stufen neu; Nutzer-Vorgabe). Farb-
+      Chronik je Lauf (`ampel_verlauf`) plus protokollierte Wechsel
+      (`ampel_wechsel`) mit Kriterium-Begründungen alt→neu; Wechselliste
+      per Button auf der Ergebnisseite, Lauf-Wechsel direkt auf der
+      Scan-Seite. Kein Reimport alter Läufe — Chronik startet ab
+      Einführung. Modul: `src/mqlkiscanner/ampel_verlauf.py`
+- [ ] Wiederholungsmodus als Kommandozeilen-Aufruf (Läufe gibt es bisher
+      nur über die Scan-Seite der GUI)
 - [ ] Alerting-Kriterien: Schranke-Verletzung ist in der Ampel-Matrix
       sichtbar, MT4/MT5-Zwillingsvergleich existiert (`compare.py`);
       fehlen: automatisierte Alerts bei Anbieter-Stilbruch oder
-      Copy-Abweichung > x %
+      Copy-Abweichung > x % (Fundament steht: Ampel-Wechsel sind
+      protokolliert und abfragbar)
 
 ## Phase 6: MqlDownloader-Anbindung — ✅ abgeschlossen (20.09.2026)
 
