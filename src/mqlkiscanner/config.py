@@ -86,6 +86,8 @@ DEFAULT_SETTINGS: dict = {
     "model_stufe2": MODEL_STUFE2,
     "downloader_base_url": "",      # MqlDownloader-REST-Interface (leer = nicht angebunden)
     "tradeserver_base_url": "",     # MqlTradeMonitor-Sync-Ziel (leer = kein Sync möglich)
+    "rest_api_enabled": True,       # schreibgeschütztes REST-Interface für MqlRealMonitor
+    "rest_api_port": 8611,          # lauscht auf 127.0.0.1; Token optional (secrets_store)
 }
 
 for _d in (DATA_DIR, RUNS_DIR, REPORTS_DIR, TRADES_DIR, STATS_DIR, PROMPTS_DIR,

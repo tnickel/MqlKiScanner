@@ -113,7 +113,10 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
   MqlDownloader-Anbindung (`downloader_client.py`, `downloader_sync.py`),
   Tradeserver-Sync zum MqlTradeMonitor (`tradeserver_client.py`,
   `tradeserver_sync.py` — Einmal-Protokoll v1 unter /api/kiscanner,
-  Doku `doc/06_tradeserver-sync.md`; bewertet nie neu)
+  Doku `doc/06_tradeserver-sync.md`; bewertet nie neu),
+  REST-API für den MqlRealMonitor (`rest_api.py` — schreibgeschützt,
+  GET /api/v1/signals?ampel=gruen,gelb auf 127.0.0.1:8611, startet
+  als Daemon-Thread mit der Streamlit-App; bewertet nie neu)
 - `config/prompts/` — editierbare LLM-Prompts
 - `tests/` — pytest (634 Tests grün; LLM-Regressionstests opt-in via
   `pytest -m llm`, echte Modellaufrufe)

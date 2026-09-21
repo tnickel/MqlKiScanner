@@ -212,4 +212,19 @@ prüft damit Erreichbarkeit **und** Schlüssel in einem Schritt — mehr nicht: 
 keine Daten übertragen und kein Sync-Lauf gestartet. Steht der Test auf „erreichbar“,
 funktioniert auch der Sync-Button auf der Ergebnisseite.
 """),
+    "settings_rest_api": ("REST-API für MqlRealMonitor", """
+Der MqlRealMonitor (Java, `D:\\git\\MQL\\MqlRealmonitor`) holt sich über dieses
+schreibgeschützte Interface die Signalliste samt Gesamt-Ampel — der Button
+„🤖 KiScanner“ dort überwacht danach nur noch Signale mit Ampel **grün oder gelb**.
+
+**Endpunkte** (nur GET, nur auf diesem Rechner, `127.0.0.1`):
+`/api/v1/health` für einen Verbindungscheck und `/api/v1/signals` für die Liste;
+mit Filter z. B. `/api/v1/signals?ampel=gruen,gelb`. Die Ampel wird bei jedem
+Abruf aus den gespeicherten Werten neu abgeleitet (wie die Ergebnis-Ansicht) —
+der Server bewertet nie selbst und schreibt nichts in die Datenbank.
+
+**Token (optional):** ist einer hinterlegt, muss der MqlRealMonitor denselben Key
+im Header `X-User-Key` senden. Änderungen an Port, Schalter oder Token greifen
+erst nach dem nächsten Start der App (der Server wird einmal beim Start geöffnet).
+"""),
 }

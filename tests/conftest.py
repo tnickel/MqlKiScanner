@@ -63,7 +63,8 @@ def isolated_app_storage(tmp_path, monkeypatch):
         key: config.PROMPTS_DIR / f"{key}.md" for key in prompts.DEFAULTS
     })
     for variable in ("MQLKISCANNER_GLM_KEY", "GLM_API_KEY", "MQL5_USER", "MQL5_PASS",
-                     "MQLDOWNLOADER_TOKEN", "MQLKISCANNER_DOWNLOADER_TOKEN"):
+                     "MQLDOWNLOADER_TOKEN", "MQLKISCANNER_DOWNLOADER_TOKEN",
+                     "MQLKISCANNER_REST_TOKEN"):
         monkeypatch.delenv(variable, raising=False)
 
     def reject_network(*args, **kwargs):

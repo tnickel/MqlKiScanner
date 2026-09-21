@@ -109,9 +109,9 @@ with st.container(horizontal=True):
              else ("gray" if not ts_start["konfiguriert"] else "red"))
     st.badge("Lokale Engine ohne KI-Key nutzbar", color="blue")
 
-access_tab, models_tab, downloader_tab, tradeserver_tab, scan_tab, prompts_tab = st.tabs(
-    ["Zugänge", "KI & Modelle", "MqlDownloader", "Tradeserver", "Scan & Risiko",
-     "Analysevorlagen"]
+access_tab, models_tab, downloader_tab, tradeserver_tab, rest_api_tab, scan_tab, prompts_tab = st.tabs(
+    ["Zugänge", "KI & Modelle", "MqlDownloader", "Tradeserver", "REST-API",
+     "Scan & Risiko", "Analysevorlagen"]
 )
 
 with access_tab:
@@ -530,6 +530,75 @@ with tradeserver_tab:
                 st.caption(f"{run['started_at']} · {zustand} · {detail}"
                            + (f" · Abbruch: {summary['abgebrochen']}"
                               if summary.get("abgebrochen") else ""))
+
+with rest_api_tab:
+    with st.container(border=True):
+        section_header("REST-API für MqlRealMonitor",
+                       "Schreibgeschütztes Interface, über das der MqlRealMonitor die "
+                       "Signalliste samt Ampel abholt (Button „KiScanner“). Läuft nur "
+                       "auf diesem Rechner (127.0.0.1); Änderungen greifen nach dem "
+                       "nächsten App-Start.",
+                       help_key="settings_rest_api")
+        rest_enabled = st.toggle("REST-API aktiviert",
+                                 value=bool(settings.get("rest_api_enabled", True)),
+                                 key="admin_rest_enabled")
+        rest_port = st.number_input("Port", min_value=1024, max_value=65535,
+                                    value=int(settings.get("rest_api_port") or 8611),
+                                    step=1, key="admin_rest_port")
+        rest_token = st.text_input(
+            "Zugriffs-Token (optional)", type="password", key="admin_rest_token",
+            placeholder="Leer lassen = unverändert")
+        rest_token_active = secrets_store.get_secret("rest_api_token")
+        st.caption("Token: " + ("hinterlegt — MqlRealMonitor muss denselben Key als "
+                                "X-User-Key senden" if rest_token_active
+                                else "nicht gesetzt — lokale Aufrufe brauchen keinen Key"))
+        st.caption("Endpunkte: /api/v1/health und /api/v1/signals"
+                   " (Filter z. B. ?ampel=gruen,gelb)")
+        rest_dirty = (rest_enabled != bool(settings.get("rest_api_enabled", True))
+                      or int(rest_port) != int(settings.get("rest_api_port") or 8611)
+                      or bool(rest_token.strip()))
+        _draft_status(rest_dirty, clean_label="Gespeicherte Werte")
+        rest_save_column, rest_test_column = st.columns(2)
+        with rest_save_column:
+            if action_button("REST-Einstellungen speichern", key="admin_rest_save",
+                             type="primary", help_key="settings_rest_api",
+                             icon=":material/save:"):
+                if rest_token.strip():
+                    secrets_store.save_secrets(rest_api_token=rest_token.strip())
+                _save_group({"rest_api_enabled": bool(rest_enabled),
+                             "rest_api_port": int(rest_port)},
+                            "REST-Einstellungen gespeichert. Neustart der App, "
+                            "wenn Port oder Aktivierung geändert wurden.",
+                            clear_result="_admin_rest_result")
+        with rest_test_column:
+            if action_button("REST-API testen", key="admin_rest_test",
+                             help_key="settings_rest_api",
+                             icon=":material/network_check:"):
+                import requests as _requests
+                saved = config.load_settings()
+                url = (f"http://127.0.0.1:{int(saved.get('rest_api_port') or 8611)}"
+                       "/api/v1/health")
+                headers = {}
+                if secrets_store.get_secret("rest_api_token"):
+                    headers["X-User-Key"] = secrets_store.get_secret("rest_api_token")
+                try:
+                    resp = _requests.get(url, headers=headers, timeout=3.0)
+                    ok = (resp.status_code == 200
+                          and resp.json().get("status") == "ok")
+                    if ok:
+                        info = resp.json()
+                        _test_result("_admin_rest_result", True,
+                                     f"REST-API erreichbar · Dienst {info.get('service', '?')} "
+                                     f"· Version {info.get('version', '?')} · Token akzeptiert")
+                    else:
+                        _test_result("_admin_rest_result", False,
+                                     f"Unerwartete Antwort: HTTP {resp.status_code} "
+                                     f"({resp.text[:120]})")
+                except Exception as exc:
+                    _test_result("_admin_rest_result", False,
+                                 f"Nicht erreichbar unter {url} ({type(exc).__name__}). "
+                                 "Läuft die App? Port/Token prüfen und App ggf. neu starten.")
+        _render_test_result("_admin_rest_result")
 
 with scan_tab:
     filters_column, risk_column = st.columns(2, gap="medium")

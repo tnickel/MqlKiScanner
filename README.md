@@ -32,6 +32,9 @@ Entstanden aus einer forensischen Analyse-Reihe (u. a. Gold Spike, KiraCat, Pu
 - **MqlDownloader-Anbindung (optional):** Abonnenten-Verläufe und Testreport-PDFs
   je Signal per REST-Interface — automatisch als Station 6 nach jedem Lauf,
   lokal gespiegelt und offline anzeigbar; Abgleich bewertet nie neu
+- **REST-API für MqlRealMonitor:** schreibgeschützt unter
+  `http://127.0.0.1:8611/api/v1` (`/health`, `/signals?ampel=gruen,gelb`) —
+  der MqlRealMonitor überwacht darüber nur noch Ampel grün/gelb
 - **Rate-Limit / Fail-Fast** zum Schutz des MQL5-Accounts
 
 ## Schnellstart

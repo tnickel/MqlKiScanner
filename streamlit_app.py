@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import streamlit as st  # noqa: E402
 
-from mqlkiscanner import config, downloader_sync, secrets_store, tradeserver_sync  # noqa: E402
+from mqlkiscanner import config, downloader_sync, secrets_store, tradeserver_sync, rest_api  # noqa: E402
 from mqlkiscanner.ui_design import apply_theme, info_button  # noqa: E402
 
 st.set_page_config(
@@ -24,6 +24,18 @@ st.set_page_config(
     layout="wide",
 )
 apply_theme()
+
+
+@st.cache_resource(show_spinner=False)
+def _rest_api_server():
+    """Schreibgeschütztes REST-Interface (MqlRealMonitor) — einmal je Prozess."""
+    try:
+        return rest_api.start_background()
+    except Exception:  # App läuft auch ohne REST weiter (z. B. Port belegt)
+        return None
+
+
+rest_server = _rest_api_server()
 
 # ------------------------------------------------------------- Session-State
 defaults = {
@@ -92,6 +104,24 @@ with st.sidebar:
                      icon=":material/cloud_off:")
             st.page_link(settings_page, label="Verbindung prüfen",
                          icon=":material/arrow_forward:")
+        # REST-Interface für den MqlRealMonitor (nur lesend, localhost).
+        # Der Monitor ruft nur auf Knopfdruck ab — der Badge zeigt deshalb,
+        # wann der Client zuletzt erreicht hat (grün ab erstem Abruf).
+        if rest_server is not None:
+            _rs_port = rest_server.server_address[1]
+            _cs = rest_api.client_status()
+            if _cs["verbunden"]:
+                st.badge(f"REST-Server :{_rs_port} · Client zuletzt "
+                         f"{_cs['letzter_abruf']:%H:%M}",
+                         color="green", icon=":material/cable:")
+            else:
+                st.badge(f"REST-Server :{_rs_port} · noch kein Client",
+                         color="gray", icon=":material/cable:")
+        elif config.load_settings().get("rest_api_enabled", True):
+            st.badge("REST-API Port belegt", color="orange",
+                     icon=":material/cable:")
+        else:
+            st.badge("REST-API aus", color="gray", icon=":material/cable:")
         if not mql_ready:
             st.page_link(settings_page, label="Zugang einrichten",
                          icon=":material/arrow_forward:")

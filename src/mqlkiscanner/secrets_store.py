@@ -16,13 +16,14 @@ SECRETS_FILE = CONFIG_DIR / "secrets.local.json"
 ENV_FILE = ROOT / ".env"
 
 _SECRET_KEYS = ("glm_api_key", "mql5_user", "mql5_pass", "downloader_token",
-                "tradeserver_api_key")
+                "tradeserver_api_key", "rest_api_token")
 _ENV_ALIASES = {
     "glm_api_key": ("MQLKISCANNER_GLM_KEY", "GLM_API_KEY"),
     "mql5_user": ("MQL5_USER",),
     "mql5_pass": ("MQL5_PASS",),
     "downloader_token": ("MQLDOWNLOADER_TOKEN", "MQLKISCANNER_DOWNLOADER_TOKEN"),
     "tradeserver_api_key": ("MQLTRADEMONITOR_KEY", "MQLKISCANNER_TRADESERVER_KEY"),
+    "rest_api_token": ("MQLKISCANNER_REST_TOKEN",),
 }
 
 
