@@ -68,18 +68,22 @@ def test_vor_startzeit_nichts_faellig():
 
 def test_nach_startzeit_dirigent_faellig():
     vormittag = datetime(2026, 9, 22, 7, 0)  # Dienstag, 07:00
-    assert scheduler.faellige_rollen(vormittag, _settings()) == ["dirigent"]
+    assert scheduler.faellige_rollen(vormittag, _settings()) == \
+        ["dirigent", "betreuer"]
 
 
 def test_deaktivierte_rolle_nicht_faellig():
     vormittag = datetime(2026, 9, 22, 7, 0)
     assert scheduler.faellige_rollen(
-        vormittag, _settings(agenten_dirigent_aktiv=False)) == []
+        vormittag, _settings(agenten_dirigent_aktiv=False)) == ["betreuer"]
+    assert scheduler.faellige_rollen(
+        vormittag, _settings(agenten_betreuer_aktiv=False)) == ["dirigent"]
 
 
 def test_nach_erfolgreichem_lauf_nicht_erneut_faellig():
     vormittag = datetime(2026, 9, 22, 7, 0)
     journal.lauf_abschliessen(journal.lauf_starten("dirigent", quelle="daemon"), "ok")
+    journal.lauf_abschliessen(journal.lauf_starten("betreuer", quelle="daemon"), "ok")
     assert scheduler.faellige_rollen(vormittag, _settings()) == []
 
 
@@ -99,8 +103,13 @@ def test_tick_mit_freigabe_fuehrt_dirigent_aus():
     config.save_settings({**config.load_settings(), "agenten_enabled": True})
     ergebnis = scheduler.tick(jetzt=datetime(2026, 9, 22, 7, 0))
     assert ergebnis["gesamt_enabled"] is True
-    assert ergebnis["ausgefuehrt"] == [{"rolle": "dirigent", "status": "ok"}]
-    assert journal.list_laeufe()[0]["rolle"] == "dirigent"
+    ausgefuehrt = {e["rolle"]: e for e in ergebnis["ausgefuehrt"]}
+    assert set(ausgefuehrt) == {"dirigent", "betreuer"}
+    assert ausgefuehrt["dirigent"]["status"] == "ok"
+    # Leere DB: Betreuer-Läuft ohne Kandidaten sauber durch (0 Läufe geschrieben).
+    assert ausgefuehrt["betreuer"]["signale"] == 0
+    rollen_gelaufen = {l["rolle"] for l in journal.list_laeufe()}
+    assert rollen_gelaufen == {"dirigent"}  # Betreuer: ohne Kandidaten kein Lauf
     # Herzschlag wurde gesetzt
     assert journal.steuerung_lesen()["letzter_tick"]
 

@@ -3,9 +3,11 @@
 
 Ohne Argumente: Dauerschleife (Scheduler-Tick alle 30 s, Stopp über die
 Steuerungstabelle). Argumente:
-  --once   EINEN Dirigent-Tageslauf sofort ausführen (ohne Takt-Prüfung;
-           ignoriert agenten_enabled — für Tests, Erstreundung und CLI)
-  --tick   EINEN Scheduler-Tick ausführen (mit Takt-Prüfung) und enden
+  --once     EINEN Dirigent-Tageslauf sofort ausführen (ohne Takt-Prüfung;
+             ignoriert agenten_enabled — für Tests, Erstreundung und CLI)
+  --betreuer EINEN Betreuer-Tageslauf sofort ausführen (alle Kandidaten;
+             Delta-Prüfung gegen die Dossiers, ignoriert agenten_enabled)
+  --tick     EINEN Scheduler-Tick ausführen (mit Takt-Prüfung) und enden
 """
 from __future__ import annotations
 
@@ -18,20 +20,27 @@ log = logging.getLogger("mqlkiscanner.agenten")
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="python -m mqlkiscanner.agenten",
-        description="Agenten-Daemon des MqlKiScanner (Phase A: Dirigent)")
+        description="Agenten-Daemon des MqlKiScanner (Phase A+B)")
     parser.add_argument("--once", action="store_true",
                         help="einen Dirigent-Tageslauf sofort ausführen")
+    parser.add_argument("--betreuer", action="store_true",
+                        help="einen Betreuer-Tageslauf sofort ausführen")
     parser.add_argument("--tick", action="store_true",
                         help="einen Scheduler-Tick ausführen und enden")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    from . import dirigent, scheduler
+    from . import betreuer, dirigent, scheduler
 
     if args.once:
         ergebnis = dirigent.tageslauf(quelle="cli", log=log.info)
         log.info("Ergebnis: %s", ergebnis.get("status"))
+        return
+    if args.betreuer:
+        ergebnis = betreuer.tageslauf(quelle="cli", log=log.info)
+        log.info("Ergebnis: %s Signale — %s", ergebnis["signale"],
+                 ergebnis["zusammenfassung"])
         return
     if args.tick:
         scheduler.tick(log=log.info)

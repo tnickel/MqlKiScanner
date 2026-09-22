@@ -17,8 +17,6 @@ from .. import config
 from ..ui_design import action_button, info_button, section_header
 from . import daemon, journal, rollen, rollen_prompts
 
-PHASEN_REIHENFOLGE = ["A", "B", "C", "D", "E"]
-
 
 def _geaendert(werte: dict, gespeichert: dict) -> bool:
     return any(wert != gespeichert.get(name) for name, wert in werte.items())
@@ -42,8 +40,10 @@ def rendern(settings: dict) -> None:
         section_header(
             "Agenten & LLMs — autonomer Betrieb",
             "Fünf LLM-Rollen übernehmen die Dauerbeobachtung (Bauplan doc/19). "
-            "Phase A ist aktiv: Dirigent-Tageslauf mit lückenlosem Protokoll; "
-            "die weiteren Rollen werden in den Phasen B–E zugeschaltet.",
+            f"Phase {rollen.AKTUELLE_PHASE} ist aktiv: Dirigent-Tageslauf mit "
+            "lückenlosem Protokoll und Betreuer-Trade-Delta gegen die "
+            "Dossiers; die weiteren Rollen werden in den Phasen C–E "
+            "zugeschaltet.",
             help_key="settings_agenten",
         )
         st.info(
@@ -140,7 +140,7 @@ def rendern(settings: dict) -> None:
             help_key="settings_agenten_rollen")
         rollen_werte: dict = {}
         for rolle in rollen.ROLLEN:
-            geplant = PHASEN_REIHENFOLGE.index(rolle.phase) > 0
+            geplant = not rollen.phase_aktiv(rolle, rollen.AKTUELLE_PHASE)
             with st.expander(f"{rolle.name} · {rolle.takt}",
                              expanded=rolle.key == "dirigent", icon=rolle.icon):
                 st.caption(rolle.beschreibung)
@@ -150,7 +150,7 @@ def rendern(settings: dict) -> None:
                         st.badge(f"aktiv ab Phase {rolle.phase} (geplant)",
                                  color="orange", icon=":material/history:")
                     else:
-                        st.badge("Phase A — aktiv", color="green",
+                        st.badge(f"Phase {rolle.phase} — aktiv", color="green",
                                  icon=":material/check_circle:")
                 aktiv = st.toggle(
                     "Rolle aktiv", key=f"agenten_{rolle.key}_aktiv_ui",

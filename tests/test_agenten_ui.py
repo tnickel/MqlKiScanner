@@ -44,7 +44,7 @@ def test_agenten_seite_rendert_mit_leerem_protokoll():
     at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
                            default_timeout=30).run()
     assert not at.exception
-    assert len(at.tabs) == 2
+    assert len(at.tabs) == 3  # Live · Protokoll · Dossiers (Phase B)
     text = _sichttext(at)
     for name in ROLLEN_NAMEN:
         assert name in text

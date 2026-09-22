@@ -395,11 +395,22 @@ Stopp. Dirigent-Default max_tokens 8192 (glm-5.3 braucht Reasoning-Spielraum
 auch für kleine JSON-Antworten — 2048 brach mit finish_reason=length ab).
 CLI: `PYTHONPATH=src python -m mqlkiscanner.agenten [--once|--tick]`.
 
-### Phase B — Dossiers & Trade-Delta
+### Phase B — Dossiers & Trade-Delta — ✅ abgeschlossen (22.09.2026)
 Dossier-Tabellen, Profil-Destillation (rückwirkend für alle 🟢/🟡 + Watchlist),
 täglicher Betreuer-Lauf mit SHA-Diff, `betreuer_delta`, STILBRUCH-Flag.
-**Abnahme:** Jedes 🟢/🟡-Signal hat ein Dossier; ein Tag mit neuen Trades
-erzeugt je Signal eine Beobachtung im Protokoll.
+**Abnahme: Jedes 🟢/🟡-Signal hat ein Dossier; ein Tag mit neuen Trades
+erzeugt je Signal eine Beobachtung im Protokoll.**
+Umgesetzt: `agenten/dossier.py`, `agenten/delta.py` (Zeilen-Diff über
+Feld-Schlüssel + maschinelle Delta-Kennzahlen), `agenten/destillation.py`
+(ohne Tiefenanalyse/Gesamtbericht wird KEIN Profil erfunden — protokollierter
+Skip), `agenten/betreuer.py` (Export über Rate-Limiter mit 20-h-Cache; SHA
+unverändert ⇒ kein Modellaufruf), Dossiers-Tab auf der Agenten-Seite,
+Scheduler-Takt Betreuer = Startzeit + 15 min, CLI `--betreuer`, 13 neue
+Tests (Gesamt: 825 grün). Ende-zu-Ende verifiziert: echte Destillation
+Gold Spike (Version 1, 6.067 Zeichen, alle 8 Abschnitte inkl.
+Konformitäts-/Warn-Merkmalen); Delta-Prüfung mit 2 simulierten neuen
+Trades auf Temp-DB-Kopie → EINORDNUNG KONFORM, Begründung zitiert
+Profil-Merkmal-Nummern, Beobachtung verlinkt auf den LLM-Schritt.
 
 ### Phase C — Marktbeobachter
 Admin-Bereich „Marktdaten", MetaTrader5-Anbindung (nur Lesen), Marktkontext,

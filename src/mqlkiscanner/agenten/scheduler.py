@@ -29,18 +29,24 @@ def _start_minute(settings: dict) -> int:
 
 
 def faellige_rollen(jetzt: datetime, settings: dict) -> list[str]:
-    """Welche Rollen sind JETZT fällig? Phase A: werktags der Dirigent.
+    """Welche Rollen sind JETZT fällig? Phase A+B: werktags Dirigent und
+    Betreuer (Betreuer ab Startzeit + 15 min, damit der Dirigent vorweg plant).
 
-    Fällig heißt: Werktag, Startzeit erreicht und heute noch kein
+    Fällig heißt: Werktag, Zeitpunkt erreicht und heute noch kein
     erfolgreicher Daemon-Lauf der Rolle.
     """
     rollen: list[str] = []
     if jetzt.weekday() >= 5:
         return rollen  # Wochenende: Markt ruht (doc/19 §9)
-    if nicht_deaktiviert(settings, "dirigent") and (
-            jetzt.hour * 60 + jetzt.minute >= _start_minute(settings)
+    minute = jetzt.hour * 60 + jetzt.minute
+    if (nicht_deaktiviert(settings, "dirigent")
+            and minute >= _start_minute(settings)
             and not journal.lauf_heute_erfolgreich("dirigent", "daemon")):
         rollen.append("dirigent")
+    if (nicht_deaktiviert(settings, "betreuer")
+            and minute >= _start_minute(settings) + 15
+            and not journal.lauf_heute_erfolgreich("betreuer", "daemon")):
+        rollen.append("betreuer")
     return rollen
 
 
@@ -60,11 +66,18 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
                 bool(settings.get("agenten_enabled", False))}
     if not settings.get("agenten_enabled", False):
         return ergebnis
+    from . import betreuer  # spät: kein Kreisimport beim Paket-Import
     for rolle in faellige_rollen(jetzt, settings):
         if rolle == "dirigent":
             lauf = dirigent.tageslauf(quelle="daemon", log=log)
             ergebnis["ausgefuehrt"].append({"rolle": "dirigent",
                                             "status": lauf["status"]})
+        elif rolle == "betreuer":
+            lauf = betreuer.tageslauf(quelle="daemon", log=log,
+                                      settings=settings)
+            ergebnis["ausgefuehrt"].append(
+                {"rolle": "betreuer", "signale": lauf["signale"],
+                 "zusammenfassung": lauf["zusammenfassung"]})
     return ergebnis
 
 

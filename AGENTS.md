@@ -176,13 +176,25 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Start/Stopp, Rollen-Prompt-Editor) und Seite „Agenten“ (Live +
   Protokoll mit vollem Prompt/voller Antwort je LLM-Schritt). Rollen
   Markt/Betreuer/Chef/Melder folgen in Phase B–E. 812 Tests grün.
+- ✅ Agentenbetrieb Phase B (22.09.2026): Signal-Dossiers
+  (`dossier_profil` versioniert / `dossier_beobachtungen` /
+  `trade_deltas`), Profil-Destillation aus Tiefenanalyse+Gesamtbericht
+  (einmalig je 🟢/🟡; ohne Belegbasis wird NICHT erfunden), Betreuer-
+  Tageslauf täglich 06:45 (Startzeit + 15 min): MQL5-Export über
+  Rate-Limiter/20-h-Cache → SHA-Vergleich (unverändert = KEIN
+  Modellaufruf) → Delta-Kennzahlen (Code) → LLM-Prüfung gegen Profil →
+  Einordnung KONFORM/AUFFAELLIG/STILBRUCH/KEINE_NEUEN_TRADES ins
+  Dossier; Dossiers-Tab auf der Agenten-Seite; CLI `--betreuer`.
+  Ende-zu-Ende verifiziert (echte Destillation Gold Spike 6.067 Zeichen;
+  Delta-Prüfung KONFORM mit Merkmal-Zitaten). 825 Tests grün.
 
 Noch offen (Phase 5 Betrieb / Agentenbetrieb):
 
 - [ ] Re-Scan als Kommandozeilenaufruf mit Diff gegen den letzten Lauf
       (Dirigent-CLI `--once` existiert; der Scan-Aufruf folgt mit Phase E)
-- [ ] Agentenbetrieb Phase B: Dossiers + Trade-Delta + Betreuer-Rolle
 - [ ] Agentenbetrieb Phase C–E: Marktdaten (MetaTrader5-Paket,
       Verifikation V1 mit Nutzer), Melder/Alerts, Chefermittler
+- [ ] Autostart des Daemon nach Rechner-Neustart (start.bat-Erweiterung
+      oder Aufgabenplanung — offen, Nutzer-Entscheidung)
 - [ ] Automatisierte Alerts (Anbieter-Stilbruch, Copy-Abweichung > x %) —
       Fundament steht: Ampel-Wechsel protokolliert, Melder geplant (Phase D)

@@ -281,12 +281,13 @@ verwendet und welcher Bericht daraus entsteht. Die Engine berechnet alle
 Kennzahlen; die KI interpretiert sie nur. Pflicht-Platzhalter bleiben beim
 Bearbeiten geschützt und werden vor dem Speichern geprüft.
 
-## 5a. Agentenbetrieb (Phase A)
+## 5a. Agentenbetrieb (Phase A + B)
 
 Fünf LLM-Rollen übernehmen schrittweise die Dauerbeobachtung der Signale
-(Bauplan: `doc/19_agentenbetrieb-bauplan.md`). **Phase A ist aktiv**: Der
-Dirigent plant täglich werktags, alle weiteren Rollen sind konfigurierbar,
-aber als „geplant“ (Phase B–E) markiert.
+(Bauplan: `doc/19_agentenbetrieb-bauplan.md`). **Phase A**: Der Dirigent
+plant täglich werktags. **Phase B**: Der Signal-Betreuer prüft täglich die
+Trade-Deltas gegen die Algo-Profile. Markt/Chef/Melder sind konfigurierbar,
+aber als „geplant“ (Phase C–E) markiert.
 
 **Einstellungen → Agenten** (Konfiguration):
 
@@ -312,9 +313,22 @@ aber als „geplant“ (Phase B–E) markiert.
   LLM-Schritte öffnen den **vollständig gefüllten Prompt** und die
   **vollständige Antwort** — nichts wird gekürzt. Dieses lückenlose
   Protokoll ersetzt den bewusst abgelehnten Trockenmodus.
+- **Dossiers (Phase B):** je Signal das versionierte **Algo-Profil**
+  (aus Tiefenanalyse/Gesamtbericht destilliert, mit nummerierten
+  Konformitäts- und Warn-Merkmalen), die **Beobachtungen** des Betreuers
+  (KONFORM grün / KEINE_NEUEN_TRADES grau / AUFFAELLIG orange /
+  STILBRUCH rot) und die **Trade-Deltas** (Hash + Kennzahlen je Abruf).
+
+**Wie der Betreuer arbeitet** (täglich 06:45, Startzeit + 15 min): Export
+laden (Rate-Limiter, 20-h-Cache — ein GUI-Scan am Vorabend macht den Abruf
+zum No-Op) → SHA-Vergleich: unverändert bedeutet **kein Modellaufruf, keine
+Kosten**. Neue Trades → Delta-Kennzahlen (reiner Code) → LLM-Prüfung gegen
+das Profil → Beobachtung. Fehlt das Profil, wird es einmalig destilliert —
+ohne Tiefenanalyse/Gesamtbericht wird nichts erfunden, sondern der Mangel
+protokolliert. Die Einordnung ist Beobachtung, nie Neubewertung.
 
 Kommandozeile (ohne GUI): `PYTHONPATH=src python -m mqlkiscanner.agenten`
-(Dauerschleife) oder `--once` für einen einzelnen Dirigent-Tageslauf.
+(Dauerschleife), `--once` (Dirigent) oder `--betreuer` (Betreuer-Tageslauf).
 
 ## 6. Typische Stolpersteine
 

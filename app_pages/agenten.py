@@ -24,7 +24,7 @@ apply_theme()
 
 agenten_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_agenten_banner.jpg"
 page_header(
-    "AUTONOMER BETRIEB · PHASE A", "Agenten",
+    f"AUTONOMER BETRIEB · PHASE {rollen.AKTUELLE_PHASE}", "Agenten",
     "Fünf LLM-Rollen beobachten die Signale — jeder Schritt lückenlos "
     "protokolliert, jede Modelläußerung nachlesbar.",
     image_path=str(agenten_banner) if agenten_banner.exists() else None,
@@ -34,7 +34,7 @@ with st.container(horizontal=True, vertical_alignment="center"):
                "Konfiguration: Einstellungen → Agenten.")
     info_button("agenten_page", key="agenten_page_help")
 
-live_tab, protokoll_tab = st.tabs(["Live", "Protokoll"])
+live_tab, protokoll_tab, dossiers_tab = st.tabs(["Live", "Protokoll", "Dossiers"])
 
 # ── Live ───────────────────────────────────────────────────────────
 with live_tab:
@@ -59,16 +59,15 @@ with live_tab:
 
     with st.container(border=True):
         st.markdown("**Die fünf Rollen**")
-        phasen = ["A", "B", "C", "D", "E"]
         for rolle in rollen.ROLLEN:
             with st.container(horizontal=True, vertical_alignment="center", wrap=True):
                 st.markdown(f"{rolle.icon} **{rolle.name}** — {rolle.takt}")
-                if phasen.index(rolle.phase) > 0:
+                if rollen.phase_aktiv(rolle, rollen.AKTUELLE_PHASE):
+                    st.badge(f"Phase {rolle.phase} · aktiv", color="green",
+                             icon=":material/check_circle:")
+                else:
                     st.badge(f"Phase {rolle.phase} · geplant", color="orange",
                              icon=":material/history:")
-                else:
-                    st.badge("Phase A · aktiv", color="green",
-                             icon=":material/check_circle:")
             st.caption(rolle.beschreibung)
 
     with st.container(border=True):
@@ -136,3 +135,78 @@ with protokoll_tab:
                         st.text_area("antwort", value=detail["antwort"], height=220,
                                      disabled=True, label_visibility="collapsed",
                                      key=f"agenten_antwort_view_{auswahl}")
+
+# ── Dossiers (Phase B) ─────────────────────────────────────────────
+with dossiers_tab:
+    from mqlkiscanner import db as scanner_db
+    from mqlkiscanner.agenten import dossier as dossier_db
+
+    st.markdown(
+        "Je Signal die wachsende Datenbasis: **Algo-Profil** (versioniert, aus "
+        "Tiefenanalyse/Gesamtbericht destilliert), **Beobachtungen** des "
+        "Betreuers und **Trade-Deltas**. Das Profil ist Beobachtungsbasis — "
+        "Ampel und Urteil bleiben Engine-Sache.")
+    katalog = scanner_db.list_catalog()
+    if not katalog:
+        st.caption("Keine Signale in der Datenbank — erst einen Scan laufen lassen.")
+    else:
+        eintraege = [{"id": s["signal_id"], "name": s["name"] or f"#{s['signal_id']}"}
+                     for s in katalog]
+        auswahl = st.selectbox(
+            "Signal", eintraege, format_func=lambda e: e["name"],
+            key="agenten_dossier_signal")
+        if auswahl:
+            signal_id = auswahl["id"]
+            profil = dossier_db.profil_lesen(signal_id)
+            historie = dossier_db.profil_historie(signal_id)
+            beobachtungen = dossier_db.beobachtungen_lesen(signal_id, limit=15)
+            deltas = dossier_db.deltas_lesen(signal_id, limit=10)
+
+            if profil is None:
+                st.info("Noch kein Algo-Profil — der Betreuer destilliert beim "
+                        "nächsten Tageslauf (vorherige Tiefenanalyse/Gesamtbericht "
+                        "erforderlich).", icon=":material/history:")
+            else:
+                with st.container(border=True):
+                    with st.container(horizontal=True, vertical_alignment="center",
+                                      wrap=True):
+                        st.markdown("**Algo-Profil**")
+                        st.badge(f"Version {profil['version']}", color="blue",
+                                 icon=":material/check:")
+                        st.caption(f"destilliert {profil['erstellt']} · "
+                                   f"{profil['modell'] or 'Modell unbekannt'}")
+                    st.markdown(profil["profil_text"])
+                    if len(historie) > 1:
+                        with st.expander(f"Profil-Historie ({len(historie) - 1} "
+                                         "ältere Versionen)"):
+                            for eintrag in historie[1:]:
+                                st.caption(f"Version {eintrag['version']} · "
+                                           f"{eintrag['erstellt']} · "
+                                           f"{eintrag['aenderungs_grund'] or ''}")
+
+            with st.container(border=True):
+                st.markdown(f"**Beobachtungen** ({len(beobachtungen)})")
+                if not beobachtungen:
+                    st.caption("Noch keine — der Betreuer schreibt hier bei jedem "
+                               "Tageslauf.")
+                for b in beobachtungen[:10]:
+                    farbe = {"KONFORM": "green", "KEINE_NEUEN_TRADES": "gray",
+                             "AUFFAELLIG": "orange", "STILBRUCH": "red"
+                             }.get(b["einordnung"], "gray")
+                    with st.container(horizontal=True, vertical_alignment="top",
+                                      wrap=True):
+                        st.badge(b["einordnung"], color=farbe)
+                        st.caption(f"{b['ts']}")
+                    st.markdown(b["text"])
+
+            with st.container(border=True):
+                st.markdown(f"**Trade-Deltas** ({len(deltas)})")
+                if deltas:
+                    st.dataframe(
+                        [{"Zeit": d["ts"], "Neue Trades": d["neue_trades"],
+                          "Hash (neu)": (d["neu_sha256"] or "")[:12] + "…"}
+                         for d in deltas],
+                        use_container_width=True, hide_index=True)
+                else:
+                    st.caption("Noch keine Deltas — der erste Tageslauf mit "
+                               "geändertem Export erzeugt den ersten Eintrag.")
