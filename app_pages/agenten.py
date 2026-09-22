@@ -58,32 +58,82 @@ with live_tab:
                      else "orange", icon=":material/lock:")
             st.caption("Starten, Stoppen und Konfigurieren: Einstellungen → Agenten")
 
-    with st.container(border=True):
-        st.markdown("**Die fünf Rollen**")
-        for rolle in rollen.ROLLEN:
-            with st.container(horizontal=True, vertical_alignment="center", wrap=True):
-                st.markdown(f"{rolle.icon} **{rolle.name}** — {rolle.takt}")
-                if rollen.phase_aktiv(rolle, rollen.AKTUELLE_PHASE):
-                    st.badge(f"Phase {rolle.phase} · aktiv", color="green",
-                             icon=":material/check_circle:")
-                else:
-                    st.badge(f"Phase {rolle.phase} · geplant", color="orange",
-                             icon=":material/history:")
-            st.caption(rolle.beschreibung)
+    from mqlkiscanner.agenten import ui_tree
+    ui_tree.rendere_agenten_baum()
 
     with st.container(border=True):
         st.markdown("**Letzte Läufe**")
-        laeufe = journal.list_laeufe(limit=10)
+        laeufe = journal.list_laeufe(limit=15)
         if not laeufe:
             st.caption("Noch keine Läufe — der Dirigent schreibt hier, sobald der "
                        "Betrieb läuft (oder per Kommandozeile: "
                        "`PYTHONPATH=src python -m mqlkiscanner.agenten --once`).")
         else:
+            def _rolle_label(r_key: str) -> str:
+                icons = {
+                    "dirigent": "🎼 Dirigent",
+                    "markt": "📊 Markt",
+                    "betreuer": "🛡️ Betreuer",
+                    "chef": "🕵️ Chef",
+                    "melder": "📬 Melder",
+                }
+                return icons.get(r_key, r_key.capitalize())
+
+            def _status_label(s: str) -> str:
+                sl = (s or "").lower()
+                if sl == "ok":
+                    return "✅ OK"
+                if sl == "skipped":
+                    return "⏭️ Übersprungen"
+                if sl == "fehler":
+                    return "❌ Fehler"
+                if sl == "laeuft":
+                    return "⏳ Läuft..."
+                return s.upper()
+
+            tabelle_daten = [
+                {
+                    "Zeit": lauf["start"],
+                    "Rolle": _rolle_label(lauf["rolle"]),
+                    "Aktion": lauf.get("aktion") or "—",
+                    "Resultat": lauf.get("resultat") or lauf.get("zusammenfassung") or "—",
+                    "Status": _status_label(lauf["status"]),
+                    "Quelle": lauf["quelle"].upper(),
+                }
+                for lauf in laeufe
+            ]
             st.dataframe(
-                [{"Zeit": lauf["start"], "Rolle": lauf["rolle"], "Quelle": lauf["quelle"],
-                  "Status": lauf["status"], "Zusammenfassung": lauf["zusammenfassung"] or ""}
-                 for lauf in laeufe],
-                use_container_width=True, hide_index=True)
+                tabelle_daten,
+                column_config={
+                    "Zeit": st.column_config.TextColumn("Zeit", width="small"),
+                    "Rolle": st.column_config.TextColumn("Rolle", width="small"),
+                    "Aktion": st.column_config.TextColumn("Was wurde gemacht?", width="medium"),
+                    "Resultat": st.column_config.TextColumn("Was war das Resultat?", width="large"),
+                    "Status": st.column_config.TextColumn("Status", width="small"),
+                    "Quelle": st.column_config.TextColumn("Quelle", width="small"),
+                },
+                width="stretch", hide_index=True)
+
+            with st.expander("🔍 Technische Details zu einem Lauf anzeigen", expanded=False):
+                auswahl_lauf_id = st.selectbox(
+                    "Lauf zur Detailansicht auswählen",
+                    [l["id"] for l in laeufe],
+                    format_func=lambda lid: next(
+                        f"#{l['id']} · {l['start']} · {_rolle_label(l['rolle'])} [{l['status']}]"
+                        for l in laeufe if l["id"] == lid),
+                    key="agenten_letzte_laeufe_sel"
+                )
+                if auswahl_lauf_id:
+                    sel = next(l for l in laeufe if l["id"] == auswahl_lauf_id)
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.markdown(f"**Durchgeführte Aktion:**\n{sel.get('aktion') or '—'}")
+                        st.caption(f"Rolle: `{sel['rolle']}` · Quelle: `{sel['quelle']}` · Signal-ID: `{sel.get('signal_id') or '—'}`")
+                    with c2:
+                        st.markdown(f"**Fachliches Resultat:**\n{sel.get('resultat') or '—'}")
+                        st.caption(f"Start: `{sel['start']}` · Ende: `{sel.get('ende') or '—'}` · Status: `{sel['status']}`")
+                    if sel.get("zusammenfassung"):
+                        st.caption(f"System-Meldung: `{sel['zusammenfassung']}`")
 
 # ── Protokoll ──────────────────────────────────────────────────────
 with protokoll_tab:
@@ -108,10 +158,10 @@ with protokoll_tab:
         st.dataframe(
             [{"Zeit": s["ts"], "Rolle": s["rolle"], "Schritt": s["schritt"],
               "Status": s["status"], "Modell": s["modell"] or "—",
-              "Token": s["tokens"] or 0,
-              "Dauer (s)": s["dauer_s"] if s["dauer_s"] is not None else "—"}
+              "Token": int(s["tokens"] or 0),
+              "Dauer (s)": f"{s['dauer_s']:.2f}" if s.get("dauer_s") is not None else "—"}
              for s in schritte],
-            use_container_width=True, hide_index=True)
+            width="stretch", hide_index=True)
         auswahl = st.selectbox(
             "Schritt öffnen (vollständiger Prompt und Antwort bei LLM-Schritten)",
             [s["id"] for s in schritte],
@@ -207,7 +257,7 @@ with dossiers_tab:
                         [{"Zeit": d["ts"], "Neue Trades": d["neue_trades"],
                           "Hash (neu)": (d["neu_sha256"] or "")[:12] + "…"}
                          for d in deltas],
-                        use_container_width=True, hide_index=True)
+                       width="stretch", hide_index=True)
                 else:
                     st.caption("Noch keine Deltas — der erste Tageslauf mit "
                                "geändertem Export erzeugt den ersten Eintrag.")

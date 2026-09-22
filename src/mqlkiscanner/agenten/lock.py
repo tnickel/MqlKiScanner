@@ -23,6 +23,13 @@ STALE_S = 3600  # ein Stunden-altes Lock ohne Lebenszeichen gilt als verwaist
 class LockBesetzt(RuntimeError):
     """Das Lauf-Lock hält ein anderer, lebender Prozess."""
 
+    def __init__(self, message: str, pid: int | None = None,
+                 alter_s: int | None = None, name: str = ""):
+        super().__init__(message)
+        self.pid = pid
+        self.alter_s = alter_s
+        self.name = name
+
 
 def _lock_pfad(basis: Path, name: str) -> Path:
     datei = basis / f"{name}.lock"
@@ -62,9 +69,11 @@ def lauf_lock(basis: Path, name: str = "agenten_lauff"):
                 except OSError:
                     pass
                 continue
+            pid = alt.get("pid")
+            alter_s = int(alter)
             raise LockBesetzt(
-                f"Lauf-Lock '{name}' wird gehalten (PID {alt.get('pid')}, "
-                f"seit {int(alter)} s)")
+                f"Lauf-Lock '{name}' wird gehalten (PID {pid}, seit {alter_s} s)",
+                pid=pid, alter_s=alter_s, name=name)
     if fd < 0:
         raise LockBesetzt(f"Lauf-Lock '{name}' konnte nicht übernommen werden")
     try:

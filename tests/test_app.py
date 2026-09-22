@@ -48,7 +48,7 @@ def test_scan_page_renders_steps():
     body = _body(at)
     assert "Signale holen" in body and "KI-Bericht" in body and "Portfolio" in body
     assert at.button(key="scan_start").label == "Full-Scan"
-    assert at.button(key="scan_gelbgruen").label == "Gelb/Grün-Scan"
+    assert at.button(key="scan_gelbgruen").label == "Teilscan"
     # Sektionskopf der Analyse-Zentrale (Titel ist ein subheader, hier die Caption)
     assert "fünf nachvollziehbare Stationen" in body
     assert "Signallisten und Handelsdaten von MQL5 laden" in body

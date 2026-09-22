@@ -446,7 +446,7 @@ def render_wechsel_karten(wechsel: list[dict]) -> None:
                 "nächsten Scan; jeder weitere Scan wird gegen den Vorgänger "
                 "verglichen.", icon=":material/history:")
         return
-    quelle_label = {"full": "Full-Scan", "gelbgruen": "Gelb/Grün-Scan"}
+    quelle_label = {"full": "Full-Scan", "gelbgruen": "Teilscan"}
     for w in wechsel:
         icon, label, karte = _RICHTUNG_LABEL.get(w.get("richtung", "hinweis"),
                                                  _RICHTUNG_LABEL["hinweis"])

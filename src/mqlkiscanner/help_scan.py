@@ -32,10 +32,10 @@ Bei jedem geprüften Signal wird die Ampel in die Farb-Chronik aufgezeichnet; We
 
 Ergebnisse erscheinen danach auf dieser Seite und unter „Ergebnisse“.
 """),
-    "scan_gelbgruen": ("Gelb/Grün-Scan starten", """
-**Regelmäßige Überwachung der Kandidaten und Beobachtungen.**
+    "scan_gelbgruen": ("Teilscan starten", """
+**Regelmäßige Überwachung der Kandidaten und Beobachtungen (vormals Gelb/Grün-Scan).**
 
-Der Lauf prüft NUR Signale, die aktuell **🟢 (Kandidat)** oder **🟡 (Beobachtung)** sind — alle anderen Farben werden in diesem Lauf nicht beachtet. Welches Signal dazu zählt, steht in der Datenbank (letzte Bewertung).
+Der Teilscan prüft NUR Signale, die aktuell **🟢 (Kandidat)** oder **🟡 (Beobachtung)** sind — alle anderen Farben werden in diesem Lauf nicht beachtet. Welches Signal dazu zählt, steht in der Datenbank (letzte Bewertung).
 
 **Immer mit KI:** Für jedes dieser Signale werden ALLE KI-Stufen neu erzeugt (Trade-Analyse, Risiko-Analyse, Gesamtbericht) — unabhängig von den Toggles „Nur neue Signale“ und „Vorhandene Berichte neu erstellen“. Danach läuft der Portfolio-Vorschlag über die geprüften Signale. Braucht KI-Key und Kontingent.
 

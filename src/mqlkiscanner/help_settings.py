@@ -287,7 +287,7 @@ das **Monatsbudget** pro Monat (Startwerte: 500.000 und 5.000.000 Token).
 Bei Erschöpfung werden Modell-Schritte übersprungen und gemeldet —
 Code-Schritte (Exporte, Delta-Berechnung, Forensik) laufen ohne Tokens
 weiter. Die **Startzeit** steuert den täglichen Dirigent-Takt (werktags;
-Wochenende ruht). Reguläre Scan-Läufe (Gelb/Grün, Full) zählen auf ihr
+Wochenende ruht). Reguläre Scan-Läufe (Teilscan, Full) zählen auf ihr
 eigenes Lauf-Budget und belasten das Agenten-Budget nicht.
 """),
     "settings_agenten_budget_save": ("Speichern: Budget und Takt", """

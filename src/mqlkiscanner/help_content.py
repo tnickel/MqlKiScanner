@@ -227,4 +227,92 @@ der Server bewertet nie selbst und schreibt nichts in die Datenbank.
 im Header `X-User-Key` senden. Änderungen an Port, Schalter oder Token greifen
 erst nach dem nächsten Start der App (der Server wird einmal beim Start geöffnet).
 """),
+    "agent_dirigent": ("🎼 Dirigent — Orchestrierung & Tagesplanung", """
+**Einfach erklärt:**
+Der Dirigent ist der Taktgeber und Koordinator des gesamten Agentensystems. Er startet morgens als Erster (werktags um 06:30 Uhr) und prüft den Gesamtzustand: Welcher Tag ist heute? Haben wir noch genug KI-Token-Budget? Welche Agenten sind überhaupt aktiv? Anschließend entscheidet er, welche Aufgaben anstehen, und weckt die anderen Agenten der Reihe nach auf (den Marktbeobachter um 06:35 Uhr, den Signal-Betreuer um 06:45 Uhr).
+
+**Technische Details & Befugnisse:**
+- **Strenge Whitelist:** Der Dirigent darf keine Aktionen frei erfinden. Seine Entscheidungen sind im Python-Code auf eine strikte Whitelist beschränkt (`delta_laufen_lassen`, `delta_ueberspringen`, `markt_holen`, `markt_ueberspringen`, `scan_gelb_gruen`, `scan_full`, `meldung_schicken`).
+- **Lauf-Lock:** Er reserviert das prozessweite System-Lock (`agenten_lauff`), damit automatisierte Läufe und manuelle GUI-Scans nicht kollidieren.
+- **Budget-Wächter:** Kontrolliert das tägliche und monatliche Token-Budget vor jedem KI-Aufruf.
+- **Grenzen:** Er bewertet niemals selbstständig Signale und darf keine mathematischen Kriterien überschreiben.
+"""),
+    "agent_markt": ("📈 Marktbeobachter — Kursdaten & Volatilität", """
+**Einfach erklärt:**
+Der Marktbeobachter analysiert das aktuelle Marktumfeld. Wenn unsere Handelssignale Positionen in Gold (XAUUSD), Währungen oder Indizes (DAX/DE40, US-Tech) halten, muss das System wissen, wie sich diese Märkte gerade bewegen. So lässt sich unterscheiden, ob ein Signalverlust an extremen Marktturbulenzen oder an Fehlern der Handelsstrategie lag.
+
+**Technische Details & Befugnisse:**
+- **MT5-Anbindung:** Liest historische H1- und Tageskurse direkt aus dem MetaTrader über das offizielle Python-Paket `MetaTrader5`.
+- **Reine Lese-Whitelist:** Zugriff ausschließlich auf `copy_rates_from_pos`, `symbol_select` und `terminal_info`. Sämtliche Trading- und Order-Funktionen sind im Code physisch nicht verdrahtet!
+- **Deterministische Kennzahlen:** Rechnet rein im Code: ATR14 (H1-Volatilitätsbandbreite), 24h-Range in %, Trendabstand zum 10-Tage-SMA sowie Performance über 1, 7 und 30 Tage.
+- **LLM-Verdichtung:** Übergibt die fertigen Zahlen an das Modell zur Formulierung des täglichen Marktkontexts (`markt_kontext`).
+"""),
+    "agent_betreuer": ("🛡️ Signal-Betreuer — Forensik & Stilbruch-Erkennung", """
+Der Signal-Betreuer (ausgeführt mit dem starken Modell **GLM-5.3**) ist der persönliche Wächter für jedes Signal auf deiner Empfehlungs- und Beobachtungsliste (Grün und Gelb). Er kennt die Handelsstrategie aus den bisherigen Berichten und prüft täglich, ob neue Trades noch exakt nach diesem Muster laufen oder ob ein Stilbruch vorliegt.
+
+---
+
+### 1. Schritt: Wie er die bisherigen Berichte auswertet (Profil-Destillation)
+
+Bevor ein Signal überwacht werden kann, liest das System alle vorliegenden Analysedokumente aus der Datenbank:
+1. **Die Tiefenanalyse** (ausführliche KI-Untersuchung der Strategie, Ein-/Ausstiegsmuster)
+2. **Den Gesamtbericht** (KI-Zusammenfassung und Risikobewertung)
+3. **Die Engine-Forensik** (harte Zahlen: Martingale-Signatur, SL-Cluster, Peak-Exposure, Holding-Zeiten)
+
+Daraus destilliert das Modell ein versioniertes **Algo-Profil** im Signal-Dossier mit festen Abschnitten:
+- **Strategietyp:** z. B. Mean-Reversion-Scalper, Grid, Trendfolge.
+- **Gehandelte Sessions & Zeiten:** An welchen Tagen und Uhrzeiten darf das System Positionen eröffnen.
+- **Positionsgrößen & Sizing:** Erlaubtes Lot-Verhalten (z. B. strikt fixe Lots vs. Eskalation nach Verlust verboten).
+- **Stop-Disziplin:** Typische SL-Distanzen und Verlustbegrenzung.
+- **Erwartetes Verhalten:** Typische Haltedauern, Drawdown-Bänder, Verlustserien-Länge.
+- **Nummerierte Konformitäts-Merkmale:** Feste Kriterien, woran man erkennt, dass das Signal *normal* handelt.
+- **Nummerierte Warn-Merkmale:** Konkrete Kriterien, was eine Abweichung oder ein *Stilbruch* wäre.
+
+> **Belegpflicht:** Liegen für ein Signal weder Tiefenanalyse noch Gesamtbericht vor, verweigert der Betreuer die Prüfung. Es wird **nichts erfunden** — ohne Belegbasis gibt es kein Profil.
+
+---
+
+### 2. Schritt: Wie er prüft, ob das Signal noch dem Muster folgt (Tagesprüfung)
+
+Bei jedem Tageslauf (werktags um 06:45 Uhr oder per Klick auf **⚡ Start** beim Betreuer) läuft folgende Kette:
+1. **Trade-Export abholen:** Der Betreuer lädt den neuesten MQL5-CSV-Export über den gemeinsamen Rate-Limiter.
+2. **Hash-Vergleich (0 Token bei Ruhe):** Stimmt der SHA-256-Hash mit gestern überein, gibt es keine neuen Trades. Das Modell wird **gar nicht erst aufgerufen** (spart Budget) → Einordnung: `KEINE_NEUEN_TRADES`.
+3. **Delta-Kennzahlen (Code rechnet):** Gibt es neue Trades, berechnet der Python-Code alle Kennzahlen der neuen Positionen (Lots, Haltedauer, Gewinne/Verluste, Distanzen).
+4. **LLM-Abgleich gegen das Profil:** Das Modell bekommt vorgelegt:
+   - das hinterlegte **Algo-Profil** (aus deinen Reports),
+   - die **berechneten Kennzahlen der neuen Trades**,
+   - den aktuellen **Marktkontext** (vom Marktbeobachter, z. B. Volatilität oder Gold-Trend).
+5. **Ergebnis-Einordnung:**
+   - **`KONFORM`**: Alle neuen Trades passen exakt zur bekannten Strategie.
+   - **`AUFFAELLIG`**: Verdächtige Abweichung (z. B. ungewöhnlich lange Haltedauer oder leicht erhöhtes Lot-Volumen).
+   - **`STILBRUCH`**: Gravierende Abweichung (z. B. plötzliche Martingale-Verdopplung, Hold ohne Stop, fremdes Währungspaar). Bei `STILBRUCH` schickt der Betreuer **sofort einen Priorität-3-Alert ins Postfach**.
+
+---
+
+### Wo du das in der Oberfläche siehst:
+- **Seite `Agenten` → Tab `Dossiers`:** Wähle oben das Signal aus (z. B. *Gold Spike MT4*). Dort siehst du links das vollständige **Algo-Profil** (aus deinen Berichten destilliert), darunter die Chronik der **Beobachtungen** (`KONFORM`, `AUFFAELLIG`, `STILBRUCH`) sowie die Historie der **Trade-Deltas**.
+- **Seite `Agenten` → Tab `Postfach`:** Hier landen sofort alle Alarme bei erkannten Stilbrüchen.
+"""),
+    "agent_chef": ("🔍 Chefermittler — Synthese & Wochenbericht", """
+**Einfach erklärt:**
+Der Chefermittler behält den strategischen Überblick über das gesamte Portfolio. Am Wochenende (sonntags ab 18:00 Uhr) und zum Monatswechsel studiert er alle Berichte, Marktkontexte und Auffälligkeiten der Woche und schreibt einen verständlichen Wochen-Lagebericht.
+
+**Technische Details & Befugnisse:**
+- **Taktung:** Startet sonntags nach dem wöchentlichen Teilscan sowie am 1. Werktag des Monats nach dem Full-Scan.
+- **Synthese:** Aggregiert Dossier-Spitzen, Ampelwechsel, Markttrends und Token-Verbräuche der vergangenen 7 Tage.
+- **Empfehlungen:** Gibt strategische Hinweise für künftige Scans, darf aber **niemals** selbst eine Signal-Ampel verändern.
+- **Ablage:** Speichert den Bericht als `lagebericht` direkt im Postfach der App.
+"""),
+    "agent_melder": ("📢 Melder — Alarmierung & Postfach-Digest", """
+**Einfach erklärt:**
+Der Melder ist deine Benachrichtigungszentrale. Er sorgt dafür, dass du wichtige Ereignisse sofort mitbekommst, ohne Logdateien durchsuchen zu müssen. Bei kritischen Vorfällen schlägt er Alarm; an normalen Tagen fasst er die Lage morgens kurz zusammen.
+
+**Technische Details & Befugnisse:**
+- **Drei Wege ins Postfach:**
+  1. *Sofort-Alert:* Bei P3-Stilbrüchen des Signal-Betreuers.
+  2. *Ampelwechsel-Watcher:* Registriert jeden Farbwechsel (Verschlechterung = P3, Verbesserung = P2), egal ob automatisch oder per GUI-Scan ausgelöst.
+  3. *Tages-Digest:* Tägliche Zusammenfassung um 07:10 Uhr im Postfach.
+- **Postfach:** Alle Meldungen werden mit Priorität und Quellenverweisen in der Datenbank gespeichert und im Tab „Postfach“ angezeigt (kein externer Mail- oder Chat-Spam).
+"""),
 }
+

@@ -151,17 +151,25 @@ def signal_pruefen(signal: dict, settings: dict, log=print,
     try:
         ergebnis = _signal_pruefen_inner(signal, settings, session,
                                          lauf_id, log)
-        journal.lauf_abschliessen(lauf_id, "ok", ergebnis["zusammenfassung"])
-        return ergebnis | {"lauf_id": lauf_id, "status": "ok"}
+        aktion = f"Handelsmuster von »{signal['name']}« geprüft"
+        resultat = ergebnis.get("resultat") or ergebnis.get("zusammenfassung") or "Konform"
+        journal.lauf_abschliessen(lauf_id, "ok",
+                                  zusammenfassung=ergebnis["zusammenfassung"],
+                                  aktion=aktion, resultat=resultat)
+        return ergebnis | {"lauf_id": lauf_id, "status": "ok",
+                           "aktion": aktion, "resultat": resultat}
     except Exception as exc:  # Ein Signal darf den Gesamtlauf nicht abreißen
         journal.schritt_protokollieren(lauf_id, "betreuer", "fehler",
                                        status="fehler",
                                        detail={"fehler": str(exc),
                                                "signal": signal["name"]})
-        journal.lauf_abschliessen(lauf_id, "fehler", str(exc))
+        aktion = f"Signalprüfung »{signal['name']}«"
+        resultat = f"Fehler: {exc}"
+        journal.lauf_abschliessen(lauf_id, "fehler", str(exc),
+                                  aktion=aktion, resultat=resultat)
         log(f"  Betreuer {signal['name']} fehlgeschlagen: {exc}")
         return {"status": "fehler", "grund": str(exc), "lauf_id": lauf_id,
-                "signal": signal["name"]}
+                "signal": signal["name"], "aktion": aktion, "resultat": resultat}
 
 
 def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
@@ -258,7 +266,22 @@ def tageslauf(quelle: str = "daemon", log=print, settings: dict | None = None,
     je = {}
     for e in ergebnisse:
         je[e.get("einordnung") or "OHNE"] = je.get(e.get("einordnung") or "OHNE",
-                                                   0) + 1
-    zusammen = ", ".join(f"{k}: {v}" for k, v in sorted(je.items())) or "keine Signale"
+                                                    0) + 1
+    
+    aktion = f"Handelsmuster von {len(signale)} aktiven Signal(en) geprüft"
+    if je.get("STILBRUCH", 0) > 0:
+        resultat = f"⚠️ STILBRUCH bei {je['STILBRUCH']} Signal(en) erkannt! Sofort-Alert ausgelöst."
+    elif je.get("AUFFAELLIG", 0) > 0:
+        resultat = f"Auffälligkeiten bei {je['AUFFAELLIG']} Signal(en) im Dossier vermerkt."
+    elif je.get("KONFORM", 0) > 0:
+        resultat = f"{je['KONFORM']} Signale geprüft: Alle Trade-Muster regelkonform."
+    elif je.get("KEINE_NEUEN_TRADES", 0) > 0:
+        resultat = f"{len(signale)} Signale unverändert: Keine neuen Trades seit letztem Check."
+    else:
+        zusammen_roh = ", ".join(f"{k}: {v}" for k, v in sorted(je.items())) or "keine Signale"
+        resultat = f"{len(signale)} Signale geprüft: {zusammen_roh}."
+
+    zusammen = f"{aktion}: {resultat}"
     return {"signale": len(signale), "einordnungen": je,
-            "zusammenfassung": zusammen, "ergebnisse": ergebnisse}
+            "zusammenfassung": zusammen, "aktion": aktion, "resultat": resultat,
+            "ergebnisse": ergebnisse}

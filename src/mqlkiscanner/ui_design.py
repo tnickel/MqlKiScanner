@@ -446,8 +446,20 @@ def _stylesheet() -> str:
         .mks-mini {{ max-width: 11rem; }}
     }}
     [role="dialog"] {{
-        border: 1px solid rgba(56, 189, 248, 0.3);
+        border: 1px solid rgba(56, 189, 248, 0.45) !important;
         background: #0E1A2C !important;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.65) !important;
+        border-radius: 16px !important;
+    }}
+    /* Agenten-Kacheln der Seite „Agenten" (ui_tree._rendere_kompakte_kachel,
+       st.container key je Rolle mit Präfix agentenkachel_) — Hover-Lift */
+    [class*="st-key-agentenkachel"] {{
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }}
+    [class*="st-key-agentenkachel"]:hover {{
+        border-color: rgba(0, 210, 211, 0.65) !important;
+        box-shadow: 0 6px 24px rgba(0, 210, 211, 0.25) !important;
+        transform: translateY(-2px);
     }}
     @media(max-width:640px) {{
         .st-key-page_hero {{ padding: 1.1rem; background-size: cover, auto 100%; }}

@@ -98,3 +98,81 @@ def test_admin_tab_rollen_speichern_schreibt_settings(admin_frame):
     for name, wert in config.DEFAULT_SETTINGS.items():
         if name.startswith("agenten_"):
             assert settings[name] == wert, name
+
+
+def test_agenten_baum_rendert_alle_aktionsbuttons():
+    at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
+                           default_timeout=30).run()
+    assert not at.exception
+    for r in ("dirigent", "markt", "betreuer", "chef", "melder"):
+        assert at.button(key=f"run_{r}") is not None
+        assert at.button(key=f"details_{r}") is not None
+
+
+_DIALOG_WRAPPER = """
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+import streamlit as st
+from mqlkiscanner.agenten import ui_tree
+from mqlkiscanner.ui_design import apply_theme
+apply_theme()
+ui_tree.zeige_agent_dialog("dirigent")
+"""
+
+
+@pytest.fixture
+def dialog_frame(tmp_path):
+    datei = tmp_path / "_dialog_frame.py"
+    datei.write_text(_DIALOG_WRAPPER, encoding="utf-8")
+    return datei
+
+
+def test_agent_dialog_rendert_ohne_fehler(dialog_frame):
+    at = AppTest.from_file(str(dialog_frame), default_timeout=30).run()
+    assert not at.exception
+    text = _sichttext(at)
+    assert "Dirigent" in text
+    metriken = [m.label for m in at.metric]
+    assert "Tokens (Protokoll)" in metriken
+    assert len(at.tabs) == 3
+
+
+
+def test_start_button_zeigt_lock_warnung_wenn_belegt():
+    """GUI-Starts außerhalb des Dirigenten laufen unter dem Lauf-Lock:
+    Ist es belegt (z. B. Daemon-Takt), erscheint eine Warnung und KEIN
+    zweiter Lauf — vorher starteten Betreuer/Markt/Chef/Melder ungeschützt
+    parallel zum Daemon (doppelter MQL5-Traffic, Dossier-Wettlauf)."""
+    from mqlkiscanner import config
+    from mqlkiscanner.agenten import lock
+
+    at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
+                           default_timeout=30).run()
+    assert not at.exception
+    with lock.lauf_lock(config.DATA_DIR):
+        at.button(key="run_markt").click().run()
+    fehler = " ".join(e.value for e in at.error)
+    assert "Lauf-Lock besetzt" in fehler
+
+
+def test_dialog_zeigt_konfigurierte_budgets_und_uhrzeit(dialog_frame, monkeypatch):
+    """Dialog liest die echten Budget-Keys (agenten_tagesbudget_tokens …)
+    und zeigt die Start-UHRZEIT des letzten Laufs — nicht das Datum."""
+    import re
+    from mqlkiscanner import config as cfg
+    from mqlkiscanner.agenten import journal
+
+    lauf = journal.lauf_starten("dirigent", quelle="test")
+    journal.lauf_abschliessen(lauf, "ok", "Testlauf für Dialog-Anzeige")
+
+    monkeypatch.setattr(cfg, "load_settings", lambda: {
+        **cfg.DEFAULT_SETTINGS,
+        "agenten_tagesbudget_tokens": 123_456,
+    })
+    at = AppTest.from_file(str(dialog_frame), default_timeout=30).run()
+    assert not at.exception
+    start = next(m for m in at.metric if m.label == "Letzter Start")
+    assert re.fullmatch(r"\d{2}:\d{2}:\d{2}", str(start.value)), start.value
+    captions = " ".join(c.value for c in at.caption)
+    assert "Tageslimit: 123,456" in captions

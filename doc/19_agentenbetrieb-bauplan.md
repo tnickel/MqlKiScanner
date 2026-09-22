@@ -257,22 +257,35 @@ Konzept-Baustein „KursExporter.mq5" ist damit **gestrichen**.
 ### 7.3 Betrieb & Konfiguration (eigner Admin-Bereich, Abschnitt 8.2)
 - **Terminal-Pfad** austauschbar (Default
   `C:/Forex/Mt5/TickmillLifeMql5/terminal64.exe`).
-- **Start-Politik-Schalter:** „Terminal selbst starten, falls nicht läuft"
-  — Default **aus**. Grund: Live-Terminal; ein unüberwachter Start könnte
-  dort laufende EAs/Signale aktivieren. Läuft das Terminal nicht, wartet der
-  Marktbeobachter bis zum nächsten Intervall und der Melder vermerkt es im
-  Digest. (Unter der Woche läuft das Terminal ohnehin meist.)
+- **Start-Politik-Schalter:** „Terminal selbst starten (portable) und nach
+  dem Lauf beenden" — Default **aus**. Grund: Live-Terminal; ein unüberwachter
+  Start könnte dort laufende EAs/Signale aktivieren.
+- **Selbststart (Nutzer-Freigabe 22.09.2026, AKTIV):** `initialize(pfad,
+  portable=True)` startet das Terminal im PORTABLE-Modus (Hauptinstallation
+  unberührt). Das Terminal des konfigurierten Pfads gehört dem Scanner
+  (Nutzer-Regel): es wird nach jedem Lauf beendet — sanft (WM_CLOSE), dann
+  hart — auch wenn es vor dem Lauf schon lief (`terminal_beendet` steht im
+  Protokoll-Schritt `kursholen`). Läuft es nicht und ist der Schalter aus,
+  wartet der Marktbeobachter bis zum nächsten Intervall (Skip mit Grund).
+  Der Prozess-Check ist pfadgenau (CIM `ExecutablePath`): ein fremdes
+  MT5-Terminal blockiert den Selbststart nicht und wird nie angefasst.
 - **Symbol-Watchlist:** automatisch aus den 🟢/🟡-Signalen abgeleitet
   (deren `forensik.symbole`), manuell erweiterbar.
 - Timeframes (M15/H1/D1), Lookback-Tage, Abrufzeit, Timeout.
 - Wochenende: Forex/Gold geschlossen → Marktbeobachter überspringt Sa/So.
 
-### 7.4 Verifikation V1 (offen, ~10 Minuten, mit Nutzer zusammen)
-Attach-Test gegen das **laufende** Terminal: `initialize()` ohne Start,
-`copy_rates_range("XAUUSD", …)` lesen, `shutdown()`. Klären: Admin-Rechte-/Bitness-Parität
-(Python und Terminal müssen gleiche Rechteebene haben — bekannte Stolperfalle
-des Pakets) und ob bei mehreren MT5-Installationen der richtige Pfad greift.
-Ergebnis wird hier nachgetragen.
+### 7.4 Verifikation V1 (ERLEDIGT, 22.09.2026)
+Attach- und Selbststart-Pfade wurden mit dem Nutzer zusammen E2E verifiziert
+(CLI `--markt`, Terminal `TickmillLifeMql5`):
+- **Selbststart portable:** Lauf #11 — Terminal gestartet (portable), 14
+  Symbole, Terminal danach beendet; Gesamtlauf ~60 s inkl. Kaltstart.
+- **Attach:** Lauf #12/#15 — Terminal lief bereits, `initialize` ohne
+  portable-Flag, 29-30 Symbole; Terminal am Lauf-Ende beendet (Nutzer-Regel).
+- **LLM-Lage:** funktioniert; `agenten_markt_max_tokens` auf 16.384 erhöht
+  (30 Symbole sprengten 4.096/8.192 — sonst maschinelle Fallback-Fassung).
+- Admin-Rechte-/Bitness-Parität: kein Problem aufgetreten (gleiche Ebene).
+- Beobachtungsliste: `forensik.symbole`-Artefakte („+"-Suffix, „SUMMARY")
+  werden jetzt robust geparsest — vorher 24 tote Symbol-Selects je Lauf.
 
 ## 8. Grafische Oberfläche
 
@@ -297,32 +310,79 @@ Downloader-Verbindungstest).
 
 ### 8.3 Seite „Agenten" (Beobachtung — das Fenster zu den LLMs)
 
+Die Seite „Agenten“ visualisiert die 5 Rollen als interaktive Fintech/Cyberpunk-
+Topologie mit SVG-Datenflüssen, Porträts, Schnellstart-Buttons und einem
+großen Inspektions-Modal:
+
 ```
 ┌ Agenten ────────────────────────────────────────────────────────┐
-│ [Live]   [Protokoll]   [Postfach (3)]   [Dossiers]              │
-│ ── Live ────────────────────────────────────────────────────────│
-│ 🟢 Dirigent        06:30  Tagesplan erstellt (7 Aktionen)       │
-│ 🟢 Markt           06:35  6/6 Symbole, XAUUSD +0,4 % / ATR 18,2 │
-│ 🟢 Betreuer        06:45  Gold Spike: 2 neue Trades → KONFORM   │
-│ 🟡 Betreuer        06:52  KiraCat: keine neuen Trades           │
-│ …                                                                │
-│ ── Protokoll (Filter: Rolle/Signal/Tag) ─────────────────────── │
-│ ▸ 06:47 Betreuer · Gold Spike · glm-5.3 · 3.812 Tok · 41 s      │
-│    [gefüllter Prompt vollständig]  [Antwort vollständig]        │
-│ ▸ 06:35 Markt · glm-5.3 · 1.204 Tok · 9 s   …                   │
+│ [Live]   [Protokoll]   [Postfach]   [Dossiers]                  │
+│ ── Live: Cyberpunk-Baumdiagramm & Datenflüsse ─────────────────│
+│                    ┌─────────────────────────┐                  │
+│                    │   🎼 DIRIGENT (Master)  │                  │
+│                    │  06:30 Takt · Budget OK │                  │
+│                    └────────────┬────────────┘                  │
+│                    ▲            │                               │
+│         ┌──────────┴────────────┴──────────┐                    │
+│         ▼ [06:35 MT5 Kurse]                ▼ [06:45 Trade-Diff] │
+│ ┌─────────────────────────┐      ┌─────────────────────────┐    │
+│ │   📈 MARKTBEOBACHTER    │ ──►  │   🛡️ SIGNAL-BETREUER    │    │
+│ │  Kurs-Kontext & ATR     │      │ Trade-Deltas & Dossier  │    │
+│ └───────────┬─────────────┘      └───────────┬─────────────┘    │
+│             │                                │ ⚡ P3 Stilbruch  │
+│             ▼                                ▼                  │
+│ ┌─────────────────────────┐      ┌─────────────────────────┐    │
+│ │    🔍 CHEFERMITTLER     │ ──►  │        📢 MELDER        │    │
+│ │ Wochen-Lagebericht      │      │ Alerts & Postfach-Digest│    │
+│ └─────────────────────────┘      └───────────┬─────────────┘    │
+│                                              ▼                  │
+│                                  ┌─────────────────────────┐    │
+│                                  │  📬 POSTFACH DER APP    │    │
+│                                  └─────────────────────────┘    │
+│ ── Kacheln je Rolle ───────────────────────────────────────────│
+│ ⚡ [Starten]             🔍 [Protokoll & Details öffnen]        │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-- **Live:** welche Rolle arbeitet woran (gleiche Philosophie wie das
-  Aktivitätsbanner — sichtbar, WAS läuft).
-- **Protokoll:** chronologische Liste **jedes** LLM-Aufrufs, aufklappbar mit
-  vollständigem gefülltem Prompt und vollständiger Antwort, Modell, Tokens,
-  Dauer, Status. Auch Code-Schritte (Export, Delta, Lock) erscheinen als
-  Einträge. Nichts wird gekürzt — alles, was ein LLM sagt, steht im Protokoll.
-- **Postfach:** Alerts + Digests + Lageberichte mit Quellenverweisen
-  (Sprung zum auslösenden Schritt).
-- **Dossiers:** je Signal Algo-Profil (Version + Historie), Trade-Chronik,
-  Beobachtungen, Ampel-Verlauf.
+- **Visuelles Baumdiagramm (`ui_tree.py`):**
+  - Ebene 1: Dirigent als Master-Orchestrator an der Spitze.
+  - Ebene 2: Datenerhebung & Forensik (Marktbeobachter + Signal-Betreuer mit
+    Querverbindung für Marktkontext/ATR).
+  - Ebene 3: Synthese & Alarmierung (Chefermittler + Melder mit Sofort-Alert-
+    Strom für P3-Stilbrüche und Postfach-Ausgang).
+  - SVG mit animierten Flusspartikeln (`pulse-flow`), Farbverläufen und
+    Taktbeschriftungen.
+- **Rollen-Avatare:**
+  - Jede Rolle besitzt ein maßgeschneidertes, hochauflösendes Cyberpunk-Porträt
+    im Glowing-Halo-Rahmen (`agent_dirigent.jpg`, `agent_markt.jpg`,
+    `agent_betreuer.jpg`, `agent_chef.jpg`, `agent_melder.jpg`) sowie ein
+    Hero-Banner (`hero_agenten_banner.jpg`).
+- **Einzelstart-Buttons („⚡ Starten"):**
+  - Jede Rolle kann per Klick direkt aus der GUI synchron ausgeführt werden
+    (`dirigent.tageslauf`, `markt.tageslauf`, `betreuer.tageslauf`,
+    `chef.lagebericht`, `melder.tagesdigest`), abgesichert durch das Lauf-Lock:
+    Der Dirigent nimmt es intern (kurz, beim Lauf-Start); für alle anderen
+    Rollen hält `ui_tree.agent_manuell_ausfuehren` es über die GESAMTE
+    Laufdauer — ein GUI-Klick kann nie parallel zu einem Daemon-Takt einen
+    zweiten Lauf starten (doppelter MQL5-Traffic, Dossier-Wettlauf).
+  - Bei besetztem Lock: rote Warnung in der GUI plus dokumentierter
+    Skip-Lauf im Journal (Quelle `gui`) — kein stiller Doppel-Lauf, auch
+    kein Erfolgstoast über einen Überspringer (Toast zeigt „übersprungen"
+    mit Begründung).
+- **Großes Inspektionsfenster („🔍 Protokoll & Details" via `@st.dialog`):**
+  - Öffnet ein breites Modal mit 3 Tabs:
+    1. *📜 Protokoll & Schritte:* chronologische Teilschritte, bei LLM-Schritten
+       mit **vollständigem gefülltem Prompt** und **vollständiger Antwort**.
+    2. *💬 Postfach & Meldungen:* alle von der Rolle erzeugten Alerts (P1–P3)
+       und Digests mit Quellenbelegen.
+    3. *🧠 Erkenntnisse & Live-Zustand:* rollenspezifische Daten (Budget &
+       Aktions-Whitelist beim Dirigenten, MT5-Symbole & ATR beim Markt,
+       Algo-Profile & Beobachtungen beim Betreuer, Wochenbericht beim Chef).
+- **Tabs der Seite:**
+  - **Live:** Daemon-Statusleiste, Baumdiagramm mit Rollenkarten, Letzte Läufe.
+  - **Protokoll:** tabellarischer Filter über alle Rollen und Schritte.
+  - **Dossiers:** je Signal Algo-Profil, Historie, Beobachtungen und Deltas.
+  - **Postfach:** Alerts, Digests und Lageberichte des Melders.
 
 ## 9. Betriebsrhythmus
 

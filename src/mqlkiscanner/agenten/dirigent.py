@@ -148,12 +148,20 @@ def tageslauf(quelle: str = "daemon", log=print) -> dict:
             lauf_id = journal.lauf_starten("dirigent", quelle=quelle)
     except lock.LockBesetzt as exc:
         lauf_id = journal.lauf_starten("dirigent", quelle=quelle)
+        pid_info = f" (PID {exc.pid})" if getattr(exc, "pid", None) else ""
+        aktion = f"Startversuch Dirigent-Tageslauf ({quelle.upper()})"
+        resultat = f"Übersprungen: Vorheriger Lauf{pid_info} war noch aktiv (Kollisionsschutz)."
         journal.schritt_protokollieren(
             lauf_id, "dirigent", "lock", status="skipped",
-            detail={"grund": str(exc)})
-        journal.lauf_abschliessen(lauf_id, "skipped", f"Lauf-Lock belegt: {exc}")
+            detail={"grund": str(exc), "pid": getattr(exc, "pid", None),
+                    "alter_s": getattr(exc, "alter_s", None)})
+        journal.lauf_abschliessen(lauf_id, "skipped",
+                                  zusammenfassung=f"Lauf-Lock belegt: {exc}",
+                                  aktion=aktion, resultat=resultat)
         log(f"Dirigent übersprungen: {exc}")
-        return {"status": "skipped", "grund": str(exc), "lauf_id": lauf_id}
+        return {"status": "skipped", "grund": str(exc), "lauf_id": lauf_id,
+                "aktion": aktion, "resultat": resultat,
+                "zusammenfassung": f"Lauf-Lock belegt: {exc}"}
 
     journal.schritt_protokollieren(lauf_id, "dirigent", "lock", status="ok",
                                    detail={"inhaber_pid": "self"})
@@ -170,10 +178,20 @@ def tageslauf(quelle: str = "daemon", log=print) -> dict:
             detail={"uebernommene_aktionen": entscheidung["aktionen"],
                     "begruendung": entscheidung["begruendung"]})
 
-    zusammen = (f"Phase-A-Tageslauf: {len(plan)} Plan-Aktion(en)"
-                + (f", LLM: {entscheidung['aktionen']}" if entscheidung else
-                   ", ohne LLM-Entscheidung"))
-    journal.lauf_abschliessen(lauf_id, "ok", zusammen)
-    log(f"Dirigent-Lauf {lauf_id} abgeschlossen: {zusammen}")
+    aktion = "Tageslage & Einsatzplan der Agenten prüfen"
+    if entscheidung and entscheidung.get("begruendung"):
+        resultat = entscheidung["begruendung"]
+    elif lage.get("wochenende"):
+        resultat = "Wochenende: Forex-Märkte geschlossen — System im Ruhezustand."
+    elif lage.get("tokens_heute", 0) >= lage.get("tagesbudget_tokens", 500_000):
+        resultat = "Tagesbudget erreicht: Modell-Aufrufe bis morgen pausiert."
+    else:
+        resultat = "Regelbetrieb freigegeben: Keine offenen Aufgaben, alle Agentenrollen einsatzbereit."
+
+    zusammen = f"Phase-A-Tageslauf: {resultat}"
+    journal.lauf_abschliessen(lauf_id, "ok", zusammenfassung=zusammen,
+                              aktion=aktion, resultat=resultat)
+    log(f"Dirigent-Lauf {lauf_id} abgeschlossen: {resultat}")
     return {"status": "ok", "lauf_id": lauf_id, "plan": plan,
-            "entscheidung": entscheidung, "lage": lage}
+            "entscheidung": entscheidung, "lage": lage,
+            "aktion": aktion, "resultat": resultat, "zusammenfassung": zusammen}

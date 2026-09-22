@@ -82,7 +82,7 @@ def _aktiver_scan() -> bool:
 
 
 def faellige_scans(jetzt: datetime, settings: dict) -> list[str]:
-    """Autonome Scan-Anstöße (Phase E): Sonntag Gelb/Grün, Monatserster
+    """Autonome Scan-Anstöße (Phase E): Sonntag Teilscan, Monatserster
     Werktag Full — je einmal, mit Monats-Merker gegen Wiederholung."""
     from . import scan_launcher
     start = _start_minute(settings)

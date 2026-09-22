@@ -7,7 +7,7 @@ Postfach (doc/19 §8.3). Er EMPFIEHLT — er entscheidet nichts und bewertet
 nichts neu (Engine-Bindung); Widersprüche zwischen Bericht und Engine
 gelten zugunsten der Engine.
 
-Takt: sonntags abends (nach dem Gelb/Grün-Scan des Tages) und am 1. Werktag
+Takt: sonntags abends (nach dem Teilscan des Tages) und am 1. Werktag
 des Monats (nach dem Full-Scan). Läuft ein Scan noch, verschiebt sich der
 Bericht automatisch zum nächsten Tick — wie der Digest des Melders.
 """
@@ -87,8 +87,12 @@ def lagebericht(quelle: str = "daemon", log=print,
         journal.schritt_protokollieren(lauf_id, "chef", "lagebericht",
                                        status="skipped",
                                        detail={"grund": grund})
-        journal.lauf_abschliessen(lauf_id, "skipped", grund)
-        return {"status": "skipped", "grund": grund, "lauf_id": lauf_id}
+        aktion = "Wochen-Lagebericht erstellen"
+        resultat = f"Verschoben: Scan-Lauf #{aktive_scans[0]['id']} noch aktiv."
+        journal.lauf_abschliessen(lauf_id, "skipped", grund,
+                                  aktion=aktion, resultat=resultat)
+        return {"status": "skipped", "grund": grund, "lauf_id": lauf_id,
+                "aktion": aktion, "resultat": resultat}
 
     grundlage = {
         "dossiers": dossiers_kompakt(),
@@ -112,11 +116,14 @@ def lagebericht(quelle: str = "daemon", log=print,
     meldung_id = journal.meldung_speichern(
         "lagebericht", f"Lagebericht ({datetime.now():%d.%m.%Y %H:%M})",
         text, prioritaet=1, quellen=[f"lauf#{lauf_id}"])
+    aktion = "Wochen-Lagebericht aus Marktdaten, Dossiers & Ampelwechseln aggregiert"
+    resultat = f"Lagebericht #{meldung_id} erstellt und im Postfach abgelegt ({quelle_text})."
     journal.lauf_abschliessen(lauf_id, "ok",
-                              f"Lagebericht ({quelle_text}) ins Postfach.")
+                              f"{aktion}: {resultat}",
+                              aktion=aktion, resultat=resultat)
     log(f"Chefermittler: Lagebericht #{meldung_id} ({quelle_text}).")
     return {"status": "ok", "lauf_id": lauf_id, "meldung_id": meldung_id,
-            "text": text}
+            "text": text, "aktion": aktion, "resultat": resultat}
 
 
 def _llm_bericht(grundlage: dict, settings: dict, lauf_id: int,

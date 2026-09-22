@@ -157,7 +157,8 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   + Seite /kiscanner. Konfiguration: Admin → Tradeserver (Base-URL +
   API-Key im secrets_store). Doku: `doc/06_tradeserver-sync.md`
 - ✅ Ampel-Verlauf + Re-Scan-Buttons (21.09.2026): Scan-Seite hat zwei
-  Start-Buttons — **Full-Scan** (alles) und **Gelb/Grün-Scan** (nur aktuell
+  Start-Buttons — **Full-Scan** (alles) und **Teilscan** (vormals
+  Gelb/Grün-Scan; nur aktuell
   🟢/🟡-Signale laut DB, IMMER alle LLM-Stufen neu; andere Farben werden
   nicht beachtet). Jeder erfolgreich persistierte Scan schreibt die Ampel
   in die append-only-Chronik (`ampel_verlauf`); gegen den Vorgänger wird
@@ -199,8 +200,16 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Tageskontext, Admin-Bereich „Marktdaten" mit Verbindungstest, Takt
   Startzeit + 5 min, CLI `--markt`. E2E verifiziert (synthetische Kurse
   + echtes LLM auf Temp-DB; Produktions-Skip ohne Terminal). 839 Tests
-  grün. OFFEN: echte V1-Attach-Prüfung MIT NUTZER, sobald das Terminal
-  läuft (Admin → Marktdaten → Verbindung testen).
+  grün. **Update 22.09.2026 abends — Selbststart AKTIV (Nutzer-Freigabe)
+  und V1-Attach E2E bestätigt:** `markt_start_erlauben=true` in
+  app_settings.json; `initialize(pfad, portable=True)` startet das
+  Terminal PORTABEL und `terminal_beenden()` schließt es nach jedem Lauf
+  (sanft dann hart; auch ein vorgefundenes Terminal dieses Pfads —
+  Nutzer-Regel „es gehört dem Scanner"); Prozess-Check pfadgenau über
+  CIM (fremde MT5-Installationen unberührt); Beobachtungsliste parst
+  Forensik-Artefakte („+"-Suffix, „SUMMARY") robust;
+  `agenten_markt_max_tokens=16384` (30 Symbole sprengten 4096/8192).
+  Ergebnisse in doc/19 §7.3/§7.4.
 - ✅ Agentenbetrieb Phase D (22.09.2026): Melder — dreifacher Weg ins
   **Postfach** (Tab auf der Agenten-Seite): SOFORT-Alert des Betreuers
   bei STILBRUCH (P3), Ampelwechsel-Watcher in JEDEM Scheduler-Tick
@@ -218,17 +227,17 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Meldung `lagebericht` ins Postfach; verschiebt sich bei laufendem
   Scan; empfiehlt, bewertet nie neu), `agenten/scan_launcher.py`
   (headless-Pipeline exakt wie die Scan-Seite: Listen → Kandidaten →
-  Gelb/Grün-Scope über results_from_db → Forensik mit Login/Fail-Fast →
+  Teilscan-Scope über results_from_db → Forensik mit Login/Fail-Fast →
   KI-Berichte → Portfolio; Scan-Abschluss als Postfach-Meldung;
   Monats-/Tages-Merker gegen Wiederholung; Lauf-Lock; Thread, damit der
-  Daemon-Herzschlag frisch bleibt). Takte: Sonntag 12:00 Gelb/Grün-Scan,
+  Daemon-Herzschlag frisch bleibt). Takte: Sonntag 12:00 Teilscan,
   1. Werktag des Monats Full-Scan (ab Startzeit+60), Chef sonntags ab
   18 Uhr und am Full-Scan-Tag (wartet auf Scan-Ende); Digest/Lagebericht
   bleiben unfällig, während lange Läufe arbeiten (kein Skip-Spam). CLI:
   `--chef`, `--scan gelbgruen|full`. 861 Tests grün. Abnahme „Monat
   ohne Scan-Klick": Orchestrierung verifiziert (Fake-Pipeline-Tests +
   Scheduler-Takte); der erste echte autonome Monat beginnt mit dem
-  nächsten Sonntag (Gelb/Grün) bzw. 1. Werktag (Full).
+  nächsten Sonntag (Teilscan) bzw. 1. Werktag (Full).
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
@@ -237,8 +246,8 @@ Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
       `--digest`, `--chef`)
 - [x] Automatisierte Alerts (Ampelwechsel, Stilbruch, Scan-Abschluss) —
       Melder/Postfach, Phase D/E
-- [ ] V1-Attach-Prüfung mit Nutzer (Terminal starten → Admin → Marktdaten
-      → Verbindung testen; Ergebnis in doc/19 §7.4 nachtragen)
+- [x] V1-Attach-Prüfung mit Nutzer — ERLEDIGT 22.09.2026 (Selbststart UND
+      Attach E2E verifiziert, Ergebnis in doc/19 §7.4 nachgetragen)
 - [ ] Autostart des Daemon nach Rechner-Neustart (start.bat-Erweiterung
       oder Aufgabenplanung — offen, Nutzer-Entscheidung)
 - [ ] Erster voller autonomer Monat (Bestätigung der Phase-E-Abnahme

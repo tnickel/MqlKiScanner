@@ -10,8 +10,6 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-import pytest
-
 from mqlkiscanner import config, db
 from mqlkiscanner.agenten import (betreuer, journal, markt, marktdata, rollen)
 
@@ -74,22 +72,114 @@ def test_kennzahlen_kurze_basis_ohne_crash():
 # ── Start-Politik ──────────────────────────────────────────────────
 
 def test_kurse_holen_ohne_terminal_und_ohne_startfreigabe(monkeypatch):
-    """Kein laufendes Terminal + Standard-Politik ⇒ KEIN Verbindungsversuch."""
+    """Kein laufendes Terminal + Standard-Politik ⇒ KEIN Verbindungsversuch.
+
+    Explizite Settings statt load_settings(): in der Produktiv-Konfiguration
+    ist markt_start_erlauben aktiviert — Tests dürfen davon nicht abhängen.
+    """
     monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: False)
     def _verboten():
         raise AssertionError("initialize darf nicht aufgerufen werden")
     import MetaTrader5 as mt5
     monkeypatch.setattr(mt5, "initialize", _verboten)
-    ergebnis = marktdata.kurse_holen(["XAUUSD"], config.load_settings())
+    ergebnis = marktdata.kurse_holen(["XAUUSD"], {"markt_start_erlauben": False})
     assert not ergebnis["ok"]
     assert "Selbststart" in ergebnis["grund"]
 
 
 def test_verbindungstest_erklaert_standardpolitik(monkeypatch):
     monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: False)
-    ergebnis = marktdata.verbindung_testen(config.load_settings())
+    ergebnis = marktdata.verbindung_testen({"markt_start_erlauben": False})
     assert not ergebnis["ok"]
     assert "Terminal läuft nicht" in ergebnis["grund"]
+
+
+def _fake_mt5(monkeypatch, aufrufe):
+    """MT5-Fakes mit Aufruf-Protokoll: initialize/shutdown + Kursdaten.
+
+    _terminal_prozesse wird leer gemockt: Tests dürfen NIE echte
+    terminal64-Prozesse sehen (und damit beenden)."""
+    import MetaTrader5 as mt5
+
+    def _initialize(*args, **kwargs):
+        aufrufe.append(("initialize", args, kwargs))
+        return True
+
+    def _shutdown():
+        aufrufe.append(("shutdown", (), {}))
+
+    def _rates(*args):
+        anzahl = args[-1]
+        return [{"time": i, "open": 100.0 + i, "high": 105.0 + i,
+                 "low": 95.0 + i, "close": 100.0 + i} for i in range(anzahl)]
+
+    monkeypatch.setattr(mt5, "initialize", _initialize)
+    monkeypatch.setattr(mt5, "shutdown", _shutdown)
+    monkeypatch.setattr(mt5, "terminal_info",
+                        lambda: type("Info", (), {"name": "FakeTerm"})())
+    monkeypatch.setattr(mt5, "symbol_select", lambda *a, **k: True)
+    monkeypatch.setattr(mt5, "copy_rates_from_pos", _rates)
+    monkeypatch.setattr(marktdata, "_terminal_prozesse", lambda pfad: [])
+
+
+def test_kurse_holen_selbststart_portable_und_beenden(monkeypatch):
+    """Start-Freigabe + kein laufendes Terminal: PORTABLE-Start, und am
+    Lauf-Ende wird die Verbindung (und damit das Terminal) wieder beendet."""
+    monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: False)
+    aufrufe = []
+    _fake_mt5(monkeypatch, aufrufe)
+    ergebnis = marktdata.kurse_holen(
+        ["XAUUSD"], {"markt_start_erlauben": True,
+                     "markt_terminal_pfad": marktdata.DEFAULT_TERMINAL})
+    assert ergebnis["ok"]
+    assert ergebnis["selbststart"] is True
+    init = next(a for a in aufrufe if a[0] == "initialize")
+    assert init[2].get("portable") is True             # Portable-Modus beim Selbststart
+    assert init[1][0] == marktdata.DEFAULT_TERMINAL    # richtiger Terminal-Pfad
+    assert aufrufe[-1][0] == "shutdown"               # Abbau am Ende
+
+
+def test_kurse_holen_attach_ohne_portableflag(monkeypatch):
+    """Läuft das Terminal schon, wird nur angehängt — KEIN portable-Start."""
+    monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: True)
+    aufrufe = []
+    _fake_mt5(monkeypatch, aufrufe)
+    ergebnis = marktdata.kurse_holen(
+        ["XAUUSD"], {"markt_start_erlauben": True,
+                     "markt_terminal_pfad": marktdata.DEFAULT_TERMINAL})
+    assert ergebnis["ok"]
+    assert ergebnis["selbststart"] is False
+    init = next(a for a in aufrufe if a[0] == "initialize")
+    assert init[2].get("portable") is False
+
+
+def test_terminal_wird_nach_lauf_auch_bei_attach_beendet(monkeypatch):
+    """Nutzer-Regel 22.09.2026: Das Terminal dieses Pfads gehört dem Scanner
+    — auch ein VORGEFUNDENES Terminal wird nach dem Lauf beendet."""
+    import subprocess
+
+    monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: True)
+    aufrufe = []
+    _fake_mt5(monkeypatch, aufrufe)
+    zustand = {"prozesse": [(4242, marktdata.DEFAULT_TERMINAL.lower())]}
+    monkeypatch.setattr(marktdata, "_terminal_prozesse",
+                        lambda pfad: zustand["prozesse"])
+    kills: list[list[str]] = []
+
+    def _fake_run(befehl, **kwargs):
+        kills.append(list(befehl))
+        zustand["prozesse"] = []  # der sanfte taskkill reicht im Test
+        return subprocess.CompletedProcess(befehl, 0)
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+    ergebnis = marktdata.kurse_holen(
+        ["XAUUSD"], {"markt_start_erlauben": True,
+                     "markt_terminal_pfad": marktdata.DEFAULT_TERMINAL})
+    assert ergebnis["ok"]
+    assert ergebnis["terminal_beendet"] is True
+    assert any("taskkill" in k for k in kills), kills
+    sanft = next(k for k in kills if "taskkill" in k)
+    assert "/F" not in sanft  # sanfter Versuch zuerst (WM_CLOSE)
 
 
 # ── Marktbeobachter-Rolle ──────────────────────────────────────────
@@ -152,6 +242,20 @@ def test_beobachtungsliste_manuell_und_aus_kandidaten(monkeypatch):
     settings["markt_symbole_manuell"] = "xauxbt, xauusd"
     liste = markt.beobachtungsliste(settings)
     assert liste == ["XAUXBT", "XAUUSD", "EURUSD"]  # manuell zuerst, dedupliziert
+
+
+def test_beobachtungsliste_strip_plus_suffix_und_artefakte(monkeypatch):
+    """Forensik-Symbole mit "+"-Markierung (z. B. "XAUUSD+") und Feld-
+    Artefakte ("SUMMARY") dürfen nicht als Symbol an MT5 gehen — MT5
+    kennt nur das nackte Symbol."""
+    db.init_db()
+    db.upsert_signal(2, name="B", stats={})
+    db.store_forensik(2, {"ampel": "🟢", "symbole": "XAUUSD+, EURUSD+ SUMMARY"})
+    monkeypatch.setattr(betreuer, "kandidaten",
+                        lambda settings=None: [{"id": 2, "name": "B",
+                                                "platform": "", "ampel": "🟢"}])
+    liste = markt.beobachtungsliste({"markt_symbole_manuell": ""})
+    assert liste == ["XAUUSD", "EURUSD"]
 
 
 def test_betreuter_marktkontext_text(monkeypatch):

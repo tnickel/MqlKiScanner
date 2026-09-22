@@ -33,11 +33,23 @@ CREATE TABLE IF NOT EXISTS markt_kontext (
 """)
 
 
+# Keine Symbole, sondern Feld-Artefakte, die in forensik.symbole vorkommen
+# (z. B. Signal 2362349 trägt "SUMMARY" als Token).
+_SYMBOL_ARTEFAKTE = frozenset(("SUMMARY",))
+
+
+def _symbole_zeigen(roh: str) -> list[str]:
+    """Symbol-Tokens: Komma/Plus sind Trenner — manche Forensik-Einträge
+    tragen Suffix-Markierungen wie "XAUUSD+", MT5 kennt nur "XAUUSD"."""
+    return [t for t in roh.replace(",", " ").replace("+", " ").split()
+            if t.upper() not in _SYMBOL_ARTEFAKTE]
+
+
 def beobachtungsliste(settings: dict | None = None) -> list[str]:
     """Manuelle Symbole + Symbole der 🟢/🟡-Kandidaten (aus der Forensik)."""
     settings = settings if settings is not None else config.load_settings()
     symbole: list[str] = []
-    for roh in str(settings.get("markt_symbole_manuell") or "").replace(",", " ").split():
+    for roh in _symbole_zeigen(str(settings.get("markt_symbole_manuell") or "")):
         if roh.upper() not in symbole:
             symbole.append(roh.upper())
     from . import betreuer  # spät: kein Kreisimport
@@ -51,7 +63,7 @@ def beobachtungsliste(settings: dict | None = None) -> list[str]:
                 roh_symbole = json.loads(row["json"] or "{}").get("symbole") or ""
             except json.JSONDecodeError:
                 roh_symbole = ""
-            for einzeln in str(roh_symbole).replace(",", " ").split():
+            for einzeln in _symbole_zeigen(str(roh_symbole)):
                 if einzeln.upper() not in symbole:
                     symbole.append(einzeln.upper())
     return symbole
@@ -74,14 +86,21 @@ def tageslauf(quelle: str = "daemon", log=print, settings: dict | None = None,
         journal.schritt_protokollieren(
             lauf_id, "markt", "kursholen", status="skipped",
             detail={"grund": grund})
-        journal.lauf_abschliessen(lauf_id, "skipped", grund)
+        aktion = "Marktkurs-Abfrage (MT5)"
+        resultat = f"Übersprungen: {grund}"
+        journal.lauf_abschliessen(lauf_id, "skipped",
+                                  zusammenfassung=grund,
+                                  aktion=aktion, resultat=resultat)
         log(f"Marktbeobachter übersprungen: {grund}")
-        return {"status": "skipped", "grund": grund, "lauf_id": lauf_id}
+        return {"status": "skipped", "grund": grund, "lauf_id": lauf_id,
+                "aktion": aktion, "resultat": resultat, "zusammenfassung": grund}
 
     kennzahlen = kurse.get("kurse", {})
     journal.schritt_protokollieren(
         lauf_id, "markt", "kursholen", status="ok",
         detail={"terminal": kurse.get("terminal", ""),
+                "selbststart": kurse.get("selbststart", False),
+                "terminal_beendet": kurse.get("terminal_beendet", None),
                 "kennzahlen": kennzahlen,
                 "symbole_ohne_daten": kurse.get("symbole_ohne_daten", [])})
 
@@ -98,12 +117,62 @@ def tageslauf(quelle: str = "daemon", log=print, settings: dict | None = None,
             "lage_text) VALUES (?,?,?,?)",
             (ts, json.dumps(symbole, ensure_ascii=False),
              json.dumps(kennzahlen, ensure_ascii=False), lage))
+    zusatz = ""
+    if kurse.get("terminal_beendet"):
+        zusatz = (" (Terminal selbst gestartet & beendet)"
+                  if kurse.get("selbststart") else " (Terminal beendet)")
+    
+    aktion = f"Marktdaten-Analyse ({len(kennzahlen)} Symbole via MT5)"
+    resultat = _markt_ergebnis_text(kennzahlen, lage)
+    zusammenfassung = f"{aktion}: {resultat}{zusatz}"
     journal.lauf_abschliessen(
         lauf_id, "ok",
-        f"Marktkontext: {len(kennzahlen)} Symbol(e), {quelle_lage}")
-    log(f"Marktbeobachter fertig: {len(kennzahlen)} Symbol(e) ({quelle_lage}).")
+        zusammenfassung=zusammenfassung,
+        aktion=aktion, resultat=resultat)
+    log(f"Marktbeobachter fertig: {resultat} ({quelle_lage}).")
     return {"status": "ok", "lauf_id": lauf_id, "symbole": list(kennzahlen),
-            "kennzahlen": kennzahlen, "lage": lage, "ts": ts}
+            "kennzahlen": kennzahlen, "lage": lage, "ts": ts,
+            "aktion": aktion, "resultat": resultat, "zusammenfassung": zusammenfassung}
+
+
+def _markt_ergebnis_text(kennzahlen: dict, lage: str) -> str:
+    """Erstellt ein prägnantes, fachliches Resultat der Marktanalyse."""
+    if not kennzahlen:
+        return "Keine Kursdaten empfangen."
+    anz = len(kennzahlen)
+    # 1. Gold-Status (für MQL-Scanner zentral)
+    gold = kennzahlen.get("XAUUSD")
+    gold_str = ""
+    if gold:
+        h = (gold.get("veraenderung_pct") or {}).get("heute")
+        w = (gold.get("veraenderung_pct") or {}).get("7t")
+        if h is not None:
+            gold_str = f"Gold (XAUUSD) {h:+} % heute" + (f" ({w:+} % 7T)" if w is not None else "")
+        elif w is not None:
+            gold_str = f"Gold (XAUUSD) {w:+} % (7T)"
+
+    # 2. Stärkste Bewegung
+    top_sym, top_val = None, 0.0
+    for s, k in kennzahlen.items():
+        val = abs((k.get("veraenderung_pct") or {}).get("7t") or 0.0)
+        if val > top_val:
+            top_sym, top_val = s, val
+
+    mover_str = ""
+    if top_sym and top_val >= 2.0:
+        pct = (kennzahlen[top_sym].get("veraenderung_pct") or {}).get("7t")
+        mover_str = f"{top_sym} {pct:+} % (7T)"
+
+    teile = []
+    if gold_str:
+        teile.append(gold_str)
+    if mover_str and top_sym != "XAUUSD":
+        teile.append(mover_str)
+
+    zusatz = "; ".join(teile)
+    if zusatz:
+        return f"{anz} Symbole analysiert: {zusatz} — Märkte stabil, keine Schocks."
+    return f"{anz} Symbole analysiert: Märkte ruhig, keine Schocks oder extreme Ausschläge."
 
 
 def _llm_lage(kennzahlen: dict, symbole: list[str], settings: dict,

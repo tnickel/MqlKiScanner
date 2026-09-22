@@ -95,3 +95,16 @@ def test_letzter_lauf_rolle_und_leer():
     journal.lauf_abschliessen(journal.lauf_starten("chef", quelle="test"), "ok")
     assert journal.letzter_lauf(rolle="chef")["rolle"] == "chef"
     assert journal.letzter_lauf(rolle="melder") is None
+
+
+def test_aktive_rollen_ignoriert_verwaiste_laeufe():
+    """Anzeige-Schwelle: ein 'laeuft'-Eintrag mit altem Start gilt als
+    verwaist (Crash-Rest) — die Rolle darf nicht dauerhaft leuchten."""
+    from mqlkiscanner import db
+
+    lauf_id = journal.lauf_starten("betreuer", quelle="test")
+    assert "betreuer" in journal.aktive_rollen()
+    with db._connect() as conn:
+        conn.execute("UPDATE agenten_laeufe SET start=? WHERE id=?",
+                     ("2020-01-01 00:00:00", lauf_id))
+    assert "betreuer" not in journal.aktive_rollen()

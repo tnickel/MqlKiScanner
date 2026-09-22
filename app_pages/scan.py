@@ -398,7 +398,7 @@ with st.container(border=True, key="scan_control_panel"):
         )
     with start_zeile[1]:
         gelbgruen_start = action_button(
-            "Gelb/Grün-Scan",
+            "Teilscan",
             key="scan_gelbgruen",
             help_key="scan_gelbgruen",
             icon=":material/monitor_heart:",
@@ -417,7 +417,7 @@ with st.container(border=True, key="scan_control_panel"):
                      "kein harter Abbruch, fertige Teilergebnisse bleiben erhalten.",
             )
         else:
-            st.caption("Full-Scan prüft alles; Gelb/Grün-Scan nur 🟢/🟡-Signale "
+            st.caption("Full-Scan prüft alles; Teilscan nur 🟢/🟡-Signale "
                        "mit allen KI-Stufen. Stop jederzeit möglich.")
 
     _live_status()
@@ -660,7 +660,7 @@ if command:
                         and getattr(r, "source_kind", "live") == "live"}
             vorher = len(cands)
             cands = [c for c in cands if c["id"] in ziel_ids]
-            log(f"Gelb/Grün-Scan: {len(cands)} von {vorher} Kandidaten sind "
+            log(f"Teilscan: {len(cands)} von {vorher} Kandidaten sind "
                 "aktuell 🟢/🟡 — nur diese werden geprüft.")
             if not cands:
                 w_step("forensik", "skipped",
@@ -1169,7 +1169,7 @@ else:
     with st.container(border=True, key="scan_empty"):
         st.markdown(":material/insights: **Noch keine Ergebnisse.**")
         st.caption(
-            "Drücken Sie oben „Full-Scan“ oder „Gelb/Grün-Scan“. "
+            "Drücken Sie oben „Full-Scan“ oder „Teilscan“. "
             "Oder unter „Weitere Möglichkeiten“ nur die Testdaten prüfen.")
 lauf_wechsel = (st.session_state.get("scan_control") or {}).get("ampel_wechsel") or []
 if lauf_wechsel:

@@ -7,10 +7,12 @@ trennen. Order-Funktionen sind nicht verdrahtet und werden von einem
 statischen Test bewacht (tests/test_agenten_phase_c.py). Das LLM erhält nur
 fertig berechnete Kennzahlen, niemals Rohkurse.
 
-Start-Politik (Nutzer-Entscheidung): initialize() würde ein ausgeschaltetes
-Terminal STARTEN. Standardmäßig ist das verboten — läuft kein Terminal,
-wartet der Marktbeobachter bis zum nächsten Intervall. Ob der Daemon das
-Terminal selbst starten darf, ist der Schalter markt_start_erlauben.
+Start-Politik (Nutzer-Entscheidung 22.09.2026): Standardmäßig startet der
+Scanner das Terminal NICHT selbst. Mit dem Schalter markt_start_erlauben
+darf er: initialize() startet das Terminal dann im PORTABLE-Modus (die
+Hauptinstallation bleibt unberührt). Das Terminal des konfigurierten Pfads
+gehört dem Scanner — es wird nach jedem Lauf beendet (terminal_beenden),
+auch wenn es schon vor dem Lauf lief.
 """
 from __future__ import annotations
 
@@ -28,52 +30,130 @@ ERLAUBTE_MT5_AUFRUFE = frozenset((
 DEFAULT_TERMINAL = r"C:\Forex\Mt5\TickmillLifeMql5\terminal64.exe"
 
 
-def terminal_laueft(terminal_pfad: str) -> bool:
-    """Läuft ein Terminal-Prozess dieses Pfads? (tasklist, Windows-only).
-
-    Bewusst ohne Prozess-API-Hacks: initialize() startet sonst ein Terminal,
-    das gar nicht laufen soll — deshalb wird der Zustand VOR jedem Verbindung
-    sauber geprüft.
-    """
-    exe = Path(terminal_pfad).name or "terminal64.exe"
+def _terminal_prozesse(terminal_pfad: str) -> list[tuple[int, str]]:
+    """(PID, Pfad) aller terminal64-Prozesse mit genau DIESEM Pfad."""
+    try:
+        ziel = str(Path(terminal_pfad).resolve()).lower()
+    except (OSError, ValueError):
+        return []
     try:
         ausgabe = subprocess.run(
-            ["tasklist", "/FI", f"IMAGENAME eq {exe}", "/FO", "CSV", "/NH"],
-            capture_output=True, text=True, timeout=15,
+            ["powershell", "-NoProfile", "-Command",
+             "(Get-CimInstance Win32_Process "
+             "-Filter \"Name='terminal64.exe'\" "
+             "| Select-Object ProcessId, ExecutablePath "
+             "| ConvertTo-Json -Compress)"],
+            capture_output=True, timeout=20,
+            encoding="utf-8", errors="replace",
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
     except (OSError, subprocess.SubprocessError):
-        return False
-    return exe.lower() in (ausgabe.stdout or "").lower()
+        return []
+    roh = (ausgabe.stdout or "").strip()
+    if not roh:
+        return []
+    import json as _json
+    eintraege = roh.splitlines()
+    try:
+        daten = _json.loads(roh) if roh.startswith("[") or roh.startswith("{") \
+            else [{"ProcessId": int(e.split()[0]),
+                   "ExecutablePath": e.split(None, 1)[1] if " " in e else ""}
+                  for e in eintraege]
+    except (ValueError, IndexError, _json.JSONDecodeError):
+        return []
+    if isinstance(daten, dict):  # ConvertTo-Json liefert ein Objekt bei EINEM Prozess
+        daten = [daten]
+    ergebnis = []
+    for eintrag in daten:
+        try:
+            pfad = str(eintrag.get("ExecutablePath") or "").strip().lower()
+            if pfad == ziel:
+                ergebnis.append((int(eintrag["ProcessId"]), pfad))
+        except (KeyError, ValueError, TypeError):
+            continue
+    return ergebnis
+
+
+def terminal_laueft(terminal_pfad: str) -> bool:
+    """Läuft ein Terminal-Prozess genau DIESES Pfads? (pfadgenau, Windows).
+
+    Nur der Prozessname reichte nicht: Ein anderes MT5-Terminal (andere
+    Installation) würde sonst den Selbststart blockieren und einen Attach
+    vortäuschen.
+    """
+    return bool(_terminal_prozesse(terminal_pfad))
+
+
+def terminal_beenden(terminal_pfad: str) -> bool:
+    """Beendet das Terminal dieses Pfads — sanft, dann hart.
+
+    Nutzer-Regel (22.09.2026): Das Terminal des konfigurierten Pfads gehört
+    dem Scanner. Es wird nach jedem Lauf beendet — auch wenn es schon vor
+    dem Lauf lief (shutdown() allein erfasst nur selbst gestartete).
+    """
+    prozesse = _terminal_prozesse(terminal_pfad)
+    if not prozesse:
+        return True
+
+    def _taskkill(hart: bool) -> None:
+        for pid, _pfad in _terminal_prozesse(terminal_pfad):
+            befehl = ["taskkill", "/PID", str(pid)] + (["/F", "/T"] if hart else [])
+            try:
+                subprocess.run(
+                    befehl, capture_output=True, timeout=15,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            except (OSError, subprocess.SubprocessError):
+                pass
+
+    _taskkill(hart=False)          # WM_CLOSE — Terminal darf Logfiles schreiben
+    if _terminal_prozesse(terminal_pfad):
+        import time as _time
+        _time.sleep(4)             # dem Terminal Zeit zum sauberen Beenden
+        _taskkill(hart=True)       # harte Notbremse, falls es hängt
+    return not _terminal_prozesse(terminal_pfad)
 
 
 def kurse_holen(symbole: list[str], settings: dict) -> dict:
     """Kurs-Kennzahlen je Symbol. Rückgabe {"ok", "grund"?, "kurse"?}.
 
     Ohne laufendes Terminal (und ohne Start-Freigabe) wird NICHT verbunden —
-    das ist der Normalfall nachts/neu gestartet: warten, nicht starten.
+    das ist der Normalfall nachts/neu gestartet: warten, nicht starten. Mit
+    Start-Freigabe: Terminal PORTABEL starten, Kurse holen, am Lauf-Ende
+    beenden (terminal_beendet im Ergebnis; selbststart kennzeichnet, ob der
+    Scanner es gestartet hat oder vorgefunden hat).
     """
     if not symbole:
         return {"ok": False, "grund": "Keine Symbole in der Beobachtungsliste."}
     terminal_pfad = str(settings.get("markt_terminal_pfad") or DEFAULT_TERMINAL)
     start_erlauben = bool(settings.get("markt_start_erlauben", False))
-    if not terminal_laueft(terminal_pfad) and not start_erlauben:
+    lief_schon = terminal_laueft(terminal_pfad)
+    if not lief_schon and not start_erlauben:
         return {"ok": False,
                 "grund": ("MetaTrader-Terminal läuft nicht und Selbststart ist "
                           "nicht erlaubt (Standard-Politik, doc/19 §7.3) — "
                           "Marktkontext entfällt für diesen Lauf.")}
+    selbststart = not lief_schon
     lookback = int(settings.get("markt_lookback_tage", 30))
 
     import MetaTrader5 as mt5  # spät: nur wenn wirklich verbunden wird
 
     def _verbinden() -> bool:
         pfad = terminal_pfad if Path(terminal_pfad).exists() else None
-        return bool(mt5.initialize(pfad) if pfad else mt5.initialize())
+        if pfad:
+            # portable=Nur beim Selbststart: die Scanner-eigene Instanz soll
+            # die Hauptinstallation (Profile/Logs) unberührt lassen.
+            return bool(mt5.initialize(pfad, portable=selbststart))
+        return bool(mt5.initialize())
 
     if not _verbinden():
         fehler = str(mt5.last_error())
         mt5.shutdown()
-        return {"ok": False, "grund": f"MT5-Verbindung fehlgeschlagen: {fehler}"}
+        terminal_beenden(terminal_pfad)
+        grund = f"MT5-Verbindung fehlgeschlagen: {fehler}"
+        if selbststart:
+            grund += " (Selbststart: portable Terminal wurde beendet.)"
+        return {"ok": False, "grund": grund}
+    ergebnis: dict | None = None
     try:
         info = mt5.terminal_info()
         kurse: dict[str, dict] = {}
@@ -93,12 +173,16 @@ def kurse_holen(symbole: list[str], settings: dict) -> dict:
             kurse[symbol] = kennzahlen_aus_rates(
                 [_bar(b) for b in h1], [_bar(b) for b in d1])
         ergebnis = {"ok": True, "terminal": (info.name if info else "unbekannt"),
+                    "selbststart": selbststart,
                     "kurse": kurse}
         if fehler_symbole:
             ergebnis["symbole_ohne_daten"] = fehler_symbole
         return ergebnis
     finally:
         mt5.shutdown()
+        beendet = terminal_beenden(terminal_pfad)
+        if ergebnis is not None:
+            ergebnis["terminal_beendet"] = beendet
 
 
 def _bar(rate) -> dict:
@@ -109,18 +193,28 @@ def _bar(rate) -> dict:
 
 
 def verbindung_testen(settings: dict) -> dict:
-    """Attach-Test für den Admin-Bereich: liest EINE Bar und trennt wieder."""
+    """Attach-Test für den Admin-Bereich: liest EINE Bar und trennt wieder.
+
+    Mit Start-Freigabe wird ein nicht laufendes Terminal portabel gestartet.
+    Das Terminal dieses Pfads wird nach dem Test grundsätzlich beendet.
+    """
     terminal_pfad = str(settings.get("markt_terminal_pfad") or DEFAULT_TERMINAL)
-    if not terminal_laueft(terminal_pfad):
+    start_erlauben = bool(settings.get("markt_start_erlauben", False))
+    lief_schon = terminal_laueft(terminal_pfad)
+    if not lief_schon and not start_erlauben:
         return {"ok": False,
                 "grund": ("Terminal läuft nicht. Standard-Politik: der Scanner "
                           "startet es nicht selbst — Terminal öffnen und erneut "
                           "testen.")}
     import MetaTrader5 as mt5
+    selbststart = not lief_schon
     pfad = terminal_pfad if Path(terminal_pfad).exists() else None
-    if not bool(mt5.initialize(pfad) if pfad else mt5.initialize()):
+    verbunden = (bool(mt5.initialize(pfad, portable=selbststart)) if pfad
+                 else bool(mt5.initialize()))
+    if not verbunden:
         fehler = str(mt5.last_error())
         mt5.shutdown()
+        terminal_beenden(terminal_pfad)
         return {"ok": False, "grund": f"Verbindung fehlgeschlagen: {fehler}"}
     try:
         info = mt5.terminal_info()
@@ -129,11 +223,14 @@ def verbindung_testen(settings: dict) -> dict:
         if bars is None or len(bars) == 0:
             return {"ok": False, "grund": "Verbunden, aber XAUUSD liefert "
                                           "keine Kursdaten (Symbol beim Broker?)"}
+        hinweis = (" — portable Selbststart" if selbststart else "")
         return {"ok": True,
                 "grund": f"Verbunden mit {info.name if info else 'Terminal'} — "
-                         f"XAUUSD-H1-Close {float(bars[-1]['close']):.2f}"}
+                         f"XAUUSD-H1-Close {float(bars[-1]['close']):.2f}"
+                         f"{hinweis}, Terminal danach beendet"}
     finally:
         mt5.shutdown()
+        terminal_beenden(terminal_pfad)
 
 
 # ── Kennzahlen (reiner Code — das LLM zitiert sie nur) ─────────────

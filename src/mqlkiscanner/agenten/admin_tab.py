@@ -146,11 +146,14 @@ def rendern(settings: dict) -> None:
                       or marktdata.DEFAULT_TERMINAL),
             key="admin_markt_terminal")
         start_erlauben = st.toggle(
-            "Terminal selbst starten, falls es nicht läuft (Live-Terminal!)",
+            "Terminal selbst starten (portable) und nach dem Lauf beenden",
             value=bool(settings.get("markt_start_erlauben", False)),
             help="Standard AUS: Der Scanner startet dein Terminal nie "
-                 "unerwünscht — läuft es nicht, wartet der Marktbeobachter "
-                 "bis zum nächsten Intervall.",
+                 "unerwünscht. AN: Der Marktbeobachter startet das Terminal "
+                 "im PORTABLE-Modus (Hauptinstallation bleibt unberührt), "
+                 "holt die Kurse und beendet es nach dem Lauf wieder. Ein "
+                 "bereits laufendes Terminal wird nur angehängt, nicht "
+                 "beendet.",
             key="admin_markt_start")
         symbole_manuell = st.text_input(
             "Zusätzliche Symbole (Komma oder Leerzeichen)",

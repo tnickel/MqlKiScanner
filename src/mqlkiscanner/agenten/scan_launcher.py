@@ -2,7 +2,7 @@
 """Autonome Scan-Anstöße (Phase E, doc/19 §9): der Dirigent startet Scans.
 
 Der Launcher führt den GLEICHEN Pipeline-Code aus wie die Scan-Seite —
-identische Modus-Verträge (Gelb/Grün erzwingt alle KI-Stufen), identische
+identische Modus-Verträge (Teilscan erzwingt alle KI-Stufen), identische
 Persistenz in DB und Ampel-Chronik. Nur die Oberflächen-Stationen (Forts-
 schritts-Rendering, Downloader-Abgleich als Station 6) entfallen; der
 Abgleich bleibt der Ergebnisseite überlassen.
@@ -59,23 +59,33 @@ def starte_scan(modus: str, quelle: str = "daemon", log=print) -> dict:
         settings.update({"nur_neue": False, "berichte_neu": True,
                          "llm_stufe1": True, "llm_stufe2": True})
     lauf_id = journal.lauf_starten("dirigent", quelle=quelle)
+    modus_name = "Teilscan (Gelb/Grün)" if modus in ("gelbgruen", "gelb_gruen") else "Full-Scan (Gesamtkatalog)"
     try:
         with lock.lauf_lock(config.DATA_DIR):
             ergebnis = _scan_innerhalb(modus, settings, lauf_id, log)
-        journal.lauf_abschliessen(lauf_id, "ok", ergebnis["zusammenfassung"])
+        aktion = f"Autonomer {modus_name} durchgeführt"
+        resultat = ergebnis.get("resultat") or ergebnis["zusammenfassung"]
+        journal.lauf_abschliessen(lauf_id, "ok", ergebnis["zusammenfassung"],
+                                  aktion=aktion, resultat=resultat)
         journal.meldung_speichern(
-            MELDUNG_TYP, f"Scan {modus} abgeschlossen",
-            ergebnis["zusammenfassung"], prioritaet=1,
+            MELDUNG_TYP, f"Scan {modus} ({modus_name}) abgeschlossen",
+            resultat, prioritaet=1,
             quellen=[f"lauf#{lauf_id}"])
-        log(f"Scan {modus} abgeschlossen: {ergebnis['zusammenfassung']}")
+        log(f"Scan {modus} abgeschlossen: {resultat}")
         _scan_vermerken(modus)
         if modus == "full":
             _scan_monat_vermerken(modus)
-        return {"status": "ok", "lauf_id": lauf_id, **ergebnis}
+        return {"status": "ok", "lauf_id": lauf_id, "aktion": aktion,
+                "resultat": resultat, **ergebnis}
     except lock.LockBesetzt as exc:
+        pid_info = f" (PID {exc.pid})" if getattr(exc, "pid", None) else ""
+        aktion = f"Autonomer {modus_name}"
+        resultat = f"Übersprungen: Vorheriger Lauf{pid_info} war noch aktiv (Kollisionsschutz)."
         grund = f"Lauf-Lock belegt — Scan {modus} übersprungen: {exc}"
-        journal.lauf_abschliessen(lauf_id, "skipped", grund)
-        return {"status": "skipped", "grund": grund, "lauf_id": lauf_id}
+        journal.lauf_abschliessen(lauf_id, "skipped", grund,
+                                  aktion=aktion, resultat=resultat)
+        return {"status": "skipped", "grund": grund, "lauf_id": lauf_id,
+                "aktion": aktion, "resultat": resultat}
     except Exception as exc:  # ein Scan-Fehler beendet den Daemon nicht
         journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
                                        status="fehler",
@@ -113,7 +123,7 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
                     and getattr(r, "source_kind", "live") == "live"}
         vorher = len(kandidaten)
         kandidaten = [c for c in kandidaten if c["id"] in ziel_ids]
-        log(f"Gelb/Grün-Scan: {len(kandidaten)} von {vorher} Kandidaten "
+        log(f"Teilscan: {len(kandidaten)} von {vorher} Kandidaten "
             "sind aktuell 🟢/🟡.")
 
     scope = kandidaten[:int(settings.get("top_n_export", 30))]
@@ -160,7 +170,7 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
             break
 
     # KI-Berichte: Bedingungen wie die GUI (Key + geeignete Ergebnisse;
-    # Gelb/Grün erzwingt Neuerstellung über den Modus-Vertrag oben).
+    # Teilscan erzwingt Neuerstellung über den Modus-Vertrag oben).
     jobs = [r for r in ergebnisse
             if r.forensik_vorhanden and not r.fehler
             and getattr(r, "source_kind", "live") == "live"]
@@ -187,10 +197,11 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
     # Ampel-Wechsel sind bereits über analyze_candidate in der DB-Chronik —
     # der Wechsel-Watcher des Melders übernimmt sie beim nächsten Tick.
     entschieden = sum(1 for r in ergebnisse if r.forensik_vorhanden)
-    zusammenfassung = (f"{modus}: {entschieden} geprüft, {berichte} Berichte"
-                       + (", Portfolio erstellt" if portfolio else ""))
+    resultat = (f"{entschieden} Signale geprüft, {berichte} Berichte erstellt"
+                + (", Portfolio aktualisiert." if portfolio else "."))
+    zusammenfassung = f"{modus}: {resultat}"
     return {"zusammenfassung": zusammenfassung, "geprueft": entschieden,
-            "berichte": berichte}
+            "berichte": berichte, "resultat": resultat}
 
 
 def starte_scan_thread(modus: str, log=print) -> threading.Thread | None:

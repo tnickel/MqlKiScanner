@@ -36,7 +36,10 @@ def alert(typ: str, titel: str, text: str, *, prioritaet: int = 2,
     meldung_id = journal.meldung_speichern(typ, titel, text,
                                            prioritaet=prioritaet,
                                            quellen=quellen or [])
-    journal.lauf_abschliessen(lauf_id, "ok", f"Alert: {titel}")
+    aktion = f"Echtzeit-Alert verarbeiten ({titel})"
+    resultat = f"Priorität P{prioritaet}-Alert im Postfach zugestellt."
+    journal.lauf_abschliessen(lauf_id, "ok", f"Alert: {titel}",
+                              aktion=aktion, resultat=resultat)
     return meldung_id
 
 
@@ -135,8 +138,12 @@ def tagesdigest(quelle: str = "daemon", log=print,
                  "Digest verschiebt sich zum nächsten Tick.")
         journal.schritt_protokollieren(lauf_id, "melder", "digest",
                                        status="skipped", detail={"grund": grund})
-        journal.lauf_abschliessen(lauf_id, "skipped", grund)
-        return {"status": "skipped", "grund": grund, "lauf_id": lauf_id}
+        aktion = "Tagesdigest erstellen"
+        resultat = f"Verschoben: Betreuer-Lauf #{aktive_betreuer[0]['id']} ist noch aktiv."
+        journal.lauf_abschliessen(lauf_id, "skipped", grund,
+                                  aktion=aktion, resultat=resultat)
+        return {"status": "skipped", "grund": grund, "lauf_id": lauf_id,
+                "aktion": aktion, "resultat": resultat}
 
     ereignisse = _ereignisse_heute(settings)
     journal.schritt_protokollieren(lauf_id, "melder", "grundlage",
@@ -149,11 +156,14 @@ def tagesdigest(quelle: str = "daemon", log=print,
     meldung_id = journal.meldung_speichern(
         "digest", f"Tagesdigest {ereignisse['datum']}", text, prioritaet=1,
         quellen=[f"lauf#{lauf_id}"])
+    aktion = f"Tagesdigest erstellen ({ereignisse['datum']})"
+    resultat = f"Tagesdigest #{meldung_id} ({quelle_text}) im Postfach abgelegt."
     journal.lauf_abschliessen(lauf_id, "ok",
-                              f"Tagesdigest ({quelle_text}) ins Postfach.")
+                              f"{aktion}: {resultat}",
+                              aktion=aktion, resultat=resultat)
     log(f"Melder: Tagesdigest #{meldung_id} ({quelle_text}).")
     return {"status": "ok", "lauf_id": lauf_id, "meldung_id": meldung_id,
-            "text": text}
+            "text": text, "aktion": aktion, "resultat": resultat}
 
 
 def _llm_digest(ereignisse: dict, settings: dict, lauf_id: int,
