@@ -448,10 +448,23 @@ Abnahme verifiziert (E2E auf Temp-DB): Ampelwechsel 🟡→🔴 → Alert P3 mit
 `ampel_wechsel#N`/`signal#N`-Quellen; echter LLM-Digest fasst Läufe,
 Beobachtungen und Token-Budget des Tages zusammen.
 
-### Phase E — Chefermittler & autonome Scan-Steuerung
+### Phase E — Chefermittler & autonome Scan-Steuerung — ✅ abgeschlossen (22.09.2026)
 Wochen-Lagebericht, Dirigent stößt Gelb/Grün- und Full-Scans selbst an.
-**Abnahme:** Ein kompletter Monat ohne einen manuellen Scan-Klick; alle
-Schritte im Protokoll nachvollziehbar.
+**Abnahme: Ein kompletter Monat ohne einen manuellen Scan-Klick; alle
+Schritte im Protokoll nachvollziehbar.**
+Umgesetzt: `agenten/chef.py` (Lagebericht aus Dossier-Spitzen,
+Wochen-Marktkontexten und Wechsel-Protokoll — Meldung `lagebericht` ins
+Postfach; LLM mit maschineller Fallback-Fassung; wartet auf laufende
+Scans) und `agenten/scan_launcher.py` (headless-Pipeline identisch zur
+Scan-Seite inklusive Modus-Vertrag und Fail-Fast; Tages-/Monats-Merker;
+Scan-Threads neben dem Scheduler-Herzschlag; Abschluss-Meldung ins
+Postfach). Takte: Sonntag 12:00 Gelb/Grün; 1. Werktag des Monats
+Full-Scan; Chef sonntags ab 18 Uhr + am Full-Scan-Tag. CLI `--chef`,
+`--scan`. 12 neue Tests (Gesamt: 861 grün). Orchestrierung mit
+Fake-Pipeline verifizert; E2E-Lagebericht mit echtem LLM auf Temp-DB
+(15 Dossiers korrekt verdichtet, Budget-Zitate stimmen). Die
+Monats-Abnahme bestätigt sich mit dem ersten vollständigen autonom
+durchlaufenen Monat (Start: nächster Sonntag bzw. 1. Werktag).
 
 Je Phase: pytest (Unit + AppTest für die neuen UI-Teile), Doku-Nachzug
 (README-Index, Benutzerhandbuch, Architektur), Commit + Push auf main.

@@ -212,15 +212,34 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Priorität/Quellen-Verweisen; CLI `--digest`. Abnahme verifiziert:
   künstlicher Ampelwechsel erzeugt Alert mit Quellverweis. 849 Tests
   grün.
+- ✅ Agentenbetrieb Phase E (22.09.2026 — KOMPLETT): Chefermittler +
+  autonome Scan-Anstöße. `agenten/chef.py` (Wochen-/Monats-Lagebericht:
+  Dossier-Spitzen, Marktkontexte und Wechsel der Woche, Budget — als
+  Meldung `lagebericht` ins Postfach; verschiebt sich bei laufendem
+  Scan; empfiehlt, bewertet nie neu), `agenten/scan_launcher.py`
+  (headless-Pipeline exakt wie die Scan-Seite: Listen → Kandidaten →
+  Gelb/Grün-Scope über results_from_db → Forensik mit Login/Fail-Fast →
+  KI-Berichte → Portfolio; Scan-Abschluss als Postfach-Meldung;
+  Monats-/Tages-Merker gegen Wiederholung; Lauf-Lock; Thread, damit der
+  Daemon-Herzschlag frisch bleibt). Takte: Sonntag 12:00 Gelb/Grün-Scan,
+  1. Werktag des Monats Full-Scan (ab Startzeit+60), Chef sonntags ab
+  18 Uhr und am Full-Scan-Tag (wartet auf Scan-Ende); Digest/Lagebericht
+  bleiben unfällig, während lange Läufe arbeiten (kein Skip-Spam). CLI:
+  `--chef`, `--scan gelbgruen|full`. 861 Tests grün. Abnahme „Monat
+  ohne Scan-Klick": Orchestrierung verifiziert (Fake-Pipeline-Tests +
+  Scheduler-Takte); der erste echte autonome Monat beginnt mit dem
+  nächsten Sonntag (Gelb/Grün) bzw. 1. Werktag (Full).
 
-Noch offen (Phase 5 Betrieb / Agentenbetrieb):
+Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
-- [ ] Re-Scan als Kommandozeilenaufruf mit Diff gegen den letzten Lauf
-      (Dirigent-CLI `--once` existiert; der Scan-Aufruf folgt mit Phase E)
-- [ ] Agentenbetrieb Phase E: Chefermittler + autonome Scan-Anstöße
+- [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:
+      `--scan gelbgruen|full` (plus `--once`, `--markt`, `--betreuer`,
+      `--digest`, `--chef`)
+- [x] Automatisierte Alerts (Ampelwechsel, Stilbruch, Scan-Abschluss) —
+      Melder/Postfach, Phase D/E
 - [ ] V1-Attach-Prüfung mit Nutzer (Terminal starten → Admin → Marktdaten
       → Verbindung testen; Ergebnis in doc/19 §7.4 nachtragen)
 - [ ] Autostart des Daemon nach Rechner-Neustart (start.bat-Erweiterung
       oder Aufgabenplanung — offen, Nutzer-Entscheidung)
-- [ ] Automatisierte Alerts (Anbieter-Stilbruch, Copy-Abweichung > x %) —
-      Fundament steht: Ampel-Wechsel protokolliert, Melder geplant (Phase D)
+- [ ] Erster voller autonomer Monat (Bestätigung der Phase-E-Abnahme
+      „Monat ohne Scan-Klick" nach Oktober 2026)

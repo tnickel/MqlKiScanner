@@ -281,15 +281,19 @@ verwendet und welcher Bericht daraus entsteht. Die Engine berechnet alle
 Kennzahlen; die KI interpretiert sie nur. Pflicht-Platzhalter bleiben beim
 Bearbeiten geschützt und werden vor dem Speichern geprüft.
 
-## 5a. Agentenbetrieb (Phase A–D)
+## 5a. Agentenbetrieb (Phase A–E — komplett)
 
-Fünf LLM-Rollen übernehmen schrittweise die Dauerbeobachtung der Signale
-(Bauplan: `doc/19_agentenbetrieb-bauplan.md`). **Phase A**: Der Dirigent
-plant täglich werktags. **Phase B**: Der Signal-Betreuer prüft täglich die
+Fünf LLM-Rollen übernehmen die Dauerbeobachtung der Signale (Bauplan:
+`doc/19_agentenbetrieb-bauplan.md`). **Phase A**: Der Dirigent plant
+täglich werktags. **Phase B**: Der Signal-Betreuer prüft täglich die
 Trade-Deltas gegen die Algo-Profile. **Phase C**: Der Marktbeobachter
-liefert den täglichen Marktkontext aus deinem MetaTrader. **Phase D**: Der
-Melder bringt Alerts und den Tagesdigest ins Postfach. Nur der
-Chefermittler ist noch „geplant“ (Phase E).
+liefert den täglichen Marktkontext aus deinem MetaTrader. **Phase D**:
+Der Melder bringt Alerts und den Tagesdigest ins Postfach. **Phase E**:
+Der Chefermittler schreibt den Wochen-Lagebericht, und der Dirigent
+stößt die Scans selbst an — **Sonntags 12:00 den Gelb/Grün-Scan, am
+1. Werktag des Monats den Full-Scan** (mit Portfolio). Der erste
+komplett autonome Monat läuft damit an; nachvollziehbar bleibt alles
+über das Protokoll.
 
 **Einstellungen → Agenten** (Konfiguration):
 
@@ -340,6 +344,20 @@ Daemon-Tick bemerkt (auch aus GUI-Scans) — jede Meldung nennt ihre Quellen
 (Protokoll-Schritt, Wechsel-ID, Signal). Der Tagesdigest (Startzeit +
 40 min) fasst Läufe, Beobachtungen und Token-Budget des Tages zusammen und
 verschiebt sich automatisch, solange der Betreuer noch arbeitet.
+
+**Autonome Scans und Lageberichte (Phase E):** Sonntags 12:00 startet der
+Daemon den Gelb/Grün-Scan (Modus-Vertrag wie der Hand-Button: nur 🟢/🟡
+mit ALLEN KI-Stufen), am 1. Werktag des Monats ab 07:30 den Full-Scan
+mit Portfolio-Vorschlag — derselbe Pipeline-Code wie die Scan-Seite,
+einschließlich Login-Prüfung und Fail-Fast-Schutz. Der Abschluss landet
+als Meldung im Postfach; Ampelwechsel melden sich über den Watcher. Der
+Chefermittler fasst sonntags ab 18 Uhr (und am Full-Scan-Tag) die Woche
+im Lagebericht zusammen — Dossiers, Marktkontexte, Wechsel und Budget;
+er wartet automatisch, solange ein Scan läuft. Scans dauern lange und
+laufen deshalb im Hintergrund-Thread: der Daemon-Herzschlag bleibt
+frisch, Stopp während eines Scans beendet ihn allerdings hart (das
+Protokoll hält den Stand fest). Manuell anstoßen: `--scan gelbgruen`
+bzw. `--scan full`, Lagebericht per `--chef`.
 
 **Wie der Betreuer arbeitet** (täglich 06:45, Startzeit + 15 min): Export
 laden (Rate-Limiter, 20-h-Cache — ein GUI-Scan am Vorabend macht den Abruf

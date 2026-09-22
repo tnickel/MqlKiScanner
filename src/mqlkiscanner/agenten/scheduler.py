@@ -29,34 +29,74 @@ def _start_minute(settings: dict) -> int:
 
 
 def faellige_rollen(jetzt: datetime, settings: dict) -> list[str]:
-    """Welche Rollen sind JETZT fällig? Phasen A–C, werktags:
-    Dirigent zur Startzeit, Marktbeobachter +5 min, Betreuer +15 min.
+    """Welche Rollen sind JETZT fällig?
 
-    Fällig heißt: Werktag, Zeitpunkt erreicht und heute noch kein
-    erfolgreicher Daemon-Lauf der Rolle.
+    Werktags die Tageskette: Dirigent zur Startzeit, Markt +5, Betreuer
+    +15, Melder-Digest +40. Sonntags abends der Chefermittler; monatlich
+    zusätzlich am Full-Scan-Tag. Solange ein längerer Lauf arbeitet
+    (Betreuer, autonomer Scan), bleiben Digest/Lagebericht UNFÄLLIG statt
+    alle 30 s einen Skip-Lauf ins Journal zu schreiben — sie werden im
+    nächsten Tick wieder geprüft.
     """
     rollen: list[str] = []
-    if jetzt.weekday() >= 5:
-        return rollen  # Wochenende: Markt ruht (doc/19 §9)
     minute = jetzt.hour * 60 + jetzt.minute
     start = _start_minute(settings)
-    if (nicht_deaktiviert(settings, "dirigent")
-            and minute >= start
-            and not journal.lauf_heute_erfolgreich("dirigent", "daemon")):
-        rollen.append("dirigent")
-    if (nicht_deaktiviert(settings, "markt")
-            and minute >= start + 5
-            and not journal.lauf_heute_erfolgreich("markt", "daemon")):
-        rollen.append("markt")
-    if (nicht_deaktiviert(settings, "betreuer")
-            and minute >= start + 15
-            and not journal.lauf_heute_erfolgreich("betreuer", "daemon")):
-        rollen.append("betreuer")
-    if (nicht_deaktiviert(settings, "melder")
-            and minute >= start + 40
-            and not journal.lauf_heute_erfolgreich("melder", "daemon")):
-        rollen.append("melder")
+    if jetzt.weekday() < 5:  # Werktagskette
+        if (nicht_deaktiviert(settings, "dirigent")
+                and minute >= start
+                and not journal.lauf_heute_erfolgreich("dirigent", "daemon")):
+            rollen.append("dirigent")
+        if (nicht_deaktiviert(settings, "markt")
+                and minute >= start + 5
+                and not journal.lauf_heute_erfolgreich("markt", "daemon")):
+            rollen.append("markt")
+        if (nicht_deaktiviert(settings, "betreuer")
+                and minute >= start + 15
+                and not journal.lauf_heute_erfolgreich("betreuer", "daemon")):
+            rollen.append("betreuer")
+        if (nicht_deaktiviert(settings, "melder")
+                and minute >= start + 40
+                and not journal.lauf_heute_erfolgreich("melder", "daemon")
+                and not journal.aktive_laeufe("betreuer")):
+            rollen.append("melder")
+    # Chefermittler (Phase E): sonntags abends UND am Full-Scan-Tag des
+    # Monats — er wartet auf laufende Scans (aktive Dirigent-Läufe).
+    from . import chef  # spät: kein Kreisimport
+    if nicht_deaktiviert(settings, "chef"):
+        from . import scan_launcher
+        chef_zeit = (jetzt.weekday() == 6 and jetzt.hour >= chef.ABEND_STUNDE)
+        monats_tag = (scan_launcher.scan_heute_gestartet(
+            "full", tag=jetzt.date().isoformat())
+            and minute >= start + 150)
+        if ((chef_zeit or monats_tag)
+                and not journal.lauf_heute_erfolgreich("chef", "daemon")
+                and not _aktiver_scan()):
+            rollen.append("chef")
     return rollen
+
+
+def _aktiver_scan() -> bool:
+    """Läuft gerade ein autonomer Scan (Dirigent-Daemon-Lauf)?"""
+    return any(l["quelle"] == "daemon"
+               for l in journal.aktive_laeufe("dirigent"))
+
+
+def faellige_scans(jetzt: datetime, settings: dict) -> list[str]:
+    """Autonome Scan-Anstöße (Phase E): Sonntag Gelb/Grün, Monatserster
+    Werktag Full — je einmal, mit Monats-Merker gegen Wiederholung."""
+    from . import scan_launcher
+    start = _start_minute(settings)
+    minute = jetzt.hour * 60 + jetzt.minute
+    tag = jetzt.date().isoformat()
+    monat = jetzt.strftime("%Y-%m")
+    modi: list[str] = []
+    if (jetzt.weekday() == 6 and jetzt.hour >= 12
+            and not scan_launcher.scan_heute_gestartet("gelbgruen", tag=tag)):
+        modi.append("gelbgruen")
+    if (jetzt.day <= 7 and jetzt.weekday() < 5 and minute >= start + 60
+            and not scan_launcher.scan_monat_gestartet("full", monat=monat)):
+        modi.append("full")
+    return modi
 
 
 def nicht_deaktiviert(settings: dict, rolle: str) -> bool:
@@ -75,13 +115,26 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
                 bool(settings.get("agenten_enabled", False))}
     if not settings.get("agenten_enabled", False):
         return ergebnis
-    from . import betreuer, markt, melder  # spät: kein Kreisimport
+    from . import betreuer, chef, markt, melder, scan_launcher  # spät: Kreisimporte
     # Ampelwechsel-Watcher: JEDER Tick (bemerkt auch Wechsel aus GUI-Scans),
     # idempotent über den letzten bearbeiteten Wechsel in der Steuerung.
     try:
         melder.pruefe_neue_wechsel(log=log)
     except Exception as exc:
         log(f"Wechsel-Watcher fehlgeschlagen (nächster Tick): {exc}")
+    # Autonome Scans (Phase E): je ein Thread; nie zwei Scans parallel.
+    try:
+        modi = faellige_scans(jetzt, settings)
+    except Exception as exc:
+        modi = []
+        log(f"Scan-Takt-Prüfung fehlgeschlagen (nächster Tick): {exc}")
+    if modi and not _aktiver_scan():
+        modus = modi[0]
+        log(f"Dirigent stößt autonomen {modus}-Scan an …")
+        scan_launcher.starte_scan_thread(modus, log=log)
+        ergebnis["ausgefuehrt"].append({"rolle": "dirigent",
+                                        "scan": modus,
+                                        "status": "gestartet"})
     for rolle in faellige_rollen(jetzt, settings):
         if rolle == "dirigent":
             lauf = dirigent.tageslauf(quelle="daemon", log=log)
@@ -104,6 +157,11 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
                                       settings=settings)
             ergebnis["ausgefuehrt"].append(
                 {"rolle": "melder", "status": lauf["status"]})
+        elif rolle == "chef":
+            lauf = chef.lagebericht(quelle="daemon", log=log,
+                                    settings=settings)
+            ergebnis["ausgefuehrt"].append(
+                {"rolle": "chef", "status": lauf["status"]})
     return ergebnis
 
 

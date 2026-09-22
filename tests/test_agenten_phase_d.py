@@ -150,7 +150,7 @@ def test_scheduler_melder_faellig_nach_40_minuten():
         datetime(2026, 9, 22, 7, 10), settings)
 
 
-def test_rollen_phase_d_aktiv():
-    assert rollen.AKTUELLE_PHASE == "D"
+def test_rollen_phase_d_erreicht():
+    # Phase D ist seit Phase E nicht mehr AKTUELL, aber erreicht (Melder läuft).
     assert rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["melder"], "D")
-    assert not rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["chef"], "D")
+    assert rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["melder"], "E")

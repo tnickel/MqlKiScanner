@@ -32,13 +32,18 @@ def main() -> None:
                         help="einen Betreuer-Tageslauf sofort ausführen")
     parser.add_argument("--digest", action="store_true",
                         help="einen Tagesdigest des Melders sofort ausführen")
+    parser.add_argument("--chef", action="store_true",
+                        help="einen Lagebericht des Chefermittlers sofort ausführen")
+    parser.add_argument("--scan", choices=["gelbgruen", "full"],
+                        help="einen autonomen Scan sofort anstoßen (full: Katalog; "
+                             "gelbgruen: nur 🟢/🟡 mit allen KI-Stufen)")
     parser.add_argument("--tick", action="store_true",
                         help="einen Scheduler-Tick ausführen und enden")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    from . import betreuer, dirigent, markt, melder, scheduler
+    from . import betreuer, chef, dirigent, markt, melder, scan_launcher, scheduler
 
     if args.once:
         ergebnis = dirigent.tageslauf(quelle="cli", log=log.info)
@@ -58,6 +63,17 @@ def main() -> None:
         ergebnis = melder.tagesdigest(quelle="cli", log=log.info)
         log.info("Ergebnis: %s — Meldung #%s", ergebnis["status"],
                  ergebnis.get("meldung_id", "-"))
+        return
+    if args.chef:
+        ergebnis = chef.lagebericht(quelle="cli", log=log.info)
+        log.info("Ergebnis: %s — Meldung #%s", ergebnis["status"],
+                 ergebnis.get("meldung_id", "-"))
+        return
+    if args.scan:
+        ergebnis = scan_launcher.starte_scan(args.scan, quelle="cli",
+                                             log=log.info)
+        log.info("Ergebnis: %s — %s", ergebnis["status"],
+                 ergebnis.get("zusammenfassung", ergebnis.get("grund", "")))
         return
     if args.tick:
         scheduler.tick(log=log.info)

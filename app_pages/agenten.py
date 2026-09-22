@@ -220,8 +220,9 @@ with postfach_tab:
         "(Protokoll-Schritt, Ampel-Wechsel, Signal).")
     filter_spalte, leer_spalte = st.columns([1, 2])
     with filter_spalte:
-        meldungs_typ = st.selectbox("Art", ["alle", "alert", "digest"],
-                                    key="agenten_postfach_typ")
+        meldungs_typ = st.selectbox(
+            "Art", ["alle", "alert", "digest", "lagebericht", "scan"],
+            key="agenten_postfach_typ")
     meldungen = journal.meldungen_lesen(
         limit=50, typ=None if meldungs_typ == "alle" else meldungs_typ)
     if not meldungen:

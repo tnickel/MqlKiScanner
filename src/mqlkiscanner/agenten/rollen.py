@@ -69,9 +69,9 @@ MODELL_AUSWAHL = ("glm-5.3", "glm-5.3-flash")
 
 # Wie weit der Agentenbetrieb umgesetzt ist (doc/19 Phasenplan).
 # A: Fundament/Dirigent · B: Dossiers/Betreuer · C: Marktdaten ·
-# D: Melder/Postfach (V1-Attach-Test des Terminals mit dem Nutzer bleibt
-# offen, bis es läuft). Die UI zeigt Rollen über dieser Stufe als 'geplant'.
-AKTUELLE_PHASE = "D"
+# D: Melder/Postfach · E: Chefermittler + autonome Scans (ALLE Rollen aktiv).
+# Offen bleibt nur die echte V1-Attach-Prüfung des Terminals mit dem Nutzer.
+AKTUELLE_PHASE = "E"
 
 
 def rollen_defaults() -> dict:
