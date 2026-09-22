@@ -37,17 +37,6 @@ def _lese(datei: Path) -> dict:
         return {}
 
 
-def _prozess_lebt(pid: int | None) -> bool:
-    """Lebenszeichen des Halter-Prozesses — plattformneutral ohne Signale.
-
-    Windows' os.kill ist für Tests ungeeignet (beendet den Prozess!). Wir
-    vertrauen stattdessen auf das kombinierte Kriterium im Erwerb: frisches
-    Alter UND bekannte PID. Ein abgestürzter Halter wird über STALE_S
-    übernommen, ein frisches fremdes Lock respektiert.
-    """
-    return pid is not None and pid > 0
-
-
 @contextmanager
 def lauf_lock(basis: Path, name: str = "agenten_lauff"):
     """Lauf-Lock halten: genau ein Lauf je Lock-Name über Prozessgrenzen.

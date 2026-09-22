@@ -93,13 +93,19 @@ neu erfunden).
       per Button auf der Ergebnisseite, Lauf-Wechsel direkt auf der
       Scan-Seite. Kein Reimport alter Läufe — Chronik startet ab
       Einführung. Modul: `src/mqlkiscanner/ampel_verlauf.py`
-- [ ] Wiederholungsmodus als Kommandozeilen-Aufruf (Läufe gibt es bisher
-      nur über die Scan-Seite der GUI)
-- [ ] Alerting-Kriterien: Schranke-Verletzung ist in der Ampel-Matrix
-      sichtbar, MT4/MT5-Zwillingsvergleich existiert (`compare.py`);
-      fehlen: automatisierte Alerts bei Anbieter-Stilbruch oder
-      Copy-Abweichung > x % (Fundament steht: Ampel-Wechsel sind
-      protokolliert und abfragbar)
+- [x] Wiederholungsmodus als Kommandozeilen-Aufruf — erledigt über den
+      Agentenbetrieb (22.09.2026, Bauplan doc/19): `PYTHONPATH=src python
+      -m mqlkiscanner.agenten` mit `--scan gelbgruen|full` (vollständiger
+      Pipeline-Lauf headless), `--once/--markt/--betreuer/--digest/--chef`
+      für Einzelakte; im Dauerbetrieb stößt der Dirigent die Scans selbst
+      an (Sonntags Gelb/Grün, 1. Werktag Full)
+- [x] Alerting-Kriterien — erledigt über den Melder des Agentenbetriebs
+      (Phase D/E, 22.09.2026): sofortige Alerts bei Ampelwechsel (Watcher
+      in jedem Daemon-Tick, auch aus GUI-Scans) und Stilbruch (direkt aus
+      der Betreuer-Prüfung), Tagesdigest und Scan-Abschlüsse ins Postfach
+      der Agenten-Seite. Copy-Abweichung > x % bleibt bewusst offen
+      (braucht Kopier-Ergebnisse des eigenen Kontos — außerhalb des
+      aktuellen Scopes)
 
 ## Phase 6: MqlDownloader-Anbindung — ✅ abgeschlossen (20.09.2026)
 

@@ -18,7 +18,6 @@ kein UPDATE auf Chronik-Zeilen, kein DELETE.
 from __future__ import annotations
 
 import json
-import sqlite3
 from datetime import datetime
 
 from .. import db
@@ -284,7 +283,7 @@ def meldungen_zaehlen(typ: str | None = None) -> int:
         args.append(typ)
     with db._connect() as conn:
         row = conn.execute(
-            f"SELECT COUNT(*) AS n FROM agenten_meldungen WHERE "
+            "SELECT COUNT(*) AS n FROM agenten_meldungen WHERE "
             + " AND ".join(clauses), args).fetchone()
     return int(row["n"] if row else 0)
 

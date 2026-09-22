@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-from .. import config, db
+from .. import config
 from ..llm import client as llm_client
 from . import journal, lock, rollen, rollen_prompts
 
@@ -30,8 +30,8 @@ ERLAUBTE_AKTIONEN = frozenset((
 def _lagestatus(settings: dict) -> dict:
     """Deterministische Ist-Aufnahme — alles, was der Plan braucht."""
     journal.init_journal()
-    von_heute = [l for l in journal.list_laeufe(limit=50)
-                 if l["start"].startswith(datetime.now().strftime("%Y-%m-%d"))]
+    von_heute = [lauf for lauf in journal.list_laeufe(limit=50)
+                 if lauf["start"].startswith(datetime.now().strftime("%Y-%m-%d"))]
     return {
         "jetzt": datetime.now().isoformat(sep=" ", timespec="seconds"),
         "wochentag": datetime.now().strftime("%A"),

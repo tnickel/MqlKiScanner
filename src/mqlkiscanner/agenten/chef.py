@@ -78,8 +78,8 @@ def lagebericht(quelle: str = "daemon", log=print,
                 settings: dict | None = None) -> dict:
     """Ein Lagebericht in das Postfach; verschiebt sich bei laufendem Scan."""
     settings = settings if settings is not None else config.load_settings()
-    aktive_scans = [l for l in journal.aktive_laeufe("dirigent")
-                    if l["quelle"] == "daemon"]
+    aktive_scans = [eintrag for eintrag in journal.aktive_laeufe("dirigent")
+                    if eintrag["quelle"] == "daemon"]
     lauf_id = journal.lauf_starten("chef", quelle=quelle)
     if aktive_scans:
         grund = (f"Scan-Lauf {aktive_scans[0]['id']} noch aktiv — "

@@ -41,14 +41,14 @@ def alert(typ: str, titel: str, text: str, *, prioritaet: int = 2,
 
 
 def stilbruch_alert(signal_name: str, text: str, schritt_ref: int,
-                    lauf_id: int, signal_id: int) -> int:
+                    lauf_id: int, signal_id: int,
+                    beobachtung_id: int | None = None) -> int:
     """Der Betreuer meldt einen Stilbruch — sofort, prioritaet 3."""
-    return alert(
-        "alert", f"STILBRUCH: {signal_name}", text,
-        prioritaet=3,
-        quellen=[f"schritt#{schritt_ref}", f"lauf#{lauf_id}",
-                 f"signal#{signal_id}"],
-        quelle="betreuer")
+    quellen = [f"schritt#{schritt_ref}", f"lauf#{lauf_id}", f"signal#{signal_id}"]
+    if beobachtung_id:
+        quellen.append(f"dossier_beobachtung#{beobachtung_id}")
+    return alert("alert", f"STILBRUCH: {signal_name}", text,
+                 prioritaet=3, quellen=quellen, quelle="betreuer")
 
 
 def pruefe_neue_wechsel(log=print) -> list[dict]:
@@ -89,14 +89,14 @@ def _ereignisse_heute(settings: dict) -> dict:
     """DeterministischeDigest-Grundlage — alles maschinell gezählt."""
     heute = datetime.now().strftime("%Y-%m-%d")
     laeufe = journal.list_laeufe(limit=200)
-    von_heute = [l for l in laeufe if l["start"].startswith(heute)]
+    von_heute = [lauf for lauf in laeufe if lauf["start"].startswith(heute)]
     je_status: dict[str, int] = {}
     fehler: list[str] = []
-    for l in von_heute:
-        je_status[l["status"]] = je_status.get(l["status"], 0) + 1
-        if l["status"] == "fehler":
-            fehler.append(f"{l['rolle']}/{l['signal_id'] or '-'}: "
-                          f"{(l['zusammenfassung'] or '')[:120]}")
+    for lauf in von_heute:
+        je_status[lauf["status"]] = je_status.get(lauf["status"], 0) + 1
+        if lauf["status"] == "fehler":
+            fehler.append(f"{lauf['rolle']}/{lauf['signal_id'] or '-'}: "
+                          f"{(lauf['zusammenfassung'] or '')[:120]}")
     # Beobachtungen heute direkt aus dem Dossier (je Einordnung).
     dossier.init_dossier()
     with db._connect() as conn:

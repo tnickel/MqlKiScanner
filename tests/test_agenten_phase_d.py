@@ -124,7 +124,7 @@ def test_stilbruch_im_betreuer_loest_alert_aus(tmp_path, monkeypatch):
                       "2026.09.22 04:00:00;2550;0;0;-2500.00\n"),
                    encoding="utf-8")
     monkeypatch.setattr(betreuer, "export_holen",
-                        lambda signal, settings: (str(neu), False))
+                        lambda session, signal, settings: (str(neu), False))
     antwort = ("EINORDNUNG: STILBRUCH\nNächtlicher Riesen-Trade mit 0,5 Lots "
                "— verletzt Merkmale 3 und 4 (Sessions, Sizing).")
     monkeypatch.setattr(betreuer, "_llm_einordnung",

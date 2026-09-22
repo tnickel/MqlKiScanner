@@ -14,7 +14,7 @@ from __future__ import annotations
 import streamlit as st
 
 from .. import config
-from ..ui_design import action_button, info_button, section_header
+from ..ui_design import action_button, section_header
 from . import daemon, journal, rollen, rollen_prompts
 
 

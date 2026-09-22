@@ -13,7 +13,6 @@ Betreuer kann für dieses Signal nicht prüfen.
 """
 from __future__ import annotations
 
-import json
 
 from .. import config, db
 from ..llm import client as llm_client

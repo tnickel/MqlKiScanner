@@ -55,12 +55,17 @@ def kandidaten(settings: dict | None = None) -> list[dict]:
             and getattr(r, "forensik_vorhanden", False)]
 
 
-def export_holen(signal: dict, settings: dict) -> tuple[str, bool]:
-    """Trade-Export laden (Pfad, aus_cache). Tests stubben diese Funktion."""
+def export_holen(session: Mql5Session, signal: dict, settings: dict) -> tuple[str, bool]:
+    """Trade-Export laden (Pfad, aus_cache). Tests stubben diese Funktion.
+
+    Eine Session für den GESAMTEN Tageslauf (gemeinsamer Rate-Limiter);
+    die Zwischen-Signal-Pause entspricht der Pipeline (GUI-Parität).
+    """
     from ..mql5.exporter import export_positions  # spät, mock-freundlich
-    session = Mql5Session(settings)
-    return export_positions(session, signal["id"], cache_stunden=CACHE_STUNDEN,
-                            platform=signal.get("platform") or None)
+    return export_positions(
+        session, signal["id"], cache_stunden=CACHE_STUNDEN,
+        extra_pause_s=float(settings.get("rate_pause_zwischen_signalen_s", 5.0)),
+        platform=signal.get("platform") or None)
 
 
 def _snapshot_sha(signal_id: int) -> tuple[str | None, str | None]:
@@ -132,12 +137,20 @@ def _einordnung_parsen(antwort: str) -> tuple[str, str]:
     return einordnung, text or "(keine Begründung geliefert)"
 
 
-def signal_pruefen(signal: dict, settings: dict, log=print) -> dict:
-    """Ein Signal im Tagesdurchlauf prüfen (ein eigener Betreuer-Lauf)."""
+def signal_pruefen(signal: dict, settings: dict, log=print,
+                   session: Mql5Session | None = None) -> dict:
+    """Ein Signal im Tagesdurchlauf prüfen (ein eigener Betreuer-Lauf).
+
+    Ohne übergebene Session wird eine eigene gebaut (Einzelabruf/CLI) —
+    der Tageslauf übergibt EINE Session für alle Signale, damit der
+    Rate-Limiter über den ganzen Lauf gemeinsam pacingt.
+    """
+    session = session if session is not None else Mql5Session(settings)
     lauf_id = journal.lauf_starten("betreuer", quelle="daemon",
                                    signal_id=signal["id"])
     try:
-        ergebnis = _signal_pruefen_inner(signal, settings, lauf_id, log)
+        ergebnis = _signal_pruefen_inner(signal, settings, session,
+                                         lauf_id, log)
         journal.lauf_abschliessen(lauf_id, "ok", ergebnis["zusammenfassung"])
         return ergebnis | {"lauf_id": lauf_id, "status": "ok"}
     except Exception as exc:  # Ein Signal darf den Gesamtlauf nicht abreißen
@@ -151,8 +164,8 @@ def signal_pruefen(signal: dict, settings: dict, log=print) -> dict:
                 "signal": signal["name"]}
 
 
-def _signal_pruefen_inner(signal: dict, settings: dict, lauf_id: int,
-                          log) -> dict:
+def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
+                           lauf_id: int, log) -> dict:
     name = signal["name"]
     # Profil fehlt? Erst destillieren (einmalig, protokolliert).
     profil = dossier.profil_lesen(signal["id"])
@@ -169,7 +182,7 @@ def _signal_pruefen_inner(signal: dict, settings: dict, lauf_id: int,
         return {"signal": name, "zusammenfassung": grund,
                 "einordnung": None}
 
-    pfad, aus_cache = export_holen(signal, settings)
+    pfad, aus_cache = export_holen(session, signal, settings)
     neu_sha = delta.datei_sha256(pfad)
     alt_sha, alt_pfad = _snapshot_sha(signal["id"])
     journal.schritt_protokollieren(
@@ -221,20 +234,27 @@ def _signal_pruefen_inner(signal: dict, settings: dict, lauf_id: int,
         signal["id"], einordnung, text, delta_ref=delta_id,
         schritt_ref=schritt_id)
     if einordnung == "STILBRUCH":
-        melder.stilbruch_alert(name, text, schritt_id, lauf_id, signal["id"])
+        melder.stilbruch_alert(name, text, schritt_id, lauf_id, signal["id"],
+                               beobachtung_id=beobachtung_id)
     return {"signal": name, "einordnung": einordnung,
             "zusammenfassung": f"{name}: {einordnung}"}
 
 
 def tageslauf(quelle: str = "daemon", log=print, settings: dict | None = None,
               nur_signal_ids: list[int] | None = None) -> dict:
-    """Alle 🟢/🟡-Signale prüfen; Rückgabe zusammengefasst."""
+    """Alle 🟢/🟡-Signale prüfen; Rückgabe zusammengefasst.
+
+    Eine gemeinsame Mql5Session für alle Signale: ein Login-Check und ein
+    gemeinsam pacingender Rate-Limiter statt je Signal neuer Bursts.
+    """
     settings = settings if settings is not None else config.load_settings()
     signale = kandidaten(settings)
     if nur_signal_ids is not None:
         signale = [s for s in signale if s["id"] in nur_signal_ids]
     log(f"Betreuer-Tageslauf: {len(signale)} Kandidat(en).")
-    ergebnisse = [signal_pruefen(s, settings, log) for s in signale]
+    session = Mql5Session(settings)
+    ergebnisse = [signal_pruefen(s, settings, log, session=session)
+                  for s in signale]
     je = {}
     for e in ergebnisse:
         je[e.get("einordnung") or "OHNE"] = je.get(e.get("einordnung") or "OHNE",

@@ -84,7 +84,9 @@ def kurse_holen(symbole: list[str], settings: dict) -> dict:
                 continue
             h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0,
                                          lookback * 24)
-            d1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, lookback)
+            # +1: die 30-Tage-Veränderung braucht 31 Closes (heute + 30).
+            d1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0,
+                                         lookback + 1)
             if h1 is None or d1 is None or len(d1) < 2:
                 fehler_symbole.append(symbol)
                 continue

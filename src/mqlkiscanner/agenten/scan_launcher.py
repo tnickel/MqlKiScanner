@@ -59,9 +59,6 @@ def starte_scan(modus: str, quelle: str = "daemon", log=print) -> dict:
         settings.update({"nur_neue": False, "berichte_neu": True,
                          "llm_stufe1": True, "llm_stufe2": True})
     lauf_id = journal.lauf_starten("dirigent", quelle=quelle)
-    _scan_vermerken(modus)
-    if modus == "full":
-        _scan_monat_vermerken(modus)
     try:
         with lock.lauf_lock(config.DATA_DIR):
             ergebnis = _scan_innerhalb(modus, settings, lauf_id, log)
@@ -71,6 +68,9 @@ def starte_scan(modus: str, quelle: str = "daemon", log=print) -> dict:
             ergebnis["zusammenfassung"], prioritaet=1,
             quellen=[f"lauf#{lauf_id}"])
         log(f"Scan {modus} abgeschlossen: {ergebnis['zusammenfassung']}")
+        _scan_vermerken(modus)
+        if modus == "full":
+            _scan_monat_vermerken(modus)
         return {"status": "ok", "lauf_id": lauf_id, **ergebnis}
     except lock.LockBesetzt as exc:
         grund = f"Lauf-Lock belegt — Scan {modus} übersprungen: {exc}"
@@ -86,6 +86,10 @@ def starte_scan(modus: str, quelle: str = "daemon", log=print) -> dict:
             MELDUNG_TYP, f"Scan {modus} FEHLGESCHLAGEN", str(exc),
             prioritaet=2, quellen=[f"lauf#{lauf_id}"])
         log(f"Scan {modus} fehlgeschlagen: {exc}")
+        # Tages-Merker auch im Fehlerfall: kein 30-Sekunden-Retry-Loop.
+        # Der MONATS-Merker bleibt offen — ein fehlgeschlagener Full-Scan
+        # wiederholt sich am nächsten Tag im 1.-Werktag-Fenster.
+        _scan_vermerken(modus)
         return {"status": "fehler", "grund": str(exc), "lauf_id": lauf_id}
 
 

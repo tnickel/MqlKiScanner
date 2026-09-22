@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import hashlib
 import statistics
-from typing import Iterable
 
 from ..models import Trade
 from ..parser import load_export

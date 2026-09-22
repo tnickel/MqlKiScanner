@@ -112,7 +112,7 @@ def signal_mit_snapshot(tmp_path, monkeypatch):
     export_pfad = _csv(tmp_path / "neu.csv",
                        [_trade_zeile(1), _trade_zeile(2, profit="15.00")])
     monkeypatch.setattr(betreuer, "export_holen",
-                        lambda signal, settings: (export_pfad, False))
+                        lambda session, signal, settings: (export_pfad, False))
     # Kandidatenliste auf das Testsignal zurechtstutzen (Ampel kommt aus
     # results_from_db — Stub greift am Moduleinstieg vorbei).
     monkeypatch.setattr(betreuer, "kandidaten",
@@ -145,7 +145,7 @@ def test_betreuter_lauf_ohne_neue_trades(signal_mit_snapshot, monkeypatch):
     snapshot_pfad = _snapshot_pfad()
     # Export identisch zum Snapshot: kein LLM, Beobachtung KEINE_NEUEN_TRADES.
     monkeypatch.setattr(betreuer, "export_holen",
-                        lambda signal, settings: (snapshot_pfad, True))
+                        lambda session, signal, settings: (snapshot_pfad, True))
     calls = []
     monkeypatch.setattr(betreuer, "_llm_einordnung",
                         lambda *a, **k: calls.append(1))

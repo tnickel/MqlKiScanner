@@ -9,7 +9,7 @@ sagt, steht im Protokoll", Nutzer-Vorgabe statt Trockenmodus).
 from __future__ import annotations
 
 import sys
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -80,9 +80,9 @@ with live_tab:
                        "`PYTHONPATH=src python -m mqlkiscanner.agenten --once`).")
         else:
             st.dataframe(
-                [{"Zeit": l["start"], "Rolle": l["rolle"], "Quelle": l["quelle"],
-                  "Status": l["status"], "Zusammenfassung": l["zusammenfassung"] or ""}
-                 for l in laeufe],
+                [{"Zeit": lauf["start"], "Rolle": lauf["rolle"], "Quelle": lauf["quelle"],
+                  "Status": lauf["status"], "Zusammenfassung": lauf["zusammenfassung"] or ""}
+                 for lauf in laeufe],
                 use_container_width=True, hide_index=True)
 
 # ── Protokoll ──────────────────────────────────────────────────────

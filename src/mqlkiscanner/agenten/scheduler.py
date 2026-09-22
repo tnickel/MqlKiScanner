@@ -77,8 +77,8 @@ def faellige_rollen(jetzt: datetime, settings: dict) -> list[str]:
 
 def _aktiver_scan() -> bool:
     """Läuft gerade ein autonomer Scan (Dirigent-Daemon-Lauf)?"""
-    return any(l["quelle"] == "daemon"
-               for l in journal.aktive_laeufe("dirigent"))
+    return any(eintrag["quelle"] == "daemon"
+               for eintrag in journal.aktive_laeufe("dirigent"))
 
 
 def faellige_scans(jetzt: datetime, settings: dict) -> list[str]:
@@ -105,7 +105,6 @@ def nicht_deaktiviert(settings: dict, rolle: str) -> bool:
 
 def tick(jetzt: datetime | None = None, log=print) -> dict:
     """Ein Schleifendurchlauf: Herzschlag → fällige Rollen ausführen."""
-    from . import dirigent  # spät: kein Kreisimport beim Paket-Import
     jetzt = jetzt or datetime.now()
     settings = config.load_settings()
     journal.steuerung_setzen("letzter_tick",
@@ -115,7 +114,7 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
                 bool(settings.get("agenten_enabled", False))}
     if not settings.get("agenten_enabled", False):
         return ergebnis
-    from . import betreuer, chef, markt, melder, scan_launcher  # spät: Kreisimporte
+    from . import melder, scan_launcher  # spät: Kreisimporte
     # Ampelwechsel-Watcher: JEDER Tick (bemerkt auch Wechsel aus GUI-Scans),
     # idempotent über den letzten bearbeiteten Wechsel in der Steuerung.
     try:
@@ -136,33 +135,40 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
                                         "scan": modus,
                                         "status": "gestartet"})
     for rolle in faellige_rollen(jetzt, settings):
-        if rolle == "dirigent":
-            lauf = dirigent.tageslauf(quelle="daemon", log=log)
-            ergebnis["ausgefuehrt"].append({"rolle": "dirigent",
-                                            "status": lauf["status"]})
-        elif rolle == "markt":
-            lauf = markt.tageslauf(quelle="daemon", log=log,
-                                   settings=settings)
-            ergebnis["ausgefuehrt"].append(
-                {"rolle": "markt", "status": lauf["status"],
-                 "grund": lauf.get("grund", "")})
-        elif rolle == "betreuer":
-            lauf = betreuer.tageslauf(quelle="daemon", log=log,
-                                      settings=settings)
-            ergebnis["ausgefuehrt"].append(
-                {"rolle": "betreuer", "signale": lauf["signale"],
-                 "zusammenfassung": lauf["zusammenfassung"]})
-        elif rolle == "melder":
-            lauf = melder.tagesdigest(quelle="daemon", log=log,
-                                      settings=settings)
-            ergebnis["ausgefuehrt"].append(
-                {"rolle": "melder", "status": lauf["status"]})
-        elif rolle == "chef":
-            lauf = chef.lagebericht(quelle="daemon", log=log,
-                                    settings=settings)
-            ergebnis["ausgefuehrt"].append(
-                {"rolle": "chef", "status": lauf["status"]})
+        try:
+            _rolle_ausfuehren(rolle, settings, ergebnis, log)
+        except Exception as exc:  # eine Rolle darf die anderen nicht blockieren
+            log(f"Rolle {rolle} fehlgeschlagen (nächster Tick): {exc}")
+            ergebnis["ausgefuehrt"].append({"rolle": rolle,
+                                            "status": "fehler",
+                                            "grund": str(exc)})
     return ergebnis
+
+
+def _rolle_ausfuehren(rolle: str, settings: dict, ergebnis: dict, log) -> None:
+    from . import betreuer, chef, dirigent, markt, melder  # spät: Kreisimporte
+    if rolle == "dirigent":
+        lauf = dirigent.tageslauf(quelle="daemon", log=log)
+        ergebnis["ausgefuehrt"].append({"rolle": "dirigent",
+                                        "status": lauf["status"]})
+    elif rolle == "markt":
+        lauf = markt.tageslauf(quelle="daemon", log=log, settings=settings)
+        ergebnis["ausgefuehrt"].append(
+            {"rolle": "markt", "status": lauf["status"],
+             "grund": lauf.get("grund", "")})
+    elif rolle == "betreuer":
+        lauf = betreuer.tageslauf(quelle="daemon", log=log, settings=settings)
+        ergebnis["ausgefuehrt"].append(
+            {"rolle": "betreuer", "signale": lauf["signale"],
+             "zusammenfassung": lauf["zusammenfassung"]})
+    elif rolle == "melder":
+        lauf = melder.tagesdigest(quelle="daemon", log=log, settings=settings)
+        ergebnis["ausgefuehrt"].append(
+            {"rolle": "melder", "status": lauf["status"]})
+    elif rolle == "chef":
+        lauf = chef.lagebericht(quelle="daemon", log=log, settings=settings)
+        ergebnis["ausgefuehrt"].append(
+            {"rolle": "chef", "status": lauf["status"]})
 
 
 def stopp_gewuenscht() -> bool:
