@@ -132,6 +132,23 @@ def beobachtungen_lesen(signal_id: int, limit: int = 50) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def stilbruch_historie(signal_id: int, limit: int = 10) -> list[dict]:
+    """Alle STILBRUCH-Beobachtungen eines Signals, neueste zuerst.
+
+    Dauerhafte Verknüpfung Signal ↔ Stilbruch ↔ Datum (Nutzer-Wunsch
+    22.09.2026): Auch wenn die Ampel später wechselt (z. B. 🟡 → 🟢),
+    bleibt hier ablesbar, dass der Betreuer in der Vergangenheit eine
+    Abweichung vom eigenen Algo-Profil festgestellt hat.
+    """
+    init_dossier()
+    with db._connect() as conn:
+        rows = conn.execute(
+            "SELECT ts, text FROM dossier_beobachtungen "
+            "WHERE signal_id=? AND einordnung='STILBRUCH' "
+            "ORDER BY id DESC LIMIT ?", (signal_id, max(1, int(limit)))).fetchall()
+    return [dict(r) for r in rows]
+
+
 def letzte_beobachtungen(signal_id: int, anzahl: int = 3) -> str:
     """Kurzer Verlaufstext für den Betreuer-Prompt ({letzte_beobachtungen})."""
     eintraege = list(reversed(beobachtungen_lesen(signal_id, limit=anzahl)))

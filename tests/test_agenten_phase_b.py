@@ -204,3 +204,18 @@ def test_rollen_phase_b_erreicht():
     # Phase B ist seit Phase C nicht mehr AKTUELL, aber erreicht (Betreuer läuft).
     assert rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["betreuer"], "B")
     assert rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["betreuer"], "C")
+
+
+def test_stilbruch_historie_nur_stilbrueche_neueste_zuerst():
+    """Die dauerhafte Signal-Verknüpfung: nur STILBRUCH-Beobachtungen,
+    neueste zuerst — KONFORM/andere Einordnungen bleiben außen vor."""
+    from mqlkiscanner.agenten import dossier as dossier_db
+
+    dossier_db.init_dossier()
+    dossier_db.beobachtung_speichern(999001, "KONFORM", "alles normal")
+    dossier_db.beobachtung_speichern(999001, "STILBRUCH", "Martingale erkannt")
+    dossier_db.beobachtung_speichern(999001, "STILBRUCH", "SL entfernt")
+    dossier_db.beobachtung_speichern(999002, "STILBRUCH", "anderes Signal")
+    hist = dossier_db.stilbruch_historie(999001)
+    assert [h["text"] for h in hist] == ["SL entfernt", "Martingale erkannt"]
+    assert dossier_db.stilbruch_historie(999003) == []

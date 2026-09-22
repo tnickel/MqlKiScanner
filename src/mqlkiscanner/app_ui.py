@@ -447,6 +447,8 @@ def render_wechsel_karten(wechsel: list[dict]) -> None:
                 "verglichen.", icon=":material/history:")
         return
     quelle_label = {"full": "Full-Scan", "gelbgruen": "Teilscan"}
+    from .agenten import dossier as dossier_db
+    _stilbruch_cache: dict[int, list[dict]] = {}
     for w in wechsel:
         icon, label, karte = _RICHTUNG_LABEL.get(w.get("richtung", "hinweis"),
                                                  _RICHTUNG_LABEL["hinweis"])
@@ -461,6 +463,19 @@ def render_wechsel_karten(wechsel: list[dict]) -> None:
                   f"{quelle_label.get(w.get('quelle'), w.get('quelle') or '—')}")
         body = [f"{icon} **{pfeil} · {name}** · #{w.get('signal_id')}"
                 f"{score_text} · {label}", f"*{zeiten}*"]
+        # Stilbruch-Vergangenheit mitliefern (Nutzer-Wunsch): ein Wechsel auf
+        # 🟢 soll nicht überdecken, dass der Betreuer früher einen Stilbruch
+        # festgestellt hat — ein Lookup je Signal, gecacht für die Liste.
+        sig = w.get("signal_id")
+        if sig is not None and sig not in _stilbruch_cache:
+            _stilbruch_cache[sig] = dossier_db.stilbruch_historie(int(sig),
+                                                                  limit=1)
+        hist = _stilbruch_cache.get(sig) or []
+        if hist:
+            body.append(f"⚠️ **Stilbruch-Historie** (zuletzt "
+                        f"{str(hist[0]['ts'])[:10]}) — die Vergangenheit bleibt "
+                        f"im Dossier ablesbar, unabhängig vom heutigen "
+                        f"Ampel-Urteil.")
         gruende = w.get("gruende") or []
         if gruende:
             body.append("**Geänderte Kriterien:**")
@@ -782,6 +797,28 @@ def render_detail(result) -> None:
             )
         st.markdown("**Urteil**")
         st.write(result.urteil or "Noch kein belastbares Urteil vorhanden.")
+
+    # Stilbruch-Historie aus dem Agenten-Dossier — dauerhaft mit dem Signal
+    # verknüpft (Nutzer-Wunsch 22.09.2026): bleibt sichtbar, auch wenn die
+    # Ampel später z. B. von 🟡 auf 🟢 wechselt; das Ampel-Urteil sagt nur
+    # den heutigen Stand.
+    from .agenten import dossier as dossier_db
+    stilbrueche = dossier_db.stilbruch_historie(result.id)
+    if stilbrueche:
+        letztes_datum = str(stilbrueche[0]["ts"] or "")[:10]
+        with st.container(border=True):
+            st.warning(
+                f"**Stilbruch-Historie:** {len(stilbrueche)} "
+                f"{'Stilbruch' if len(stilbrueche) == 1 else 'Stilbrüche'} "
+                f"erkannt (zuletzt {letztes_datum}) — der Signal-Betreuer hat "
+                f"Abweichungen vom eigenen Algo-Profil festgestellt. Dieses "
+                f"Warnfeld bleibt unabhängig vom Ampel-Urteil stehen, auch "
+                f"nach einem Wechsel auf 🟢.", icon=":material/warning:")
+            with st.expander("Stilbruch-Beobachtungen des Betreuers (Dossier)",
+                             expanded=False, icon=":material/manage_search:"):
+                for b in stilbrueche:
+                    st.caption(str(b["ts"]))
+                    st.markdown(str(b["text"] or ""))
 
     if result.ampel == "⛔":
         eintrag = regelwerk.ausgeschlossen_eintrag(result.id)
