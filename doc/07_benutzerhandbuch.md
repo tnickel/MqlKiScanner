@@ -281,6 +281,41 @@ verwendet und welcher Bericht daraus entsteht. Die Engine berechnet alle
 Kennzahlen; die KI interpretiert sie nur. Pflicht-Platzhalter bleiben beim
 Bearbeiten geschützt und werden vor dem Speichern geprüft.
 
+## 5a. Agentenbetrieb (Phase A)
+
+Fünf LLM-Rollen übernehmen schrittweise die Dauerbeobachtung der Signale
+(Bauplan: `doc/19_agentenbetrieb-bauplan.md`). **Phase A ist aktiv**: Der
+Dirigent plant täglich werktags, alle weiteren Rollen sind konfigurierbar,
+aber als „geplant“ (Phase B–E) markiert.
+
+**Einstellungen → Agenten** (Konfiguration):
+
+- **Start/Stop:** „Agentenbetrieb starten“ setzt die Freigabe und startet
+  den Daemon als eigenen Hintergrundprozess (überlebt geschlossene
+  Browser-Tabs; Log: `data/agenten_daemon.log`). „Stoppen“ beendet ihn
+  kooperativ beim nächsten Tick (max. ~30 s). Der Status zeigt
+  Herzschlag und PID.
+- **Budget und Takt:** Tages-/Monatsbudget (Standard 500.000 / 5.000.000
+  Token — nur Agenten-Modellaufrufe; reguläre Scan-Läufe zählen auf ihr
+  eigenes Lauf-Budget) und die tägliche Startzeit (Standard 06:30).
+  Wochenende ruht.
+- **Rollen:** je Rolle aktiv/aus, Modell (Standard **GLM-5.3** je Rolle;
+  Flash wählbar, Freitext für OpenAI-kompatible Modelle) und
+  Token-Limit je Aufruf.
+- **Rollen-Prompts:** sechs Vorlagen (`config/prompts/agenten/`), editierbar
+  wie die Analysevorlagen, mit Pflicht-Platzhalter-Schutz.
+
+**Seite „Agenten“** (Beobachtung):
+
+- **Live:** Daemon-Status, die fünf Rollen mit Phasen-Badge, letzte Läufe.
+- **Protokoll:** jeder Schritt chronologisch (Filter nach Rolle und Tag);
+  LLM-Schritte öffnen den **vollständig gefüllten Prompt** und die
+  **vollständige Antwort** — nichts wird gekürzt. Dieses lückenlose
+  Protokoll ersetzt den bewusst abgelehnten Trockenmodus.
+
+Kommandozeile (ohne GUI): `PYTHONPATH=src python -m mqlkiscanner.agenten`
+(Dauerschleife) oder `--once` für einen einzelnen Dirigent-Tageslauf.
+
 ## 6. Typische Stolpersteine
 
 | Symptom | Ursache / Hilfe |
@@ -293,6 +328,8 @@ Bearbeiten geschützt und werden vor dem Speichern geprüft.
 | Downloader nicht erreichbar | Läuft der MqlDownloader? Admin → „MqlDownloader“ → Verbindung testen |
 | Gelb/Grün-Scan: „nichts zu prüfen“ | Kein Signal im Katalog ist aktuell 🟢/🟡 — erst einmal Full-Scan laufen lassen |
 | „Noch kein Wechsel protokolliert“ | Normal nach der Einführung: erster Scan = Baseline, Wechsel ab dem zweiten Scan |
+| Agenten: „Daemon gestoppt“ trotz Start | Nach dem Start dauert der erste Tick bis 30 s; Status basiert auf Herzschlag + PID |
+| Agenten-LLM-Schritt „fehler (length)“ | Ausgabelimit zu klein — Admin → Agenten → Rolle → „Max. Tokens je Aufruf“ erhöhen (glm-5.3 braucht Reasoning-Spielraum) |
 
 ## 7. Verifikation
 

@@ -120,12 +120,23 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
   Ampel-Verlauf (`ampel_verlauf.py` — Farb-Chronik je Lauf plus
   protokollierte Wechsel mit Kriterium-Begründungen, Tabellen
   `ampel_verlauf`/`ampel_wechsel`; bewertet selbst nichts, nur
-  Aufzeichnung des Engine-Ergebnisses)
-- `config/prompts/` — editierbare LLM-Prompts
-- `tests/` — pytest (766 Tests grün; LLM-Regressionstests opt-in via
+  Aufzeichnung des Engine-Ergebnisses),
+  Agentenbetrieb (`agenten/` — autonomer LLM-Daemon nach Bauplan
+  `doc/19_agentenbetrieb-bauplan.md`: Dirigent-Tageslauf [Phase A,
+  22.09.2026], Journal/Protokoll [`agenten_laeufe`/`agenten_schritte`/
+  `agenten_meldungen`/`agenten_steuerung`], prozessübergreifendes
+  Lauf-Lock, Rollen-Registry mit GLM-5.3 als Standard JE Rolle
+  [Nutzer-Vorgabe 22.09.2026], 6 Rollen-Prompts unter
+  `config/prompts/agenten/`; Daemon-Start/Stopp über Admin → Agenten
+  oder CLI `PYTHONPATH=src python -m mqlkiscanner.agenten [--once|--tick]`;
+  bewertet nie, beobachtet und meldet nur — LLM-Schritte protokollieren
+  vollen Prompt und volle Antwort, kein Trockenmodus)
+- `config/prompts/` — editierbare LLM-Prompts (Workflow) und
+  `config/prompts/agenten/` — editierbare Rollen-Prompts
+- `tests/` — pytest (812 Tests grün; LLM-Regressionstests opt-in via
   `pytest -m llm`, echte Modellaufrufe)
 
-## Umsetzungsstand (Stand 21.09.2026)
+## Umsetzungsstand (Stand 22.09.2026)
 
 Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
 
@@ -156,8 +167,22 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   per Button „Wechsel-Protokoll“ auf der Ergebnisseite. Fehlgeschlagene
   Prüfungen schreiben keinen Eintrag (kein ⚪-Flackern); Reimport alter
   Läufe bewusst NEIN (Nutzer-Entscheidung).
+- ✅ Agentenbetrieb Phase A (22.09.2026, Bauplan `doc/19`): Daemon-Prozess
+  im selben Repo (`agenten/`), Dirigent-Tageslauf werktags zur Startzeit
+  (Lagestatus → Code-Plan → optionale LLM-Randentscheidung mit
+  Aktions-Whitelist), lückenloses Schritt-Protokoll in SQLite,
+  Lauf-Lock gegen die GUI, Token-Tages-/Monatsbudget, Admin-Tab
+  „Agenten“ (Rollenkarten mit GLM-5.3-Default, Budget/Takt, Daemon
+  Start/Stopp, Rollen-Prompt-Editor) und Seite „Agenten“ (Live +
+  Protokoll mit vollem Prompt/voller Antwort je LLM-Schritt). Rollen
+  Markt/Betreuer/Chef/Melder folgen in Phase B–E. 812 Tests grün.
 
-Noch offen (Phase 5 Betrieb):
+Noch offen (Phase 5 Betrieb / Agentenbetrieb):
 
-- [ ] Re-Scan als Kommandozeilen-Aufruf mit Diff gegen den letzten Lauf
-- [ ] Automatisierte Alerts (Anbieter-Stilbruch, Copy-Abweichung > x %)
+- [ ] Re-Scan als Kommandozeilenaufruf mit Diff gegen den letzten Lauf
+      (Dirigent-CLI `--once` existiert; der Scan-Aufruf folgt mit Phase E)
+- [ ] Agentenbetrieb Phase B: Dossiers + Trade-Delta + Betreuer-Rolle
+- [ ] Agentenbetrieb Phase C–E: Marktdaten (MetaTrader5-Paket,
+      Verifikation V1 mit Nutzer), Melder/Alerts, Chefermittler
+- [ ] Automatisierte Alerts (Anbieter-Stilbruch, Copy-Abweichung > x %) —
+      Fundament steht: Ampel-Wechsel protokolliert, Melder geplant (Phase D)

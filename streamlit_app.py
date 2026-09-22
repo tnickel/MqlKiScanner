@@ -54,6 +54,9 @@ scan_page = st.Page("app_pages/scan.py", title="Scan", icon=":material/radar:")
 results_page = st.Page(
     "app_pages/ergebnisse.py", title="Ergebnisse", icon=":material/table_chart:"
 )
+agenten_page = st.Page(
+    "app_pages/agenten.py", title="Agenten", icon=":material/tune:"
+)
 settings_page = st.Page(
     "app_pages/admin.py", title="Einstellungen", icon=":material/settings:"
 )
@@ -138,6 +141,7 @@ page = st.navigation(
         "Arbeitsbereich": [
             scan_page,
             results_page,
+            agenten_page,
         ],
         "Konfiguration": [
             settings_page,

@@ -15,7 +15,7 @@ Einstieg für Menschen und Agenten. Alles Wesentliche liegt unter `doc/`.
 | 6 | [`07_benutzerhandbuch.md`](07_benutzerhandbuch.md) | Bedienung der Streamlit-App (Scan-Modi, Wechsel-Protokoll, REST-API) |
 | 7 | [`08_architektur.md`](08_architektur.md) | Schichten, Datenfluss, Module |
 | 8 | [`09_sicherheit.md`](09_sicherheit.md) | Secrets, Rate-Limits, öffentliches Repo |
-| 9 | [`19_agentenbetrieb-bauplan.md`](19_agentenbetrieb-bauplan.md) | Bauplan autonomer Agentenbetrieb — 5 LLM-Rollen, Dossiers, MetaTrader-Kursdaten (beschlossen 22.09.2026, **noch nicht implementiert**) |
+| 9 | [`19_agentenbetrieb-bauplan.md`](19_agentenbetrieb-bauplan.md) | Bauplan autonomer Agentenbetrieb — 5 LLM-Rollen, Dossiers, MetaTrader-Kursdaten (Phase A **umgesetzt** 22.09.2026: Dirigent-Daemon + Protokoll + Admin/UI; B–E offen) |
 | — | [`../AGENTS.md`](../AGENTS.md) | Verbindliche Regeln für KI-Agenten |
 | — | [`../SECURITY.md`](../SECURITY.md) | Kurzfassung für GitHub Security |
 

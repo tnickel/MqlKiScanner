@@ -254,4 +254,81 @@ bestätigt die Netzwerkverbindung, nicht dass jedes Signal dort Daten hat: Ein S
 das der Downloader nie geladen hat, liefert je Endpunkt eine leere Antwort (404),
 ohne dass die Verbindung defekt ist.
 """),
+"settings_agenten": ("Agentenbetrieb: fünf Rollen, ein Protokoll", """
+Der Agentenbetrieb (Bauplan doc/19) überträgt die Dauerbeobachtung an fünf
+LLM-Rollen: **Dirigent** (plant und steuert), **Marktbeobachter** (Kursdaten),
+**Signal-Betreuer** (Trade-Delta gegen das Algo-Profil), **Chefermittler**
+(Lageberichte) und **Melder** (Alerts und Digests ins Postfach der
+Agenten-Seite).
+
+Zwei Grundregeln gelten weiter: Die Engine rechnet und bewertet — Agenten
+beobachten und melden. Und jeder LLM-Schritt wird mit vollständigem Prompt
+und vollständiger Antwort protokolliert: Seite **Agenten → Protokoll**.
+Der Daemon ist ein eigener Prozess und läuft weiter, wenn die App geschlossen
+wird; Start und Stopp passieren hier im Tab.
+"""),
+    "settings_agenten_start": ("Start: Daemon-Prozess und Freigabe", """
+**Starten** setzt die Freigabe (agenten_enabled) und startet den Daemon als
+eigenen Hintergrundprozess — er überlebt geschlossene Browser-Tabs und
+App-Neustarts. Der Scheduler prüft alle 30 Sekunden, ob eine Rolle fällig
+ist (Phase A: Dirigent werktags zur Startzeit). Der Status oben zeigt den
+letzten Herzschlag; nach dem Start dauert der erste Tick bis zu 30 Sekunden.
+"""),
+    "settings_agenten_stop": ("Stopp: kooperativ über die Steuerungstabelle", """
+**Stoppen** entzieht die Freigabe und setzt den Stopp-Wunsch in der
+Steuerungstabelle. Der Daemon beendet sich sauber beim nächsten Tick
+(maximal ~30 Sekunden) — laufende Schritte werden zu Ende geführt und
+protokolliert. Ein hartes Beenden des Prozesses ist nicht nötig und nicht
+vorgesehen.
+"""),
+    "settings_agenten_budget": ("Budget und Takt des Agentenbetriebs", """
+Das **Tagesbudget** begrenzt die Summe aller Agenten-Modellaufrufe pro Tag,
+das **Monatsbudget** pro Monat (Startwerte: 500.000 und 5.000.000 Token).
+Bei Erschöpfung werden Modell-Schritte übersprungen und gemeldet —
+Code-Schritte (Exporte, Delta-Berechnung, Forensik) laufen ohne Tokens
+weiter. Die **Startzeit** steuert den täglichen Dirigent-Takt (werktags;
+Wochenende ruht). Reguläre Scan-Läufe (Gelb/Grün, Full) zählen auf ihr
+eigenes Lauf-Budget und belasten das Agenten-Budget nicht.
+"""),
+    "settings_agenten_budget_save": ("Speichern: Budget und Takt", """
+Speichert Tages- und Monatsbudget, Startzeit und die Dirigent-LLM-Freigabe
+in app_settings.json. Der Daemon liest die Werte beim nächsten Tick — ein
+Neustart ist nicht nötig.
+"""),
+    "settings_agenten_rollen": ("Rollen: Modell, Limit, Aktivstatus", """
+Je Rolle: **Rolle aktiv** (der Scheduler berücksichtigt sie), **Modell**
+(Standard GLM-5.3; das kleinere Flash-Modell ist als Kostenschraube
+wählbar, Freitext erlaubt OpenAI-kompatible Modelle) und **Max. Tokens**
+je Aufruf. Rollen späterer Phasen sind konfigurierbar, aber als 'geplant'
+gekennzeichnet — ihre Lauflogik entsteht in den Phasen B bis E.
+"""),
+    "settings_agenten_rollen_save": ("Speichern: Rollen-Konfiguration", """
+Schreibt Modell, Ausgabelimit und Aktivstatus aller fünf Rollen in
+app_settings.json. Änderungen greifen beim nächsten Lauf — ohne Neustart.
+"""),
+    "settings_agenten_prompts": ("Rollen-Prompts: sechs Vorlagen", """
+Jede Rolle hat ihre eigene Vorlage unter config/prompts/agenten/ — wie die
+Analysevorlagen editierbar, auf Standard zurücksetzbar und mit
+Pflicht-Platzhaltern abgesichert. Fehlt eine Datei, wird die eingebettete
+Standardvorlage neu angelegt.
+"""),
+    "settings_agenten_prompt_save": ("Speichern: Agenten-Vorlage", """
+Speichert die bearbeitete Vorlage. Text und alle Pflicht-Platzhalter sind
+erforderlich — eine Vorlage mit fehlendem Platzhalter wird nicht
+gespeichert (der Lauf würde sonst mit einem leeren Abschnitt beim Modell
+landen).
+"""),
+    "settings_agenten_prompt_reset": ("Standard wiederherstellen", """
+Ersetzt die eigene Vorlage durch die eingebettete Standardfassung und
+aktualisiert den Editor. Eigene Änderungen sind danach verworfen — vor dem
+Zurücksetzen lohnt ein Blick in 'Standardvorlage ansehen'.
+"""),
+    "agenten_page": ("Agenten-Seite: Live und Protokoll", """
+**Live** zeigt Daemon-Status, die fünf Rollen und die letzten Läufe.
+**Protokoll** listet jeden Schritt chronologisch — Code-Schritte ebenso wie
+Modellaufrufe. LLM-Schritte speichern den vollständig gefüllten Prompt und
+die vollständige Antwort; der Auswahlkasten darunter öffnet den vollen
+Wortlaut. Nichts wird gekürzt: Alles, was ein Modell sagt, steht im
+Protokoll (das ersetzt den bewusst abgelehnten Trockenmodus).
+"""),
 }

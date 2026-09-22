@@ -88,10 +88,21 @@ DEFAULT_SETTINGS: dict = {
     "tradeserver_base_url": "",     # MqlTradeMonitor-Sync-Ziel (leer = kein Sync möglich)
     "rest_api_enabled": True,       # schreibgeschütztes REST-Interface für MqlRealMonitor
     "rest_api_port": 8611,          # lauscht auf 127.0.0.1; Token optional (secrets_store)
+    # ── Agentenbetrieb (doc/19; Phase A) ─────────────────────────────
+    "agenten_enabled": False,       # Freigabe: darf der Daemon Läufe ausführen?
+    "agenten_start_zeit": "06:30",  # täglicher Dirigent-Takt (werktags)
+    "agenten_tagesbudget_tokens": 500_000,   # alle Rollen zusammen (doc/19 §10)
+    "agenten_monatsbudget_tokens": 5_000_000,
+    "agenten_dirigent_llm": True,   # Dirigent darf LLM-Randentscheidungen treffen
 }
 
+# Rollen-Defaults je Rolle (GLM-5.3 als Standard — Nutzer-Vorgabe 22.09.2026).
+# Import nach der Definition: rollen.py importiert bewusst nichts aus dem Paket.
+from .agenten.rollen import rollen_defaults  # noqa: E402
+DEFAULT_SETTINGS.update(rollen_defaults())
+
 for _d in (DATA_DIR, RUNS_DIR, REPORTS_DIR, TRADES_DIR, STATS_DIR, PROMPTS_DIR,
-           DOWNLOADER_DIR):
+           PROMPTS_DIR / "agenten", DOWNLOADER_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 

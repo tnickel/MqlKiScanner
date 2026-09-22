@@ -109,9 +109,10 @@ with st.container(horizontal=True):
              else ("gray" if not ts_start["konfiguriert"] else "red"))
     st.badge("Lokale Engine ohne KI-Key nutzbar", color="blue")
 
-access_tab, models_tab, downloader_tab, tradeserver_tab, rest_api_tab, scan_tab, prompts_tab = st.tabs(
+(access_tab, models_tab, downloader_tab, tradeserver_tab, rest_api_tab, scan_tab,
+ prompts_tab, agenten_tab) = st.tabs(
     ["Zugänge", "KI & Modelle", "MqlDownloader", "Tradeserver", "REST-API",
-     "Scan & Risiko", "Analysevorlagen"]
+     "Scan & Risiko", "Analysevorlagen", "Agenten"]
 )
 
 with access_tab:
@@ -828,3 +829,9 @@ with prompts_tab:
                 info_button("settings_prompt_preview", key="admin_prompt_preview_help")
             with st.expander("Standardvorlage ansehen", icon=":material/visibility:"):
                 st.markdown(llm_prompts.DEFAULTS[prompt_key])
+
+with agenten_tab:
+    # Inhalt des Agenten-Betriebs (Rollen, Budget, Daemon, Rollen-Prompts)
+    # als eigenes Modul — admin.py bleibt dünn, der Tab ist isoliert testbar.
+    from mqlkiscanner.agenten import admin_tab
+    admin_tab.rendern(settings)

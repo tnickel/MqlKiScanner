@@ -379,12 +379,21 @@ lückenlose Transparenz:
 
 ## 13. Phasenplan
 
-### Phase A — Fundament
+### Phase A — Fundament — ✅ abgeschlossen (22.09.2026)
 Daemon + Scheduler + Lauf-Lock, Journal-Tabellen, Admin-Bereich „Agenten &
 LLMs" (GLM-5.3 vorkonfiguriert), Seite „Agenten" mit Live/Protokoll.
 CLI-Re-Scan als Nebenprodukt.
-**Abnahme:** Ein Dirigent-Tageslauf ist im Protokoll vollständig nachlesbar;
-Start/Stopp und Rollen-Konfiguration funktionieren über die UI.
+**Abnahme: Ein Dirigent-Tageslauf ist im Protokoll vollständig nachlesbar;
+Start/Stopp und Rollen-Konfiguration funktionieren über die UI.**
+Umgesetzt: `src/mqlkiscanner/agenten/` (journal, lock, rollen,
+rollen_prompts, dirigent, scheduler, daemon, admin_tab, `__main__`),
+`app_pages/agenten.py`, Admin-Tab „Agenten", 6 Rollen-Prompts unter
+`config/prompts/agenten/`, 46 neue Tests (Gesamt: 812 grün).
+Ende-zu-Ende verifiziert: Daemon-Start (PID/Trennung/Logfile), Herzschlag,
+Dirigent-Tageslauf mit LLM-Whitelist-Entscheidung im Protokoll, kooperativer
+Stopp. Dirigent-Default max_tokens 8192 (glm-5.3 braucht Reasoning-Spielraum
+auch für kleine JSON-Antworten — 2048 brach mit finish_reason=length ab).
+CLI: `PYTHONPATH=src python -m mqlkiscanner.agenten [--once|--tick]`.
 
 ### Phase B — Dossiers & Trade-Delta
 Dossier-Tabellen, Profil-Destillation (rückwirkend für alle 🟢/🟡 + Watchlist),

@@ -21,6 +21,13 @@ Pipeline (pipeline.py) — Crawl → Export → Forensik → Score → optional 
                         Ampel-Verlauf (ampel_verlauf/ampel_wechsel)
 Nebenläufig: rest_api.py — schreibgeschützter HTTP-Server (127.0.0.1:8611)
 für den MqlRealMonitor, liest nur die DB, bewertet nie neu.
+Nebenläufig (Phase A, 22.09.2026): agenten/ — autonomer LLM-Daemon als
+eigener Prozess (python -m mqlkiscanner.agenten): Dirigent-Tageslauf,
+Scheduler mit Herzschlag/Stopp, Journal (agenten_laeufe/schritte/
+meldungen/steuerung, append-only; LLM-Schritte mit vollem Prompt und
+voller Antwort), Lauf-Lock gegen die GUI, Rollen-Registry (GLM-5.3
+Standard je Rolle), Start/Stopp über Admin → Agenten. Bewertet nie —
+beobachtet und meldet. Bauplan: doc/19.
 ```
 
 **Regel:** Die Engine rechnet alle Zahlen. Das LLM interpretiert nur
