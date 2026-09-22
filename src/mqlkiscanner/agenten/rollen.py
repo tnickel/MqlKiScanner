@@ -69,8 +69,10 @@ MODELL_AUSWAHL = ("glm-5.3", "glm-5.3-flash")
 
 # Wie weit der Agentenbetrieb umgesetzt ist (doc/19 Phasenplan).
 # Phase A: Fundament/Dirigent · Phase B: Dossiers + Trade-Delta + Betreuer.
-# Die UI zeigt Rollen über dieser Stufe als 'geplant'.
-AKTUELLE_PHASE = "B"
+# Phase C: Marktdaten/MetaTrader + Marktbeobachter (V1-Attach-Test mit dem
+# Nutzer bleibt offen, bis das Terminal läuft). Die UI zeigt Rollen über
+# dieser Stufe als 'geplant'.
+AKTUELLE_PHASE = "C"
 
 
 def rollen_defaults() -> dict:

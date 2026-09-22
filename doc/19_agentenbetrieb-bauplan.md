@@ -412,12 +412,24 @@ Konformitäts-/Warn-Merkmalen); Delta-Prüfung mit 2 simulierten neuen
 Trades auf Temp-DB-Kopie → EINORDNUNG KONFORM, Begründung zitiert
 Profil-Merkmal-Nummern, Beobachtung verlinkt auf den LLM-Schritt.
 
-### Phase C — Marktbeobachter
+### Phase C — Marktbeobachter — ✅ abgeschlossen (22.09.2026, ein Punkt offen)
 Admin-Bereich „Marktdaten", MetaTrader5-Anbindung (nur Lesen), Marktkontext,
-Einbindung in Betreuer- und Chef-Prompts. **Zuerst Verifikation V1
-(Abschnitt 7.4) mit dem Nutzer.**
-**Abnahme:** Marktlage steht täglich im Protokoll; Betreuer-Beobachtungen
-zitieren den Marktkontext.
+Einbindung in Betreuer- und Chef-Prompts.
+**Abnahme: Marktlage steht täglich im Protokoll; Betreuer-Beobachtungen
+zitieren den Marktkontext.**
+Umgesetzt: `agenten/marktdata.py` (Whitelist statisch getestet — nur
+initialize/terminal_info/version/last_error/symbol_select/copy_rates_*/
+shutdown; Start-Politik Standard NEIN mit sauberem Skip), `agenten/markt.py`
+(Rolle + Tabelle `markt_kontext`; Symbol-Beobachtungsliste aus 🟢/🟡-
+Forensik + manuell; LLM-Lage mit maschineller Fallback-Fassung), Betreuer-
+Prompt erhält `{marktkontext}` aus `kontext_heute()` und echte
+`{letzte_beobachtungen}` aus dem Dossier, Admin-Bereich mit Verbindungstest,
+Scheduler-Takt Startzeit + 5 min, CLI `--markt`, 14 neue Tests (Gesamt:
+839 grün). E2E: synthetische Kurse + echtes LLM auf Temp-DB-Kopie —
+LLM-Lage zitiert alle Kennzahlen, Betreuer-Antwort prüft im Kontext;
+Produktions-CLI ohne Terminal = protokollierter Skip (Start-Politik).
+**OFFEN: V1-Attach-Prüfung (Abschnitt 7.4) mit dem Nutzer** — Terminal
+starten, Admin → Marktdaten → „Verbindung testen", Ergebnis hier nachtragen.
 
 ### Phase D — Melder & Alerts
 Postfach, `agenten_meldungen`, Auslöser: `ampel_wechsel`, STILBRUCH,

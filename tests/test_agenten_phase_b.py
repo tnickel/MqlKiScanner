@@ -192,15 +192,15 @@ def test_destillation_ohne_grundlage_und_mit_vorhandenem_profil(tmp_path):
 def test_scheduler_betreuer_faellig_nach_15_minuten():
     from mqlkiscanner.agenten import scheduler
     settings = config.load_settings()
-    # 06:44 — Dirigent fällig, Betreuer noch nicht.
-    assert scheduler.faellige_rollen(datetime(2026, 9, 22, 6, 44), settings) == \
+    # 06:34 — nur der Dirigent (Markt ab 06:35, Betreuer ab 06:45).
+    assert scheduler.faellige_rollen(datetime(2026, 9, 22, 6, 34), settings) == \
         ["dirigent"]
-    # 06:45 — beide fällig.
+    # 06:45 — alle drei fällig.
     assert scheduler.faellige_rollen(datetime(2026, 9, 22, 6, 45), settings) == \
-        ["dirigent", "betreuer"]
+        ["dirigent", "markt", "betreuer"]
 
 
-def test_rollen_phase_b_aktiv():
-    assert rollen.AKTUELLE_PHASE == "B"
+def test_rollen_phase_b_erreicht():
+    # Phase B ist seit Phase C nicht mehr AKTUELL, aber erreicht (Betreuer läuft).
     assert rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["betreuer"], "B")
-    assert not rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["markt"], "B")
+    assert rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["betreuer"], "C")

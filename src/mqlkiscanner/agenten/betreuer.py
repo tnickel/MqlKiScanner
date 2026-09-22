@@ -24,16 +24,22 @@ import re
 from .. import config, db
 from ..llm import client as llm_client
 from ..mql5.session import Mql5Session
-from . import delta, dossier, journal, rollen, rollen_prompts
+from . import delta, dossier, journal, markt, rollen, rollen_prompts
 from . import destillation
 
 # Export-Cache: 20 h — der tägliche 06:45-Abruf holt frisch, ein GUI-Scan
 # am Vorabend macht daraus einen No-Op (Hash identisch).
 CACHE_STUNDEN = 20.0
 
-MARKTKONTEXT_PLATZHALTER = (
-    "Marktbeobachtung startet in Phase C — für diese Prüfung liegt kein "
-    "Marktkontext vor.")
+
+def _marktkontext_text() -> str:
+    """Heutige Marktlage für den Betreuer-Prompt; klarer Platzhalter, wenn
+    der Marktbeobachter (noch) keinen Kontext geliefert hat."""
+    kontext = markt.kontext_heute()
+    if not kontext:
+        return ("Kein Marktkontext verfügbar (Marktbeobachter lief heute nicht "
+                "— z. B. Terminal aus oder Wochenende).")
+    return f"Marktlage ({kontext['ts']}, Quelle: Marktbeobachter):\n{kontext['lage']}"
 
 _EINORDNUNG_RE = re.compile(
     r"EINORDNUNG:\s*(KONFORM|AUFFAELLIG|STILBRUCH|KEINE_NEUEN_TRADES)")
@@ -64,8 +70,9 @@ def _snapshot_sha(signal_id: int) -> tuple[str | None, str | None]:
     return (row["sha256"], row["path"]) if row else (None, None)
 
 
-def _llm_einordnung(signal_name: str, profil_text: str, delta_json: str,
-                    settings: dict, lauf_id: int) -> tuple[str, str] | None:
+def _llm_einordnung(signal_id: int, signal_name: str, profil_text: str,
+                    delta_json: str, settings: dict,
+                    lauf_id: int) -> tuple[str, str] | None:
     """LLM-Prüfung gegen das Profil; None = übersprungen/fehlgeschlagen."""
     modell = settings.get("agenten_betreuer_modell", rollen.STANDARD_MODELL)
     max_tokens = int(settings.get("agenten_betreuer_max_tokens", 8192))
@@ -91,8 +98,8 @@ def _llm_einordnung(signal_name: str, profil_text: str, delta_json: str,
     prompt = rollen_prompts.fuellung(
         rollen_prompts.lade_vorlage("betreuer_delta"),
         {"signal_name": signal_name, "profil_text": profil_text,
-         "delta_json": delta_json, "marktkontext": MARKTKONTEXT_PLATZHALTER,
-         "letzte_beobachtungen": "(siehe Dossier — erste Prüfung)"})
+         "delta_json": delta_json, "marktkontext": _marktkontext_text(),
+         "letzte_beobachtungen": dossier.letzte_beobachtungen(signal_id)})
     meta: dict = {}
     import time as _time
     beginn = _time.monotonic()
@@ -197,7 +204,7 @@ def _signal_pruefen_inner(signal: dict, settings: dict, lauf_id: int,
         return {"signal": name, "einordnung": "KEINE_NEUEN_TRADES",
                 "zusammenfassung": f"{name}: Datei geändert, keine neuen Trades"}
 
-    llm = _llm_einordnung(name, profil["profil_text"],
+    llm = _llm_einordnung(signal["id"], name, profil["profil_text"],
                           json.dumps(kzz, ensure_ascii=False, indent=2),
                           settings, lauf_id)
     if llm is None:

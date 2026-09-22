@@ -187,13 +187,28 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Dossier; Dossiers-Tab auf der Agenten-Seite; CLI `--betreuer`.
   Ende-zu-Ende verifiziert (echte Destillation Gold Spike 6.067 Zeichen;
   Delta-Prüfung KONFORM mit Merkmal-Zitaten). 825 Tests grün.
+- ✅ Agentenbetrieb Phase C (22.09.2026): Marktbeobachter — Kursdaten über
+  das offizielle `MetaTrader5`-Paket, NUR LESEND (Whitelist statisch
+  getestet: initialize/terminal_info/symbol_select/copy_rates_*/shutdown;
+  Order-Funktionen nicht verdrahtet), Start-Politik Standard NEIN (ohne
+  laufendes Terminal sauberer Skip, im Protokoll begründet), Symbol-
+  Beobachtungsliste automatisch aus 🟢/🟡-Forensik + manuell, Kennzahlen
+  reiner Code (Bewegung 1/7/30 T, Distanz Hoch/Tief, ATR14 H1,
+  Tagesrange, Trend vs. SMA10), Tabelle `markt_kontext`, LLM-Lage mit
+  maschineller Fallback-Fassung, Betreuer-Prompts zitieren den
+  Tageskontext, Admin-Bereich „Marktdaten" mit Verbindungstest, Takt
+  Startzeit + 5 min, CLI `--markt`. E2E verifiziert (synthetische Kurse
+  + echtes LLM auf Temp-DB; Produktions-Skip ohne Terminal). 839 Tests
+  grün. OFFEN: echte V1-Attach-Prüfung MIT NUTZER, sobald das Terminal
+  läuft (Admin → Marktdaten → Verbindung testen).
 
 Noch offen (Phase 5 Betrieb / Agentenbetrieb):
 
 - [ ] Re-Scan als Kommandozeilenaufruf mit Diff gegen den letzten Lauf
       (Dirigent-CLI `--once` existiert; der Scan-Aufruf folgt mit Phase E)
-- [ ] Agentenbetrieb Phase C–E: Marktdaten (MetaTrader5-Paket,
-      Verifikation V1 mit Nutzer), Melder/Alerts, Chefermittler
+- [ ] Agentenbetrieb Phase D–E: Melder/Alerts, Chefermittler
+- [ ] V1-Attach-Prüfung mit Nutzer (Terminal starten → Admin → Marktdaten
+      → Verbindung testen; Ergebnis in doc/19 §7.4 nachtragen)
 - [ ] Autostart des Daemon nach Rechner-Neustart (start.bat-Erweiterung
       oder Aufgabenplanung — offen, Nutzer-Entscheidung)
 - [ ] Automatisierte Alerts (Anbieter-Stilbruch, Copy-Abweichung > x %) —

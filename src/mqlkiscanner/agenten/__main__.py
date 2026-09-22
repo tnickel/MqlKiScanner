@@ -5,6 +5,9 @@ Ohne Argumente: Dauerschleife (Scheduler-Tick alle 30 s, Stopp über die
 Steuerungstabelle). Argumente:
   --once     EINEN Dirigent-Tageslauf sofort ausführen (ohne Takt-Prüfung;
              ignoriert agenten_enabled — für Tests, Erstreundung und CLI)
+  --markt    EINEN Marktbeobachter-Lauf sofort ausführen (Kursdaten aus dem
+             MetaTrader, nur lesend; überspringt sauber, wenn das Terminal
+             aus ist und der Selbststart nicht erlaubt wurde)
   --betreuer EINEN Betreuer-Tageslauf sofort ausführen (alle Kandidaten;
              Delta-Prüfung gegen die Dossiers, ignoriert agenten_enabled)
   --tick     EINEN Scheduler-Tick ausführen (mit Takt-Prüfung) und enden
@@ -20,9 +23,11 @@ log = logging.getLogger("mqlkiscanner.agenten")
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="python -m mqlkiscanner.agenten",
-        description="Agenten-Daemon des MqlKiScanner (Phase A+B)")
+        description="Agenten-Daemon des MqlKiScanner (Phasen A–C)")
     parser.add_argument("--once", action="store_true",
                         help="einen Dirigent-Tageslauf sofort ausführen")
+    parser.add_argument("--markt", action="store_true",
+                        help="einen Marktbeobachter-Lauf sofort ausführen")
     parser.add_argument("--betreuer", action="store_true",
                         help="einen Betreuer-Tageslauf sofort ausführen")
     parser.add_argument("--tick", action="store_true",
@@ -31,11 +36,16 @@ def main() -> None:
 
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    from . import betreuer, dirigent, scheduler
+    from . import betreuer, dirigent, markt, scheduler
 
     if args.once:
         ergebnis = dirigent.tageslauf(quelle="cli", log=log.info)
         log.info("Ergebnis: %s", ergebnis.get("status"))
+        return
+    if args.markt:
+        ergebnis = markt.tageslauf(quelle="cli", log=log.info)
+        log.info("Ergebnis: %s — %s", ergebnis["status"],
+                 ergebnis.get("grund") or f"{len(ergebnis.get('kennzahlen', {}))} Symbole")
         return
     if args.betreuer:
         ergebnis = betreuer.tageslauf(quelle="cli", log=log.info)

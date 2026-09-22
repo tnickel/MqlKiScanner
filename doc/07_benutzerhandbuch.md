@@ -281,13 +281,14 @@ verwendet und welcher Bericht daraus entsteht. Die Engine berechnet alle
 Kennzahlen; die KI interpretiert sie nur. Pflicht-Platzhalter bleiben beim
 Bearbeiten geschützt und werden vor dem Speichern geprüft.
 
-## 5a. Agentenbetrieb (Phase A + B)
+## 5a. Agentenbetrieb (Phase A–C)
 
 Fünf LLM-Rollen übernehmen schrittweise die Dauerbeobachtung der Signale
 (Bauplan: `doc/19_agentenbetrieb-bauplan.md`). **Phase A**: Der Dirigent
 plant täglich werktags. **Phase B**: Der Signal-Betreuer prüft täglich die
-Trade-Deltas gegen die Algo-Profile. Markt/Chef/Melder sind konfigurierbar,
-aber als „geplant“ (Phase C–E) markiert.
+Trade-Deltas gegen die Algo-Profile. **Phase C**: Der Marktbeobachter
+liefert den täglichen Marktkontext aus deinem MetaTrader. Chef/Melder sind
+konfigurierbar, aber als „geplant“ (Phase D–E) markiert.
 
 **Einstellungen → Agenten** (Konfiguration):
 
@@ -319,6 +320,18 @@ aber als „geplant“ (Phase C–E) markiert.
   (KONFORM grün / KEINE_NEUEN_TRADES grau / AUFFAELLIG orange /
   STILBRUCH rot) und die **Trade-Deltas** (Hash + Kennzahlen je Abruf).
 
+**Marktdaten (Phase C, Einstellungen → Agenten → Marktdaten):** Der
+Marktbeobachter liest Kursdaten über das offizielle MetaTrader5-Paket —
+ausschließlich lesend, ohne dass im Terminal etwas installiert wird.
+Terminal-Pfad austauschbar; **Selbststart ist standardmäßig AUS** (läuft
+das Terminal nicht, wartet der Beobachter und der Lauf wird mit Begründung
+übersprungen). Symbol-Beobachtungsliste automatisch aus den 🟢/🟡-
+Kandidaten plus eigene Einträge. **Verbindung testen** liest genau eine
+XAUUSD-Bar und trennt sofort — der echte Ersttest (V1) gehört mit
+laufendem Terminal einmalig gemacht. Der Betreuer zitiert die Tageslage
+in jeder Delta-Prüfung; ohne Kontext läuft die Prüfung mit klarem
+Platzhalter weiter.
+
 **Wie der Betreuer arbeitet** (täglich 06:45, Startzeit + 15 min): Export
 laden (Rate-Limiter, 20-h-Cache — ein GUI-Scan am Vorabend macht den Abruf
 zum No-Op) → SHA-Vergleich: unverändert bedeutet **kein Modellaufruf, keine
@@ -344,6 +357,7 @@ Kommandozeile (ohne GUI): `PYTHONPATH=src python -m mqlkiscanner.agenten`
 | „Noch kein Wechsel protokolliert“ | Normal nach der Einführung: erster Scan = Baseline, Wechsel ab dem zweiten Scan |
 | Agenten: „Daemon gestoppt“ trotz Start | Nach dem Start dauert der erste Tick bis 30 s; Status basiert auf Herzschlag + PID |
 | Agenten-LLM-Schritt „fehler (length)“ | Ausgabelimit zu klein — Admin → Agenten → Rolle → „Max. Tokens je Aufruf“ erhöhen (glm-5.3 braucht Reasoning-Spielraum) |
+| Marktbeobachter „übersprungen“ | Terminal läuft nicht und Selbststart ist aus (Standard) — Terminal öffnen; danach liefert der nächste Lauf Kontext |
 
 ## 7. Verifikation
 

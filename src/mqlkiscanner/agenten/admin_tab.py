@@ -135,6 +135,56 @@ def rendern(settings: dict) -> None:
 
     with st.container(border=True):
         section_header(
+            "Marktdaten (MetaTrader)",
+            "Kursdaten über das offizielle MetaTrader5-Paket — ausschließlich "
+            "lesend, mit Start-Politik und automatischer Symbol-Beobachtungsliste.",
+            help_key="settings_markt")
+        from . import marktdata
+        terminal_pfad = st.text_input(
+            "Terminal-Pfad (austauschbar)",
+            value=str(settings.get("markt_terminal_pfad")
+                      or marktdata.DEFAULT_TERMINAL),
+            key="admin_markt_terminal")
+        start_erlauben = st.toggle(
+            "Terminal selbst starten, falls es nicht läuft (Live-Terminal!)",
+            value=bool(settings.get("markt_start_erlauben", False)),
+            help="Standard AUS: Der Scanner startet dein Terminal nie "
+                 "unerwünscht — läuft es nicht, wartet der Marktbeobachter "
+                 "bis zum nächsten Intervall.",
+            key="admin_markt_start")
+        symbole_manuell = st.text_input(
+            "Zusätzliche Symbole (Komma oder Leerzeichen)",
+            value=str(settings.get("markt_symbole_manuell") or ""),
+            placeholder="z. B. XAUUSD, EURUSD",
+            key="admin_markt_symbole")
+        lookback = st.number_input(
+            "Kurs-Historie (Tage)", min_value=7, max_value=250,
+            value=int(settings.get("markt_lookback_tage", 30)),
+            key="admin_markt_lookback")
+        markt_werte = {"markt_terminal_pfad": terminal_pfad.strip(),
+                       "markt_start_erlauben": start_erlauben,
+                       "markt_symbole_manuell": symbole_manuell.strip(),
+                       "markt_lookback_tage": int(lookback)}
+        _entwurfs_status(_geaendert(markt_werte, settings))
+        test_spalte, speicher_spalte = st.columns(2)
+        with test_spalte:
+            if action_button("Verbindung testen", key="admin_markt_test",
+                             help_key="settings_markt_test",
+                             icon=":material/network_check:"):
+                ergebnis = marktdata.verbindung_testen(
+                    {**settings, **markt_werte})
+                if ergebnis["ok"]:
+                    st.success(ergebnis["grund"], icon=":material/check_circle:")
+                else:
+                    st.info(ergebnis["grund"], icon=":material/info:")
+        with speicher_spalte:
+            if action_button("Marktdaten speichern", key="admin_markt_save",
+                             help_key="settings_markt_save",
+                             icon=":material/save:"):
+                _speichern(markt_werte, "Marktdaten-Einstellungen gespeichert.")
+
+    with st.container(border=True):
+        section_header(
             "Rollen konfigurieren",
             "Modell, Ausgabelimit und Aktivstatus je Rolle — GLM-5.3 ist Standard.",
             help_key="settings_agenten_rollen")

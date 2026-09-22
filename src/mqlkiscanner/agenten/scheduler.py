@@ -29,8 +29,8 @@ def _start_minute(settings: dict) -> int:
 
 
 def faellige_rollen(jetzt: datetime, settings: dict) -> list[str]:
-    """Welche Rollen sind JETZT fällig? Phase A+B: werktags Dirigent und
-    Betreuer (Betreuer ab Startzeit + 15 min, damit der Dirigent vorweg plant).
+    """Welche Rollen sind JETZT fällig? Phasen A–C, werktags:
+    Dirigent zur Startzeit, Marktbeobachter +5 min, Betreuer +15 min.
 
     Fällig heißt: Werktag, Zeitpunkt erreicht und heute noch kein
     erfolgreicher Daemon-Lauf der Rolle.
@@ -39,12 +39,17 @@ def faellige_rollen(jetzt: datetime, settings: dict) -> list[str]:
     if jetzt.weekday() >= 5:
         return rollen  # Wochenende: Markt ruht (doc/19 §9)
     minute = jetzt.hour * 60 + jetzt.minute
+    start = _start_minute(settings)
     if (nicht_deaktiviert(settings, "dirigent")
-            and minute >= _start_minute(settings)
+            and minute >= start
             and not journal.lauf_heute_erfolgreich("dirigent", "daemon")):
         rollen.append("dirigent")
+    if (nicht_deaktiviert(settings, "markt")
+            and minute >= start + 5
+            and not journal.lauf_heute_erfolgreich("markt", "daemon")):
+        rollen.append("markt")
     if (nicht_deaktiviert(settings, "betreuer")
-            and minute >= _start_minute(settings) + 15
+            and minute >= start + 15
             and not journal.lauf_heute_erfolgreich("betreuer", "daemon")):
         rollen.append("betreuer")
     return rollen
@@ -66,12 +71,18 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
                 bool(settings.get("agenten_enabled", False))}
     if not settings.get("agenten_enabled", False):
         return ergebnis
-    from . import betreuer  # spät: kein Kreisimport beim Paket-Import
+    from . import betreuer, markt  # spät: kein Kreisimport beim Paket-Import
     for rolle in faellige_rollen(jetzt, settings):
         if rolle == "dirigent":
             lauf = dirigent.tageslauf(quelle="daemon", log=log)
             ergebnis["ausgefuehrt"].append({"rolle": "dirigent",
                                             "status": lauf["status"]})
+        elif rolle == "markt":
+            lauf = markt.tageslauf(quelle="daemon", log=log,
+                                   settings=settings)
+            ergebnis["ausgefuehrt"].append(
+                {"rolle": "markt", "status": lauf["status"],
+                 "grund": lauf.get("grund", "")})
         elif rolle == "betreuer":
             lauf = betreuer.tageslauf(quelle="daemon", log=log,
                                       settings=settings)

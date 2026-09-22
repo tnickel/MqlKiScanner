@@ -69,21 +69,21 @@ def test_vor_startzeit_nichts_faellig():
 def test_nach_startzeit_dirigent_faellig():
     vormittag = datetime(2026, 9, 22, 7, 0)  # Dienstag, 07:00
     assert scheduler.faellige_rollen(vormittag, _settings()) == \
-        ["dirigent", "betreuer"]
+        ["dirigent", "markt", "betreuer"]
 
 
 def test_deaktivierte_rolle_nicht_faellig():
     vormittag = datetime(2026, 9, 22, 7, 0)
     assert scheduler.faellige_rollen(
-        vormittag, _settings(agenten_dirigent_aktiv=False)) == ["betreuer"]
+        vormittag, _settings(agenten_dirigent_aktiv=False)) == ["markt", "betreuer"]
     assert scheduler.faellige_rollen(
-        vormittag, _settings(agenten_betreuer_aktiv=False)) == ["dirigent"]
+        vormittag, _settings(agenten_betreuer_aktiv=False)) == ["dirigent", "markt"]
 
 
 def test_nach_erfolgreichem_lauf_nicht_erneut_faellig():
     vormittag = datetime(2026, 9, 22, 7, 0)
-    journal.lauf_abschliessen(journal.lauf_starten("dirigent", quelle="daemon"), "ok")
-    journal.lauf_abschliessen(journal.lauf_starten("betreuer", quelle="daemon"), "ok")
+    for rolle in ("dirigent", "markt", "betreuer"):
+        journal.lauf_abschliessen(journal.lauf_starten(rolle, quelle="daemon"), "ok")
     assert scheduler.faellige_rollen(vormittag, _settings()) == []
 
 
@@ -104,12 +104,14 @@ def test_tick_mit_freigabe_fuehrt_dirigent_aus():
     ergebnis = scheduler.tick(jetzt=datetime(2026, 9, 22, 7, 0))
     assert ergebnis["gesamt_enabled"] is True
     ausgefuehrt = {e["rolle"]: e for e in ergebnis["ausgefuehrt"]}
-    assert set(ausgefuehrt) == {"dirigent", "betreuer"}
+    assert set(ausgefuehrt) == {"dirigent", "markt", "betreuer"}
     assert ausgefuehrt["dirigent"]["status"] == "ok"
-    # Leere DB: Betreuer-Läuft ohne Kandidaten sauber durch (0 Läufe geschrieben).
+    # Ohne laufendes Terminal: Markt übersprungen (Standard-Politik).
+    assert ausgefuehrt["markt"]["status"] == "skipped"
+    # Leere DB: Betreuer-Lauf ohne Kandidaten sauber durch (0 Läufe geschrieben).
     assert ausgefuehrt["betreuer"]["signale"] == 0
     rollen_gelaufen = {l["rolle"] for l in journal.list_laeufe()}
-    assert rollen_gelaufen == {"dirigent"}  # Betreuer: ohne Kandidaten kein Lauf
+    assert rollen_gelaufen == {"dirigent", "markt"}  # Betreuer: kein Kandidat
     # Herzschlag wurde gesetzt
     assert journal.steuerung_lesen()["letzter_tick"]
 

@@ -331,4 +331,30 @@ die vollständige Antwort; der Auswahlkasten darunter öffnet den vollen
 Wortlaut. Nichts wird gekürzt: Alles, was ein Modell sagt, steht im
 Protokoll (das ersetzt den bewusst abgelehnten Trockenmodus).
 """),
+"settings_markt": ("Marktdaten: Kursdaten aus dem eigenen MetaTrader", """
+Der Marktbeobachter liest Kursdaten über das offizielle Python-Paket der
+MetaTrader-Plattform — ein lokaler IPC-Zugriff auf dein laufendes Terminal,
+ohne dass dort etwas installiert oder verändert wird. Angebunden sind
+AUSSCHLIESSLICH Lese-Funktionen (Verbindung, Symbol aktivieren, Kurs- und
+Tick-Reihen lesen, trennen); Order-Funktionen sind nicht verdrahtet und
+werden von einem statischen Test bewacht.
+
+**Terminal-Pfad** ist austauschbar. **Selbststart** ist standardmäßig AUS:
+Läuft das Terminal nicht, wartet der Marktbeobachter bis zum nächsten
+Intervall und der Digest vermerkt die Lücke — dein Live-Terminal wird nie
+unerwünscht gestartet. Die **Symbol-Beobachtungsliste** entsteht
+automatisch aus den Symbolen der 🟢/🟡-Kandidaten (Forensik) plus den hier
+eingetragenen zusätzlichen Symbolen. Wochenende: Markt ruht.
+"""),
+    "settings_markt_test": ("Verbindungstest: eine Bar lesen, dann trennen", """
+Prüft ohne Nebenwirkungen: Läuft ein Terminal dieses Pfads? Wenn ja, wird
+genau EINE Kurs-Bar (XAUUSD, Stundenbasis) gelesen und die Verbindung
+sofort getrennt. Läuft kein Terminal, erklärt der Test die Standard-Politik
+(kein Selbststart) — öffne das Terminal und teste erneut.
+"""),
+    "settings_markt_save": ("Speichern: Marktdaten-Einstellungen", """
+Speichert Terminal-Pfad, Start-Politik, zusätzliche Symbole und die
+Kurs-Historie-Länge in app_settings.json. Der Daemon liest die Werte beim
+nächsten Lauf — ohne Neustart.
+"""),
 }
