@@ -176,10 +176,10 @@ def test_scheduler_markt_zwischen_dirigent_und_betreuer():
         ["dirigent", "markt", "betreuer"]
 
 
-def test_rollen_phase_c_aktiv():
-    assert rollen.AKTUELLE_PHASE == "C"
+def test_rollen_phase_c_erreicht():
+    # Phase C ist seit Phase D nicht mehr AKTUELL, aber erreicht (Markt läuft).
     assert rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["markt"], "C")
-    assert not rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["melder"], "C")
+    assert rollen.phase_aktiv(rollen.ROLLEN_NACH_KEY["markt"], "D")
 
 
 def test_markt_settings_defaults():

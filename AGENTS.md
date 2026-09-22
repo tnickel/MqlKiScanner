@@ -201,12 +201,23 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   + echtes LLM auf Temp-DB; Produktions-Skip ohne Terminal). 839 Tests
   grün. OFFEN: echte V1-Attach-Prüfung MIT NUTZER, sobald das Terminal
   läuft (Admin → Marktdaten → Verbindung testen).
+- ✅ Agentenbetrieb Phase D (22.09.2026): Melder — dreifacher Weg ins
+  **Postfach** (Tab auf der Agenten-Seite): SOFORT-Alert des Betreuers
+  bei STILBRUCH (P3), Ampelwechsel-Watcher in JEDEM Scheduler-Tick
+  (bemerkt auch Wechsel aus GUI-Scans; idempotent über letzte
+  bearbeitete Wechsel-ID in der Steuerung; Verschlechterung P3,
+  sonst P2) und Tagesdigest (Takt Startzeit + 40 min; verschiebt sich
+  automatisch, solange der Betreuer läuft; LLM-Fassung mit
+  maschineller Fallback-Meldung). `agenten_meldungen` mit
+  Priorität/Quellen-Verweisen; CLI `--digest`. Abnahme verifiziert:
+  künstlicher Ampelwechsel erzeugt Alert mit Quellverweis. 849 Tests
+  grün.
 
 Noch offen (Phase 5 Betrieb / Agentenbetrieb):
 
 - [ ] Re-Scan als Kommandozeilenaufruf mit Diff gegen den letzten Lauf
       (Dirigent-CLI `--once` existiert; der Scan-Aufruf folgt mit Phase E)
-- [ ] Agentenbetrieb Phase D–E: Melder/Alerts, Chefermittler
+- [ ] Agentenbetrieb Phase E: Chefermittler + autonome Scan-Anstöße
 - [ ] V1-Attach-Prüfung mit Nutzer (Terminal starten → Admin → Marktdaten
       → Verbindung testen; Ergebnis in doc/19 §7.4 nachtragen)
 - [ ] Autostart des Daemon nach Rechner-Neustart (start.bat-Erweiterung

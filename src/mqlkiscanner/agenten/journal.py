@@ -232,6 +232,77 @@ def tokens_monat() -> int:
     return int(row["n"] if row else 0)
 
 
+# ── Meldungen (Postfach, Phase D) ─────────────────────────────────
+
+def meldung_speichern(typ: str, titel: str, text: str, *,
+                      prioritaet: int = 1, quellen: list | None = None) -> int:
+    """Eine Nachricht ins Postfach — Alerts, Digests, Lageberichte.
+
+    prioritaet: 1 = Info, 2 = Warnung, 3 = kritisch. quellen verweist auf
+    Nachweise (z. B. ['schritt#42', 'ampel_wechsel#7']).
+    """
+    init_journal()
+    with db._connect() as conn:
+        cursor = conn.execute(
+            "INSERT INTO agenten_meldungen (ts, typ, prioritaet, titel, text, "
+            "quellen_json) VALUES (?,?,?,?,?,?)",
+            (_now(), typ, int(prioritaet), titel, text,
+             json.dumps(quellen or [], ensure_ascii=False)))
+        return int(cursor.lastrowid or 0)
+
+
+def meldungen_lesen(limit: int = 50, typ: str | None = None) -> list[dict]:
+    """Postfach, neueste zuerst (die UI-Ansicht)."""
+    init_journal()
+    clauses, args = [], []
+    if typ:
+        clauses.append("typ=?")
+        args.append(typ)
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    args.append(max(1, int(limit)))
+    with db._connect() as conn:
+        rows = conn.execute(
+            f"SELECT id, ts, typ, prioritaet, titel, text, quellen_json "
+            f"FROM agenten_meldungen {where} ORDER BY id DESC LIMIT ?",
+            args).fetchall()
+    meldungen = []
+    for row in rows:
+        eintrag = dict(row)
+        try:
+            eintrag["quellen"] = json.loads(eintrag.pop("quellen_json") or "[]")
+        except json.JSONDecodeError:
+            eintrag["quellen"] = []
+        meldungen.append(eintrag)
+    return meldungen
+
+
+def meldungen_zaehlen(typ: str | None = None) -> int:
+    init_journal()
+    clauses, args = ["1=1"], []
+    if typ:
+        clauses.append("typ=?")
+        args.append(typ)
+    with db._connect() as conn:
+        row = conn.execute(
+            f"SELECT COUNT(*) AS n FROM agenten_meldungen WHERE "
+            + " AND ".join(clauses), args).fetchone()
+    return int(row["n"] if row else 0)
+
+
+def aktive_laeufe(rolle: str | None = None) -> list[dict]:
+    """Läufe im Status 'laeuft' (z. B. wartet der Digest auf den Betreuer)."""
+    init_journal()
+    clauses, args = ["status='laeuft'"], []
+    if rolle:
+        clauses.append("rolle=?")
+        args.append(rolle)
+    with db._connect() as conn:
+        rows = conn.execute(
+            f"SELECT id, rolle, quelle, start, signal_id FROM agenten_laeufe "
+            f"WHERE {' AND '.join(clauses)} ORDER BY id", args).fetchall()
+    return [dict(r) for r in rows]
+
+
 # ── Steuerung (Daemon-Status, Start/Stopp über die UI) ────────────
 
 def steuerung_setzen(schluessel: str, wert: str) -> None:

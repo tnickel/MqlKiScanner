@@ -52,6 +52,10 @@ def faellige_rollen(jetzt: datetime, settings: dict) -> list[str]:
             and minute >= start + 15
             and not journal.lauf_heute_erfolgreich("betreuer", "daemon")):
         rollen.append("betreuer")
+    if (nicht_deaktiviert(settings, "melder")
+            and minute >= start + 40
+            and not journal.lauf_heute_erfolgreich("melder", "daemon")):
+        rollen.append("melder")
     return rollen
 
 
@@ -71,7 +75,13 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
                 bool(settings.get("agenten_enabled", False))}
     if not settings.get("agenten_enabled", False):
         return ergebnis
-    from . import betreuer, markt  # spät: kein Kreisimport beim Paket-Import
+    from . import betreuer, markt, melder  # spät: kein Kreisimport
+    # Ampelwechsel-Watcher: JEDER Tick (bemerkt auch Wechsel aus GUI-Scans),
+    # idempotent über den letzten bearbeiteten Wechsel in der Steuerung.
+    try:
+        melder.pruefe_neue_wechsel(log=log)
+    except Exception as exc:
+        log(f"Wechsel-Watcher fehlgeschlagen (nächster Tick): {exc}")
     for rolle in faellige_rollen(jetzt, settings):
         if rolle == "dirigent":
             lauf = dirigent.tageslauf(quelle="daemon", log=log)
@@ -89,6 +99,11 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
             ergebnis["ausgefuehrt"].append(
                 {"rolle": "betreuer", "signale": lauf["signale"],
                  "zusammenfassung": lauf["zusammenfassung"]})
+        elif rolle == "melder":
+            lauf = melder.tagesdigest(quelle="daemon", log=log,
+                                      settings=settings)
+            ergebnis["ausgefuehrt"].append(
+                {"rolle": "melder", "status": lauf["status"]})
     return ergebnis
 
 

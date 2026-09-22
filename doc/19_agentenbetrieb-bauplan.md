@@ -431,11 +431,22 @@ Produktions-CLI ohne Terminal = protokollierter Skip (Start-Politik).
 **OFFEN: V1-Attach-Prüfung (Abschnitt 7.4) mit dem Nutzer** — Terminal
 starten, Admin → Marktdaten → „Verbindung testen", Ergebnis hier nachtragen.
 
-### Phase D — Melder & Alerts
+### Phase D — Melder & Alerts — ✅ abgeschlossen (22.09.2026)
 Postfach, `agenten_meldungen`, Auslöser: `ampel_wechsel`, STILBRUCH,
 Budget-/Terminal-/MQL5-Fehler; Tagesdigest.
-**Abnahme:** Ein künstlich ausgelöster Ampelwechsel (Test-DB) erzeugt einen
-Alert mit Quellverweis.
+**Abnahme: Ein künstlich ausgelöster Ampelwechsel (Test-DB) erzeugt einen
+Alert mit Quellverweis.**
+Umgesetzt: `agenten/melder.py` (alert/stilbruch_alert mit Journaleintrag
+als Nachweis; Ampelwechsel-Watcher in jedem Scheduler-Tick, idempotent
+über `melder_ampel_wechsel_id` in der Steuerung — GUI-Scan-Wechsel werden
+beim nächsten Tick bemerkt; Tagesdigest mit LLM-Fassung und maschineller
+Fallback-Meldung, verschiebt sich automatisch, solange ein Betreuer-Lauf
+aktiv ist), Betreuer löst bei STILBRUCH den Sofort-Alert direkt aus,
+Postfach-Tab auf der Agenten-Seite (Priorität 1/2/3, Quellen-Verweise),
+Takt Startzeit + 40 min, CLI `--digest`, 10 neue Tests (Gesamt: 849 grün).
+Abnahme verifiziert (E2E auf Temp-DB): Ampelwechsel 🟡→🔴 → Alert P3 mit
+`ampel_wechsel#N`/`signal#N`-Quellen; echter LLM-Digest fasst Läufe,
+Beobachtungen und Token-Budget des Tages zusammen.
 
 ### Phase E — Chefermittler & autonome Scan-Steuerung
 Wochen-Lagebericht, Dirigent stößt Gelb/Grün- und Full-Scans selbst an.

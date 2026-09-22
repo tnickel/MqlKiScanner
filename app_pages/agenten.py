@@ -34,7 +34,8 @@ with st.container(horizontal=True, vertical_alignment="center"):
                "Konfiguration: Einstellungen → Agenten.")
     info_button("agenten_page", key="agenten_page_help")
 
-live_tab, protokoll_tab, dossiers_tab = st.tabs(["Live", "Protokoll", "Dossiers"])
+live_tab, protokoll_tab, dossiers_tab, postfach_tab = st.tabs(
+    ["Live", "Protokoll", "Dossiers", "Postfach"])
 
 # ── Live ───────────────────────────────────────────────────────────
 with live_tab:
@@ -210,3 +211,32 @@ with dossiers_tab:
                 else:
                     st.caption("Noch keine Deltas — der erste Tageslauf mit "
                                "geändertem Export erzeugt den ersten Eintrag.")
+
+# ── Postfach (Phase D) ─────────────────────────────────────────────
+with postfach_tab:
+    st.markdown(
+        "Alerts und Digests des Melders. Priorität: **1 Info** · "
+        "**2 Warnung** · **3 Kritisch**. Jede Meldung nennt ihre Quellen "
+        "(Protokoll-Schritt, Ampel-Wechsel, Signal).")
+    filter_spalte, leer_spalte = st.columns([1, 2])
+    with filter_spalte:
+        meldungs_typ = st.selectbox("Art", ["alle", "alert", "digest"],
+                                    key="agenten_postfach_typ")
+    meldungen = journal.meldungen_lesen(
+        limit=50, typ=None if meldungs_typ == "alle" else meldungs_typ)
+    if not meldungen:
+        st.caption("Postfach leer — der Melder schreibt Alerts bei "
+                   "Ampelwechseln und Stilbrüchen, dazu den Tagesdigest.")
+    for m in meldungen:
+        farbe = {3: "red", 2: "orange", 1: "blue"}.get(m["prioritaet"], "gray")
+        with st.container(border=True):
+            with st.container(horizontal=True, vertical_alignment="center",
+                              wrap=True):
+                st.badge(f"P{m['prioritaet']}", color=farbe)
+                st.badge(m["typ"], color="gray")
+                st.caption(m["ts"])
+            st.markdown(f"**{m['titel']}**")
+            st.markdown(m["text"])
+            if m.get("quellen"):
+                st.caption("Quellen: " + ", ".join(
+                    f"`{q}`" for q in m["quellen"]))

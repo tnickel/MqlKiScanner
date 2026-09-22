@@ -30,13 +30,15 @@ def main() -> None:
                         help="einen Marktbeobachter-Lauf sofort ausführen")
     parser.add_argument("--betreuer", action="store_true",
                         help="einen Betreuer-Tageslauf sofort ausführen")
+    parser.add_argument("--digest", action="store_true",
+                        help="einen Tagesdigest des Melders sofort ausführen")
     parser.add_argument("--tick", action="store_true",
                         help="einen Scheduler-Tick ausführen und enden")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    from . import betreuer, dirigent, markt, scheduler
+    from . import betreuer, dirigent, markt, melder, scheduler
 
     if args.once:
         ergebnis = dirigent.tageslauf(quelle="cli", log=log.info)
@@ -51,6 +53,11 @@ def main() -> None:
         ergebnis = betreuer.tageslauf(quelle="cli", log=log.info)
         log.info("Ergebnis: %s Signale — %s", ergebnis["signale"],
                  ergebnis["zusammenfassung"])
+        return
+    if args.digest:
+        ergebnis = melder.tagesdigest(quelle="cli", log=log.info)
+        log.info("Ergebnis: %s — Meldung #%s", ergebnis["status"],
+                 ergebnis.get("meldung_id", "-"))
         return
     if args.tick:
         scheduler.tick(log=log.info)

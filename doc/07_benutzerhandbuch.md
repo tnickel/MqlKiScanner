@@ -281,14 +281,15 @@ verwendet und welcher Bericht daraus entsteht. Die Engine berechnet alle
 Kennzahlen; die KI interpretiert sie nur. Pflicht-Platzhalter bleiben beim
 Bearbeiten geschützt und werden vor dem Speichern geprüft.
 
-## 5a. Agentenbetrieb (Phase A–C)
+## 5a. Agentenbetrieb (Phase A–D)
 
 Fünf LLM-Rollen übernehmen schrittweise die Dauerbeobachtung der Signale
 (Bauplan: `doc/19_agentenbetrieb-bauplan.md`). **Phase A**: Der Dirigent
 plant täglich werktags. **Phase B**: Der Signal-Betreuer prüft täglich die
 Trade-Deltas gegen die Algo-Profile. **Phase C**: Der Marktbeobachter
-liefert den täglichen Marktkontext aus deinem MetaTrader. Chef/Melder sind
-konfigurierbar, aber als „geplant“ (Phase D–E) markiert.
+liefert den täglichen Marktkontext aus deinem MetaTrader. **Phase D**: Der
+Melder bringt Alerts und den Tagesdigest ins Postfach. Nur der
+Chefermittler ist noch „geplant“ (Phase E).
 
 **Einstellungen → Agenten** (Konfiguration):
 
@@ -331,6 +332,14 @@ XAUUSD-Bar und trennt sofort — der echte Ersttest (V1) gehört mit
 laufendem Terminal einmalig gemacht. Der Betreuer zitiert die Tageslage
 in jeder Delta-Prüfung; ohne Kontext läuft die Prüfung mit klarem
 Platzhalter weiter.
+
+**Postfach (Phase D, Seite „Agenten → Postfach“):** Alerts mit Priorität
+(3 kritisch · 2 Warnung · 1 Info) und der Tagesdigest. Stilbrüche melden
+sich SOFORT aus der Betreuer-Prüfung; Ampelwechsel werden im nächsten
+Daemon-Tick bemerkt (auch aus GUI-Scans) — jede Meldung nennt ihre Quellen
+(Protokoll-Schritt, Wechsel-ID, Signal). Der Tagesdigest (Startzeit +
+40 min) fasst Läufe, Beobachtungen und Token-Budget des Tages zusammen und
+verschiebt sich automatisch, solange der Betreuer noch arbeitet.
 
 **Wie der Betreuer arbeitet** (täglich 06:45, Startzeit + 15 min): Export
 laden (Rate-Limiter, 20-h-Cache — ein GUI-Scan am Vorabend macht den Abruf

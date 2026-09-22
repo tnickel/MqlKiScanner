@@ -25,7 +25,7 @@ from .. import config, db
 from ..llm import client as llm_client
 from ..mql5.session import Mql5Session
 from . import delta, dossier, journal, markt, rollen, rollen_prompts
-from . import destillation
+from . import destillation, melder
 
 # Export-Cache: 20 h — der tägliche 06:45-Abruf holt frisch, ein GUI-Scan
 # am Vorabend macht daraus einen No-Op (Hash identisch).
@@ -217,8 +217,11 @@ def _signal_pruefen_inner(signal: dict, settings: dict, lauf_id: int,
                 "zusammenfassung": f"{name}: {grund}"}
     antwort, schritt_id = llm
     einordnung, text = _einordnung_parsen(antwort)
-    dossier.beobachtung_speichern(signal["id"], einordnung, text,
-                                  delta_ref=delta_id, schritt_ref=schritt_id)
+    beobachtung_id = dossier.beobachtung_speichern(
+        signal["id"], einordnung, text, delta_ref=delta_id,
+        schritt_ref=schritt_id)
+    if einordnung == "STILBRUCH":
+        melder.stilbruch_alert(name, text, schritt_id, lauf_id, signal["id"])
     return {"signal": name, "einordnung": einordnung,
             "zusammenfassung": f"{name}: {einordnung}"}
 
