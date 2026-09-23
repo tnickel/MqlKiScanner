@@ -11,6 +11,8 @@ Steuerungstabelle). Argumente:
   --betreuer EINEN Betreuer-Tageslauf sofort ausführen (alle Kandidaten;
              Delta-Prüfung gegen die Dossiers, ignoriert agenten_enabled)
   --tick     EINEN Scheduler-Tick ausführen (mit Takt-Prüfung) und enden
+  --alles    die KOMPLETTE Tageskette sofort ausführen (Ampelwechsel-Watcher
+             → Dirigent → Markt → Betreuer → Tagesdigest; ohne Takt-Prüfung)
 """
 from __future__ import annotations
 
@@ -23,7 +25,7 @@ log = logging.getLogger("mqlkiscanner.agenten")
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="python -m mqlkiscanner.agenten",
-        description="Agenten-Daemon des MqlKiScanner (Phasen A–C)")
+        description="Agenten-Daemon des MqlKiScanner (Phasen A–E)")
     parser.add_argument("--once", action="store_true",
                         help="einen Dirigent-Tageslauf sofort ausführen")
     parser.add_argument("--markt", action="store_true",
@@ -37,13 +39,17 @@ def main() -> None:
     parser.add_argument("--scan", choices=["gelbgruen", "full"],
                         help="einen autonomen Scan sofort anstoßen (full: Katalog; "
                              "gelbgruen: nur 🟢/🟡 mit allen KI-Stufen)")
+    parser.add_argument("--alles", action="store_true",
+                        help="die komplette Tageskette sofort ausführen "
+                             "(Watcher → Dirigent → Markt → Betreuer → Digest)")
     parser.add_argument("--tick", action="store_true",
                         help="einen Scheduler-Tick ausführen und enden")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    from . import betreuer, chef, dirigent, markt, melder, scan_launcher, scheduler
+    from . import (betreuer, chef, dirigent, markt, melder, scan_launcher,
+                   scheduler, tageskette)
 
     if args.once:
         ergebnis = dirigent.tageslauf(quelle="cli", log=log.info)
@@ -74,6 +80,11 @@ def main() -> None:
                                              log=log.info)
         log.info("Ergebnis: %s — %s", ergebnis["status"],
                  ergebnis.get("zusammenfassung", ergebnis.get("grund", "")))
+        return
+    if args.alles:
+        ergebnis = tageskette.tageskette(quelle="cli", log=log.info)
+        log.info("Ergebnis: %s — %s", ergebnis["status"],
+                 ergebnis["zusammenfassung"])
         return
     if args.tick:
         scheduler.tick(log=log.info)

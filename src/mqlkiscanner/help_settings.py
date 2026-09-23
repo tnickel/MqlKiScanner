@@ -331,6 +331,24 @@ die vollständige Antwort; der Auswahlkasten darunter öffnet den vollen
 Wortlaut. Nichts wird gekürzt: Alles, was ein Modell sagt, steht im
 Protokoll (das ersetzt den bewusst abgelehnten Trockenmodus).
 """),
+    "agenten_komplett_start": ("Komplettlauf: die ganze Tageskette mit einem Klick", """
+Der Button führt den kompletten Agenten-Workflow sofort aus — in der
+Reihenfolge des Daemon-Tageslaufs, aber ohne auf die Startzeit zu warten:
+Ampelwechsel-Prüfung → Dirigent (Tagesplan) → Marktbeobachter (MT5-Kurse,
+nach der konfigurierten Start-Politik) → Betreuer (Trade-Deltas gegen die
+Dossiers) → Tagesdigest ins Postfach.
+
+Dabei gilt:
+- Der Lauf respektiert die Rollen-Aktivschalter und das Lauf-Lock: Läuft
+  gerade ein anderer Lauf (z. B. ein Daemon-Takt), wird die Rolle
+  übersprungen und der Sprung im Protokoll begründet — nie ein Doppel-Lauf.
+- Eine fehlgeschlagene Rolle hält die folgenden nicht auf; am Ende zeigt
+  die Zusammenfassung den Stand jeder Rolle.
+- Chefermittler (Sonntags-/Monatsbericht) und autonome Scans sind bewusst
+  NICHT Teil des Komplettlaufs — sie bleiben an ihre Takte gebunden bzw.
+  laufen über die Scan-Seite oder die Kommandozeile (--scan).
+- Auf der Kommandozeile macht --alles denselben Lauf.
+"""),
 "settings_markt": ("Marktdaten: Kursdaten aus dem eigenen MetaTrader", """
 Der Marktbeobachter liest Kursdaten über das offizielle Python-Paket der
 MetaTrader-Plattform — ein lokaler IPC-Zugriff auf dein laufendes Terminal,

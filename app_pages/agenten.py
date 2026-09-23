@@ -18,7 +18,8 @@ import streamlit as st
 
 from mqlkiscanner import config
 from mqlkiscanner.agenten import daemon, journal, rollen
-from mqlkiscanner.ui_design import apply_theme, info_button, page_header
+from mqlkiscanner.ui_design import action_button, apply_theme, info_button, \
+    page_header
 
 apply_theme()
 
@@ -57,6 +58,18 @@ with live_tab:
                      color="green" if config.load_settings().get("agenten_enabled")
                      else "orange", icon=":material/lock:")
             st.caption("Starten, Stoppen und Konfigurieren: Einstellungen → Agenten")
+
+        if action_button(
+                "Kompletten Agenten-Workflow jetzt ausführen",
+                key="agenten_komplett_start", type="primary",
+                help_key="agenten_komplett_start",
+                icon=":material/rocket_launch:"):
+            st.session_state["agenten_komplett_lauf"] = True
+            st.rerun()
+        st.caption("Ein Klick, die ganze Tageskette: Ampelwechsel-Prüfung → "
+                   "Dirigent → Markt → Betreuer → Tagesdigest. Chefermittler "
+                   "und autonome Scans bleiben an ihre Takte gebunden "
+                   "(Sonntag/Monatsbeginn).")
 
     from mqlkiscanner.agenten import ui_tree
     ui_tree.rendere_agenten_baum()

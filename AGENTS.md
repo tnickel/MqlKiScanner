@@ -128,12 +128,14 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
   Lauf-Lock, Rollen-Registry mit GLM-5.3 als Standard JE Rolle
   [Nutzer-Vorgabe 22.09.2026], 6 Rollen-Prompts unter
   `config/prompts/agenten/`; Daemon-Start/Stopp über Admin → Agenten
-  oder CLI `PYTHONPATH=src python -m mqlkiscanner.agenten [--once|--tick]`;
+  oder CLI `PYTHONPATH=src python -m mqlkiscanner.agenten [--tick|--alles|…]`
+  (—alles = komplette Tageskette, wie der Komplettlauf-Button auf der
+  Agenten-Seite — Orchestrierung `agenten/tageskette.py`);
   bewertet nie, beobachtet und meldet nur — LLM-Schritte protokollieren
   vollen Prompt und volle Antwort, kein Trockenmodus)
 - `config/prompts/` — editierbare LLM-Prompts (Workflow) und
   `config/prompts/agenten/` — editierbare Rollen-Prompts
-- `tests/` — pytest (812 Tests grün; LLM-Regressionstests opt-in via
+- `tests/` — pytest (892 Tests grün; LLM-Regressionstests opt-in via
   `pytest -m llm`, echte Modellaufrufe)
 
 ## Umsetzungsstand (Stand 22.09.2026)
@@ -238,12 +240,23 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   ohne Scan-Klick": Orchestrierung verifiziert (Fake-Pipeline-Tests +
   Scheduler-Takte); der erste echte autonome Monat beginnt mit dem
   nächsten Sonntag (Teilscan) bzw. 1. Werktag (Full).
+- ✅ Komplettlauf (23.09.2026): Der ganze Agenten-Workflow mit EINEM
+  Knopf — Button „Kompletten Agenten-Workflow jetzt ausführen" auf der
+  Agenten-Seite (Live) und CLI `--alles`. Orchestrierung in
+  `agenten/tageskette.py`: Ampelwechsel-Watcher → Dirigent → Markt →
+  Betreuer → Tagesdigest in Daemon-Reihenfolge, aber OHNE Takt-Prüfung;
+  respektiert Rollen-Aktivschalter und Lauf-Lock (besetzte Rolle =
+  dokumentierter Skip im Journal, nie ein Doppel-Lauf); eine fehlge-
+  schlagene Rolle hält die Kette nicht auf; Chef und autonome Scans
+  bleiben bewusst an ihre Takte gebunden. Live-Fortschritt im Status-
+  Kasten mit Aktivitäts-Banner, Ergebnis-Zusammenfassung nach dem Rerun.
+  892 Tests grün.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:
       `--scan gelbgruen|full` (plus `--once`, `--markt`, `--betreuer`,
-      `--digest`, `--chef`)
+      `--digest`, `--chef`, `--alles` = komplette Tageskette)
 - [x] Automatisierte Alerts (Ampelwechsel, Stilbruch, Scan-Abschluss) —
       Melder/Postfach, Phase D/E
 - [x] V1-Attach-Prüfung mit Nutzer — ERLEDIGT 22.09.2026 (Selbststart UND

@@ -16,6 +16,7 @@ import streamlit as st
 from .. import config, ui_design
 from ..ui_design import aktivitaets_banner
 from . import journal, lock, rollen
+from .tageskette import kompakt_zusammenfassung as _kompakt_zusammenfassung
 
 ASSETS_DIR = Path(__file__).resolve().parents[3] / "assets"
 
@@ -72,23 +73,6 @@ def _starte_rolle(rolle_key: str):
     if rolle_key == "melder":
         return melder.tagesdigest(quelle="gui", log=lambda m: None)
     raise ValueError(f"Unbekannte Rolle: {rolle_key}")
-
-
-def _kompakt_zusammenfassung(rolle_key: str, res: dict) -> str:
-    """Einzeiler für den Toast — je Rolle aus den Keys, die der Lauf liefert."""
-    if res.get("resultat"):
-        return str(res["resultat"])
-    if res.get("zusammenfassung"):
-        return str(res["zusammenfassung"])
-    if rolle_key == "dirigent":
-        plan = res.get("plan") or []
-        return f"Plan: {', '.join(plan)}" if plan else ""
-    if rolle_key == "markt":
-        symbole = res.get("symbole") or []
-        return f"{len(symbole)} Symbol(e) analysiert" if symbole else ""
-    if res.get("meldung_id") is not None:
-        return f"Meldung #{res['meldung_id']} im Postfach"
-    return ""
 
 
 def agent_manuell_ausfuehren(rolle_key: str) -> None:
@@ -150,6 +134,81 @@ def agent_manuell_ausfuehren(rolle_key: str) -> None:
                  icon=":material/error:")
     finally:
         banner.empty()
+
+
+def agenten_komplett_ausfuehren() -> None:
+    """Die komplette Tageskette per Klick: Wechsel-Watcher → Dirigent →
+    Markt → Betreuer → Tagesdigest (Orchestrierung in tageskette.py).
+
+    Live-Fortschritt im Status-Kasten (eine Zeile je Schritt); das Ergebnis
+    landet im Session-State und wird nach dem Rerun als Zusammenfassung
+    oben eingeblendet — frische Tabellen UND sichtbares Resultat.
+    """
+    from . import tageskette
+
+    banner = aktivitaets_banner(
+        "Agenten-Workflow läuft — Dirigent → Markt → Betreuer → Digest …")
+    try:
+        with st.status("Agenten-Workflow: Ampelwechsel-Prüfung …",
+                       expanded=True) as status_kasten:
+            verlauf = st.container()
+
+            def _meldung(rolle_key: str, text: str, stand: str) -> None:
+                zeichen = {"laeuft": "⏳", "ok": "✅", "skipped": "⏭️",
+                           "fehler": "⚠️"}.get(stand, "·")
+                verlauf.caption(f"{zeichen} {text}")
+                if stand == "laeuft":
+                    status_kasten.update(label=f"Agenten-Workflow: {text}")
+
+            ergebnis = tageskette.tageskette(quelle="gui",
+                                             log=lambda m: None,
+                                             meldung=_meldung)
+            st.session_state["_agenten_kette_ergebnis"] = ergebnis
+            titel = {"ok": "Agenten-Workflow abgeschlossen.",
+                     "skipped": "Agenten-Workflow: keine Rolle lief "
+                                "(deaktiviert oder gesperrt).",
+                     "teilerfolg": "Agenten-Workflow teilerfolgreich — "
+                                   "siehe Protokoll.",
+                     "fehler": "Agenten-Workflow mit Fehlern — "
+                               "siehe Protokoll."}.get(ergebnis["status"],
+                                                       "Agenten-Workflow "
+                                                       "beendet.")
+            status_kasten.update(label=titel,
+                                 state=("error" if ergebnis["status"]
+                                        in ("fehler", "teilerfolg")
+                                        else "complete"),
+                                 expanded=True)
+        st.rerun()
+    except Exception as e:
+        st.error(f"Fehler im Agenten-Workflow: {e}", icon=":material/error:")
+    finally:
+        banner.empty()
+
+
+def _zeige_kette_ergebnis() -> None:
+    """Zusammenfassung des letzten Komplettlaufs einblenden (nach dem Rerun)."""
+    ergebnis = st.session_state.pop("_agenten_kette_ergebnis", None)
+    if not ergebnis:
+        return
+    titel = {"ok": "Agenten-Workflow abgeschlossen.",
+             "skipped": "Agenten-Workflow: keine Rolle lief.",
+             "teilerfolg": "Agenten-Workflow teilerfolgreich.",
+             "fehler": "Agenten-Workflow mit Fehlern."}.get(
+        ergebnis.get("status"), "Agenten-Workflow beendet.")
+    with st.status(titel, state=("error" if ergebnis.get("status")
+                                 in ("fehler", "teilerfolg") else "complete"),
+                   expanded=True):
+        for eintrag in ergebnis.get("ergebnisse", []):
+            zeichen = {"ok": "✅", "skipped": "⏭️",
+                       "fehler": "⚠️"}.get(eintrag.get("status"), "·")
+            if eintrag.get("schritt") == "wechsel_watcher":
+                anzeige = "Wechsel-Watcher"
+            else:
+                rolle = rollen.ROLLEN_NACH_KEY.get(eintrag.get("rolle", ""))
+                anzeige = rolle.name if rolle else str(eintrag.get("rolle", "?"))
+            text = (eintrag.get("info") or eintrag.get("grund")
+                    or eintrag.get("status", ""))
+            st.caption(f"{zeichen} {anzeige}: {text}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -836,6 +895,9 @@ def rendere_agenten_baum() -> None:
     """Rendert das vollständige visuelle Baumdiagramm und kompakte Kacheln."""
     settings = config.load_settings()
 
+    # Ergebnis des letzten Komplettlaufs einblenden (einmalig, nach Rerun)
+    _zeige_kette_ergebnis()
+
     # 1. Ermitteln, welche Agenten aktiv sind
     db_aktive = journal.aktive_rollen()
     gui_aktiver = st.session_state.get("aktiver_agent_lauf")
@@ -863,3 +925,9 @@ def rendere_agenten_baum() -> None:
         rolle_start = st.session_state.pop("aktiver_agent_lauf", None)
         if rolle_start:
             agent_manuell_ausfuehren(rolle_start)
+
+    # 5. Komplettlauf (Ein-Knopf-Workflow): erst ausführen, wenn Baum und
+    #    Kacheln stehen — die Live-Rückmeldung übernimmt der Status-Kasten.
+    if st.session_state.get("agenten_komplett_lauf"):
+        st.session_state.pop("agenten_komplekt_lauf", None)
+        agenten_komplett_ausfuehren()
