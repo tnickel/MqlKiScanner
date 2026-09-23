@@ -59,17 +59,30 @@ with live_tab:
                      else "orange", icon=":material/lock:")
             st.caption("Starten, Stoppen und Konfigurieren: Einstellungen → Agenten")
 
+        # Sperre, solange irgendein Agentenlauf aktiv ist (GUI-Kette,
+        # Einzelstart oder Daemon-Takt): Ein weiterer Klick würde nichts
+        # parallel starten (Lock), aber Tokens doppelt verbrauchen. Auch
+        # gepufferte Klicks während des blockierten Skripts laufen so ins
+        # Leere statt eine zweite Kette anzustoßen.
+        lauf_aktiv = bool(journal.aktive_rollen()) or bool(
+            st.session_state.get("agenten_komplett_lauf")
+            or st.session_state.get("aktiver_agent_lauf"))
         if action_button(
                 "Kompletten Agenten-Workflow jetzt ausführen",
                 key="agenten_komplett_start", type="primary",
                 help_key="agenten_komplett_start",
-                icon=":material/rocket_launch:"):
+                icon=":material/rocket_launch:", disabled=lauf_aktiv):
             st.session_state["agenten_komplett_lauf"] = True
             st.rerun()
-        st.caption("Ein Klick, die ganze Tageskette: Ampelwechsel-Prüfung → "
-                   "Dirigent → Markt → Betreuer → Tagesdigest. Chefermittler "
-                   "und autonome Scans bleiben an ihre Takte gebunden "
-                   "(Sonntag/Monatsbeginn).")
+        if lauf_aktiv:
+            st.caption("⏳ Ein Agentenlauf ist aktiv — der Button ist gesperrt, "
+                       "bis er beendet ist (Meldungen und Verlauf laufen live "
+                       "im Kasten darunter bzw. unter „Letzte Läufe“).")
+        else:
+            st.caption("Ein Klick, die ganze Tageskette: Ampelwechsel-Prüfung → "
+                       "Dirigent → Markt → Betreuer → Tagesdigest. Chefermittler "
+                       "und autonome Scans bleiben an ihre Takte gebunden "
+                       "(Sonntag/Monatsbeginn).")
 
     from mqlkiscanner.agenten import ui_tree
     ui_tree.rendere_agenten_baum()

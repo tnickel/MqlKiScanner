@@ -219,3 +219,15 @@ def test_stilbruch_historie_nur_stilbrueche_neueste_zuerst():
     hist = dossier_db.stilbruch_historie(999001)
     assert [h["text"] for h in hist] == ["SL entfernt", "Martingale erkannt"]
     assert dossier_db.stilbruch_historie(999003) == []
+
+
+def test_signal_pruefen_reicht_quelle_durch(signal_mit_snapshot, monkeypatch):
+    """Die je-Signal-Betreuer-Läufe zeigen den echten Auslöser (gui/cli/
+    daemon) — vorher war 'daemon' fest verdrahtet und ein GUI-Komplettlauf
+    wurde in „Letzte Läufe" falsch als Daemon-Lauf angezeigt."""
+    monkeypatch.setattr(betreuer, "_llm_einordnung",
+                        lambda *a, **k: ("EINORDNUNG: KONFORM\nText", 1))
+    betreuer.signal_pruefen(signal_mit_snapshot, config.load_settings(),
+                            log=lambda *_: None, quelle="gui")
+    lauf = journal.list_laeufe(limit=3, rolle="betreuer")[0]
+    assert lauf["quelle"] == "gui"

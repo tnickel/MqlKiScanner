@@ -15,7 +15,7 @@ import streamlit as st
 
 from .. import config, ui_design
 from ..ui_design import aktivitaets_banner
-from . import journal, lock, rollen
+from . import journal, lock, rollen, tageskette
 from .tageskette import kompakt_zusammenfassung as _kompakt_zusammenfassung
 
 ASSETS_DIR = Path(__file__).resolve().parents[3] / "assets"
@@ -136,13 +136,16 @@ def agent_manuell_ausfuehren(rolle_key: str) -> None:
         banner.empty()
 
 
-def agenten_komplett_ausfuehren() -> None:
+def agenten_komplett_ausfuehren(baum_aktualisieren=None) -> None:
     """Die komplette Tageskette per Klick: Wechsel-Watcher → Dirigent →
     Markt → Betreuer → Tagesdigest (Orchestrierung in tageskette.py).
 
     Live-Fortschritt im Status-Kasten (eine Zeile je Schritt); das Ergebnis
     landet im Session-State und wird nach dem Rerun als Zusammenfassung
     oben eingeblendet — frische Tabellen UND sichtbares Resultat.
+    baum_aktualisieren(aktive_rollen) zeichnet optional das Baumdiagramm
+    mit der gerade arbeitenden Rolle neu (Elemente während des Laufs
+    gestreamt — der Baum 'blinkt' durch die Kette).
     """
     from . import tageskette
 
@@ -159,6 +162,11 @@ def agenten_komplett_ausfuehren() -> None:
                 verlauf.caption(f"{zeichen} {text}")
                 if stand == "laeuft":
                     status_kasten.update(label=f"Agenten-Workflow: {text}")
+                    if baum_aktualisieren:
+                        try:
+                            baum_aktualisieren({rolle_key})
+                        except Exception:  # Anzeige darf den Lauf nie brechen
+                            pass
 
             ergebnis = tageskette.tageskette(quelle="gui",
                                              log=lambda m: None,
@@ -898,15 +906,24 @@ def rendere_agenten_baum() -> None:
     # Ergebnis des letzten Komplettlaufs einblenden (einmalig, nach Rerun)
     _zeige_kette_ergebnis()
 
-    # 1. Ermitteln, welche Agenten aktiv sind
+    # 1. Ermitteln, welche Agenten aktiv sind. Der Komplettlauf-Flag hebt
+    #    die GANZE Tageskette hervor — sie startet erst am Ende dieses
+    #    Reruns, aber der Baum/Kacheln müssen sofort zeigen, was los ist
+    #    (wie beim Einzelstart-Button).
     db_aktive = journal.aktive_rollen()
     gui_aktiver = st.session_state.get("aktiver_agent_lauf")
     aktive_rollen = set(db_aktive)
     if gui_aktiver:
         aktive_rollen.add(gui_aktiver)
+    if st.session_state.get("agenten_komplett_lauf"):
+        aktive_rollen.update(tageskette.KETTEN_ROLLEN)
 
-    # 2. Das dynamische Baumdiagramm im IFrame rendern (Breit: 1260px, Höhe: 545px)
-    st.iframe(_rendere_topologie_html(aktive_rollen=aktive_rollen), height=545)
+    # 2. Das dynamische Baumdiagramm im IFrame rendern (Breit: 1260px, Höhe: 545px).
+    #    Im st.empty-Slot, damit der Komplettlauf den Baum je Rolle LIVE neu
+    #    zeichnen kann (Elemente während des Laufs streamen zum Browser).
+    baum_slot = st.empty()
+    baum_slot.iframe(_rendere_topologie_html(aktive_rollen=aktive_rollen),
+                     height=545)
 
     # 3. Kompakte Steuerungs-Kacheln in 5 Spalten direkt darunter (passt perfekt auf eine Seite!)
     st.markdown(
@@ -927,7 +944,13 @@ def rendere_agenten_baum() -> None:
             agent_manuell_ausfuehren(rolle_start)
 
     # 5. Komplettlauf (Ein-Knopf-Workflow): erst ausführen, wenn Baum und
-    #    Kacheln stehen — die Live-Rückmeldung übernimmt der Status-Kasten.
+    #    Kacheln stehen — die Live-Rückmeldung übernimmt der Status-Kasten,
+    #    der Baum wird je Rolle neu gezeichnet (siehe baum_aktualisieren).
     if st.session_state.get("agenten_komplett_lauf"):
-        st.session_state.pop("agenten_komplekt_lauf", None)
-        agenten_komplett_ausfuehren()
+        st.session_state.pop("agenten_komplett_lauf", None)
+
+        def _baum_aktualisieren(aktive: set[str]) -> None:
+            baum_slot.iframe(_rendere_topologie_html(aktive_rollen=aktive),
+                             height=545)
+
+        agenten_komplett_ausfuehren(baum_aktualisieren=_baum_aktualisieren)

@@ -138,15 +138,17 @@ def _einordnung_parsen(antwort: str) -> tuple[str, str]:
 
 
 def signal_pruefen(signal: dict, settings: dict, log=print,
-                   session: Mql5Session | None = None) -> dict:
+                   session: Mql5Session | None = None,
+                   quelle: str = "daemon") -> dict:
     """Ein Signal im Tagesdurchlauf prüfen (ein eigener Betreuer-Lauf).
 
     Ohne übergebene Session wird eine eigene gebaut (Einzelabruf/CLI) —
     der Tageslauf übergibt EINE Session für alle Signale, damit der
-    Rate-Limiter über den ganzen Lauf gemeinsam pacingt.
+    Rate-Limiter über den ganzen Lauf gemeinsam pacingt. quelle reist mit
+    (gui/cli/daemon), damit „Letzte Läufe" den echten Auslöser zeigt.
     """
     session = session if session is not None else Mql5Session(settings)
-    lauf_id = journal.lauf_starten("betreuer", quelle="daemon",
+    lauf_id = journal.lauf_starten("betreuer", quelle=quelle,
                                    signal_id=signal["id"])
     try:
         ergebnis = _signal_pruefen_inner(signal, settings, session,
@@ -261,7 +263,8 @@ def tageslauf(quelle: str = "daemon", log=print, settings: dict | None = None,
         signale = [s for s in signale if s["id"] in nur_signal_ids]
     log(f"Betreuer-Tageslauf: {len(signale)} Kandidat(en).")
     session = Mql5Session(settings)
-    ergebnisse = [signal_pruefen(s, settings, log, session=session)
+    ergebnisse = [signal_pruefen(s, settings, log, session=session,
+                                  quelle=quelle)
                   for s in signale]
     je = {}
     for e in ergebnisse:

@@ -342,6 +342,8 @@ Dabei gilt:
 - Der Lauf respektiert die Rollen-Aktivschalter und das Lauf-Lock: Läuft
   gerade ein anderer Lauf (z. B. ein Daemon-Takt), wird die Rolle
   übersprungen und der Sprung im Protokoll begründet — nie ein Doppel-Lauf.
+  Solange ein Agentenlauf aktiv ist, ist der Button gesperrt; gepufferte
+  Doppelklicks starten so keine zweite Kette.
 - Eine fehlgeschlagene Rolle hält die folgenden nicht auf; am Ende zeigt
   die Zusammenfassung den Stand jeder Rolle.
 - Chefermittler (Sonntags-/Monatsbericht) und autonome Scans sind bewusst

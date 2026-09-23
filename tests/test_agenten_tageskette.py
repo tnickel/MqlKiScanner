@@ -184,7 +184,7 @@ def test_komplettlauf_flag_loest_ausfuehrung_aus(monkeypatch):
     from mqlkiscanner.agenten import ui_tree
     aufrufe: list[bool] = []
     monkeypatch.setattr(ui_tree, "agenten_komplett_ausfuehren",
-                        lambda: aufrufe.append(True))
+                        lambda **k: aufrufe.append(True))
 
     at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
                            default_timeout=60).run()
@@ -193,6 +193,35 @@ def test_komplettlauf_flag_loest_ausfuehrung_aus(monkeypatch):
     at.session_state["agenten_komplett_lauf"] = True
     at.run()
     assert aufrufe == [True]  # Flag wurde genau einmal verbraucht
+
+
+def test_komplettlauf_flag_lichtet_die_ganze_kette_im_baum(monkeypatch):
+    """Sobald der Komplettlauf-Flag steht, rendert der Baum die GANZE
+    Tageskette als aktiv (wie beim Einzelstart-Button) — der Nutzer sieht
+    sofort, dass gearbeitet wird, obwohl die Kette erst am Seitenende
+    startet (Regression: Baum blieb im Ruhe-Zustand stehen)."""
+    from mqlkiscanner.agenten import ui_tree
+    aufgerufen: list[set] = []
+    echt = ui_tree._rendere_topologie_html
+
+    def _mitschneiden(aktive_rollen=None):
+        aufgerufen.append(set(aktive_rollen or set()))
+        return echt(aktive_rollen=aktive_rollen)
+
+    monkeypatch.setattr(ui_tree, "_rendere_topologie_html", _mitschneiden)
+    monkeypatch.setattr(ui_tree, "agenten_komplett_ausfuehren",
+                        lambda **k: None)
+
+    at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
+                           default_timeout=60).run()
+    assert not at.exception
+    assert aufgerufen[-1] == set()  # Ruhe-Zustand ohne Lauf
+    at.session_state["agenten_komplett_lauf"] = True
+    at.run()
+    assert set(tageskette.KETTEN_ROLLEN) <= aufgerufen[-1]
+    # Das Baum-HTML unterscheidet Arbeits- und Standby-Zustand wirklich.
+    assert "ARBEITET GERADE" in echt(aktive_rollen={"dirigent"})
+    assert "SYSTEM RUHIG" in echt(aktive_rollen=set())
 
 
 def test_kette_ergebnis_wird_angezeigt_und_nur_einmal(monkeypatch):
@@ -210,3 +239,25 @@ def test_kette_ergebnis_wird_angezeigt_und_nur_einmal(monkeypatch):
     at.run()  # nächster Interaktions-Rerun: Anzeige ist weg
     texte = " ".join(c.value for c in at.caption)
     assert "Dirigent: Regelbetrieb freigegeben" not in texte
+
+
+def test_komplettlauf_button_gesperrt_waehrend_eines_laufs():
+    """Solange ein Agentenlauf aktiv ist (DB-'laeuft' oder gesetzter Start-
+    Flag), ist der Button gesperrt — gepufferte Doppelklicks dürfen keine
+    zweite Kette anstoßen (passierte am 23.09. live: Klick während des
+    blockierten Skripts feuerte eine Sekunde nach Kettenende erneut)."""
+    from mqlkiscanner.agenten import journal
+    at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
+                           default_timeout=60).run()
+    assert not at.exception
+    assert not at.button(key="agenten_komplett_start").disabled
+    lauf_id = journal.lauf_starten("betreuer", quelle="gui")
+    try:
+        at.run()
+        assert at.button(key="agenten_komplett_start").disabled
+        texte = " ".join(c.value for c in at.caption)
+        assert "Agentenlauf ist aktiv" in texte
+    finally:
+        journal.lauf_abschliessen(lauf_id, "ok", "Testlauf beendet")
+    at.run()
+    assert not at.button(key="agenten_komplett_start").disabled
