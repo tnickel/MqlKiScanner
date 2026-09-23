@@ -344,6 +344,8 @@ Dabei gilt:
   übersprungen und der Sprung im Protokoll begründet — nie ein Doppel-Lauf.
   Solange ein Agentenlauf aktiv ist, ist der Button gesperrt; gepufferte
   Doppelklicks starten so keine zweite Kette.
+- Der Workflow läuft im HINTERGRUND weiter — ein Seiten-Reload (F5) bricht
+  ihn nicht ab; der Live-Verlauf erscheint nach dem Reload wieder.
 - Eine fehlgeschlagene Rolle hält die folgenden nicht auf; am Ende zeigt
   die Zusammenfassung den Stand jeder Rolle.
 - Chefermittler (Sonntags-/Monatsbericht) und autonome Scans sind bewusst

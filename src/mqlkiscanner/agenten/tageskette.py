@@ -22,6 +22,9 @@ respektiert: Der Komplettlauf führt den Betrieb aus, wie er konfiguriert ist.
 """
 from __future__ import annotations
 
+import threading
+from datetime import datetime
+
 from .. import config
 from . import journal, lock, rollen
 
@@ -169,3 +172,70 @@ def tageskette(quelle: str = "gui", log=print, settings: dict | None = None,
                        + " — " + ", ".join(teile))
     return {"status": gesamt, "ergebnisse": ergebnisse,
             "zusammenfassung": zusammenfassung}
+
+
+# ── Reload-sicherer GUI-Komplettlauf (Hintergrund-Thread) ──────────────
+# Ein Browser-Reload (F5) während eines synchronen Skript-Laufs bricht
+# die Kette STILL ab — Live-Vorfall 23.09. 10:23: Betreuer komplett, der
+# Digest-Schritt wurde nie gestartet, kein Fehler im Log. Deshalb läuft
+# die Kette wie der Scan-Worker in einem prozessweiten Thread weiter, egal
+# was die Browser-Sitzung macht; die UI liest den Zustand nur noch ab.
+
+_ZEICHEN = {"laeuft": "⏳", "ok": "✅", "skipped": "⏭️", "fehler": "⚠️"}
+_zustand_lock = threading.Lock()
+_zustand: dict = {"thread": None, "zeilen": [], "ergebnis": None,
+                  "gestartet": "", "fertig": ""}
+
+
+def _jetzt() -> str:
+    return datetime.now().isoformat(sep=" ", timespec="seconds")
+
+
+def laeuft_gerade() -> bool:
+    """Läuft gerade ein Komplettlauf-Thread (prozessweit, reload-sicher)?"""
+    thread = _zustand["thread"]
+    return bool(thread and thread.is_alive())
+
+
+def starte_komplettlauf(quelle: str = "gui", log=print) -> dict:
+    """Komplettlauf im Hintergrund-Thread starten; kehrt SOFORT zurück.
+
+    Das Lauf-Lock schützt weiterhin vor Parallel-Läufen; ein zweiter
+    Startversuch, während der Thread lebt, wird abgewiesen (kein Doppel-Lauf).
+    """
+    if laeuft_gerade():
+        return {"gestartet": False,
+                "grund": "Ein Komplettlauf läuft bereits."}
+
+    def _notiz(rolle_key: str, text: str, stand: str) -> None:
+        with _zustand_lock:
+            _zustand["zeilen"].append(f"{_ZEICHEN.get(stand, '·')} {text}")
+
+    def _arbeit() -> None:
+        try:
+            ergebnis = tageskette(quelle=quelle, log=log, meldung=_notiz)
+        except Exception as exc:  # der Thread darf nie still sterben
+            ergebnis = {"status": "fehler", "ergebnisse": [],
+                        "zusammenfassung": f"Komplettlauf abgebrochen: {exc}"}
+        with _zustand_lock:
+            _zustand["ergebnis"] = ergebnis
+            _zustand["fertig"] = _jetzt()
+
+    with _zustand_lock:
+        _zustand.update(zeilen=["⏳ Komplettlauf gestartet …"],
+                        ergebnis=None, gestartet=_jetzt(), fertig="")
+        thread = threading.Thread(target=_arbeit, name="mks-komplettlauf",
+                                  daemon=True)
+        _zustand["thread"] = thread
+    thread.start()
+    return {"gestartet": True}
+
+
+def zustand() -> dict:
+    """Snapshot für die UI: läuft der Thread, Live-Zeilen, letztes Ergebnis."""
+    with _zustand_lock:
+        return {"laeuft": laeuft_gerade(),
+                "zeilen": list(_zustand["zeilen"]),
+                "ergebnis": _zustand["ergebnis"],
+                "gestartet": _zustand["gestartet"],
+                "fertig": _zustand["fertig"]}

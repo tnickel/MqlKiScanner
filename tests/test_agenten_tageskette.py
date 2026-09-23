@@ -4,6 +4,7 @@
 Die Kette trägt die Daemon-Reihenfolge in einen Aufruf — ohne Takt-Prüfung,
 mit Lock-Disziplin und dokumentierten Sprüngen statt stiller Doppel-Läufe.
 Alle Rollen-Einstiegspunkte werden hier gefaket (kein Netz, kein LLM)."""
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -224,33 +225,63 @@ def test_komplettlauf_flag_lichtet_die_ganze_kette_im_baum(monkeypatch):
     assert "SYSTEM RUHIG" in echt(aktive_rollen=set())
 
 
-def test_kette_ergebnis_wird_angezeigt_und_nur_einmal(monkeypatch):
-    """Die Zusammenfassung erscheint aus dem Session-State (einmalig)."""
+def test_kette_ergebnis_im_live_fragment(monkeypatch):
+    """Das Live-Fragment zeigt den laufenden und den frisch beendeten
+    Komplettlauf aus dem prozessweiten Zustand (überlebt Browser-Reloads);
+    Stunden alte Ergebnisse erscheinen nach einem Reload NICHT mehr."""
+    von_heute = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Läuft gerade: Live-Zeilen sichtbar.
+    monkeypatch.setattr(tageskette, "zustand", lambda: {
+        "laeuft": True,
+        "zeilen": ["⏳ Komplettlauf gestartet …", "⏳ Dirigent läuft …"],
+        "ergebnis": None, "gestartet": von_heute, "fertig": ""})
     at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
-                           default_timeout=60)
-    at.session_state["_agenten_kette_ergebnis"] = dict(_KETTEN_ERGEBNIS)
-    at.run()
+                           default_timeout=60).run()
     assert not at.exception
+    texte = " ".join(c.value for c in at.caption)
+    assert "Dirigent läuft …" in texte
+
+    # Frisch beendet: Zusammenfassung je Rolle sichtbar …
+    monkeypatch.setattr(tageskette, "zustand", lambda: {
+        "laeuft": False, "zeilen": [], "ergebnis": dict(_KETTEN_ERGEBNIS),
+        "gestartet": von_heute, "fertig": von_heute})
+    at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
+                           default_timeout=60).run()
     texte = " ".join(c.value for c in at.caption)
     assert "Dirigent: Regelbetrieb freigegeben" in texte
     assert "Marktbeobachter" in texte  # Skip wird mit Name genannt
     assert "Wechsel-Watcher" in texte
-    assert "_agenten_kette_ergebnis" not in at.session_state
-    at.run()  # nächster Interaktions-Rerun: Anzeige ist weg
+
+    # … aber ein stundenalter Abschluss wird nach Reload nicht mehr gezeigt.
+    alt = (datetime.now() - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+    monkeypatch.setattr(tageskette, "zustand", lambda: {
+        "laeuft": False, "zeilen": [], "ergebnis": dict(_KETTEN_ERGEBNIS),
+        "gestartet": alt, "fertig": alt})
+    at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
+                           default_timeout=60).run()
     texte = " ".join(c.value for c in at.caption)
     assert "Dirigent: Regelbetrieb freigegeben" not in texte
 
 
-def test_komplettlauf_button_gesperrt_waehrend_eines_laufs():
-    """Solange ein Agentenlauf aktiv ist (DB-'laeuft' oder gesetzter Start-
-    Flag), ist der Button gesperrt — gepufferte Doppelklicks dürfen keine
-    zweite Kette anstoßen (passierte am 23.09. live: Klick während des
-    blockierten Skripts feuerte eine Sekunde nach Kettenende erneut)."""
+def test_komplettlauf_button_gesperrt_waehrend_eines_laufs(monkeypatch):
+    """Solange ein Agentenlauf aktiv ist (Komplettlauf-Thread, DB-'laeuft'
+    oder gesetzter Start-Flag), ist der Button gesperrt — gepufferte
+    Doppelklicks dürfen keine zweite Kette anstoßen (passierte am 23.09.
+    live: Klick während des blockierten Skripts feuerte eine Sekunde nach
+    Kettenende erneut)."""
     from mqlkiscanner.agenten import journal
+    monkeypatch.setattr(tageskette, "laeuft_gerade", lambda: False)
     at = AppTest.from_file(str(ROOT / "app_pages" / "agenten.py"),
                            default_timeout=60).run()
     assert not at.exception
     assert not at.button(key="agenten_komplett_start").disabled
+    # Hintergrund-Thread der Kette lebt:
+    monkeypatch.setattr(tageskette, "laeuft_gerade", lambda: True)
+    at.run()
+    assert at.button(key="agenten_komplett_start").disabled
+    # … ebenso ein einzelner Lauf in der DB (z. B. Daemon-Takt):
+    monkeypatch.setattr(tageskette, "laeuft_gerade", lambda: False)
     lauf_id = journal.lauf_starten("betreuer", quelle="gui")
     try:
         at.run()
@@ -261,3 +292,80 @@ def test_komplettlauf_button_gesperrt_waehrend_eines_laufs():
         journal.lauf_abschliessen(lauf_id, "ok", "Testlauf beendet")
     at.run()
     assert not at.button(key="agenten_komplett_start").disabled
+
+
+# ── Hintergrund-Thread: reload-sicherer Komplettlauf ────────────────────────
+
+@pytest.fixture(autouse=True)
+def _zustand_zuruecksetzen():
+    """Modul-globalen Worker-Zustand um jeden Test sauberstellen."""
+    tageskette._zustand.update(thread=None, zeilen=[], ergebnis=None,
+                               gestartet="", fertig="")
+    yield
+    thread = tageskette._zustand.get("thread")
+    if thread and thread.is_alive():
+        thread.join(timeout=10)
+
+
+def test_starte_komplettlauf_im_hintergrund(monkeypatch):
+    """Der Thread sammelt Live-Zeilen und das Ergebnis prozessweit — die
+    Kette überlebt damit Browser-Reloads (Live-Vorfall: F5 brach die Kette
+    nach dem Betreuer ab, der Digest startete nie)."""
+    aufgerufen: dict = {}
+
+    def _fake_kette(quelle="gui", log=print, settings=None, meldung=None):
+        aufgerufen["quelle"] = quelle
+        if meldung:
+            meldung("dirigent", "Dirigent läuft …", "laeuft")
+        return {"status": "ok", "ergebnisse": [],
+                "zusammenfassung": "Testlauf"}
+
+    monkeypatch.setattr(tageskette, "tageskette", _fake_kette)
+    ergebnis = tageskette.starte_komplettlauf(quelle="gui")
+    assert ergebnis["gestartet"] is True
+    tageskette._zustand["thread"].join(timeout=10)
+
+    z = tageskette.zustand()
+    assert aufgerufen["quelle"] == "gui"
+    assert z["laeuft"] is False
+    assert z["ergebnis"]["zusammenfassung"] == "Testlauf"
+    assert z["fertig"] and z["gestartet"]
+    assert any("Dirigent läuft …" in zeile for zeile in z["zeilen"])
+    assert any(zeile.startswith("⏳") for zeile in z["zeilen"])  # Start-Zeile
+
+
+def test_starte_komplettlauf_nicht_doppelt(monkeypatch):
+    """Während der Thread lebt, wird ein zweiter Start abgewiesen."""
+    import threading
+    anfang = threading.Event()
+    weiter = threading.Event()
+
+    def _blocker(quelle="gui", log=print, settings=None, meldung=None):
+        anfang.set()
+        weiter.wait(10)
+        return {"status": "ok", "ergebnisse": [], "zusammenfassung": "x"}
+
+    monkeypatch.setattr(tageskette, "tageskette", _blocker)
+    assert tageskette.starte_komplettlauf()["gestartet"] is True
+    assert anfang.wait(5)
+    zweiter = tageskette.starte_komplettlauf()
+    assert zweiter == {"gestartet": False,
+                       "grund": "Ein Komplettlauf läuft bereits."}
+    weiter.set()
+    tageskette._zustand["thread"].join(timeout=10)
+    assert tageskette.laeuft_gerade() is False
+
+
+def test_starte_komplettlauf_faengt_ausnahmen_ab(monkeypatch):
+    """Wirft die Kette im Thread, wird ein Fehler-Ergebnis abgelegt statt
+    den Thread still sterben zu lassen (Fehler müssen sichtbar sein)."""
+    def _bock(quelle="gui", log=print, settings=None, meldung=None):
+        raise RuntimeError("Versehentliches Sterben")
+
+    monkeypatch.setattr(tageskette, "tageskette", _bock)
+    tageskette.starte_komplettlauf()
+    tageskette._zustand["thread"].join(timeout=10)
+    z = tageskette.zustand()
+    assert z["laeuft"] is False
+    assert z["ergebnis"]["status"] == "fehler"
+    assert "Versehentliches Sterben" in z["ergebnis"]["zusammenfassung"]

@@ -9,6 +9,7 @@ Postfach-Meldungen und Live-Erkenntnissen.
 from __future__ import annotations
 
 import base64
+from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
@@ -136,76 +137,66 @@ def agent_manuell_ausfuehren(rolle_key: str) -> None:
         banner.empty()
 
 
-def agenten_komplett_ausfuehren(baum_aktualisieren=None) -> None:
-    """Die komplette Tageskette per Klick: Wechsel-Watcher → Dirigent →
-    Markt → Betreuer → Tagesdigest (Orchestrierung in tageskette.py).
+def agenten_komplett_ausfuehren() -> None:
+    """Komplettlauf im Hintergrund-Thread starten (reload-sicher).
 
-    Live-Fortschritt im Status-Kasten (eine Zeile je Schritt); das Ergebnis
-    landet im Session-State und wird nach dem Rerun als Zusammenfassung
-    oben eingeblendet — frische Tabellen UND sichtbares Resultat.
-    baum_aktualisieren(aktive_rollen) zeichnet optional das Baumdiagramm
-    mit der gerade arbeitenden Rolle neu (Elemente während des Laufs
-    gestreamt — der Baum 'blinkt' durch die Kette).
+    Ein Browser-Reload während eines synchronen Skript-Laufs bricht die
+    Kette still ab (Live-Vorfall 23.09. 10:23: Betreuer fertig, Digest
+    nie gestartet, kein Fehler im Log). Der Thread läuft prozessweit
+    weiter; die Live-Anzeige übernimmt das Fragment _komplettlauf_live,
+    das den Zustand selbständig alle paar Sekunden abfragt.
     """
     from . import tageskette
 
-    banner = aktivitaets_banner(
-        "Agenten-Workflow läuft — Dirigent → Markt → Betreuer → Digest …")
-    try:
-        with st.status("Agenten-Workflow: Ampelwechsel-Prüfung …",
-                       expanded=True) as status_kasten:
-            verlauf = st.container()
-
-            def _meldung(rolle_key: str, text: str, stand: str) -> None:
-                zeichen = {"laeuft": "⏳", "ok": "✅", "skipped": "⏭️",
-                           "fehler": "⚠️"}.get(stand, "·")
-                verlauf.caption(f"{zeichen} {text}")
-                if stand == "laeuft":
-                    status_kasten.update(label=f"Agenten-Workflow: {text}")
-                    if baum_aktualisieren:
-                        try:
-                            baum_aktualisieren({rolle_key})
-                        except Exception:  # Anzeige darf den Lauf nie brechen
-                            pass
-
-            ergebnis = tageskette.tageskette(quelle="gui",
-                                             log=lambda m: None,
-                                             meldung=_meldung)
-            st.session_state["_agenten_kette_ergebnis"] = ergebnis
-            titel = {"ok": "Agenten-Workflow abgeschlossen.",
-                     "skipped": "Agenten-Workflow: keine Rolle lief "
-                                "(deaktiviert oder gesperrt).",
-                     "teilerfolg": "Agenten-Workflow teilerfolgreich — "
-                                   "siehe Protokoll.",
-                     "fehler": "Agenten-Workflow mit Fehlern — "
-                               "siehe Protokoll."}.get(ergebnis["status"],
-                                                       "Agenten-Workflow "
-                                                       "beendet.")
-            status_kasten.update(label=titel,
-                                 state=("error" if ergebnis["status"]
-                                        in ("fehler", "teilerfolg")
-                                        else "complete"),
-                                 expanded=True)
-        st.rerun()
-    except Exception as e:
-        st.error(f"Fehler im Agenten-Workflow: {e}", icon=":material/error:")
-    finally:
-        banner.empty()
+    start = tageskette.starte_komplettlauf(quelle="gui",
+                                           log=lambda m: None)
+    if start["gestartet"]:
+        st.toast("⚡ Agenten-Workflow gestartet — Live-Verlauf erscheint "
+                 "oben und läuft auch über einen Seiten-Reload weiter.",
+                 icon=":material/rocket_launch:")
+    else:
+        st.toast(f"⏭️ Start nicht nötig: {start['grund']}",
+                 icon=":material/skip_next:")
+    st.rerun()
 
 
-def _zeige_kette_ergebnis() -> None:
-    """Zusammenfassung des letzten Komplettlaufs einblenden (nach dem Rerun)."""
-    ergebnis = st.session_state.pop("_agenten_kette_ergebnis", None)
+@st.fragment(run_every=2.0)
+def _komplettlauf_live() -> None:
+    """Live-Anzeige des Komplettlaufs — Fragment fragt den Zustand selbst
+    ab (alle 2 s), unabhängig von Interaktionen und Browser-Reloads."""
+    from . import tageskette
+
+    z = tageskette.zustand()
+    ergebnis = z["ergebnis"]
+    if z["laeuft"]:
+        with st.status("Agenten-Workflow läuft …", expanded=True):
+            for zeile in z["zeilen"][-14:]:
+                st.caption(zeile)
+        return
     if not ergebnis:
         return
+    # Frische Ergebnisse einblenden (max. 30 min) — stundenlater Reload
+    # soll keine Alt-Anzeige zeigen.
+    try:
+        fertig_alter_s = (datetime.now()
+                          - datetime.strptime(z["fertig"], "%Y-%m-%d %H:%M:%S")
+                          ).total_seconds()
+    except (TypeError, ValueError):
+        fertig_alter_s = 1e9
+    if fertig_alter_s > 1800:
+        return
+    gesamt = str(ergebnis.get("status", ""))
     titel = {"ok": "Agenten-Workflow abgeschlossen.",
              "skipped": "Agenten-Workflow: keine Rolle lief.",
              "teilerfolg": "Agenten-Workflow teilerfolgreich.",
              "fehler": "Agenten-Workflow mit Fehlern."}.get(
-        ergebnis.get("status"), "Agenten-Workflow beendet.")
-    with st.status(titel, state=("error" if ergebnis.get("status")
-                                 in ("fehler", "teilerfolg") else "complete"),
-                   expanded=True):
+        gesamt, "Agenten-Workflow beendet.")
+    with st.status(titel,
+                   state=("error" if gesamt in ("fehler", "teilerfolg")
+                          else "complete"),
+                   expanded=False):
+        st.caption(f"beendet: {z['fertig']} · "
+                   f"{ergebnis.get('zusammenfassung', '')}")
         for eintrag in ergebnis.get("ergebnisse", []):
             zeichen = {"ok": "✅", "skipped": "⏭️",
                        "fehler": "⚠️"}.get(eintrag.get("status"), "·")
@@ -903,27 +894,23 @@ def rendere_agenten_baum() -> None:
     """Rendert das vollständige visuelle Baumdiagramm und kompakte Kacheln."""
     settings = config.load_settings()
 
-    # Ergebnis des letzten Komplettlaufs einblenden (einmalig, nach Rerun)
-    _zeige_kette_ergebnis()
+    # Live-Anzeige des Komplettlaufs (Fragment, fragt den Zustand selbst ab)
+    _komplettlauf_live()
 
-    # 1. Ermitteln, welche Agenten aktiv sind. Der Komplettlauf-Flag hebt
-    #    die GANZE Tageskette hervor — sie startet erst am Ende dieses
-    #    Reruns, aber der Baum/Kacheln müssen sofort zeigen, was los ist
-    #    (wie beim Einzelstart-Button).
+    # 1. Ermitteln, welche Agenten aktiv sind. Läuft der Komplettlauf
+    #    (Flag gesetzt oder Hintergrund-Thread am Leben), leuchtet die
+    #    GANZE Tageskette — sofort sichtbar, was los ist.
     db_aktive = journal.aktive_rollen()
     gui_aktiver = st.session_state.get("aktiver_agent_lauf")
     aktive_rollen = set(db_aktive)
     if gui_aktiver:
         aktive_rollen.add(gui_aktiver)
-    if st.session_state.get("agenten_komplett_lauf"):
+    if (st.session_state.get("agenten_komplett_lauf")
+            or tageskette.laeuft_gerade()):
         aktive_rollen.update(tageskette.KETTEN_ROLLEN)
 
-    # 2. Das dynamische Baumdiagramm im IFrame rendern (Breit: 1260px, Höhe: 545px).
-    #    Im st.empty-Slot, damit der Komplettlauf den Baum je Rolle LIVE neu
-    #    zeichnen kann (Elemente während des Laufs streamen zum Browser).
-    baum_slot = st.empty()
-    baum_slot.iframe(_rendere_topologie_html(aktive_rollen=aktive_rollen),
-                     height=545)
+    # 2. Das dynamische Baumdiagramm im IFrame rendern (Breit: 1260px, Höhe: 545px)
+    st.iframe(_rendere_topologie_html(aktive_rollen=aktive_rollen), height=545)
 
     # 3. Kompakte Steuerungs-Kacheln in 5 Spalten direkt darunter (passt perfekt auf eine Seite!)
     st.markdown(
@@ -943,14 +930,8 @@ def rendere_agenten_baum() -> None:
         if rolle_start:
             agent_manuell_ausfuehren(rolle_start)
 
-    # 5. Komplettlauf (Ein-Knopf-Workflow): erst ausführen, wenn Baum und
-    #    Kacheln stehen — die Live-Rückmeldung übernimmt der Status-Kasten,
-    #    der Baum wird je Rolle neu gezeichnet (siehe baum_aktualisieren).
+    # 5. Komplettlauf (Ein-Knopf-Workflow): startet nur den Hintergrund-
+    #    Thread und rerunt sofort — die Live-Anzeige übernimmt das Fragment.
     if st.session_state.get("agenten_komplett_lauf"):
-        st.session_state.pop("agenten_komplett_lauf", None)
-
-        def _baum_aktualisieren(aktive: set[str]) -> None:
-            baum_slot.iframe(_rendere_topologie_html(aktive_rollen=aktive),
-                             height=545)
-
-        agenten_komplett_ausfuehren(baum_aktualisieren=_baum_aktualisieren)
+        st.session_state.pop("agenten_komplekt_lauf", None)
+        agenten_komplett_ausfuehren()

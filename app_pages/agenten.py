@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import streamlit as st
 
 from mqlkiscanner import config
-from mqlkiscanner.agenten import daemon, journal, rollen
+from mqlkiscanner.agenten import daemon, journal, rollen, tageskette
 from mqlkiscanner.ui_design import action_button, apply_theme, info_button, \
     page_header
 
@@ -59,14 +59,15 @@ with live_tab:
                      else "orange", icon=":material/lock:")
             st.caption("Starten, Stoppen und Konfigurieren: Einstellungen → Agenten")
 
-        # Sperre, solange irgendein Agentenlauf aktiv ist (GUI-Kette,
-        # Einzelstart oder Daemon-Takt): Ein weiterer Klick würde nichts
-        # parallel starten (Lock), aber Tokens doppelt verbrauchen. Auch
-        # gepufferte Klicks während des blockierten Skripts laufen so ins
-        # Leere statt eine zweite Kette anzustoßen.
-        lauf_aktiv = bool(journal.aktive_rollen()) or bool(
-            st.session_state.get("agenten_komplett_lauf")
-            or st.session_state.get("aktiver_agent_lauf"))
+        # Sperre, solange irgendein Agentenlauf aktiv ist (GUI-Komplettlauf
+        # im Hintergrund-Thread, Einzelstart oder Daemon-Takt): Ein weiterer
+        # Klick würde nichts parallel starten (Lock), aber Tokens doppelt
+        # verbrauchen. Auch gepufferte Klicks während des blockierten
+        # Skripts laufen so ins Leere statt eine zweite Kette anzustoßen.
+        lauf_aktiv = (tageskette.laeuft_gerade()
+                      or bool(journal.aktive_rollen())
+                      or bool(st.session_state.get("agenten_komplett_lauf")
+                              or st.session_state.get("aktiver_agent_lauf")))
         if action_button(
                 "Kompletten Agenten-Workflow jetzt ausführen",
                 key="agenten_komplett_start", type="primary",
@@ -76,8 +77,9 @@ with live_tab:
             st.rerun()
         if lauf_aktiv:
             st.caption("⏳ Ein Agentenlauf ist aktiv — der Button ist gesperrt, "
-                       "bis er beendet ist (Meldungen und Verlauf laufen live "
-                       "im Kasten darunter bzw. unter „Letzte Läufe“).")
+                       "bis er beendet ist. Der Workflow läuft im Hintergrund "
+                       "weiter, auch bei einem Seiten-Reload; der Live-Verlauf "
+                       "steht direkt unter dem Baum.")
         else:
             st.caption("Ein Klick, die ganze Tageskette: Ampelwechsel-Prüfung → "
                        "Dirigent → Markt → Betreuer → Tagesdigest. Chefermittler "

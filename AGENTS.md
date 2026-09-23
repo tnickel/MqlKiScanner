@@ -135,7 +135,7 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
   vollen Prompt und volle Antwort, kein Trockenmodus)
 - `config/prompts/` — editierbare LLM-Prompts (Workflow) und
   `config/prompts/agenten/` — editierbare Rollen-Prompts
-- `tests/` — pytest (895 Tests grün; LLM-Regressionstests opt-in via
+- `tests/` — pytest (898 Tests grün; LLM-Regressionstests opt-in via
   `pytest -m llm`, echte Modellaufrufe)
 
 ## Umsetzungsstand (Stand 22.09.2026)
@@ -250,9 +250,12 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   schlagene Rolle hält die Kette nicht auf; Chef und autonome Scans
   bleiben bewusst an ihre Takte gebunden. Live-Fortschritt im Status-
   Kasten mit Aktivitäts-Banner, Ergebnis-Zusammenfassung nach dem Rerun;
-  Baum + Kacheln leuchten über die ganze Kette und der Baum wird je Rolle
-  live neu gezeichnet; der Button ist gesperrt, solange ein Agentenlauf
-  aktiv ist (kein Zweitlauf aus gepufferten Doppelklicks). 895 Tests grün.
+  Baum + Kacheln leuchten über die ganze Kette; der Button ist gesperrt,
+  solange ein Agentenlauf aktiv ist (kein Zweitlauf aus gepufferten
+  Doppelklicks). Die Kette läuft im HINTERGRUND-THREAD prozessweit weiter
+  (Reload-sicher — F5 brach die Kette anfangs still nach dem Betreuer ab,
+  Digest startete nie); Live-Anzeige als st.fragment(run_every=2 s) über
+  tageskette.zustand(). 898 Tests grün.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
