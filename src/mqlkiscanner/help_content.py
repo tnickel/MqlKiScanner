@@ -197,7 +197,7 @@ nur eine Lauf-Historie an. Base-URL und API-Key werden im Admin-Bereich unter
 """),
     "settings_tradeserver": ("Tradeserver-Verbindung (MqlTradeMonitor)", """
 Ziel des Daten-Syncs ist der Spring-Boot-Tradeserver **MqlTradeMonitor** (feste
-Server-IP, Port 8080, z. B. `http://192.0.2.10:8080`; im Produktivbetrieb liegt
+Server-IP, Port 8080, z. B. `http://tradeserver.example:8080`; im Produktivbetrieb liegt
 ihm ggf. ein HTTPS-Reverse-Proxy vor). Der MqlKiScanner ist kein MetaTrader-EA und
 nutzt deshalb ein eigenes Protokoll unter `{Base-URL}/api/kiscanner`.
 

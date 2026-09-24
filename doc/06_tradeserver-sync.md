@@ -44,7 +44,7 @@ MqlKiScanner (hier, Streamlit)                MqlTradeMonitor (Spring Boot 3.2)
 
 ## 2. Protokoll „KiScanner-Sync v1“
 
-Basis: `{Base-URL}/api/kiscanner`, z. B. `http://192.0.2.10:8080`.
+Basis: `{Base-URL}/api/kiscanner`, z. B. `http://tradeserver.example:8080`.
 Jeder Aufruf trägt den Server-API-Key im Header **`X-User-Key`** (gleicher
 Mechanismus wie bei den EAs: der Key gehört zu einem Benutzer des
 Tradeservers, Feld „API-Key“ in dessen Admin-Oberfläche; ein Benutzer ohne
@@ -87,10 +87,10 @@ Zahlen werden vor der Übertragung gerundet (der Server rechnet nicht).
 
 | Ort | Schlüssel | Beispiel |
 |-----|-----------|----------|
-| Admin → Tradeserver (landet in `config/app_settings.json`) | `tradeserver_base_url` | `http://192.0.2.10:8080` |
+| Admin → Tradeserver (landet in `config/app_settings.json`) | `tradeserver_base_url` | `http://tradeserver.example:8080` |
 | Admin → Tradeserver / `.env` / Env (`MQLTRADEMONITOR_KEY`, `MQLKISCANNER_TRADESERVER_KEY`) | `tradeserver_api_key` | 43-Zeichen-Key des Tradeserver-Benutzers |
 
-Default-Platzhalter: `config.TRADESERVER_DEFAULT_BASE = http://192.0.2.10:8080`.
+Default-Platzhalter: `config.TRADESERVER_DEFAULT_BASE = http://tradeserver.example:8080`.
 Der Client ergänzt `/api/kiscanner` selbst; ein Kontextpfad in der Base-URL
 bleibt erhalten. Secrets liegen wie immer nur im secrets_store (nie im Repo).
 

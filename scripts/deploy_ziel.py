@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-"""Deployment: MqlKiScanner -> Zielrechner ZIELRECHNER (C:\\Forex\\MqlKiScanner).
+"""Deployment: MqlKiScanner auf den konfigurierten Zielrechner.
 
 Ein Klick-Deploy von dem Entwicklungssystem auf den Trading-Rechner:
 
   1. Verbinden (SSH/SFTP, Zugangsdaten aus config/deploy.local.json
      oder Umgebungsvariablen DEPLOY_HOST/USER/PASSWORD) und ABSICHERN,
-     dass der Hostname wirklich ZIELRECHNER ist (falscher-Rechner-Schutz).
-  2. Python 3.12 silent installieren (per-user, ohne Admin), falls fehlt.
+     dass der Hostname wirklich der konfigurierte Zielrechner ist
+     (falscher-Rechner-Schutz).
+  2. Portables Python 3.12 ins Tools-Verzeichnis am Ziel entpacken
+     (NuGet-Paket), falls es dort fehlt.
   3. Code + config (inkl. secrets.local.json) + Daten-Kern via SFTP syncen.
      Die SQLite-DB wird vorher lokal über die backup-API gespiegelt — auch
      wenn die App gerade läuft.
-  4. Ziel-Einstellungen patchen: Downloader-URL -> 127.0.0.1:8089 (laeuft
-     dort), MT5-Terminal -> Vantage (falls vorhanden), Terminal-Selbststart
-     aus (nie das Trading-Terminal anfassen).
+  4. Ziel-Einstellungen patchen (siehe settings_patched unten).
   5. .venv anlegen + requirements installieren (+ MetaTrader5-Paket).
-  6. start.bat detached starten und Streamlit-Gesundheit pruefen.
+  6. start.bat als Ziel-User starten und Streamlit-Gesundheit pruefen.
 
 Aufruf (aus dem Projekt-Root):
   python scripts/deploy_ns1mqsv.py              # alles
@@ -22,9 +22,9 @@ Aufruf (aus dem Projekt-Root):
   python scripts/deploy_ns1mqsv.py --kein-start # installieren, aber nicht starten
 
 Zugangsdaten-Datei (gitignored, einmal anlegen):
-  config/deploy.local.json
-  {"host": "LAN-ZIELRECHNER", "hostname_erwartet": "ZIELRECHNER",
-   "user": "...", "password": "...", "ziel": "C:\\\\Forex\\\\MqlKiScanner"}
+  config/deploy.local.json mit host, user, password, ziel (Zielordner),
+  hostname_erwartet (Falsch-Rechner-Schutz), ziel_user (Session, in der
+  die Apps laufen sollen) und tools_python_pfad.
 """
 from __future__ import annotations
 
@@ -41,9 +41,6 @@ import paramiko
 ROOT = Path(__file__).resolve().parents[1]
 NUGET = ROOT / "deploy-cache" / "python-3.12.10.nupkg"
 NUGET_URL = "https://www.nuget.org/api/v2/package/python/3.12.10"
-TOOLS_PY = "TOOLS-PYTHON/python.exe"
-ERWARTETER_HOSTNAME = "ZIELRECHNER"
-ZIEL_USER = "<ziel_user>"   # Desktop-Session des Nutzers auf dem Zielrechner
 
 # Was mitwandert (Code): alles im Projekt-Root ausser diesen Eintraegen.
 CODE_ORDNER_AUS = {".git", "__pycache__", ".venv", "deploy-cache", "data",
@@ -73,11 +70,14 @@ def lade_zugang() -> dict:
         "host": os.environ.get("DEPLOY_HOST", daten.get("host", "")),
         "user": os.environ.get("DEPLOY_USER", daten.get("user", "")),
         "password": os.environ.get("DEPLOY_PASSWORD", daten.get("password", "")),
-        "ziel": daten.get("ziel", r"ZIELORDNER"),
-        "hostname_erwartet": daten.get("hostname_erwartet",
-                                       ERWARTETER_HOSTNAME),
+        "ziel": daten.get("ziel", ""),
+        "hostname_erwartet": daten.get("hostname_erwartet", ""),
+        "ziel_user": daten.get("ziel_user", ""),
+        "tools_python_pfad": daten.get("tools_python_pfad", ""),
     }
-    fehlt = [k for k in ("host", "user", "password") if not zugang[k]]
+    fehlt = [k for k in ("host", "user", "password", "ziel",
+                         "hostname_erwartet", "ziel_user",
+                         "tools_python_pfad") if not zugang[k]]
     if fehlt:
         raise SystemExit(
             f"Zugangsdaten unvollstaendig ({', '.join(fehlt)}). "
@@ -180,50 +180,51 @@ def hostname_absichern(ziel: Ziel) -> None:
 
 
 def tools_python_sicherstellen(ziel: Ziel) -> str:
-    """Portables Python nach C:\\Forex\\Tools\\Python312 (NuGet-Paket).
+    """Portables Python ins Tools-Verzeichnis am Ziel (NuGet-Paket).
 
     Warum kein Installer: der python.org-Bootstrapper sieht ein vorhandenes
     per-user-Python als 'bereits installiert' und tut dann still nichts
     (Exit 0 ohne Kopieren). Das NuGet-Paket ist ein ZIP mit vollständigem
-    Python (pip + venv), braucht keine Installation UND ist im C:\\Forex-
-    Baum fuer ALLE Nutzer lesbar — Pfad liegt bewusst ausserhalb der
-    Nutzerprofile, damit die Apps unter der TRADER-Session laufen."""
-    out, _, _ = ziel.run(f'"{TOOLS_PY}" --version')
+    Python (pip + venv), braucht keine Installation UND liegt bewusst
+    ausserhalb der Nutzerprofile, damit die Apps unter der Ziel-User-
+    Session laufen."""
+    tools_py = ziel.zugang["tools_python_pfad"].replace("\\", "/")
+    basis = tools_py.rsplit("/", 1)[0]
+    out, _, _ = ziel.run(f'"{tools_py}" --version')
     if out.strip().startswith("Python 3.1"):
-        _log("python", f"vorhanden: {out.strip()} ({TOOLS_PY})")
-        return TOOLS_PY
+        _log("python", f"vorhanden: {out.strip()} ({tools_py})")
+        return tools_py
     if not NUGET.exists():
         raise SystemExit(f"NuGet-Paket fehlt lokal: {NUGET} — einmal laden: "
                          f'curl -L -o "{NUGET}" {NUGET_URL}')
-    _log("python", "entpacke portables Python 3.12.10 nach "
-                   "C:\\Forex\\Tools\\Python312 …")
+    _log("python", f"entpacke portables Python (NuGet) nach {basis} …")
     ziel.sftp.put(str(NUGET), "C:/Users/Public/python.nupkg.zip")
-    ziel.ps("Remove-Item -Recurse -Force C:\\Forex\\Tools\\Python312, "
-            "C:\\Forex\\Tools\\py_tmp -ErrorAction SilentlyContinue; "
+    ziel.ps(f"Remove-Item -Recurse -Force '{basis}', "
+            f"'{basis}_tmp' -ErrorAction SilentlyContinue; "
             "Expand-Archive -Path C:\\Users\\Public\\python.nupkg.zip "
-            "-DestinationPath C:\\Forex\\Tools\\py_tmp -Force; "
-            "New-Item -ItemType Directory -Force -Path "
-            "C:\\Forex\\Tools\\Python312 | Out-Null; "
-            "Move-Item C:\\Forex\\Tools\\py_tmp\\tools\\* "
-            "C:\\Forex\\Tools\\Python312\\; "
-            "Remove-Item -Recurse -Force C:\\Forex\\Tools\\py_tmp",
+            f"-DestinationPath '{basis}_tmp' -Force; "
+            f"New-Item -ItemType Directory -Force -Path '{basis}' | Out-Null; "
+            f"Move-Item '{basis}_tmp\\tools\\*' '{basis}\\'; "
+            f"Remove-Item -Recurse -Force '{basis}_tmp'",
             timeout=300)
-    out, err, _ = ziel.run(f'"{TOOLS_PY}" --version')
+    out, err, _ = ziel.run(f'"{tools_py}" --version')
     if not out.strip().startswith("Python"):
         raise SystemExit(f"Tools-Python laeuft nicht: {out.strip()} "
                          f"{err.strip()[:200]}")
     _log("python", f"bereit: {out.strip()}")
-    return TOOLS_PY
+    return tools_py
 
 
 def rechte_setzen(ziel: Ziel) -> None:
-    """Der Ziel-User (Trader-Session) braucht Vollzugriff auf Projekt und
-    Python — die liegen im C:\\Forex-Baum, nicht in seinem Profil."""
-    for pfad in (ziel.ziel, "TOOLS-PYTHON"):
+    """Der Ziel-User braucht Vollzugriff auf Projekt und Python — die
+    liegen bewusst ausserhalb seines Nutzerprofils."""
+    tools_py = ziel.zugang["tools_python_pfad"].replace("\\", "/")
+    for pfad in (ziel.ziel, tools_py.rsplit("/", 1)[0]):
         out, err, _ = ziel.run(
             f'icacls "{pfad.replace("/", chr(92))}" '
-            f"/grant {ZIEL_USER}:(OI)(CI)F /T /C /Q", timeout=600)
-        _log("rechte", f"{pfad} -> {ZIEL_USER} voll"
+            f"/grant {ziel.zugang['ziel_user']}:(OI)(CI)F /T /C /Q",
+            timeout=600)
+        _log("rechte", f"{pfad} -> {ziel.zugang['ziel_user']} voll"
               + ("" if "fehler" not in (err or "").lower() else
                  f" (Hinweis: {err[:100]})"))
 
@@ -242,21 +243,23 @@ def db_lokal_spiegeln() -> Path:
     return ziel_datei
 
 
-def settings_patched(ziel: Ziel) -> dict:
+def settings_patched(ziel: Ziel, zugang: dict) -> dict:
     """Lokale app_settings.json lesen und ziel-spezifisch anpassen."""
     settings = json.loads((ROOT / "config" / "app_settings.json")
                           .read_text(encoding="utf-8"))
     # Downloader laeuft AUF dem Zielrechner (dort Port 8089, Health 200).
     settings["downloader_base_url"] = "http://127.0.0.1:8089/api/v1"
-    # MT5-Terminal dort heisst Vantage — nur setzen, wenn es existiert.
-    vantage = "C:\\Forex\\Mt5\\Vantage\\terminal64.exe"
-    out, _, _ = ziel.ps(f"Test-Path '{vantage}'")
-    if out.strip().lower() == "true":
-        settings["markt_terminal_pfad"] = vantage
-        _log("konfig", f"markt_terminal_pfad -> {vantage}")
-    else:
-        _log("konfig", "Vantage-Terminal nicht gefunden — Pfad bleibt "
-                       "wie lokal (im Admin-Tab anpassbar).")
+    # MT5-Terminal am Ziel — aus der Zugangsdaten-Datei (optionaler Key
+    # markt_terminal_pfad); nur setzen, wenn es dort existiert.
+    terminal = str(zugang.get("markt_terminal_pfad") or "")
+    if terminal:
+        out, _, _ = ziel.ps(f"Test-Path '{terminal}'")
+        if out.strip().lower() == "true":
+            settings["markt_terminal_pfad"] = terminal
+            _log("konfig", f"markt_terminal_pfad -> {terminal}")
+        else:
+            _log("konfig", "Terminal am Ziel nicht gefunden — Pfad bleibt "
+                           "wie lokal (im Admin-Tab anpassbar).")
     # Politik auf dem Trading-Rechner: Terminal NIEMALS selbst starten
     # (terminal_beenden wuerde es nach dem Lauf schliessen).
     settings["markt_start_erlauben"] = False
@@ -296,7 +299,7 @@ def sync(ziel: Ziel) -> None:
 
     # 4) Config: Prompts (schon im Code-Sync via config/) + gepatchte
     #    Settings + Secrets. app_settings.json hier IMMER frisch (Patch!).
-    settings = settings_patched(ziel)
+    settings = settings_patched(ziel, ziel.zugang)
     patch_pfad = ROOT / "deploy-cache" / "app_settings.ziel.json"
     patch_pfad.write_text(
         json.dumps(settings, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -364,7 +367,8 @@ def task_anlegen(ziel: Ziel, name: str, bat: str, onstart: bool) -> None:
         "(New-TimeSpan -Seconds 0) -AllowStartIfOnBatteries "
         "-DontStopIfGoingOnBatteries -StartWhenAvailable; "
         f"Register-ScheduledTask -TaskName '{name}' -Action $a -Trigger $t "
-        f"-Settings $s -User '{ZIEL_USER}' -Force | Out-Null; 'angelegt'")
+        f"-Settings $s -User '{ziel.zugang['ziel_user']}' "
+        f"-Force | Out-Null; 'angelegt'")
     out, err, _ = ziel.ps(skript, timeout=90)
     _log("task", f"{name}: {out.strip() or err.strip()[:160]}")
 
@@ -420,7 +424,8 @@ def main() -> None:
         if not args.kein_start:
             starten_und_pruefen(ziel)
         _log("fertig", f"MqlKiScanner liegt unter {zugang['ziel']} "
-                       f"(laeuft als {ZIEL_USER}: App Port 8504, REST :8611 "
+                       f"(laeuft als {zugang['ziel_user']}: App Port 8504, "
+                       f"REST :8611 "
                        "lazy; Tasks 'MqlKiScannerStart' + Autostart).")
     finally:
         ziel.close()

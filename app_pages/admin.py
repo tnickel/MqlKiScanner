@@ -441,7 +441,7 @@ with tradeserver_tab:
                     ts_normalized = ""
                 if ts_base.strip() and not ts_normalized:
                     st.error("Eine vollständige HTTP(S)-Base-URL verwenden, "
-                             "z. B. http://192.0.2.10:8080")
+                             "z. B. http://tradeserver.example:8080")
                 else:
                     if ts_key.strip():
                         secrets_store.save_secrets(tradeserver_api_key=ts_key.strip())

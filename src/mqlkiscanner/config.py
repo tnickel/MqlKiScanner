@@ -55,7 +55,7 @@ DOWNLOADER_DEFAULT_BASE = "http://localhost:8089/api/v1"
 # MqlTradeMonitor-Tradeserver (Spring Boot, ROOT-WAR auf Port 8080; Doku:
 # doc/06_tradeserver-sync.md). Der Sync ist ein Einmallauf: Register-
 # Handshake → Tabelle + PDFs → Complete, danach keine Verbindung.
-TRADESERVER_DEFAULT_BASE = "http://192.0.2.10:8080"
+TRADESERVER_DEFAULT_BASE = "http://tradeserver.example:8080"
 
 # Beide Einstellungsseiten verwenden dieselben Eingabegrenzen. Für Anzahl
 # und Vorfilter gibt es keine fachlich begründete obere Grenze.

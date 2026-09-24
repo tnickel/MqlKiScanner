@@ -48,4 +48,6 @@ monthly.json
 # EZB-Kursdateien (nachladbar, kein Repo-Inhalt)
 data/fx_rates/
 deploy-cache/
+doc/zielrechner_ns1mqsv_betrieb.md
+config/app_settings.json
 config/deploy.local.json

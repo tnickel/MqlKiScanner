@@ -17,8 +17,8 @@ from mqlkiscanner import tradeserver_client as tsc
 # --- URL-Normalisierung ---------------------------------------------------
 
 def test_normalize_base_url_behaelt_host_und_port():
-    assert tsc.normalize_base_url("http://192.0.2.10:8080/") == \
-        "http://192.0.2.10:8080"
+    assert tsc.normalize_base_url("http://tradeserver.example:8080/") == \
+        "http://tradeserver.example:8080"
 
 
 def test_normalize_base_url_behaelt_kontextpfad():
@@ -30,7 +30,7 @@ def test_normalize_base_url_leer_ist_unkonfiguriert():
     assert tsc.normalize_base_url("   ") == ""
 
 
-@pytest.mark.parametrize("bad", ["192.0.2.10:8080", "ftp://host", "nur-text"])
+@pytest.mark.parametrize("bad", ["tradeserver.example:8080", "ftp://host", "nur-text"])
 def test_normalize_base_url_ungueltig(bad):
     with pytest.raises(tsc.TradeserverError):
         tsc.normalize_base_url(bad)
