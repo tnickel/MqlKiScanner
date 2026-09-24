@@ -39,10 +39,11 @@ from pathlib import Path
 import paramiko
 
 ROOT = Path(__file__).resolve().parents[1]
-INSTALLER = ROOT / "deploy-cache" / "python-3.12.10-amd64.exe"
-INSTALLER_URL = ("https://www.python.org/ftp/python/3.12.10/"
-                 "python-3.12.10-amd64.exe")
+NUGET = ROOT / "deploy-cache" / "python-3.12.10.nupkg"
+NUGET_URL = "https://www.nuget.org/api/v2/package/python/3.12.10"
+TOOLS_PY = "TOOLS-PYTHON/python.exe"
 ERWARTETER_HOSTNAME = "ZIELRECHNER"
+ZIEL_USER = "<ziel_user>"   # Desktop-Session des Nutzers auf dem Zielrechner
 
 # Was mitwandert (Code): alles im Projekt-Root ausser diesen Eintraegen.
 CODE_ORDNER_AUS = {".git", "__pycache__", ".venv", "deploy-cache", "data",
@@ -178,46 +179,53 @@ def hostname_absichern(ziel: Ziel) -> None:
             f"erwartet '{erwartet}'. Zugangsdaten pruefen.")
 
 
-def python_sicherstellen(ziel: Ziel) -> str:
-    """Liefert den Pfad eines echten Python (>=3.12) auf dem Ziel."""
-    out, _, _ = ziel.ps("$ErrorActionPreference = 'SilentlyContinue'; "
-                        "$c = Get-Command python -ErrorAction SilentlyContinue; "
-                        "if ($c) { & python -c 'import sys; print(sys.executable)'; "
-                        "& python --version }")
-    zeilen = [z.strip() for z in out.splitlines() if z.strip()]
-    if zeilen and any(z.startswith("Python 3.1") for z in zeilen):
-        _log("python", f"vorhanden: {zeilen[1] if len(zeilen) > 1 else zeilen[0]} "
-                       f"({zeilen[0]})")
-        return zeilen[0]
-    if zeilen and "Python" not in " ".join(zeilen):
-        pass  # Store-Stub oder nichts -> unten installieren
+def tools_python_sicherstellen(ziel: Ziel) -> str:
+    """Portables Python nach C:\\Forex\\Tools\\Python312 (NuGet-Paket).
 
-    if not INSTALLER.exists():
-        raise SystemExit(
-            f"Kein Python auf dem Ziel und Installer fehlt lokal: {INSTALLER}\n"
-            f"Einmal herunterladen: curl -L -o \"{INSTALLER}\" {INSTALLER_URL}")
+    Warum kein Installer: der python.org-Bootstrapper sieht ein vorhandenes
+    per-user-Python als 'bereits installiert' und tut dann still nichts
+    (Exit 0 ohne Kopieren). Das NuGet-Paket ist ein ZIP mit vollständigem
+    Python (pip + venv), braucht keine Installation UND ist im C:\\Forex-
+    Baum fuer ALLE Nutzer lesbar — Pfad liegt bewusst ausserhalb der
+    Nutzerprofile, damit die Apps unter der TRADER-Session laufen."""
+    out, _, _ = ziel.run(f'"{TOOLS_PY}" --version')
+    if out.strip().startswith("Python 3.1"):
+        _log("python", f"vorhanden: {out.strip()} ({TOOLS_PY})")
+        return TOOLS_PY
+    if not NUGET.exists():
+        raise SystemExit(f"NuGet-Paket fehlt lokal: {NUGET} — einmal laden: "
+                         f'curl -L -o "{NUGET}" {NUGET_URL}')
+    _log("python", "entpacke portables Python 3.12.10 nach "
+                   "C:\\Forex\\Tools\\Python312 …")
+    ziel.sftp.put(str(NUGET), "C:/Users/Public/python.nupkg.zip")
+    ziel.ps("Remove-Item -Recurse -Force C:\\Forex\\Tools\\Python312, "
+            "C:\\Forex\\Tools\\py_tmp -ErrorAction SilentlyContinue; "
+            "Expand-Archive -Path C:\\Users\\Public\\python.nupkg.zip "
+            "-DestinationPath C:\\Forex\\Tools\\py_tmp -Force; "
+            "New-Item -ItemType Directory -Force -Path "
+            "C:\\Forex\\Tools\\Python312 | Out-Null; "
+            "Move-Item C:\\Forex\\Tools\\py_tmp\\tools\\* "
+            "C:\\Forex\\Tools\\Python312\\; "
+            "Remove-Item -Recurse -Force C:\\Forex\\Tools\\py_tmp",
+            timeout=300)
+    out, err, _ = ziel.run(f'"{TOOLS_PY}" --version')
+    if not out.strip().startswith("Python"):
+        raise SystemExit(f"Tools-Python laeuft nicht: {out.strip()} "
+                         f"{err.strip()[:200]}")
+    _log("python", f"bereit: {out.strip()}")
+    return TOOLS_PY
 
-    _log("python", "kein echtes Python — stiller Install 3.12.10 (per-user) …")
-    remote_installer = "C:/Users/Public/python-3.12.10-amd64.exe"
-    ziel.sftp.put(str(INSTALLER), remote_installer)
-    ziel.run(f'"{remote_installer.replace("/", chr(92))}" /quiet '
-             f"InstallAllUsers=0 PrependPath=1 Include_test=0 "
-             f"Include_launcher=1", timeout=600)
-    kandidat = ("C:/Users/" + ziel.zugang["user"]
-                + "/AppData/Local/Programs/Python/Python312/python.exe")
-    deadline = time.time() + 300
-    while time.time() < deadline:
-        try:
-            ziel.sftp.stat(kandidat)
-            break
-        except FileNotFoundError:
-            time.sleep(3)
-    else:
-        raise SystemExit("Python-Installation nicht nach 300 s fertig "
-                         f"(erwartet: {kandidat}).")
-    out, _, _ = ziel.run(f'"{kandidat}" --version')
-    _log("python", f"installiert: {out.strip()} -> {kandidat}")
-    return kandidat
+
+def rechte_setzen(ziel: Ziel) -> None:
+    """Der Ziel-User (Trader-Session) braucht Vollzugriff auf Projekt und
+    Python — die liegen im C:\\Forex-Baum, nicht in seinem Profil."""
+    for pfad in (ziel.ziel, "TOOLS-PYTHON"):
+        out, err, _ = ziel.run(
+            f'icacls "{pfad.replace("/", chr(92))}" '
+            f"/grant {ZIEL_USER}:(OI)(CI)F /T /C /Q", timeout=600)
+        _log("rechte", f"{pfad} -> {ZIEL_USER} voll"
+              + ("" if "fehler" not in (err or "").lower() else
+                 f" (Hinweis: {err[:100]})"))
 
 
 def db_lokal_spiegeln() -> Path:
@@ -312,12 +320,18 @@ def venv_und_pakete(ziel: Ziel, python_exe: str) -> None:
         if code != 0:
             raise SystemExit(f"venv-Anlage fehlgeschlagen: {err[:400]}")
         ziel.sftp.stat(venv_py)  # wirft, wenn es trotzdem fehlt
+    # NuGet-Python bringt pip nicht mit — venv-ensurepip als Sicherung
+    out, _, _ = ziel.run(f'"{venv_py}" -m pip --version')
+    if "No module named pip" in out:
+        _log("venv", "pip fehlt -> ensurepip")
+        ziel.run(f'"{venv_py}" -m ensurepip --upgrade', timeout=300)
 
     _log("pip", "installiere/aktualisiere Abhaengigkeiten (Dauer ~Minuten) …")
     out, err, code = ziel.run(
         f'"{venv_py}" -m pip install --upgrade pip '
         f'&& "{venv_py}" -m pip install -r "{ziel.ziel}/requirements.txt" '
-        f'&& "{venv_py}" -m pip install MetaTrader5', timeout=900)
+        f'&& "{venv_py}" -m pip install MetaTrader5 '
+        f'&& "{venv_py}" -m pip install "streamlit==1.63.0"', timeout=1200)
     letzte = [z for z in out.splitlines() if z.strip()][-2:]
     _log("pip", (" | ".join(letzte) if code == 0 else
                  f"FEHLER (Exit {code}): {err[-400:]}"))
@@ -333,37 +347,59 @@ def venv_und_pakete(ziel: Ziel, python_exe: str) -> None:
     _log("smoke", out.strip() or err.strip())
 
 
+def task_anlegen(ziel: Ziel, name: str, bat: str, onstart: bool) -> None:
+    """Task ALS ZIEL-USER (Interactive — laeuft in der Trader-Session,
+    Fenster sind sichtbar; kein Passwort noetig, startet nur bei
+    angemeldetem User = Normalzustand dort). OHNE Zeitlimit: der
+    schtasks-Default wuerde die App nach 72 h killen."""
+    trigger = ("$t = New-ScheduledTaskTrigger -AtStartup"
+               if onstart else
+               "$t = New-ScheduledTaskTrigger -Once -At "
+               "(Get-Date).AddMinutes(10)")
+    skript = (
+        f"$ErrorActionPreference = 'Stop'; {trigger}; "
+        "$a = New-ScheduledTaskAction -Execute 'cmd.exe' "
+        f"-Argument '/c start \"MqlKiScanner\" /min \"{bat}\"'; "
+        "$s = New-ScheduledTaskSettingsSet -ExecutionTimeLimit "
+        "(New-TimeSpan -Seconds 0) -AllowStartIfOnBatteries "
+        "-DontStopIfGoingOnBatteries -StartWhenAvailable; "
+        f"Register-ScheduledTask -TaskName '{name}' -Action $a -Trigger $t "
+        f"-Settings $s -User '{ZIEL_USER}' -Force | Out-Null; 'angelegt'")
+    out, err, _ = ziel.ps(skript, timeout=90)
+    _log("task", f"{name}: {out.strip() or err.strip()[:160]}")
+
+
 def starten_und_pruefen(ziel: Ziel) -> None:
-    _log("start", "start.bat detached starten …")
-    ziel.ps(f"Start-Process -FilePath '{ziel.ziel}/start.bat' "
-            f"-WorkingDirectory '{ziel.ziel}'")
-    deadline = time.time() + 150
+    bat = ziel.ziel.replace("/", chr(92)) + "\\start.bat"
+    task_anlegen(ziel, "MqlKiScannerStart", bat, onstart=False)
+    task_anlegen(ziel, "MqlKiScanner Autostart", bat, onstart=True)
+    ziel.run('schtasks /Run /TN "MqlKiScannerStart"')
+    # Der WMI-Vorlauf von start.bat dauert auf der beschaeftigten Maschine
+    # Minuten — grosszuegig pollen.
+    deadline = time.time() + 420
     antwort = ""
     while time.time() < deadline:
+        time.sleep(8)
         out, _, _ = ziel.ps(
-            "$ErrorActionPreference='SilentlyContinue'; "
+            "$ErrorActionPreference = 'SilentlyContinue'; "
             "try { (Invoke-WebRequest -Uri 'http://127.0.0.1:8504"
             "/_stcore/health' -UseBasicParsing -TimeoutSec 4).Content } "
             "catch { 'warte' }")
         antwort = out.strip()
         if antwort == "ok":
             break
-        time.sleep(5)
-    if antwort == "ok":
-        _log("start", "Streamlet gesund: http://127.0.0.1:8504/_stcore/health "
-                      "-> ok (Port 8504, Browser oeffnet start.bat dort)")
-    else:
-        _log("start", f"Health-Check ohne 'ok' ({antwort!r}) — dort "
-                      "start.bat-Fenster bzw. data/streamlit_restart.log "
-                      "pruefen.")
+    _log("start", f"Streamlit 8504: {antwort}"
+          + ("" if antwort == "ok" else
+             " — nicht hochgekommen; dort start.bat-Fenster bzw. "
+             "data/streamlit_restart.log pruefen"))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--code-only", action="store_true",
-                        help="kein Python-Install/venv/pip (nur Sync+Konfig)")
+                        help="kein Python/venv/pip (nur Sync+Konfig)")
     parser.add_argument("--kein-start", action="store_true",
-                        help="installieren, aber start.bat nicht ausfuehren")
+                        help="installieren, aber nicht starten")
     args = parser.parse_args()
 
     zugang = lade_zugang()
@@ -376,15 +412,16 @@ def main() -> None:
 
         python_exe = ""
         if not args.code_only:
-            python_exe = python_sicherstellen(ziel)
+            python_exe = tools_python_sicherstellen(ziel)
         sync(ziel)
         if not args.code_only:
             venv_und_pakete(ziel, python_exe)
+        rechte_setzen(ziel)
         if not args.kein_start:
             starten_und_pruefen(ziel)
         _log("fertig", f"MqlKiScanner liegt unter {zugang['ziel']} "
-                       "(start.bat startet die App auf Port 8504, "
-                       "REST :8611).")
+                       f"(laeuft als {ZIEL_USER}: App Port 8504, REST :8611 "
+                       "lazy; Tasks 'MqlKiScannerStart' + Autostart).")
     finally:
         ziel.close()
 
