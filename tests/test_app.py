@@ -332,6 +332,21 @@ def test_action_help_opens_explanation_without_starting_scan():
     assert not at.session_state["scan_results"]
 
 
+def test_sidebar_info_erklaert_scan_und_agenten():
+    """Das i am Arbeitsbereich öffnet die Erklärung Scan vs. Agenten."""
+    at = _run_main()
+    at.button(key="ui_info_sidebar_arbeitsbereich").click().run()
+    assert not at.exception, at.exception
+    dialogs = at.get("dialog")
+    assert dialogs, "Sidebar-i muss die Arbeitsbereich-Erklärung öffnen"
+    text = "\n".join(md.value for md in dialogs[0].markdown)
+    assert "Agenten" in text and "Wachdienst" in text
+    assert "auf Knopfdruck" in text
+    assert "Der Unterschied in einem Satz" in text
+    at.button(key="ui_help_close").click().run()
+    assert not at.exception, at.exception
+
+
 def test_standalone_llm_without_key_is_skipped():
     at = _run_main()
     at.session_state["scan_results"] = [pipeline.ScanResult(

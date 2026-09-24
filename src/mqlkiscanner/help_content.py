@@ -12,6 +12,17 @@ HELP_CONTENT = {
 
 **Gelbes i.** Öffnet kurze Hilfe zum Nachbarn. Schließen mit „Verstanden“, Kreuz oder Escape.
 """),
+    "arbeitsbereich": ("Arbeitsbereich: Scan, Ergebnisse, Agenten — wer macht was?", """
+**Kurzfassung:** **Scan** ist die Prüfung selbst (ein Lauf auf deinen Klick) — **Agenten** sind der Wachdienst (läuft von selbst zu festen Zeiten und bestellt bei Bedarf neue Scans).
+
+**🔍 Scan — die Analyse auf Knopfdruck.** Hier startest du eine echte Prüfung. **Full-Scan** nimmt alle Signale von MQL5: Daten holen → Forensik (Martingale, Exposure, Stop-Nachweis, Drawdown) → KI-Berichte → Ampel. **Teilscan** macht dasselbe nur für die Signale, die aktuell 🟢/🟡 sind (Restkontrolle der Hoffnungskandidaten, immer mit frischen KI-Stufen). Ohne deinen Klick passiert hier nichts.
+
+**📊 Ergebnisse — das Archiv.** Zeigt, was die Scans erarbeitet haben: Tabelle, Ampel-Matrix, KI-Berichte, PDFs, Ampel-Verlauf und Wechsel-Protokoll. Diese Seite startet selbst nichts.
+
+**🤖 Agenten — der Wachdienst.** Der Daemon arbeitet im Hintergrund zu festen Zeiten, ganz ohne Klick: werktags morgens Dirigent (Tagesplan), Markt (Kursdaten), Betreuer (prüft, ob jeder Anbieter noch so tradet wie früher — Stilbruch-Erkennung) und Melder (Tagesdigest + Sofort-Alerts ins Postfach, z. B. wenn eine Ampel kippt). Sonntags Teilscan + Chef-Lagebericht, einmal im Monat ein Full-Scan. Der **Komplettlauf-Button** auf der Agenten-Seite führt diese Tageskette einmal auf Klick aus — Warten auf die Uhrzeiten entfällt; echte Scans bleiben den Scan-Buttons und den Sonntags-/Monats-Takten vorbehalten.
+
+**Der Unterschied in einem Satz:** Der Scan ist die Prüfung selbst — ein einzelner Laborlauf auf deinen Klick. Die Agenten sind die Wächter drumherum: Sie beobachten zwischen den Scans, merken, wenn sich etwas ändert (Ampel kippt, Anbieter tradet plötzlich anders), und lassen Meldungen ins Postfach schreiben oder bestellen von sich aus einen neuen Scan.
+"""),
     "connections": ("Zugänge und Bereitschaft", """
 **MQL5** benötigt Benutzername und Passwort für authentifizierte Trade-Exporte. Sind beide hinterlegt, ist der Zugang konfiguriert, aber noch nicht als gültig getestet. Ein abgelaufener Login kann beim Export weiterhin scheitern.
 

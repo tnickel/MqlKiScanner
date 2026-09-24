@@ -72,6 +72,9 @@ with st.sidebar:
         st.caption("SIGNAL RESEARCH · FORENSIC RADAR")
         st.header("MqlKiScanner")
         st.caption("Risiko vor Ertrag")
+    with st.container(horizontal=True, vertical_alignment="center"):
+        st.markdown("**Arbeitsbereich — was macht was?**")
+        info_button("arbeitsbereich", key="sidebar_arbeitsbereich")
     with st.container(border=True):
         with st.container(horizontal=True, vertical_alignment="center"):
             st.markdown("**Systemstatus**")
