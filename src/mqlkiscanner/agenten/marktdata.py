@@ -30,6 +30,16 @@ ERLAUBTE_MT5_AUFRUFE = frozenset((
 DEFAULT_TERMINAL = r"C:\Forex\Mt5\TickmillLifeMql5\terminal64.exe"
 
 
+def broker_symbol(symbol: str, settings: dict) -> str:
+    """Kanonisches Symbol (XAUUSD) → Symbolname am EIGENEN Terminal.
+
+    Manche Broker (z. B. Vantage je Kontoart) hängen einen Postfix an
+    (XAUUSD.a) — markt_symbol_suffix wird beim Abfragen angehängt; intern
+    und in allen Auswertungen bleibt der kanonische Name."""
+    suffix = str(settings.get("markt_symbol_suffix") or "").strip()
+    return symbol + suffix
+
+
 def _terminal_prozesse(terminal_pfad: str) -> list[tuple[int, str]]:
     """(PID, Pfad) aller terminal64-Prozesse mit genau DIESEM Pfad."""
     try:
@@ -159,13 +169,14 @@ def kurse_holen(symbole: list[str], settings: dict) -> dict:
         kurse: dict[str, dict] = {}
         fehler_symbole: list[str] = []
         for symbol in symbole:
-            if not mt5.symbol_select(symbol, True):
+            am_broker = broker_symbol(symbol, settings)
+            if not mt5.symbol_select(am_broker, True):
                 fehler_symbole.append(symbol)
                 continue
-            h1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0,
+            h1 = mt5.copy_rates_from_pos(am_broker, mt5.TIMEFRAME_H1, 0,
                                          lookback * 24)
             # +1: die 30-Tage-Veränderung braucht 31 Closes (heute + 30).
-            d1 = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0,
+            d1 = mt5.copy_rates_from_pos(am_broker, mt5.TIMEFRAME_D1, 0,
                                          lookback + 1)
             if h1 is None or d1 is None or len(d1) < 2:
                 fehler_symbole.append(symbol)
@@ -218,11 +229,14 @@ def verbindung_testen(settings: dict) -> dict:
         return {"ok": False, "grund": f"Verbindung fehlgeschlagen: {fehler}"}
     try:
         info = mt5.terminal_info()
-        mt5.symbol_select("XAUUSD", True)
-        bars = mt5.copy_rates_from_pos("XAUUSD", mt5.TIMEFRAME_H1, 0, 2)
+        test_symbol = broker_symbol("XAUUSD", settings)
+        mt5.symbol_select(test_symbol, True)
+        bars = mt5.copy_rates_from_pos(test_symbol, mt5.TIMEFRAME_H1, 0, 2)
         if bars is None or len(bars) == 0:
-            return {"ok": False, "grund": "Verbunden, aber XAUUSD liefert "
-                                          "keine Kursdaten (Symbol beim Broker?)"}
+            return {"ok": False,
+                    "grund": f"Verbunden, aber {test_symbol} liefert "
+                             "keine Kursdaten (Symbol beim Broker? "
+                             "markt_symbol_suffix pruefen)"}
         hinweis = (" — portable Selbststart" if selbststart else "")
         return {"ok": True,
                 "grund": f"Verbunden mit {info.name if info else 'Terminal'} — "

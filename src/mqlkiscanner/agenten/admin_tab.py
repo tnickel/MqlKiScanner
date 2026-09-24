@@ -160,6 +160,15 @@ def rendern(settings: dict) -> None:
             value=str(settings.get("markt_symbole_manuell") or ""),
             placeholder="z. B. XAUUSD, EURUSD",
             key="admin_markt_symbole")
+        symbol_suffix = st.text_input(
+            "Broker-Symbol-Postfix",
+            value=str(settings.get("markt_symbol_suffix") or ""),
+            placeholder="leer = kein Postfix (z. B. XAUUSD); sonst z. B. .a",
+            help="Manche Broker hängen an Symbole einen Postfix an "
+                 "(XAUUSD statt XAUUSD.a). Der Scanner fragt damit "
+                 "XAUUSD+Postfix ab — in allen Auswertungen bleibt der "
+                 "kanonische Name.",
+            key="admin_markt_suffix")
         lookback = st.number_input(
             "Kurs-Historie (Tage)", min_value=7, max_value=250,
             value=int(settings.get("markt_lookback_tage", 30)),
@@ -167,6 +176,7 @@ def rendern(settings: dict) -> None:
         markt_werte = {"markt_terminal_pfad": terminal_pfad.strip(),
                        "markt_start_erlauben": start_erlauben,
                        "markt_symbole_manuell": symbole_manuell.strip(),
+                       "markt_symbol_suffix": symbol_suffix.strip(),
                        "markt_lookback_tage": int(lookback)}
         _entwurfs_status(_geaendert(markt_werte, settings))
         test_spalte, speicher_spalte = st.columns(2)

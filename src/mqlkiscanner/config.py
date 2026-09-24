@@ -99,6 +99,9 @@ DEFAULT_SETTINGS: dict = {
     "markt_start_erlauben": False,  # Standard: Terminal NIE selbst starten
     "markt_symbole_manuell": "",    # zusätzliche Symbole, Komma/Leerzeichen
     "markt_lookback_tage": 30,      # Kurs-Historie je Symbol (H1+D1)
+    "markt_symbol_suffix": "",      # Broker-Postfix am eigenen Terminal,
+    #                                 z. B. ".a" — kanonische Symbole
+    #                                 (XAUUSD) bleiben in allen Auswertungen
 }
 
 # Rollen-Defaults je Rolle (GLM-5.3 als Standard — Nutzer-Vorgabe 22.09.2026).

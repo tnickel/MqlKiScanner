@@ -291,3 +291,15 @@ def test_markt_settings_defaults():
     assert settings["markt_start_erlauben"] is False
     assert "terminal64.exe" in settings["markt_terminal_pfad"]
     assert settings["markt_lookback_tage"] == 30
+
+
+def test_broker_symbol_suffix():
+    """markt_symbol_suffix wird ans eigene Terminal-Symbol gehängt —
+    kanonischer Name bleibt in Auswertungen (Vantage & Co.)."""
+    assert marktdata.broker_symbol("XAUUSD", {}) == "XAUUSD"
+    assert marktdata.broker_symbol(
+        "XAUUSD", {"markt_symbol_suffix": ""}) == "XAUUSD"
+    assert marktdata.broker_symbol(
+        "XAUUSD", {"markt_symbol_suffix": ".a"}) == "XAUUSD.a"
+    assert marktdata.broker_symbol(
+        "XAUUSD", {"markt_symbol_suffix": " .i "}) == "XAUUSD.i"

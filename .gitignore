@@ -47,3 +47,5 @@ monthly.json
 
 # EZB-Kursdateien (nachladbar, kein Repo-Inhalt)
 data/fx_rates/
+deploy-cache/
+config/deploy.local.json
