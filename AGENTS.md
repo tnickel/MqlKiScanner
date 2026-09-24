@@ -271,7 +271,9 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   am Full-Scan-Tag ab Startzeit+150, Merker gegen Wiederholung).
   Außerdem: Sidebar-Marke „MqlKiScanner" fett/größer (Nutzer-Wunsch —
   Produktname muss sichtbar sein) und im Help-System das Thema
-  „automatik". 912 Tests grün.
+  „automatik". Nav-Punkt „Automatik" zeigt den Zustand live mit
+  (🟢 OK bei Herzschlag + Freigabe, sonst 🔴 OFF — daemon.status_text).
+  913 Tests grün.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

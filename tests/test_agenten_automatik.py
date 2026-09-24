@@ -14,7 +14,7 @@ from datetime import datetime, time
 from streamlit.testing.v1 import AppTest
 
 from mqlkiscanner import config
-from mqlkiscanner.agenten import scheduler
+from mqlkiscanner.agenten import daemon, journal, scheduler
 
 import pytest
 
@@ -106,6 +106,25 @@ def test_fullscan_zeit_verschiebbar_tag_fest():
         datetime(2026, 10, 1, 7, 45), settings) == []
     assert scheduler.faellige_scans(
         datetime(2026, 10, 1, 8, 15), settings) == ["full"]
+
+
+# ── Status im Nav-Punkt (🟢 OK / 🔴 OFF) ──────────────────────────────
+
+def test_status_text_gruen_nur_bei_herzschlag_und_freigabe():
+    from datetime import datetime as dt
+    # Ohne Herzschlag/Freigabe: OFF.
+    assert daemon.status_text(_settings(agenten_enabled=False)) == "🔴 OFF"
+    # Herzschlag frisch + Freigabe: OK.
+    jetzt = dt.now().isoformat(sep=" ", timespec="seconds")
+    journal.steuerung_setzen("pid", "12345")
+    journal.steuerung_setzen("letzter_tick", jetzt)
+    try:
+        assert daemon.status_text(_settings(agenten_enabled=True)) == "🟢 OK"
+        # Läuft, aber Freigabe aus: OFF.
+        assert daemon.status_text(_settings(agenten_enabled=False)) == "🔴 OFF"
+    finally:
+        journal.steuerung_setzen("pid", "")
+        journal.steuerung_setzen("letzter_tick", "")
 
 
 # ── Seite ─────────────────────────────────────────────────────────────

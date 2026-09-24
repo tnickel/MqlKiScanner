@@ -61,6 +61,15 @@ def status() -> dict:
     }
 
 
+def status_text(settings: dict | None = None) -> str:
+    """Kurzstatus für den Nav-Punkt „Automatik": 🟢 OK, wenn der Daemon
+    läuft (frischer Herzschlag) UND die Freigabe an ist, sonst 🔴 OFF."""
+    settings = settings if settings is not None else config.load_settings()
+    if status()["aktiv"] and bool(settings.get("agenten_enabled", False)):
+        return "🟢 OK"
+    return "🔴 OFF"
+
+
 def starten(settings: dict | None = None) -> dict:
     """Daemon-Prozess abgetrennt starten; Settings-Freigabe setzen.
 

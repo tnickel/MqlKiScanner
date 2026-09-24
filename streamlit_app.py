@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "src"))
 import streamlit as st  # noqa: E402
 
 from mqlkiscanner import config, downloader_sync, secrets_store, tradeserver_sync, rest_api  # noqa: E402
+from mqlkiscanner.agenten import daemon as agenten_daemon  # noqa: E402
 from mqlkiscanner.ui_design import apply_theme, info_button  # noqa: E402
 
 st.set_page_config(
@@ -61,7 +62,9 @@ settings_page = st.Page(
     "app_pages/admin.py", title="Einstellungen", icon=":material/settings:"
 )
 automatik_page = st.Page(
-    "app_pages/automatik.py", title="Automatik", icon=":material/schedule:"
+    "app_pages/automatik.py",
+    title=f"Automatik {agenten_daemon.status_text()}",
+    icon=":material/schedule:",
 )
 
 # ------------------------------------------------------------------ Sidebar

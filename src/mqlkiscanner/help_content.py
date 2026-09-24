@@ -26,7 +26,7 @@ HELP_CONTENT = {
     "automatik": ("Automatik: Zeitplan und Daemon", """
 **Was die Seite tut:** Hier stellst du ein, was der Agenten-Daemon von selbst tut und wann — Wochentag und Uhrzeit je Job. Der Daemon liest den Plan bei jedem Tick neu (alle 30 s), Änderungen greifen also ohne Neustart.
 
-**Daemon.** Ohne laufenden Daemon passiert nichts von selbst. „Daemon starten" legt einen unabhängigen Prozess an und erteilt die Freigabe; „Daemon stoppen" zieht die Freigabe zurück, der Daemon beendet sich beim nächsten Tick (≤ 30 s).
+**Daemon.** Ohne laufenden Daemon passiert nichts von selbst. „Daemon starten" legt einen unabhängigen Prozess an und erteilt die Freigabe; „Daemon stoppen" zieht die Freigabe zurück, der Daemon beendet sich beim nächsten Tick (≤ 30 s). Der Nav-Punkt links zeigt den Zustand mit an: **🟢 OK** heißt Daemon läuft und Freigabe erteilt, **🔴 OFF** heißt aus.
 
 **Zeitplan.** Ohne eigene Eingabe gilt der Standard: Dirigent werktags zur Startzeit (06:30), Markt +5 Minuten, Betreuer +15, Melder +40, Chefermittler sonntags ab 18:00, Teilscan sonntags ab 12:00, Full-Scan am ersten Werktag des Monats ab einer Stunde nach der Startzeit. Basis der abgeleiteten Zeiten ist die Startzeit aus Einstellungen → Agenten. Jede Zeile kann abweichen: Wochentag (Werktags, Täglich oder ein fester Tag) und Uhrzeit frei wählbar — nur der Full-Scan-Tag bleibt fest (erster Werktag im Monat), weil ein Full-Scan schwer ist und monatlich gehört.
 
