@@ -23,6 +23,17 @@ HELP_CONTENT = {
 
 **Der Unterschied in einem Satz:** Der Scan ist die Prüfung selbst — ein einzelner Laborlauf auf deinen Klick. Die Agenten sind die Wächter drumherum: Sie beobachten zwischen den Scans, merken, wenn sich etwas ändert (Ampel kippt, Anbieter tradet plötzlich anders), und lassen Meldungen ins Postfach schreiben oder bestellen von sich aus einen neuen Scan.
 """),
+    "automatik": ("Automatik: Zeitplan und Daemon", """
+**Was die Seite tut:** Hier stellst du ein, was der Agenten-Daemon von selbst tut und wann — Wochentag und Uhrzeit je Job. Der Daemon liest den Plan bei jedem Tick neu (alle 30 s), Änderungen greifen also ohne Neustart.
+
+**Daemon.** Ohne laufenden Daemon passiert nichts von selbst. „Daemon starten" legt einen unabhängigen Prozess an und erteilt die Freigabe; „Daemon stoppen" zieht die Freigabe zurück, der Daemon beendet sich beim nächsten Tick (≤ 30 s).
+
+**Zeitplan.** Ohne eigene Eingabe gilt der Standard: Dirigent werktags zur Startzeit (06:30), Markt +5 Minuten, Betreuer +15, Melder +40, Chefermittler sonntags ab 18:00, Teilscan sonntags ab 12:00, Full-Scan am ersten Werktag des Monats ab einer Stunde nach der Startzeit. Basis der abgeleiteten Zeiten ist die Startzeit aus Einstellungen → Agenten. Jede Zeile kann abweichen: Wochentag (Werktags, Täglich oder ein fester Tag) und Uhrzeit frei wählbar — nur der Full-Scan-Tag bleibt fest (erster Werktag im Monat), weil ein Full-Scan schwer ist und monatlich gehört.
+
+**Sonderregeln.** Der Melder wartet, bis der Betreuer fertig ist. Der Chef läuft zusätzlich am Full-Scan-Tag nach dem Scan. Ein einmal erfolgreich gelaufener Job wird am selben Tag nicht wiederholt.
+
+**Zusammenspiel mit Knöpfen.** Der Komplettlauf-Button auf der Agenten-Seite führt die Tageskette auf Klick aus — unabhängig von diesem Zeitplan. Scans kannst du jederzeit auch von Hand starten (Scan-Seite); der Daemon stößt zusätzlich die automatischen Scans an.
+"""),
     "connections": ("Zugänge und Bereitschaft", """
 **MQL5** benötigt Benutzername und Passwort für authentifizierte Trade-Exporte. Sind beide hinterlegt, ist der Zugang konfiguriert, aber noch nicht als gültig getestet. Ein abgelaufener Login kann beim Export weiterhin scheitern.
 

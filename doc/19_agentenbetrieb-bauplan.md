@@ -386,7 +386,7 @@ großen Inspektions-Modal:
 
 ## 9. Betriebsrhythmus
 
-| Wann | Wer | Was |
+| Wann (Standard) | Wer | Was |
 |---|---|---|
 | Werktag 06:30 | Dirigent | Tagesplan: Budget/Locks/Feiertag prüfen, Rollen wecken |
 | 06:35 | Marktbeobachter | Kursdaten holen (Policy beachten), Marktkontext erzeugen |
@@ -396,6 +396,21 @@ großen Inspektions-Modal:
 | Sonntag | Dirigent | Gelb/Grün-Scan anstoßen (bestehender Ablauf, alle LLM-Stufen — Nutzer-Vorgabe bleibt) |
 | 1. Werktag/Monat | Dirigent | Full-Scan + Portfolio anstoßen |
 | jederzeit | Melder | Alert bei Ampelwechsel, STILBRUCH, Schrankenverletzung, Budget-/Terminalproblemen |
+
+**Konfigurierbar (24.09.2026, Muster Goldscanner „Konfiguration →
+Automatik"):** Die Tabelle oben ist der STANDARD. Über die Seite
+„Automatik" (Nav-Bereich Konfiguration) sind Wochentag + Uhrzeit je Job
+einstellbar — Settings `agenten_{job}_tag` (Werktags/Täglich/Wochentag-Wort)
+und `agenten_{job}_zeit` (HH:MM) für dirigent, markt, betreuer, melder,
+chef, teilscan; der Full-Scan behält seinen Monatstermin (1. Werktag,
+nur die Uhrzeit ist frei). Auflösung: `scheduler.job_termin()`; ohne
+Keys gilt exakt der Standard (abgeleitet von `agenten_start_zeit`),
+ungültige Werte fallen darauf zurück. Der Daemon liest den Plan je Tick
+neu — Änderungen greifen ohne Neustart. Sonderregeln bleiben: Melder
+wartet auf den Betreuer, Chef läuft zusätzlich am Full-Scan-Tag ab
+Startzeit +150 min, ein erfolgreich gelaufener Job wird am selben Tag
+nicht wiederholt. Die Seite enthält außerdem Daemon-Status + Start/Stopp
+sowie die letzten Läufe.
 
 Regeln: Wochenenden/Forex-Schließung → Markt/Delta überspringen; Lauf-Lock
 ggg. GUI-Scans respektieren; MQL5-Rate-Limiter gilt für jeden Agenten-Export

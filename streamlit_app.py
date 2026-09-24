@@ -60,6 +60,9 @@ agenten_page = st.Page(
 settings_page = st.Page(
     "app_pages/admin.py", title="Einstellungen", icon=":material/settings:"
 )
+automatik_page = st.Page(
+    "app_pages/automatik.py", title="Automatik", icon=":material/schedule:"
+)
 
 # ------------------------------------------------------------------ Sidebar
 status = secrets_store.secret_status()
@@ -148,6 +151,7 @@ page = st.navigation(
         ],
         "Konfiguration": [
             settings_page,
+            automatik_page,
         ],
     },
     position="sidebar",

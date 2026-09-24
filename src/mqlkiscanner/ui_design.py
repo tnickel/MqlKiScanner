@@ -114,7 +114,9 @@ def _stylesheet() -> str:
         padding-bottom: .9rem;
     }}
     .st-key-sidebar_brand h2 {{
-        letter-spacing: -.04em;
+        letter-spacing: -.02em;
+        font-weight: 900 !important;
+        font-size: 1.8rem;
         color: #F8FAFC;
     }}
     .st-key-sidebar_brand img {{

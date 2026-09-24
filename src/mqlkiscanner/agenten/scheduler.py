@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """Scheduler des Agenten-Daemons: Takte berechnen, Herzschlag, Stopp.
 
-Phase A (doc/19 §13): ein Takt — der Dirigent-Tageslauf werktags zur
-konfigurierten Startzeit. Weitere Rollen werden in den Phasen B–E an
-dieser Stelle ergänzt; die Takt-Regeln bleiben Code.
+Tag und Uhrzeit je Job kommen aus den Settings (agenten_{job}_tag/_zeit,
+editierbar über die Automatik-Seite „Konfiguration → Automatik" — Muster
+Goldscanner); ohne explizite Keys gilt das bisherige Verhalten (werktags
+zur Startzeit, Chef/Teilscan sonntags, Full-Scan am ersten Werktag).
+Der Daemon liest den Plan je Tick neu — Änderungen greifen ohne Neustart.
 
 Stopp-Mechanik: Die UI setzt 'stop_wunsch' in der Steuerungstabelle; der
 Daemon sieht das beim nächsten Schleifendurchlauf (TICK_S) und beendet
@@ -28,43 +30,102 @@ def _start_minute(settings: dict) -> int:
         return 6 * 60 + 30
 
 
+# Wochentag-Wörter der Automatik-Seite (Muster Goldscanner: Tag + Zeit je Job).
+WOCHENTAGE = {"Montag": 0, "Dienstag": 1, "Mittwoch": 2, "Donnerstag": 3,
+              "Freitag": 4, "Samstag": 5, "Sonntag": 6}
+TAG_AUSWAHL = ["Werktags", "Täglich"] + list(WOCHENTAGE)
+
+
+def _normalisiere_tag(tag: str) -> str:
+    """Settings-Wert → Modus 'werktags'/'taeglich'/'montag'…/'sonntag'
+    ('' oder Unbekanntes → '')."""
+    wert = str(tag).strip().lower().replace("ä", "ae")
+    if wert in ("werktags", "taeglich"):
+        return wert
+    if wert in {k.lower() for k in WOCHENTAGE}:
+        return wert
+    return ""
+
+
+def _minute_aus_zeit(zeit: str, fallback: int) -> int:
+    """'HH:MM' als Minute des Tages; ungültige Werte → fallback."""
+    try:
+        stunde, minute = str(zeit).strip().split(":")
+        return int(stunde) * 60 + int(minute)
+    except ValueError:
+        return fallback
+
+
+def job_termin(settings: dict, job: str) -> tuple[str, int]:
+    """Wochentag-Modus + Termin (Minute des Tages) je Job.
+
+    Ohne explizite Settings gilt das bisherige Taktverhalten: Rollen
+    werktags zur Startzeit mit festen Abständen (Dirigent +0, Markt +5,
+    Betreuer +15, Melder +40), Chef und Teilscan sonntags, Full-Scan am
+    ersten Werktag des Monats. Explizite Keys `agenten_{job}_tag` /
+    `agenten_{job}_zeit` (Automatik-Seite) überschreiben das; ungültige
+    Werte fallen auf die Defaults zurück. Wird je Tick neu gelesen —
+    Änderungen greifen ohne Daemon-Neustart.
+    """
+    start = _start_minute(settings)
+    defaults = {
+        "dirigent": ("werktags", start),
+        "markt": ("werktags", start + 5),
+        "betreuer": ("werktags", start + 15),
+        "melder": ("werktags", start + 40),
+        "chef": ("sonntag", 18 * 60),
+        "teilscan": ("sonntag", 12 * 60),
+        "fullscan": ("monatserster", start + 60),
+    }
+    default_tag, default_minute = defaults[job]
+    tag = _normalisiere_tag(settings.get(f"agenten_{job}_tag", ""))
+    minute = default_minute
+    roh = settings.get(f"agenten_{job}_zeit")
+    if roh:
+        minute = _minute_aus_zeit(roh, default_minute)
+    return (tag or default_tag), minute
+
+
+def _tag_passt(jetzt: datetime, modus: str) -> bool:
+    if modus == "werktags":
+        return jetzt.weekday() < 5
+    if modus == "taeglich":
+        return True
+    wt = WOCHENTAGE.get(modus.capitalize())
+    return wt is not None and jetzt.weekday() == wt
+
+
 def faellige_rollen(jetzt: datetime, settings: dict) -> list[str]:
     """Welche Rollen sind JETZT fällig?
 
-    Werktags die Tageskette: Dirigent zur Startzeit, Markt +5, Betreuer
-    +15, Melder-Digest +40. Sonntags abends der Chefermittler; monatlich
-    zusätzlich am Full-Scan-Tag. Solange ein längerer Lauf arbeitet
-    (Betreuer, autonomer Scan), bleiben Digest/Lagebericht UNFÄLLIG statt
-    alle 30 s einen Skip-Lauf ins Journal zu schreiben — sie werden im
-    nächsten Tick wieder geprüft.
+    Tag und Uhrzeit je Rolle kommen aus job_termin (Defaults: werktags
+    Kette zur Startzeit, Chef sonntags abends). Solange ein längerer Lauf
+    arbeitet (Betreuer, autonomer Scan), bleiben Digest/Lagebericht
+    UNFÄLLIG statt alle 30 s einen Skip-Lauf ins Journal zu schreiben —
+    sie werden im nächsten Tick wieder geprüft.
     """
     rollen: list[str] = []
     minute = jetzt.hour * 60 + jetzt.minute
-    start = _start_minute(settings)
-    if jetzt.weekday() < 5:  # Werktagskette
-        if (nicht_deaktiviert(settings, "dirigent")
-                and minute >= start
-                and not journal.lauf_heute_erfolgreich("dirigent", "daemon")):
-            rollen.append("dirigent")
-        if (nicht_deaktiviert(settings, "markt")
-                and minute >= start + 5
-                and not journal.lauf_heute_erfolgreich("markt", "daemon")):
-            rollen.append("markt")
-        if (nicht_deaktiviert(settings, "betreuer")
-                and minute >= start + 15
-                and not journal.lauf_heute_erfolgreich("betreuer", "daemon")):
-            rollen.append("betreuer")
-        if (nicht_deaktiviert(settings, "melder")
-                and minute >= start + 40
-                and not journal.lauf_heute_erfolgreich("melder", "daemon")
-                and not journal.aktive_laeufe("betreuer")):
-            rollen.append("melder")
+    for rolle in ("dirigent", "markt", "betreuer", "melder"):
+        if not nicht_deaktiviert(settings, rolle):
+            continue
+        modus, termin = job_termin(settings, rolle)
+        if not _tag_passt(jetzt, modus) or minute < termin:
+            continue
+        if journal.lauf_heute_erfolgreich(rolle, "daemon"):
+            continue
+        if rolle == "melder" and journal.aktive_laeufe("betreuer"):
+            continue
+        rollen.append(rolle)
     # Chefermittler (Phase E): sonntags abends UND am Full-Scan-Tag des
-    # Monats — er wartet auf laufende Scans (aktive Dirigent-Läufe).
-    from . import chef  # spät: kein Kreisimport
+    # Monats (fest: Startzeit + 150) — er wartet auf laufende Scans
+    # (aktive Dirigent-Läufe).
+    from . import scan_launcher
     if nicht_deaktiviert(settings, "chef"):
-        from . import scan_launcher
-        chef_zeit = (jetzt.weekday() == 6 and jetzt.hour >= chef.ABEND_STUNDE)
+        modus, termin = job_termin(settings, "chef")
+        chef_zeit = modus != "monatserster" and _tag_passt(jetzt, modus) \
+            and minute >= termin
+        start = _start_minute(settings)
         monats_tag = (scan_launcher.scan_heute_gestartet(
             "full", tag=jetzt.date().isoformat())
             and minute >= start + 150)
@@ -82,18 +143,22 @@ def _aktiver_scan() -> bool:
 
 
 def faellige_scans(jetzt: datetime, settings: dict) -> list[str]:
-    """Autonome Scan-Anstöße (Phase E): Sonntag Teilscan, Monatserster
-    Werktag Full — je einmal, mit Monats-Merker gegen Wiederholung."""
+    """Autonome Scan-Anstöße (Phase E): Teilscan am konfigurierten Wochentag
+    (Default Sonntag ab 12:00), Full-Scan am ersten Werktag des Monats
+    (Tag fest, Uhrzeit konfigurierbar) — je einmal, mit Monats-/Tages-Merker
+    gegen Wiederholung."""
     from . import scan_launcher
     start = _start_minute(settings)
     minute = jetzt.hour * 60 + jetzt.minute
     tag = jetzt.date().isoformat()
     monat = jetzt.strftime("%Y-%m")
     modi: list[str] = []
-    if (jetzt.weekday() == 6 and jetzt.hour >= 12
+    teil_modus, teil_termin = job_termin(settings, "teilscan")
+    if (_tag_passt(jetzt, teil_modus) and minute >= teil_termin
             and not scan_launcher.scan_heute_gestartet("gelbgruen", tag=tag)):
         modi.append("gelbgruen")
-    if (jetzt.day <= 7 and jetzt.weekday() < 5 and minute >= start + 60
+    _, full_termin = job_termin(settings, "fullscan")
+    if (jetzt.day <= 7 and jetzt.weekday() < 5 and minute >= full_termin
             and not scan_launcher.scan_monat_gestartet("full", monat=monat)):
         modi.append("full")
     return modi

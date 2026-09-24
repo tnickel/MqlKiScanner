@@ -256,6 +256,22 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   (Reload-sicher — F5 brach die Kette anfangs still nach dem Betreuer ab,
   Digest startete nie); Live-Anzeige als st.fragment(run_every=2 s) über
   tageskette.zustand(). 898 Tests grün.
+- ✅ Automatik-Seite + fette Marke (24.09.2026): Neuer Nav-Punkt
+  **Konfiguration → Automatik** (app_pages/automatik.py, Muster
+  Goldscanner) — Daemon-Status mit Start/Stopp (setzt agenten_enabled
+  mit) und Zeitplan je Job: Wochentag (Werktags/Täglich/fester Tag) +
+  Uhrzeit für Dirigent, Markt, Betreuer, Melder, Chef, Teilscan; der
+  Full-Scan behält seinen Monatstermin (1. Werktag, nur Uhrzeit frei).
+  Settings `agenten_{job}_tag`/`agenten_{job}_zeit`, Auflösung in
+  `scheduler.job_termin()` — ohne Keys gilt das bisherige Verhalten
+  (werktags Kette zur agenten_start_zeit, Chef/Teilscan sonntags,
+  Full-Scan ab Startzeit+60); ungültige Werte fallen auf die Defaults
+  zurück. Daemon liest den Plan je Tick neu (kein Neustart nötig);
+  Sonderregeln unverändert (Melder wartet auf Betreuer, Chef zusätzlich
+  am Full-Scan-Tag ab Startzeit+150, Merker gegen Wiederholung).
+  Außerdem: Sidebar-Marke „MqlKiScanner" fett/größer (Nutzer-Wunsch —
+  Produktname muss sichtbar sein) und im Help-System das Thema
+  „automatik". 912 Tests grün.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
