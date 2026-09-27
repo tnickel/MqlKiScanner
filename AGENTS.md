@@ -346,6 +346,13 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Deposit/Balance, Demo-Trader mit demo:true im Katalog, kein SL,
   Average3MonthProfit hergeleitet (ROI/Laufzeit). Anbindung: Kürzel z. B.
   „zulu", http://rechner:8093. 934 Tests grün.
+- ✅ Megaprojekt-Gesamtdoku (27.09.2026 nachts): `doc/21_megaprojekt-
+  architektur.md` — die komplette Kette (5 Quellen :8089–:8093 → Hub
+  SignalKiScanner → MqlTradeMonitor per Einmal-Sync v1 / MqlRealmonitor per
+  REST :8611) mit Diagramm, Protokoll, Ports, Testabdeckung je Projekt und
+  Ausbaustufen; Workspace-Einstieg `SIGNALDOWNLOADER/README.md`. Alle fünf
+  REST-Schnittstellen integriert UND getestet (je Quelle ein Scanner-
+  Akzeptanztest Ende-zu-Ende).
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

@@ -17,6 +17,7 @@ Einstieg für Menschen und Agenten. Alles Wesentliche liegt unter `doc/`.
 | 8 | [`09_sicherheit.md`](09_sicherheit.md) | Secrets, Rate-Limits, öffentliches Repo |
 | 9 | [`19_agentenbetrieb-bauplan.md`](19_agentenbetrieb-bauplan.md) | Bauplan autonomer Agentenbetrieb — 5 LLM-Rollen, Dossiers, MetaTrader-Kursdaten (Phase A–E **komplett umgesetzt** 22.09.2026; V1-Attach-Test erledigt; offen: Autostart, erster autonomer Monat) |
 | 10 | [`20_konzept-multi-source-hub.md`](20_konzept-multi-source-hub.md) | Konzept: Signale über beliebig viele Datenquellen-REST (Kürzel je Quelle, Connection-Ampel, `listen_modus`; **Stufe 1 umgesetzt** 27.09.2026, 929 Tests; offen: Initial Deposit im Downloader, MT4-S/L-Verifikation, Stufen 2–4) |
+| 11 | [`21_megaprojekt-architektur.md`](21_megaprojekt-architektur.md) | **Gesamtdoku Megaprojekt**: alle 5 Quellen (MqlDownloader/Pelican/RoboForex/Vantage/Zulu) → Hub → MqlTradeMonitor/MqlRealmonitor — Diagramm, Protokoll, Ports, Testabdeckung, Ausbaustufen |
 | — | [`../AGENTS.md`](../AGENTS.md) | Verbindliche Regeln für KI-Agenten |
 | — | [`../SECURITY.md`](../SECURITY.md) | Kurzfassung für GitHub Security |
 
