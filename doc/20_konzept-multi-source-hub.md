@@ -159,6 +159,26 @@ Plattform-Durchreichung (`pelican`-Muster); Akzeptanz per Regressionstest
 | Stop-Nachweis | keine SL-Daten | „kein Nachweis" + Verhaltensanalyse (§2.1) |
 | Signalalter | `weeks` aus Monaten | Wochen-Vorfilter greift |
 
+### 4d. ZuluMonitor — fünfte Quelle (implementiert 27.09.2026)
+
+Der ZuluMonitor (`SIGNALDOWNLOADER/zulumonitor`, ZuluTrade) spricht dasselbe
+Protokoll mit Versions-Kürzel **`zulu`** (Port 8093, Autostart,
+`data/rest_api.json`, Instanz-Kennung). Scanner-seitig nur die
+Plattform-Durchreichung; Akzeptanz per Regressionstest
+(`test_zulumonitor_ende_zu_ende_…`).
+
+| Thema | ZuluTrade-Lage | Folge im Scanner |
+|---|---|---|
+| Trades | positionell (Open+Close), nur verifizierte Downloads (.meta) | direkte Konvertierung |
+| Symbole | Paare mit Schrägstrich („EUR/USD") | Server liefert „EURUSD" |
+| Währung | Trader-Kontowährung gemischt (149/200 USD) | trades.csv nur USD-Konten (404 + Grund), currencyCode im Katalog |
+| Abonnenten-Historie | nicht verfügbar | history leer (7/30-Tage-Bilanz bleibt leer, kein Fehler) |
+| Drawdown | Gesamt-DD und Max-DD getrennt | EquityDrawdown = Gesamt-DD, MaxDDGraphic = Max-DD |
+| Ertrag | nur Gesamt-ROI | Average3MonthProfit hergeleitet (ROI/Laufzeit) |
+| Demo-Trader | gekennzeichnet | `demo:true` im Katalog, keine Vorauswahl |
+| Initial Deposit / Balance | nicht verfügbar | beide Regeln ruhen |
+| Stop-Nachweis | keine SL-Daten | „kein Nachweis" + Verhaltensanalyse (§2.1) |
+
 **Bewertet wird, was der Scanner selbst aus der Trades-CSV rechnet**
 (Design-Regel 1: Code rechnet, LLM interpretiert) — die Downloader-Metriken
 dienen nur als Ersatz für die wegfallende MQL5-Kennzahlenseite:

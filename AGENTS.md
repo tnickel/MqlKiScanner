@@ -336,6 +336,16 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Netto-PnL, kein SL. Scanner-seitig wie Pelican nur Plattform-Durchreichung
   + Akzeptanz-Regressionstest. Anbindung: Kürzel z. B. „vant",
   http://rechner:8092. 933 Tests grün.
+- ✅ ZuluMonitor als fünfte Quelle (27.09.2026 nachts, doc/20 §4d):
+  ZuluTrade über dasselbe REST-Protokoll, Versions-Kürzel „zulu" (Port 8093,
+  Autostart, data/rest_api.json, Instanz-Kennung). Trades positionell
+  (nur verifizierte Downloads mit .meta-Marker), Paar-Symbole ohne
+  Schrägstrich (EURUSD), Netto-PnL. Grenzen: trades.csv nur USD-Konten
+  (149/200 Trader; PnL in Trader-Kontowährung), KEINE Abonnenten-Historie
+  (history ehrlich leer — 7/30-Tage-Bilanz bleibt leer), kein Initial
+  Deposit/Balance, Demo-Trader mit demo:true im Katalog, kein SL,
+  Average3MonthProfit hergeleitet (ROI/Laufzeit). Anbindung: Kürzel z. B.
+  „zulu", http://rechner:8093. 934 Tests grün.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

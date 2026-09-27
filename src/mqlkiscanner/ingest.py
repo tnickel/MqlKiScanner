@@ -24,7 +24,8 @@ from pathlib import Path
 
 from . import config, db, downloader_client, quellen
 
-_PLATTFORM = {"mql4": "mt4", "mql5": "mt5", "pelican": "pelican", "vantage": "vantage"}
+_PLATTFORM = {"mql4": "mt4", "mql5": "mt5", "pelican": "pelican",
+              "vantage": "vantage", "zulu": "zulu"}
 _KUERZEL_SICHER = re.compile(r"[^A-Za-z0-9_\-]")
 
 

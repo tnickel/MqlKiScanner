@@ -422,6 +422,44 @@ def test_vantage_ende_zu_ende_wird_akzeptiert(monkeypatch):
     assert downloader_sync.versions("vantage") == ["vantage"]
 
 
+def test_zulumonitor_ende_zu_ende_wird_akzeptiert(monkeypatch):
+    """ZuluMonitor liefert Version „zulu“ (Port 8093), positionelle Trades mit
+    Paar-Symbolen ohne Slash und Netto-PnL — der Scanner nimmt das Format
+    unverändert an (nur USD-Konten; gleiche Endpunkte, kein Adapter nötig)."""
+    quelle = _quelle("zulu", "http://zulu:8093")
+    zulu_csv = (
+        "Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n"
+        "2026.03.12 16:09:40;Buy;2;EURUSD;1.1513;2;2026.03.19 22:59:01;1.1582;0;;1380\n"
+        "2026.03.11 23:43:29;Sell;1;XAUUSD;4325.5;1;2026.03.19 20:06:26;4320.25;0;;-525\n"
+        "2026.03.10 10:00:00;Buy;1;EURUSD;1.1500;1;2026.03.10 18:00:00;1.1470;0;;-300\n"
+    ).encode("utf-8")
+    katalog_item = {"signalId": "402995", "version": "zulu", "signalName": "SKMT4IC2017",
+                    "subscribers": 1446, "weeks": 319, "currencyCode": "USD",
+                    "demo": False}
+    metrics = {"metrics": {"EquityDrawdown": 17.75, "MaxDDGraphic": 14.96,
+                           "Average3MonthProfit": 5.0, "Weeks": 319,
+                           "Subscribers": 1446, "Currency": "USD"}}
+    _verdrahte(monkeypatch, {
+        "http://zulu:8093": FakeClient(katalog=[katalog_item], trades=zulu_csv,
+                                       metrics=metrics)})
+
+    def exporter_verboten(*args, **kwargs):
+        pytest.fail("exporter darf im Quellen-Modus nicht gerufen werden")
+    monkeypatch.setattr(pipeline.exporter, "export_positions", exporter_verboten)
+
+    kandidat = ingest.kandidaten(quelle, [katalog_item])[0]
+    assert kandidat["platform"] == "zulu" and kandidat["wochen"] == 319
+    pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
+    assert result.quelle == "zulu" and result.platform == "zulu"
+    artefakt = db.get_quellen_artefakt(quelle["id"], 402995, "zulu", "trades")
+    assert artefakt and artefakt["path"].replace("\\", "/").endswith(
+        "zulu_402995_trades.csv")
+    assert db.get_signal(402995)["quelle"] == "zulu"
+    # Abonnenten-Historie ist bei ZuluTrade leer (keine DB) — kein Fehler
+    assert downloader_sync.versions("zulu") == ["zulu"]
+
+
 def test_zeile_und_rest_api_zeigen_quelle():
     res = pipeline.ScanResult(id=1, name="X")
     assert res.to_row()["Quelle"] == "mql5"

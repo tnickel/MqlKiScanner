@@ -69,15 +69,15 @@ def normalize_base_url(url: str) -> str:
 def platform_version(platform: str) -> str | None:
     """ScanResult-Plattform ("MT4"/"MT5") → API-Version ("mql4"/"mql5").
 
-    „pelican“ und „vantage“ sind die Versions-Kürzel der gleichnamigen
-    Plattform-Quellen (dasselbe REST-Protokoll, doc/20); sie bleiben
-    unverändert durchgereicht."""
+    „pelican“, „vantage“ und „zulu“ sind die Versions-Kürzel der gleich-
+    namigen Plattform-Quellen (dasselbe REST-Protokoll, doc/20); sie
+    bleiben unverändert durchgereicht."""
     value = (platform or "").strip().lower()
     if value in ("mt4", "mql4"):
         return "mql4"
     if value in ("mt5", "mql5"):
         return "mql5"
-    if value in ("pelican", "vantage"):
+    if value in ("pelican", "vantage", "zulu"):
         return value
     return None
 
