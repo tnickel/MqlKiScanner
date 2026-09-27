@@ -67,12 +67,17 @@ def normalize_base_url(url: str) -> str:
 
 
 def platform_version(platform: str) -> str | None:
-    """ScanResult-Plattform ("MT4"/"MT5") → API-Version ("mql4"/"mql5")."""
+    """ScanResult-Plattform ("MT4"/"MT5") → API-Version ("mql4"/"mql5").
+
+    „pelican“ ist die Version-Kennung von PelicanTrading-Quellen (dasselbe
+    REST-Protokoll, doc/20); sie bleibt unverändert durchgereicht."""
     value = (platform or "").strip().lower()
     if value in ("mt4", "mql4"):
         return "mql4"
     if value in ("mt5", "mql5"):
         return "mql5"
+    if value == "pelican":
+        return "pelican"
     return None
 
 

@@ -24,7 +24,7 @@ from pathlib import Path
 
 from . import config, db, downloader_client, quellen
 
-_PLATTFORM = {"mql4": "mt4", "mql5": "mt5"}
+_PLATTFORM = {"mql4": "mt4", "mql5": "mt5", "pelican": "pelican"}
 _KUERZEL_SICHER = re.compile(r"[^A-Za-z0-9_\-]")
 
 
@@ -66,6 +66,14 @@ def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
         except ValueError:
             continue
         version = str(item.get("version") or "").strip()
+        # PelicanTrading liefert das Signalalter (weeks) mit — dann greift der
+        # Wochen-Vorfilter erstmals auch für Quellen-Signale; MQL5-Kataloge
+        # kennen es nicht (None lässt den Filter bewusst durch).
+        wochen = item.get("weeks")
+        try:
+            wochen = float(wochen) if wochen is not None else None
+        except (TypeError, ValueError):
+            wochen = None
         out.append({
             "id": signal_id,
             "name": str(item.get("signalName") or str(signal_id)),
@@ -73,7 +81,7 @@ def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
             "url": str(item.get("url")
                        or f"https://www.mql5.com/en/signals/{signal_id}"),
             "abonnenten": item.get("subscribers"),
-            "wochen": None,
+            "wochen": wochen,
             "quelle_kuerzel": str(quelle.get("kuerzel") or ""),
             "quelle_id": int(quelle["id"]),
             "quelle_version": version,

@@ -100,6 +100,26 @@ Genutzt werden die bestehenden Endpunkte des MqlDownloader (Doku:
 | Abonnenten-Verlauf | `GET /providers/{id}/{version}/history` |
 | Testreport-PDFs | `GET /providers/{id}/{version}/reports` |
 
+### 4a. PelicanTrading — zweite Börse (implementiert 27.09.2026)
+
+PelicanTrading (`SIGNALDOWNLOADER/PelicanTrading`, „PelicanMonitor“) spricht
+**dasselbe Protokoll** mit Versions-Kürzel **`pelican`** (Port 8090, Autostart,
+`data/rest_api.json`, Instanz-Kennung wie beim MqlDownloader). Der Scanner
+brauchte dafür nur: `platform_version("pelican")` → `pelican` und die
+Plattform-Durchreichung im Ingest — kein eigener Quell-Typ nötig.
+
+Abweichungen gegenüber MQL5-Quellen (bewusst, Server-Doku „REST-API für den
+SignalKiScanner"):
+
+| Thema | Pelican-Lage | Folge im Scanner |
+|---|---|---|
+| Trades | positionell (Open+Close je Zeile), serverseitig ins mql5-CSV konvertiert (Zeitstempel mit Punkten) | Forensik läuft unverändert |
+| Kontowährung | **gemischt** (USD, USC, EUR, JPY …) | `trades.csv` nur für USD-Konten (404 + Grund sonst); `currencyCode` im Katalog |
+| Initial Deposit | nicht verfügbar | Kapitalbasis-Regel ruht (wie MqlDownloader bis Erweiterung) |
+| Stop-Nachweis | StopPrice nur bei offenen Positionen | Historie ohne SL → „kein Nachweis" + Verhaltensanalyse (§2.1) |
+| Signalalter | `weeks` im Katalog | Wochen-Vorfilter greift erstmals für Quellen-Signale |
+| Abonnenten | Copiers + Historie (copier_historie) | 7/30-Tage-Bilanz wie bei MQL5 |
+
 **Bewertet wird, was der Scanner selbst aus der Trades-CSV rechnet**
 (Design-Regel 1: Code rechnet, LLM interpretiert) — die Downloader-Metriken
 dienen nur als Ersatz für die wegfallende MQL5-Kennzahlenseite:

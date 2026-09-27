@@ -300,6 +300,18 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Signale); Tagesfrische genügt; MPDD-Filter im Downloader ist gewollt.
   Offen (Stufen 2–4): Composite-Identität (quelle, signal_id), Betreuer
   umstellen, Crawler entfernen, weitere Börsen-Typen. 929 Tests grün.
+- ✅ PelicanTrading als zweite Börse (27.09.2026 abends, doc/20 §4a): Der
+  PelicanMonitor (SIGNALDOWNLOADER/PelicanTrading) spricht dasselbe REST-
+  Protokoll mit Versions-Kürzel „pelican" (Port 8090, Autostart,
+  data/rest_api.json, Instanz-Kennung; Toolbar-Button „REST-API an/aus").
+  Trades werden serverseitig ins mql5-Positions-CSV konvertiert — die
+  Forensik läuft unverändert. Bewusste Grenzen: trades.csv nur für USD-
+  Konten (Forensik rechnet USD; currencyCode im Katalog), kein Initial
+  Deposit (Regel ruht), Stop-Nachweis nur offene Positionen (Historie
+  ehrlich „kein Nachweis" + Verhaltensanalyse), weeks im Katalog →
+  Wochen-Vorfilter greift. Scanner-seitig: platform_version("pelican"),
+  Plattform-Durchreichung. Anbindung: Admin → Datenquellen → z. B.
+  Kürzel „pelik", http://rechner:8090. 931 Tests grün.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

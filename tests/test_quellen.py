@@ -332,6 +332,22 @@ def test_analyze_kandidat_nimmt_quellen_pfad_und_persistiert(monkeypatch):
     assert gespeichert["quelle"] == "mql5"
 
 
+def test_kandidaten_pelican_version_und_wochen():
+    """PelicanTrading (Version „pelican“): Plattform-Kennung, Signalalter aus
+    dem Katalog (Wochen-Vorfilter greift) und Version-Durchreichung."""
+    quelle = _quelle("pelik", "http://pelican:8090")
+    items = [{"signalId": "100", "version": "pelican", "signalName": "Gold Pelican",
+              "subscribers": 7, "weeks": 52, "currencyCode": "USD"}]
+    kandidat = ingest.kandidaten(quelle, items)[0]
+    assert kandidat["platform"] == "pelican"
+    assert kandidat["wochen"] == 52
+    assert kandidat["quelle_version"] == "pelican"
+    assert kandidat["quelle_kuerzel"] == "pelik"
+    # Detail-Sync/History fragen genau diese Version an
+    assert downloader_client.platform_version("pelican") == "pelican"
+    assert downloader_sync.versions("pelican") == ["pelican"]
+
+
 def test_zeile_und_rest_api_zeigen_quelle():
     res = pipeline.ScanResult(id=1, name="X")
     assert res.to_row()["Quelle"] == "mql5"
