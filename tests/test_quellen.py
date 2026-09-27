@@ -130,14 +130,47 @@ def test_migration_ohne_legacy_legt_nichts_an():
 # ------------------------------------------------------------------ Prüfung
 def test_pruefe_gruen_bei_ok(monkeypatch):
     quelle = _quelle()
-    _verdrahte(monkeypatch, {"http://localhost:8089": FakeClient()})
+    _verdrahte(monkeypatch, {"http://localhost:8089": FakeClient(
+        health={"status": "ok", "apiVersion": "v1", "providers": 7,
+                "instance": "DESKTOP-NS1MQSV"})})
     pruefung = quellen.pruefe(quelle, force=True)
     assert pruefung["status"] == "ok" and pruefung["farbe"] == "green"
     assert pruefung["details"]["anbieter"] == 7
+    assert pruefung["details"]["kennung"] == "DESKTOP-NS1MQSV"
     assert quellen.status_zeichen(pruefung) == "🟢"
     # letzter Test hängt an der Quelle (Anzeige ohne neuen Aufruf)
     gespeichert = db.get_quelle(quelle["id"])["letzte_pruefung"]
     assert gespeichert["status"] == "ok"
+
+
+def test_kennung_konflikt_erkennt_doppelte_instanz(monkeypatch):
+    _quelle("mql5", "http://a:8089")
+    _quelle("spiegel", "http://b:8089")
+    _verdrahte(monkeypatch, {
+        "http://a:8089": FakeClient(health={"status": "ok", "instance": "GLEICH"}),
+        "http://b:8089": FakeClient(health={"status": "ok", "instance": "GLEICH"}),
+    })
+    for q in db.list_quellen(nur_aktiv=True):
+        quellen.pruefe(q, force=True)
+    assert quellen.kennung_konflikte() == {"GLEICH": ["mql5", "spiegel"]}
+    # Verschiedene Kennungen (zwei echte Downloader) sind kein Konflikt …
+    _verdrahte(monkeypatch, {
+        "http://a:8089": FakeClient(health={"status": "ok", "instance": "EINS"}),
+        "http://b:8089": FakeClient(health={"status": "ok", "instance": "ZWEI"}),
+    })
+    for q in db.list_quellen(nur_aktiv=True):
+        quellen.pruefe(q, force=True)
+    assert quellen.kennung_konflikte() == {}
+    # … dieselbe Kennung unter zwei Quellen schon — deaktiviert fällt raus.
+    _verdrahte(monkeypatch, {
+        "http://a:8089": FakeClient(health={"status": "ok", "instance": "GLEICH"}),
+        "http://b:8089": FakeClient(health={"status": "ok", "instance": "GLEICH"}),
+    })
+    for q in db.list_quellen(nur_aktiv=True):
+        quellen.pruefe(q, force=True)
+    assert quellen.kennung_konflikte() == {"GLEICH": ["mql5", "spiegel"]}
+    db.update_quelle(db.list_quellen()[1]["id"], aktiv=False)
+    assert quellen.kennung_konflikte() == {}
 
 
 def test_pruefe_orange_wenn_token_fehlt(monkeypatch):

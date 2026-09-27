@@ -93,7 +93,7 @@ Genutzt werden die bestehenden Endpunkte des MqlDownloader (Doku:
 
 | Zweck | Endpunkt |
 |---|---|
-| Verbindung/Version | `GET /health` |
+| Verbindung/Version/**Instanz-Kennung** | `GET /health` (Feld `instance` — Standard: Rechnername des Downloaders, im Setup-Dialog frei wählbar; der Scanner zeigt sie je Quelle und warnt bei Doppelung unter zwei Quellen = Verwechslungsschutz) |
 | Katalog (Kandidaten) | `GET /providers` (paginiert; `total`, `items[].links`) |
 | Trades roh | `GET /providers/{id}/{version}/trades.csv` (Original-mql5-CSV) |
 | Kennzahlen | `GET /providers/{id}/{version}/metrics` (Balance, EquityDrawdown, MaxDDGraphic, 3MPDD, monthProfits …) |

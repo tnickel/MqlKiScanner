@@ -101,9 +101,13 @@ def pruefe(quelle: dict, *, force: bool = False,
             base.update(status="ok", farbe="green",
                         text="Erreichbar",
                         details={"version": info.get("apiVersion"),
-                                 "anbieter": info.get("providers")})
+                                 "anbieter": info.get("providers"),
+                                 "kennung": info.get("instance")})
         else:
             base.update(text=f"Unerwarteter Status: {info.get('status')!r}")
+        # Instanz-Kennung auch bei Orange mitnehmen (Verwechslungs-Check).
+        if "kennung" not in base["details"] and info.get("instance"):
+            base["details"]["kennung"] = info.get("instance")
         base["details"]["latenz_s"] = latenz
         base["details"]["token_required"] = bool(info.get("tokenRequired"))
     except downloader_client.DownloaderError as exc:
@@ -131,3 +135,22 @@ def status_zeichen(pruefung: dict | None) -> str:
     """Ampel-Kurzzeichen für Tabellen/Badges (🟢/🟡/🔴/⚪ nie geprüft)."""
     farbe = str((pruefung or {}).get("farbe") or "")
     return {"green": "🟢", "orange": "🟡", "red": "🔴"}.get(farbe, "⚪")
+
+
+def kennung_konflikte() -> dict[str, list[str]]:
+    """Melden zwei aktive Quellen dieselbe Downloader-Instanz-Kennung?
+
+    Grundlage sind die gespeicherten letzten Prüfungen (details.kennung aus
+    /health „instance“). Rückgabe: Kennung -> Liste der Quellen-Kürzel; nur
+    Kennungen mit mehr als einer Quelle. Der Scanner behandelt dieselbe
+    MQL5-ID aus mehreren Spiegeln zwar idempotent, aber zwei Quellen auf
+    DEMSELBEN Downloader sind fast sicher eine Konfigurations-Verwechslung.
+    """
+    _ensure()
+    kennungen: dict[str, list[str]] = {}
+    for quelle in db.list_quellen(nur_aktiv=True):
+        pruefung = quelle.get("letzte_pruefung") or {}
+        kennung = str(((pruefung.get("details") or {}).get("kennung")) or "").strip()
+        if kennung:
+            kennungen.setdefault(kennung, []).append(str(quelle["kuerzel"]))
+    return {k: v for k, v in kennungen.items() if len(v) > 1}

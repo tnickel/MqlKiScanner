@@ -344,6 +344,8 @@ with downloader_tab:
                     if pruefung.get("text"):
                         detail = pruefung.get("details") or {}
                         zusatz = []
+                        if detail.get("kennung"):
+                            zusatz.append(f"Instanz „{detail['kennung']}“")
                         if detail.get("anbieter") is not None:
                             zusatz.append(f"{detail['anbieter']} Signale")
                         if detail.get("version"):
@@ -413,6 +415,15 @@ with downloader_tab:
                             downloader_sync.status_cache_leeren()
                             _finish(f"Datenquelle {q['kuerzel']} gelöscht.")
         _render_test_result("_admin_quellen_result")
+
+        # Verwechslungsschutz: dieselbe Downloader-Instanz unter zwei Quellen
+        # ist fast sicher ein Konfigurationsfehler (gleiche Daten, doppelt).
+        konflikte = quellen.kennung_konflikte()
+        for kennung, kuerzel in konflikte.items():
+            st.warning(f"Instanz-Kennung „{kennung}“ melden mehrere Quellen "
+                       f"({', '.join(kuerzel)}) — zwei Quellen zeigen auf "
+                       "denselben Downloader. Eine davon bitte korrigieren oder "
+                       "deaktivieren.")
 
     with st.container(border=True):
         section_header("Datenquelle hinzufügen",
