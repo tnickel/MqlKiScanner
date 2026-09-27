@@ -192,12 +192,14 @@ dienen nur als Ersatz für die wegfallende MQL5-Kennzahlenseite:
 
 ### Offene Verifikationspunkte (vor dem Abschalten des Direktwegs)
 
-- **MT4-Orderbuch/S/L:** Liefert der Downloader bei MT4-Signalen die
-  Orderbuch-CSV mit S/L-Spalte? Falls nein: Downloader erweitern oder
-  SL-Einschätzung läuft über die Verhaltens-Analyse (Entscheidung 1) und
-  „kein Nachweis" bleibt der ehrliche Befund.
+- **MT4-Orderbuch/S/L: BESTÄTIGT (27.09.2026, Live-Test).** Der MqlDownloader
+  liefert bei MT4-Signalen die Orderbuch-CSV **mit S/L- und T/P-Spalte** samt
+  Balance-Zeilen (belegt am Signal 2336904, 2222 Zeilen) — der Stop-Beweis
+  („direct") bleibt für MT4-Quellen-Signale vollständig erhalten; der Parser
+  kennt das Format (Orderbuch-Variante, Profit = Spalte 11).
 - **Initial Deposit in `/metrics`** (Entscheidung 2): ohne ihn keine
-  Kapitalbasis-Regel und kein Cent-genauer Abgleich für Quellen-Signale.
+  Kapitalbasis-Regel und kein Cent-genauer Abgleich für Quellen-Signale —
+  **weiterhin offen** (MqlDownloader-Erweiterung).
 - Vollständigkeit: nur Signale mit Downloader-Bestand (404 = überspringen).
 
 ## 5. Ingest (Stufe 1, implementiert)
