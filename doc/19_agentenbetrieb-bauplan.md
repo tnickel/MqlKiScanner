@@ -503,8 +503,9 @@ Scheduler-Takt Startzeit + 5 min, CLI `--markt`, 14 neue Tests (Gesamt:
 839 grün). E2E: synthetische Kurse + echtes LLM auf Temp-DB-Kopie —
 LLM-Lage zitiert alle Kennzahlen, Betreuer-Antwort prüft im Kontext;
 Produktions-CLI ohne Terminal = protokollierter Skip (Start-Politik).
-**OFFEN: V1-Attach-Prüfung (Abschnitt 7.4) mit dem Nutzer** — Terminal
-starten, Admin → Marktdaten → „Verbindung testen", Ergebnis hier nachtragen.
+**V1-Attach-Prüfung (Abschnitt 7.4): ERLEDIGT 22.09.2026 abends** — Selbststart
+(portable) UND Attach E2E mit dem Nutzer verifiziert, Ergebnis steht in 7.4
+(„Attach- und Selbststart-Pfade wurden mit dem Nutzer zusammen E2E verifiziert").
 
 ### Phase D — Melder & Alerts — ✅ abgeschlossen (22.09.2026)
 Postfach, `agenten_meldungen`, Auslöser: `ampel_wechsel`, STILBRUCH,

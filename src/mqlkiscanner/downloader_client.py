@@ -129,6 +129,25 @@ class DownloaderClient:
         items = data.get("items", [])
         return items if isinstance(items, list) else []
 
+    def katalog(self, *, version: str | None = None, limit: int = 500,
+                offset: int = 0) -> dict:
+        """Katalogseite der Provider: total/count/offset/items (Pagination)."""
+        params: dict = {"limit": int(limit), "offset": int(offset)}
+        if version:
+            params["version"] = version
+        return self._get("/providers", params=params)
+
+    def metrics(self, signal_id: int, version: str) -> dict:
+        """Kennzahlen-Antwort komplett: metrics{Balance, EquityDrawdown,
+        MaxDDGraphic, 3MPDD …}, monthProfits, drawdown-Reihe, file."""
+        data = self._get(f"/providers/{int(signal_id)}/{version}/metrics")
+        return data if isinstance(data, dict) else {}
+
+    def trades_csv(self, signal_id: int, version: str) -> bytes:
+        """Tradeliste als Original-mql5-CSV (Rohbytes, Header 1:1)."""
+        return self._get(f"/providers/{int(signal_id)}/{version}/trades.csv",
+                         raw=True)
+
     def history(self, signal_id: int, version: str) -> list[dict]:
         """Abonnenten-Historie: Punkte aufsteigend mit ts/subscribers/change."""
         data = self._get(f"/providers/{int(signal_id)}/{version}/history")

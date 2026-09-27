@@ -119,6 +119,26 @@ CREATE TABLE IF NOT EXISTS ampel_wechsel (
     gruende     TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ampel_wechsel_ts ON ampel_wechsel(ts DESC);
+CREATE TABLE IF NOT EXISTS datenquellen (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    kuerzel          TEXT NOT NULL UNIQUE,
+    name             TEXT,
+    base_url         TEXT NOT NULL,
+    typ              TEXT NOT NULL DEFAULT 'mql5-downloader-v1',
+    aktiv            INTEGER NOT NULL DEFAULT 1,
+    angelegt_am      TEXT,
+    letzte_pruefung  TEXT
+);
+CREATE TABLE IF NOT EXISTS quellen_artefakte (
+    quelle_id   INTEGER NOT NULL REFERENCES datenquellen(id),
+    signal_id   INTEGER NOT NULL,
+    version     TEXT NOT NULL,
+    art         TEXT NOT NULL,
+    sha256      TEXT,
+    path        TEXT,
+    fetched_at  TEXT,
+    PRIMARY KEY (quelle_id, signal_id, version, art)
+);
 """
 
 
@@ -142,6 +162,11 @@ def init_db() -> None:
         conn.execute("BEGIN IMMEDIATE")
         if "basis" not in {row["name"] for row in conn.execute("PRAGMA table_info(analyses)")}:
             conn.execute("ALTER TABLE analyses ADD COLUMN basis TEXT")
+        # Multi-Source-Hub (doc/20): Herkunfts-Kürzel je Signal. Bestand ist
+        # ausnahmslos MQL5-Welt; spätere Quellen schreiben ihr Kürzel dazu.
+        if "quelle" not in {row["name"] for row in conn.execute("PRAGMA table_info(signals)")}:
+            conn.execute("ALTER TABLE signals ADD COLUMN quelle TEXT DEFAULT 'mql5'")
+        conn.execute("UPDATE signals SET quelle='mql5' WHERE quelle IS NULL")
         # Globale Portfolios haben kein Elternsignal. Alte 0-Platzhalter ohne
         # Änderung des Berichtsinhalts auf den bereits erlaubten NULL-Wert heben.
         conn.execute("UPDATE analyses SET signal_id=NULL "
@@ -162,19 +187,37 @@ def file_sha256(path: str) -> str:
 
 def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str = "",
                   autor: str = "", abo_preis=None, abonnenten=None, wochen=None,
-                  stats: dict | None = None, *, _connection=None) -> None:
+                  stats: dict | None = None, quelle: str | None = None, *,
+                  _connection=None) -> None:
+    """Kopfdaten je Signal. `quelle` (Herkunfts-Kürzel) wird nur geschrieben,
+    wenn übergeben — ein Update aus einer anderen Quelle überklebtert die
+    dokumentierte Herkunft nicht stillschweigend."""
     with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
-        conn.execute(
-            """INSERT INTO signals (signal_id, name, platform, url, autor, abo_preis,
-               abonnenten, wochen, stats_json, updated_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?)
-               ON CONFLICT(signal_id) DO UPDATE SET
-                 name=excluded.name, platform=excluded.platform, url=excluded.url,
-                 autor=excluded.autor, abo_preis=excluded.abo_preis,
-                 abonnenten=excluded.abonnenten, wochen=excluded.wochen,
-                 stats_json=excluded.stats_json, updated_at=excluded.updated_at""",
-            (signal_id, name, platform, url, autor, abo_preis, abonnenten, wochen,
-             json.dumps(stats or {}, ensure_ascii=False), _now()))
+        if quelle is None:
+            conn.execute(
+                """INSERT INTO signals (signal_id, name, platform, url, autor, abo_preis,
+                   abonnenten, wochen, stats_json, updated_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(signal_id) DO UPDATE SET
+                     name=excluded.name, platform=excluded.platform, url=excluded.url,
+                     autor=excluded.autor, abo_preis=excluded.abo_preis,
+                     abonnenten=excluded.abonnenten, wochen=excluded.wochen,
+                     stats_json=excluded.stats_json, updated_at=excluded.updated_at""",
+                (signal_id, name, platform, url, autor, abo_preis, abonnenten, wochen,
+                 json.dumps(stats or {}, ensure_ascii=False), _now()))
+        else:
+            conn.execute(
+                """INSERT INTO signals (signal_id, name, platform, url, autor, abo_preis,
+                   abonnenten, wochen, stats_json, updated_at, quelle)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(signal_id) DO UPDATE SET
+                     name=excluded.name, platform=excluded.platform, url=excluded.url,
+                     autor=excluded.autor, abo_preis=excluded.abo_preis,
+                     abonnenten=excluded.abonnenten, wochen=excluded.wochen,
+                     stats_json=excluded.stats_json, updated_at=excluded.updated_at,
+                     quelle=excluded.quelle""",
+                (signal_id, name, platform, url, autor, abo_preis, abonnenten, wochen,
+                 json.dumps(stats or {}, ensure_ascii=False), _now(), quelle))
 
 
 def _snapshot_trade_file(path: str) -> tuple[str, str]:
@@ -277,7 +320,8 @@ def list_catalog() -> list[dict]:
         rows = conn.execute(
             """
             SELECT s.signal_id, s.name, s.platform, s.url, s.autor, s.abo_preis,
-                   s.abonnenten, s.wochen, s.stats_json, s.updated_at AS signal_updated,
+                   s.abonnenten, s.wochen, s.quelle,
+                   s.stats_json, s.updated_at AS signal_updated,
                    t.path AS trades_path, t.sha256 AS trades_sha256, t.fetched_at AS trades_fetched,
                    f.json AS forensik_json, f.updated_at AS forensik_updated,
                    (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
@@ -545,3 +589,112 @@ def count_ampel_wechsel() -> int:
     with _connect() as conn:
         row = conn.execute("SELECT COUNT(*) AS n FROM ampel_wechsel").fetchone()
     return int(row["n"]) if row else 0
+
+
+# ------------------------------------------------- Datenquellen (doc/20)
+
+def _row_zu_quelle(row) -> dict:
+    eintrag = dict(row)
+    eintrag["aktiv"] = bool(eintrag.get("aktiv"))
+    try:
+        eintrag["letzte_pruefung"] = json.loads(eintrag.pop("letzte_pruefung") or "null")
+    except (json.JSONDecodeError, TypeError):
+        eintrag["letzte_pruefung"] = None
+    return eintrag
+
+
+def list_quellen(nur_aktiv: bool = False) -> list[dict]:
+    """Konfigurierte Datenquellen, oldest first (stabile Reihenfolge fürs Abholen)."""
+    init_db()
+    where = "WHERE aktiv=1" if nur_aktiv else ""
+    with _connect() as conn:
+        rows = conn.execute(
+            f"SELECT id, kuerzel, name, base_url, typ, aktiv, angelegt_am, "
+            f"letzte_pruefung FROM datenquellen {where} ORDER BY id").fetchall()
+    return [_row_zu_quelle(row) for row in rows]
+
+
+def get_quelle(quelle_id: int) -> dict | None:
+    init_db()
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT id, kuerzel, name, base_url, typ, aktiv, angelegt_am, "
+            "letzte_pruefung FROM datenquellen WHERE id=?",
+            (int(quelle_id),)).fetchone()
+    return _row_zu_quelle(row) if row else None
+
+
+def add_quelle(kuerzel: str, name: str, base_url: str, typ: str = "mql5-downloader-v1",
+               aktiv: bool = True) -> int:
+    """Neue Datenquelle anlegen; Kürzel ist eindeutig (sqlite3.IntegrityError)."""
+    init_db()
+    with _connect() as conn:
+        cursor = conn.execute(
+            "INSERT INTO datenquellen (kuerzel, name, base_url, typ, aktiv, angelegt_am) "
+            "VALUES (?,?,?,?,?,?)",
+            (str(kuerzel).strip(), str(name).strip(), str(base_url).strip(),
+             str(typ).strip(), int(bool(aktiv)), _now()))
+        return int(cursor.lastrowid or 0)
+
+
+def update_quelle(quelle_id: int, *, kuerzel: str | None = None, name: str | None = None,
+                  base_url: str | None = None, aktiv: bool | None = None) -> None:
+    """Einzelne Felder einer Quelle ändern; None lässt das Feld unberührt."""
+    sets, args = [], []
+    if kuerzel is not None:
+        sets.append("kuerzel=?")
+        args.append(str(kuerzel).strip())
+    if name is not None:
+        sets.append("name=?")
+        args.append(str(name).strip())
+    if base_url is not None:
+        sets.append("base_url=?")
+        args.append(str(base_url).strip())
+    if aktiv is not None:
+        sets.append("aktiv=?")
+        args.append(int(bool(aktiv)))
+    if not sets:
+        return
+    args.append(int(quelle_id))
+    with _connect() as conn:
+        conn.execute(f"UPDATE datenquellen SET {', '.join(sets)} WHERE id=?", args)
+
+
+def delete_quelle(quelle_id: int) -> None:
+    """Quelle löschen. Cache-Dateien bleiben liegen (bewusst — Neuanlage mit
+    gleichem Kürzel findet unveränderte Artefakte nicht mehr, SHA schützt)."""
+    with _connect() as conn:
+        conn.execute("DELETE FROM quellen_artefakte WHERE quelle_id=?", (int(quelle_id),))
+        conn.execute("DELETE FROM datenquellen WHERE id=?", (int(quelle_id),))
+
+
+def store_quell_pruefung(quelle_id: int, pruefung: dict) -> None:
+    """Letzten Connection-Test je Quelle festhalten (Anzeige ohne neuen Aufruf)."""
+    with _connect() as conn:
+        conn.execute("UPDATE datenquellen SET letzte_pruefung=? WHERE id=?",
+                     (json.dumps(pruefung, ensure_ascii=False, default=str), int(quelle_id)))
+
+
+def store_quellen_artefakt(quelle_id: int, signal_id: int, version: str, art: str,
+                           sha256: str, path: str) -> None:
+    with _connect() as conn:
+        conn.execute(
+            """INSERT INTO quellen_artefakte
+               (quelle_id, signal_id, version, art, sha256, path, fetched_at)
+               VALUES (?,?,?,?,?,?,?)
+               ON CONFLICT(quelle_id, signal_id, version, art) DO UPDATE SET
+                 sha256=excluded.sha256, path=excluded.path,
+                 fetched_at=excluded.fetched_at""",
+            (int(quelle_id), int(signal_id), str(version), str(art),
+             str(sha256), str(path), _now()))
+
+
+def get_quellen_artefakt(quelle_id: int, signal_id: int, version: str,
+                         art: str) -> dict | None:
+    init_db()
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT sha256, path, fetched_at FROM quellen_artefakte "
+            "WHERE quelle_id=? AND signal_id=? AND version=? AND art=?",
+            (int(quelle_id), int(signal_id), str(version), str(art))).fetchone()
+    return dict(row) if row else None

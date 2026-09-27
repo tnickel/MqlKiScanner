@@ -15,7 +15,8 @@ Einstieg für Menschen und Agenten. Alles Wesentliche liegt unter `doc/`.
 | 6 | [`07_benutzerhandbuch.md`](07_benutzerhandbuch.md) | Bedienung der Streamlit-App (Scan-Modi, Wechsel-Protokoll, REST-API) |
 | 7 | [`08_architektur.md`](08_architektur.md) | Schichten, Datenfluss, Module |
 | 8 | [`09_sicherheit.md`](09_sicherheit.md) | Secrets, Rate-Limits, öffentliches Repo |
-| 9 | [`19_agentenbetrieb-bauplan.md`](19_agentenbetrieb-bauplan.md) | Bauplan autonomer Agentenbetrieb — 5 LLM-Rollen, Dossiers, MetaTrader-Kursdaten (Phase A–E **komplett umgesetzt** 22.09.2026, 861 Tests; offen: V1-Attach-Test, Autostart, erster autonomer Monat) |
+| 9 | [`19_agentenbetrieb-bauplan.md`](19_agentenbetrieb-bauplan.md) | Bauplan autonomer Agentenbetrieb — 5 LLM-Rollen, Dossiers, MetaTrader-Kursdaten (Phase A–E **komplett umgesetzt** 22.09.2026; V1-Attach-Test erledigt; offen: Autostart, erster autonomer Monat) |
+| 10 | [`20_konzept-multi-source-hub.md`](20_konzept-multi-source-hub.md) | Konzept: Signale über beliebig viele Datenquellen-REST (Kürzel je Quelle, Connection-Ampel, `listen_modus`; **Stufe 1 umgesetzt** 27.09.2026, 929 Tests; offen: Initial Deposit im Downloader, MT4-S/L-Verifikation, Stufen 2–4) |
 | — | [`../AGENTS.md`](../AGENTS.md) | Verbindliche Regeln für KI-Agenten |
 | — | [`../SECURITY.md`](../SECURITY.md) | Kurzfassung für GitHub Security |
 

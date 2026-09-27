@@ -274,6 +274,32 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   „automatik". Nav-Punkt „Automatik" zeigt den Zustand live mit
   (🟢 OK bei Herzschlag + Freigabe, sonst 🔴 OFF — daemon.status_text).
   913 Tests grün.
+- ✅ Multi-Source-Hub Stufe 1 (27.09.2026, Konzept `doc/20`): Der Scanner
+  kann Signale über BELIEBIG VIELE Datenquellen-REST-Schnittstellen
+  beziehen (erster Typ: MqlDownloader). Neue Module `quellen.py`
+  (Registry-Tabelle `datenquellen` mit eindeutigem Kürzel je Quelle +
+  Verbindungstest mit Ampel 🟢/🟡/🔴) und `ingest.py` (Katalog-Pagination,
+  Trades-CSV + Metrics mit SHA-Artefakt-Cache `quellen_artefakte`).
+  Admin-Tab „MqlDownloader" → „Datenquellen": komfortable Verwaltung
+  (anlegen/bearbeiten/löschen/(de)aktivieren, „Alle Quellen testen",
+  je Karte Ampel + letzter Test inkl. Signale-Zahl/API/Latenz); Tokens
+  je Quelle im Secrets-Speicher (`datenquelle_{id}_token`). Scan-Seite:
+  „Signale holen aus" = MQL5 direkt / Datenquellen (REST) / beides
+  (Setting `listen_modus`, Default `mql5` = unverändertes Verhalten;
+  bei Doppelung gewinnt MQL5-Direkt). Quellen-Kandidaten laufen ohne
+  MQL5-Kontakt durch die unveränderte Forensik (Trades aus dem Quellen-
+  Cache statt Exporter). Herkunft überall sichtbar: Spalte „Quelle" in
+  der Ergebnistabelle + Feld `quelle` in der REST-API (:8611);
+  `signals.quelle` (Bestand = 'mql5'). Sync (Abonnenten-Verlauf +
+  PDFs) läuft über alle aktiven Quellen (idempotent, erste Quelle
+  gewinnt; Teilausfall einer Quelle bricht nichts). Alte Einzel-
+  Konfiguration wird automatisch als Quelle `mql5` übernommen.
+  Nutzer-Entscheidungen in doc/20 §2: kein SL-Nachweis → Verhaltens-
+  analyse statt Anforderung; Initial Deposit liefert künftig der
+  Downloader (bis dahin ruht die Kapitalbasis-Regel für Quellen-
+  Signale); Tagesfrische genügt; MPDD-Filter im Downloader ist gewollt.
+  Offen (Stufen 2–4): Composite-Identität (quelle, signal_id), Betreuer
+  umstellen, Crawler entfernen, weitere Börsen-Typen. 929 Tests grün.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
@@ -286,5 +312,10 @@ Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
       Attach E2E verifiziert, Ergebnis in doc/19 §7.4 nachgetragen)
 - [ ] Autostart des Daemon nach Rechner-Neustart (start.bat-Erweiterung
       oder Aufgabenplanung — offen, Nutzer-Entscheidung)
+- [ ] Multi-Source-Hub Stufe 2–4 (doc/20 §7): Initial Deposit im
+      MqlDownloader-/metrics + MT4-S/L-Verifikation am Downloader-Bestand,
+      dann Composite-Identität (quelle, signal_id), Betreuer auf Quellen
+      umstellen, Crawler entfernen (listen_modus=quellen als Standard),
+      Quell-Typen für weitere Signal-Börsen
 - [ ] Erster voller autonomer Monat (Bestätigung der Phase-E-Abnahme
       „Monat ohne Scan-Klick" nach Oktober 2026)

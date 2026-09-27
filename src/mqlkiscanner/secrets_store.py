@@ -70,7 +70,9 @@ def save_secrets(**fields: str) -> None:
     """
     local = _load_local_file()
     for key, val in fields.items():
-        if key in _SECRET_KEYS:
+        # Datenquellen-Tokens sind dynamisch (datenquelle_{id}_token, doc/20) —
+        # jede Quelle bringt ihren eigenen Schlüssel mit.
+        if key in _SECRET_KEYS or key.startswith("datenquelle_"):
             local[key] = val
     SECRETS_FILE.parent.mkdir(parents=True, exist_ok=True)
     SECRETS_FILE.write_text(

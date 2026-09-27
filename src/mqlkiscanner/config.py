@@ -69,6 +69,7 @@ SCAN_INPUT_BOUNDS = {
 # Scan-Grundeinstellungen (in der GUI aenderbar, persistiert in app_settings.json)
 DEFAULT_SETTINGS: dict = {
     "listen_seiten": 2,             # je Liste (MT4 + MT5): Seiten 1..N
+    "listen_modus": "mql5",         # Signale holen: mql5 | quellen | beides (doc/20 §6)
     "top_n_export": 30,             # wie viele Kandidaten bekommen Trade-Export + Forensik
     "min_abonnenten": 0,            # Vorfilter Kandidatenliste
     "min_wochen": 26,               # Vorfilter: Track-Record-Laenge

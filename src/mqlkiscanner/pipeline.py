@@ -24,6 +24,7 @@ import requests
 
 from . import ampel_verlauf, config, scoring
 from . import db
+from . import downloader_client
 from . import fx_rates
 from .ampel_matrix import matrix_payload
 from .analysis_version import FORENSICS_VERSION
@@ -112,6 +113,7 @@ class ScanResult:
     tiefenanalyse_model: str = ""
     llm_fehler: str = ""
     fehler: str = ""
+    quelle: str = ""                # Herkunfts-Kürzel der Datenquelle (doc/20)
     source_kind: str = "live"  # Demo-Ergebnisse nie in den Live-Katalog übernehmen.
     persisted_this_run: bool = False  # Mindestens ein Versuch dieses analyze_candidate-Aufrufs gespeichert.
     ampel_wechsel: dict | None = None  # Protokollierter Wechsel gegen den letzten Chronik-Eintrag (ampel_verlauf).
@@ -119,7 +121,8 @@ class ScanResult:
     def to_row(self) -> dict:
         return {
             "Ampel": self.ampel, "ID": self.id, "Name": self.name,
-            "Platform": self.platform, "Abo $": self.abo_preis_usd,
+            "Platform": self.platform, "Quelle": self.quelle or "mql5",
+            "Abo $": self.abo_preis_usd,
             "Abos": self.abonnenten, "Wochen": self.wochen,
             "Growth %": self.growth_pct, "Ertrag/Monat %": self.ertrag_monat_pct,
             "PF": self.pf, "EQ-DD %": self.dd_equity_pct,
@@ -185,6 +188,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             abonnenten=row.get("abonnenten"),
             abo_preis_usd=row.get("abo_preis"),
             wochen=row.get("wochen"),
+            quelle=str(row.get("quelle") or "mql5"),
             growth_pct=stats.get("growth_pct"),
             ertrag_monat_pct=stats.get("ertrag_monat_pct"),
             pf=stats.get("pf"),
@@ -518,12 +522,33 @@ class ScanPipeline:
 
     # ------------------------------------------------------ Schritt 1 + 2
     def crawl(self, on_progress: ProgressCb, log: LogCb) -> list[dict]:
+        """Signale holen — je `listen_modus` (doc/20 §6):
+
+        mql5 (Default) : MQL5-Listen per Crawler (bisheriges Verhalten)
+        quellen        : Kataloge der Datenquellen-REST (kein MQL5-Kontakt)
+        beides         : Vereinigung; bei Doppelung gewinnt MQL5-Direkt
+        """
+        modus = str(self.settings.get("listen_modus") or "mql5").strip().lower()
+        if modus == "quellen":
+            from . import ingest
+            signals = ingest.kandidaten_aus_quellen(log)
+            log(f"{len(signals)} Signale aus Datenquellen geladen (Modus quellen).")
+            return signals
         session = Mql5Session(self.settings)
         signals = crawler.crawl_lists(
             session, seiten_pro_liste=int(self.settings.get("listen_seiten", 2)),
             on_progress=on_progress)
         log(f"{len(signals)} Signale geladen (MT4+MT5, "
             f"{self.settings.get('listen_seiten', 2)} Seiten je Liste).")
+        if modus == "beides":
+            from . import ingest
+            quellen_signale = ingest.kandidaten_aus_quellen(log)
+            gesehen = {(s.get("id"), s.get("platform")) for s in signals}
+            neu = [s for s in quellen_signale
+                   if (s.get("id"), s.get("platform")) not in gesehen]
+            signals.extend(neu)
+            log(f"Vereinigt: +{len(neu)} Signale nur aus Datenquellen "
+                f"(MQL5-Direkt gewinnt bei Doppelung) — gesamt {len(signals)}.")
         return signals
 
     def build_candidates(self, signals: list[dict], log: LogCb) -> list[dict]:
@@ -587,10 +612,25 @@ class ScanPipeline:
                          autor=cand.get("autor") or "",
                          abonnenten=cand.get("abonnenten"),
                          abo_preis_usd=cand.get("abo_preis_usd"),
-                         wochen=cand.get("wochen"), growth_pct=cand.get("growth_pct"))
+                         wochen=cand.get("wochen"), growth_pct=cand.get("growth_pct"),
+                         quelle=str(cand.get("quelle_kuerzel") or ""))
         try:
-            log("Kennzahlen-Seite laden (mql5) …")
-            stats = signal_stats.fetch_signal_stats(session, res.id)
+            quelle_row = None
+            quelle_version = None
+            if cand.get("quelle_kuerzel"):
+                from . import ingest
+                quelle_row = db.get_quelle(int(cand["quelle_id"]))
+                if quelle_row is None or not quelle_row["aktiv"]:
+                    raise RuntimeError(f"Datenquelle „{cand['quelle_kuerzel']}“ "
+                                       "existiert nicht mehr oder ist inaktiv.")
+                quelle_version = str(cand.get("quelle_version") or "mql5")
+                log(f"Kennzahlen aus Datenquelle {quelle_row['kuerzel']} "
+                    f"({quelle_version}) …")
+                stats = ingest.metrics_zu_stats(
+                    ingest.hole_metrics(quelle_row, res.id, quelle_version))
+            else:
+                log("Kennzahlen-Seite laden (mql5) …")
+                stats = signal_stats.fetch_signal_stats(session, res.id)
             res.dd_equity_pct = stats.get("dd_equity_pct")
             res.dd_balance_pct = stats.get("dd_balance_pct")
             res.ertrag_monat_pct = stats.get("monthly_growth_pct")
@@ -598,10 +638,13 @@ class ScanPipeline:
             if res.wochen is None:
                 res.wochen = stats.get("weeks")
             res.broker_server = stats.get("broker_server")
-            # Webseiten-Kapitalbasis (kann negativ sein — eigene rote Regel)
+            # Webseiten-Kapitalbasis (kann negativ sein — eigene rote Regel).
+            # Quellen-Signale: erst mit Downloader-Lieferung von InitialDeposit
+            # (doc/20 §4) — bis dahin ehrlich None.
             res.kapitalbasis_usd = stats.get("initial_deposit_usd")
             log(f"✓ Kennzahlen: EQ-DD {res.dd_equity_pct} % · PF {res.pf} · "
                 f"Ertrag {res.ertrag_monat_pct} %/Monat")
+
             # Eine öffentliche Kennzahlen-Seite belegt keinen funktionierenden
             # authentifizierten Export. Dessen Fehlerkette hier nicht zurücksetzen.
 
@@ -609,13 +652,20 @@ class ScanPipeline:
             report = None
             try:
                 try:
-                    path, from_cache = exporter.export_positions(
-                        session, res.id,
-                        extra_pause_s=float(self.settings.get(
-                            "rate_pause_zwischen_signalen_s", 5.0)),
-                        platform=res.platform or cand.get("platform"))
+                    if quelle_row is not None:
+                        from . import ingest
+                        path, from_cache = ingest.hole_trades(
+                            quelle_row, res.id, quelle_version)
+                    else:
+                        path, from_cache = exporter.export_positions(
+                            session, res.id,
+                            extra_pause_s=float(self.settings.get(
+                                "rate_pause_zwischen_signalen_s", 5.0)),
+                            platform=res.platform or cand.get("platform"))
                 except (Mql5HardStopError, Mql5CredentialsMissingError):
                     raise
+                except downloader_client.DownloaderError:
+                    raise  # Quellen-Fehler haben keinen Browser-Fallback
                 except (RuntimeError, requests.HTTPError):
                     # MQL5 drosselt / falscher Export-Pfad — Chrome-Fallback
                     # (History-Link auf der Signal-Seite, MT4+MT5).
@@ -796,12 +846,17 @@ class ScanPipeline:
                     # barkeit; Anzeige rechnet aus den Werten aktuell neu).
                     "kriterien_matrix": matrix_payload(res, self.settings),
                     "ampel": res.ampel}
-            saved_trades_path = db.store_scan_result(res.id, {
+            signal_payload = {
                 "name": res.name, "platform": res.platform, "url": res.url,
                 "autor": res.autor, "abo_preis": res.abo_preis_usd,
                 "abonnenten": res.abonnenten, "wochen": res.wochen,
                 "stats": stats_payload,
-            }, trades_path=res.trades_path, forensik=forensik_payload)
+            }
+            if cand.get("quelle_kuerzel"):
+                signal_payload["quelle"] = str(cand["quelle_kuerzel"])
+            saved_trades_path = db.store_scan_result(
+                res.id, signal_payload,
+                trades_path=res.trades_path, forensik=forensik_payload)
             res.persisted_this_run = True
             if saved_trades_path:
                 res.trades_path = saved_trades_path

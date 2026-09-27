@@ -297,8 +297,8 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
     column_order = None
     if compact:
         column_order = (["Stand"] if fresh_ids is not None else []) + [
-            "Ampel", "Name", "Stop", "Trading-DD %", "EQ-DD %", "Ertrag/Monat %",
-            "Score", "Urteil", "Bericht vom", "Bericht", "Link",
+            "Ampel", "Name", "Quelle", "Stop", "Trading-DD %", "EQ-DD %",
+            "Ertrag/Monat %", "Score", "Urteil", "Bericht vom", "Bericht", "Link",
             "Abonnenten", "30 Tage", "7 Tage", "Dokumente"]
 
     event = st.dataframe(
@@ -319,6 +319,9 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             "ID": st.column_config.NumberColumn("ID", format="%d"),
             "Name": st.column_config.TextColumn("Name", width="medium", pinned=True),
             "Platform": st.column_config.TextColumn("Plattform", width="small"),
+            "Quelle": st.column_config.TextColumn(
+                "Quelle", width="small",
+                help="Datenquelle des Signals — Kürzel aus Admin → Datenquellen (doc/20)"),
             "Abo $": st.column_config.NumberColumn("Abo $", format="%.0f"),
             "Abos": st.column_config.NumberColumn("Abonnenten", format="%.0f"),
             "Wochen": st.column_config.NumberColumn("Wochen", format="%.0f"),

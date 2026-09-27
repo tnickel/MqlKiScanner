@@ -453,9 +453,22 @@ with st.expander("Analyseumfang anpassen", icon=":material/tune:", expanded=Fals
     left, right = st.columns(2)
     with left.container(border=True, key="scan_scope"):
         section_header("Wie weit suchen?", "Weniger Seiten = schnellerer Lauf.", help_key="scan_scope")
+        _modus_optionen = {"mql5": "MQL5 direkt (Crawler)",
+                           "quellen": "Datenquellen (REST)",
+                           "beides": "Beides (Vereinigung)"}
+        _modus_aktiv = str(settings.get("listen_modus") or "mql5")
+        listen_modus = st.selectbox(
+            "Signale holen aus",
+            options=list(_modus_optionen),
+            format_func=_modus_optionen.get,
+            index=list(_modus_optionen).index(_modus_aktiv)
+            if _modus_aktiv in _modus_optionen else 0,
+            key="set_listen_modus", disabled=running,
+            help="Datenquellen (REST): Kandidaten und Trades ausschließlich aus den "
+                 "im Admin konfigurierten Quellen (doc/20) — kein Kontakt zu mql5.com.")
         pages = st.number_input(
             "Listen-Seiten je MT4/MT5", *config.SCAN_INPUT_BOUNDS["listen_seiten"], value=int(settings["listen_seiten"]),
-            key="set_seiten", disabled=running)
+            key="set_seiten", disabled=running or listen_modus == "quellen")
         top_n = st.number_input(
             "Max. Signale gründlich prüfen", *config.SCAN_INPUT_BOUNDS["top_n_export"], value=int(settings["top_n_export"]),
             key="set_topn", disabled=running)
@@ -548,6 +561,7 @@ with st.expander("Testdaten und Expertenfunktionen", icon=":material/build:", ex
 run_settings = {
     **settings,
     "listen_seiten": int(pages),
+    "listen_modus": str(listen_modus),
     "top_n_export": int(top_n),
     "min_wochen": int(min_weeks),
     "min_abonnenten": int(min_subs),

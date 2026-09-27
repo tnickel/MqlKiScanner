@@ -2,6 +2,8 @@
 """Einstellungen mit klaren Speicherbereichen und kontextbezogener Hilfe."""
 from __future__ import annotations
 
+import re
+import sqlite3
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -12,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import streamlit as st
 
 from mqlkiscanner import (config, db, secrets_store, downloader_client, downloader_sync,
-                          tradeserver_client, tradeserver_sync)
+                          quellen, tradeserver_client, tradeserver_sync)
 from mqlkiscanner.llm import client as llm_client
 from mqlkiscanner.llm import prompts as llm_prompts
 from mqlkiscanner.mql5.session import Mql5Session
@@ -96,9 +98,9 @@ with st.container(horizontal=True):
     st.badge("KI-Key vorhanden" if secret_status["glm_api_key"] else "KI-Key fehlt",
              color="green" if secret_status["glm_api_key"] else "orange")
     dl_start = downloader_sync.verbindungs_status()
-    st.badge("MqlDownloader verbunden" if dl_start["ok"]
-             else ("MqlDownloader nicht konfiguriert" if not dl_start["konfiguriert"]
-                   else "MqlDownloader nicht erreichbar"),
+    st.badge("Datenquellen verbunden" if dl_start["ok"]
+             else ("Keine Datenquelle konfiguriert" if not dl_start["konfiguriert"]
+                   else "Datenquellen nicht erreichbar"),
              color="green" if dl_start["ok"]
              else ("gray" if not dl_start["konfiguriert"] else "red"))
     ts_start = tradeserver_sync.verbindungs_status()
@@ -111,7 +113,7 @@ with st.container(horizontal=True):
 
 (access_tab, models_tab, downloader_tab, tradeserver_tab, rest_api_tab, scan_tab,
  prompts_tab, agenten_tab) = st.tabs(
-    ["Zugänge", "KI & Modelle", "MqlDownloader", "Tradeserver", "REST-API",
+    ["Zugänge", "KI & Modelle", "Datenquellen", "Tradeserver", "REST-API",
      "Scan & Risiko", "Analysevorlagen", "Agenten"]
 )
 
@@ -298,113 +300,172 @@ with models_tab:
         _render_test_result("_admin_llm_result")
 
 with downloader_tab:
-    with st.container(border=True):
-        section_header("MqlDownloader REST-Interface",
-                       "Adresse und Zugang des lokalen Downloaders — Quelle der "
-                       "Abonnenten-Verläufe und Testreport-PDFs je Signal-ID.",
-                       help_key="settings_downloader")
-        saved_downloader_base = str(settings.get("downloader_base_url") or "")
-        downloader_base = st.text_input(
-            "Base-URL", value=saved_downloader_base,
-            placeholder=config.DOWNLOADER_DEFAULT_BASE, key="admin_downloader_base")
-        st.caption(f"Standard: {config.DOWNLOADER_DEFAULT_BASE} · „/api/v1“ wird ergänzt, "
-                   "wenn nur Host:Port eingetragen ist.")
-        downloader_token = st.text_input(
-            "API-Token", type="password", key="admin_downloader_token",
-            placeholder="Leer lassen = unverändert")
-        token_active = secrets_store.get_secret("downloader_token")
-        st.caption("Token: " + ("hinterlegt" if token_active
-                                else "nicht hinterlegt (Downloader ohne Token-Schutz)"))
-        downloader_dirty = (downloader_base.strip() != saved_downloader_base
-                            or bool(downloader_token.strip()))
-        _draft_status(downloader_dirty,
-                      clean_label="Verbindung konfiguriert" if saved_downloader_base
-                      else "Nicht konfiguriert",
-                      clean_color="green" if saved_downloader_base else "gray")
-        save_column, token_column = st.columns(2)
-        with save_column:
-            if action_button("MqlDownloader-Verbindung speichern", key="admin_downloader_save",
-                             type="primary", help_key="settings_downloader",
-                             icon=":material/save:"):
-                try:
-                    normalized = downloader_client.normalize_base_url(downloader_base)
-                except (downloader_client.DownloaderError, ValueError):
-                    normalized = ""
-                if downloader_base.strip() and not normalized:
-                    st.error("Eine vollständige HTTP(S)-Base-URL verwenden, "
-                             "z. B. http://rechner:8089/api/v1")
-                else:
-                    if downloader_token.strip():
-                        secrets_store.save_secrets(downloader_token=downloader_token.strip())
-                    # Reload on save: nie eine alte Kopie anderer Einstellungen schreiben.
-                    config.save_settings({**config.load_settings(),
-                                          "downloader_base_url": normalized})
-                    downloader_sync.status_cache_leeren()
-                    _finish("MqlDownloader-Verbindung gespeichert. "
-                            "Bitte die gespeicherte Verbindung testen.",
-                            widget_updates=({"admin_downloader_token": ""}
-                                            if downloader_token.strip() else None),
-                            clear_result="_admin_downloader_result")
-        with token_column:
-            if action_button("Token entfernen", key="admin_downloader_token_remove",
-                             help_key="settings_downloader", icon=":material/delete:",
-                             disabled=not token_active):
-                secrets_store.save_secrets(downloader_token="")
-                downloader_sync.status_cache_leeren()
-                _finish("Token entfernt. Ist im Downloader keiner gesetzt, bleibt die "
-                        "Verbindung voll nutzbar.",
-                        widget_updates={"admin_downloader_token": ""},
-                        clear_result="_admin_downloader_result")
+    # Einmalig: bisherige Einzel-Downloader-Konfiguration als Quelle übernehmen.
+    quellen._ensure()
+    alle_quellen = db.list_quellen()
 
     with st.container(border=True):
-        section_header("Verbindung prüfen", "Health-Check gegen den gespeicherten Downloader.",
-                       help_key="settings_downloader_test")
-        if downloader_dirty:
-            st.warning("Es gibt ungespeicherte Änderungen. Der Test verwendet "
-                       "weiterhin die gespeicherten Werte.")
-        if action_button("Gespeicherte Downloader-Verbindung testen", key="admin_downloader_test",
-                         help_key="settings_downloader_test", icon=":material/network_check:"):
-            saved = config.load_settings()
-            if not str(saved.get("downloader_base_url") or "").strip():
-                _test_result("_admin_downloader_result", False, "Zuerst eine Base-URL speichern.")
+        section_header("Datenquellen (REST)",
+                       "Beliebig viele Signal-Quellen — jede mit einem Kürzel, das in "
+                       "der Ergebnisliste die Herkunft der Signale zeigt. Typ "
+                       "mql5-downloader-v1: Katalog, Trades, Kennzahlen, Abonnenten-"
+                       "Verläufe und Testreport-PDFs (Konzept doc/20).",
+                       help_key="settings_downloader")
+        test_spalte = st.columns([4, 1])[1]
+        with test_spalte:
+            if action_button("Alle Quellen testen", key="admin_quellen_test_all",
+                             help_key="settings_downloader_test",
+                             icon=":material/network_check:",
+                             disabled=not any(q["aktiv"] for q in alle_quellen)):
+                pruefungen, texte = [], []
+                for q in db.list_quellen(nur_aktiv=True):
+                    pruefung = quellen.pruefe(q, force=True)
+                    pruefungen.append(pruefung)
+                    texte.append(f"{quellen.status_zeichen(pruefung)} {q['kuerzel']}: "
+                                 f"{pruefung['text']}")
+                ok = bool(pruefungen) and all(p["status"] != "fehler" for p in pruefungen)
+                _test_result("_admin_quellen_result", ok,
+                             " · ".join(texte) or "Keine aktive Quelle.")
+                st.rerun()
+
+        if not alle_quellen:
+            st.info("Noch keine Datenquelle konfiguriert — unten eine anlegen "
+                    "(z. B. den lokalen MqlDownloader).")
+        for q in alle_quellen:
+            pruefung = q.get("letzte_pruefung") or {}
+            with st.container(border=True, key=f"quelle_karte_{q['id']}"):
+                zeichen_spalte, kopf_spalte, aktion_spalte = st.columns([1, 6, 2])
+                with zeichen_spalte:
+                    st.markdown(f"### {quellen.status_zeichen(pruefung)}")
+                with kopf_spalte:
+                    st.markdown(f"**{q['kuerzel']}** — {q['name'] or 'ohne Name'} · "
+                                + ("aktiv" if q["aktiv"] else "inaktiv"))
+                    st.caption(f"{q['base_url']} · Typ {q['typ']}")
+                    if pruefung.get("text"):
+                        detail = pruefung.get("details") or {}
+                        zusatz = []
+                        if detail.get("anbieter") is not None:
+                            zusatz.append(f"{detail['anbieter']} Signale")
+                        if detail.get("version"):
+                            zusatz.append(f"API {detail['version']}")
+                        if detail.get("latenz_s") is not None:
+                            zusatz.append(f"{detail['latenz_s']} s")
+                        st.caption("Letzter Test: " + str(pruefung.get("text"))
+                                   + (f" ({', '.join(map(str, zusatz))})" if zusatz else ""))
+                    else:
+                        st.caption("Noch nie getestet.")
+                with aktion_spalte:
+                    if action_button("Testen", key=f"admin_quelle_test_{q['id']}",
+                                     icon=":material/wifi_tethering:",
+                                     help_key="settings_downloader_test"):
+                        quellen.pruefe(q, force=True)
+                        st.rerun()
+                    if action_button("Deaktivieren" if q["aktiv"] else "Aktivieren",
+                                     key=f"admin_quelle_toggle_{q['id']}",
+                                     icon=":material/power_settings_new:",
+                                     help_key="settings_downloader"):
+                        db.update_quelle(q["id"], aktiv=not q["aktiv"])
+                        downloader_sync.status_cache_leeren()
+                        _finish(f"Quelle {q['kuerzel']} "
+                                + ("deaktiviert — sie wird nicht mehr abgerufen."
+                                   if q["aktiv"] else "aktiviert."))
+                bearb_spalte, loesch_spalte = st.columns(2)
+                with bearb_spalte:
+                    with st.popover("Bearbeiten", key=f"admin_quelle_edit_{q['id']}"):
+                        neu_name = st.text_input("Anzeigename", value=q["name"] or "",
+                                                 key=f"quelle_edit_name_{q['id']}")
+                        neu_url = st.text_input("Base-URL", value=q["base_url"],
+                                                key=f"quelle_edit_url_{q['id']}")
+                        neu_token = st.text_input(
+                            "API-Token", type="password", placeholder="Leer lassen = unverändert",
+                            key=f"quelle_edit_token_{q['id']}")
+                        if action_button("Änderungen speichern",
+                                         key=f"quelle_edit_save_{q['id']}",
+                                         icon=":material/save:", type="primary",
+                                         help_key="settings_downloader"):
+                            try:
+                                normalized = downloader_client.normalize_base_url(neu_url)
+                            except (downloader_client.DownloaderError, ValueError):
+                                normalized = ""
+                            if not normalized:
+                                st.error("Eine vollständige HTTP(S)-Base-URL verwenden, "
+                                         "z. B. http://rechner:8089/api/v1")
+                            else:
+                                db.update_quelle(q["id"], name=neu_name.strip(),
+                                                 base_url=normalized)
+                                if neu_token.strip():
+                                    secrets_store.save_secrets(
+                                        **{quellen.token_schluessel(q["id"]):
+                                           neu_token.strip()})
+                                downloader_sync.status_cache_leeren()
+                                _finish(f"Quelle {q['kuerzel']} gespeichert. "
+                                        "Bitte die gespeicherte Verbindung testen.")
+                with loesch_spalte:
+                    with st.popover("Löschen", key=f"admin_quelle_del_{q['id']}"):
+                        st.caption(f"Datenquelle **{q['kuerzel']}** entfernen? Bereits "
+                                   "gespiegelte Signale und Bewertungen bleiben in der "
+                                   "Datenbank erhalten; nur die Verbindung fällt weg.")
+                        if action_button("Endgültig löschen",
+                                         key=f"quelle_del_yes_{q['id']}",
+                                         icon=":material/delete:",
+                                         help_key="settings_downloader"):
+                            db.delete_quelle(q["id"])
+                            downloader_sync.status_cache_leeren()
+                            _finish(f"Datenquelle {q['kuerzel']} gelöscht.")
+        _render_test_result("_admin_quellen_result")
+
+    with st.container(border=True):
+        section_header("Datenquelle hinzufügen",
+                       "Eine neue REST-Quelle registrieren. Das Kürzel erscheint in "
+                       "der Ergebnisliste als Herkunft der Signale (z. B. mql5, pelik).")
+        neu_kuerzel = st.text_input("Kürzel (eindeutig, z. B. mql5)",
+                                    key="admin_quelle_neu_kuerzel")
+        neu_name = st.text_input("Anzeigename", key="admin_quelle_neu_name",
+                                 placeholder="z. B. MqlDownloader lokal")
+        neu_base = st.text_input("Base-URL", placeholder=config.DOWNLOADER_DEFAULT_BASE,
+                                 key="admin_quelle_neu_base")
+        st.caption(f"Beispiel: {config.DOWNLOADER_DEFAULT_BASE} — „/api/v1“ wird "
+                   "ergänzt, wenn nur Host:Port eingetragen ist.")
+        neu_token = st.text_input("API-Token", type="password",
+                                  key="admin_quelle_neu_token")
+        st.caption("Token liegt im Secrets-Speicher — leer lassen, wenn die Quelle "
+                   "keinen verlangt.")
+        if action_button("Datenquelle anlegen", key="admin_quelle_neu_save",
+                         type="primary", icon=":material/add_circle:",
+                         help_key="settings_downloader"):
+            kuerzel = neu_kuerzel.strip()
+            fehler = ""
+            if not re.fullmatch(r"[A-Za-z0-9_\-]{2,16}", kuerzel):
+                fehler = (f"Kürzel „{kuerzel}“ ungültig — 2–16 Zeichen, nur "
+                          "Buchstaben, Zahlen, _ und -.")
+            elif any(q["kuerzel"].lower() == kuerzel.lower() for q in db.list_quellen()):
+                fehler = f"Kürzel „{kuerzel}“ ist bereits vergeben."
             else:
-                with st.status("MqlDownloader wird geprüft …", expanded=True) as status:
-                    st.write(f"Health-Check gegen {saved['downloader_base_url']}/health. "
-                             "Der Test liest nur und verbraucht keine MQL5-Ressourcen.")
-                    try:
-                        info = downloader_client.client_from_settings(saved).health()
-                        if str(info.get("status", "")).lower() != "ok":
-                            raise downloader_client.DownloaderError(
-                                f"Unerwarteter Status: {info.get('status')!r}")
-                        needed = bool(info.get("tokenRequired"))
-                        token_there = bool(secrets_store.get_secret("downloader_token"))
-                        _test_result(
-                            "_admin_downloader_result", True,
-                            f"Downloader erreichbar · {info.get('providers', '?')} Provider · "
-                            f"API-Version {info.get('apiVersion', '?')} · "
-                            + ("Token erforderlich und hinterlegt" if needed and token_there
-                               else "Token erforderlich, aber keiner hinterlegt!" if needed
-                               else "kein Token erforderlich"))
-                        status.update(label="Downloader-Verbindung bestätigt",
-                                      state="complete", expanded=False)
-                    except downloader_client.DownloaderNotConfigured:
-                        _test_result("_admin_downloader_result", False,
-                                     "Zuerst eine Base-URL speichern.")
-                        status.update(label="Verbindungstest fehlgeschlagen",
-                                      state="error", expanded=False)
-                    except downloader_client.DownloaderAuthError as exc:
-                        _test_result("_admin_downloader_result", False, str(exc))
-                        status.update(label="Token abgelehnt", state="error", expanded=False)
-                    except downloader_client.DownloaderConnectionError as exc:
-                        _test_result("_admin_downloader_result", False, str(exc))
-                        status.update(label="Downloader nicht erreichbar", state="error", expanded=False)
-                    except Exception as exc:
-                        _test_result("_admin_downloader_result", False,
-                                     f"Verbindungstest fehlgeschlagen ({type(exc).__name__}). "
-                                     "Base-URL und Downloader prüfen.")
-                        status.update(label="Verbindungstest fehlgeschlagen",
-                                      state="error", expanded=False)
-        _render_test_result("_admin_downloader_result")
+                try:
+                    normalized = downloader_client.normalize_base_url(neu_base)
+                except (downloader_client.DownloaderError, ValueError):
+                    normalized = ""
+                if not normalized:
+                    fehler = ("Eine vollständige HTTP(S)-Base-URL verwenden, "
+                              "z. B. http://rechner:8089/api/v1")
+            if fehler:
+                st.error(fehler)
+            else:
+                try:
+                    neue_id = db.add_quelle(kuerzel, neu_name.strip(), normalized)
+                except sqlite3.IntegrityError:
+                    neue_id = 0
+                    st.error(f"Kürzel „{kuerzel}“ ist bereits vergeben.")
+                if neue_id:
+                    if neu_token.strip():
+                        secrets_store.save_secrets(
+                            **{quellen.token_schluessel(neue_id): neu_token.strip()})
+                    downloader_sync.status_cache_leeren()
+                    _finish(f"Datenquelle {kuerzel} angelegt. Bitte jetzt testen.",
+                            widget_updates={"admin_quelle_neu_kuerzel": "",
+                                            "admin_quelle_neu_name": "",
+                                            "admin_quelle_neu_base": "",
+                                            "admin_quelle_neu_token": ""})
 
 with tradeserver_tab:
     with st.container(border=True):

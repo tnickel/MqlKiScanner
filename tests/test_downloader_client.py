@@ -13,8 +13,14 @@ from pathlib import Path
 import pytest
 import requests
 
-from mqlkiscanner import app_ui, config, db, downloader_sync, secrets_store
+from mqlkiscanner import app_ui, config, db, downloader_sync, quellen, secrets_store
 from mqlkiscanner import downloader_client as dc
+
+
+def _quelle_an(base: str = "http://rechner:8089") -> dict:
+    """Datenquelle in der Test-DB anlegen (doc/20: Sync läuft über Quellen)."""
+    db.init_db()
+    return db.get_quelle(db.add_quelle("mql5", "Test-Quelle", base))
 
 
 # --- URL-Normalisierung und Plattform-Zuordnung -------------------------
@@ -231,7 +237,9 @@ def test_fetch_history_legt_punkte_ab_und_ignoriert_404(monkeypatch):
         "mql5": [{"timestamp": "2026-09-01T18:00:05", "subscribers": 42, "change": 0}],
         # mql4 fehlt im Downloader → 404 → Version wird übersprungen
     })
-    monkeypatch.setattr(dc, "client_from_settings", lambda settings: fake)
+    _quelle_an()
+    monkeypatch.setattr(quellen, "client_fuer_quelle",
+                        lambda quelle, timeout=None: fake)
     assert app_ui._dl_fetch_history(_Result()) == 1
     verlauf = db.get_history(77)
     assert len(verlauf) == 1 and verlauf[0]["version"] == "mql5"
@@ -243,7 +251,9 @@ def test_fetch_reports_spiegelt_pdf_und_ueberspringt_unveraenderte(monkeypatch):
         "mql5": [{"name": "testreport_77.pdf", "sizeBytes": 12,
                   "lastModified": "2026-09-20T10:00:00"}],
     })
-    monkeypatch.setattr(dc, "client_from_settings", lambda settings: fake)
+    _quelle_an()
+    monkeypatch.setattr(quellen, "client_fuer_quelle",
+                        lambda quelle, timeout=None: fake)
     neu = app_ui._dl_fetch_reports(_Result())
     assert len(neu) == 1
     pfad = Path(neu[0])
@@ -261,7 +271,9 @@ def test_fetch_reports_laedt_geaenderte_groesse_neu(monkeypatch):
         "mql5": [{"name": "testreport_77.pdf", "sizeBytes": 12,
                   "lastModified": "2026-09-20T10:00:00"}],
     })
-    monkeypatch.setattr(dc, "client_from_settings", lambda settings: fake)
+    _quelle_an()
+    monkeypatch.setattr(quellen, "client_fuer_quelle",
+                        lambda quelle, timeout=None: fake)
     app_ui._dl_fetch_reports(_Result())
     fake.reports_antwort["mql5"][0]["sizeBytes"] = 34
     assert len(app_ui._dl_fetch_reports(_Result())) == 1
@@ -274,7 +286,9 @@ def test_versionswahl_ohne_plattformfragt_beide(monkeypatch):
         "mql4": [{"timestamp": "2026-09-01T18:00:05", "subscribers": 7, "change": 0}],
         "mql5": [{"timestamp": "2026-09-01T18:00:05", "subscribers": 9, "change": 0}],
     })
-    monkeypatch.setattr(dc, "client_from_settings", lambda settings: fake)
+    _quelle_an()
+    monkeypatch.setattr(quellen, "client_fuer_quelle",
+                        lambda quelle, timeout=None: fake)
     assert app_ui._dl_fetch_history(_Result(platform="")) == 2
     versionen = {row["version"] for row in db.get_history(77)}
     assert versionen == {"mql4", "mql5"}
@@ -308,10 +322,11 @@ def test_starttest_nicht_konfiguriert_ohne_netzwerk():
 
 def test_starttest_verbunden_und_gacacht(monkeypatch):
     downloader_sync.status_cache_leeren()
-    config.save_settings({**config.load_settings(),
-                          "downloader_base_url": "http://rechner:8089"})
+    quellen._letzte_pruefung_cache.clear()
+    _quelle_an()
     fake = _ZaehlClient()
-    monkeypatch.setattr(downloader_sync, "_client", lambda: fake)
+    monkeypatch.setattr(quellen, "client_fuer_quelle",
+                        lambda q, timeout=None: fake)
     status = downloader_sync.verbindungs_status()
     assert status["ok"] is True and status["providers"] == 176
     assert status["geprueft"] is not None
@@ -325,16 +340,16 @@ def test_starttest_verbunden_und_gacacht(monkeypatch):
 
 def test_starttest_offline_und_cache_pro_url(monkeypatch):
     downloader_sync.status_cache_leeren()
+    quellen._letzte_pruefung_cache.clear()
+    quelle = _quelle_an()
     fake = _ZaehlClient()
     fake.health_fehler = dc.DownloaderConnectionError("weg")
-    monkeypatch.setattr(downloader_sync, "_client", lambda: fake)
-    config.save_settings({**config.load_settings(),
-                          "downloader_base_url": "http://rechner:8089"})
+    monkeypatch.setattr(quellen, "client_fuer_quelle",
+                        lambda q, timeout=None: fake)
     status = downloader_sync.verbindungs_status()
     assert status["ok"] is False and "weg" in status["detail"]
-    # Anderer Base-URL-Schlüssel → neuer Test, kein alter Cache:
-    config.save_settings({**config.load_settings(),
-                          "downloader_base_url": "http://anders:8089"})
+    # Andere base_url der Quelle → neuer Cache-Schlüssel, kein alter Cache:
+    db.update_quelle(quelle["id"], base_url="http://anders:8089/api/v1")
     fake.health_fehler = None
     status = downloader_sync.verbindungs_status()
     assert status["ok"] is True
@@ -344,11 +359,12 @@ def test_starttest_offline_und_cache_pro_url(monkeypatch):
 
 def test_starttest_token_fehlt_ist_offline(monkeypatch):
     downloader_sync.status_cache_leeren()
+    quellen._letzte_pruefung_cache.clear()
     fake = _ZaehlClient()
     fake.health_fehler = dc.DownloaderAuthError("Token erforderlich")
-    monkeypatch.setattr(downloader_sync, "_client", lambda: fake)
-    config.save_settings({**config.load_settings(),
-                          "downloader_base_url": "http://rechner:8089"})
+    _quelle_an()
+    monkeypatch.setattr(quellen, "client_fuer_quelle",
+                        lambda q, timeout=None: fake)
     status = downloader_sync.verbindungs_status()
     assert status["ok"] is False
     assert "Token" in status["detail"]

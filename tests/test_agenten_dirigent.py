@@ -52,7 +52,17 @@ def test_wochenende_plant_ruhen(monkeypatch):
     assert ergebnis["plan"] == ["ruhen_markt_geschlossen"]
 
 
-def test_budget_erschopft_plant_pause():
+def test_budget_erschopft_plant_pause(monkeypatch):
+    # Werktag einfrieren: am Wochenende plant der Dirigent ruhen, bevor das
+    # Budget überhaupt geprüft wird (der Test hinkte sonst an Sonntagen).
+    import datetime as _dt
+
+    class _Freitag(_dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 9, 25, 7, 0)  # Freitag
+
+    monkeypatch.setattr(dirigent, "datetime", _Freitag)
     config.save_settings({**config.load_settings(),
                           "agenten_tagesbudget_tokens": 10_000})
     # Ein LLM-freier Lauf verbraucht nichts — Budget künstlich belegen:

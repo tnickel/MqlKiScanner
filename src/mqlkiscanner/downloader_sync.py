@@ -14,12 +14,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Callable, Iterable
 
-from . import config, db, downloader_client
+from . import config, db, downloader_client, quellen
 
 
 def konfiguriert() -> bool:
-    """Ist überhaupt eine Downloader-Base-URL gespeichert?"""
-    return bool(str(config.load_settings().get("downloader_base_url") or "").strip())
+    """Ist mindestens eine aktive Datenquelle gespeichert?"""
+    quellen._ensure()
+    return bool(db.list_quellen(nur_aktiv=True))
 
 
 def versions(platform: str) -> list[str]:
@@ -28,19 +29,44 @@ def versions(platform: str) -> list[str]:
     return [version] if version else ["mql4", "mql5"]
 
 
+def _ueber_quellen(fn: Callable[[downloader_client.DownloaderClient], list]) -> list:
+    """fn(client) je aktiver Datenquelle ausführen (sequenziell, Stufe 1).
+
+    Dieselbe MQL5-Signal-ID in mehreren Spiegel-Quellen ist dasselbe Signal:
+    Writes sind idempotent (INSERT-OR-UPDATE), Rückgaben werden vereinigt.
+    Ein Verbindungs-/Auth-Fehler EINER Quelle bricht nichts — nur wenn keine
+    Quelle etwas liefern konnte, wandert der Systemfehler nach oben (damit
+    Batch-Läufe wie bisher sauber abbrechen).
+    """
+    quellen_liste = db.list_quellen(nur_aktiv=True)
+    if not quellen_liste:
+        # Erst Chancen für die Legacy-Übernahme (settings → Quelle), dann Nein.
+        quellen._ensure()
+        quellen_liste = db.list_quellen(nur_aktiv=True)
+    if not quellen_liste:
+        raise downloader_client.DownloaderNotConfigured(
+            "Keine Datenquelle konfiguriert. Admin → Datenquellen.")
+    ergebnis: list = []
+    systemic: BaseException | None = None
+    for quelle in quellen_liste:
+        try:
+            ergebnis.extend(fn(quellen.client_fuer_quelle(quelle)))
+        except downloader_client.DownloaderNotFound:
+            continue  # Signal existiert in dieser Quelle nicht — keine Daten, kein Fehler
+        except (downloader_client.DownloaderAuthError,
+                downloader_client.DownloaderConnectionError) as exc:
+            systemic = systemic or exc
+    if systemic is not None and not ergebnis:
+        raise systemic
+    return ergebnis
+
+
 def _client() -> downloader_client.DownloaderClient:
     return downloader_client.client_from_settings(config.load_settings())
 
 
-def sync_history(signal_id: int, platform: str, *,
-                 client: downloader_client.DownloaderClient | None = None) -> int:
-    """Abonnenten-Verlauf je Version holen und in die DB übernehmen.
-
-    404 zählt nicht als Fehler: Das Signal existiert im Downloader
-    schlicht nicht (z. B. nie geladen) — die betroffene Version wird
-    übersprungen. Rückgabe: Anzahl gesicherter Punkte.
-    """
-    client = client or _client()
+def _history_via_client(client: downloader_client.DownloaderClient,
+                        signal_id: int, platform: str) -> int:
     stored = 0
     for version in versions(platform):
         try:
@@ -51,14 +77,26 @@ def sync_history(signal_id: int, platform: str, *,
     return stored
 
 
-def sync_reports(signal_id: int, platform: str, *,
-                 client: downloader_client.DownloaderClient | None = None) -> list[str]:
-    """Testreport-PDFs je Version nach data/downloader/{id}/ spiegeln.
+def sync_history(signal_id: int, platform: str, *,
+                 client: downloader_client.DownloaderClient | None = None) -> int:
+    """Abonnenten-Verlauf über alle aktiven Quellen holen und übernehmen.
 
-    Unveränderte Dateien (gleicher Name + Größe, Datei vorhanden) werden
-    nicht erneut geladen. Rückgabe: diesmal neu geschriebene Pfade.
+    404 zählt nicht als Fehler: Das Signal existiert in dieser Quelle
+    schlicht nicht (z. B. nie geladen) — die betroffene Version wird
+    übersprungen. Rückgabe: Anzahl vorhandener Verlaufspunkte je Signal
+    und Plattform-Versionen (Spiegel liefern identische Punkte; gezählt
+    wird der echte DB-Stand, nicht je Quelle doppelt).
     """
-    client = client or _client()
+    if client is not None:
+        return _history_via_client(client, signal_id, platform)
+    _ueber_quellen(lambda qc: [_history_via_client(qc, signal_id, platform)])
+    punkte = {(p["version"], p["ts"]) for p in db.get_history(signal_id)}
+    moegliche = set(versions(platform))
+    return sum(1 for version, _ts in punkte if version in moegliche)
+
+
+def _reports_via_client(client: downloader_client.DownloaderClient,
+                        signal_id: int, platform: str) -> list[str]:
     known = {(row["version"], row["name"]): row
              for row in db.list_downloader_reports(signal_id)}
     fresh: list[str] = []
@@ -88,6 +126,21 @@ def sync_reports(signal_id: int, platform: str, *,
     return fresh
 
 
+def sync_reports(signal_id: int, platform: str, *,
+                 client: downloader_client.DownloaderClient | None = None) -> list[str]:
+    """Testreport-PDFs je Version nach data/downloader/{id}/ spiegeln.
+
+    Unveränderte Dateien (gleicher Name + Größe, Datei vorhanden) werden
+    nicht erneut geladen — auch wenn mehrere Quellen dasselbe Signal
+    liefern (idempotent). Rückgabe: diesmal neu geschriebene Pfade.
+    """
+    if client is not None:
+        return _reports_via_client(client, signal_id, platform)
+    fresh = _ueber_quellen(
+        lambda qc: _reports_via_client(qc, signal_id, platform))
+    return list(dict.fromkeys(fresh))
+
+
 def sync_signal(signal_id: int, platform: str, *,
                 client: downloader_client.DownloaderClient | None = None) -> dict:
     """Verlauf + PDFs für ein Signal; Rückgabe ist eine kleine Summe."""
@@ -110,7 +163,7 @@ def sync_many(entries: Iterable[tuple[int, str]], *,
     weiter. Rückgabe: {"signale" (bearbeitete Ziele, inkl. Einzelfehler),
     "verlaufspunkte", "neue_pdfs", "fehler", "abgebrochen"}.
     """
-    client = client or _client()
+    client_fallback = client
     ziele = [(int(signal_id), str(platform)) for signal_id, platform in entries]
     summary = {"signale": 0, "verlaufspunkte": 0, "neue_pdfs": 0,
                "fehler": [], "abgebrochen": None}
@@ -118,7 +171,9 @@ def sync_many(entries: Iterable[tuple[int, str]], *,
         if progress:
             progress(done, len(ziele), signal_id)
         try:
-            result = sync_signal(signal_id, platform, client=client)
+            result = (sync_signal(signal_id, platform, client=client_fallback)
+                      if client_fallback is not None
+                      else sync_signal(signal_id, platform))
         except downloader_client.DownloaderNotFound:
             summary["signale"] += 1
             continue
@@ -153,42 +208,50 @@ def status_cache_leeren() -> None:
 
 
 def verbindungs_status(force: bool = False, timeout: float = 3.0) -> dict:
-    """Erreichbarkeit des MqlDownloader — einmal beim Programmstart, dann gecacht.
+    """Erreichbarkeit der Datenquellen — einmal beim Programmstart, dann gecacht.
 
     Wird in der Sidebar (Systemstatus), auf der Scan-Seite und im Admin
     angezeigt. ok=None bedeutet „nicht konfiguriert“ (kein Netzaufruf);
-    ok=True/False das Ergebnis des letzten /health-Tests. Der Cache gilt
-    5 Minuten je Base-URL; `force=True` (manueller Test) umgeht ihn.
+    ok=True = mindestens eine Quelle erreichbar, ok=False = keine der
+    aktiven Quellen antwortet. Der Cache gilt 5 Minuten je Quellen-Kombi;
+    `force=True` (manueller Test) umgeht ihn.
     """
-    base = str(config.load_settings().get("downloader_base_url") or "")
+    quellen._ensure()
+    aktiv = db.list_quellen(nur_aktiv=True)
+    schluessel = "|".join(q["base_url"] for q in aktiv)
     jetzt = datetime.now()
     if not force:
-        cached = _STATUS_CACHE.get(base)
+        cached = _STATUS_CACHE.get(schluessel)
         if cached and (jetzt - cached[0]).total_seconds() < _STATUS_TTL_S:
             return cached[1]
-    if not base:
+    if not aktiv:
         wert = {"konfiguriert": False, "ok": None,
-                "detail": "Nicht konfiguriert (Admin → MqlDownloader)",
+                "detail": "Nicht konfiguriert (Admin → Datenquellen)",
                 "providers": None, "api_version": None, "geprueft": jetzt,
                 "token_required": None}
     else:
-        try:
-            client = _client()
-            client.timeout = timeout
-            info = client.health()
-            ok = str(info.get("status", "")).lower() == "ok"
-            wert = {"konfiguriert": True, "ok": ok,
-                    "detail": ("Verbindung ok" if ok else
-                               f"Unerwarteter Status: {info.get('status')!r}"),
-                    "providers": info.get("providers"),
-                    "api_version": info.get("apiVersion"),
-                    "geprueft": jetzt,
-                    "token_required": bool(info.get("tokenRequired"))}
-        except downloader_client.DownloaderError as exc:
-            wert = {"konfiguriert": True, "ok": False, "detail": str(exc),
-                    "providers": None, "api_version": None, "geprueft": jetzt,
-                    "token_required": None}
-    _STATUS_CACHE[base] = (jetzt, wert)
+        pruefungen = [quellen.pruefe(q, force=force, timeout=timeout) for q in aktiv]
+        erreichbar = [p for p in pruefungen if p["status"] == "ok"]
+        kurz = " · ".join(f"{q['kuerzel']} {quellen.status_zeichen(p)}"
+                          for q, p in zip(aktiv, pruefungen))
+        providers = sum(int((p.get("details") or {}).get("anbieter") or 0)
+                        for p in erreichbar)
+        api_version = next((str((p.get("details") or {}).get("version"))
+                            for p in erreichbar
+                            if (p.get("details") or {}).get("version") is not None), None)
+        if erreichbar:
+            detail = (f"{len(erreichbar)}/{len(aktiv)} Quellen erreichbar — {kurz}"
+                      if len(erreichbar) < len(aktiv)
+                      else f"Alle {len(aktiv)} Quellen erreichbar — {kurz}")
+        else:
+            fehler = next((p["text"] for p in pruefungen if p["text"]), "keine Antwort")
+            detail = f"Keine Quelle erreichbar — {fehler}"
+        wert = {"konfiguriert": True, "ok": bool(erreichbar), "detail": detail,
+                "providers": providers or None, "api_version": api_version,
+                "geprueft": jetzt,
+                "token_required": any((p.get("details") or {}).get("token_required")
+                                      for p in pruefungen)}
+    _STATUS_CACHE[schluessel] = (jetzt, wert)
     return wert
 
 
