@@ -386,6 +386,42 @@ def test_roboforex_ende_zu_ende_wird_akzeptiert(monkeypatch):
     assert downloader_sync.versions("mt4") == ["mql4"]
 
 
+def test_vantage_ende_zu_ende_wird_akzeptiert(monkeypatch):
+    """VantageMonitor liefert Version „vantage“ (Port 8092), positionelle
+    USD-normalisierte Trades mit Basis-Symbolen — der Scanner nimmt das
+    Format unverändert an (gleiche Endpunkte, kein Adapter nötig)."""
+    quelle = _quelle("vant", "http://vant:8092")
+    vantage_csv = (
+        "Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n"
+        "2026.09.22 12:00:00;Buy;0.01;XAUUSD;4336.63;0.01;2026.09.22 13:41:58;4319.67;0;;-0.17\n"
+        "2026.09.21 08:15:02;Sell;0.03;XAUUSD;4325.5;0.03;2026.09.21 09:00:01;4320.25;0;;14.02\n"
+        "2026.09.20 07:00:00;Buy;0.02;XAUUSD;4301.0;0.02;2026.09.20 08:00:00;4296.5;0;;-8.4\n"
+    ).encode("utf-8")
+    katalog_item = {"signalId": "1440581", "version": "vantage",
+                    "signalName": "FLOW TRADING", "subscribers": 5, "weeks": 52,
+                    "currencyCode": "USD"}
+    metrics = {"metrics": {"EquityDrawdown": 0.7, "Average3MonthProfit": 170.97,
+                           "WinRate": 93.05, "Weeks": 52, "Currency": "USD"}}
+    _verdrahte(monkeypatch, {
+        "http://vant:8092": FakeClient(katalog=[katalog_item], trades=vantage_csv,
+                                       metrics=metrics)})
+
+    def exporter_verboten(*args, **kwargs):
+        pytest.fail("exporter darf im Quellen-Modus nicht gerufen werden")
+    monkeypatch.setattr(pipeline.exporter, "export_positions", exporter_verboten)
+
+    kandidat = ingest.kandidaten(quelle, [katalog_item])[0]
+    assert kandidat["platform"] == "vantage" and kandidat["wochen"] == 52
+    pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
+    assert result.quelle == "vant" and result.platform == "vantage"
+    artefakt = db.get_quellen_artefakt(quelle["id"], 1440581, "vantage", "trades")
+    assert artefakt and artefakt["path"].replace("\\", "/").endswith(
+        "vantage_1440581_trades.csv")
+    assert db.get_signal(1440581)["quelle"] == "vant"
+    assert downloader_sync.versions("vantage") == ["vantage"]
+
+
 def test_zeile_und_rest_api_zeigen_quelle():
     res = pipeline.ScanResult(id=1, name="X")
     assert res.to_row()["Quelle"] == "mql5"

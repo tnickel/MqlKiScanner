@@ -141,6 +141,24 @@ Besonderheiten gegenüber den anderen Quellen:
 | Stop-Nachweis | keine SL-Daten | „kein Nachweis" + Verhaltensanalyse (§2.1) |
 | Signalalter | `weeks` aus Startdatum | Wochen-Vorfilter greift |
 
+### 4c. VantageMonitor — vierte Quelle (implementiert 27.09.2026)
+
+Der VantageMonitor (`SIGNALDOWNLOADER/vantage`, Vantage-Copy-Trading) spricht
+dasselbe Protokoll mit Versions-Kürzel **`vantage`** (Port 8092, Autostart,
+`data/rest_api.json`, Instanz-Kennung). Scanner-seitig nur die
+Plattform-Durchreichung (`pelican`-Muster); Akzeptanz per Regressionstest
+(`test_vantage_ende_zu_ende_…`).
+
+| Thema | Vantage-Lage | Folge im Scanner |
+|---|---|---|
+| Trades | deal-genau, bereits positionell (Open+Close), **USD-normalisiert** | direkte Konvertierung, kein Währungsfilter |
+| Symbole | Broker-Postfixe („XAUUSD.sc") | Server liefert Basis-Symbol (kontract_specs matchen) |
+| Ertrag | **gemessene 30-Tage-Rendite** | `Average3MonthProfit` ohne Herleitung |
+| Drawdown | nur Gesamt-DD | `EquityDrawdown` = |Gesamt-DD| |
+| Initial Deposit / Balance | nicht verfügbar (AumUsd = Kopierer-Kapital) | beide Regeln ruhen |
+| Stop-Nachweis | keine SL-Daten | „kein Nachweis" + Verhaltensanalyse (§2.1) |
+| Signalalter | `weeks` aus Monaten | Wochen-Vorfilter greift |
+
 **Bewertet wird, was der Scanner selbst aus der Trades-CSV rechnet**
 (Design-Regel 1: Code rechnet, LLM interpretiert) — die Downloader-Metriken
 dienen nur als Ersatz für die wegfallende MQL5-Kennzahlenseite:

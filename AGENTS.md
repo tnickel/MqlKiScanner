@@ -325,6 +325,17 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Ø-Monatsrendite (Yield/Laufzeit), EquityDrawdown bevorzugt Gesamt-DD.
   Anbindung: Admin → Datenquellen → z. B. Kürzel „robo",
   http://rechner:8091. 932 Tests grün.
+- ✅ VantageMonitor als vierte Quelle (27.09.2026 nachts, doc/20 §4c):
+  Vantage-Copy-Trading über dasselbe REST-Protokoll, Versions-Kürzel
+  „vantage" (Port 8092, Autostart, data/rest_api.json, Instanz-Kennung).
+  Trades dort deal-genau, bereits positionell und USD-normalisiert —
+  direkte mql5-Konvertierung, Server liefert Basis-Symbole (XAUUSD statt
+  XAUUSD.sc), kein Währungsfilter. Average3MonthProfit = GEMESSENE
+  30-Tage-Rendite (keine Herleitung). Grenzen: kein Initial Deposit und
+  keine Provider-Balance (AumUsd ist Kopierer-Kapital), Kommission im
+  Netto-PnL, kein SL. Scanner-seitig wie Pelican nur Plattform-Durchreichung
+  + Akzeptanz-Regressionstest. Anbindung: Kürzel z. B. „vant",
+  http://rechner:8092. 933 Tests grün.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
