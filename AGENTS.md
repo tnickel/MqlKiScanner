@@ -312,6 +312,19 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Wochen-Vorfilter greift. Scanner-seitig: platform_version("pelican"),
   Plattform-Durchreichung. Anbindung: Admin → Datenquellen → z. B.
   Kürzel „pelik", http://rechner:8090. 931 Tests grün.
+- ✅ RoboMonitor (RoboForex) als dritte Quelle (27.09.2026 abends, doc/20
+  §4b): RoboForex-CopyFX-Signale über dasselbe REST-Protokoll — Version je
+  Plattform (mql4/mql5, je Signal), Port 8091, Autostart,
+  data/rest_api.json, Instanz-Kennung, Toolbar-Button. MT4-Deals sind
+  positionell, MT5-Rohdeals werden serverseitig über die IN/OUT-Paarung
+  (TradeAggregator) zu Positionen — Commission/Swaps echt; CopyFX rechnet
+  durchgehend USD (kein Währungsfilter). Scanner-seitig KEIN Adapter nötig
+  (Ende-zu-Ende-Regressionstest bestätigt Akzeptanz). Grenzen: kein Initial
+  Deposit (Kapitalbasis-Regel ruht), kein SL in Deal-Daten („kein
+  Nachweis" + Verhaltensanalyse), Average3MonthProfit = hergeleitete
+  Ø-Monatsrendite (Yield/Laufzeit), EquityDrawdown bevorzugt Gesamt-DD.
+  Anbindung: Admin → Datenquellen → z. B. Kürzel „robo",
+  http://rechner:8091. 932 Tests grün.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

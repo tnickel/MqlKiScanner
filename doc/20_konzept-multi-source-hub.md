@@ -102,7 +102,7 @@ Genutzt werden die bestehenden Endpunkte des MqlDownloader (Doku:
 
 ### 4a. PelicanTrading — zweite Börse (implementiert 27.09.2026)
 
-PelicanTrading (`SIGNALDOWNLOADER/PelicanTrading`, „PelicanMonitor“) spricht
+PelicanTrading (`SIGNALDOWNLOADER/PelicanTrading`, „PelicanMonitor”) spricht
 **dasselbe Protokoll** mit Versions-Kürzel **`pelican`** (Port 8090, Autostart,
 `data/rest_api.json`, Instanz-Kennung wie beim MqlDownloader). Der Scanner
 brauchte dafür nur: `platform_version("pelican")` → `pelican` und die
@@ -119,6 +119,27 @@ SignalKiScanner"):
 | Stop-Nachweis | StopPrice nur bei offenen Positionen | Historie ohne SL → „kein Nachweis" + Verhaltensanalyse (§2.1) |
 | Signalalter | `weeks` im Katalog | Wochen-Vorfilter greift erstmals für Quellen-Signale |
 | Abonnenten | Copiers + Historie (copier_historie) | 7/30-Tage-Bilanz wie bei MQL5 |
+
+### 4b. RoboMonitor (RoboForex) — dritte Quelle (implementiert 27.09.2026)
+
+Der RoboMonitor (`SIGNALDOWNLOADER/roboforex`, RoboForex-CopyFX) spricht
+dasselbe Protokoll mit **Version je Plattform**: `mql4` für MT4-,
+`mql5` für MT5-Signale (Port 8091, Autostart, `data/rest_api.json`,
+Instanz-Kennung). Dadurch benötigt der Scanner **keinen eigenen Adapter** —
+Kandidaten, Plattformanzeige (mt4/mt5) und Detail-Sync laufen unverändert;
+Ende-zu-Ende per Regressionstest nachgewiesen (`test_roboforex_ende_zu_ende_…`).
+
+Besonderheiten gegenüber den anderen Quellen:
+
+| Thema | RoboForex-Lage | Folge im Scanner |
+|---|---|---|
+| Trades | MT4 positionell direkt; **MT5-Rohdeals serverseitig über IN/OUT-Paarung zu Positionen** (Commission/Swaps echt) | Forensik läuft unverändert |
+| Währung | CopyFX rechnet durchgängig USD | kein Währungsfilter nötig |
+| Drawdown | Zeitraum-DD und Gesamt-DD (`MaxDrawdownGesamtProzent`) | `EquityDrawdown` = Gesamt-DD (Fallback Zeitraum) |
+| Ertrag | nur Yield % seit Start | `Average3MonthProfit` = Ø-Monatsrendite, serverseitig **hergeleitet** (Yield/Laufzeit) |
+| Initial Deposit | nicht verfügbar (MinEinlage ≠ Startkapital) | Kapitalbasis-Regel ruht |
+| Stop-Nachweis | keine SL-Daten | „kein Nachweis" + Verhaltensanalyse (§2.1) |
+| Signalalter | `weeks` aus Startdatum | Wochen-Vorfilter greift |
 
 **Bewertet wird, was der Scanner selbst aus der Trades-CSV rechnet**
 (Design-Regel 1: Code rechnet, LLM interpretiert) — die Downloader-Metriken

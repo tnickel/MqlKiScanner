@@ -348,6 +348,44 @@ def test_kandidaten_pelican_version_und_wochen():
     assert downloader_sync.versions("pelican") == ["pelican"]
 
 
+def test_roboforex_ende_zu_ende_wird_akzeptiert(monkeypatch):
+    """RoboMonitor (RoboForex) liefert Version je Plattform (mql4/mql5), BOM,
+    Punkt-Zeitstempel und weeks — der Scanner nimmt das Format unverändert an
+    (gleiche Endpunkte wie der MqlDownloader, kein Adapter nötig)."""
+    quelle = _quelle("robo", "http://robo:8091")
+    robo_csv = (
+        "Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n"
+        "2026.09.22 07:48:01;Sell;0.02;.DE40Cash;25520;0.02;2026.09.22 08:37:37;25492.6;0;0;7.21\n"
+        "2026.09.21 12:00:00;Buy;0.01;XAUUSD;4300;0.01;2026.09.21 13:00:00;4310;-0.5;-0.2;9.3\n"
+        "2026.09.20 09:00:00;Buy;0.01;XAUUSD;4280;0.01;2026.09.20 10:30:00;4270;0;0;-9.5\n"
+    ).encode("utf-8")
+    katalog_item = {"signalId": "100", "version": "mql4", "signalName": "Gold Robo MT4",
+                    "subscribers": 5, "weeks": 52, "currencyCode": "USD",
+                    "url": "https://roboforex.com/copy-trading/rating/"}
+    metrics = {"metrics": {"EquityDrawdown": 20.0, "MaxDDGraphic": 12.5,
+                           "Average3MonthProfit": 7.2916, "Weeks": 52,
+                           "Balance": 5000.0, "Currency": "USD"}}
+    _verdrahte(monkeypatch, {
+        "http://robo:8091": FakeClient(katalog=[katalog_item], trades=robo_csv,
+                                       metrics=metrics)})
+
+    def exporter_verboten(*args, **kwargs):
+        pytest.fail("exporter darf im Quellen-Modus nicht gerufen werden")
+    monkeypatch.setattr(pipeline.exporter, "export_positions", exporter_verboten)
+
+    kandidat = ingest.kandidaten(quelle, [katalog_item])[0]
+    assert kandidat["platform"] == "mt4" and kandidat["wochen"] == 52
+    pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
+    assert result.quelle == "robo" and result.platform == "mt4"
+    artefakt = db.get_quellen_artefakt(quelle["id"], 100, "mql4", "trades")
+    assert artefakt and artefakt["path"].replace("\\", "/").endswith(
+        "mql4_100_trades.csv")
+    assert db.get_signal(100)["quelle"] == "robo"
+    # Detail-Sync fragt die Plattform-Version korrekt an
+    assert downloader_sync.versions("mt4") == ["mql4"]
+
+
 def test_zeile_und_rest_api_zeigen_quelle():
     res = pipeline.ScanResult(id=1, name="X")
     assert res.to_row()["Quelle"] == "mql5"
