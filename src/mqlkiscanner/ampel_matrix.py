@@ -74,8 +74,10 @@ KRITERIEN: list[Kriterium] = [
         "Kernfrage des Projekts: Ist der Stop-Loss bewiesen oder nur "
         "behauptet? Grün = direkt (Orderbuch mit S/L-Spalte bzw. [sl]-"
         "Kommentaren) oder Cluster-Signatur (Regelabstand der Verluste). "
-        "Gelb = teilweise, orange = kein Nachweis — das entlastet nicht, "
-        "sperrt aber allein nicht die harte Schranke."),
+        "Gelb = teilweise. Weiß = SL nicht übertragen — NEUTRAL, kein "
+        "Nachteil (die meisten Broker übertragen keinen SL); die KI-"
+        "Analyse schätzt aus dem Tradingverhalten ab, ob ein impliziter "
+        "Stop plausibel ist."),
     Kriterium(
         "ertrag", "Ertrag/Monat",
         "Nutzerkriterium: über der Mindestschwelle (Standard 5 %/Monat). "
@@ -170,11 +172,16 @@ def _stop_zelle(r) -> Zelle:
                      f"ballen sich an einem Niveau): {nachweis}")
     if r.stop_evidence == "partial":
         return Zelle(GELB, "teilweise",
-                     f"Stop-Nachweis nur teilweise vorhanden: {nachweis}")
+                     f"Stop-Nachweis teilweise vorhanden: {nachweis}")
     if r.stop_evidence == "none":
-        return Zelle(ORANGE, "kein Nachweis",
-                     f"Kein belastbarer Stop-Nachweis: {nachweis} — fehlende "
-                     "Evidenz entlastet nicht; keine Empfehlung möglich.")
+        # Nutzer-Regel 28.09.2026: kein SL in den Daten = NEUTRAL, kein
+        # Warnflag — die meisten Broker übertragen keinen SL. Abwerten darf
+        # nur die KI-Analyse mit begründeter Verhaltens-Einschätzung.
+        return Zelle(KEINE_DATEN, "neutral (nicht übertragen)",
+                     f"SL in den Trade-Daten nicht sichtbar: {nachweis} — "
+                     "neutral, kein Nachteil (viele Broker übertragen keinen "
+                     "SL). Die KI-Analyse schätzt aus dem Tradingverhalten "
+                     "ab, ob ein impliziter Stop plausibel ist.")
     return Zelle(KEINE_DATEN, "keine Daten",
                  "Stop-Evidenz-Stufe nicht erfasst (keine Forensik).")
 

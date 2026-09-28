@@ -98,7 +98,7 @@ Das ist ein Szenario, kein gemessener Verlust und keine Verlustobergrenze. Slipp
 
 **Statistische Evidenz** sucht nach Verlusten mit ähnlichen Kursdistanzen. Ein Cluster kann regelbasierte Ausstiege plausibel machen, beweist aber nicht für jeden Trade einen beim Broker gesetzten Stop.
 
-**Kein Nachweis** bedeutet: Die Daten belegen keinen verlässlichen Schutz. Anbieterbehauptungen, Signalnamen oder viele Abonnenten ersetzen keine Evidenz.
+**Nicht übertragen = neutral (kein Nachteil).** Die meisten Broker liefern den SL nicht in den Exporten — fehlender SL in den Daten wertet die Strategie nicht ab. Die KI-Analyse (Tiefenanalyse/Verhaltensanalyse) schätzt aus den Trades ab, ob ein impliziter Stop plausibel ist; nur eine dort begründete Einschätzung darf negativ werten.
 
 Auch historische Stops garantieren bei Kurslücken oder Slippage keine exakte zukünftige Verlustbegrenzung.
 """),

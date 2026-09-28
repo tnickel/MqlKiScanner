@@ -842,7 +842,8 @@ def render_detail(result) -> None:
     with st.container(border=True):
         section_header("Schutz und Stop-Nachweis", "Kernfrage: bewiesen oder nur behauptet?",
                        help_key="stop_evidence")
-        st.markdown(result.stop_nachweis or "Kein Nachweis in den vorliegenden Daten.")
+        st.markdown(result.stop_nachweis
+                   or "SL nicht übertragen — neutral; die KI-Analyse schätzt aus dem Verhalten ab.")
 
     section_header("Risiko und Ertrag", "Historische Kennzahlen · fehlende Daten erscheinen als Strich.", help_key="risk_metrics")
     with st.container(horizontal=True):

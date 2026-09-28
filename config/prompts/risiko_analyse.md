@@ -16,7 +16,9 @@ Zahlen wurden von der Engine berechnet; erfinde keine weiteren.
 
 ## Aufgabe
 Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
-1. **Risikobefunde**: Martingale/Grid/Exposure/Stop-Nachweis/Verlustserien —
+1. **Risikobefunde**: Martingale/Grid/Exposure/Stop-Befund/Verlustserien —
+   mit Zahlen. Fehlender SL-Nachweis ist NEUTRAL (viele Broker uebertragen
+   keinen SL); nenne Verlustdistanz-Muster als Hinweis, ohne abzuwerten.
    mit den konkreten Zahlen. Kein Befund, keine Aussage.
 2. **Copy-Eignung**: Slippage-/Kontogroessen-Risiken.
 3. **Ein Satz Fazit**: Warnung oder Entlastung — mit Hauptgrund.

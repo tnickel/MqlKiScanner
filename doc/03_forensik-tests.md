@@ -140,27 +140,37 @@ ausgegeben.
 3. **Ribbon-Statistik:** Verlustserie (max. Länge, Summe) und
    schlechtester Einzeltrade ins Verhältnis zum Kontostand setzen.
 
-**Interpretation:**
-- Fester Stop belegt → Risiko mechanisch gedeckelt (gut)
-- Kein Cluster + große Einzeldistanzen → Verluste laufen frei
-  (Grid-/Diskretionsrisiko; Beispiele: MSC -21 USD-Kappe ohne Level,
-  Pure Gold Worst -152 USD Bewegung, KiraCat -7 % in einem Trade)
+**Interpretation (Nutzer-Regel 28.09.2026):**
+- Fester Stop belegt → Risiko mechanisch gedeckelt (gut; bleibt Score-
+  Entlastung −1,0 Struktur-Punkte)
+- Kein Cluster + große Einzeldistanzen → Hinweis, dass Verluste frei laufen
+  — aber **neutral, kein Nachteil**: Die meisten Broker übertragen keinen
+  SL in den Exporten. Ob ein impliziter Stop plausibel ist (Cluster-
+  Tendenzen, konsistente Cut-Offs, Haltedauer bei Verlusten) schätzt die
+  KI-Analyse ab; nur eine dort begründete Einschätzung „wahrscheinlich ohne
+  Stop-Schutz" darf negativ werten. Beispiele für freilaufende Verluste
+  bleiben Fallnotizen (MSC -21 USD-Kappe ohne Level, Pure Gold Worst -152
+  USD Bewegung, KiraCat -7 % in einem Trade).
 
 Die Engine liefert formatunabhängig `stop_evidence`: `direct` (alle
 Positionen mit SL), `cluster` (ausreichende Distanzsignatur), `partial`
 oder `none`. Leere Orderbuchfelder oder fehlende Schlüssel liefern keine
-Entlastung im Score. Ein Take-Profit ist für den SL-Nachweis nicht nötig.
+Entlastung im Score — aber auch keine Abwertung. Ein Take-Profit ist für
+den SL-Nachweis nicht nötig.
 
-Eine grüne Kandidatenampel setzt zusätzlich zu Score und Rendite einen
-strukturierten Status `direct` oder `cluster` voraus. `partial`, `none`
-sowie fehlende oder unbekannte Evidenz führen höchstens zu Gelb mit
-Begründung. Eine vollständige Analyse ohne Stop-Nachweis bleibt eine
-vollständige Analyse; sie wird deshalb nicht erneut heruntergeladen.
-Drawdown- und Martingale-Ablehnungen haben weiterhin Vorrang. Der Status
-wird durch Scan, Datenbank, Laufarchiv und KI-Payload durchgereicht;
-Freitext gilt nicht als Ersatznachweis. Bewertungsstand 7 verlangt für
-ältere Live-Befunde eine erneute Prüfung; Archive bleiben historische
-Momentaufnahmen.
+**Fehlender SL-Nachweis ist NEUTRAL**: kein Malus im Risiko-Score (die
+Struktur-Dimension bleibt bei der Basis 3,0; nur `direct` senkt auf 2,0),
+keine Kandidaten-Sperre, in der Ampel-Matrix eine weiße Zelle
+(„neutral (nicht übertragen)”). Kandidat entscheidet sich allein über
+Drawdown-Schranke, Score und Ertrag; das Urteil nennt den Stop-Kontext
+nur informativ („Stop bewiesen” / „teilweise belegt” / „SL nicht
+übertragen (neutral — KI schätzt ab)”). Eine vollständige Analyse ohne
+Stop-Nachweis bleibt eine vollständige Analyse; sie wird deshalb nicht
+erneut heruntergeladen. Drawdown- und Martingale-Ablehnungen haben
+weiterhin Vorrang. Der Status wird durch Scan, Datenbank, Laufarchiv und
+KI-Payload durchgereicht; Freitext gilt nicht als Ersatznachweis.
+Bewertungsstand 7 verlangt für ältere Live-Befunde eine erneute Prüfung;
+Archive bleiben historische Momentaufnahmen.
 
 Beim Verlustdistanz-Clustering gilt für gleich häufige gerundete Niveaus
 deterministisch das kleinere Niveau. Eine gleich starke Nullklasse verhindert

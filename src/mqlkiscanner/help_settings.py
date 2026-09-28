@@ -155,7 +155,7 @@ exakt 5,0 % akzeptiert. Für einen strengeren Filter kannst du einen Wert über 
 
 Drawdown und Ertrag allein beweisen keine Sicherheit. Peak-Exposure, Martingale,
 Stop-Nachweis und rekonstruierter Drawdown müssen ebenfalls geprüft werden. Insbesondere
-enthält der Positions-Export keine SL/TP-Spalten; fehlender Stop-Nachweis bleibt ein Warnflag.
+enthält der Positions-Export keine SL/TP-Spalten; ein nicht übertragener SL ist neutral (kein Nachteil) — die KI-Analyse schätzt aus dem Tradingverhalten ab.
 
 Dieser Bereich speichert nur die beiden Grenzwerte. Bestehende Berichte werden nicht
 rückwirkend neu bewertet.

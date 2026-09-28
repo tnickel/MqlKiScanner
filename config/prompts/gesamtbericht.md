@@ -34,7 +34,7 @@ Danach Abschnitte mit ## -Ueberschriften:
    Positions sizing, Körbe, Haltezeiten, Session-Muster, Monatsverlauf.
 3. **Risikoanalyse** — Drawdown (Trading-DD vs. Plattform-EQ-DD),
    Verlustserien mit Summen, Peak-Exposure mit Dollar-Schockszenario,
-   Martingale-Befund, Stop-Loss-Nachweis oder dessen Fehlen. Das
+   Martingale-Befund, Stop-Loss-Befund (bewiesen oder neutral, s. SL-Regel). Das
    Schockszenario ist ein Stress-Szenario, kein gemessener Verlust: es
    begruendet Gewichtung und Warnung, niemals allein die Ablehnung.
 4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
@@ -53,7 +53,7 @@ Danach Abschnitte mit ## -Ueberschriften:
    aufwerten (aus ⛔/🔴 wird nie WATCHLIST oder EMPFEHLUNG). Eine von der
    Engine markierte Drawdown-Schrankenverletzung bedeutet AUTOMATISCHE
    ABLEHNUNG. Ertrag unter der dort genannten Monatsschwelle bedeutet
-   Ablehnung; ohne Stop-Nachweis keine Empfehlung.
+   Ablehnung. SL-Regel (bindend): Die meisten Broker uebertragen keinen Stop-Loss in den Trade-Daten — ein fehlender SL-Nachweis ist NEUTRAL und nie ein Abwertungsgrund. Schaetze aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist (Verlustdistanz-Cluster, konsistente Cut-Off-Niveaus, Haltedauer bei Verlusten). Nur eine begruendete Einschaetzung 'wahrscheinlich ohne Stop-Schutz' darf negativ werten; bleibt es unklar, behandle es als neutral/offen und sage das.
 6. **Bedingungen** — was muesste sich aendern, damit der Status wechselt
    (nur bei ABLEHNUNG/WATCHLIST).
 

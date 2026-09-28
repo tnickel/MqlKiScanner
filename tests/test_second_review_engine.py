@@ -142,9 +142,14 @@ def test_empty_orderbook_columns_do_not_reduce_risk():
     reports = [report(parsed(trades, fmt=fmt)) for fmt in ("positions", "mt4_orderbook")]
     evaluations = [scoring.evaluate(r) for r in reports]
     assert all(r["forensics"]["stops"]["stop_evidence"] == "none" for r in reports)
-    assert evaluations[0]["dimensions"]["structure"] == 5
+    # Nutzer-Regel 28.09.2026: fehlender SL ist neutral — kein +2-Malus mehr;
+    # beide Formate bleiben bei der neutralen Strukturbasis 3.0.
+    assert evaluations[0]["dimensions"]["structure"] == 3
+    assert evaluations[1]["dimensions"]["structure"] == 3
     assert evaluations[0]["dimensions"] == evaluations[1]["dimensions"]
-    assert evaluations[0]["score"] == evaluations[1]["score"] == 5.4
+    # Ohne den +2-Malus für fehlenden SL (Nutzer-Regel 28.09.2026) liegt der
+    # Score beider Formate bei 4.9 statt 5.4 — identisch, das ist die Aussage.
+    assert evaluations[0]["score"] == evaluations[1]["score"] == 4.9
 
 
 def test_stop_loss_evidence_does_not_require_take_profit():
@@ -159,4 +164,8 @@ def test_partial_stop_coverage_never_counts_as_complete_protection():
     p = parsed([trade(day=i, sl=1990 if i else None) for i in range(100)], fmt="mt4_orderbook")
     r = report(p)
     assert r["forensics"]["stops"]["stop_evidence"] == "partial"
-    assert scoring.evaluate(r)["dimensions"]["structure"] == 5
+    # partial: kein Bewiesen-Bonus, aber auch kein Malus (neutral).
+    assert scoring.evaluate(r)["dimensions"]["structure"] == 3
+    # direct (volle SL-Abdeckung) behält die Entlastung von 3.0 auf 2.0:
+    komplett = parsed([trade(day=i, sl=1990) for i in range(100)], fmt="mt4_orderbook")
+    assert scoring.evaluate(report(komplett))["dimensions"]["structure"] == 2

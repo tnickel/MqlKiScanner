@@ -93,12 +93,14 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     stop_proven = evidence == "direct" or (
         evidence is None and stops.get("evidence_level") == 1
         and stops.get("positions_with_sl_tp_pct", 0) == 100.0)
-    stop_signature = evidence == "cluster" or (
-        evidence is None and stops.get("clustered") is True)
     struct = 3.0
     struct -= 1.0 if stop_proven else 0.0
     struct += 3.0 if mart.get("flag") else 0.0
-    struct += 2.0 if not stop_proven and not stop_signature else 0.0
+    # Nutzer-Regel 28.09.2026: Ein NICHT sichtbarer Stop-Loss ist NEUTRAL —
+    # die meisten Broker übertragen keinen SL in den Exporten. Kein Malus
+    # für fehlenden Nachweis; abwerten darf nur die KI-Analyse, wenn sie aus
+    # dem Tradingverhalten eine begründete Einschätzung trifft. Bewiesener
+    # SL bleibt als Entlastung (-1.0) erhalten.
     struct += 1.5 if (bask.get("grid_indicator_pct") or 0) > 30 else 0.0
     struct += 1.0 if (platform.get("correlated_pairs") or 1) >= 5 else 0.0
     struct_dim = _clamp(struct)

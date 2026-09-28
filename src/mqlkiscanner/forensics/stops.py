@@ -133,7 +133,7 @@ def _distance_clustering(trades) -> dict:
             by_sym[normalize_symbol(t.symbol)].append(d)
     if not by_sym:
         return {"n_losses_with_distance": 0, "clustered": False,
-                "verdict": "keine Verluste mit Preisdaten (kein Nachweis)"}
+                "verdict": "keine Verluste mit Preisdaten — SL nicht prüfbar (neutral)"}
 
     best: dict | None = None
     per_symbol: dict[str, dict] = {}
@@ -184,7 +184,7 @@ def _distance_clustering(trades) -> dict:
             "spread_max_over_median": None,
             "clustered": False,
             "per_symbol": per_symbol,
-            "verdict": "zu wenige Verluste je Symbol fuer Cluster-Aussage (kein Nachweis)",
+            "verdict": "zu wenige Verluste je Symbol fuer Cluster-Aussage — neutral",
         }
 
     n = best["n"]
@@ -209,11 +209,11 @@ def _distance_clustering(trades) -> dict:
             f"Stop-Signatur ({best['symbol']}): {best['top_share']*100:.0f}% der "
             f"Verlustdistanzen bei {best['top_level']}"
             if clustered
-            else ("Stop-Signatur nur in Teilstichproben; kein Nachweis fuer das gesamte Signal"
+            else ("Stop-Signatur nur in Teilstichproben — fuer das gesamte Signal neutral"
                   if any(item["clustered"] for item in per_symbol.values()) else
-                  "Verlustdistanzen ungebundelt, laufen frei (kein Stop-Nachweis)"
+                  "Verlustdistanzen ohne Cluster — SL nicht uebertragen (neutral; KI schatzt aus dem Verhalten ab)"
                   if free_running else
-                  "kein eindeutiges Stop-Niveau erkennbar (kein Nachweis)")
+                  "kein eindeutiges Stop-Niveau erkennbar — neutral")
         ),
     }
 

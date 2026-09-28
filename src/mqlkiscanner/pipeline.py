@@ -290,16 +290,22 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
         limit = settings.get("schranke_eq_dd_pct", 30)
         return "🔴", f"Schranke verletzt: Drawdown > {limit:g} % (harte Ablehnung)"
     if result.forensik_vorhanden:
-        if result.stop_evidence not in ("direct", "cluster"):
-            reason = ("Stop-Nachweis nur teilweise vorhanden" if result.stop_evidence == "partial"
-                      else "Kein belastbarer Stop-Nachweis")
-            return "🟡", f"{reason} (kein Kandidat)"
+        # Nutzer-Regel 28.09.2026: Fehlender SL-Nachweis ist NEUTRAL — die
+        # meisten Broker übertragen keinen SL. Kandidat entscheidet sich über
+        # Schranke, Score und Ertrag; die Stop-Evidenz ist nur Kontext, und
+        # abwerten darf allein die KI (begründete Verhaltens-Einschätzung).
+        stop_kontext = {
+            "direct": "Stop bewiesen",
+            "cluster": "Stop per Cluster-Signatur belegt",
+            "partial": "Stop teilweise belegt",
+        }.get(result.stop_evidence or "", "SL nicht übertragen (neutral — KI schätzt ab)")
         if result.score is not None and result.score < 5.0:
             min_return = settings.get("min_ertrag_pct_monat", 5.0)
             if (result.ertrag_monat_pct or 0) >= min_return:
-                return "🟢", "Kandidat: Forensik bestanden, Stop-Evidenz vorhanden, Score < 5, Ertrag ok"
-            return "🟡", f"Forensik ok, aber Ertrag < {min_return:g} %/Monat"
-        return "🟡", f"Forensik bestanden, Score {result.score} (kein Kandidat)"
+                return "🟢", (f"Kandidat: Forensik bestanden, Score < 5, Ertrag ok · "
+                              f"{stop_kontext}")
+            return "🟡", f"Forensik ok ({stop_kontext}), aber Ertrag < {min_return:g} %/Monat"
+        return "🟡", f"Forensik bestanden ({stop_kontext}), Score {result.score} (kein Kandidat)"
     return "⚪", "Vorprüfung (ohne Trade-Export-Forensik)"
 
 
@@ -361,7 +367,10 @@ def _stop_evidence_text(stops: dict) -> str:
             return f"Orderbuch: {stops['positions_with_sl']}/{stops.get('positions_total')} mit SL"
         return (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
                 f"{stops.get('positions_total')} mit SL/TP")
-    return stops.get("verdict", "kein Nachweis")
+    # Nutzer-Regel 28.09.2026: fehlender SL-Nachweis ist neutral — kein
+    # "kein Nachweis"-Wertungstext, sondern Offenlegung + KI-Auftrag.
+    return stops.get("verdict",
+                     "SL nicht übertragen — neutral (KI schätzt aus dem Verhalten ab)")
 
 
 def _kapitalbasis_abgleich(drawdown_befund: dict, stats: dict) -> tuple[bool, str]:

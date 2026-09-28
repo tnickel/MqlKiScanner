@@ -42,7 +42,11 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 2. **Positions-Export (MT5) enthält KEINE SL/TP-Spalten.** Stop-Nachweis nur über
    (a) MT4-History-Export / Orderbuch-CSV (S/L-Spalte und [sl]/[tp]-Kommentaren,
    Beispiel: `data/raw/gold_spike_mt4_2349227_ORDERBOOK.csv`) oder (b) statistische
-   Signaturen. "Kein Nachweis" = Warnflag, niemals Entlastung.
+   Signaturen. "Kein Nachweis" = NEUTRAL — die meisten Broker übertragen
+   keinen SL (Nutzer-Regel 28.09.2026): kein Malus im Score, keine Ampel-
+   Sperre, keine Matrix-Abwertung. Abwerten darf NUR die KI-Analyse
+   (Tiefenanalyse/Verhaltensanalyse) mit begründeter Einschätzung
+   "wahrscheinlich ohne Stop-Schutz"; bewiesener SL bleibt Entlastung.
 3. **XAUUSD-Kontraktgröße: 1 Lot = 100 USD je 1 USD Kursbewegung.**
    Exposure-Rechnung: Peak-Lots × 100 × Schockbewegung. (Dieser Faktor wurde in
    der Reihe einmal falsch angesetzt und führte zu einer Fehleinschätzung.)

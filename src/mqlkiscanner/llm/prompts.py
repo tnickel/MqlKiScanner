@@ -90,7 +90,9 @@ Zahlen wurden von der Engine berechnet; erfinde keine weiteren.
 
 ## Aufgabe
 Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
-1. **Risikobefunde**: Martingale/Grid/Exposure/Stop-Nachweis/Verlustserien —
+1. **Risikobefunde**: Martingale/Grid/Exposure/Stop-Befund/Verlustserien —
+   mit Zahlen. Fehlender SL-Nachweis ist NEUTRAL (viele Broker uebertragen
+   keinen SL); nenne Verlustdistanz-Muster als Hinweis, ohne abzuwerten.
    mit den konkreten Zahlen. Kein Befund, keine Aussage.
 2. **Copy-Eignung**: Slippage-/Kontogroessen-Risiken.
 3. **Ein Satz Fazit**: Warnung oder Entlastung — mit Hauptgrund.
@@ -155,7 +157,7 @@ Danach Abschnitte mit ## -Ueberschriften:
    aufwerten (aus ⛔/🔴 wird nie WATCHLIST oder EMPFEHLUNG). Eine von der
    Engine markierte Drawdown-Schrankenverletzung bedeutet AUTOMATISCHE
    ABLEHNUNG. Ertrag unter der dort genannten Monatsschwelle bedeutet
-   Ablehnung; ohne Stop-Nachweis keine Empfehlung.
+   Ablehnung. SL-Regel (bindend): Die meisten Broker uebertragen keinen Stop-Loss in den Trade-Daten — ein fehlender SL-Nachweis ist NEUTRAL und nie ein Abwertungsgrund. Schaetze aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist (Verlustdistanz-Cluster, konsistente Cut-Off-Niveaus, Haltedauer bei Verlusten). Nur eine begruendete Einschaetzung 'wahrscheinlich ohne Stop-Schutz' darf negativ werten; bleibt es unklar, behandle es als neutral/offen und sage das.
 6. **Bedingungen** — was muesste sich aendern, damit der Status wechselt
    (nur bei ABLEHNUNG/WATCHLIST).
 
@@ -205,8 +207,9 @@ Danach Abschnitte mit ## -Ueberschriften:
 5. **Naechste Schritte** — Konkrete Bedingungen fuer Aufnahme/Ausschluss
    und was den Status aendern wuerde.
 
-Bindende Regeln: Risiko VOR Ertrag. Kein Signal ohne Stop-Nachweis wird
-Ertragstraeger. Ein Signal mit Martingale-Flag oder verletzter
+Bindende Regeln: Risiko VOR Ertrag. SL-Regel (bindend): Die meisten Broker uebertragen keinen Stop-Loss in den Trade-Daten — ein fehlender SL-Nachweis ist NEUTRAL und nie ein Abwertungsgrund. Schaetze aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist (Verlustdistanz-Cluster, konsistente Cut-Off-Niveaus, Haltedauer bei Verlusten). Nur eine begruendete Einschaetzung 'wahrscheinlich ohne Stop-Schutz' darf negativ werten; bleibt es unklar, behandle es als neutral/offen und sage das.
+Ein fehlender SL-Nachweis allein sperrt KEIN Signal als Ertragstraeger —
+nur die begruendete KI-Einschaetzung 'wahrscheinlich ohne Stop-Schutz'. Ein Signal mit Martingale-Flag oder verletzter
 Drawdown-Schranke wird nie aufgenommen. Die Engine-Ampel je Eintrag ist
 bindend: ⛔ = Ausgeschlossen-Liste (Grund im Feld "urteil"), 🔴 =
 Martingale-Signatur oder verletzte Schranke, 🟡 = Beobachtung, 🟢 =
@@ -246,7 +249,12 @@ folgender Aspekte:
 
 ## 1. Risikomanagement-Analyse
 - **Stop-Loss-Verwendung:** Untersuche jeden Trade auf Hinweise für
-  Stop-Loss-Nutzung. Analysiere:
+  Stop-Loss-Nutzung. Wichtig: Ein in den Daten NICHT sichtbarer SL ist
+  neutral (die meisten Broker übertragen ihn nicht) — leite aus
+  Verlustdistanzen, Cut-Off-Niveaus und Haltedauern ab, ob ein
+  impliziter Stop plausibel ist. NUR hier darfst du abwerten, und nur
+  mit begründeter Einschätzung „wahrscheinlich ohne Stop-Schutz“;
+  sonst bleibt es neutral/offen. Analysiere:
   - Gibt es wiederkehrende Verlustmuster bei bestimmten Pip-Werten?
   - Werden Trades bei konsistenten Verlustniveaus geschlossen?
   - Falls kein Stop-Loss: Wie werden Verluste begrenzt?

@@ -43,12 +43,16 @@ def write_history(tmp_path, evidence):
     return path
 
 
-@pytest.mark.parametrize("evidence,expected", [
-    ("none_orderbook", "🟡"), ("none", "🟡"), ("partial", "🟡"),
-    ("direct", "🟢"), ("cluster", "🟢"),
+# Nutzer-Regel 28.09.2026: Fehlender SL-Nachweis ist NEUTRAL — kein Stopp-
+# Gate mehr. Kandidat entscheidet Score/Ertrag/Schranke; das Urteil nennt
+# den Evidenz-Kontext (bewiesen/teilweise/neutral) nur noch informativ.
+@pytest.mark.parametrize("evidence,expected,stichwort", [
+    ("none_orderbook", "🟢", "neutral"), ("none", "🟢", "neutral"),
+    ("partial", "🟢", "teilweise"),
+    ("direct", "🟢", "bewiesen"), ("cluster", "🟢", "belegt"),
 ])
-def test_real_history_stop_gate_survives_database_archive_and_llm_payload(
-        tmp_path, monkeypatch, evidence, expected):
+def test_real_history_stop_neutralitaet_survives_database_archive_and_llm_payload(
+        tmp_path, monkeypatch, evidence, expected, stichwort):
     path = write_history(tmp_path, evidence)
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", Mock(return_value={
         "dd_equity_pct": 1, "monthly_growth_pct": 6, "weeks": 110,
@@ -63,8 +67,10 @@ def test_real_history_stop_gate_survives_database_archive_and_llm_payload(
     assert result.ampel == expected
     assert result.stop_evidence == ("none" if evidence == "none_orderbook" else evidence)
     download.assert_called_once()  # Missing stop evidence is not a request failure.
-    if expected == "🟡":
-        assert "Stop-Nachweis" in result.urteil
+    # Kontext statt Gate: das Urteil nennt die Evidenz-Stufe, ohne sie
+    # negativ zu werten (kein "kein Kandidat" mehr wegen fehlendem SL).
+    assert stichwort in result.urteil
+    assert "kein Kandidat)" not in result.urteil or "Score" in result.urteil
     loaded = pipeline.results_from_db()[0]
     archive = pipeline.ScanPipeline.save_run([result], {})
     restored = pipeline.ScanResult(**json.loads(Path(archive).read_text(encoding="utf-8"))["ergebnisse"][0])
@@ -75,12 +81,22 @@ def test_real_history_stop_gate_survives_database_archive_and_llm_payload(
         assert json.loads(pipeline._forensik_json(row))["stop_evidence"] == result.stop_evidence
 
 
-@pytest.mark.parametrize("evidence", [None, "", "none", "partial", "unknown"])
-def test_free_text_cannot_replace_structured_evidence(evidence):
+@pytest.mark.parametrize("evidence,erwarteter_kontext", [
+    (None, "neutral"), ("", "neutral"), ("none", "neutral"),
+    ("partial", "teilweise"), ("unknown", "neutral"),
+])
+def test_free_text_cannot_replace_structured_evidence(evidence, erwarteter_kontext):
+    """Freitext ("BEWIESEN: …") fälscht weder Kontext noch Kandidaten-Status:
+    Ohne strukturierte direct/cluster-Evidenz bleibt der Stop-Kontext
+    neutral/teilweise — und sperrt das Signal NICHT mehr (Nutzer-Regel
+    28.09.2026)."""
     result = pipeline.ScanResult(id=9000123, score=2, ertrag_monat_pct=6,
                                  forensik_vorhanden=True, stop_nachweis="BEWIESEN: Schutz vorhanden")
     result.stop_evidence = evidence
-    assert pipeline.ampel_for(result, {})[0] == "🟡"
+    ampel, urteil = pipeline.ampel_for(result, {})
+    assert ampel == "🟢"  # Kandidat trotz fehlendem SL-Beweis (neutral)
+    assert erwarteter_kontext in urteil
+    assert "bewiesen" not in urteil  # Freitext schlägt nie die Struktur
 
 
 @pytest.mark.parametrize("flags,expected", [

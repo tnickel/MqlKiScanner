@@ -23,7 +23,10 @@ REST holen"). Übergangsweise bleibt der Direktweg als Modus erhalten
 1. **Stop-Loss ohne Nachweis:** Kommt aus einer Quelle kein SL (z. B. weil der
    Export keine S/L-Spalte hat), kann und wird keiner „angefordert". Die
    **spätere Analyse** (Tiefenanalyse/LLM) muss aus dem Tradingverhalten der
-   Trades schließen, ob wohl ein SL drin ist. „Kein Nachweis" bleibt Warnflag.
+   Trades schließen, ob wohl ein SL drin ist. „Kein Nachweis" ist NEUTRAL
+   (kein Nachteil — die meisten Broker übertragen keinen SL; Nutzer-Regel
+   28.09.2026: kein Score-Malus, keine Ampel-Sperre, keine Matrix-
+   Abwertung; nur die KI darf begründet abwerten).
 2. **Initial Deposit:** Der Downloader stellt künftig den Initial Deposit der
    Signalseite über `/metrics` bereit (Erweiterung im MqlDownloader). Bis dahin
    laufen Quellen-Signale ohne Kapitalbasis-Regel (Vorprüfung) — die harte rote

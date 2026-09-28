@@ -70,11 +70,13 @@ def test_martingale_drei_zustaende():
 
 
 def test_stop_nachweis_stufen():
+    """Nutzer-Regel 28.09.2026: fehlender SL ist NEUTRAL (kein Warnflag) —
+    nur die KI darf bei begründeter Einschätzung abwerten."""
     f = lambda stufe: _matrix(_result(stop_evidence=stufe))["stop"].ampel
     assert f("direct") == GRUEN
     assert f("cluster") == GRUEN
     assert f("partial") == GELB
-    assert f("none") == ORANGE
+    assert f("none") == KEINE_DATEN   # neutral: SL nicht übertragen
     assert f(None) == KEINE_DATEN
 
 

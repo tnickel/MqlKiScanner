@@ -69,7 +69,9 @@ def test_changed_csv_separates_old_recommendation_from_current_result_and_portfo
     path.write_text(path.read_text(encoding="utf-8").replace(";1990;2010;", ";;2010;"),
                     encoding="utf-8")
     changed = scan()
-    assert changed.stop_evidence == "none" and changed.ampel == "🟡"
+    # Nutzer-Regel 28.09.2026: fehlender SL ist neutral — Kandidat bleibt
+    # möglich (Score/Ertrag entscheiden), auch ohne Orderbuch-SL.
+    assert changed.stop_evidence == "none" and changed.ampel == "🟢"
     assert first.trades_sha256 != changed.trades_sha256
     assert not pipeline.restore_current_reports(changed, pipe.settings)
     assert not changed.gesamtbericht and not changed.kurzfassung

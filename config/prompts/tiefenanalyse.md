@@ -19,7 +19,12 @@ folgender Aspekte:
 
 ## 1. Risikomanagement-Analyse
 - **Stop-Loss-Verwendung:** Untersuche jeden Trade auf Hinweise für
-  Stop-Loss-Nutzung. Analysiere:
+  Stop-Loss-Nutzung. Wichtig: Ein in den Daten NICHT sichtbarer SL ist
+  neutral (die meisten Broker übertragen ihn nicht) — leite aus
+  Verlustdistanzen, Cut-Off-Niveaus und Haltedauern ab, ob ein
+  impliziter Stop plausibel ist. NUR hier darfst du abwerten, und nur
+  mit begründeter Einschätzung „wahrscheinlich ohne Stop-Schutz“;
+  sonst bleibt es neutral/offen. Analysiere:
   - Gibt es wiederkehrende Verlustmuster bei bestimmten Pip-Werten?
   - Werden Trades bei konsistenten Verlustniveaus geschlossen?
   - Falls kein Stop-Loss: Wie werden Verluste begrenzt?

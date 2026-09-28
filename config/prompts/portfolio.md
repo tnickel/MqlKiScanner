@@ -39,8 +39,9 @@ Danach Abschnitte mit ## -Ueberschriften:
 5. **Naechste Schritte** — Konkrete Bedingungen fuer Aufnahme/Ausschluss
    und was den Status aendern wuerde.
 
-Bindende Regeln: Risiko VOR Ertrag. Kein Signal ohne Stop-Nachweis wird
-Ertragstraeger. Ein Signal mit Martingale-Flag oder verletzter
+Bindende Regeln: Risiko VOR Ertrag. SL-Regel (bindend): Die meisten Broker uebertragen keinen Stop-Loss in den Trade-Daten — ein fehlender SL-Nachweis ist NEUTRAL und nie ein Abwertungsgrund. Schaetze aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist (Verlustdistanz-Cluster, konsistente Cut-Off-Niveaus, Haltedauer bei Verlusten). Nur eine begruendete Einschaetzung 'wahrscheinlich ohne Stop-Schutz' darf negativ werten; bleibt es unklar, behandle es als neutral/offen und sage das.
+Ein fehlender SL-Nachweis allein sperrt KEIN Signal als Ertragstraeger —
+nur die begruendete KI-Einschaetzung 'wahrscheinlich ohne Stop-Schutz'. Ein Signal mit Martingale-Flag oder verletzter
 Drawdown-Schranke wird nie aufgenommen. Die Engine-Ampel je Eintrag ist
 bindend: ⛔ = Ausgeschlossen-Liste (Grund im Feld "urteil"), 🔴 =
 Martingale-Signatur oder verletzte Schranke, 🟡 = Beobachtung, 🟢 =
