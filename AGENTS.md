@@ -315,18 +315,28 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Signale); Tagesfrische genügt; MPDD-Filter im Downloader ist gewollt.
   Offen (Stufen 2–4): Composite-Identität (quelle, signal_id), Betreuer
   umstellen, Crawler entfernen, weitere Börsen-Typen. 929 Tests grün.
-- ✅ PelicanTrading als zweite Börse (27.09.2026 abends, doc/20 §4a): Der
+- ✅ PelicanTrading als zweite Börse (27.09.2026 abends, doc/20 §4a;
+  Währung korrigiert 28.09., doc/20 §4a.1): Der
   PelicanMonitor (SIGNALDOWNLOADER/PelicanTrading) spricht dasselbe REST-
   Protokoll mit Versions-Kürzel „pelican" (Port 8090, Autostart,
   data/rest_api.json, Instanz-Kennung; Toolbar-Button „REST-API an/aus").
   Trades werden serverseitig ins mql5-Positions-CSV konvertiert — die
-  Forensik läuft unverändert. Bewusste Grenzen: trades.csv nur für USD-
-  Konten (Forensik rechnet USD; currencyCode im Katalog), kein Initial
-  Deposit (Regel ruht), Stop-Nachweis nur offene Positionen (Historie
-  ehrlich „kein Nachweis" + Verhaltensanalyse), weeks im Katalog →
-  Wochen-Vorfilter greift. Scanner-seitig: platform_version("pelican"),
-  Plattform-Durchreichung. Anbindung: Admin → Datenquellen → z. B.
-  Kürzel „pelik", http://rechner:8090. 931 Tests grün.
+  Forensik läuft unverändert. Währung seit 28.09. serverseitig gelöst:
+  USD direkt, USC (US-Cent) fix ÷100, übrige Kontowährungen per EZB-
+  Referenzkurs nach USD (Kurs je Provider offengelegt in metrics/Katalog;
+  nur Geldbeträge skaliert; offline ohne je gecachten Kurs → trades.csv
+  404 + Grund). Erweiterter metrics-Satz (Equity, Leverage, Trades/Monat,
+  MarketsCount, TopMarkets, CopiersAum/-Profit) seit 28.09.; Initial-
+  DepositVirtual 10000 als klar markierte Annahme — das ECHTE Initial-
+  Deposit fehlt weiter (Kapitalbasis-Regel ruht; Scanner ignoriert
+  unbekannte Keys). Stop-Nachweis nur offene Positionen (Historie ehrlich
+  „kein Nachweis" + Verhaltensanalyse), weeks im Katalog → Wochen-Vorfilter
+  greift. Eigene KI-Risikoberichte (GLM-5.3) im Monitor selbst (MD+PDF,
+  Risiko-Score 1–10, data/reports; Altberichte 28.09. mit neuem Score-
+  Schema zurückgesetzt) — unabhängig vom Scanner-LLM; /reports liefert
+  (noch) eine leere Liste, der Scanner-Spiegel zeigt also noch nichts.
+  Scanner-seitig: platform_version("pelican"), Plattform-Durchreichung.
+  Anbindung: Admin → Datenquellen → z. B. Kürzel „pelik", http://rechner:8090.
 - ✅ RoboMonitor (RoboForex) als dritte Quelle (27.09.2026 abends, doc/20
   §4b): RoboForex-CopyFX-Signale über dasselbe REST-Protokoll — Version je
   Plattform (mql4/mql5, je Signal), Port 8091, Autostart,

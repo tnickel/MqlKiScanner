@@ -169,6 +169,16 @@ PelicanMonitor seit 28.09.2026 zuverlässig geladen werden (vorher wurden sie
 technisch verworfen, `metrics` war faktisch leer — bei Cache-Zweifeln also
 Artefakt-SHAs der Quellen erneuert abfragen).
 
+**Eigene KI-Risikoberichte im PelicanMonitor** (28.09.2026, nur Monitor-
+Feature): der Monitor erzeugt selbst GLM-Berichte je Provider (MD+PDF unter
+`data/reports/`, Risiko-Score 1–10, Index `data/llm_reports.json`; Altberichte
+mit dem neuen validierten Score-Schema zurückgesetzt). Das ist eine EIGENE
+KI-Schicht des Monitors — unabhängig vom LLM-Layer des Scanners und von
+dessen Ampel/Score; `/reports` liefert weiterhin eine leere Liste, der
+Dokumente-Spiegel des Scanners zeigt also noch nichts. Sobald der Monitor
+`/reports` füllt, spiegelt der Scanner die PDFs automatisch (bestehender
+Sync, kein Adapter nötig).
+
 ### 4b. RoboMonitor (RoboForex) — dritte Quelle (implementiert 27.09.2026)
 
 Der RoboMonitor (`SIGNALDOWNLOADER/roboforex`, RoboForex-CopyFX) spricht
