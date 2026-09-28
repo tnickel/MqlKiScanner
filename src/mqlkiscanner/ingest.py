@@ -120,6 +120,11 @@ def kandidaten_aus_quellen(log=None) -> list[dict]:
             neu += 1
         _log(f"Quelle {quelle['kuerzel']}: {len(items)} Katalog-Einträge, "
              f"{neu} neue Kandidaten (gesamt {len(out)}).")
+    # Wie crawl_lists: absteigend nach Abonnenten. Die Reihenfolge entscheidet
+    # spaeter, wen top_n_export (Forensik-Export) trifft — unsortiert haette
+    # der Katalog eines Downloader-Defaults "aufsteigend" die KLEINSTEN
+    # Provider zuerst geliefert (Review MqlDownloader 28.09.2026).
+    out.sort(key=lambda s: -float(s.get("abonnenten") or 0))
     return out
 
 

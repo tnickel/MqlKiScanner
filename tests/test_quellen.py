@@ -348,6 +348,23 @@ def test_kandidaten_pelican_version_und_wochen():
     assert downloader_sync.versions("pelican") == ["pelican"]
 
 
+def test_kandidaten_aus_quellen_sortiert_groesste_zuerst(monkeypatch):
+    """Review MqlDownloader 28.09.: Die Katalog-Reihenfolge einer Quelle ist
+    kein Vertrag — top_n_export darf nie die KLEINSTEN Provider treffen.
+    kandidaten_aus_quellen sortiert deshalb absteigend nach Abonnenten
+    (wie crawl_lists im MQL5-Direktweg), egal in welcher Ordnung die Quelle
+    liefert."""
+    quelle = _quelle("mql5", "http://localhost:8089")
+    # Absichtlich AUFSTEIGEND geliefert (früherer Downloader-Default)
+    items = [{"signalId": str(i), "version": "mql5", "signalName": f"S{i}",
+              "subscribers": i, "url": ""} for i in range(1, 6)]
+    _verdrahte(monkeypatch, {
+        "http://localhost:8089": FakeClient(katalog=list(reversed(items)))})
+    kandidaten = ingest.kandidaten_aus_quellen()
+    assert [k["id"] for k in kandidaten[:3]] == [5, 4, 3], \
+        "die abonnentenstärksten Signale müssen zuerst kommen"
+
+
 def test_pelican_ende_zu_ende_wird_akzeptiert(monkeypatch):
     """PelicanMonitor: Version „pelican“, BOM + Punkt-Zeitstempel in trades.csv,
     FX-Kennzeichnung in metrics und InitialDepositVirtual als Kapitalbasis.

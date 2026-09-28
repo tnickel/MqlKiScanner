@@ -55,7 +55,7 @@ Toolbar-Button „REST-API an/aus“.
 
 | Projekt (Ordner) | Version(en) | Währung | Besonderheiten / Grenzen |
 |---|---|---|---|
-| **MqlDownloader** (Git: `tnickel/MqlDownloader`) | `mql4`/`mql5` | USD | Originär; Original-mql5-Exporte; MPDD-Filter gewollt; Initial Deposit folgt |
+| **MqlDownloader** (Git: `tnickel/MqlDownloader`) | `mql4`/`mql5` | USD | Originär; Original-mql5-Exporte; MPDD-Filter gewollt; Initial Deposit folgt; Katalog ohne weeks (28.09. bekannt: Wochen-Vorfilter greift für diese Quelle nicht — Stufe 2) |
 | **PelicanTrading** (Git: `tnickel/PelicanTrading`) | `pelican` | USD-normalisiert | serverseitige FX-Umrechnung seit 28.09.2026 (USC fix ÷100, übrige EZB-Kurs, Kennzeichnung in metrics/Katalog — doc/20 §4a.1); erweiterter metrics-Satz (Equity/Leverage/Markets …); SL nur offene Positionen; weeks im Katalog; InitialDepositVirtual als Forensik-Fallback (eigener Kanal, transparent im Urteil); eigene KI-Risikoberichte (GLM) im Monitor — /reports (noch) leere Liste |
 | **roboforex** (Git: `tnickel/robomonitor`) | `mql4`/`mql5` je Plattform | USD | MT5-Rohdeals serverseitig zu Positionen gepaart; Ø-Monatsrendite hergeleitet (Yield/Laufzeit) |
 | **vantage** (Git: `tnickel/vantagemonitor`) | `vantage` | USD/USC-normalisiert | gemessene 30-Tage-Rendite; Basis-Symbole (XAUUSD statt XAUUSD.sc); USC (US-Cent) serverseitig ÷100 nach USD; Drittwährung (EUR, GBP …): trades.csv 404 + Grund (Forensik rechnet USD); Kopierer-Historie aus kopierer.db (/history, 7/30-Tage-Zuwachs im Katalog) |
@@ -113,8 +113,8 @@ Anbindung einer neuen Quelle im Scanner: Admin → Datenquellen → hinzufügen
 
 | Projekt | Suite | Davon REST |
 |---|---|---|
-| SignalKiScanner | **951** grün (28.09.: +14 Fix-IDs, +3 Pelican-Akzeptanz/virtuelle Kapitalbasis) | 24 Quellen-/Akzeptanztests (je Quelle ein Ende-zu-Ende-Regressionstest — Pelican 28.09. nachgetragen) |
-| MqlDownloader | **81** grün | 3 (Instanz-Kennung) |
+| SignalKiScanner | **956** grün (28.09.: +14 Fix-IDs, +3 Pelican-Akzeptanz/virtuelle Kapitalbasis, +1 Quellen-Sortierung) | 25 Quellen-/Akzeptanztests (je Quelle ein Ende-zu-Ende-Regressionstest — Pelican 28.09. nachgetragen) |
+| MqlDownloader | **82** grün (28.09.: +1 Katalog-Ordnung/limit-Klammer) | 4 |
 | PelicanTrading | **36** grün (28.09.: FX/Stats-Erweiterung + Equity-Tab) | 11 |
 | roboforex | **120** grün (28.09.: +6 Paarungs-/Kontrakttests) | 10 (inkl. MT5-Paarung) |
 | vantage | **10** grün (28.09.: +2 Währungsschutz) | 10 |
