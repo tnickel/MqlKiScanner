@@ -58,7 +58,7 @@ Toolbar-Button „REST-API an/aus“.
 | **MqlDownloader** (Git: `tnickel/MqlDownloader`) | `mql4`/`mql5` | USD | Originär; Original-mql5-Exporte; MPDD-Filter gewollt; Initial Deposit folgt |
 | **PelicanTrading** (Git: `tnickel/PelicanTrading`) | `pelican` | USD-normalisiert | serverseitige FX-Umrechnung seit 28.09.2026 (USC fix ÷100, übrige EZB-Kurs, Kennzeichnung in metrics/Katalog — doc/20 §4a.1); erweiterter metrics-Satz (Equity/Leverage/Markets …); SL nur offene Positionen; weeks im Katalog; InitialDepositVirtual als Forensik-Fallback (eigener Kanal, transparent im Urteil); eigene KI-Risikoberichte (GLM) im Monitor — /reports (noch) leere Liste |
 | **roboforex** (Git: `tnickel/robomonitor`) | `mql4`/`mql5` je Plattform | USD | MT5-Rohdeals serverseitig zu Positionen gepaart; Ø-Monatsrendite hergeleitet (Yield/Laufzeit) |
-| **vantage** (kein Git) | `vantage` | USD/USC-normalisiert | gemessene 30-Tage-Rendite; Basis-Symbole (XAUUSD statt XAUUSD.sc); USC (US-Cent) serverseitig ÷100 nach USD; Drittwährung (EUR, GBP …): trades.csv 404 + Grund (Forensik rechnet USD); Kopierer-Historie aus kopierer.db (/history, 7/30-Tage-Zuwachs im Katalog) |
+| **vantage** (Git: `tnickel/vantagemonitor`) | `vantage` | USD/USC-normalisiert | gemessene 30-Tage-Rendite; Basis-Symbole (XAUUSD statt XAUUSD.sc); USC (US-Cent) serverseitig ÷100 nach USD; Drittwährung (EUR, GBP …): trades.csv 404 + Grund (Forensik rechnet USD); Kopierer-Historie aus kopierer.db (/history, 7/30-Tage-Zuwachs im Katalog) |
 | **zulumonitor** (Git: `tnickel/zulumonitor`) | `zulu` | Trader-Konto | trades.csv nur USD-Konten (149/200); keine Abonnenten-Historie (ehrlich leer); Demo-Flag im Katalog |
 
 Allen gemeinsam (Nutzer-Entscheidungen 27.09.2026, doc/20 §2): kein
@@ -131,5 +131,5 @@ Anbindung einer neuen Quelle im Scanner: Admin → Datenquellen → hinzufügen
 - Stufe 2–4: Composite-Identität (quelle, signal_id), Betreuer-Agent auf
   Quellen umstellen, MQL5-Crawler entfernen (`listen_modus=quellen` als
   Standard), weitere Börsen.
-- vantage: noch ohne Git-Repository (PelicanTrading liegt seit 28.09.2026
-  unter `tnickel/PelicanTrading`, private).
+- ~~vantage: noch ohne Git-Repository~~ — erledigt 28.09.2026:
+  `tnickel/vantagemonitor` (private) angelegt und gepusht.
