@@ -771,6 +771,7 @@ if command:
             r.urteil = (r.urteil or "") + " | bereits bewertet — unverändert übernommen"
             results.append(r)
         control["new_ids"] = new_ids
+        pipe.kursdaten_beenden()  # MT5-Terminal der Kursdaten nach dem Lauf schließen
         entschieden, vorpruefung, probleme = _station_kennzahlen(results)
         zusatz = f" · {len(uebernommen)} übernommen" if uebernommen else ""
         if stopped_early:

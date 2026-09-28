@@ -80,6 +80,7 @@ DEFAULT_SETTINGS: dict = {
     "rate_pause_zwischen_signalen_s": 5.0,
     "rate_backoff_429_s": 45.0,     # Wartezeit bei HTTP 429/503
     "mql5_fail_fast_after": 3,      # Abbruch nach N systemischen Export-Fehlern in Folge
+    "equity_rekonstruktion": True, # Equity-DD aus Kursen nachmessen (MT5-Terminal, Auto-GMT); ohne Terminal still aus
     "llm_stufe1": True,             # Massen-Profile (Flash)
     "llm_stufe2": True,             # Verdicts fuer Finalisten (starkes Modell)
     "llm_max_total_tokens": 5_000_000,  # Token-Budget je Lauf (Abo: grosszuegig)

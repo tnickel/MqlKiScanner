@@ -389,6 +389,21 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Ausbaustufen; Workspace-Einstieg `SIGNALDOWNLOADER/README.md`. Alle fünf
   REST-Schnittstellen integriert UND getestet (je Quelle ein Scanner-
   Akzeptanztest Ende-zu-Ende).
+- ✅ Equity-DD-Rekonstruktion aus Kursdaten (28.09.2026, Nutzer-Wunsch):
+  Der Broker-„By Equity"-DD ist eine Selbstauskunft — der Scanner misst ihn
+  nach (forensics/equity_rekonstruktion.py): Equity-Kurve auf H1-Raster mit
+  realisiertem UND floating PnL (Bar-Closes je Symbol, FX über EZB-Kurse);
+  Auto-GMT per Preisabgleich der Trade-Open/Closes gegen die High-Low-Spanne
+  (±14 h, ≥60 % Treffer, Tie-Break klein |Shift|). Kursdaten über
+  kursdaten.py (MetaTrader5-Paket, NUR LESEND, Terminal-Politik wie
+  Markt-Beobachter: portabler Selbststart nur mit markt_start_erlauben,
+  Beenden nach dem Lauf — GUI-Scan und autonomer Scan rufen
+  kursdaten_beenden()). Fließt NUR bei Abdeckung ≥95 % als viertes Maximum
+  in die Drawdown-Schranke ein (Risiko vor Ertrag); Urteil nennt
+  „Reko-EQ-DD … (aus Kursen, GMT ±N h)", Forensik-Snapshot + LLM-JSON
+  führen ihn mit. Ohne Terminal still aus (kein Malus). Setting
+  equity_rekonstruktion (an). 964 Tests grün (+8
+  tests/test_equity_rekonstruktion.py, synthetische Bars — kein MT5 nötig).
 - ✅ Fix-IDs — definierte Signal-IDs immer scannen (28.09.2026,
   Nutzer-Wunsch nach der Lücke, dass KiraCat seit 08.09. aus den Top-
   Listen gefallen war): Setting `fix_signal_ids` (app_settings.json,

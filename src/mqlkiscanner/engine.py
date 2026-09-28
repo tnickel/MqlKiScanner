@@ -11,12 +11,13 @@ import json
 from pathlib import Path
 
 from . import compare, parser, stats
-from .forensics import baskets, drawdown, exposure, martingale, news, stops
+from .forensics import baskets, drawdown, equity_rekonstruktion, exposure, martingale, news, stops
 
 
 def analyze(path: str, stress_move: float | None = None,
             broker: str | None = None, kapitalbasis_usd: float | None = None,
-            kapitalbasis_quelle: str | None = None) -> dict:
+            kapitalbasis_quelle: str | None = None,
+            kursanbieter=None) -> dict:
     """Vollstaendige Analyse eines Trade-Exports -> Befund-Dictionary.
 
     broker: Broker-/Serverkennung des Signals (z. B. "PepperstoneKE-MT5-Live01").
@@ -26,25 +27,34 @@ def analyze(path: str, stress_move: float | None = None,
     Greift NUR, wenn der Export keine Einzahlung vor dem ersten Trade enthaelt
     (MT4-Orderbuch beginnt mit der Signalhistorie); Schranke und Schock-in-
     Prozent sind sonst nicht berechenbar.
+    kursanbieter: optional (kursdaten.KursDaten o. ä.). Liefert er H1-Kurse,
+    wird die Equity-Kurve samt floating PnL rekonstruiert und der Equity-DD
+    nachgemessen (Auto-GMT per Preisabgleich); sonst entfällt der Test still.
     """
     parsed = parser.load_export(path)
+    forensics = {
+        "martingale": martingale.run(parsed),
+        "exposure": exposure.run(parsed, stress_move=stress_move, broker=broker,
+                                 kapitalbasis_usd=kapitalbasis_usd,
+                                 kapitalbasis_quelle=kapitalbasis_quelle),
+        "stops": stops.run(parsed),
+        "drawdown": drawdown.run(parsed, kapitalbasis_usd=kapitalbasis_usd,
+                                 kapitalbasis_quelle=kapitalbasis_quelle),
+        "baskets": baskets.run(parsed),
+        "news": news.run(parsed),
+    }
+    if kursanbieter is not None:
+        forensics["equity_rekonstruktion"] = equity_rekonstruktion.rekonstruiere(
+            parsed, kursanbieter,
+            startkapital=float(forensics["drawdown"].get("startkapital") or 0.0),
+            broker=broker)
     report = {
         "source": str(path),
         "source_format": parsed.source_format,
         "n_pendings": len(parsed.pendings),
         "n_balances": len(parsed.balances),
         "stats": stats.compute(parsed),
-        "forensics": {
-            "martingale": martingale.run(parsed),
-            "exposure": exposure.run(parsed, stress_move=stress_move, broker=broker,
-                                     kapitalbasis_usd=kapitalbasis_usd,
-                                     kapitalbasis_quelle=kapitalbasis_quelle),
-            "stops": stops.run(parsed),
-            "drawdown": drawdown.run(parsed, kapitalbasis_usd=kapitalbasis_usd,
-                                     kapitalbasis_quelle=kapitalbasis_quelle),
-            "baskets": baskets.run(parsed),
-            "news": news.run(parsed),
-        },
+        "forensics": forensics,
     }
     return report
 

@@ -171,6 +171,8 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
             log(f"  Fail-Fast zum Account-Schutz: {exc}")
             break
 
+    pipe.kursdaten_beenden()  # MT5-Terminal der Kursdaten schließen
+
     # KI-Berichte: Bedingungen wie die GUI (Key + geeignete Ergebnisse;
     # Teilscan erzwingt Neuerstellung über den Modus-Vertrag oben).
     jobs = [r for r in ergebnisse

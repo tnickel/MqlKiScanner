@@ -127,6 +127,11 @@ class ScanResult:
     # durch Persistenz, DB-Laden und Prompt-JSON geführt — die KI muss wissen,
     # ob DD-/Schock-Prozente gegen eine Annahme gerechnet sind.
     kapitalbasis_verwendet_usd: float | None = None
+    # Equity-DD-Rekonstruktion aus Kursdaten (nur bei verlässlicher Abdeckung
+    # gesetzt; geht dann als viertes Maximum in die Drawdown-Schranke ein)
+    equity_dd_rekonstruiert_pct: float | None = None
+    equity_dd_rekonstruiert_usd: float | None = None
+    equity_rekon_gmt_h: int | None = None
     kapitalbasis_verwendet_quelle: str = ""
     broker_server: str | None = None
     symbole: str = ""               # gehandelte Assets ("XAUUSD, US30, ...")
@@ -258,6 +263,14 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             kapitalbasis_usd=stats.get("initial_deposit_usd"),
             # Tatsächlich verwendete Kapitalbasis aus dem Forensik-Snapshot
             # (führt durch DB-Reload und Prompt-JSON; siehe ScanResult-Felder)
+            equity_dd_rekonstruiert_pct=(f.get("equity_rekonstruktion") or {}).get(
+                "equity_dd_pct") if (f.get("equity_rekonstruktion") or {}).get(
+                "verlaesslich") else None,
+            equity_dd_rekonstruiert_usd=(f.get("equity_rekonstruktion") or {}).get(
+                "equity_dd_usd") if (f.get("equity_rekonstruktion") or {}).get(
+                "verlaesslich") else None,
+            equity_rekon_gmt_h=(f.get("equity_rekonstruktion") or {}).get(
+                "gmt_offset_h"),
             kapitalbasis_verwendet_usd=(f.get("kapitalbasis") or {}).get("usd")
             if isinstance(f.get("kapitalbasis"), dict) else None,
             kapitalbasis_verwendet_quelle=(f.get("kapitalbasis") or {}).get("quelle") or ""
@@ -290,7 +303,8 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             eq = float(res.dd_equity_pct) if res.dd_equity_pct is not None else 0.0
             real = float(res.trading_dd_pct) if res.trading_dd_pct is not None else 0.0
             bal = float(res.dd_balance_pct) if res.dd_balance_pct is not None else 0.0
-            res.schranke_verletzt = max(eq, real, bal) > limit
+            reko = float(res.equity_dd_rekonstruiert_pct)                 if res.equity_dd_rekonstruiert_pct is not None else 0.0
+            res.schranke_verletzt = max(eq, real, bal, reko) > limit
         if res.gesamtbericht:
             res.kurzfassung = _extract_kurzfassung(res.gesamtbericht)
         if any((res.trade_analyse, res.risiko_analyse, res.gesamtbericht,
@@ -310,6 +324,14 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         # App-Neustart). Zentrale, idempotente Kennzeichnung — restore/refresh
         # baut das Urteil neu, der Hinweis bleibt dadurch erhalten.
         _kennezeichne_virtuelle_kapitalbasis(res)
+        # Rekonstruierter Equity-DD aus Kursen — Messwert im Urteil sichtbar
+        # halten (auch nach App-Neustart); idempotent per Marker-Suche.
+        if (res.equity_dd_rekonstruiert_pct is not None
+                and res.forensik_vorhanden and not res.fehler
+                and "Reko-EQ-DD" not in (res.urteil or "")):
+            res.urteil = (res.urteil or "") + (
+                f" · Reko-EQ-DD {res.equity_dd_rekonstruiert_pct} % "
+                f"(aus Kursen, GMT {res.equity_rekon_gmt_h:+d} h)")
         results.append(res)
     return results
 
@@ -419,6 +441,9 @@ def _forensik_json(r: ScanResult) -> str:
         "kapitalbasis_verwendet": (
             {"usd": r.kapitalbasis_verwendet_usd, "quelle": r.kapitalbasis_verwendet_quelle}
             if r.kapitalbasis_verwendet_quelle == KAPITALBASIS_QUELLE_VIRTUELL else None),
+        # Nachgemessener Equity-DD aus Kursdaten (floating inklusive) — die KI
+        # soll ihn als Messung deuten und gegen den gemeldeten Wert stellen.
+        "equity_dd_rekonstruiert_pct": r.equity_dd_rekonstruiert_pct,
     }, ensure_ascii=False)
 
 
@@ -532,9 +557,12 @@ def refresh_report_verdict(result: ScanResult, settings: dict) -> None:
         limit = float(settings.get("schranke_eq_dd_pct", 30.0))
         # Konservativ: vom Plattform-Drawdown der HOECHSTE By-Equity-/
         # By-Balance-Wert (Gold Spike: By Equity 3,8 % vs. By Balance 8,11 %).
+        # Rekonstruierter Equity-DD (aus Kursen, floating inklusive) geht bei
+        # verlässlicher Abdeckung als viertes Maximum ein — Risiko vor Ertrag.
         result.schranke_verletzt = max(result.dd_equity_pct or 0.0,
                                        result.trading_dd_pct or 0.0,
-                                       result.dd_balance_pct or 0.0) > limit
+                                       result.dd_balance_pct or 0.0,
+                                       result.equity_dd_rekonstruiert_pct or 0.0) > limit
     result.ampel, result.urteil = ampel_for(result, settings)
     # Kennzeichnung ueberlebt das Neubauen des Urteils (KI-Prompts, Portfolio,
     # DB-Neuladen rufen alle refresh_report_verdict).
@@ -592,6 +620,10 @@ class ScanPipeline:
         )
         # Aufeinanderfolgende systemische MQL5-Fehler (Ban/Drossel/Login).
         self._mql5_hard_fails = 0
+        # Kursdaten-Anbieter für die Equity-DD-Rekonstruktion (lazy, einmal
+        # pro Pipeline-Instanz; Setting equity_rekonstruktion, Default an).
+        self._kursanbieter = None
+        self._kursversuch = False
         self.fail_fast_after = max(1, int(self.settings.get("mql5_fail_fast_after", 3)))
 
     def _register_mql5_outcome(self, *, ok: bool, exc: BaseException | None = None,
@@ -842,7 +874,8 @@ class ScanPipeline:
                 report = analyze_export(
                     path, broker=res.broker_server,
                     kapitalbasis_usd=kapitalbasis,
-                    kapitalbasis_quelle=kapitalbasis_quelle)
+                    kapitalbasis_quelle=kapitalbasis_quelle,
+                    kursanbieter=self._kursanbieter_fuer(log))
             except Mql5CredentialsMissingError:
                 log("Trade-Export übersprungen (kein MQL5-Login) — "
                     "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
@@ -881,6 +914,16 @@ class ScanPipeline:
                 res.shock_pct_peak_time = expo.get("shock_pct_peak_time")
                 res.shock_pct_peak_account = expo.get("shock_pct_peak_account")
                 res.shock_pct_peak_usd = expo.get("shock_pct_peak_usd")
+                reko = fx.get("equity_rekonstruktion") or {}
+                if reko.get("status") == "ok" and reko.get("verlaesslich"):
+                    res.equity_dd_rekonstruiert_pct = reko.get("equity_dd_pct")
+                    res.equity_dd_rekonstruiert_usd = reko.get("equity_dd_usd")
+                    res.equity_rekon_gmt_h = reko.get("gmt_offset_h")
+                    log(f"✓ Equity-Rekonstruktion: Reko-EQ-DD {res.equity_dd_rekonstruiert_pct} % "
+                        f"(GMT {res.equity_rekon_gmt_h:+d} h, Abdeckung "
+                        f"{reko.get('abdeckung_pct')} %, floating inklusive)")
+                elif reko.get("status") == "skipped":
+                    log(f"Equity-Rekonstruktion übersprungen: {reko.get('grund')}")
                 res.martingale_flag = fx["martingale"].get("flag")
                 res.martingale_evidenz = fx["martingale"].get("evidence") or []
                 stops = fx["stops"]
@@ -959,6 +1002,9 @@ class ScanPipeline:
             detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
                       f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
+            if res.equity_dd_rekonstruiert_pct is not None:
+                detail += (f" · Reko-EQ-DD {res.equity_dd_rekonstruiert_pct} % "
+                           f"(aus Kursen, GMT {res.equity_rekon_gmt_h:+d} h)")
             res.urteil = grund + detail
             # Kennzeichnung aus der TATSÄCHLICH verwendeten Quelle (Engine-
             # Befund), nicht aus der Lauf-Absicht — echte CSV-Einzahlung
@@ -996,6 +1042,8 @@ class ScanPipeline:
                         "end_balance_real": fx["drawdown"].get("end_balance_real"),
                         "webseite_balance_usd": stats.get("balance_usd"),
                     },
+                    # Equity-DD-Rekonstruktion aus Kursen (Audit-Snapshot)
+                    "equity_rekonstruktion": fx.get("equity_rekonstruktion"),
                     "fx_kursquelle": expo.get("fx_conversion", {}).get("quelle"),
                     # Score nur bei vollstaendiger Forensik — Design-Regel:
                     # kein Score vor bestandener Batterie.
@@ -1046,6 +1094,34 @@ class ScanPipeline:
             hard_stop.result = res
             raise hard_stop
         return res
+
+    def _kursanbieter_fuer(self, log: LogCb):
+        """KursDaten lazy je Pipeline (ein Terminal-Start pro Lauf).
+
+        Ohne Terminal/ohne Freigabe: ein Versuch, danach still None —
+        die Rekonstruktion entfällt für den Rest des Laufs (kein Malus).
+        """
+        if self._kursversuch:
+            return self._kursanbieter
+        self._kursversuch = True
+        if not bool(self.settings.get("equity_rekonstruktion", True)):
+            return None
+        from . import kursdaten
+        anbieter = kursdaten.KursDaten(self.settings)
+        ok, grund = anbieter.starten()
+        if ok:
+            self._kursanbieter = anbieter
+            log("Kursdaten: Terminal verbunden — Equity-DD-Rekonstruktion aktiv.")
+        else:
+            log(f"Kursdaten nicht verfügbar: {grund} — Equity-Rekonstruktion entfällt.")
+            anbieter.beenden()
+        return self._kursanbieter
+
+    def kursdaten_beenden(self) -> None:
+        """Terminal des Kursdaten-Anbieters sauber beenden (Lauf-Ende)."""
+        if self._kursanbieter is not None:
+            self._kursanbieter.beenden()
+            self._kursanbieter = None
 
     # ------------------------------------------------------ Schritt 4
     def run_llm(self, results: list[ScanResult], log: LogCb,

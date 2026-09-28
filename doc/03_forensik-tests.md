@@ -250,3 +250,25 @@ Drawdown-Historie, Strukturrisiko (SL? Grid? Martingale?), Margin-Disziplin,
 Transparenz, Track-Record-Länge, Copy-/Slippage-Risiko, Broker-Umgebung.
 Kalibrierung aus der Reihe: Gold Spike 4,0 / Gold Reaper 4,4 / KiraCat 4,7 /
 MSC 5,6 / FXtrading 5,7 / World PEACE 8,0.
+
+
+## 5. Equity-DD-Rekonstruktion aus Kursdaten (28.09.2026, Nutzer-Wunsch)
+
+Der Broker-„By Equity"-DD ist eine Selbstauskunft. Diese Prüfung misst ihn
+NACH: Auf einem H1-Raster wird Equity = Startkapital + realisiert + floating
+(Bar-Close je Symbol, FX-Kreuze über EZB-Kurse nach USD) geführt; der
+maximale Rückfall ist der Reko-EQ-DD.
+
+- **Auto-GMT:** Trade-Zeiten sind Signal-Broker-Zeit, Kurse Terminal-Zeit.
+  Der Shift wird per Preisabgleich ermittelt (Open/Close in High-Low-Spanne
+  der getroffenen H1-Bar; ±14 h Kandidaten, ≥ 60 % Treffer, Tie-Break kleines
+  |Shift|). Ohne eindeutiges Ergebnis: ehrlicher Skip.
+- **Schranke:** Fließt nur bei Abdeckung ≥ 95 % der offenen H1-Punkte (und
+  ohne EZB-Kurslücke) als viertes Maximum in die 30-%-Drawdown-Schranke ein;
+  sonst informativ (Status unvollständig, kein Schranken-Wert).
+- **Still ohne Terminal:** Ohne laufendes MT5-Terminal (und ohne
+  markt_start_erlauben) entfällt die Prüfung kommentarlos — kein Malus.
+- Setting: `equity_rekonstruktion` (Default an). Terminal-Lebenszyklus wie
+  beim Markt-Beobachter (portabler Selbststart, Beenden nach dem Lauf).
+- Urteil nennt „Reko-EQ-DD X % (aus Kursen, GMT +N h)"; KI-Forensik-JSON
+  enthält equity_dd_rekonstruiert_pct.

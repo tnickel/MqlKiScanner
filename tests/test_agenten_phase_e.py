@@ -103,6 +103,9 @@ class _FakePipeline:
         _FakePipeline.aufrufe.append("llm")
         return {"completed": 3 * len(results)}
 
+    def kursdaten_beenden(self):
+        _FakePipeline.aufrufe.append("kursdaten_beenden")
+
     def run_portfolio(self, results, log, on_progress=None, should_stop=None):
         _FakePipeline.aufrufe.append("portfolio")
         return {"text": "Portfolio"}
