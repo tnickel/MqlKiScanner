@@ -327,14 +327,20 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   nur Geldbeträge skaliert; offline ohne je gecachten Kurs → trades.csv
   404 + Grund). Erweiterter metrics-Satz (Equity, Leverage, Trades/Monat,
   MarketsCount, TopMarkets, CopiersAum/-Profit) seit 28.09.; Initial-
-  DepositVirtual 10000 als klar markierte Annahme — das ECHTE Initial-
-  Deposit fehlt weiter (Kapitalbasis-Regel ruht; Scanner ignoriert
-  unbekannte Keys). Stop-Nachweis nur offene Positionen (Historie ehrlich
-  „kein Nachweis" + Verhaltensanalyse), weeks im Katalog → Wochen-Vorfilter
-  greift. Eigene KI-Risikoberichte (GLM-5.3) im Monitor selbst (MD+PDF,
-  Risiko-Score 1–10, data/reports; Altberichte 28.09. mit neuem Score-
-  Schema zurückgesetzt) — unabhängig vom Scanner-LLM; /reports liefert
-  (noch) eine leere Liste, der Scanner-Spiegel zeigt also noch nichts.
+  DepositVirtual 10000 als klar markierte Annahme — der Scanner nutzt sie
+  seit 28.09. (Nutzer-Wunsch) über einen EIGENEN Kanal als Engine-Fallback
+  (pipeline.KAPITALBASIS_QUELLE_VIRTUELL): ohne sie bliebe die Forensik
+  unvollständig (Quellen-CSVs haben keine Einzahlungszeilen). Nie als
+  initial_deposit_usd, nie im Cent-Abgleich, Urteil nennt „Kapitalbasis
+  virtuell". Das ECHTE Initial Deposit gewinnt immer. Stop-Nachweis nur
+  offene Positionen (Historie ehrlich „kein Nachweis" + Verhaltens-
+  analyse), weeks im Katalog → Wochen-Vorfilter greift. Eigene
+  KI-Risikoberichte (GLM-5.3) im Monitor selbst (MD+PDF, Risiko-Score
+  1–10, data/reports; Altberichte 28.09. mit neuem Score-Schema
+  zurückgesetzt) — unabhängig vom Scanner-LLM; /reports liefert (noch)
+  eine leere Liste, der Scanner-Spiegel zeigt also noch nichts.
+  Ende-zu-Ende-Akzeptanztest test_pelican_ende_zu_ende_wird_akzeptiert
+  (28.09. nachgetragen: BOM, FX-Felder, virtuelle Kapitalbasis).
   Scanner-seitig: platform_version("pelican"), Plattform-Durchreichung.
   Anbindung: Admin → Datenquellen → z. B. Kürzel „pelik", http://rechner:8090.
 - ✅ RoboMonitor (RoboForex) als dritte Quelle (27.09.2026 abends, doc/20

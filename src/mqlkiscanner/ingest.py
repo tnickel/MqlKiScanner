@@ -181,6 +181,11 @@ def metrics_zu_stats(antwort: dict | None) -> dict:
         "monthly_growth_pct": metrics.get("Average3MonthProfit"),
         "subscribers": metrics.get("Subscribers"),
         "initial_deposit_usd": metrics.get("InitialDeposit"),
+        # Virtuelle Kapitalbasis (z. B. PelicanMonitor "InitialDepositVirtual"):
+        # klar markierte Annahme, KEIN Plattformwert. Dient als Fallback fuer
+        # die Forensik (DD-/Schock-Prozente brauchen ein Startkapital), nie
+        # als echtes InitialDeposit und nie in den Cent-genauen Abgleich.
+        "kapitalbasis_virtual_usd": metrics.get("InitialDepositVirtual"),
         "balance_usd": metrics.get("Balance"),
         "stats_quelle": "datenquelle_metrics",
     }

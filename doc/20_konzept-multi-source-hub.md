@@ -118,7 +118,7 @@ SignalKiScanner"):
 |---|---|---|
 | Trades | positionell (Open+Close je Zeile), serverseitig ins mql5-CSV konvertiert (Zeitstempel mit Punkten) | Forensik läuft unverändert |
 | Kontowährung | **gemischt** (USD, USC, EUR, JPY …), seit 28.09.2026 **serverseitig nach USD umgerechnet** (siehe 4a.1) | `trades.csv` für alle Konten; Forensik rechnet USD wie gehabt |
-| Initial Deposit | nicht verfügbar; seit 28.09.2026 zusätzlich `InitialDepositVirtual` (siehe 4a.1) | Kapitalbasis-Regel ruht weiter — **Virtual NICHT in den Abgleich speisen** |
+| Initial Deposit | nicht verfügbar; seit 28.09.2026 zusätzlich `InitialDepositVirtual` (siehe 4a.1) | Kapitalbasis-Regel ruht weiter — Virtual fließt seit 28.09. als eigener Fallback-Kanal in die Forensik, **nie** in den Abgleich als `initial_deposit_usd` |
 | Stop-Nachweis | StopPrice nur bei offenen Positionen | Historie ohne SL → „kein Nachweis" + Verhaltensanalyse (§2.1) |
 | Signalalter | `weeks` im Katalog | Wochen-Vorfilter greift erstmals für Quellen-Signale |
 | Abonnenten | Copiers + Historie (copier_historie) | 7/30-Tage-Bilanz wie bei MQL5 |
@@ -157,9 +157,19 @@ Kontowährungen verfügbar, Geldbeträge serverseitig in USD:
 `InitialDeposit` bleibt **bewusst weg**: `_kapitalbasis_abgleich` gleicht
 eine injizierte Kapitalbasis Cent-genau gegen die Web-Balance ab — ein
 virtueller Wert würde JEDEM Pelican-Signal „Kapitalbasis unbestätigt"
-geben. `InitialDepositVirtual` ist nur für eine bewusste spätere Nutzung
-gedacht (z. B. Anzeige/Filter), niemals als `initial_deposit_usd` in den
-Abgleich.
+geben.
+
+**Scanner nutzt die virtuelle Annahme seit 28.09.2026 als Fallback**
+(Nutzer-Wunsch): Ohne Einzahlungszeilen und ohne Initial Deposit wäre
+`capital_history_complete = False` — die Forensik bliebe unvollständig und
+jedes Quellen-Signal ⚪. Deshalb injiziert die Pipeline
+`InitialDepositVirtual` über einen EIGENEN Kanal
+(`KAPITALBASIS_QUELLE_VIRTUELL`): DD-/Schock-Prozente rechnen damit, aber —
+niemals als `initial_deposit_usd` (rote Kapitalbasis-Regel unberührt),
+— kein Cent-Abgleich (eine Annahme hat keine Web-Balance),
+— transparent im Urteil („Kapitalbasis virtuell (Annahme der Datenquelle)")
+und im Forensik-Snapshot (`kapitalbasis.quelle`). Ein echtes
+`InitialDeposit` gewinnt immer gegen die virtuelle Annahme.
 
 **Erweiterter `metrics`-Satz** (28.09.2026, ebenfalls additiv): `Equity`,
 `Leverage`, `MinTradesPerMonth`, `MaxTradesPerMonth`, `MarketsCount`,
@@ -250,6 +260,7 @@ dienen nur als Ersatz für die wegfallende MQL5-Kennzahlenseite:
 | `ertrag_monat_pct` | `metrics.Average3MonthProfit` |
 | `abonnenten` | Katalog `subscribers` |
 | `kapitalbasis_usd` | **bisher nicht verfügbar** — bis Downloader-Erweiterung |
+| Engine-Kapitalbasis | Fallback `metrics.InitialDepositVirtual` (28.09.2026, eigener Kanal `virtuelle_annahme` — siehe §4a.1; kein `kapitalbasis_usd`, kein Cent-Abgleich) |
 
 ### Offene Verifikationspunkte (vor dem Abschalten des Direktwegs)
 

@@ -56,7 +56,7 @@ Toolbar-Button „REST-API an/aus“.
 | Projekt (Ordner) | Version(en) | Währung | Besonderheiten / Grenzen |
 |---|---|---|---|
 | **MqlDownloader** (Git: `tnickel/MqlDownloader`) | `mql4`/`mql5` | USD | Originär; Original-mql5-Exporte; MPDD-Filter gewollt; Initial Deposit folgt |
-| **PelicanTrading** (kein Git) | `pelican` | USD-normalisiert | serverseitige FX-Umrechnung seit 28.09.2026 (USC fix ÷100, übrige EZB-Kurs, Kennzeichnung in metrics/Katalog — doc/20 §4a.1); erweiterter metrics-Satz (Equity/Leverage/Markets …); SL nur offene Positionen; weeks im Katalog; InitialDepositVirtual (additiv); eigene KI-Risikoberichte (GLM) im Monitor — /reports (noch) leere Liste |
+| **PelicanTrading** (kein Git) | `pelican` | USD-normalisiert | serverseitige FX-Umrechnung seit 28.09.2026 (USC fix ÷100, übrige EZB-Kurs, Kennzeichnung in metrics/Katalog — doc/20 §4a.1); erweiterter metrics-Satz (Equity/Leverage/Markets …); SL nur offene Positionen; weeks im Katalog; InitialDepositVirtual als Forensik-Fallback (eigener Kanal, transparent im Urteil); eigene KI-Risikoberichte (GLM) im Monitor — /reports (noch) leere Liste |
 | **roboforex** (Git: `tnickel/robomonitor`) | `mql4`/`mql5` je Plattform | USD | MT5-Rohdeals serverseitig zu Positionen gepaart; Ø-Monatsrendite hergeleitet (Yield/Laufzeit) |
 | **vantage** (kein Git) | `vantage` | USD/USC-normalisiert | gemessene 30-Tage-Rendite; Basis-Symbole (XAUUSD statt XAUUSD.sc); USC (US-Cent) serverseitig ÷100 nach USD; Drittwährung (EUR, GBP …): trades.csv 404 + Grund (Forensik rechnet USD); Kopierer-Historie aus kopierer.db (/history, 7/30-Tage-Zuwachs im Katalog) |
 | **zulumonitor** (Git: `tnickel/zulumonitor`) | `zulu` | Trader-Konto | trades.csv nur USD-Konten (149/200); keine Abonnenten-Historie (ehrlich leer); Demo-Flag im Katalog |
@@ -113,7 +113,7 @@ Anbindung einer neuen Quelle im Scanner: Admin → Datenquellen → hinzufügen
 
 | Projekt | Suite | Davon REST |
 |---|---|---|
-| SignalKiScanner | **948** grün (28.09.: +14 Fix-IDs) | 21 Quellen-/Akzeptanztests (je Quelle ein Ende-zu-Ende-Regressionstest) |
+| SignalKiScanner | **951** grün (28.09.: +14 Fix-IDs, +3 Pelican-Akzeptanz/virtuelle Kapitalbasis) | 24 Quellen-/Akzeptanztests (je Quelle ein Ende-zu-Ende-Regressionstest — Pelican 28.09. nachgetragen) |
 | MqlDownloader | **81** grün | 3 (Instanz-Kennung) |
 | PelicanTrading | **36** grün (28.09.: FX/Stats-Erweiterung + Equity-Tab) | 11 |
 | roboforex | **114** grün | 9 (inkl. MT5-Paarung) |

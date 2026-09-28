@@ -348,6 +348,92 @@ def test_kandidaten_pelican_version_und_wochen():
     assert downloader_sync.versions("pelican") == ["pelican"]
 
 
+def test_pelican_ende_zu_ende_wird_akzeptiert(monkeypatch):
+    """PelicanMonitor: Version „pelican“, BOM + Punkt-Zeitstempel in trades.csv,
+    FX-Kennzeichnung in metrics und InitialDepositVirtual als Kapitalbasis.
+    Ohne die virtuelle Annahme bliebe die Forensik unvollständig (Quellen-CSVs
+    haben keine Einzahlungszeilen) — mit ihr wird sie vollständig, OHNE je als
+    echtes InitialDeposit zu gelten (kein Cent-Abgleich, keine rote Regel)."""
+    quelle = _quelle("pelik", "http://pelican:8090")
+    # Wie der echte Server: \ufeff-BOM, 11 Spalten, Kommission/Swap im Netto-PnL.
+    peli_csv = (
+        "﻿Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n"
+        "2026.09.22 12:00:00;Buy;0.01;XAUUSD;4336.63;0.01;2026.09.22 13:41:58;4319.67;0;;-0.17\n"
+        "2026.09.21 08:15:02;Sell;0.03;XAUUSD;4325.5;0.03;2026.09.21 09:00:01;4320.25;0;;14.02\n"
+        "2026.09.20 07:00:00;Buy;0.02;XAUUSD;4301.0;0.02;2026.09.20 08:00:00;4296.5;0;;-8.4\n"
+        "2026.09.19 07:30:00;Sell;0.01;XAUUSD;4310.0;0.01;2026.09.19 09:00:00;4302.0;0;;7.9\n"
+    ).encode("utf-8")
+    katalog_item = {"signalId": "2014074", "version": "pelican",
+                    "signalName": "The Holy Grail", "subscribers": 996, "weeks": 96,
+                    "currencyCode": "EUR"}
+    metrics = {"metrics": {
+        "EquityDrawdown": 12.5, "Average3MonthProfit": 3.1, "Weeks": 96,
+        "Currency": "EUR", "CurrencyConvertedToUsd": True,
+        "CurrencyRateToUsd": 1.08, "CurrencyNote": "EUR → USD (EZB)",
+        "InitialDepositVirtual": 10000.0}}
+    _verdrahte(monkeypatch, {
+        "http://pelican:8090": FakeClient(katalog=[katalog_item], trades=peli_csv,
+                                          metrics=metrics)})
+
+    def exporter_verboten(*args, **kwargs):
+        pytest.fail("exporter darf im Quellen-Modus nicht gerufen werden")
+    monkeypatch.setattr(pipeline.exporter, "export_positions", exporter_verboten)
+
+    kandidat = ingest.kandidaten(quelle, [katalog_item])[0]
+    pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
+    assert result.quelle == "pelik" and result.platform == "pelican"
+    # Kern der Integration: Forensik wird VOLLSTÄNDIG (virtuelle Kapitalbasis)
+    assert not result.fehler, result.fehler
+    assert result.forensik_vorhanden
+    assert result.trading_dd_pct is not None and result.shock_pct_max is not None
+    # Virtuelle Basis ist kein Initial Deposit: rote Regel unberührt (kein Wert),
+    # Urteil nennt die Annahme transparent.
+    assert result.kapitalbasis_usd is None
+    assert "Kapitalbasis virtuell" in result.urteil
+    artefakt = db.get_quellen_artefakt(quelle["id"], 2014074, "pelican", "trades")
+    assert artefakt and artefakt["path"].replace("\\", "/").endswith(
+        "pelican_2014074_trades.csv")
+    assert db.get_signal(2014074)["quelle"] == "pelik"
+    # Audit in der DB: Forensik-Snapshot führt Quelle+Höhe der Basis mit.
+    neu = [r for r in pipeline.results_from_db() if r.id == 2014074][0]
+    assert "Kapitalbasis virtuell" in neu.urteil
+    gespeichert = neu.fehler == "" and neu.forensik_vorhanden
+
+
+def test_virtuelle_kapitalbasis_ohne_balance_ohne_abgleich(monkeypatch):
+    """Der Cent-Abgleich gegen die Web-Balance gilt nur für die ECHTE
+    Signalseiten-Basis — die virtuelle Annahme hat keine Balance und darf
+    deshalb 'Kapitalbasis unbestätigt' nie auslösen (auch ohne Balance-Feld)."""
+    quelle = _quelle("pelik", "http://pelican:8090")
+    metrics = {"metrics": {"EquityDrawdown": 8.0, "Average3MonthProfit": 5.5,
+                           "InitialDepositVirtual": 10000.0}}  # kein Balance-Feld
+    _verdrahte(monkeypatch, {
+        "http://pelican:8090": FakeClient(trades=MINI_CSV, metrics=metrics)})
+    kandidat = ingest.kandidaten(quelle, [
+        {"signalId": "4711", "version": "pelican", "signalName": "Ohne Balance",
+         "subscribers": 1, "weeks": 40}])[0]
+    pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
+    assert not result.fehler, result.fehler
+    assert result.forensik_vorhanden
+    assert "unbestätigt" not in (result.urteil or "")
+
+
+def test_echte_kapitalbasis_hat_vorrang_vor_virtueller(monkeypatch):
+    """Liefert eine Quelle BOTH InitialDeposit (echt) und Virtual, gewinnt das
+    echte — der Cent-Abgleich bleibt für belegte Werte aktiv."""
+    quelle = _quelle("pelik", "http://pelican:8090")
+    stats = ingest.metrics_zu_stats({"metrics": {
+        "InitialDeposit": 2500.0, "InitialDepositVirtual": 10000.0}})
+    assert stats["initial_deposit_usd"] == 2500.0
+    assert stats["kapitalbasis_virtual_usd"] == 10000.0
+    # Und im Abgleich: virtuelle Quelle wird übersprungen, echte geprüft
+    ok, meldung = pipeline._kapitalbasis_abgleich(
+        {"startkapital_quelle": pipeline.KAPITALBASIS_QUELLE_VIRTUELL}, {})
+    assert ok and meldung == ""
+
+
 def test_roboforex_ende_zu_ende_wird_akzeptiert(monkeypatch):
     """RoboMonitor (RoboForex) liefert Version je Plattform (mql4/mql5), BOM,
     Punkt-Zeitstempel und weeks — der Scanner nimmt das Format unverändert an

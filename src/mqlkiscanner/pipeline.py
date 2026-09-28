@@ -39,6 +39,14 @@ from .mql5.session import Mql5Session
 ProgressCb = Callable[[int, int, str], None]
 LogCb = Callable[[str], None]
 
+# Quellen-Label der virtuellen Kapitalbasis (Nutzer-Wunsch 28.09.2026): Ein
+# Monitor ohne Initial-Deposit-Daten (z. B. PelicanMonitor) kann eine klar
+# markierte Annahme liefern ("InitialDepositVirtual"). Sie gibt der Forensik
+# ein Startkapital (DD-/Schock-Prozente), gilt aber ausdrücklich NICHT als
+# belegtes Initial Deposit: kein Cent-Abgleich gegen die Web-Balance, keine
+# rote Kapitalbasis-Regel, transparent im Urteil.
+KAPITALBASIS_QUELLE_VIRTUELL = "virtuelle_annahme"
+
 
 @dataclass
 class StepLog:
@@ -257,6 +265,13 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         elif forensik_stale:
             res.urteil = "Forensik veraltet oder unvollständig — erneute Prüfung erforderlich."
         restore_current_reports(res, settings)
+        # Virtuelle Kapitalbasis dauerhaft im Urteil kennzeichnen (auch nach
+        # App-Neustart): Forensik-Snapshot führt die Quelle der Basis mit.
+        if (isinstance(f.get("kapitalbasis"), dict)
+                and f["kapitalbasis"].get("quelle") == KAPITALBASIS_QUELLE_VIRTUELL
+                and res.forensik_vorhanden and not res.fehler):
+            res.urteil = (res.urteil or "") + \
+                " · Kapitalbasis virtuell (Annahme der Datenquelle)"
         results.append(res)
     return results
 
@@ -380,9 +395,12 @@ def _kapitalbasis_abgleich(drawdown_befund: dict, stats: dict) -> tuple[bool, st
 
     Returns (ok, fehlermeldung). Bei Kapitalbasis aus CSV-Einzahlungen ent-
     faellt der Check — ein aelterer Cache-Export darf real abweichen, ohne
-    die Bewertung umzuwerfen.
+    die Bewertung umzuwerfen. Dasselbe gilt fuer die VIRTUELLE Annahme aus
+    einem Quellen-Monitor: Sie ist per Definition kein Plattformwert und
+    hat keine Webseiten-Balance zum Abgleich.
     """
-    if drawdown_befund.get("startkapital_quelle", "csv_einzahlungen") == "csv_einzahlungen":
+    quelle = drawdown_befund.get("startkapital_quelle", "csv_einzahlungen")
+    if quelle in ("csv_einzahlungen", KAPITALBASIS_QUELLE_VIRTUELL):
         return True, ""
     web_kontostand = stats.get("balance_usd")
     real = drawdown_befund.get("end_balance_real")
@@ -658,6 +676,9 @@ class ScanPipeline:
     def _analyze_candidate_once(self, session: Mql5Session, cand: dict,
                           log: LogCb) -> ScanResult:
         stats: dict = {}  # bleibt leer, wenn die Kennzahlen-Seite fehlschlaegt
+        # Kapitalbasis-Entscheidung dieses Laufs (Audit/Uurteil-Kennzeichnung);
+        # im try wird sie ggf. auf die virtuelle Annahme umgestellt.
+        kapitalbasis_quelle = "signalseite_initial_deposit"
         res = ScanResult(id=cand["id"], name=cand.get("name") or str(cand["id"]),
                          platform=cand.get("platform") or "", url=cand.get("url", ""),
                          autor=cand.get("autor") or "",
@@ -740,13 +761,25 @@ class ScanPipeline:
                     else "nicht verfuegbar (offline?) — FX-Kreuze bleiben ohne USD-Schock"))
                 # Broker mitgeben: cross_broker=false-Kontraktspecs (z. B. Oel)
                 # gelten nur fuer den gelisteten Broker des Signals.
-                # Kapitalbasis von der Signalseite ("Initial Deposit"): greift
-                # nur, wenn der Export keine Einzahlung vor dem ersten Trade
-                # enthaelt (MT4-Orderbuch beginnt mit der Signalhistorie).
+                # Kapitalbasis: 1) Signalseite "Initial Deposit" (belegt,
+                # Cent-Abgleich), 2) virtuelle Annahme aus dem Quellen-Monitor
+                # ("InitialDepositVirtual", z. B. Pelican) — greift nur, wenn
+                # der Export keine Einzahlung vor dem ersten Trade enthaelt
+                # (Quellen-CSVs haben keine Kontobewegungszeilen).
+                kapitalbasis = stats.get("initial_deposit_usd")
+                kapitalbasis_quelle = "signalseite_initial_deposit"
+                kapitalbasis_virtual = stats.get("kapitalbasis_virtual_usd")
+                if kapitalbasis is None and kapitalbasis_virtual is not None \
+                        and float(kapitalbasis_virtual) > 0:
+                    kapitalbasis = float(kapitalbasis_virtual)
+                    kapitalbasis_quelle = KAPITALBASIS_QUELLE_VIRTUELL
+                    log(f"Kapitalbasis: virtuelle Annahme "
+                        f"{kapitalbasis_virtual:,.0f} USD aus der Datenquelle "
+                        "(kein Plattformwert — DD-/Schock-Prozente damit gerechnet).")
                 report = analyze_export(
                     path, broker=res.broker_server,
-                    kapitalbasis_usd=stats.get("initial_deposit_usd"),
-                    kapitalbasis_quelle="signalseite_initial_deposit")
+                    kapitalbasis_usd=kapitalbasis,
+                    kapitalbasis_quelle=kapitalbasis_quelle)
             except Mql5CredentialsMissingError:
                 log("Trade-Export übersprungen (kein MQL5-Login) — "
                     "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
@@ -843,6 +876,8 @@ class ScanPipeline:
                 # Webseiten-Kontobasis (Audit: woher die Kapitalbasis kommt)
                 "initial_deposit_usd": stats.get("initial_deposit_usd"),
                 "balance_usd": stats.get("balance_usd"),
+                # Virtuelle Annahme aus dem Quellen-Monitor (Audit-Snapshot)
+                "kapitalbasis_virtual_usd": stats.get("kapitalbasis_virtual_usd"),
             }
             if res.fehler and not res.forensik_vorhanden:
                 stats_payload["last_fehler"] = res.fehler
@@ -855,6 +890,10 @@ class ScanPipeline:
             detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
                       f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
+            # Transparente Kennzeichnung: DD-/Schock-Prozente sind gegen die
+            # virtuelle Annahme gerechnet, nicht gegen belegtes Startkapital.
+            if res.forensik_vorhanden and kapitalbasis_quelle == KAPITALBASIS_QUELLE_VIRTUELL:
+                detail += " · Kapitalbasis virtuell (Annahme der Datenquelle)"
             res.urteil = grund + detail
             forensik_payload = None
             # Auch unvollstaendige Laeufe speichern ihre Teilergebnisse
