@@ -210,7 +210,7 @@ Besonderheiten gegenüber den anderen Quellen:
 
 | Thema | RoboForex-Lage | Folge im Scanner |
 |---|---|---|
-| Trades | MT4 positionell direkt; **MT5-Rohdeals serverseitig über IN/OUT-Paarung zu Positionen** (Commission/Swaps echt) | Forensik läuft unverändert |
+| Trades | MT4 positionell direkt; **MT5-Rohdeals serverseitig über IN/OUT-Paarung zu Positionen** (Commission/Swaps echt). Seit 28.09. komplett: Teilschließungen (mehrere OUT) und Nachschüben (mehrere IN) werden vollständig aufsummiert; beschnittene Historie am 20.000-Deal-Deckel (OUT ohne IN) wird mit invertierter Richtung + Zeit/Kurs-Fallback gerettet — leere Pflichtfelder hätten den Scanner die ganze CSV abweisen lassen | Forensik läuft unverändert |
 | Währung | CopyFX rechnet durchgängig USD | kein Währungsfilter nötig |
 | Drawdown | Zeitraum-DD und Gesamt-DD (`MaxDrawdownGesamtProzent`) | `EquityDrawdown` = Gesamt-DD (Fallback Zeitraum) |
 | Ertrag | nur Yield % seit Start | `Average3MonthProfit` = Ø-Monatsrendite, serverseitig **hergeleitet** (Yield/Laufzeit) |

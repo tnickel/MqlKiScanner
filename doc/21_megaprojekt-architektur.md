@@ -116,7 +116,7 @@ Anbindung einer neuen Quelle im Scanner: Admin → Datenquellen → hinzufügen
 | SignalKiScanner | **951** grün (28.09.: +14 Fix-IDs, +3 Pelican-Akzeptanz/virtuelle Kapitalbasis) | 24 Quellen-/Akzeptanztests (je Quelle ein Ende-zu-Ende-Regressionstest — Pelican 28.09. nachgetragen) |
 | MqlDownloader | **81** grün | 3 (Instanz-Kennung) |
 | PelicanTrading | **36** grün (28.09.: FX/Stats-Erweiterung + Equity-Tab) | 11 |
-| roboforex | **114** grün | 9 (inkl. MT5-Paarung) |
+| roboforex | **120** grün (28.09.: +6 Paarungs-/Kontrakttests) | 10 (inkl. MT5-Paarung) |
 | vantage | **10** grün (28.09.: +2 Währungsschutz) | 10 |
 | zulumonitor | **63** grün | 9 |
 
