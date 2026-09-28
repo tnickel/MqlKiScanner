@@ -41,6 +41,15 @@ HELP_CONTENT = {
 
 **Ohne Zugänge** kannst du lokale Verifikationsdaten auswerten. Ohne KI-Key bleiben berechnete Befunde verfügbar; es entstehen keine KI-Berichte.
 """),
+    "fix_ids": ("Fix-IDs: definierte Signale immer scannen", """
+**Kurzfassung:** Fix-IDs sind Signal-IDs, die **jeder** Scan prüft — egal, ob sie noch in den MQL5-Top-Listen stehen, die Wochen-/Abonnenten-Vorfilter bestehen oder die Export-Auswahl (Top N) voll ist. In der Tabelle tragen sie die Markierung **📌 FIX**.
+
+**Warum das nötig ist.** Der Scanner holt seine Kandidaten aus den Top-Listen (2 Seiten je Plattform) und filtert danach. Ein gepinntes Signal wie die Empfehlung KiraCat rutscht irgendwann aus dieser Menge heraus — und würde unbemerkt nicht mehr geprüft. Fix-IDs schließen diese Lücke.
+
+**Setzen.** Drei Wege: Checkmark **„📌 Fix — immer scannen“** in der Detailansicht eines Signals, die Eingabe **„Signal-ID fix setzen“** auf der Ergebnisseite (Abschnitt „Fix-IDs · immer scannen“) oder abwählen in derselben Liste zum Entfernen.
+
+**Was Fix NICHT ist.** Kein Vorzugsurteil: Ampel, Score und Urteil gelten unverändert. Der Teilscan prüft 🟢/🟡-Signale plus alle Fix-IDs; fehlt eine Fix-ID in den Listen, lädt der Scanner ihre Signalseite einzeln nach.
+"""),
     "results_runs": ("Aktueller Lauf, Archiv und Datenbank", """
 **Datenbank (alle Berichte)** zeigt alle in SQLite gespeicherten Signale mit Forensik und KI-Texten. **NEU** markiert Signale, für die im letzten Lauf dieser Sitzung Kennzahlen, Befunde oder Signalberichte neu gespeichert wurden. Unverändert übernommene Bewertungen zählen nicht dazu.
 

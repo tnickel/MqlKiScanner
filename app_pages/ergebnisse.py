@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 import streamlit as st
 
-from mqlkiscanner import (config, db, downloader_sync, pipeline, regelwerk,
+from mqlkiscanner import (config, db, downloader_sync, fix_signale, pipeline, regelwerk,
                           scan_state, scan_worker, tiefen_batch, tradeserver_sync)
 from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, render_detail,
                                  render_downloader_docs_panel, render_report_panel,
@@ -265,6 +265,65 @@ demo_only = bool(results) and all(getattr(r, 'source_kind', 'live') == 'demo'
                                   for r in results)
 portfolio = None if demo_only or not isinstance(portfolio, dict) else portfolio
 
+# Fix-IDs (Nutzer-Wunsch 28.09.2026): definierte Signal-IDs laufen durch
+# JEDEM Scan — unabhängig von Top-Listen-Platzierung, Vorfiltern und
+# Export-Auswahl. Verwaltung hier (auch ohne Ergebnisse erreichbar);
+# einzelne Signale lassen sich zusätzlich per Checkmark in ihrer
+# Detailansicht pinnen.
+fix_ist = fix_signale.fix_ids()
+with st.container(border=True):
+    section_header('Fix-IDs · immer scannen',
+                   'Diese Signal-IDs durchlaufen jeden Scan — auch wenn sie aus den '
+                   'MQL5-Top-Listen rutschen oder den Vorfiltern nicht genügen.',
+                   help_key='fix_ids')
+    namen: dict[int, str] = {}
+    try:
+        for zeile in db.list_catalog():
+            namen[int(zeile['signal_id'])] = zeile.get('name') or ''
+    except Exception:
+        namen = {}
+
+    def _fix_label(i: int) -> str:
+        name = namen.get(i)
+        return f"{name} · #{i}" if name else f"#{i}"
+
+    st.caption(
+        'Gesetzte Fix-IDs erscheinen hier mit Entfernen-Button; in der Tabelle '
+        'erkennen Fix-Signale die Markierung 📌 FIX, in der Detailansicht setzt '
+        'das Checkmark „📌 Fix — immer scannen“ die ID direkt.')
+    if not fix_ist:
+        st.caption('Noch keine Fix-IDs gesetzt — unten eine Signal-ID eintragen '
+                   'oder das Checkmark in einer Signal-Detailansicht nutzen.')
+    for i in sorted(fix_ist):
+        with st.container(horizontal=True):
+            st.markdown(f'📌 **{_fix_label(i)}** — wird in jedem Scan geprüft')
+            if st.button('Entfernen', key=f'fix_weg_{i}', icon=':material/close:',
+                         help='Nimmt diese Signal-ID von der Immer-Scannen-Liste.'):
+                fix_signale.setzen(i, False)
+                st.toast(f'#{i} ist kein Fix-Signal mehr', icon=':material/push_pin:')
+                st.rerun()
+    with st.container(horizontal=True):
+        fix_neu_text = st.text_input(
+            'Signal-ID fix setzen', placeholder='z. B. 2342895 (KiraCat)',
+            key='fix_neue_id',
+            help='Numerische MQL5-Signal-ID. Nach dem nächsten Scan erscheint das '
+                 'Signal mit 📌 FIX in der Tabelle.')
+        if st.button('Fix setzen', key='fix_hinzu', icon=':material/push_pin:',
+                     type='primary'):
+            text = (fix_neu_text or '').strip().lstrip('#')
+            if not text.isdigit() or int(text) <= 0:
+                st.warning('Bitte eine gültige numerische Signal-ID eingeben '
+                           '(z. B. 2342895).', icon=':material/error_outline:')
+            else:
+                fix_signale.setzen(int(text), True)
+                st.toast(f"#{int(text)} ist jetzt Fix — wird in jedem Scan geprüft",
+                         icon=':material/push_pin:')
+                st.rerun()
+    st.caption('Fix ist eine Scan-Zusage, kein Vorzugsurteil: Ampel und Score gelten '
+               'für Fix-Signale exakt wie für alle anderen. Teilscan prüft 🟢/🟡 '
+               'plus alle Fix-IDs; fehlt eine Fix-ID in den Listen, wird ihre '
+               'Signalseite einzeln geladen.')
+
 
 def _render_portfolio_report(report: dict) -> None:
     catalog_portfolio = selected_run.startswith('Datenbank')
@@ -404,9 +463,10 @@ with st.container(border=True):
         else:
             selected = render_results_table(
                 visible, key=f'ergebnisse_table_{signature}', compact=view != 'Alle Kennzahlen',
-                fresh_ids=show_fresh)
-        with st.container(horizontal=True, vertical_alignment='center', gap='xsmall'):
-            csv = results_to_dataframe(visible, fresh_ids=show_fresh).drop(
+                fresh_ids=show_fresh, fix_ids=fix_signale.fix_ids())
+        with st.container(horizontal=True, vertical_alignment="center", gap="xsmall"):
+            csv = results_to_dataframe(visible, fresh_ids=show_fresh,
+                                       fix_ids=fix_signale.fix_ids()).drop(
                 columns=['Bericht'], errors='ignore').to_csv(index=False, sep=';').encode('utf-8-sig')
             st.download_button('Gefilterte Tabelle als CSV', csv, 'mql-signale.csv', 'text/csv',
                                key='results_download', icon=':material/download:')

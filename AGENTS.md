@@ -125,6 +125,17 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
   protokollierte Wechsel mit Kriterium-Begründungen, Tabellen
   `ampel_verlauf`/`ampel_wechsel`; bewertet selbst nichts, nur
   Aufzeichnung des Engine-Ergebnisses),
+  Fix-IDs (`fix_signale.py` — definierte Signal-IDs, die JEDEN Scan
+  durchlaufen [Nutzer-Wunsch 28.09.2026]: Setting `fix_signal_ids`;
+  umgehen Wochen-/Abonnenten-Vorfilter, stehen in der top_n_export-
+  Auswahl vorne, sind im Teilscan-Scope immer dabei und werden, wenn
+  sie nicht in den MQL5-Top-Listen stehen, einzeln von ihrer Details-
+  seite nachgeladen [`crawler.fetch_signal_overview`, Plattform per
+  data-mt/Titel — entscheidet den Export-Pfad]; GUI: Checkmark „📌
+  Fix — immer scannen" in der Detailansicht, Verwaltung + ID-Eingabe
+  auf der Ergebnisseite (Abschnitt „Fix-IDs · immer scannen"),
+  Tabellen-Markierung 📌 FIX; bewertet völlig normal — Scan-Zusage,
+  kein Vorzugsurteil),
   Agentenbetrieb (`agenten/` — autonomer LLM-Daemon nach Bauplan
   `doc/19_agentenbetrieb-bauplan.md`: Dirigent-Tageslauf [Phase A,
   22.09.2026], Journal/Protokoll [`agenten_laeufe`/`agenten_schritte`/
@@ -357,6 +368,27 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Ausbaustufen; Workspace-Einstieg `SIGNALDOWNLOADER/README.md`. Alle fünf
   REST-Schnittstellen integriert UND getestet (je Quelle ein Scanner-
   Akzeptanztest Ende-zu-Ende).
+- ✅ Fix-IDs — definierte Signal-IDs immer scannen (28.09.2026,
+  Nutzer-Wunsch nach der Lücke, dass KiraCat seit 08.09. aus den Top-
+  Listen gefallen war): Setting `fix_signal_ids` (app_settings.json,
+  Default leer). Wirkt an vier Stellen: (1) Pipeline `crawl()` lädt
+  fehlende Fix-IDs einzeln von der Signalseite (Plattform über data-mt/
+  Titel — die entscheidet den MT4/MT5-Export-Pfad; im Modus quellen nur
+  Protokoll, dort nicht einzeln ladbar); (2) `build_candidates()` umgeht
+  für Fix-IDs die Wochen-/Abonnenten-Vorfilter; (3) Export-Auswahl
+  (`top_n_export`) nimmt Fix-Kandidaten vorne (scan.py UND scan_launcher
+  .py — GUI und autonome Scans gleich); (4) Teilscan-Scope = 🟢/🟡 PLUS
+  Fix-IDs (`fix_signale.teilscan_ziel_ids`). GUI: Checkmark „📌 Fix —
+  immer scannen" in der Detailansicht (Widget-Key enthält den Zustand —
+  kein veralteter Klick), Verwaltung mit Entfernen-Buttons + ID-Eingabe
+  auf der Ergebnisseite (Abschnitt „Fix-IDs · immer scannen", auch ohne
+  Ergebnisse erreichbar), Tabelle/CSV markieren 📌 FIX, Scan-Seite nennt
+  gesetzte IDs. Bewusst NICHT geändert: Ampel/Score/Urteil gelten für
+  Fix-IDs exakt wie für alle anderen (kein Vorzugsurteil); der Betreuer
+  bleibt bei 🟢/🟡 (Dossier-Beobachtung ist kein Scan). Live validiert am
+  Beispiel KiraCat #2342895 (MT5, 43 Wochen sauber geparst). 948 Tests
+  grün (+14 in tests/test_fix_signale.py, inkl. AppTest Ende-zu-Ende:
+  ID eingeben → setzen → 📌 FIX in der Tabelle).
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

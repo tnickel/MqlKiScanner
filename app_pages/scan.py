@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, db, downloader_sync, pipeline, scan_state, scan_worker, secrets_store
+from mqlkiscanner import config, db, downloader_sync, fix_signale, pipeline, scan_state, scan_worker, secrets_store
 from mqlkiscanner.app_ui import (
     render_downloader_docs_panel,
     render_portfolio_pdf_viewer,
@@ -417,8 +417,13 @@ with st.container(border=True, key="scan_control_panel"):
                      "kein harter Abbruch, fertige Teilergebnisse bleiben erhalten.",
             )
         else:
-            st.caption("Full-Scan prüft alles; Teilscan nur 🟢/🟡-Signale "
-                       "mit allen KI-Stufen. Stop jederzeit möglich.")
+            fix_hinweis = fix_signale.fix_ids()
+            st.caption(
+                "Full-Scan prüft alles; Teilscan nur 🟢/🟡-Signale"
+                + (" plus Fix-IDs" if fix_hinweis else "")
+                + " mit allen KI-Stufen. Stop jederzeit möglich."
+                + (f" Fix gesetzt: {', '.join(f'#{i}' for i in sorted(fix_hinweis))}."
+                   if fix_hinweis else ""))
 
     _live_status()
     if not has_login:
@@ -668,18 +673,21 @@ if command:
             # (Datenbank-Stand) 🟢 oder 🟡 ist — alle anderen werden in
             # diesem Lauf nicht beachtet. Bestimmung über results_from_db,
             # damit dieselbe Ampel-Logik wie in der Anzeige entscheidet.
+            # Fix-IDs sind zusätzlich IMMER im Scope (Nutzer-Wunsch
+            # 28.09.2026: definierte IDs immer scannen).
             alt_ergebnisse = pipeline.results_from_db(cfg)
-            ziel_ids = {r.id for r in alt_ergebnisse
-                        if r.ampel in ("🟢", "🟡")
-                        and getattr(r, "source_kind", "live") == "live"}
+            ziel_ids = fix_signale.teilscan_ziel_ids(alt_ergebnisse, cfg)
             vorher = len(cands)
             cands = [c for c in cands if c["id"] in ziel_ids]
             log(f"Teilscan: {len(cands)} von {vorher} Kandidaten sind "
-                "aktuell 🟢/🟡 — nur diese werden geprüft.")
+                "aktuell 🟢/🟡 oder Fix-ID — nur diese werden geprüft.")
             if not cands:
                 w_step("forensik", "skipped",
-                       detail="Keine 🟢/🟡-Signale in Auswahl und Katalog — nichts zu prüfen")
+                       detail="Keine 🟢/🟡- oder Fix-Signale in Auswahl und Katalog — nichts zu prüfen")
                 return
+        # Fix-Kandidaten vorne: die top_n_export-Grenze darf eine Fix-ID
+        # nie treffen (Nutzer-Wunsch 28.09.2026: definierte IDs immer scannen).
+        fix_vorne, rest = fix_signale.ordne_fix_vorne(cands, cfg)
         n_export = min(len(cands), cfg["top_n_export"])
         if not n_export:
             w_step("forensik", "skipped", detail="Keine passenden Signale nach der Auswahl")
@@ -689,7 +697,7 @@ if command:
         if only_new:
             alt = {r.id: r for r in pipeline.results_from_db(cfg) if r.forensik_vorhanden
                    and getattr(r, "source_kind", "live") == "live"}
-        scope = cands[:n_export]
+        scope = (fix_vorne + rest)[:n_export]
         neu = [c for c in scope if c["id"] not in alt] if only_new else scope
         uebernommen = [alt[c["id"]] for c in scope if c["id"] in alt]
         session = pipeline.Mql5Session(cfg)
@@ -1175,7 +1183,7 @@ if st.session_state.scan_results:
     st.caption("Tipp: Eine Tabellenzeile auswählen, um die vollständige Risikoprüfung darunter zu öffnen.")
     render_report_panel(results)
     render_downloader_docs_panel(results)
-    selected = render_results_table(results)
+    selected = render_results_table(results, fix_ids=fix_signale.fix_ids())
     if selected is not None:
         from mqlkiscanner.app_ui import render_detail
         render_detail(selected)

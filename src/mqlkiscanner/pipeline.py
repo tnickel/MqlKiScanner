@@ -22,7 +22,7 @@ from typing import Callable
 
 import requests
 
-from . import ampel_verlauf, config, scoring
+from . import ampel_verlauf, config, fix_signale, scoring
 from . import db
 from . import downloader_client
 from . import fx_rates
@@ -542,6 +542,7 @@ class ScanPipeline:
             from . import ingest
             signals = ingest.kandidaten_aus_quellen(log)
             log(f"{len(signals)} Signale aus Datenquellen geladen (Modus quellen).")
+            self._ergaenze_fix_ids(signals, log, session=None)
             return signals
         session = Mql5Session(self.settings)
         signals = crawler.crawl_lists(
@@ -558,13 +559,53 @@ class ScanPipeline:
             signals.extend(neu)
             log(f"Vereinigt: +{len(neu)} Signale nur aus Datenquellen "
                 f"(MQL5-Direkt gewinnt bei Doppelung) — gesamt {len(signals)}.")
+        self._ergaenze_fix_ids(signals, log, session=session)
         return signals
+
+    def _ergaenze_fix_ids(self, signals: list[dict], log: LogCb,
+                          session: Mql5Session | None = None) -> None:
+        """Fix-IDs (immer scannen) fehlen in der geladenen Liste? Nachladen.
+
+        Mit Session (Modus mql5/beides) wird die Detailseite des Signals
+        abgerufen; ohne Session (Modus quellen) ist ein Einzelabruf nicht
+        moeglich — der Fall wird protokolliert, der Lauf laeuft weiter.
+        """
+        fix = sorted(fix_signale.fix_ids(self.settings))
+        if not fix:
+            return
+        vorhanden = {s.get("id") for s in signals}
+        fehlend = [i for i in fix if i not in vorhanden]
+        if not fehlend:
+            log(f"Fix-IDs {fix}: alle bereits in der Liste enthalten.")
+            return
+        for sid in fehlend:
+            if session is None:
+                log(f"Fix-ID {sid}: im Katalog der Datenquellen nicht gefunden — "
+                    "ohne MQL5-Session nicht einzeln ladbar, in diesem Lauf übergangen.")
+                continue
+            try:
+                overview = crawler.fetch_signal_overview(session, sid)
+            except Exception as exc:
+                log(f"Fix-ID {sid}: Signalseite nicht ladbar "
+                    f"({type(exc).__name__}: {exc}) — in diesem Lauf übergangen.")
+                continue
+            signals.append(overview)
+            log(f"Fix-ID {sid}: nicht in den Top-Listen — einzeln von der "
+                f"Signalseite geladen ({overview.get('name') or overview.get('url')}).")
 
     def build_candidates(self, signals: list[dict], log: LogCb) -> list[dict]:
         min_abo = int(self.settings.get("min_abonnenten", 0))
         min_wochen = float(self.settings.get("min_wochen", 26))
+        fix = fix_signale.fix_ids(self.settings)
         candidates = []
+        n_fix = 0
         for s in signals:
+            # Fix-IDs umgehen die Vorfilter (Nutzer-Wunsch: immer scannen) —
+            # ein gepinntes Signal darf nicht an Wochen/Abonnenten scheitern.
+            if s.get("id") in fix:
+                candidates.append(s)
+                n_fix += 1
+                continue
             weeks = s.get("wochen")
             if weeks is not None and weeks < min_wochen:
                 continue
@@ -572,7 +613,8 @@ class ScanPipeline:
                 continue
             candidates.append(s)
         log(f"Vorfilter (Wochen >= {min_wochen:g}, Abonnenten >= {min_abo}): "
-            f"{len(signals)} -> {len(candidates)} Kandidaten.")
+            f"{len(signals)} -> {len(candidates)} Kandidaten"
+            + (f" (davon {n_fix} Fix-ID(s) ohne Vorfilter)." if n_fix else "."))
         known = config.load_known_signals()
         excluded = {e["id"] for e in known.get("ausgeschlossen", [])}
         out_file = config.DATA_DIR / "candidates.json"

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 import streamlit as st
-from mqlkiscanner import config, db, downloader_client, downloader_sync, llm_runner
+from mqlkiscanner import config, db, downloader_client, downloader_sync, fix_signale, llm_runner
 from mqlkiscanner import regelwerk
 from mqlkiscanner.ampel_matrix import KRITERIEN, LABELS, kriterien_matrix
 from mqlkiscanner.pdf_reports import (
@@ -230,7 +230,8 @@ def _abo_verlauf_dialog(signal_id: int, name: str, fenster: str) -> None:
                "und ändert keine Bewertung.")
 
 
-def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataFrame:
+def results_to_dataframe(results, fresh_ids: set[int] | None = None,
+                         fix_ids: set[int] | None = None) -> pd.DataFrame:
     results = tuple(copy(r) for r in results)
     rows = [r.to_row() for r in results]
     if not rows:
@@ -238,16 +239,20 @@ def results_to_dataframe(results, fresh_ids: set[int] | None = None) -> pd.DataF
     df = pd.DataFrame(rows)
     if fresh_ids is not None:
         df.insert(0, "Stand", ["NEU" if r.id in fresh_ids else "" for r in results])
+    if fix_ids is not None:
+        df.insert(0 if fresh_ids is None else 1, "Fix",
+                  ["📌 FIX" if r.id in fix_ids else "" for r in results])
     df["Bericht vom"] = pd.to_datetime(df["Bericht vom"], errors="coerce")
     df["Bericht"] = ":material/picture_as_pdf: Öffnen"
     return df
 
 
 def render_results_table(results, key: str = "results_table", compact: bool = True,
-                         fresh_ids: set[int] | None = None) -> ScanResult | None:
+                         fresh_ids: set[int] | None = None,
+                         fix_ids: set[int] | None = None) -> ScanResult | None:
     """Tabelle mit Ampel- und Bericht-Button; Rueckgabe = gewaehlter Ergebnissnapshot."""
     results = tuple(copy(r) for r in results)
-    df = results_to_dataframe(results, fresh_ids=fresh_ids)
+    df = results_to_dataframe(results, fresh_ids=fresh_ids, fix_ids=fix_ids)
     if df.empty:
         st.info("Noch keine Ergebnisse — erst einen Scan starten oder die "
                 "Verifikations-Datensaetze laden.")
@@ -296,10 +301,11 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
 
     column_order = None
     if compact:
-        column_order = (["Stand"] if fresh_ids is not None else []) + [
-            "Ampel", "Name", "Quelle", "Stop", "Trading-DD %", "EQ-DD %",
-            "Ertrag/Monat %", "Score", "Urteil", "Bericht vom", "Bericht", "Link",
-            "Abonnenten", "30 Tage", "7 Tage", "Dokumente"]
+        column_order = ((["Stand"] if fresh_ids is not None else [])
+                        + (["Fix"] if fix_ids is not None else [])
+                        + ["Ampel", "Name", "Quelle", "Stop", "Trading-DD %", "EQ-DD %",
+                           "Ertrag/Monat %", "Score", "Urteil", "Bericht vom", "Bericht",
+                           "Link", "Abonnenten", "30 Tage", "7 Tage", "Dokumente"])
 
     event = st.dataframe(
         df,
@@ -313,6 +319,13 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             "Stand": st.column_config.TextColumn(
                 "Stand", width="small",
                 help="NEU = im letzten Lauf dieser Sitzung aktualisiert"),
+            "Fix": st.column_config.TextColumn(
+                "Fix", width="small",
+                help="📌 FIX = diese Signal-ID steht auf der Immer-Scannen-Liste: "
+                     "Jeder Scan prüft sie — auch wenn sie aus den MQL5-Top-Listen "
+                     "rutscht oder den Vorfiltern nicht genügt. Setzen/entfernen "
+                     "per Checkmark im Detail oder auf der Ergebnisseite unter "
+                     "„Fix-IDs · immer scannen“."),
             "Ampel": st.column_config.TextColumn(
                 "Status", width="small",
                 help="Kandidat, Beobachtung, Risiko, Ausschluss oder Vorprüfung"),
@@ -772,6 +785,27 @@ def render_detail(result) -> None:
         st.subheader(f"{result.ampel} {result.name} · #{result.id}")
         if result.url:
             st.link_button("Auf MQL5 öffnen", result.url, icon=":material/open_in_new:")
+
+    # Fix-Checkmark (Nutzer-Wunsch 28.09.2026): Signal-ID für JEDEN Scan pinnen.
+    # Der Widget-Key enthält den aktuellen Zustand — ändert sich der Zustand
+    # woanders (z. B. über die Fix-IDs-Verwaltung), entsteht ein frisches
+    # Widget mit richtigem Häkchen statt eines veralteten Klicks.
+    if getattr(result, "source_kind", "live") == "live" and result.id:
+        fix_ist = result.id in fix_signale.fix_ids()
+        fix_neu = st.checkbox(
+            "📌 Fix — immer scannen", value=fix_ist,
+            key=f"fix_check_{result.id}_{int(fix_ist)}",
+            help="Setzt diese Signal-ID auf die Immer-Scannen-Liste: Jeder Scan "
+                 "(Full-Scan, Teilscan, autonome Scans) prüft das Signal — auch "
+                 "wenn es aus den MQL5-Top-Listen rutscht, die Wochen-/Abonnenten-"
+                 "Vorfilter nicht bestehen oder die Export-Auswahl (top N) voll ist. "
+                 "Kein Vorzugsurteil: Ampel und Score gelten unverändert.")
+        if fix_neu != fix_ist:
+            fix_signale.setzen(result.id, fix_neu)
+            st.toast(f"#{result.id} " + ("ist jetzt Fix — wird in jedem Scan geprüft"
+                                         if fix_neu else "ist kein Fix-Signal mehr"),
+                     icon=":material/push_pin:")
+            st.rerun()
 
     labels = {
         "🟢": ("Kandidat", "green"),

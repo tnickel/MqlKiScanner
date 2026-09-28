@@ -16,7 +16,7 @@ from __future__ import annotations
 import threading
 from datetime import date
 
-from .. import config, pipeline
+from .. import config, fix_signale, pipeline
 from ..mql5.session import Mql5Session
 from . import journal, lock
 
@@ -116,17 +116,19 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
 
     if modus == "gelbgruen":
         # Modus-Vertrag: nur aktuell 🟢/🟡 laut DB-Stand — Ampel-Logik
-        # exakt wie die Ergebnis-Ansicht (results_from_db).
+        # exakt wie die Ergebnis-Ansicht (results_from_db). Fix-IDs sind
+        # zusätzlich IMMER im Scope (fix_signale.teilscan_ziel_ids).
         alt = pipeline.results_from_db(settings)
-        ziel_ids = {r.id for r in alt
-                    if r.ampel in ("🟢", "🟡")
-                    and getattr(r, "source_kind", "live") == "live"}
+        ziel_ids = fix_signale.teilscan_ziel_ids(alt, settings)
         vorher = len(kandidaten)
         kandidaten = [c for c in kandidaten if c["id"] in ziel_ids]
         log(f"Teilscan: {len(kandidaten)} von {vorher} Kandidaten "
-            "sind aktuell 🟢/🟡.")
+            "sind aktuell 🟢/🟡 oder Fix-ID.")
 
-    scope = kandidaten[:int(settings.get("top_n_export", 30))]
+    # Fix-Kandidaten vorne: die top_n_export-Grenze darf eine Fix-ID nie
+    # treffen (Nutzer-Wunsch 28.09.2026: definierte IDs immer scannen).
+    fix_vorne, rest = fix_signale.ordne_fix_vorne(kandidaten, settings)
+    scope = (fix_vorne + rest)[:int(settings.get("top_n_export", 30))]
     if not scope:
         grund = (f"Keine zu prüfenden Kandidaten (Modus {modus}) — "
                  "kein Login/Export nötig.")

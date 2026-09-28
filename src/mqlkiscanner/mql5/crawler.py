@@ -14,6 +14,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 from ..config import MQL5_BASE
+from . import signal_stats
 from .session import Mql5Session
 
 _NUM = re.compile(r"[+-]?[\d.,]+")
@@ -134,3 +135,53 @@ def crawl_lists(session: Mql5Session, seiten_pro_liste: int = 2,
                         f"{plattform.upper()} Seite {page_no}: "
                         f"{len(page_signals)} Signale (gesamt {len(signals)})")
     return sorted(signals.values(), key=lambda s: -(s.get("abonnenten") or 0))
+
+
+_PREIS_RE = re.compile(r"([\d.,]+)\s*USD\s+per\s+month", re.IGNORECASE)
+_NAME_RE = re.compile(r"Copy trades of the (.+?) trading signal", re.IGNORECASE)
+_AUTOR_RE = re.compile(r"per\s+month\s+[-–]\s+(.+?)\s*$", re.IGNORECASE)
+_MT_RE = re.compile(r"MetaTrader\s*([45])", re.IGNORECASE)
+
+
+def fetch_signal_overview(session: Mql5Session, signal_id: int) -> dict:
+    """Einzelsignal von der Detailseite — fuer Fix-IDs ausserhalb der Top-Listen.
+
+    Liefert die Kandidatenform von parse_list_html (id, name, platform,
+    wochen, abonnenten …). Die Kennzahlen holt die Forensik-Station spaeter
+    ohnehin frisch von derselben Seite; hier genuegt das Geruest fuer
+    Anzeige und Persistenz. Plattform entscheidet den Export-Pfad
+    (MT4=/history, MT5=/positions) und wird deshalb zweifach gesichert:
+    data-mt-Attribut des Copy-Widgets, Fallback Seitentitel.
+    """
+    r = session.get(f"/en/signals/{signal_id}", extra_pause_s=1.0)
+    soup = BeautifulSoup(r.text, "html.parser")
+    titel = soup.title.get_text(" ", strip=True) if soup.title else ""
+
+    mt = None
+    marker = soup.find(attrs={"data-mt": re.compile(r"^[45]$")})
+    if marker is not None:
+        mt = marker.get("data-mt")
+    if mt not in ("4", "5"):
+        mt_match = _MT_RE.search(titel)
+        mt = mt_match.group(1) if mt_match else None
+
+    name_match = _NAME_RE.search(titel)
+    autor_match = _AUTOR_RE.search(titel)
+    preis_match = _PREIS_RE.search(titel)
+    stats = signal_stats.parse_detail_html(r.text)
+    return {
+        "id": int(signal_id),
+        "name": (name_match.group(1).strip() if name_match else "") or f"Signal {signal_id}",
+        "platform": f"MT{mt}" if mt in ("4", "5") else "",
+        "abo_preis_usd": _num(preis_match.group(1)) if preis_match else None,
+        "konto_balance": "",
+        "wochen": stats.get("weeks"),
+        "abonnenten": _num(stats.get("raw", {}).get("Subscribers:", "")),
+        "growth_pct": stats.get("growth_pct"),
+        "autor": autor_match.group(1).strip() if autor_match else "",
+        "rating": None,
+        "reviews": None,
+        "reliability_level": None,
+        "algo_trading_pct": None,
+        "url": urljoin(MQL5_BASE, f"/en/signals/{signal_id}"),
+    }
