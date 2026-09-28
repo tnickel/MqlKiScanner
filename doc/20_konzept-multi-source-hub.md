@@ -169,7 +169,15 @@ niemals als `initial_deposit_usd` (rote Kapitalbasis-Regel unberührt),
 — kein Cent-Abgleich (eine Annahme hat keine Web-Balance),
 — transparent im Urteil („Kapitalbasis virtuell (Annahme der Datenquelle)")
 und im Forensik-Snapshot (`kapitalbasis.quelle`). Ein echtes
-`InitialDeposit` gewinnt immer gegen die virtuelle Annahme.
+`InitialDeposit` gewinnt immer gegen die virtuelle Annahme. Review-Härtung
+28.09. (Abend): Ungültige Werte (Infinity/1e309, Strings, 0/negativ, bool)
+werden abgewiesen statt konvertiert — dann gibt es keine Basis und die
+Forensik bleibt unvollständig (keine positive Bewertung aus einer Annahme).
+Eine echte CSV-Einzahlung vor dem ersten Trade schlägt die Annahme ebenfalls
+(Kennzeichnung folgt dem Engine-Befund, nicht der Lauf-Absicht); Betrag und
+Herkunft reichen strukturiert bis in die KI-Prompt-JSONs und in die
+Berichtsbindung (`report_basis_for` — Wechsel virtuell → belegt ergibt
+einen neuen Berichtsschlüssel).
 
 **Erweiterter `metrics`-Satz** (28.09.2026, ebenfalls additiv): `Equity`,
 `Leverage`, `MinTradesPerMonth`, `MaxTradesPerMonth`, `MarketsCount`,

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import tempfile
 import time
@@ -46,6 +47,34 @@ LogCb = Callable[[str], None]
 # belegtes Initial Deposit: kein Cent-Abgleich gegen die Web-Balance, keine
 # rote Kapitalbasis-Regel, transparent im Urteil.
 KAPITALBASIS_QUELLE_VIRTUELL = "virtuelle_annahme"
+
+
+def _virtuelle_kapitalbasis(wert, log: LogCb | None = None) -> float | None:
+    """InitialDepositVirtual strikt pruefen: endliche, positive JSON-Zahl.
+
+    Der Quellen-Vertrag (z. B. PelicanMonitor) liefert eine JSON-Zahl.
+    Infinity (JSON 1e309 parst als inf) wuerde jede DD-/Schock-Prozent-
+    Rechnung zu 0 machen und damit eine vollstaendige, risikofreie
+    Forensik vortaeuschen; Strings (auch numerische) sind ein Vertrags-
+    verstoess und werden abgewiesen statt geraten. Ungueltige Werte
+    liefern None — dann gibt es KEINE Basis und die Forensik bleibt
+    unvollständig (keine positive Bewertung aus einer Annahme).
+    """
+    if isinstance(wert, bool) or not isinstance(wert, (int, float)):
+        if log and wert is not None:
+            log(f"Kapitalbasis: InitialDepositVirtual ist keine JSON-Zahl "
+                f"({wert!r}) — Annahme ignoriert, Forensik ohne Basis.")
+        return None
+    zahl = float(wert)
+    if not math.isfinite(zahl) or zahl <= 0:
+        if log:
+            log(f"Kapitalbasis: InitialDepositVirtual ungueltig ({wert!r}) — "
+                "Annahme ignoriert, Forensik ohne Basis.")
+        return None
+    if log:
+        log(f"Kapitalbasis: virtuelle Annahme {zahl:,.0f} USD aus der Datenquelle "
+            "(kein Plattformwert — DD-/Schock-Prozente damit gerechnet).")
+    return zahl
 
 
 @dataclass
@@ -93,6 +122,12 @@ class ScanResult:
     stop_nachweis: str = ""
     stop_evidence: str | None = None  # direct | cluster | partial | none; nie aus Freitext ableiten
     kapitalbasis_usd: float | None = None  # Signalseite "Initial Deposit" (kann negativ sein)
+    # Von der Forensik TATSÄCHLICH verwendete Kapitalbasis (Engine-Befund,
+    # nicht die Lauf-Absicht): csv_einzahlungen schlägt jede Injektion. Wird
+    # durch Persistenz, DB-Laden und Prompt-JSON geführt — die KI muss wissen,
+    # ob DD-/Schock-Prozente gegen eine Annahme gerechnet sind.
+    kapitalbasis_verwendet_usd: float | None = None
+    kapitalbasis_verwendet_quelle: str = ""
     broker_server: str | None = None
     symbole: str = ""               # gehandelte Assets ("XAUUSD, US30, ...")
     # Bewertung
@@ -221,6 +256,12 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             stop_nachweis=f.get("stop_nachweis") or "",
             stop_evidence=f.get("stop_evidence"),
             kapitalbasis_usd=stats.get("initial_deposit_usd"),
+            # Tatsächlich verwendete Kapitalbasis aus dem Forensik-Snapshot
+            # (führt durch DB-Reload und Prompt-JSON; siehe ScanResult-Felder)
+            kapitalbasis_verwendet_usd=(f.get("kapitalbasis") or {}).get("usd")
+            if isinstance(f.get("kapitalbasis"), dict) else None,
+            kapitalbasis_verwendet_quelle=(f.get("kapitalbasis") or {}).get("quelle") or ""
+            if isinstance(f.get("kapitalbasis"), dict) else "",
             broker_server=stats.get("broker_server"),
             symbole=f.get("symbole") or "",
             score=None if forensik_stale else f.get("score"),
@@ -266,12 +307,9 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             res.urteil = "Forensik veraltet oder unvollständig — erneute Prüfung erforderlich."
         restore_current_reports(res, settings)
         # Virtuelle Kapitalbasis dauerhaft im Urteil kennzeichnen (auch nach
-        # App-Neustart): Forensik-Snapshot führt die Quelle der Basis mit.
-        if (isinstance(f.get("kapitalbasis"), dict)
-                and f["kapitalbasis"].get("quelle") == KAPITALBASIS_QUELLE_VIRTUELL
-                and res.forensik_vorhanden and not res.fehler):
-            res.urteil = (res.urteil or "") + \
-                " · Kapitalbasis virtuell (Annahme der Datenquelle)"
+        # App-Neustart). Zentrale, idempotente Kennzeichnung — restore/refresh
+        # baut das Urteil neu, der Hinweis bleibt dadurch erhalten.
+        _kennezeichne_virtuelle_kapitalbasis(res)
         results.append(res)
     return results
 
@@ -373,6 +411,14 @@ def _forensik_json(r: ScanResult) -> str:
         "martingale_evidenz": r.martingale_evidenz,
         "stop_nachweis": r.stop_nachweis,
         "stop_evidence": r.stop_evidence,
+        # Bezugsgröße der Risikoprozente, solange sie eine ANNAHME ist: Die
+        # KI soll wissen, ob DD/Schock gegen eine virtuelle Basis gerechnet
+        # sind (Interpretationsauftrag, nicht Neu-Rechnen — Design-Regel 1).
+        # Belegte/csv-Basen ändern die Aussage nicht und bleiben draußen —
+        # auch, damit existierende Berichtsschlüssel unangetastet bleiben.
+        "kapitalbasis_verwendet": (
+            {"usd": r.kapitalbasis_verwendet_usd, "quelle": r.kapitalbasis_verwendet_quelle}
+            if r.kapitalbasis_verwendet_quelle == KAPITALBASIS_QUELLE_VIRTUELL else None),
     }, ensure_ascii=False)
 
 
@@ -462,6 +508,23 @@ def report_basis_for(result: ScanResult, settings: dict) -> str | None:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _kennezeichne_virtuelle_kapitalbasis(result: ScanResult) -> None:
+    """Hinweis "Kapitalbasis virtuell" ans Urteil haengen — idempotent.
+
+    Grundlage ist die von der FORENSIK tatsaechlich verwendete Quelle
+    (kapitalbasis_verwendet_quelle), nie die Lauf-Absicht: Eine echte
+    CSV-Einzahlung schlaegt die virtuelle Annahme. Wird zentral nach
+    jedem ampel_for/refresh aufgerufen (auch llm_runner/run_portfolio
+    bauen das Urteil neu — ohne diese Zentrierung wuerde der Hinweis
+    vor dem Prompt verschwinden).
+    """
+    hinweis = "Kapitalbasis virtuell (Annahme der Datenquelle)"
+    if (result.kapitalbasis_verwendet_quelle == KAPITALBASIS_QUELLE_VIRTUELL
+            and result.forensik_vorhanden and not result.fehler
+            and hinweis not in (result.urteil or "")):
+        result.urteil = (result.urteil or "") + " · " + hinweis
+
+
 def refresh_report_verdict(result: ScanResult, settings: dict) -> None:
     """Recompute settings-dependent flags before using a current report or prompt."""
     if (result.dd_equity_pct is not None or result.trading_dd_pct is not None
@@ -473,6 +536,9 @@ def refresh_report_verdict(result: ScanResult, settings: dict) -> None:
                                        result.trading_dd_pct or 0.0,
                                        result.dd_balance_pct or 0.0) > limit
     result.ampel, result.urteil = ampel_for(result, settings)
+    # Kennzeichnung ueberlebt das Neubauen des Urteils (KI-Prompts, Portfolio,
+    # DB-Neuladen rufen alle refresh_report_verdict).
+    _kennezeichne_virtuelle_kapitalbasis(result)
 
 
 def restore_current_reports(result: ScanResult, settings: dict) -> bool:
@@ -768,14 +834,11 @@ class ScanPipeline:
                 # (Quellen-CSVs haben keine Kontobewegungszeilen).
                 kapitalbasis = stats.get("initial_deposit_usd")
                 kapitalbasis_quelle = "signalseite_initial_deposit"
-                kapitalbasis_virtual = stats.get("kapitalbasis_virtual_usd")
-                if kapitalbasis is None and kapitalbasis_virtual is not None \
-                        and float(kapitalbasis_virtual) > 0:
-                    kapitalbasis = float(kapitalbasis_virtual)
-                    kapitalbasis_quelle = KAPITALBASIS_QUELLE_VIRTUELL
-                    log(f"Kapitalbasis: virtuelle Annahme "
-                        f"{kapitalbasis_virtual:,.0f} USD aus der Datenquelle "
-                        "(kein Plattformwert — DD-/Schock-Prozente damit gerechnet).")
+                if kapitalbasis is None:
+                    virtuell = _virtuelle_kapitalbasis(stats.get("kapitalbasis_virtual_usd"), log)
+                    if virtuell is not None:
+                        kapitalbasis = virtuell
+                        kapitalbasis_quelle = KAPITALBASIS_QUELLE_VIRTUELL
                 report = analyze_export(
                     path, broker=res.broker_server,
                     kapitalbasis_usd=kapitalbasis,
@@ -797,6 +860,12 @@ class ScanPipeline:
                     raise ValueError(meldung)
                 res.forensik_vorhanden = True
                 res.symbole = ", ".join(sorted(st.get("symbols", {})))
+                # Tatsaechlich verwendete Kapitalbasis laut Engine-Befund: Eine
+                # echte CSV-Einzahlung schlaegt jede Injektion — nur diese Quelle
+                # darf die "virtuell"-Kennzeichnung steuern (Live-Urteil, DB,
+                # Prompt-JSON; siehe _kennezeichne_virtuelle_kapitalbasis).
+                res.kapitalbasis_verwendet_usd = fx["drawdown"].get("startkapital")
+                res.kapitalbasis_verwendet_quelle = fx["drawdown"].get("startkapital_quelle") or ""
                 td = fx["drawdown"]["trading_dd"]
                 # Risiko-/Ampel-% = max. relativer DD; USD-Anker bleibt dd_usd.
                 res.trading_dd_pct = td.get("dd_pct_max_rel", td.get("dd_pct"))
@@ -890,11 +959,11 @@ class ScanPipeline:
             detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
                       f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
-            # Transparente Kennzeichnung: DD-/Schock-Prozente sind gegen die
-            # virtuelle Annahme gerechnet, nicht gegen belegtes Startkapital.
-            if res.forensik_vorhanden and kapitalbasis_quelle == KAPITALBASIS_QUELLE_VIRTUELL:
-                detail += " · Kapitalbasis virtuell (Annahme der Datenquelle)"
             res.urteil = grund + detail
+            # Kennzeichnung aus der TATSÄCHLICH verwendeten Quelle (Engine-
+            # Befund), nicht aus der Lauf-Absicht — echte CSV-Einzahlung
+            # schlägt die virtuelle Annahme.
+            _kennezeichne_virtuelle_kapitalbasis(res)
             forensik_payload = None
             # Auch unvollstaendige Laeufe speichern ihre Teilergebnisse
             # (vollstaendig=False): Winrate/DD/Martingale/Stop bleiben sichtbar
@@ -972,6 +1041,7 @@ class ScanPipeline:
                       f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
             res.urteil = grund + detail
+            _kennezeichne_virtuelle_kapitalbasis(res)
         if hard_stop is not None:
             hard_stop.result = res
             raise hard_stop

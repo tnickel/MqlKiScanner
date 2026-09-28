@@ -434,6 +434,123 @@ def test_echte_kapitalbasis_hat_vorrang_vor_virtueller(monkeypatch):
     assert ok and meldung == ""
 
 
+# ---------------------------- Virtuelle Kapitalbasis: Review-Befunde 28.09.
+
+def test_virtuelle_kapitalbasis_ungueltige_werte_verhindern_forensik(monkeypatch):
+    """Review-Befund 1: Infinity/1e309, numerische Strings, 0/negativ, bool
+    dürfen NIEMALS als Basis gelten — sonst lügt die Forensik 0 % Risiko
+    (inf-Basis) oder stürzt beim Log-Format ab (String). Ungültig = keine
+    Basis = unvollständige Forensik = keine positive Bewertung."""
+    quelle = _quelle("pelik", "http://pelican:8090")
+    for wert in (float("inf"), float("-inf"), "10000", 0, -5.0, True, None):
+        metrics = {"metrics": {"EquityDrawdown": 8.0, "Average3MonthProfit": 5.5,
+                               "InitialDepositVirtual": wert}}
+        _verdrahte(monkeypatch, {
+            "http://pelican:8090": FakeClient(trades=MINI_CSV, metrics=metrics)})
+        kandidat = ingest.kandidaten(quelle, [
+            {"signalId": "4711", "version": "pelican", "signalName": "Kaput",
+             "subscribers": 1, "weeks": 40}])[0]
+        pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+        logs: list[str] = []
+        result = pipe.analyze_candidate(None, kandidat, logs.append)
+        assert not result.forensik_vorhanden, f"mit {wert!r} dürfte es keine Forensik geben"
+        assert "Kapitalbasis virtuell" not in (result.urteil or ""), wert
+        assert result.ampel == "⚪", wert
+        assert result.kapitalbasis_verwendet_quelle != pipeline.KAPITALBASIS_QUELLE_VIRTUELL, wert
+        assert "Forensik unvollständig" in result.fehler, wert
+
+
+def test_virtuelle_kapitalbasis_reicht_bis_ki_prompt_und_reload(monkeypatch):
+    """Review-Befund 2: Betrag+Herkunft der verwendeten Basis müssen bis in
+    die Prompt-JSONs und durch refresh_report_verdict (llm_runner/run_portfolio
+    bauen das Urteil NEU, bevor Prompts entstehen) sowie den DB-Reload reichen."""
+    import json as _json
+
+    quelle = _quelle("pelik", "http://pelican:8090")
+    metrics = {"metrics": {"EquityDrawdown": 12.5, "Average3MonthProfit": 3.1,
+                           "InitialDepositVirtual": 10000.0}}
+    _verdrahte(monkeypatch, {
+        "http://pelican:8090": FakeClient(trades=MINI_CSV, metrics=metrics)})
+    kandidat = ingest.kandidaten(quelle, [
+        {"signalId": "2014074", "version": "pelican", "signalName": "The Holy Grail",
+         "subscribers": 996, "weeks": 96}])[0]
+    pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
+    assert result.kapitalbasis_verwendet_quelle == pipeline.KAPITALBASIS_QUELLE_VIRTUELL
+    assert result.kapitalbasis_verwendet_usd == 10000.0
+
+    # Strukturierter Befund im Forensik-Prompt-JSON (KI sieht die Annahme)
+    forensik = _json.loads(pipeline._forensik_json(result))
+    assert forensik["kapitalbasis_verwendet"] == {
+        "usd": 10000.0, "quelle": "virtuelle_annahme"}
+
+    # llm_runner/run_portfolio rufen vor dem Prompt refresh_report_verdict —
+    # das Urteil wird NEU gebaut, die Kennzeichnung muss überleben
+    pipeline.refresh_report_verdict(result, {})
+    assert "Kapitalbasis virtuell" in result.urteil
+    kandidat_json = _json.loads(pipeline._kandidat_json(result))
+    assert "Kapitalbasis virtuell" in kandidat_json["urteil"]
+
+    # DB-Reload: Felder aus dem Forensik-Snapshot, Kennzeichnung im Urteil
+    neu = [r for r in pipeline.results_from_db() if r.id == 2014074][0]
+    assert neu.kapitalbasis_verwendet_quelle == pipeline.KAPITALBASIS_QUELLE_VIRTUELL
+    assert neu.kapitalbasis_verwendet_usd == 10000.0
+    assert "Kapitalbasis virtuell" in neu.urteil
+
+
+def test_berichtsbasis_unterscheidet_virtuelle_von_belegter_kapitalbasis():
+    """Review-Befund 3: report_basis_for muss den Wechsel virtuell → belegt
+    (gleicher Betrag!) als neue Berichtsgrundlage erkennen — sonst werden alte
+    KI-Berichte als aktuell wiederverwendet, obwohl sich die Beweislage der
+    Bezugsgröße geändert hat."""
+    def _result(quelle: str) -> pipeline.ScanResult:
+        return pipeline.ScanResult(
+            id=2014074, name="The Holy Grail", platform="pelican",
+            forensik_vorhanden=True, forensik_version=1,
+            trades_sha256="sha", trading_dd_pct=12.0, trading_dd_usd=-1200.0,
+            winrate_pct=60.0, peak_positionen=3, peak_netto_lots=0.05,
+            shock_usd=500.0, shock_pct_max=5.0,
+            score=4.0, dd_equity_pct=12.5, ertrag_monat_pct=3.1,
+            kapitalbasis_verwendet_usd=10000.0, kapitalbasis_verwendet_quelle=quelle)
+
+    virtuell = pipeline.report_basis_for(_result(pipeline.KAPITALBASIS_QUELLE_VIRTUELL), {})
+    belegt = pipeline.report_basis_for(_result("signalseite_initial_deposit"), {})
+    assert virtuell != belegt
+
+
+def test_csv_einzahlung_schlaegt_virtuelle_annahme(monkeypatch):
+    """Review-Befund 4: Enthält der Export eine echte Einzahlung vor dem
+    ersten Trade, nutzt die Engine DIESE — dann darf das Live-Urteil nicht
+    "Kapitalbasis virtuell" behaupten (alte Prüfung sah nur die Lauf-Absicht)."""
+    quelle = _quelle("pelik", "http://pelican:8090")
+    csv_mit_einzahlung = (
+        "Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n"
+        "2026.09.01 08:00:00;Balance;;;;;;;;;1000.00\n"
+        "2026.09.01 22:39:54;Sell;0.01;XAUUSD;4324.98;0.01;2026.09.02 04:13:01;4319.66;-0.18;;5.32\n"
+        "2026.09.01 16:12:05;Sell;0.01;XAUUSD;4326.38;0.01;2026.09.01 16:31:23;4349.51;-0.18;;-23.13\n"
+        "2026.09.02 08:00:00;Buy;0.01;XAUUSD;4330.00;0.01;2026.09.02 09:00:00;4340.00;-0.18;;9.82\n"
+        "2026.09.02 10:00:00;Buy;0.01;XAUUSD;4340.00;0.01;2026.09.02 11:00:00;4335.00;-0.18;;-4.18\n"
+    ).encode("utf-8")
+    metrics = {"metrics": {"EquityDrawdown": 8.0, "Average3MonthProfit": 5.5,
+                           "InitialDepositVirtual": 10000.0}}
+    _verdrahte(monkeypatch, {
+        "http://pelican:8090": FakeClient(trades=csv_mit_einzahlung, metrics=metrics)})
+    kandidat = ingest.kandidaten(quelle, [
+        {"signalId": "4712", "version": "pelican", "signalName": "Mit Einzahlung",
+         "subscribers": 1, "weeks": 40}])[0]
+    pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
+    assert not result.fehler, result.fehler
+    assert result.forensik_vorhanden
+    assert result.kapitalbasis_verwendet_quelle == "csv_einzahlungen"
+    assert result.kapitalbasis_verwendet_usd == 1000.0
+    assert "Kapitalbasis virtuell" not in (result.urteil or "")
+    # Und der Prompt-JSON bleibt ohne Annahme-Vermerk
+    import json as _json
+    forensik = _json.loads(pipeline._forensik_json(result))
+    assert forensik["kapitalbasis_verwendet"] is None
+
+
 def test_roboforex_ende_zu_ende_wird_akzeptiert(monkeypatch):
     """RoboMonitor (RoboForex) liefert Version je Plattform (mql4/mql5), BOM,
     Punkt-Zeitstempel und weeks — der Scanner nimmt das Format unverändert an
