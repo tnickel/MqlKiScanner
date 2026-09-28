@@ -1,6 +1,8 @@
 # 21 — Megaprojekt-Architektur: Signal-Kette von der Quelle bis zum Monitor
 
-Stand: 27.09.2026. Diese Seite ist die **Gesamtdokumentation des Megaprojekts**
+Stand: 27.09.2026 (Nachtrag 28.09.2026: Vantage-Währungsschutz + Kopierer-
+Historie nachgetragen, Testzahlen aktualisiert). Diese Seite ist die
+**Gesamtdokumentation des Megaprojekts**
 im Workspace `SIGNALDOWNLOADER` — der SignalKiScanner als Hub, fünf Datenquellen
 per REST angebunden, zwei Konsumenten nachgelagert. Detail-Doku der Quellen:
 doc/20 (Multi-Source-Hub, §4a–d); je Projekt existiert eine eigene README.
@@ -54,9 +56,9 @@ Toolbar-Button „REST-API an/aus“.
 | Projekt (Ordner) | Version(en) | Währung | Besonderheiten / Grenzen |
 |---|---|---|---|
 | **MqlDownloader** (Git: `tnickel/MqlDownloader`) | `mql4`/`mql5` | USD | Originär; Original-mql5-Exporte; MPDD-Filter gewollt; Initial Deposit folgt |
-| **PelicanTrading** (kein Git) | `pelican` | gemischt | trades.csv nur USD-Konten; SL nur offene Positionen; weeks im Katalog |
+| **PelicanTrading** (kein Git) | `pelican` | USD-normalisiert | serverseitige FX-Umrechnung seit 28.09.2026 (USC fix ÷100, übrige EZB-Kurs, Kennzeichnung in metrics/Katalog — doc/20 §4a.1); SL nur offene Positionen; weeks im Katalog; InitialDepositVirtual (additiv) |
 | **roboforex** (Git: `tnickel/robomonitor`) | `mql4`/`mql5` je Plattform | USD | MT5-Rohdeals serverseitig zu Positionen gepaart; Ø-Monatsrendite hergeleitet (Yield/Laufzeit) |
-| **vantage** (kein Git) | `vantage` | USD-normalisiert | gemessene 30-Tage-Rendite; Basis-Symbole (XAUUSD statt XAUUSD.sc) |
+| **vantage** (kein Git) | `vantage` | USD/USC-normalisiert | gemessene 30-Tage-Rendite; Basis-Symbole (XAUUSD statt XAUUSD.sc); USC (US-Cent) serverseitig ÷100 nach USD; Drittwährung (EUR, GBP …): trades.csv 404 + Grund (Forensik rechnet USD); Kopierer-Historie aus kopierer.db (/history, 7/30-Tage-Zuwachs im Katalog) |
 | **zulumonitor** (Git: `tnickel/zulumonitor`) | `zulu` | Trader-Konto | trades.csv nur USD-Konten (149/200); keine Abonnenten-Historie (ehrlich leer); Demo-Flag im Katalog |
 
 Allen gemeinsam (Nutzer-Entscheidungen 27.09.2026, doc/20 §2): kein
@@ -107,23 +109,25 @@ Anbindung einer neuen Quelle im Scanner: Admin → Datenquellen → hinzufügen
 (Kürzel + Base-URL + optional Token) → „Alle Quellen testen“ → Scan-Seite
 „Signale holen aus: Datenquellen (REST)“ oder „Beides“.
 
-## 6. Testabdeckung (Stand 27.09.2026)
+## 6. Testabdeckung (Stand 28.09.2026)
 
 | Projekt | Suite | Davon REST |
 |---|---|---|
-| SignalKiScanner | **934** grün | 21 Quellen-/Akzeptanztests (je Quelle ein Ende-zu-Ende-Regressionstest) |
+| SignalKiScanner | **948** grün (28.09.: +14 Fix-IDs) | 21 Quellen-/Akzeptanztests (je Quelle ein Ende-zu-Ende-Regressionstest) |
 | MqlDownloader | **81** grün | 3 (Instanz-Kennung) |
 | PelicanTrading | **24** grün | 8 |
 | roboforex | **114** grün | 9 (inkl. MT5-Paarung) |
-| vantage | **8** grün | 8 |
+| vantage | **10** grün (28.09.: +2 Währungsschutz) | 10 |
 | zulumonitor | **63** grün | 9 |
 
 ## 7. Offenes / Ausbaustufen (doc/20 §7)
 
 - Initial Deposit: MqlDownloader-/metrics-Erweiterung (Vorlage für alle) →
   danach volle Kapitalbasis-Regel für Quellen-Signale.
-- USD-Konten-Filter bei Pelican/Zulu durch FX-Umrechnung ersetzen (EZB-Kurse
-  im Scanner vorhanden).
+- USD-Konten-Filter durch FX-Umrechnung ersetzen — **Pelican erledigt
+  (28.09.2026, serverseitig im Downloader, doc/20 §4a.1)**; Zulu und Vantage
+  offen (Vantage deckt USD+USC ab und lehnt Drittwährung seit 28.09.2026
+  ehrlich mit 404 + Grund ab, Zulu-Muster).
 - Stufe 2–4: Composite-Identität (quelle, signal_id), Betreuer-Agent auf
   Quellen umstellen, MQL5-Crawler entfernen (`listen_modus=quellen` als
   Standard), weitere Börsen.

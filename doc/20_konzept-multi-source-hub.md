@@ -117,11 +117,57 @@ SignalKiScanner"):
 | Thema | Pelican-Lage | Folge im Scanner |
 |---|---|---|
 | Trades | positionell (Open+Close je Zeile), serverseitig ins mql5-CSV konvertiert (Zeitstempel mit Punkten) | Forensik läuft unverändert |
-| Kontowährung | **gemischt** (USD, USC, EUR, JPY …) | `trades.csv` nur für USD-Konten (404 + Grund sonst); `currencyCode` im Katalog |
-| Initial Deposit | nicht verfügbar | Kapitalbasis-Regel ruht (wie MqlDownloader bis Erweiterung) |
+| Kontowährung | **gemischt** (USD, USC, EUR, JPY …), seit 28.09.2026 **serverseitig nach USD umgerechnet** (siehe 4a.1) | `trades.csv` für alle Konten; Forensik rechnet USD wie gehabt |
+| Initial Deposit | nicht verfügbar; seit 28.09.2026 zusätzlich `InitialDepositVirtual` (siehe 4a.1) | Kapitalbasis-Regel ruht weiter — **Virtual NICHT in den Abgleich speisen** |
 | Stop-Nachweis | StopPrice nur bei offenen Positionen | Historie ohne SL → „kein Nachweis" + Verhaltensanalyse (§2.1) |
 | Signalalter | `weeks` im Katalog | Wochen-Vorfilter greift erstmals für Quellen-Signale |
 | Abonnenten | Copiers + Historie (copier_historie) | 7/30-Tage-Bilanz wie bei MQL5 |
+
+#### 4a.1 Pelican-Resterweiterung 28.09.2026 (Währungsumrechnung, virtuelle Einlage)
+
+Der PelicanMonitor liefert seit dem 28.09.2026 zusätzliche, **additive**
+Felder (Protokoll `mql5-downloader-v1` unverändert — kein bestehendes Feld
+geändert oder entfernt; der Ingest läuft ohne Anpassung weiter):
+
+**Währungsumrechnung** — `trades.csv` und `metrics` sind jetzt für ALLE
+Kontowährungen verfügbar, Geldbeträge serverseitig in USD:
+
+- USD unverändert; **USC (US-Cent) fix ÷ 100**; alle anderen Währungen per
+  **EZB-Referenzkurs** (frankfurter.dev, je Währung gecacht in
+  `data/fx_rates.json` der Downloader-Seite).
+- Skaliert werden nur Geldbeträge (Profit in `trades.csv`; Balance, Equity,
+  CopiersAum, CopiersProfit\* in `metrics`), centgerundet; Preise und Mengen
+  bleiben original. Ein einheitlicher Kurs je Provider verzerrt keine
+  Verhältnisse — Profit-Faktor, Drawdown-%, Exposure-vs-Balance der Forensik
+  sind invariant.
+- Kennzeichnung (additiv, der Scanner ignoriert sie heute):
+  - `metrics.CurrencyNote` — Klartext, z. B. „US-Cent-Konto: 1 USC = 0,01 USD
+    (fixer Umrechnungskurs)" oder „… EZB-Referenzkurs (frankfurter.dev) vom
+    2026-09-25, einheitlich auf alle Werte angewandt"
+  - `metrics.CurrencyRateToUsd`, `metrics.CurrencyRateDate`,
+    `metrics.CurrencyConvertedToUsd` (maschinenlesbar)
+  - Katalog `items[].currencyNote` (ohne Kursabruf, nur Kennzeichnung;
+    US-Cent-Konten ausdrücklich markiert)
+- Offline ohne jemals gecachten Kurs: `trades.csv` 404 + Grund (Scanner
+  überspringt wie bisher), `metrics` liefert Geldfelder `null` statt
+  Fremdwährungsbeträge fälschlich als USD.
+
+**Virtuelle Einlage** — `metrics.InitialDepositVirtual: 10000.0` plus
+`InitialDepositVirtualNote` („Annahme, kein Plattformwert"). Das echte
+`InitialDeposit` bleibt **bewusst weg**: `_kapitalbasis_abgleich` gleicht
+eine injizierte Kapitalbasis Cent-genau gegen die Web-Balance ab — ein
+virtueller Wert würde JEDEM Pelican-Signal „Kapitalbasis unbestätigt"
+geben. `InitialDepositVirtual` ist nur für eine bewusste spätere Nutzung
+gedacht (z. B. Anzeige/Filter), niemals als `initial_deposit_usd` in den
+Abgleich.
+
+**Erweiterter `metrics`-Satz** (28.09.2026, ebenfalls additiv): `Equity`,
+`Leverage`, `MinTradesPerMonth`, `MaxTradesPerMonth`, `MarketsCount`,
+`TopMarkets`, `CopiersAum`, `CopiersProfitYear`, `CopiersProfitMonth` —
+Quelle sind die Strategy-Stats (`/api/strategies/{id}/stats`), die im
+PelicanMonitor seit 28.09.2026 zuverlässig geladen werden (vorher wurden sie
+technisch verworfen, `metrics` war faktisch leer — bei Cache-Zweifeln also
+Artefakt-SHAs der Quellen erneuert abfragen).
 
 ### 4b. RoboMonitor (RoboForex) — dritte Quelle (implementiert 27.09.2026)
 
@@ -154,10 +200,12 @@ Plattform-Durchreichung (`pelican`-Muster); Akzeptanz per Regressionstest
 
 | Thema | Vantage-Lage | Folge im Scanner |
 |---|---|---|
-| Trades | deal-genau, bereits positionell (Open+Close), **USD-normalisiert** | direkte Konvertierung, kein Währungsfilter |
+| Trades | deal-genau, bereits positionell (Open+Close) | direkte Konvertierung |
+| Währung | USD direkt; **USC (US-Cent) serverseitig ÷100 nach USD normalisiert**; Drittwährung (EUR, GBP …) bleibt Kontowährung | trades.csv nur für USD/USC-Konten — sonst 404 + klarer Grund (Zulu-Muster, korrigiert 28.09.2026); `currencyCode` im Katalog zeigt die Währung |
 | Symbole | Broker-Postfixe („XAUUSD.sc") | Server liefert Basis-Symbol (kontract_specs matchen) |
 | Ertrag | **gemessene 30-Tage-Rendite** | `Average3MonthProfit` ohne Herleitung |
 | Drawdown | nur Gesamt-DD | `EquityDrawdown` = |Gesamt-DD| |
+| Abonnenten-Verlauf | kopierer.db: Tages-Snapshot je „Signale laden" (weekChange/monthChange im Katalog) | `/history` liefert Punkte; 7/30-Tage-Bilanz baut sich mit der Zeit auf |
 | Initial Deposit / Balance | nicht verfügbar (AumUsd = Kopierer-Kapital) | beide Regeln ruhen |
 | Stop-Nachweis | keine SL-Daten | „kein Nachweis" + Verhaltensanalyse (§2.1) |
 | Signalalter | `weeks` aus Monaten | Wochen-Vorfilter greift |
@@ -202,7 +250,10 @@ dienen nur als Ersatz für die wegfallende MQL5-Kennzahlenseite:
   kennt das Format (Orderbuch-Variante, Profit = Spalte 11).
 - **Initial Deposit in `/metrics`** (Entscheidung 2): ohne ihn keine
   Kapitalbasis-Regel und kein Cent-genauer Abgleich für Quellen-Signale —
-  **weiterhin offen** (MqlDownloader-Erweiterung).
+  **weiterhin offen** (MqlDownloader-Erweiterung). Pelican liefert seit
+  28.09.2026 zusätzlich `InitialDepositVirtual` (Annahme 10.000 USD,
+  siehe §4a.1) — das ist **kein** Ersatz und darf nie als
+  `initial_deposit_usd` in den Abgleich.
 - Vollständigkeit: nur Signale mit Downloader-Bestand (404 = überspringen).
 
 ## 5. Ingest (Stufe 1, implementiert)

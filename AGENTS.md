@@ -343,14 +343,19 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
 - ✅ VantageMonitor als vierte Quelle (27.09.2026 nachts, doc/20 §4c):
   Vantage-Copy-Trading über dasselbe REST-Protokoll, Versions-Kürzel
   „vantage" (Port 8092, Autostart, data/rest_api.json, Instanz-Kennung).
-  Trades dort deal-genau, bereits positionell und USD-normalisiert —
-  direkte mql5-Konvertierung, Server liefert Basis-Symbole (XAUUSD statt
-  XAUUSD.sc), kein Währungsfilter. Average3MonthProfit = GEMESSENE
-  30-Tage-Rendite (keine Herleitung). Grenzen: kein Initial Deposit und
-  keine Provider-Balance (AumUsd ist Kopierer-Kapital), Kommission im
-  Netto-PnL, kein SL. Scanner-seitig wie Pelican nur Plattform-Durchreichung
-  + Akzeptanz-Regressionstest. Anbindung: Kürzel z. B. „vant",
-  http://rechner:8092. 933 Tests grün.
+  Trades dort deal-genau, bereits positionell — direkte mql5-Konvertierung,
+  Server liefert Basis-Symbole (XAUUSD statt XAUUSD.sc). Währung (korrigiert
+  28.09.2026): USD-Konten liefern trades.csv direkt, USC-Konten (US-Cent)
+  werden serverseitig ÷100 nach USD normalisiert, Konten in Drittwährung
+  (EUR, GBP …) antworten ehrlich 404 + Grund (Zulu-Muster — die Forensik
+  rechnet USD; currencyCode im Katalog zeigt die Währung). Kopierer-
+  Historie: kopierer.db mit Tages-Snapshots je „Signale laden" → /history
+  liefert den Verlauf, Katalog trägt weekChange/monthChange (7/30-Tage-
+  Zuwachs). Average3MonthProfit = GEMESSENE 30-Tage-Rendite (keine
+  Herleitung). Grenzen: kein Initial Deposit und keine Provider-Balance
+  (AumUsd ist Kopierer-Kapital), Kommission im Netto-PnL, kein SL.
+  Scanner-seitig wie Pelican nur Plattform-Durchreichung + Akzeptanz-
+  Regressionstest. Anbindung: Kürzel z. B. „vant", http://rechner:8092.
 - ✅ ZuluMonitor als fünfte Quelle (27.09.2026 nachts, doc/20 §4d):
   ZuluTrade über dasselbe REST-Protokoll, Versions-Kürzel „zulu" (Port 8093,
   Autostart, data/rest_api.json, Instanz-Kennung). Trades positionell
