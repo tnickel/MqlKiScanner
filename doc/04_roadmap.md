@@ -172,3 +172,12 @@ Manuelle Vollanalyse je Signal, außerhalb des Workflows:
 - Keine Garantie-Logik: "bewiesener Stop" heißt nicht risikolos
   (Historie ≠ Zukunft; 30-%-Schranke schützt nur bei kontinuierlichen
   Verlusten, nicht bei Gap-Risiken)
+
+
+## Ergänzt 28.09.2026: Equity-DD-Rekonstruktion aus Kursdaten
+
+- Forensik-Batterie um den fünften Messwert erweitert: Reko-EQ-DD (Equity-
+  Kurve aus Trades + H1-Kursen, floating inklusive, Auto-GMT per
+  Preisabgleich). Geht bei Abdeckung >=95 % als viertes Maximum in die
+  30-%-Schranke; Prompts/Score werten ihn aus; ohne MT5-Terminal still aus.
+- Details: doc/03 Abschnitt 5 + AGENTS.md Umsetzungsstand.

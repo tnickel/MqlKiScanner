@@ -272,3 +272,18 @@ maximale Rückfall ist der Reko-EQ-DD.
   beim Markt-Beobachter (portabler Selbststart, Beenden nach dem Lauf).
 - Urteil nennt „Reko-EQ-DD X % (aus Kursen, GMT +N h)"; KI-Forensik-JSON
   enthält equity_dd_rekonstruiert_pct.
+
+### LLM-Auswertung des Reko-EQ-DD (28.09.2026, gleicher Tag nachgerüstet)
+
+Alle drei Prompt-Vorlagen (config/prompts/) deuten den Wert gezielt:
+
+- **risiko_analyse.md** (Prompt 2): Punkt 1a — Vergleich gemeldeter DD vs.
+  Trading-DD vs. `equity_dd_rekonstruiert_pct`; Reko > gemeldet = Kernbefund
+  („Anbieter meldet seinen Drawdown schöner, als er war") mit beiden Zahlen.
+- **gesamtbericht.md** (Prompt 3): Drawdown-Dreiklang; Reko über Schranke =
+  hartes Ablehnungskriterium.
+- **portfolio.md**: DD-Arten im Portfolioteil genannt.
+- **Kriterien-Text** (pipeline._kriterien_text): erklärt das Vierfach-Maximum
+  der Schranke (EQ/Bal/Trading/Reko) — die KI kennt die Engine-Regel.
+- **scoring.evaluate**: `reko_eq_dd_pct` als viertes Maximum (auch bei
+  eq_dd_caveat); Pipeline reicht ihn nur bei verlässlicher Rekonstruktion durch.

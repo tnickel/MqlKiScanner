@@ -83,6 +83,20 @@ eine ausreichende statistische Stop-Signatur vorliegen. Ein fehlender oder
 nur teilweiser Stop-Nachweis ergibt höchstens Gelb, auch bei niedrigem Score
 und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
 
+**Equity-Drawdown wird nachgemessen (28.09.2026):** Der vom Broker gemeldete
+„By Equity"-Drawdown ist eine Selbstauskunft. Mit laufendem MetaTrader-Terminal
+(oder bei aktiviertem portablen Selbststart) rekonstruiert der Scanner die
+Equie-Kurve aus den Trades und echten Kursen — inklusive der floating
+Verluste offener Positionen („Reko-EQ-DD"). Der nötige Zeitversatz
+(GMT-Offset zwischen Signal-Broker und Terminal) wird automatisch per
+Preisabgleich ermittelt. Der Reko-EQ-DD geht bei belastbarer Abdeckung als
+weiterer Wert in die harte 30-%-Drawdown-Schranke ein; im Urteil steht dann
+„· Reko-EQ-DD X % (aus Kursen, GMT +N h)", und die KI-Berichte vergleichen
+gemeldeten vs. nachgemessenen Drawdown ausdrücklich. Ohne Terminal entfällt
+die Prüfung still — kein Signal wird dafür schlechter bewertet
+(Einstellung „equity_rekonstruktion", Standard an; Terminal-Politik wie beim
+Markt-Beobachter: einmal pro Scanlauf, danach beendet).
+
 ### Ampel-Verlauf und Wechsel-Protokoll
 
 **Farben werden bei jedem Lauf aufgezeichnet:** Jeder erfolgreich gespeicherte

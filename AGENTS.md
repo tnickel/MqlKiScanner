@@ -401,7 +401,10 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   kursdaten_beenden()). Fließt NUR bei Abdeckung ≥95 % als viertes Maximum
   in die Drawdown-Schranke ein (Risiko vor Ertrag); Urteil nennt
   „Reko-EQ-DD … (aus Kursen, GMT ±N h)", Forensik-Snapshot + LLM-JSON
-  führen ihn mit. Ohne Terminal still aus (kein Malus). Setting
+  führen ihn mit; alle drei Prompts (Risiko/Gesamt/Portfolio) und der
+  Kriterien-Text deuten ihn gezielt (Reko > gemeldet = Kernbefund
+  „Drawdown schöner gemeldet als er war"), scoring.evaluate nimmt ihn
+  als viertes Maximum in die Schranke (reko_eq_dd_pct). Ohne Terminal still aus (kein Malus). Setting
   equity_rekonstruktion (an). 964 Tests grün (+8
   tests/test_equity_rekonstruktion.py, synthetische Bars — kein MT5 nötig).
 - ✅ Fix-IDs — definierte Signal-IDs immer scannen (28.09.2026,
