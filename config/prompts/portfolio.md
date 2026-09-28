@@ -25,7 +25,7 @@ Danach Abschnitte mit ## -Ueberschriften:
    gleicher Strategie-Typ/Handelszeitfenster = Korrelationsrisiko)?
 2. **Bewertung je Signal** — Kurzes Urteil je Signal: Rolle im Depot
    (Ertragstraeger, Risikotraeger, ueberfluessig) und Hauptgrund mit
-   Zahlen (Trading-DD, Schockszenario, Stop-Nachweis, Ertrag/Monat).
+   Zahlen (Trading-DD, Reko-EQ-DD aus Kursen falls vorhanden neben dem gemeldeten EQ-DD, Schockszenario, Stop-Nachweis, Ertrag/Monat).
 3. **Portfolio-Vorschlag** — Welche Kombination empfiehlst du? Je
    gewaehltem Signal: Rolle, ungefaehre Gewichtung in Prozent des
    Kopierbudgets und warum die Kombination diversifiziert ist

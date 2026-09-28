@@ -387,7 +387,9 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
 def _kriterien_text(settings: dict) -> str:
     return (f"- Harte Schranke: max. {settings.get('schranke_eq_dd_pct', 30)} % Drawdown — "
             "gewertet wird das MAXIMUM aus Plattform-By-Equity-DD, Plattform-"
-            "By-Balance-DD und aus den Trades rekonstruiertem Trading-DD\n"
+            "By-Balance-DD, aus den Trades rekonstruiertem Trading-DD UND dem "
+            "aus Kursdaten nachgemessenen Reko-EQ-DD (floating inklusive; nur "
+            "bei belastbarer Abdeckung)\n"
             f"- Mindest-Ertrag: {settings.get('min_ertrag_pct_monat', 5)} %/Monat\n"
             "- Risiko VOR Ertrag; Stop-Loss muss BEWIESEN sein (Orderbuch oder "
             "eindeutige Cluster-Signatur), nicht nur behauptet\n"
@@ -939,6 +941,7 @@ class ScanPipeline:
                 platform = {
                     "eq_dd_pct": res.dd_equity_pct or 0,
                     "bal_dd_pct": res.dd_balance_pct or 0,
+                    "reko_eq_dd_pct": res.equity_dd_rekonstruiert_pct or 0,
                     "weeks": res.wochen,
                     "broker_risk": 5.0,      # Default offshore; Detailpruefung manuell
                     "transparency_risk": 5.0,

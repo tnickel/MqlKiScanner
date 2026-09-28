@@ -32,7 +32,7 @@ Danach Abschnitte mit ## -Ueberschriften:
    Logik, Automatisierungsgrad, belegt aus den Trades.
 2. **Wie handelt das System?** — Verhalten anhand der Beispiel-Trades:
    Positions sizing, Körbe, Haltezeiten, Session-Muster, Monatsverlauf.
-3. **Risikoanalyse** — Drawdown (Trading-DD vs. Plattform-EQ-DD),
+3. **Risikoanalyse** — Drawdown im Dreiklang: Trading-DD (geschlossene Trades) vs. Plattform-EQ-DD (gemeldet) vs. Reko-EQ-DD (aus Kursen nachgemessen, floating inklusive — Feld equity_dd_rekonstruiert_pct im Forensik-JSON, wenn vorhanden). Eine Rekonstruktion über der Drawdown-Schranke ist ein hartes Ablehnungskriterium; eine Rekonstruktion deutlich über dem gemeldeten Wert ist gesondert zu benennen,
    Verlustserien mit Summen, Peak-Exposure mit Dollar-Schockszenario,
    Martingale-Befund, Stop-Loss-Befund (bewiesen oder neutral, s. SL-Regel). Das
    Schockszenario ist ein Stress-Szenario, kein gemessener Verlust: es

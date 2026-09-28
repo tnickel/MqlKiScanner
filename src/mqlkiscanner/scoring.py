@@ -164,10 +164,14 @@ def evaluate(report: dict, platform: dict | None = None,
     real_dd = _trading_dd_for_risk(trading_dd)
     eq_dd = float(platform.get("eq_dd_pct") or 0.0)
     bal_dd = float(platform.get("bal_dd_pct") or 0.0)
+    # Reko-EQ-DD aus Kursdaten (floating inklusive) — nur bei belastbarer
+    # Abdeckung wird er von der Pipeline hierher gereicht; er geht als
+    # viertes Maximum in die Schranke ein (Risiko vor Ertrag, 28.09.2026).
+    reko_dd = float(platform.get("reko_eq_dd_pct") or 0.0)
     if platform.get("eq_dd_caveat"):
-        barrier_dd = real_dd
+        barrier_dd = max(real_dd, reko_dd)
     else:
-        barrier_dd = max(real_dd, eq_dd, bal_dd)
+        barrier_dd = max(real_dd, eq_dd, bal_dd, reko_dd)
     barrier = barrier_dd > float(schranke_eq_dd_pct)
     return {
         "dimensions": dims,
