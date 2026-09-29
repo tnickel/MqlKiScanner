@@ -219,6 +219,24 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
     return ergebnis
 
 
+# Verwaisten-Grenzen des Doppel-Lauf-Guards (Review Qwen 29.09., M4):
+# Betreuer bewusst 2 h — dieselbe Grenze wie Tagesdigest und fällig-Prüfung
+# (echte Betreuer-Läufe bleiben dank Export-Cache deutlich kürzer); alle
+# anderen Rollen 4 h (Dirigent/Full-Scan können lang laufen). Vorher
+# pauschal 4 h: Ein 3-h-verwaister Betreuer-Row ließ Digest („ich laufe“)
+# und Guard („läuft noch“) gegeneinander entscheiden.
+_GUARD_MAX_S = {"betreuer": 2 * 3600}
+_GUARD_DEFAULT_MAX_S = 4 * 3600
+# M5: Ein Guard-Skip wird nur EINMAL je blockierendem Lauf gemeldet (der
+# Daemon tickt alle 30 s — sonst Postfach-/Log-Spam). Schlüssel: Rolle,
+# Wert: ID des blockierenden Laufs.
+_guard_skip_vermerkt: dict[str, int] = {}
+
+
+def _guard_max_alter_s(rolle: str) -> int:
+    return _GUARD_MAX_S.get(rolle, _GUARD_DEFAULT_MAX_S)
+
+
 def _rolle_ausfuehren(rolle: str, settings: dict, ergebnis: dict, log) -> None:
     from . import betreuer, chef, dirigent, markt, melder  # spät: Kreisimporte
     # Doppel-Lauf-Guard Daemon vs. GUI (Review 29.09.): Das Lauf-Lock nimmt
@@ -228,10 +246,22 @@ def _rolle_ausfuehren(rolle: str, settings: dict, ergebnis: dict, log) -> None:
     # welche Quelle) heißt hier: die Rolle arbeitet bereits → dokumentierter
     # Skip statt Doppel-Export/Doppel-Kosten. (dirigent behält zusätzlich
     # sein Lauf-Lock; Verschachtelungsgefahr besteht dadurch nicht.)
-    if journal.aktive_laeufe(rolle, max_alter_s=4 * 3600):
-        grund = (f"{rolle.capitalize()} läuft bereits (Journal) — "
+    aktive = journal.aktive_laeufe(rolle, max_alter_s=_guard_max_alter_s(rolle))
+    if aktive:
+        holder = int(aktive[0]["id"])
+        grund = (f"{rolle.capitalize()} läuft bereits (Lauf {holder}) — "
                  "Daemon-Tick übersprungen")
-        log(grund)
+        if _guard_skip_vermerkt.get(rolle) != holder:
+            # M5 (Review Qwen 29.09.): Skip sichtbar machen (Postfach + Log),
+            # aber ohne agenten_laeufe-Zeile — 'skipped' zählt als Terminal-
+            # Status in lauf_heute_erfolgreich und würde die Rolle sonst für
+            # heute stilllegen. Einmal je blockierendem Lauf reicht.
+            _guard_skip_vermerkt[rolle] = holder
+            journal.meldung_speichern(
+                "laufsperre", f"{rolle.capitalize()}: Daemon-Tick übersprungen",
+                grund + " — der aktive Lauf arbeitet noch.",
+                prioritaet=1, quellen=[f"lauf#{holder}"])
+            log(grund)
         ergebnis["ausgefuehrt"].append({"rolle": rolle, "status": "skipped",
                                         "grund": grund})
         return

@@ -2,6 +2,10 @@
 requests>=2.31
 beautifulsoup4>=4.12
 pandas>=2.0
+# Lauf-Lock (Agenten): PID-Liveness + Prozess-Startzeit gegen Windows-PID-
+# Recycling. Bewusst DIREKTE Dependency — die Lock-Semantik darf nicht von
+# einer zufaelligen Mit-Installation abhaengen (Review Qwen 29.09., M3).
+psutil>=5.9
 # PDF-Berichte (Unicode-Schriften sind im Paket enthalten; keine Systemfonts nötig)
 reportlab>=4.2,<5
 # GUI (Phase 4) inklusive eingebettetem PDF-Viewer
