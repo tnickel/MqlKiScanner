@@ -476,9 +476,11 @@ def _stop_evidence_text(stops: dict) -> str:
 
 
 def _kapitalbasis_abgleich(drawdown_befund: dict, stats: dict) -> tuple[bool, str]:
-    """Deckung auf den Cent (AGENTS.md): Eine von der Signalseite injizierte
-    Kapitalbasis ("Initial Deposit") muss den rekonstruierten Endkontostand
-    erklaeren (Basis + alle CSV-Fluesse + Netto == Webseiten-Balance).
+    """Kapitalbasis-Abgleich: Eine von der Signalseite injizierte Kapitalbasis
+    ("Initial Deposit") muss den rekonstruierten Endkontostand erklaeren
+    (Basis + alle CSV-Fluesse + Netto == Webseiten-Balance). Toleranz
+    max(5 USD, 2 %) — die Signalseite rundet (M3, Review-Handoff 29.09.:
+    "auf den Cent" war eine AGENTS-Floskel, die der Code nie geliefert hat).
 
     Returns (ok, fehlermeldung). Bei Kapitalbasis aus CSV-Einzahlungen ent-
     faellt der Check — ein aelterer Cache-Export darf real abweichen, ohne

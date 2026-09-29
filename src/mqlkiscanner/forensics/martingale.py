@@ -32,8 +32,17 @@ def _successor_test(seq) -> dict:
         losses, wins = [], []
         for a, b in zip(trades, trades[1:]):
             if b.open_time > a.close_time:  # nicht parallel offen
-                ratio = b.volume / max(a.volume, 1e-9)
-                (losses if a.profit <= 0 else wins).append(ratio)
+                # L5 (Review-Handoff 29.09.): Vorgaenger ohne Volumen
+                # (Export-Artefakt, z. B. geschlossene Null-Position)
+                # erzeugte ratio ~1e7 -> Phantom-MARTINGALE-Flag -> falsche
+                # harte rote Ampel. Ohne Volumen kein Risiko-Verhaeltnis.
+                if a.volume <= 0 or b.volume <= 0:
+                    continue
+                ratio = b.volume / a.volume
+                # L9: Netto statt Brutto — Kommission/Swap zaehlt zum
+                # Verlust (gleiches Mass wie Drawdown-Kurve/Equity-Reko).
+                netto = a.net if a.net is not None else a.profit
+                (losses if netto <= 0 else wins).append(ratio)
         median = statistics.median(losses) if losses else None
         per_symbol[symbol] = {
             "n_after_loss": len(losses),
@@ -45,12 +54,22 @@ def _successor_test(seq) -> dict:
     if not after_loss:
         return {"n_after_loss": 0, "per_symbol": per_symbol}
     med_loss = statistics.median(after_loss)
+    # L15 (Review-Handoff 29.09.), Variante (a) — nur Zusatzfeld, keine
+    # Verhaltensaenderung: flag ist der PER-SYMBOL-OR, waehrend
+    # median_ratio_after_loss das GLOBALLE Median ist. Ein globales
+    # Median ~0.8 neben flag:true wirkt widerspruechlich; das Max-Feld
+    # zeigt dem LLM das treibernde Symbol.
+    per_symbol_max = max(
+        (item["median_ratio_after_loss"] for item in per_symbol.values()
+         if item["median_ratio_after_loss"] is not None), default=None)
     return {
         "n_after_loss": len(after_loss),
         "n_after_win": len(after_win),
         "median_ratio_after_loss": round(med_loss, 2),
         "mean_ratio_after_loss": round(statistics.mean(after_loss), 2),
         "median_ratio_after_win": round(statistics.median(after_win), 2) if after_win else None,
+        "median_ratio_after_loss_per_symbol_max":
+            per_symbol_max if per_symbol_max is None else round(per_symbol_max, 2),
         "flag": any(item["flag"] for item in per_symbol.values()),
         "per_symbol": per_symbol,
     }

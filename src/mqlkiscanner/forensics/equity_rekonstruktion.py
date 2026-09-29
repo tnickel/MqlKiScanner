@@ -22,7 +22,7 @@ eine Messung aus Kursen, kein Szenario wie der Schock-Wert.
 from __future__ import annotations
 
 import datetime as dt
-from bisect import bisect_right
+import math
 
 from .. import fx_rates
 from .exposure import _resolve_symbol
@@ -68,15 +68,21 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
     indizes = {s: _bar_index(b) for s, b in bars_je_symbol.items()}
 
     def _bar_fuer(symbol: str, epoch: int, shift: int) -> dict | None:
-        idx = indizes.get(symbol)
+        # L4 (Review-Handoff 29.09.): Der Index ist UPPERCASE (symbole in
+        # rekonstruiere sind .strip().upper()); der Aufruf kam bisher mit
+        # dem ROHEN Symbol -> gemischte Schreibweise lief idx=None, die
+        # Probe wurde still uebersprungen und die Auto-GMT-Erkennung konnte
+        # unter die Mindest-Trefferquote rutschen -> Reko unnoetig skipped.
+        idx = indizes.get(symbol.strip().upper())
         if idx is None:
             return None
         zeiten, mappe = idx
         stunde = (epoch + shift) // 3600 * 3600
-        pos = bisect_right(zeiten, stunde) - 1
-        if pos < 0:
-            return None
-        return mappe[zeiten[pos]]
+        # L6: EXAKTER Lookup wie auf der Kurvenseite — bisect-1 lieferte bei
+        # fehlender Stunde (Wochenende/Feiertag) die VORHERIGE Bar und
+        # behandelte deren Close als Kurs dieser Stunde (verzerrte Treffer-
+        # quote und Punkt-Preise).
+        return mappe.get(stunde)
 
     quotes: dict[int, float] = {}
     for shift in GMT_KANDIDATEN_S:
@@ -195,8 +201,9 @@ def rekonstruiere(parsed, kurse, startkapital: float,
                          f"(Trefferquote {gmt['trefferquote']:.0%} < "
                          f"{GMT_MIN_TREFFER:.0%}) — Zeitversatz nicht belastbar."}
 
-    # Bars pro Symbol im verschobenen Zeitraum neu holen (Cache greift),
-    # auf H1-Raster normieren (Bar-Anfangsstunde).
+    # Raster aus dem bereits geladenen Superset-Fenster ableiten (deckt alle
+    # GMT-Shifts ab) — KEIN zusaetzlicher Kursabruf. Normierung auf H1
+    # (Bar-Anfangsstunde).
     raster: list[int] = sorted({(b["time"] // 3600) * 3600
                                 for bars in bars_je_symbol.values() for b in bars})
     if not raster:
@@ -284,6 +291,14 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     if len(curve) < 2:
         return {"test": "equity_rekonstruktion", "status": "skipped",
                 "grund": "zu wenige Rasterpunkte mit Kursen"}
+
+    # L14 (Review-Handoff 29.09.): Ein NaN/Inf in der Kurve (Kursdaten-
+    # Fehler) wuerde den Rueckfallvergleich still falsch machen und am Ende
+    # "0 % DD" melden — ohne dass verlaesslich es abfingt. Nicht endliche
+    # Werte = Reko unbrauchbar -> ehrlich skippen statt Schoenrechnen.
+    if not all(math.isfinite(wert) for _t, wert in curve):
+        return {"test": "equity_rekonstruktion", "status": "skipped",
+                "grund": "NaN/Inf in der Equity-Kurve (Kursdaten unbrauchbar)"}
 
     hoch = curve[0][1]
     dd_usd = 0.0

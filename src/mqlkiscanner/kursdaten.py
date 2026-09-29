@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Historische Kursdaten für die Equity-DD-Rekonstruktion (Nutzer-Wunsch 28.09).
+"""
+
+Known-Limitation (L11, Review-Handoff 29.09.): Das MetaTrader5-Paket
+hat keinen nativen Timeout-Parameter — ein haengendes Terminal kann
+initialize()/copy_rates_range() minutenlang blockieren (GUI-Scan- bzw.
+Daemon-Thread). Bewusst akzeptiert statt Thread-Timeout-Komplexität;
+beenden() ist idempotent und wird von allen Scan-Wegen in finally
+aufgerufen. Bei wiederkehrenden Blockaden: Entscheidung Thread-Timeout.
+Historische Kursdaten für die Equity-DD-Rekonstruktion (Nutzer-Wunsch 28.09).
 
 NUR LESEND — derselbe MT5-Whitelist-Stil wie agenten/marktdata.py (doc/19
 §7.1). Der Unterschied: hier werden HISTORIEN je Symbol über den Zeitraum

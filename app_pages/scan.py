@@ -738,40 +738,44 @@ if command:
         if only_new:
             log(f"Nur-neue-Modus: {len(neu)} neue Signale, "
                 f"{len(uebernommen)} bereits bewertet (werden übernommen).")
-        for i, candidate in enumerate(neu):
-            if control.get("stop"):
-                log("Stop angefordert — verbleibende Signale werden nicht mehr geladen.")
-                stop_gefordert = True
-                break
-            w_step("forensik", done=i,
-                   detail=f"Signal {i + 1}/{len(neu)}: {candidate.get('name')} #{candidate['id']}")
-            try:
-                result = pipe.analyze_candidate(
-                    session, candidate, log, should_stop=lambda: bool(control.get("stop")))
-                results.append(result)
-                new_ids.append(result.id)
-                _merke_wechsel(result)
-                if result.persisted_this_run:
-                    control["refreshed_ids"].append(result.id)
-            except pipeline.Mql5HardStopError as exc:
-                if getattr(exc, "result", None) is not None:
-                    results.append(exc.result)
-                    _merke_wechsel(exc.result)
-                    if exc.result.persisted_this_run:
-                        control["refreshed_ids"].append(exc.result.id)
-                log(str(exc))
-                skipped = len(neu) - (i + 1)
-                if skipped > 0:
-                    log(f"Fail-Fast: {skipped} weitere Signale nicht mehr von MQL5 geholt.")
-                stopped_early = True
+        try:
+            # L12 (Review-Handoff 29.09.): jede unerwartete Exception
+            # im Loop uebersprang kursdaten_beenden() -> MT5-Leak.
+            for i, candidate in enumerate(neu):
+                if control.get("stop"):
+                    log("Stop angefordert — verbleibende Signale werden nicht mehr geladen.")
+                    stop_gefordert = True
+                    break
+                w_step("forensik", done=i,
+                       detail=f"Signal {i + 1}/{len(neu)}: {candidate.get('name')} #{candidate['id']}")
+                try:
+                    result = pipe.analyze_candidate(
+                        session, candidate, log, should_stop=lambda: bool(control.get("stop")))
+                    results.append(result)
+                    new_ids.append(result.id)
+                    _merke_wechsel(result)
+                    if result.persisted_this_run:
+                        control["refreshed_ids"].append(result.id)
+                except pipeline.Mql5HardStopError as exc:
+                    if getattr(exc, "result", None) is not None:
+                        results.append(exc.result)
+                        _merke_wechsel(exc.result)
+                        if exc.result.persisted_this_run:
+                            control["refreshed_ids"].append(exc.result.id)
+                    log(str(exc))
+                    skipped = len(neu) - (i + 1)
+                    if skipped > 0:
+                        log(f"Fail-Fast: {skipped} weitere Signale nicht mehr von MQL5 geholt.")
+                    stopped_early = True
+                    w_step("forensik", done=i + 1)
+                    break
                 w_step("forensik", done=i + 1)
-                break
-            w_step("forensik", done=i + 1)
+        finally:
+            pipe.kursdaten_beenden()  # MT5-Terminal der Kursdaten nach dem Lauf schließen
         for r in uebernommen:
             r.urteil = (r.urteil or "") + " | bereits bewertet — unverändert übernommen"
             results.append(r)
         control["new_ids"] = new_ids
-        pipe.kursdaten_beenden()  # MT5-Terminal der Kursdaten nach dem Lauf schließen
         entschieden, vorpruefung, probleme = _station_kennzahlen(results)
         zusatz = f" · {len(uebernommen)} übernommen" if uebernommen else ""
         if stopped_early:

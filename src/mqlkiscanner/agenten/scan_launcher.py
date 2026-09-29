@@ -158,21 +158,25 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
         detail={"modus": modus, "station": "forensik",
                 "kandidaten": [c["id"] for c in scope]})
     ergebnisse = []
-    for i, kandidat in enumerate(scope, 1):
-        log(f"  [forensik {i}/{len(scope)}] "
-            f"{kandidat.get('name')} #{kandidat['id']}")
-        try:
-            ergebnisse.append(
-                pipe.analyze_candidate(session, kandidat,
-                                       log=lambda m: log(f"    {m}")))
-        except pipeline.Mql5HardStopError as exc:
-            if getattr(exc, "result", None) is not None:
-                ergebnisse.append(exc.result)
-            log(f"  Fail-Fast zum Account-Schutz: {exc}")
-            break
+    try:
+        # L12 (Review-Handoff 29.09.): jede unerwartete Exception
+        # im Loop uebersprang kursdaten_beenden() -> MT5-Leak.
+        for i, kandidat in enumerate(scope, 1):
+            log(f"  [forensik {i}/{len(scope)}] "
+                f"{kandidat.get('name')} #{kandidat['id']}")
+            try:
+                ergebnisse.append(
+                    pipe.analyze_candidate(session, kandidat,
+                                           log=lambda m: log(f"    {m}")))
+            except pipeline.Mql5HardStopError as exc:
+                if getattr(exc, "result", None) is not None:
+                    ergebnisse.append(exc.result)
+                log(f"  Fail-Fast zum Account-Schutz: {exc}")
+                break
 
-    pipe.kursdaten_beenden()  # MT5-Terminal der Kursdaten schließen
 
+    finally:
+        pipe.kursdaten_beenden()  # MT5-Terminal der Kursdaten schließen
     # KI-Berichte: Bedingungen wie die GUI (Key + geeignete Ergebnisse;
     # Teilscan erzwingt Neuerstellung über den Modus-Vertrag oben).
     jobs = [r for r in ergebnisse

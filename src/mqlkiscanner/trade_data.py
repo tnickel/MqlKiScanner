@@ -70,7 +70,9 @@ def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
     by_open = sorted(trades, key=lambda t: t.open_time)
     by_close = sorted(trades, key=lambda t: t.close_time)
     wins = [t for t in trades if t.profit > 0]
-    losses = [t for t in trades if t.profit <= 0]
+    # F4-Konsistenz (Review-Handoff 29.09.): Breakeven ist kein Verlust —
+    # dieselbe Definition wie stats.py/stops.py (Serie bricht ab wie bei Gewinn)
+    losses = [t for t in trades if t.profit < 0]
     durs = sorted(t.holding_hours for t in trades)
 
     # --- Monatskurve (Netto je Close-Monat)
@@ -96,7 +98,7 @@ def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
     streak, best_len, best_window = 0, 0, []
     window = []
     for t in by_close:
-        if t.profit <= 0:
+        if t.profit < 0:  # F4: Breakeven unterbricht die Serie wie ein Gewinn
             streak += 1
             window.append(t)
             if streak > best_len:

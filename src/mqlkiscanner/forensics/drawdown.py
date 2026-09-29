@@ -127,7 +127,3 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
         "balance_dd": balance,      # Diagnostik (Auszahlungs-Artefakte moeglich)
     }
 
-
-def consistency_usd_dd(parsed: ParsedExport) -> float:
-    """Der ankerrelevante Trading-DD in USD (Vergleich Plattform 'By Balance')."""
-    return run(parsed)["trading_dd"]["dd_usd"]
