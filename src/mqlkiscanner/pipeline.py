@@ -886,11 +886,23 @@ class ScanPipeline:
                     if virtuell is not None:
                         kapitalbasis = virtuell
                         kapitalbasis_quelle = KAPITALBASIS_QUELLE_VIRTUELL
+                if res.monitor_trade_eq_dd_pct is not None:
+                    # Datenquellen-Monitor hat den EQ-DD bereits aus der
+                    # vollen Trade-Kurve gemessen — die Kursdaten-Rekonstruktion
+                    # (Terminal, H1-Bars, Auto-GMT) wäre Doppelarbeit am selben
+                    # Signal. Der Lazy-Anbieter-Start bleibt für MQL5-Signale
+                    # dieses Laufs unangetastet.
+                    log(f"Equity-Rekonstruktion übersprungen: Datenquellen-"
+                        f"Monitor liefert Trade-EQ-DD "
+                        f"{res.monitor_trade_eq_dd_pct} %.")
+                    kursanbieter = None
+                else:
+                    kursanbieter = self._kursanbieter_fuer(log)
                 report = analyze_export(
                     path, broker=res.broker_server,
                     kapitalbasis_usd=kapitalbasis,
                     kapitalbasis_quelle=kapitalbasis_quelle,
-                    kursanbieter=self._kursanbieter_fuer(log))
+                    kursanbieter=kursanbieter)
             except Mql5CredentialsMissingError:
                 log("Trade-Export übersprungen (kein MQL5-Login) — "
                     "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")

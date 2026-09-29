@@ -273,6 +273,8 @@ def test_monitor_trade_eq_dd_wird_durchgereicht_und_gelandet(monkeypatch):
         {"signalId": "4711", "version": "pelican", "signalName": "Lexo",
          "subscribers": 1, "weeks": 40}])[0]
     pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    kursanbieter_angefragt = []
+    pipe._kursanbieter_fuer = lambda log: kursanbieter_angefragt.append(1) or None
     res = pipe.analyze_candidate(None, dict(
         kandidat, quelle_id=quelle["id"], quelle_kuerzel=quelle["kuerzel"],
         quelle_version="pelican"), lambda *_: None)
@@ -280,10 +282,27 @@ def test_monitor_trade_eq_dd_wird_durchgereicht_und_gelandet(monkeypatch):
     import json as _json
     forensik_json = _json.loads(pipeline._forensik_json(res))
     assert forensik_json["monitor_trade_eq_dd_pct"] == 6.46
+    # Monitor liefert den EQ-DD → keine Kursdaten-Rekonstruktion für dieses
+    # Signal (keine Doppelarbeit am selben Signal; Nutzer-Wunsch 29.09.)
+    assert kursanbieter_angefragt == []
     # Unabhängige Kontrolle: Der Wert darf die Schranke NICHT kippen —
     # allein die eigenen Messungen (EQ-DD 8 %, Trading-DD aus MINI_CSV)
     # zählen (Engine-Bindung).
     assert res.schranke_verletzt is False
+
+    # Ohne Monitor-Wert: Kurs-Rekonstruktion wird wie bisher angefragt
+    _verdrahte(monkeypatch, {"http://pelican:8090": FakeClient(
+        trades=MINI_CSV, metrics={"metrics": {
+            "EquityDrawdown": 8.0, "Average3MonthProfit": 5.5,
+            "InitialDepositVirtual": 10000.0}})})
+    pipe2 = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    angefragt2 = []
+    pipe2._kursanbieter_fuer = lambda log: angefragt2.append(1) or None
+    res2 = pipe2.analyze_candidate(None, dict(
+        kandidat, quelle_id=quelle["id"], quelle_kuerzel=quelle["kuerzel"],
+        quelle_version="pelican"), lambda *_: None)
+    assert res2.monitor_trade_eq_dd_pct is None
+    assert angefragt2 == [1]
 
 
 # ------------------------------------------------------------------ Sync
