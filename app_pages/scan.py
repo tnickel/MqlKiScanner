@@ -647,6 +647,17 @@ if command:
         def log(message: str) -> None:
             lines.append(_stamped(message))
             _touch_activity(message.splitlines()[0][:400])
+            # Nutzer-Forderung 29.09.: Fehlermeldungen muessen IMMER geloggt
+            # werden — die Session-Anzeige verschwindet beim Neustart. Jede
+            # Workflow-Zeile (auch mehrzeilige Tracebacks) landet dauerhaft
+            # in data/scan_workflow.log.
+            try:
+                logdatei = config.DATA_DIR / "scan_workflow.log"
+                logdatei.parent.mkdir(parents=True, exist_ok=True)
+                with logdatei.open("a", encoding="utf-8") as fh:
+                    fh.write(_stamped(f"[{sid}] " + message) + "\n")
+            except OSError:
+                pass  # Log darf den Scan nie blockieren
         return log
 
     def w_skip_if_stopped(sid: str) -> bool:

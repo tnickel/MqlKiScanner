@@ -224,9 +224,16 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # 10:20 wäre sonst bei Rasterpunkt 10:00 gleichzeitig realisiert UND
     # floating verbucht (Doppelbuchung, verfälschter Peak; Review 29.09.,
     # Befund 2).
+    # Key-ONLY-Sortierung (Live-Bug 29.09., MCA100 #2153920): Das Tupel
+    # enthaelt das Trade-Objekt — hatten zwei Trades dieselbe Open- UND
+    # Close-Stunde (Grid/Scalping), verglich Python die Objekte und warf
+    # „'<' not supported between instances of 'Trade' and 'Trade'" → die
+    # Equity-Reko scheiterte zweimal (auch im Retry) und das Signal bekam
+    # keine Kursdaten-Nachmessung.
     offen_sort = sorted(
-        (( (_epoch(t.open_time) + offset) // 3600) * 3600,
-         ((_epoch(t.close_time) + offset) // 3600) * 3600, t) for t in nutzbare)
+        ((( (_epoch(t.open_time) + offset) // 3600) * 3600,
+          ((_epoch(t.close_time) + offset) // 3600) * 3600, t) for t in nutzbare),
+        key=lambda x: (x[0], x[1]))
 
     fx_cache: dict[tuple[str, dt.date], float | None] = {}
     fx_fehlt = False

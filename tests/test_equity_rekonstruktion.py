@@ -342,3 +342,25 @@ def test_skip_status_ohne_leerzeichen():
     parsed = SimpleNamespace(trades=[], balances=[], pendings=[])
     erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({}), startkapital=1000.0)
     assert erg["status"] == "skipped"
+
+
+def test_gleiche_stunde_trades_crashen_die_reko_nicht():
+    """Live-Bug 29.09. (MCA100 #2153920): Zwei Trades mit identischer Open-
+    UND Close-Stunde (Grid/Scalping) ließen sorted() die Trade-OBJEKTE
+    vergleichen → TypeError ‚<' not supported' → Reko scheiterte auch im
+    Retry. Die Key-Only-Sortierung muss das vertragen."""
+    start = dt.datetime(2026, 1, 1)
+    bars = _bars("XAUUSD", start, 48)
+    # ZWEI Trades, exakt gleiche Open-/Close-Stunde, unterschiedliche Lots
+    # und Preise (Grid-Legs in derselben Sekunde):
+    t1 = _trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+                start + dt.timedelta(hours=22), bars[1]["close"] - 0.1,
+                bars[22]["close"], lots=0.5, pnl=0.0)
+    t2 = _trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+                start + dt.timedelta(hours=22), bars[1]["close"] - 0.1,
+                bars[22]["close"], lots=0.5, pnl=0.0)
+    parsed = SimpleNamespace(trades=[t1, t2], balances=[], pendings=[])
+    fake = kursdaten.FakeKursDaten({"XAUUSD": bars})
+    erg = er.rekonstruiere(parsed, fake, startkapital=10_000.0)
+    assert erg["status"] == "ok", erg
+    assert erg["verlaesslich"] is True
