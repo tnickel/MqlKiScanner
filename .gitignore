@@ -51,3 +51,4 @@ deploy-cache/
 doc/zielrechner_ns1mqsv_betrieb.md
 config/app_settings.json
 config/deploy.local.json
+tests/tmp_*.py
