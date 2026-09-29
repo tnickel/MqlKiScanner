@@ -18,7 +18,7 @@ import time
 from datetime import datetime
 
 from .. import config
-from . import journal
+from . import journal, lock
 
 
 def _start_minute(settings: dict) -> int:
@@ -227,66 +227,98 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
 # und Guard („läuft noch“) gegeneinander entscheiden.
 _GUARD_MAX_S = {"betreuer": 2 * 3600}
 _GUARD_DEFAULT_MAX_S = 4 * 3600
-# M5: Ein Guard-Skip wird nur EINMAL je blockierendem Lauf gemeldet (der
-# Daemon tickt alle 30 s — sonst Postfach-/Log-Spam). Schlüssel: Rolle,
-# Wert: ID des blockierenden Laufs.
-_guard_skip_vermerkt: dict[str, int] = {}
+# M5/Qwen: Eine Skip-Meldung nur EINMAL je blockierendem Lauf bzw. Holder
+# (der Daemon tickt alle 30 s — sonst Postfach-/Log-Spam).
+_guard_skip_vermerkt: dict[str, str] = {}
 
 
 def _guard_max_alter_s(rolle: str) -> int:
     return _GUARD_MAX_S.get(rolle, _GUARD_DEFAULT_MAX_S)
 
 
+def _guard_skip_melden(rolle: str, kennzeichen: str, grund: str,
+                       verweis: str, log) -> None:
+    """Skip dokumentieren (Postfach + Log) — genau EINMAL je Kennzeichen
+    (Lauf-ID bzw. PID des Halters). Der Vermerk wird erst NACH erfolgreichem
+    Speichern gesetzt: Scheitert die DB einmal, retryt der nächste Tick
+    (Review-Übergabe 29.09., Befund 4 — vorher wurde der Vermerk VOR dem
+    Speichern gesetzt und ein einmaliger DB-Fehler verschluckte die Meldung
+    für diesen Holder dauerhaft)."""
+    if _guard_skip_vermerkt.get(rolle) == kennzeichen:
+        return
+    try:
+        journal.meldung_speichern(
+            "laufsperre", f"{rolle.capitalize()}: Daemon-Tick übersprungen",
+            grund + " — der aktive Lauf arbeitet noch.",
+            prioritaet=1, quellen=[verweis])
+    except Exception as exc:
+        log(f"Postfach-Meldung (Laufsperre) fehlgeschlagen, Retry im "
+            f"nächsten Tick: {exc}")
+        return
+    _guard_skip_vermerkt[rolle] = kennzeichen
+    log(grund)
+
+
 def _rolle_ausfuehren(rolle: str, settings: dict, ergebnis: dict, log) -> None:
     from . import betreuer, chef, dirigent, markt, melder  # spät: Kreisimporte
-    # Doppel-Lauf-Guard Daemon vs. GUI (Review 29.09.): Das Lauf-Lock nimmt
-    # nur dirigent/tageskette/scan_launcher/GUI — markt/betreuer/melder/chef
-    # liefen auf der Daemon-Seite ungeschützt neben einem parallelen GUI-
-    # Start derselben Rolle. Ein frischer 'laeuft'-Eintrag im Journal (egal
-    # welche Quelle) heißt hier: die Rolle arbeitet bereits → dokumentierter
-    # Skip statt Doppel-Export/Doppel-Kosten. (dirigent behält zusätzlich
-    # sein Lauf-Lock; Verschachtelungsgefahr besteht dadurch nicht.)
+    # Doppel-Lauf-Guard Daemon vs. GUI/Komplettkette (Review 29.09.): Ein
+    # frischer 'laeuft'-Eintrag im Journal heißt: die Rolle arbeitet bereits
+    # → dokumentierter Skip statt Doppel-Export/Doppel-Kosten. Die Grenze
+    # ist rein altersbasiert — ein LEBENDER Lauf über der Grenze wird vom
+    # Rollen-Lock unten gehalten (Review-Übergabe 29.09., Befund 2).
     aktive = journal.aktive_laeufe(rolle, max_alter_s=_guard_max_alter_s(rolle))
     if aktive:
         holder = int(aktive[0]["id"])
         grund = (f"{rolle.capitalize()} läuft bereits (Lauf {holder}) — "
                  "Daemon-Tick übersprungen")
-        if _guard_skip_vermerkt.get(rolle) != holder:
-            # M5 (Review Qwen 29.09.): Skip sichtbar machen (Postfach + Log),
-            # aber ohne agenten_laeufe-Zeile — 'skipped' zählt als Terminal-
-            # Status in lauf_heute_erfolgreich und würde die Rolle sonst für
-            # heute stilllegen. Einmal je blockierendem Lauf reicht.
-            _guard_skip_vermerkt[rolle] = holder
-            journal.meldung_speichern(
-                "laufsperre", f"{rolle.capitalize()}: Daemon-Tick übersprungen",
-                grund + " — der aktive Lauf arbeitet noch.",
-                prioritaet=1, quellen=[f"lauf#{holder}"])
-            log(grund)
+        _guard_skip_melden(rolle, f"lauf:{holder}", grund,
+                           f"lauf#{holder}", log)
         ergebnis["ausgefuehrt"].append({"rolle": rolle, "status": "skipped",
                                         "grund": grund})
         return
+    # Rollen-Lock (Review-Übergabe 29.09., Befunde 1+2): Der Daemon-Tick
+    # hielt bisher KEIN Datei-Lock — GUI-Klick/Komplettkette fanden das
+    # globale Lock frei und starteten dieselbe Rolle parallel; und ein
+    # lebender Lauf über der Journal-Altersgrenze war ganz ohne Schutz.
+    # Der liveness-basierte Rollen-Lock schließt beide Wege; LockBesetzt
+    # (lebender Halter) = dokumentierter Skip wie beim Journal-Guard.
+    try:
+        with lock.lauf_lock(config.DATA_DIR, lock.rolle_lock_name(rolle)):
+            lauf = _rolle_starten(rolle, settings, log,
+                                  betreuer, chef, dirigent, markt, melder)
+    except lock.LockBesetzt as exc:
+        pid = getattr(exc, "pid", None)
+        kennzeichen = f"pid:{pid}" if pid else f"unbekannt:{id(exc)}"
+        grund = (f"{rolle.capitalize()} läuft bereits (PID {pid}) — "
+                 "Daemon-Tick übersprungen (Rollen-Lock)")
+        _guard_skip_melden(rolle, kennzeichen, grund,
+                           f"rolle_lock#{rolle}", log)
+        ergebnis["ausgefuehrt"].append({"rolle": rolle, "status": "skipped",
+                                        "grund": grund})
+        return
+    ergebnis["ausgefuehrt"].append(lauf)
+
+
+def _rolle_starten(rolle: str, settings: dict, log, betreuer, chef,
+                   dirigent, markt, melder) -> dict:
     if rolle == "dirigent":
         lauf = dirigent.tageslauf(quelle="daemon", log=log)
-        ergebnis["ausgefuehrt"].append({"rolle": "dirigent",
-                                        "status": lauf["status"]})
-    elif rolle == "markt":
+        return {"rolle": "dirigent", "status": lauf["status"]}
+    if rolle == "markt":
         lauf = markt.tageslauf(quelle="daemon", log=log, settings=settings)
-        ergebnis["ausgefuehrt"].append(
-            {"rolle": "markt", "status": lauf["status"],
-             "grund": lauf.get("grund", "")})
-    elif rolle == "betreuer":
+        return {"rolle": "markt", "status": lauf["status"],
+                "grund": lauf.get("grund", "")}
+    if rolle == "betreuer":
         lauf = betreuer.tageslauf(quelle="daemon", log=log, settings=settings)
-        ergebnis["ausgefuehrt"].append(
-            {"rolle": "betreuer", "signale": lauf["signale"],
-             "zusammenfassung": lauf["zusammenfassung"]})
-    elif rolle == "melder":
+        return {"rolle": "betreuer", "signale": lauf["signale"],
+                "zusammenfassung": lauf["zusammenfassung"]}
+    if rolle == "melder":
         lauf = melder.tagesdigest(quelle="daemon", log=log, settings=settings)
-        ergebnis["ausgefuehrt"].append(
-            {"rolle": "melder", "status": lauf["status"]})
-    elif rolle == "chef":
+        return {"rolle": "melder", "status": lauf["status"]}
+    if rolle == "chef":
         lauf = chef.lagebericht(quelle="daemon", log=log, settings=settings)
-        ergebnis["ausgefuehrt"].append(
-            {"rolle": "chef", "status": lauf["status"]})
+        return {"rolle": "chef", "status": lauf["status"]}
+    raise ValueError(f"Unbekannte Rolle: {rolle}")
 
 
 def stopp_gewuenscht() -> bool:

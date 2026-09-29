@@ -64,7 +64,10 @@ def _rolle_ausfuehren(rolle_key: str, quelle: str, log, settings: dict) -> dict:
     if rolle_key == "dirigent":
         return dirigent.tageslauf(quelle=quelle, log=log)
     try:
-        with lock.lauf_lock(config.DATA_DIR):
+        # Globales Lock (wie GUI) PLUS Rollen-Lock — der Daemon-Tick hält
+        # nur das Rollen-Lock (Review-Übergabe 29.09., Befund 1).
+        with lock.lauf_lock(config.DATA_DIR), \
+                lock.lauf_lock(config.DATA_DIR, lock.rolle_lock_name(rolle_key)):
             if rolle_key == "markt":
                 return markt.tageslauf(quelle=quelle, log=log, settings=settings)
             if rolle_key == "betreuer":

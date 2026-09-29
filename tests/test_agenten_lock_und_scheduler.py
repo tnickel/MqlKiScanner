@@ -196,13 +196,32 @@ def test_lock_recycelte_pid_wird_uebernommen(tmp_path):
         pass  # Übernahme erfolgreich
 
 
-def test_lock_ueber_max_s_wird_uebernommen(tmp_path):
-    """M1: Auch ein verifiziert lebender, DERSELBE Halter blockiert nie über
-    MAX_S (24 h) — kein Lock blockiert ewig (Crash + Recycling-Lücke)."""
+def test_lock_ohne_start_stempel_wird_nach_max_s_uebernommen(tmp_path):
+    """MAX_S (24 h) gilt für Locks OHNE verifizierbare Identität (alter
+    Bestand ohne Start-Stempel): 25 h alt → Übernahme trotz lebender PID."""
+    import os as _os
+    import time as _time
+    import json as _json
+    from mqlkiscanner.agenten import lock as _lock
+
+    datei = tmp_path / "agenten_lauff.lock"
+    datei.write_text(_json.dumps(
+        {"pid": _os.getpid(), "ts": _time.time() - _lock.MAX_S - 60}),
+        encoding="utf-8")
+    with _lock.lauf_lock(tmp_path):
+        pass
+
+
+def test_lock_verifiziert_lebender_halter_blockiert_ohne_altersgrenze(tmp_path):
+    """Befund 3 (Übergabe-Review 29.09.): PID + Startzeit bestätigen denselben
+    lebenden Halter → blockiert UNABHÄNGIG vom Alter. Vorher gab MAX_S ihn
+    nach 24 h frei — Windows: Übernahme scheiterte am offenen Handle (Lock
+    blieb, Anzeige sagte „verwaist"), POSIX: unlink gelang → paralleler Lauf."""
     import os as _os
     import time as _time
     import json as _json
     import psutil
+    import pytest
     from mqlkiscanner.agenten import lock as _lock
 
     datei = tmp_path / "agenten_lauff.lock"
@@ -210,8 +229,27 @@ def test_lock_ueber_max_s_wird_uebernommen(tmp_path):
         {"pid": _os.getpid(), "ts": _time.time() - _lock.MAX_S - 60,
          "start": psutil.Process(_os.getpid()).create_time()}),
         encoding="utf-8")
-    with _lock.lauf_lock(tmp_path):
+    with pytest.raises(_lock.LockBesetzt):
+        with _lock.lauf_lock(tmp_path):
+            pass
+
+
+def test_besitzer_loescht_nur_eigenes_lock(tmp_path):
+    """Befund 3, zweiter Teil: Hat ein anderer Prozess die Lock-Datei
+    zwischenzeitlich ersetzt (POSIX-Übernahme), darf unser Verlassen sie
+    nicht löschen — sonst läuft ein dritter Prozess parallel an."""
+    from mqlkiscanner.agenten import lock as _lock
+
+    datei = tmp_path / "x.lock"
+    with _lock.lauf_lock(tmp_path, "x"):
+        datei.write_text(json.dumps(
+            {"pid": 999_999_999, "ts": time.time(), "start": None}),
+            encoding="utf-8")
+    assert datei.exists(), "fremdes Nachfolge-Lock darf nicht gelöscht werden"
+    # Und das normale Freigeben räumt weiterhin auf:
+    with _lock.lauf_lock(tmp_path, "x"):
         pass
+    assert not datei.exists()
 
 
 def test_lock_korrupte_datei_wird_uebernommen(tmp_path):
@@ -283,3 +321,75 @@ def test_guard_skip_meldet_einmal_je_blockierendem_lauf():
     assert f"lauf#{lauf}" in str(meldungen[0].get("quellen", ""))
     # Kein Journal-Lauf für den Skip (der GUI-'laeuft'-Row ist der einzige):
     assert len(journal.list_laeufe()) == 1
+
+
+# ------------------------- Review-Übergabe 29.09.: Befunde 1, 2, 4
+
+def test_daemon_rolle_nimmt_rolle_lock(monkeypatch, tmp_path):
+    """Befund 1 (Übergabe-Review): GUI und Komplettkette halten das Rollen-
+    Lock — der Daemon-Tick muss dasselbe nehmen, sonst startet ein Klick
+    dieselbe Rolle parallel zum laufenden Daemon-Lauf."""
+    from mqlkiscanner.agenten import markt
+    monkeypatch.setattr(config, "DATA_DIR", tmp_path)
+
+    def _nicht_parallel(**kwargs):
+        raise AssertionError("Daemon muss das Rollen-Lock beachten")
+
+    monkeypatch.setattr(markt, "tageslauf", _nicht_parallel)
+    with lock.lauf_lock(tmp_path, lock.rolle_lock_name("markt")):
+        ergebnis = {"ausgefuehrt": []}
+        scheduler._rolle_ausfuehren("markt", {}, ergebnis, log=lambda *_: None)
+    assert ergebnis["ausgefuehrt"][0]["status"] == "skipped"
+    assert "Rollen-Lock" in ergebnis["ausgefuehrt"][0]["grund"]
+    assert journal.meldungen_lesen(typ="laufsperre")
+
+
+def test_daemon_skippt_lebenden_betreuer_auch_nach_2h(monkeypatch, tmp_path):
+    """Befund 2 (Übergabe-Review): Der Journal-Guard ist rein altersbasiert
+    (2 h Betreuer) — ein LEBENDER Lauf darüber (lange LLM-Timeouts) darf
+    trotzdem keinen zweiten Start zulassen. Das Rollen-Lock hält ihn."""
+    from datetime import timedelta
+    from mqlkiscanner import db
+    from mqlkiscanner.agenten import betreuer
+    monkeypatch.setattr(config, "DATA_DIR", tmp_path)
+
+    lauf_id = journal.lauf_starten("betreuer", quelle="gui")
+    with db._connect() as conn:
+        vor3h = (datetime.now() - timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
+        conn.execute("UPDATE agenten_laeufe SET start=? WHERE id=?",
+                     (vor3h, lauf_id))
+
+    def _kein_zweiter_lauf(**kwargs):
+        raise AssertionError("lebender Lauf >2 h muss per Rollen-Lock geschützt sein")
+
+    monkeypatch.setattr(betreuer, "tageslauf", _kein_zweiter_lauf)
+    with lock.lauf_lock(tmp_path, lock.rolle_lock_name("betreuer")):
+        ergebnis = {"ausgefuehrt": []}
+        scheduler._rolle_ausfuehren("betreuer", {}, ergebnis, log=lambda *_: None)
+    assert ergebnis["ausgefuehrt"][0]["status"] == "skipped"
+    assert "Rollen-Lock" in ergebnis["ausgefuehrt"][0]["grund"]
+
+
+def test_guard_vermerk_erst_nach_erfolgreichem_speichern(monkeypatch):
+    """Befund 4 (Übergabe-Review): Scheitert das Postfach-Speichern einmal,
+    darf der Vermerk den Retry im nächsten Tick nicht unterdrücken."""
+    lauf = journal.lauf_starten("markt", quelle="gui")
+    orig = journal.meldung_speichern
+    aufrufe = {"n": 0}
+
+    def _kaputt(*args, **kwargs):
+        aufrufe["n"] += 1
+        if aufrufe["n"] == 1:
+            raise RuntimeError("DB busy")
+        return orig(*args, **kwargs)
+
+    monkeypatch.setattr(journal, "meldung_speichern", _kaputt)
+    ergebnis = {"ausgefuehrt": []}
+    scheduler._rolle_ausfuehren("markt", {}, ergebnis, log=lambda *_: None)
+    assert aufrufe["n"] == 1
+    assert journal.meldungen_lesen(typ="laufsperre") == [], \
+        "fehlgeschlagene Meldung darf keinen Vermerk setzen"
+    scheduler._rolle_ausfuehren("markt", {}, ergebnis, log=lambda *_: None)
+    meldungen = journal.meldungen_lesen(typ="laufsperre")
+    assert len(meldungen) == 1, "zweiter Tick muss die Meldung nachholen"
+    assert scheduler._guard_skip_vermerkt.get("markt") == f"lauf:{lauf}"

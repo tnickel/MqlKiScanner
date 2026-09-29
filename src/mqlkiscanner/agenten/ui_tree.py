@@ -97,7 +97,13 @@ def agent_manuell_ausfuehren(rolle_key: str) -> None:
                 if rolle_key == "dirigent":
                     res = _starte_rolle(rolle_key)  # Lock intern (dirigent.py)
                 else:
-                    with lock.lauf_lock(config.DATA_DIR):
+                    # Globales Lock (gegen Dirigent/Scans/Komplettkette) PLUS
+                    # Rollen-Lock: Der Daemon-Tick hält nur das Rollen-Lock —
+                    # ohne es könnte ein Klick parallel zu einem Daemon-Lauf
+                    # derselben Rolle starten (Review-Übergabe 29.09., Befund 1).
+                    with lock.lauf_lock(config.DATA_DIR), \
+                            lock.lauf_lock(config.DATA_DIR,
+                                           lock.rolle_lock_name(rolle_key)):
                         res = _starte_rolle(rolle_key)
             except lock.LockBesetzt as exc:
                 lauf_id = journal.lauf_starten(rolle_key, quelle="gui")

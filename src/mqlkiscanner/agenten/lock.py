@@ -22,10 +22,21 @@ from contextlib import contextmanager
 from pathlib import Path
 
 STALE_S = 3600  # ohne psutil: ein Stunden-altes Lock gilt als verwaist
-# Ultimative Obergrenze (Review Qwen 29.09., M1): Auch ein psutil-verifiziert
-# lebender Halter blockiert nie länger — sonst hätte ein Crash + Windows-PID-
-# Recycling den Daemon dauerhaft manuell entsorgt werden müssen.
+# Obergrenze NUR für Locks ohne verifizierbare Identität (kein Start-Stempel
+# oder Startzeit unklar). Ein EINDEUTIG identifizierter lebender Halter
+# blockiert ohne Altersgrenze (Review-Übergabe 29.09., Befund 3): MAX_S
+# hätte sonst einen echten >24-h-Lauf freigegeben — Windows: Übernahme
+# scheitert am offenen Handle (Lock bleibt, Anzeige sagt „verwaist"),
+# POSIX: unlink gelingt → paralleler Lauf.
 MAX_S = 24 * 3600
+
+
+def rolle_lock_name(rolle: str) -> str:
+    """Eigener Lock-Name je Rolle: Daemon-Tick, GUI-Klick und Komplettkette
+    nehmen denselben Rollen-Lock (liveness-basiert) — ein lebender Lauf
+    blockiert parallele Starts derselben Rolle unabhängig von Journal-
+    Altersgrenzen (Review-Übergabe 29.09., Befunde 1+2)."""
+    return f"rolle_{rolle}"
 
 
 class LockBesetzt(RuntimeError):
@@ -98,7 +109,33 @@ def _lock_blockiert(alt: dict, alter: float) -> tuple[bool, bool]:
             selber = None  # Prozess zwischendurch weg: konservativ unklar
         if selber is False:
             return False, False
+        if selber is True:
+            # Eindeutig identifiziert lebender Halter blockiert OHNE
+            # Altersgrenze (Review-Übergabe 29.09., Befund 3).
+            return True, True
+    # Kein Start-Stempel oder Startzeit unklar: Identität nicht verifizierbar
+    # → Alters-Obergrenze als Rückfallebene.
     return alter <= MAX_S, True
+
+
+def _lock_ist_uns(datei: Path, info: dict) -> bool:
+    """Gehört die Lock-Datei noch UNS? Nur dann darf der Besitzer sie
+    entfernen (Review-Übergabe 29.09., Befund 3): Hat ein anderer Prozess
+    die Datei zwischenzeitlich ersetzt (POSIX: Übernahme nach Altersgrenze),
+    darf unser unlink seine Datei nicht löschen — sonst läuft ein dritter
+    Prozess parallel an."""
+    try:
+        inhalt = json.loads(datei.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    try:
+        gleich_ts = abs(float(inhalt.get("ts", 0) or 0)
+                        - float(info.get("ts", 0) or 0)) < 0.001
+    except (TypeError, ValueError):
+        return False
+    return (inhalt.get("pid") == info.get("pid")
+            and gleich_ts
+            and inhalt.get("start") == info.get("start"))
 
 
 @contextmanager
@@ -106,12 +143,15 @@ def lauf_lock(basis: Path, name: str = "agenten_lauff"):
     """Lauf-Lock halten: genau ein Lauf je Lock-Name über Prozessgrenzen.
 
     Erwerb atomar über O_CREAT|O_EXCL. Ist die Datei vorhanden, entscheidet
-    _lock_blockiert (Lebenszeichen + Startzeit-Abgleich gegen PID-Recycling,
-    Alters-Obergrenze MAX_S als Rückfallebene); Details dort.
+    _lock_blockiert (Lebenszeichen + Startzeit-Abgleich gegen PID-Recycling;
+    Alters-Obergrenze MAX_S nur für nicht verifizierbare Identität); Details
+    dort. Beim Verlassen entfernt NUR der noch eingetragene Besitzer die
+    Datei.
     """
     datei = _lock_pfad(basis, name)
     fd = -1
     versucht = 0
+    info: dict | None = None
     while fd < 0 and versucht < 2:
         versucht += 1
         try:
@@ -127,7 +167,7 @@ def lauf_lock(basis: Path, name: str = "agenten_lauff"):
                     f"seit {alter_s} s" + (", lebend)" if lebend else ")"),
                     pid=alt.get("pid"), alter_s=alter_s, name=name)
             # Verwaist/überholbar: toter oder recycelter Halter, korrupte
-            # Datei oder älter als MAX_S.
+            # Datei oder (ohne Start-Stempel) älter als MAX_S.
             try:
                 datei.unlink()
             except OSError:
@@ -143,10 +183,11 @@ def lauf_lock(basis: Path, name: str = "agenten_lauff"):
         yield
     finally:
         os.close(fd)
-        try:
-            datei.unlink()
-        except OSError:
-            pass  # schon entfernt — unschön, aber ohne Folge für die Korrektheit
+        if info is not None and _lock_ist_uns(datei, info):
+            try:
+                datei.unlink()
+            except OSError:
+                pass  # schon entfernt — unschön, aber ohne Folge für die Korrektheit
 
 
 def lock_status(basis: Path, name: str = "agenten_lauff") -> dict:
