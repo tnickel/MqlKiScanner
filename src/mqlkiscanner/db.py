@@ -150,12 +150,17 @@ def _connect():
     try:
         # WAL + busy_timeout: Daemon-Prozess, GUI-Session und Scan-Thread
         # schreiben gleichzeitig — ohne beides sind „database is locked"
-        # und daraus following halbe Läufe realistisch (Review 29.09.).
-        # journal_mode=WAL persistiert in der Datei (idempotent); das
-        # Timeout lässt gleichzeitige Writer kurz warten statt sofort
-        # scheitern.
-        conn.execute("PRAGMA journal_mode=WAL")
+        # und daraus folgend halbe Läufe realistisch (Review 29.09.).
+        # Reihenfolge wichtig: busy_timeout ZUERST — die journal_mode-
+        # Umschaltung braucht die Datei kurz exklusiv und wirft sonst
+        # sofort „database is locked". Schlägt sie trotzdem fehl, läuft
+        # diese Verbindung im aktuellen Modus weiter (WAL ist persistent;
+        # ein anderer Prozess hat es längst gesetzt oder es greift später).
         conn.execute("PRAGMA busy_timeout=5000")
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+        except sqlite3.OperationalError:
+            pass
         conn.execute("PRAGMA foreign_keys=ON")
         with conn:
             yield conn

@@ -220,6 +220,20 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
 
 def _rolle_ausfuehren(rolle: str, settings: dict, ergebnis: dict, log) -> None:
     from . import betreuer, chef, dirigent, markt, melder  # spät: Kreisimporte
+    # Doppel-Lauf-Guard Daemon vs. GUI (Review 29.09.): Das Lauf-Lock nimmt
+    # nur dirigent/tageskette/scan_launcher/GUI — markt/betreuer/melder/chef
+    # liefen auf der Daemon-Seite ungeschützt neben einem parallelen GUI-
+    # Start derselben Rolle. Ein frischer 'laeuft'-Eintrag im Journal (egal
+    # welche Quelle) heißt hier: die Rolle arbeitet bereits → dokumentierter
+    # Skip statt Doppel-Export/Doppel-Kosten. (dirigent behält zusätzlich
+    # sein Lauf-Lock; Verschachtelungsgefahr besteht dadurch nicht.)
+    if journal.aktive_laeufe(rolle, max_alter_s=4 * 3600):
+        grund = (f"{rolle.capitalize()} läuft bereits (Journal) — "
+                 "Daemon-Tick übersprungen")
+        log(grund)
+        ergebnis["ausgefuehrt"].append({"rolle": rolle, "status": "skipped",
+                                        "grund": grund})
+        return
     if rolle == "dirigent":
         lauf = dirigent.tageslauf(quelle="daemon", log=log)
         ergebnis["ausgefuehrt"].append({"rolle": "dirigent",

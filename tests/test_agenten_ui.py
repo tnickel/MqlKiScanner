@@ -176,3 +176,15 @@ def test_dialog_zeigt_konfigurierte_budgets_und_uhrzeit(dialog_frame, monkeypatc
     assert re.fullmatch(r"\d{2}:\d{2}:\d{2}", str(start.value)), start.value
     captions = " ".join(c.value for c in at.caption)
     assert "Tageslimit: 123,456" in captions
+
+
+def test_komplettlauf_flag_ohne_tippfehler():
+    """Review 29.09., A: Der Konsum-Pfad poppte „agenten_komplekt_lauf"
+    (Tippfehler), während der Button „agenten_komplett_lauf" setzt — das
+    Flag blieb stehen und der Rerun-Endpunkt feuerte bei jedem Reload.
+    Literal-Sweep gegen Rückfälle."""
+    from pathlib import Path
+    from mqlkiscanner.agenten import ui_tree
+    src = Path(ui_tree.__file__).read_text(encoding="utf-8")
+    assert "agenten_komplekt_lauf" not in src
+    assert 'pop("agenten_komplett_lauf"' in src

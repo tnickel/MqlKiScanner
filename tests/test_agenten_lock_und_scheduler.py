@@ -125,3 +125,52 @@ def test_stopp_gewuenscht_liest_steuerung():
     assert not scheduler.stopp_gewuenscht()
     journal.steuerung_setzen("stop_wunsch", "1")
     assert scheduler.stopp_gewuenscht()
+
+
+# ------------------------------ Review 29.09.: Lock-PID + Doppel-Lauf-Guard
+
+def test_lock_mit_lebender_pid_blockiert_auch_ueber_stale(tmp_path):
+    """Lebender Halter blockiert unabhängig vom Lock-Alter — ein echter
+    langer Scan wird nicht mehr von der 1-h-STALLE-Schwelle weggerissen."""
+    import json as _json
+    import time as _time
+    import os as _os
+    from mqlkiscanner.agenten import lock as _lock
+
+    datei = tmp_path / "agenten_lauff.lock"
+    datei.write_text(_json.dumps(
+        {"pid": _os.getpid(), "ts": _time.time() - 2 * _lock.STALE_S}),
+        encoding="utf-8")
+    try:
+        with _lock.lauf_lock(tmp_path):
+            raise AssertionError("lebender Halter muss blockieren")
+    except _lock.LockBesetzt as exc:
+        assert "lebend" in str(exc)
+
+
+def test_lock_mit_toter_pid_wird_sofort_uebernommen(tmp_path):
+    import json as _json
+    import time as _time
+    from mqlkiscanner.agenten import lock as _lock
+
+    datei = tmp_path / "agenten_lauff.lock"
+    # PID existiert nicht (psutil bestätigt) → sofort übernehmen, auch frisch
+    datei.write_text(_json.dumps(
+        {"pid": 9_999_999, "ts": _time.time() - 30}), encoding="utf-8")
+    with _lock.lauf_lock(tmp_path):
+        pass  # Übernahme erfolgreich
+
+
+def test_daemon_tick_ueberspringt_rolle_mit_aktivem_gui_lauf():
+    """Doppel-Lauf-Guard: Läuft die Rolle (z. B. aus der GUI), überspringt
+    der Daemon-Tick sie dokumentiert statt doppelt zu exportieren."""
+    from mqlkiscanner.agenten import journal, scheduler
+
+    lauf = journal.lauf_starten("markt", quelle="gui")
+    ergebnis = {"ausgefuehrt": []}
+    scheduler._rolle_ausfuehren("markt", {}, ergebnis, log=lambda *_: None)
+    eintrag = ergebnis["ausgefuehrt"][0]
+    assert eintrag["rolle"] == "markt"
+    assert eintrag["status"] == "skipped"
+    assert "läuft bereits" in eintrag["grund"]
+    journal.lauf_abschliessen(lauf, "ok")

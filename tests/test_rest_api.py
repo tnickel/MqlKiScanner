@@ -234,3 +234,22 @@ def test_rest_api_ist_in_den_standardeinstellungen_aktiv():
     from mqlkiscanner import config
     assert config.DEFAULT_SETTINGS["rest_api_enabled"] is True
     assert config.DEFAULT_SETTINGS["rest_api_port"] == 8611
+
+
+def test_token_vergleich_mit_nicht_ascii_crasht_nicht():
+    """Review 29.09., E: hmac.compare_digest wirft TypeError bei Nicht-
+    ASCII-STRINGS — ein Umlaut-Token tötete JEDE Request (ungefangener
+    Traceback statt 401). Vergleich jetzt als Bytes."""
+    from mqlkiscanner import rest_api
+
+    class _Dummy:
+        def __init__(self, gegeben, token):
+            self.headers = {"X-User-Key": gegeben} if gegeben is not None else {}
+            self.token = token
+
+    # Umlaut im Header: kein Crash, schlicht falsch → False
+    assert rest_api._RestApiHandler._token_ok(_Dummy("ächz", "geheim")) is False
+    # Umlaut im Server-Token, ASCII-Anfrage: False statt TypeError
+    assert rest_api._RestApiHandler._token_ok(_Dummy("geheim", "ächz")) is False
+    # Korrektes Paar (mit Whitespace) bleibt True
+    assert rest_api._RestApiHandler._token_ok(_Dummy(" geheim ", "geheim")) is True

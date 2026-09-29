@@ -264,3 +264,30 @@ def test_verbindungs_status_cacht_ping_5_minuten():
     finally:
         tradeserver_sync._client = original  # type: ignore[assignment]
         tradeserver_sync.status_cache_leeren()
+
+
+def test_sync_alle_allgemeine_ausnahme_ruft_abort_nicht_ok():
+    """Review 29.09.: Eine Nicht-TradeserverError-Exception (gelöschte PDF,
+    OSError …) verließ den Sync mit status='ok' OHNE abort — der Server
+    hatte den Snapshot, ein Retry übersprang alles. Jetzt: abort + Status
+    'abgebrochen' in der Laufhistorie."""
+    result = _result()
+    # Gesamterbericht nach Dokumentensammlung unlesbar machen:
+    # sync_alle sammelt Pfade, liest Bytes erst beim Upload.
+    import pytest
+    from mqlkiscanner import tradeserver_sync as _ts
+
+    class _KaputtClient(_FakeClient):
+        def document(self, dokument):
+            raise FileNotFoundError("PDF wurde zwischenzeitlich gelöscht")
+
+    client = _KaputtClient()
+    summary = _ts.sync_alle([result], client=client)
+    assert summary["abgebrochen"]
+    assert "gelöscht" in summary["abgebrochen"]
+    assert "abort" in client.schritt_namen()
+    with db._connect() as conn:
+        letzte = conn.execute(
+            "SELECT status FROM tradeserver_sync_runs "
+            "ORDER BY id DESC LIMIT 1").fetchone()
+        assert letzte["status"] == "abgebrochen"

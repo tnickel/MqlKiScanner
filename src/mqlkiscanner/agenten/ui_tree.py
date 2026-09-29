@@ -933,9 +933,9 @@ def rendere_agenten_baum() -> None:
     # 5. Komplettlauf (Ein-Knopf-Workflow): startet nur den Hintergrund-
     #    Thread und rerunt sofort — die Live-Anzeige übernimmt das Fragment.
     if st.session_state.get("agenten_komplett_lauf"):
-        # WICHTIG: Flag ZUERST löschen. Der frühere Tippfehler
-        # („agenten_komplekt_lauf") ließ es stehen — da agenten_komplett_
-        # ausfuehren() mit st.rerun() endet, feuerte dieser Block bei jedem
-        # Rerun erneut: Endlos-Rerun + Kette-über-Kette (Review 29.09., A).
+        # WICHTIG: Flag ZUERST löschen. Ein früherer Tippfehler im Key
+        # ließ es stehen — da agenten_komplett_ausfuehren() mit st.rerun()
+        # endet, feuerte dieser Block bei jedem Rerun erneut: Endlos-Rerun
+        # + Kette-über-Kette (Review 29.09., A).
         st.session_state.pop("agenten_komplett_lauf", None)
         agenten_komplett_ausfuehren()

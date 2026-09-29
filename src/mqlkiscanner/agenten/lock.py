@@ -44,13 +44,40 @@ def _lese(datei: Path) -> dict:
         return {}
 
 
+def _pid_lebt(pid) -> bool:
+    """Lebt der Halter-Prozess? psutil (Streamlit-Dependency), sonst True.
+
+    Bewusst konservativ: Ohne psutil gilt der Halter als lebend — ein
+    toter Halter wird dann wie bisher über die Alters-Schwelle erkannt.
+    (os.kill(pid, 0) ist auf Windows KEINE Option: jeder andere Signalwert
+    als CTRL_* beendet den Prozess dort unconditional.)
+    """
+    try:
+        pid = int(pid or 0)
+    except (TypeError, ValueError):
+        return False
+    if pid <= 0 or pid == os.getpid():
+        # Eigene PID in einer fremden Datei: unwahrscheinlich, entscheidet
+        # hier niemand — als lebend gelten lassen (Alter greift).
+        return True
+    try:
+        import psutil
+        return psutil.pid_exists(pid)
+    except ImportError:
+        return True
+
+
 @contextmanager
 def lauf_lock(basis: Path, name: str = "agenten_lauff"):
     """Lauf-Lock halten: genau ein Lauf je Lock-Name über Prozessgrenzen.
 
-    Erwerb atomar über O_CREAT|O_EXCL. Ist die Datei vorhanden, prüft ihr
-    Alter: älter als STALE_S Sekunden gilt als verwaist (abgestürzter
-    Halter) und wird ersetzt; sonst LockBesetzt.
+    Erwerb atomar über O_CREAT|O_EXCL. Ist die Datei vorhanden:
+    - Lebt der Halter-Prozess (PID-Prüfung, Review 29.09. — der Docstring
+      versprach das bisher, implementiert war nur das Alter): LockBesetzt,
+      UNABHÄNGIG vom Alter — ein echter 2-Stunden-Scan wird nicht mehr von
+      einem 1-h-STALE-Riss gegen einen zweiten Scan ausgetauscht.
+    - Ist der Halter tot: sofort übernehmen (auch vor STALE_S).
+    - Ohne psutil gilt weiterhin: älter als STALE_S = verwaist.
     """
     datei = _lock_pfad(basis, name)
     fd = -1
@@ -62,18 +89,33 @@ def lauf_lock(basis: Path, name: str = "agenten_lauff"):
         except FileExistsError:
             alt = _lese(datei)
             alter = time.time() - float(alt.get("ts", 0) or 0)
-            if alter > STALE_S:
-                # Verwaistes Lock übernehmen (abgestürzter Halter).
-                try:
-                    datei.unlink()
-                except OSError:
-                    pass
-                continue
             pid = alt.get("pid")
             alter_s = int(alter)
-            raise LockBesetzt(
-                f"Lauf-Lock '{name}' wird gehalten (PID {pid}, seit {alter_s} s)",
-                pid=pid, alter_s=alter_s, name=name)
+            # Lebender Halter und (noch) frisch: warten. Ein lebender
+            # Halter MIT psutil-Nachweis blockiert auch über STALE_S hinweg
+            # (Review 29.09.: lange Scans wurden sonst gegeneinander
+            # ausgetauscht); ohne belastbare PID-Auskunft entscheidet das
+            # Alter allein (wie bisher).
+            try:
+                import psutil  # noqa: F401 — Verfügbarkeit prüfen
+                pid_bekannt = True
+            except ImportError:
+                pid_bekannt = False
+            blockiert = (
+                (_pid_lebt(pid) and alter <= STALE_S)
+                or (pid_bekannt and _pid_lebt(pid)))
+            if blockiert:
+                raise LockBesetzt(
+                    f"Lauf-Lock '{name}' wird gehalten (PID {pid}, "
+                    f"seit {alter_s} s, lebend)",
+                    pid=pid, alter_s=alter_s, name=name)
+            # Verwaist: toter Halter (PID-Prüfung) oder älter als STALE_S
+            # (Fallback, wenn psutil fehlt / PID unlesbar).
+            try:
+                datei.unlink()
+            except OSError:
+                pass
+            continue
     if fd < 0:
         raise LockBesetzt(f"Lauf-Lock '{name}' konnte nicht übernommen werden")
     try:
