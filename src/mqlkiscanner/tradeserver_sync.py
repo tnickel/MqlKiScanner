@@ -287,6 +287,16 @@ def sync_alle(results: Iterable, portfolio: dict | None = None, *,
                 client.abort(str(exc))
             except tradeserver_client.TradeserverError:
                 pass  # Best-Effort: Server markiert den Lauf sonst beim Timeout.
+    except Exception as exc:  # gelöschte PDF (OSError), Netzwerk-Deko & Co.
+        # Früher entkam das: Der finally-Block schrieb status='ok', obwohl
+        # der Server den Signal-Snapshot hatte und nur TEIL der Dokumente —
+        # ein Retry übersprang dann alles (Review 29.09.).
+        summary["abgebrochen"] = f"{type(exc).__name__}: {exc}"
+        if run_offen:
+            try:
+                client.abort(summary["abgebrochen"])
+            except tradeserver_client.TradeserverError:
+                pass  # Best-Effort: Server markiert den Lauf sonst beim Timeout.
     finally:
         summary["dauer_s"] = round(time.monotonic() - start, 1)
         db.store_tradeserver_sync_run(

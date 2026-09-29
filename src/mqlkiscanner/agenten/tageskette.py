@@ -202,32 +202,36 @@ def starte_komplettlauf(quelle: str = "gui", log=print) -> dict:
 
     Das Lauf-Lock schützt weiterhin vor Parallel-Läufen; ein zweiter
     Startversuch, während der Thread lebt, wird abgewiesen (kein Doppel-Lauf).
+    Prüfung UND Thread-Start atomar unter _zustand_lock — vorher lag
+    laeuft_gerade() außerhalb (check-then-act-Race): Zwei gleichzeitige
+    Tabs sahen beide „läuft nicht" und starteten je eine Kette
+    (Review 29.09.). laeuft_gerade nimmt das Lock selbst nicht → safe.
     """
-    if laeuft_gerade():
-        return {"gestartet": False,
-                "grund": "Ein Komplettlauf läuft bereits."}
-
-    def _notiz(rolle_key: str, text: str, stand: str) -> None:
-        with _zustand_lock:
-            _zustand["zeilen"].append(f"{_ZEICHEN.get(stand, '·')} {text}")
-
-    def _arbeit() -> None:
-        try:
-            ergebnis = tageskette(quelle=quelle, log=log, meldung=_notiz)
-        except Exception as exc:  # der Thread darf nie still sterben
-            ergebnis = {"status": "fehler", "ergebnisse": [],
-                        "zusammenfassung": f"Komplettlauf abgebrochen: {exc}"}
-        with _zustand_lock:
-            _zustand["ergebnis"] = ergebnis
-            _zustand["fertig"] = _jetzt()
-
     with _zustand_lock:
+        if laeuft_gerade():
+            return {"gestartet": False,
+                    "grund": "Ein Komplettlauf läuft bereits."}
+
+        def _notiz(rolle_key: str, text: str, stand: str) -> None:
+            with _zustand_lock:
+                _zustand["zeilen"].append(f"{_ZEICHEN.get(stand, '·')} {text}")
+
+        def _arbeit() -> None:
+            try:
+                ergebnis = tageskette(quelle=quelle, log=log, meldung=_notiz)
+            except Exception as exc:  # der Thread darf nie still sterben
+                ergebnis = {"status": "fehler", "ergebnisse": [],
+                            "zusammenfassung": f"Komplettlauf abgebrochen: {exc}"}
+            with _zustand_lock:
+                _zustand["ergebnis"] = ergebnis
+                _zustand["fertig"] = _jetzt()
+
         _zustand.update(zeilen=["⏳ Komplettlauf gestartet …"],
                         ergebnis=None, gestartet=_jetzt(), fertig="")
         thread = threading.Thread(target=_arbeit, name="mks-komplettlauf",
                                   daemon=True)
         _zustand["thread"] = thread
-    thread.start()
+        thread.start()
     return {"gestartet": True}
 
 

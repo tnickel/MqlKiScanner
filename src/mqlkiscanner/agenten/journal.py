@@ -109,8 +109,10 @@ def zerlege_lauf(rolle: str, status: str, ztext: str = "", quelle: str = "") -> 
     z = (ztext or "").strip()
     status_lower = (status or "").lower()
 
-    # 1. Kollisionsschutz / Lock besetzt
-    if "Lauf-Lock" in z or "Lock" in z or "lock" in z:
+    # 1. Kollisionsschutz / Lock besetzt — NUR der echte Lock-Text, kein
+    # Substring-„lock" („Betreuer BLOCKIERT (MT5 läuft)" enthält „lock"
+    # und wurde fälschlich als Kollisionsschutz gedeutet; Review 29.09.)
+    if "Lauf-Lock" in z or "lock belegt" in z.lower():
         import re
         m = re.search(r"PID (\d+)", z)
         pid_info = f" (PID {m.group(1)})" if m else ""
@@ -266,16 +268,24 @@ def aktive_rollen() -> set[str]:
 
 
 def lauf_heute_erfolgreich(rolle: str, quelle: str) -> bool:
-    """Gab es heute bereits einen ok-Lauf dieser Rolle aus dieser Quelle?
+    """Gab es heute bereits einen abgeschlossenen Lauf (ok/skipped/fehler)?
 
     Die scheduler-Takt-Prüfung: pro Tag und Rolle genau ein Daemon-Lauf.
+    Zählt JEGLICHEN Terminal-Status — nur 'ok' zu zählen machte jeden
+    skipped/fehler-Lauf sofort wieder fällig: Ein nicht laufendes MT5-
+    Terminal löste dann alle 30 s einen Terminal-Start/Stopp-Zyklus aus,
+    ein Betreuer-Fehler den kompletten MQL5-Export erneut (Dauerlast,
+    ToS-Risiko AGENTS.md Regel 6; Review 29.09., C). Retry = nächster Tag.
+    Bereichs-Prädikat statt LIKE-Präfix (nutzt den Index auf start).
     """
     init_journal()
     with db._connect() as conn:
         row = conn.execute(
             "SELECT COUNT(*) AS n FROM agenten_laeufe "
-            "WHERE rolle=? AND quelle=? AND status='ok' AND start LIKE ?",
-            (rolle, quelle, _heute() + "%")).fetchone()
+            "WHERE rolle=? AND quelle=? AND status IN ('ok','skipped','fehler') "
+            "AND start >= ? AND start < ?",
+            (rolle, quelle, _heute() + " 00:00:00",
+             _heute() + " 23:59:59")).fetchone()
     return int(row["n"] if row else 0) > 0
 
 
@@ -447,13 +457,24 @@ def meldungen_zaehlen(typ: str | None = None) -> int:
     return int(row["n"] if row else 0)
 
 
-def aktive_laeufe(rolle: str | None = None) -> list[dict]:
-    """Läufe im Status 'laeuft' (z. B. wartet der Digest auf den Betreuer)."""
+def aktive_laeufe(rolle: str | None = None, max_alter_s: int | None = None) -> list[dict]:
+    """Läufe im Status 'laeuft' (z. B. wartet der Digest auf den Betreuer).
+
+    max_alter_s: Läufe mit älterem Start gelten als verwaist (abgestürzte
+    Exception hat den Lauf nie abgeschlossen) und werden NICHT mehr
+    geliefert — sonst blockiert ein einziger verwaister Dirigent-Lauf
+    Chef und autonome Scans für immer, während die Anzeige „SYSTEM RUHIG"
+    meldet (Review 29.09., B).
+    """
     init_journal()
     clauses, args = ["status='laeuft'"], []
     if rolle:
         clauses.append("rolle=?")
         args.append(rolle)
+    if max_alter_s is not None:
+        clauses.append("start >= ?")
+        args.append((datetime.now() - timedelta(seconds=max_alter_s))
+                    .isoformat(sep=" ", timespec="seconds"))
     with db._connect() as conn:
         rows = conn.execute(
             f"SELECT id, rolle, quelle, start, signal_id FROM agenten_laeufe "

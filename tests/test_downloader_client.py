@@ -498,3 +498,34 @@ def test_abo_delta_zelle_formatierung():
     assert _abo_delta_zelle(-4) == "🔴 -4"
     assert _abo_delta_zelle(0) == "⚪ 0"
     assert _abo_delta_zelle(None) == ""
+
+
+# ------------------------------ Review 29.09., D + Nicht-JSON
+
+def test_version_wird_im_url_pfad_codiert(monkeypatch):
+    """Review D: version unverändert im Pfad → serverseitiges Path-Traversal
+    (/../../admin). Jetzt URL-codiert."""
+    aufrufe = _verdrahte(monkeypatch, _Antwort(body={"points": []}))
+    client = dc.DownloaderClient("http://rechner:8089")
+    client.history(5, "../../../admin")
+    url = aufrufe[0]["url"]
+    assert url == ("http://rechner:8089/api/v1/providers/5/"
+                   "..%2F..%2F..%2Fadmin/history")
+
+
+def test_nicht_json_200_wird_zu_downloader_error(monkeypatch):
+    """Review: Eine Wartungsseite mit Status 200 ließ requests' JSONDecode-
+    Error entkommen und tötete den GESAMTEN Scan — jetzt DownloaderError,
+    die Quelle wird einzeln übersprungen."""
+    class _Html:
+        status_code = 200
+        text = "<html>Wartung</html>"
+        content = b"<html>Wartung</html>"
+
+        def json(self):
+            raise requests.exceptions.JSONDecodeError("x", "y", 0)
+
+    _verdrahte(monkeypatch, _Html())
+    client = dc.DownloaderClient("http://rechner:8089")
+    with pytest.raises(dc.DownloaderError, match="kein JSON"):
+        client.health()

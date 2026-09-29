@@ -123,7 +123,17 @@ class DownloaderClient:
                 detail = response.text[:200]
             raise DownloaderError(
                 f"HTTP {response.status_code} von {path}: {detail}")
-        return response.content if raw else response.json()
+        if raw:
+            return response.content
+        try:
+            return response.json()
+        except ValueError as exc:
+            # Wartungsseite/HTML mit Status 200: früher entkam das als
+            # requests JSONDecodeError und ließ den GESAMTEN Scan sterben,
+            # obwohl nur eine Quelle streikt (Review 29.09.).
+            raise DownloaderError(
+                f"Antwort von {path} ist kein JSON "
+                f"(Beginn: {response.text[:80]!r})") from exc
 
     def health(self) -> dict:
         """Verbindungstest: status/service/apiVersion/providers/tokenRequired."""
@@ -143,33 +153,40 @@ class DownloaderClient:
             params["version"] = version
         return self._get("/providers", params=params)
 
+    @staticmethod
+    def _v(version: str) -> str:
+        """version URL-codiert für den Pfad — unverändert eingesetzt würde
+        „../../admin" serverseitig zu /api/admin/… (Review 29.09., D)."""
+        return quote(str(version), safe="")
+
     def metrics(self, signal_id: int, version: str) -> dict:
         """Kennzahlen-Antwort komplett: metrics{Balance, EquityDrawdown,
         MaxDDGraphic, 3MPDD …}, monthProfits, drawdown-Reihe, file."""
-        data = self._get(f"/providers/{int(signal_id)}/{version}/metrics")
+        data = self._get(f"/providers/{int(signal_id)}/{self._v(version)}/metrics")
         return data if isinstance(data, dict) else {}
 
     def trades_csv(self, signal_id: int, version: str) -> bytes:
         """Tradeliste als Original-mql5-CSV (Rohbytes, Header 1:1)."""
-        return self._get(f"/providers/{int(signal_id)}/{version}/trades.csv",
-                         raw=True)
+        return self._get(
+            f"/providers/{int(signal_id)}/{self._v(version)}/trades.csv",
+            raw=True)
 
     def history(self, signal_id: int, version: str) -> list[dict]:
         """Abonnenten-Historie: Punkte aufsteigend mit ts/subscribers/change."""
-        data = self._get(f"/providers/{int(signal_id)}/{version}/history")
+        data = self._get(f"/providers/{int(signal_id)}/{self._v(version)}/history")
         points = data.get("points", [])
         return points if isinstance(points, list) else []
 
     def reports(self, signal_id: int, version: str) -> list[dict]:
         """Testreport-PDFs: name/sizeBytes/lastModified/href je Datei."""
-        data = self._get(f"/providers/{int(signal_id)}/{version}/reports")
+        data = self._get(f"/providers/{int(signal_id)}/{self._v(version)}/reports")
         items = data.get("items", [])
         return items if isinstance(items, list) else []
 
     def download_report(self, signal_id: int, version: str, name: str) -> bytes:
-        """PDF-Binärdaten; der Name wird exakt und URL-codiert übernommen."""
+        """PDF-Binärdaten; Version und Name werden exakt und URL-codiert übernommen."""
         return self._get(
-            f"/providers/{int(signal_id)}/{version}/reports/{quote(name, safe='')}",
+            f"/providers/{int(signal_id)}/{self._v(version)}/reports/{quote(name, safe='')}",
             raw=True)
 
 

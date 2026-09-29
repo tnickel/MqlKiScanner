@@ -29,6 +29,18 @@ _PLATTFORM = {"mql4": "mt4", "mql5": "mt5", "pelican": "pelican",
 _KUERZEL_SICHER = re.compile(r"[^A-Za-z0-9_\-]")
 
 
+def _version_sicher(version: str) -> str:
+    """version-Segment für Cache-Dateinamen sanitisieren.
+
+    version kommt UNVERÄNDERT aus dem Katalog der Fremdquelle (LAN-HTTP) —
+    ein „../../x" wäre Path-Traversal: Der Cache-Pfad würde AUSSERHALB von
+    data/quellen/<kuerzel>/ landen (Review 29.09., D). Gleiches Muster wie
+    beim Kürzel: alles außer [A-Za-z0-9_-] → Unterstrich. Die Plattform-
+    Versionen (mql4/mql5/pelican/…) bleiben unberührt.
+    """
+    return _KUERZEL_SICHER.sub("_", str(version or "mql5"))
+
+
 def _kuerzel_verzeichnis(quelle: dict):
     kuerzel = _KUERZEL_SICHER.sub("_", str(quelle.get("kuerzel") or "quelle"))
     verzeichnis = config.DATA_DIR / "quellen" / kuerzel
@@ -137,8 +149,15 @@ def hole_trades(quelle: dict, signal_id: int, version: str, *,
     alt = db.get_quellen_artefakt(int(quelle["id"]), signal_id, version, "trades")
     if alt and alt.get("sha256") == sha and alt.get("path") \
             and Path(alt["path"]).exists():
-        return str(alt["path"]), False
-    pfad = _kuerzel_verzeichnis(quelle) / f"{version}_{signal_id}_trades.csv"
+        # Cache-Treffer nur bei INTAKTER Datei: Der Inhalt wird gegen den
+        # SHA geprüft — eine nachträglich korrumpierte Datei wäre sonst die
+        # unvermerkte Grundlage der Forensik (Review 29.09.).
+        try:
+            if hashlib.sha256(Path(alt["path"]).read_bytes()).hexdigest() == sha:
+                return str(alt["path"]), False
+        except OSError:
+            pass  # unlesbar: unten neu schreiben
+    pfad = _kuerzel_verzeichnis(quelle) / f"{_version_sicher(version)}_{signal_id}_trades.csv"
     pfad.write_bytes(roh)
     db.store_quellen_artefakt(int(quelle["id"]), signal_id, version,
                               "trades", sha, str(pfad))
@@ -150,19 +169,23 @@ def hole_metrics(quelle: dict, signal_id: int, version: str, *,
     """Metrics-Antwort holen und cachen; Rückgabe ist das gecachte JSON."""
     cli = client or quellen.client_fuer_quelle(quelle)
     antwort = cli.metrics(signal_id, version)
+    # Kanonische Serialisierung: Der SHA beschreibt EXAKT die geschriebenen
+    # Bytes (früher: SHA über sort_keys, Datei über indent OHNE sort_keys —
+    # der gespeicherte SHA stimmte nie mit der Datei; Review 29.09.).
     roh = json.dumps(antwort, ensure_ascii=False, sort_keys=True,
-                     default=str).encode("utf-8")
+                     indent=1, default=str).encode("utf-8")
     sha = hashlib.sha256(roh).hexdigest()
     alt = db.get_quellen_artefakt(int(quelle["id"]), signal_id, version, "metrics")
     if alt and alt.get("sha256") == sha and alt.get("path") \
             and Path(alt["path"]).exists():
         try:
-            return json.loads(Path(alt["path"]).read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            pass  # defekter Cache: neu schreiben (unten)
-    pfad = _kuerzel_verzeichnis(quelle) / f"{version}_{signal_id}_metrics.json"
-    pfad.write_text(json.dumps(antwort, ensure_ascii=False, indent=1, default=str),
-                    encoding="utf-8")
+            inhalt = Path(alt["path"]).read_bytes()
+            if hashlib.sha256(inhalt).hexdigest() == sha:
+                return json.loads(inhalt.decode("utf-8"))
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+            pass  # defekter/korrumpierter Cache: neu schreiben (unten)
+    pfad = _kuerzel_verzeichnis(quelle) / f"{_version_sicher(version)}_{signal_id}_metrics.json"
+    pfad.write_bytes(roh)
     db.store_quellen_artefakt(int(quelle["id"]), signal_id, version,
                               "metrics", sha, str(pfad))
     return antwort

@@ -94,3 +94,18 @@ def test_whitelist_filter_ohne_json():
     gefiltert = dirigent._whitelist_filter("Ich lehne ab.")
     assert gefiltert["aktionen"] == []
     assert "verworfen" in gefiltert["begruendung"]
+
+
+def test_dirigent_tageslauf_schliesst_lauf_bei_ausnahme(monkeypatch):
+    """Review B: Exception im Lagestatus darf den Dirigent-Lauf nie auf
+    'laeuft' verwaisen lassen (er blockierte sonst Chef/Scans für immer)."""
+    from mqlkiscanner.agenten import dirigent, journal
+
+    def _boom(settings):
+        raise RuntimeError("Datenbank kaputt")
+
+    monkeypatch.setattr(dirigent, "_lagestatus", _boom)
+    erg = dirigent.tageslauf(quelle="test", log=lambda *_: None)
+    assert erg["status"] == "fehler"
+    assert "Datenbank kaputt" in erg["zusammenfassung"]
+    assert journal.aktive_laeufe("dirigent") == []

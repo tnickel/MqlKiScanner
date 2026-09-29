@@ -108,3 +108,52 @@ def test_aktive_rollen_ignoriert_verwaiste_laeufe():
         conn.execute("UPDATE agenten_laeufe SET start=? WHERE id=?",
                      ("2020-01-01 00:00:00", lauf_id))
     assert "betreuer" not in journal.aktive_rollen()
+
+
+# ------------------------------ Review 29.09. (fremde KI), C + UI + B
+
+def test_lauf_heute_erfolgreich_zaehlt_auch_skipped_und_fehler():
+    """Review C: Nur 'ok' zu zählen machte skipped/fehler sofort wieder
+    fällig — MT5-Start/Stopp alle 30 s bzw. MQL5-Dauerlast die Folge."""
+    journal.init_journal()
+    lauf = journal.lauf_starten("markt", quelle="daemon")
+    journal.lauf_abschliessen(lauf, "skipped", zusammenfassung="Terminal aus")
+    assert journal.lauf_heute_erfolgreich("markt", "daemon") is True
+    lauf2 = journal.lauf_starten("betreuer", quelle="daemon")
+    journal.lauf_abschliessen(lauf2, "fehler", zusammenfassung="Boom")
+    assert journal.lauf_heute_erfolgreich("betreuer", "daemon") is True
+
+
+def test_zerlege_lauf_deutet_blockiert_nicht_als_kollisionsschutz():
+    """Review UI-Text: „Betreuer BLOCKIERT" enthält „lock" und wurde als
+    Kollisionsschutz fehlgedeutet."""
+    aktion, resultat = journal.zerlege_lauf(
+        "betreuer", "skipped", ztext="Betreuer blockiert (MT5 läuft)")
+    assert "Kollisionsschutz" not in resultat
+    # Der echte Lock-Text bleibt Kollisionsschutz
+    aktion2, resultat2 = journal.zerlege_lauf(
+        "dirigent", "skipped", ztext="Lauf-Lock belegt: LockBesetzt PID 123")
+    assert "Kollisionsschutz" in resultat2
+    assert "PID 123" in resultat2
+
+
+def test_aktive_laeufe_ignoriert_verwaiste_nach_alter():
+    """Review B: Ein verwaister Dirigent-Lauf (start alt, status 'laeuft')
+    darf _aktiver_scan()/Chef-Blockade nicht mehr auslösen."""
+    from datetime import datetime, timedelta
+    from mqlkiscanner.agenten import scheduler
+    journal.init_journal()
+    alt = datetime.now() - timedelta(hours=5)
+    with journal.db._connect() as conn:
+        conn.execute(
+            "INSERT INTO agenten_laeufe (rolle, quelle, start, status) "
+            "VALUES ('dirigent','daemon',?,'laeuft')",
+            (alt.isoformat(sep=" ", timespec="seconds"),))
+    laeufe = journal.aktive_laeufe("dirigent", max_alter_s=4 * 3600)
+    assert not any(e["start"].startswith(alt.strftime("%Y-%m-%d %H"))
+                   for e in laeufe)
+    assert scheduler._aktiver_scan() is False
+    # Frischer Lauf blockiert weiter
+    lauf = journal.lauf_starten("dirigent", quelle="daemon")
+    assert scheduler._aktiver_scan() is True
+    journal.lauf_abschliessen(lauf, "ok")

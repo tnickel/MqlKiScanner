@@ -303,3 +303,20 @@ def test_broker_symbol_suffix():
         "XAUUSD", {"markt_symbol_suffix": ".a"}) == "XAUUSD.a"
     assert marktdata.broker_symbol(
         "XAUUSD", {"markt_symbol_suffix": " .i "}) == "XAUUSD.i"
+
+
+def test_markt_tageslauf_schliesst_lauf_bei_ausnahme(monkeypatch):
+    """Review B: Eine Exception nach lauf_starten darf den Lauf nie auf
+    'laeuft' verwaisen lassen (blockierte Chef/Scans)."""
+    from mqlkiscanner.agenten import journal, markt
+
+    def _boom(settings):
+        raise RuntimeError("MetaTrader5-Import kaputt")
+
+    monkeypatch.setattr(markt, "beobachtungsliste", _boom)
+    erg = markt.tageslauf(quelle="test", log=lambda *_: None,
+                          kurse_override={"ok": True, "kurse": {}})
+    assert erg["status"] == "fehler"
+    assert "Import kaputt" in erg["zusammenfassung"]
+    # Kein Lauf der Rolle Markt bleibt mehr aktiv
+    assert journal.aktive_laeufe("markt") == []

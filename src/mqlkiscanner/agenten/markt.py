@@ -75,6 +75,24 @@ def tageslauf(quelle: str = "daemon", log=print, settings: dict | None = None,
     settings = settings if settings is not None else config.load_settings()
     init_markt()
     lauf_id = journal.lauf_starten("markt", quelle=quelle)
+    try:
+        return _tageslauf_inner(lauf_id, settings, kurse_override, log)
+    except Exception as exc:  # der Lauf darf NIE auf 'laeuft' verwaisten
+        # (Review 29.09., B): Eine entkommene Exception ließ den Lauf
+        # dauerhaft 'laeuft' und blockierte Chef/Scans.
+        journal.lauf_abschliessen(
+            lauf_id, "fehler", zusammenfassung=str(exc),
+            aktion="Marktbeobachter-Ausführung",
+            resultat=f"Fehler aufgetreten: {exc}")
+        log(f"Marktbeobachter FEHLER: {exc}")
+        return {"status": "fehler", "grund": str(exc), "lauf_id": lauf_id,
+                "aktion": "Marktbeobachter-Ausführung",
+                "resultat": f"Fehler aufgetreten: {exc}",
+                "zusammenfassung": str(exc)}
+
+
+def _tageslauf_inner(lauf_id: int, settings: dict,
+                     kurse_override: dict | None, log) -> dict:
     symbole = beobachtungsliste(settings)
     journal.schritt_protokollieren(
         lauf_id, "markt", "beobachtungsliste", detail={"symbole": symbole})

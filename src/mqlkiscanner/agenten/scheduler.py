@@ -137,9 +137,17 @@ def faellige_rollen(jetzt: datetime, settings: dict) -> list[str]:
 
 
 def _aktiver_scan() -> bool:
-    """Läuft gerade ein autonomer Scan (Dirigent-Daemon-Lauf)?"""
+    """Läuft gerade ein autonomer Scan (Dirigent-Daemon-Lauf)?
+
+    Mit Altersgrenze: Ein Dirigent-Lauf, dessen Start älter als 4 h ist,
+    gilt als verwaist (eine entkommene Exception hat ihn nie abge-
+    schlossen) und blockiert Chef/Tick-Scans nicht länger — sonst stand
+    hier „für immer aktiv", während die Anzeige nach 90 min „SYSTEM
+    RUHIG" meldete (Review 29.09., B). Echte Langläufe (Full-Scan) sind
+    nach 4 h ohnehin durch; das Lauf-Lock (STALE 1 h) schützt zusätzlich.
+    """
     return any(eintrag["quelle"] == "daemon"
-               for eintrag in journal.aktive_laeufe("dirigent"))
+               for eintrag in journal.aktive_laeufe("dirigent", max_alter_s=4 * 3600))
 
 
 def faellige_scans(jetzt: datetime, settings: dict) -> list[str]:

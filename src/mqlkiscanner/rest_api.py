@@ -207,7 +207,12 @@ class _RestApiHandler(BaseHTTPRequestHandler):
 
     def _token_ok(self) -> bool:
         gegeben = self.headers.get("X-User-Key", "")
-        return hmac.compare_digest(gegeben.strip(), self.token)
+        # Als BYTES vergleichen: compare_digest wirft bei Nicht-ASCII-STRINGS
+        # einen TypeError — ein Umlaut im Token oder im Header hätte damit
+        # JEDE Request ungefangen crashen lassen (API komplett tot statt
+        # 401; Review 29.09., E).
+        return hmac.compare_digest(gegeben.strip().encode("utf-8"),
+                                   self.token.encode("utf-8"))
 
     def _send_json(self, status: int, payload: dict) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")

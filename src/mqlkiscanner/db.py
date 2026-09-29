@@ -148,6 +148,14 @@ def _connect():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
+        # WAL + busy_timeout: Daemon-Prozess, GUI-Session und Scan-Thread
+        # schreiben gleichzeitig — ohne beides sind „database is locked"
+        # und daraus following halbe Läufe realistisch (Review 29.09.).
+        # journal_mode=WAL persistiert in der Datei (idempotent); das
+        # Timeout lässt gleichzeitige Writer kurz warten statt sofort
+        # scheitern.
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.execute("PRAGMA foreign_keys=ON")
         with conn:
             yield conn

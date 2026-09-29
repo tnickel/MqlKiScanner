@@ -165,18 +165,31 @@ def tageslauf(quelle: str = "daemon", log=print) -> dict:
 
     journal.schritt_protokollieren(lauf_id, "dirigent", "lock", status="ok",
                                    detail={"inhaber_pid": "self"})
-    lage = _lagestatus(settings)
-    journal.schritt_protokollieren(lauf_id, "dirigent", "lagestatus",
-                                   detail=lage)
-    plan = _tagesplan(lage)
-    journal.schritt_protokollieren(lauf_id, "dirigent", "tagesplan",
-                                   detail={"aktionen": plan})
-    entscheidung = _llm_entscheidung(lage, settings, lauf_id, log)
-    if entscheidung and entscheidung["aktionen"]:
-        journal.schritt_protokollieren(
-            lauf_id, "dirigent", "entscheidung",
-            detail={"uebernommene_aktionen": entscheidung["aktionen"],
-                    "begruendung": entscheidung["begruendung"]})
+    try:
+        lage = _lagestatus(settings)
+        journal.schritt_protokollieren(lauf_id, "dirigent", "lagestatus",
+                                       detail=lage)
+        plan = _tagesplan(lage)
+        journal.schritt_protokollieren(lauf_id, "dirigent", "tagesplan",
+                                       detail={"aktionen": plan})
+        entscheidung = _llm_entscheidung(lage, settings, lauf_id, log)
+        if entscheidung and entscheidung["aktionen"]:
+            journal.schritt_protokollieren(
+                lauf_id, "dirigent", "entscheidung",
+                detail={"uebernommene_aktionen": entscheidung["aktionen"],
+                        "begruendung": entscheidung["begruendung"]})
+    except Exception as exc:  # der Lauf darf NIE auf 'laeuft' verwaisen
+        # (Review 29.09., B): entkommene Exception = Dauer-Blockade von
+        # Chef und autonomen Scans (_aktiver_scan sah ihn 'für immer').
+        journal.lauf_abschliessen(
+            lauf_id, "fehler", zusammenfassung=str(exc),
+            aktion="Dirigenten-Ausführung",
+            resultat=f"Fehler aufgetreten: {exc}")
+        log(f"Dirigent FEHLER: {exc}")
+        return {"status": "fehler", "grund": str(exc), "lauf_id": lauf_id,
+                "aktion": "Dirigenten-Ausführung",
+                "resultat": f"Fehler aufgetreten: {exc}",
+                "zusammenfassung": str(exc)}
 
     aktion = "Tageslage & Einsatzplan der Agenten prüfen"
     if entscheidung and entscheidung.get("begruendung"):

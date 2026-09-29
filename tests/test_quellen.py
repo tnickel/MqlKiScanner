@@ -739,3 +739,61 @@ def test_zeile_und_rest_api_zeigen_quelle():
         id=1, name="X", platform="mt5", url="", ampel="🟢", score=2.0,
         urteil="ok", kurzfassung="", quelle="pelik")])["signals"][0]
     assert zeile["quelle"] == "pelik"
+
+
+# ------------------------------ Review 29.09., D + Cache-Integrität
+
+def test_boese_version_bleibt_im_quellen_verzeichnis(monkeypatch):
+    """Review D: version aus dem Fremdkatalog darf den Cache-Pfad nicht aus
+    data/quellen/<kuerzel>/ herausführen (Path-Traversal)."""
+    from mqlkiscanner import ingest as _ing
+    quelle = _quelle("pelik", "http://pelican:8090")
+    boese = "..\..\..\pwned"
+    gesichert = _ing._version_sicher(boese)
+    assert "\\" not in gesichert and "/" not in gesichert and "." not in gesichert
+    pfad, _ = _ing.hole_trades(quelle, 12345, boese, client=FakeClient(trades=MINI_CSV))
+    from pathlib import Path as _P
+    wurzel = _ing._kuerzel_verzeichnis(quelle).resolve()
+    assert _P(pfad).resolve().parent == wurzel, pfad
+
+
+def test_korrumpierte_trades_cachedatei_wird_neu_geschrieben(monkeypatch):
+    """Cache-Integrität: Eine nachträglich beschädigte Cache-Datei darf
+    nicht still als Forensik-Grundlage dienen — Cache-Treffer nur bei
+    intaktem Inhalt (SHA-Vergleich über die Datei)."""
+    quelle = _quelle("pelik", "http://pelican:8090")
+    client = FakeClient(trades=MINI_CSV)
+    pfad1, geaendert1 = ingest.hole_trades(quelle, 987001, "pelican", client=client)
+    assert geaendert1 is True
+    from pathlib import Path as _P
+    _P(pfad1).write_bytes(b"kaputt;total;kaputt")   # Datei korrumpieren
+    pfad2, geaendert2 = ingest.hole_trades(quelle, 987001, "pelican", client=client)
+    assert geaendert2 is True                       # kein stummer Treffer
+    assert _P(pfad2).read_bytes() == MINI_CSV.encode("utf-8")
+
+
+def test_korrumpierte_metrics_cachedatei_wird_neu_geschrieben(monkeypatch):
+    """Metrics: SHA muss die geschriebene Datei beschreiben (früher SHA über
+    sort_keys, Datei ohne — nie konsistent) und ein Treffer erfordert
+    intakten Dateiinhalt."""
+    quelle = _quelle("pelik", "http://pelican:8090")
+    antwort = {"metrics": {"EquityDrawdown": 1.0, "TradeEqDrawdownPct": 2.0}}
+    client = FakeClient(metrics=antwort)
+    erg1 = ingest.hole_metrics(quelle, 987002, "pelican", client=client)
+    assert erg1 == antwort
+    from pathlib import Path as _P
+    import hashlib as _h
+    pfad = _P(_ing_cache_pfad(quelle, 987002))
+    # Datei korrumpieren → nächster Aufruf muss neu schreiben
+    pfad.write_bytes(b"{kaputt")
+    erg2 = ingest.hole_metrics(quelle, 987002, "pelican", client=client)
+    assert erg2 == antwort
+    # Und: SHA beschreibt jetzt die Datei exakt
+    zeile = db.get_quellen_artefakt(quelle["id"], 987002, "pelican", "metrics")
+    assert _h.sha256(pfad.read_bytes()).hexdigest() == zeile["sha256"]
+
+
+def _ing_cache_pfad(quelle, signal_id):
+    from mqlkiscanner import ingest as _ing
+    return str(_ing._kuerzel_verzeichnis(quelle)
+               / f"pelican_{signal_id}_metrics.json")
