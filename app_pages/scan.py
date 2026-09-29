@@ -488,8 +488,10 @@ with st.expander("Analyseumfang anpassen", icon=":material/tune:", expanded=Fals
             "Listen-Seiten je MT4/MT5", *config.SCAN_INPUT_BOUNDS["listen_seiten"], value=int(settings["listen_seiten"]),
             key="set_seiten", disabled=running or listen_modus == "quellen")
         top_n = st.number_input(
-            "Max. Signale gründlich prüfen", *config.SCAN_INPUT_BOUNDS["top_n_export"], value=int(settings["top_n_export"]),
-            key="set_topn", disabled=running)
+            "Max. Signale gründlich prüfen (je Quelle)", *config.SCAN_INPUT_BOUNDS["top_n_export"], value=int(settings["top_n_export"]),
+            key="set_topn", disabled=running,
+            help="Gilt JE Datenquelle: 30 heißt bis zu 30 MQL5- UND 30 "
+                 "Pelican-Signale in der Forensik; Fix-IDs kommen immer dazu.")
     with right.container(border=True, key="scan_filters"):
         section_header("Vorfilter", "Nur Signale, die alt genug und sichtbar genug sind.",
                        help_key="scan_filters")
@@ -698,10 +700,15 @@ if command:
                 w_step("forensik", "skipped",
                        detail="Keine 🟢/🟡- oder Fix-Signale in Auswahl und Katalog — nichts zu prüfen")
                 return
-        # Fix-Kandidaten vorne: die top_n_export-Grenze darf eine Fix-ID
-        # nie treffen (Nutzer-Wunsch 28.09.2026: definierte IDs immer scannen).
-        fix_vorne, rest = fix_signale.ordne_fix_vorne(cands, cfg)
-        n_export = min(len(cands), cfg["top_n_export"])
+        # Fix-Kandidaten vorne (die Grenze trifft sie nie); danach JE
+        # Quelle die top_n abonnentenstärksten Kandidaten (Nutzer-Wunsch
+        # 29.09.: „30 von jedem" — MQL5 und Pelican konkurrieren nicht
+        # mehr um dieselben Slots).
+        scope, export_infos = fix_signale.waehle_fuer_export(cands, cfg["top_n_export"], cfg)
+        n_export = len(scope)
+        log("Auswahl je Quelle: " + " · ".join(
+            f"{i['quelle']}: {i['genommen']}/{i['angeboten']}" for i in export_infos)
+            + f" — gesamt {n_export} für die Forensik.")
         if not n_export:
             w_step("forensik", "skipped", detail="Keine passenden Signale nach der Auswahl")
             return
@@ -710,7 +717,6 @@ if command:
         if only_new:
             alt = {r.id: r for r in pipeline.results_from_db(cfg) if r.forensik_vorhanden
                    and getattr(r, "source_kind", "live") == "live"}
-        scope = (fix_vorne + rest)[:n_export]
         neu = [c for c in scope if c["id"] not in alt] if only_new else scope
         uebernommen = [alt[c["id"]] for c in scope if c["id"] in alt]
         session = pipeline.Mql5Session(cfg)

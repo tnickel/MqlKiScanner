@@ -266,3 +266,53 @@ def test_ergebnisse_seite_zeigt_fix_verwaltung_und_markierung():
     fix_zellen = dict(zip(frame["ID"], frame["Fix"]))
     assert fix_zellen[2342895] == "📌 FIX"
     assert fix_zellen[111] == ""
+
+
+# ── Nutzer-Wunsch 29.09.: „30 von jedem" — Top-N je Quelle ────────
+
+def _k(id_, abonnenten, quelle=None):
+    c = {"id": id_, "abonnenten": abonnenten}
+    if quelle:
+        c["quelle_kuerzel"] = quelle
+    return c
+
+
+def test_export_auswahl_nimmt_top_n_je_quelle():
+    """30 von jedem: 40 MQL5- + 40 Pelican-Kandidaten bei top_n=30 liefern
+    30+30 — die große Quelle verdrängt die kleine nicht mehr."""
+    mql5 = [_k(1000 + i, 1000 - i) for i in range(40)]        # ohne quelle_kuerzel = mql5
+    peli = [_k(2000 + i, 900 - i, "pelik") for i in range(40)]
+    auswahl, infos = fix_signale.waehle_fuer_export(mql5 + peli, 30, {})
+    mql5_ids = [c["id"] for c in auswahl if not c.get("quelle_kuerzel")]
+    peli_ids = [c["id"] for c in auswahl if c.get("quelle_kuerzel") == "pelik"]
+    assert len(mql5_ids) == 30 and len(peli_ids) == 30
+    # Innerhalb jeder Quelle die abonnentenstärksten:
+    assert mql5_ids == [1000 + i for i in range(30)]
+    assert peli_ids == [2000 + i for i in range(30)]
+    assert {i["quelle"]: (i["angeboten"], i["genommen"]) for i in infos} == {
+        "mql5": (40, 30), "pelik": (40, 30)}
+
+
+def test_export_auswahl_fix_ids_nie_geschnitten_ohne_slot_verbrauch():
+    """Fix-IDs kommen IMMER dazu und verbrauchen keine Quellen-Slots —
+    selbst wenn beide Quellen voll sind."""
+    mql5 = [_k(1000 + i, 1000 - i) for i in range(35)]
+    peli = [_k(2000 + i, 900 - i, "pelik") for i in range(35)]
+    fix_id = 1005  # läge mitten in den MQL5-Top-35
+    auswahl, _ = fix_signale.waehle_fuer_export(
+        mql5 + peli, 30, {"fix_signal_ids": [fix_id]})
+    ids = [c["id"] for c in auswahl]
+    assert fix_id in ids
+    mql5_ohne_fix = [c for c in auswahl
+                     if not c.get("quelle_kuerzel") and c["id"] != fix_id]
+    peli_count = sum(1 for c in auswahl if c.get("quelle_kuerzel") == "pelik")
+    assert len(mql5_ohne_fix) == 30, "Fix-ID verbraucht keinen MQL5-Slot"
+    assert peli_count == 30
+    assert len(auswahl) == 61
+
+
+def test_export_auswahl_ohne_quelle_kuerzel_zaehlt_als_mql5():
+    cands = [_k(i, i) for i in range(5)]
+    auswahl, infos = fix_signale.waehle_fuer_export(cands, 30, {})
+    assert len(auswahl) == 5
+    assert infos == [{"quelle": "mql5", "angeboten": 5, "genommen": 5}]

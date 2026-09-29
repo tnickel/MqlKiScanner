@@ -125,10 +125,12 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
         log(f"Teilscan: {len(kandidaten)} von {vorher} Kandidaten "
             "sind aktuell 🟢/🟡 oder Fix-ID.")
 
-    # Fix-Kandidaten vorne: die top_n_export-Grenze darf eine Fix-ID nie
-    # treffen (Nutzer-Wunsch 28.09.2026: definierte IDs immer scannen).
-    fix_vorne, rest = fix_signale.ordne_fix_vorne(kandidaten, settings)
-    scope = (fix_vorne + rest)[:int(settings.get("top_n_export", 30))]
+    # Fix-Kandidaten vorne (Grenze trifft sie nie); JE Quelle die top_n
+    # abonnentenstärksten Kandidaten (Nutzer-Wunsch 29.09.: „30 von jedem").
+    scope, export_infos = fix_signale.waehle_fuer_export(
+        kandidaten, int(settings.get("top_n_export", 30)), settings)
+    log("Auswahl je Quelle: " + " · ".join(
+        f"{i['quelle']}: {i['genommen']}/{i['angeboten']}" for i in export_infos))
     if not scope:
         grund = (f"Keine zu prüfenden Kandidaten (Modus {modus}) — "
                  "kein Login/Export nötig.")

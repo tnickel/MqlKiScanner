@@ -59,6 +59,42 @@ def ordne_fix_vorne(cands: list[dict], settings: dict | None = None) -> tuple[li
     return vorne, rest
 
 
+def waehle_fuer_export(cands: list[dict], top_n: int,
+                       settings: dict | None = None) -> tuple[list[dict], list[dict]]:
+    """Auswahl für die Forensik (Nutzer-Wunsch 29.09.: „30 von jedem").
+
+    - Fix-IDs zuerst — die Grenze trifft sie nie, und sie verbrauchen
+      KEINE Quellen-Slots mehr (vorher: fix_vorne + rest[:top_n]).
+    - Danach JE DATENQUELLE die top_n abonnentenstärksten Kandidaten —
+      eine große Quelle (2223 MQL5-Signale) verdrängt eine kleine
+      (Pelican) nicht mehr aus der Prüfung. Kandidaten ohne
+      quelle_kuerzel zählen als „mql5" (Crawler-Weg).
+
+    Rückgabe (auswahl, infos): auswahl = finale Reihenfolge; infos =
+    [{quelle, angeboten, genommen}] für das Log.
+    """
+    fix_vorne, rest = ordne_fix_vorne(cands, settings)
+    gruppen: dict[str, list[dict]] = {}
+    reihenfolge: list[str] = []
+    for c in rest:
+        k = str(c.get("quelle_kuerzel") or "mql5")
+        if k not in gruppen:
+            gruppen[k] = []
+            reihenfolge.append(k)
+        gruppen[k].append(c)
+    auswahl = list(fix_vorne)
+    infos = []
+    limit = max(0, int(top_n or 0))
+    for k in reihenfolge:
+        gruppe = sorted(gruppen[k],
+                        key=lambda c: -(float(c.get("abonnenten") or 0)))
+        genommen = gruppe[:limit]
+        auswahl.extend(genommen)
+        infos.append({"quelle": k, "angeboten": len(gruppe),
+                      "genommen": len(genommen)})
+    return auswahl, infos
+
+
 def teilscan_ziel_ids(alt_ergebnisse, settings: dict | None = None) -> set[int]:
     """Teilscan-Scope: 🟢/🟡 laut DB-Stand PLUS alle Fix-IDs.
 
