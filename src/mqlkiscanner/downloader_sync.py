@@ -228,9 +228,20 @@ def verbindungs_status(force: bool = False, timeout: float = 3.0) -> dict:
         wert = {"konfiguriert": False, "ok": None,
                 "detail": "Nicht konfiguriert (Admin → Datenquellen)",
                 "providers": None, "api_version": None, "geprueft": jetzt,
-                "token_required": None}
+                "token_required": None, "quellen": []}
     else:
         pruefungen = [quellen.pruefe(q, force=force, timeout=timeout) for q in aktiv]
+        # F (Nutzer-Wunsch 29.09.): je Quelle ein eigener Status fuer die
+        # Badges — der „Downloader"-Badge meint nur den klassischen
+        # MqlDownloader (kuerzel mql5); Pelican & Co. bekommen eigene.
+        quellen_status = [
+            {"kuerzel": q["kuerzel"],
+             "name": quellen.anzeige_name(q),
+             "ok": p["status"] == "ok",
+             "eingeschraenkt": p["status"] == "eingeschraenkt",
+             "anbieter": (p.get("details") or {}).get("anbieter"),
+             "geprueft": p.get("geprueft") or jetzt}
+            for q, p in zip(aktiv, pruefungen)]
         erreichbar = [p for p in pruefungen if p["status"] == "ok"]
         kurz = " · ".join(f"{q['kuerzel']} {quellen.status_zeichen(p)}"
                           for q, p in zip(aktiv, pruefungen))
@@ -250,7 +261,8 @@ def verbindungs_status(force: bool = False, timeout: float = 3.0) -> dict:
                 "providers": providers or None, "api_version": api_version,
                 "geprueft": jetzt,
                 "token_required": any((p.get("details") or {}).get("token_required")
-                                      for p in pruefungen)}
+                                      for p in pruefungen),
+                "quellen": quellen_status}
     _STATUS_CACHE[schluessel] = (jetzt, wert)
     return wert
 

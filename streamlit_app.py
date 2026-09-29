@@ -93,16 +93,35 @@ with st.sidebar:
         # Erreichbarkeit des MqlDownloader: einmal beim Programmstart geprüft,
         # danach 5 Min. gecacht (verbindungs_status verhindert REST-Flut).
         dl_status = downloader_sync.verbindungs_status(timeout=3.0)
-        if not dl_status["konfiguriert"]:
+        # „Downloader" = klassischer MqlDownloader (kuerzel mql5); jede
+        # weitere REST-Quelle (Pelican, RoboForex, …) bekommt ihren eigenen
+        # Badge (Nutzer-Wunsch 29.09.: „für den Pelican auch so eine grüne
+        # Anzeige … er sollte Pelican heissen").
+        mql_quelle = next((q for q in dl_status.get("quellen", [])
+                           if q["kuerzel"] == "mql5"), None)
+        if not dl_status["konfiguriert"] or mql_quelle is None:
             st.badge("Downloader optional", color="gray", icon=":material/sync:")
-        elif dl_status["ok"]:
+        elif mql_quelle["ok"]:
             st.badge("Downloader verbunden", color="green", icon=":material/sync:")
-            st.caption(f"{dl_status['providers']} Provider · geprüft "
-                       f"{dl_status['geprueft']:%H:%M}")
+            st.caption(f"{mql_quelle['anbieter'] or 0} Provider · geprüft "
+                       f"{mql_quelle['geprueft']:%H:%M}")
         else:
             st.badge("Downloader offline", color="red", icon=":material/sync_disabled:")
             st.page_link(settings_page, label="Verbindung prüfen",
                          icon=":material/arrow_forward:")
+        for q in dl_status.get("quellen", []):
+            if q["kuerzel"] == "mql5":
+                continue  # oben als „Downloader" gezeigt
+            if q["ok"]:
+                st.badge(f"{q['name']} verbunden", color="green",
+                         icon=":material/sync:")
+                st.caption(f"{q['anbieter'] or 0} Provider · geprüft "
+                           f"{q['geprueft']:%H:%M}")
+            else:
+                st.badge(f"{q['name']} offline", color="red",
+                         icon=":material/sync_disabled:")
+                st.page_link(settings_page, label="Verbindung prüfen",
+                             icon=":material/arrow_forward:")
         # Tradeserver (MqlTradeMonitor): Einmal-Sync-Ziel für Tabelle + PDFs.
         ts_status = tradeserver_sync.verbindungs_status(timeout=3.0)
         if not ts_status["konfiguriert"]:

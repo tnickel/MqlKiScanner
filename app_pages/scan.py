@@ -380,12 +380,25 @@ with st.container(border=True, key="scan_control_panel"):
                  icon=":material/lock:", color="green" if has_login else "orange")
         st.badge("KI-Berichte aktiv" if has_llm else "KI optional",
                  icon=":material/psychology:", color="green" if has_llm else "gray")
-        st.badge("Downloader verbunden" if dl_status["ok"]
-                 else ("Downloader nicht konfiguriert" if not dl_status["konfiguriert"]
-                       else "Downloader offline"),
-                 icon=":material/sync:",
-                 color="green" if dl_status["ok"]
-                 else ("gray" if not dl_status["konfiguriert"] else "red"))
+        mql_quelle = next((q for q in dl_status.get("quellen", [])
+                           if q["kuerzel"] == "mql5"), None)
+        if mql_quelle is None:
+            st.badge("Downloader nicht konfiguriert", icon=":material/sync:",
+                     color="gray")
+        else:
+            st.badge("Downloader verbunden" if mql_quelle["ok"]
+                     else "Downloader offline",
+                     icon=":material/sync:" if mql_quelle["ok"]
+                     else ":material/sync_disabled:",
+                     color="green" if mql_quelle["ok"] else "red")
+        for q in dl_status.get("quellen", []):
+            if q["kuerzel"] == "mql5":
+                continue  # oben als „Downloader" gezeigt
+            st.badge(f"{q['name']} verbunden" if q["ok"]
+                     else f"{q['name']} offline",
+                     icon=":material/sync:" if q["ok"]
+                     else ":material/sync_disabled:",
+                     color="green" if q["ok"] else "red")
     start_zeile = st.columns([1.15, 1.15, 1], gap="small", vertical_alignment="center")
     with start_zeile[0]:
         start = action_button(

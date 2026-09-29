@@ -131,6 +131,20 @@ def pruefe_alle(*, force: bool = False, timeout: float = 5.0) -> dict[int, dict]
             for q in db.list_quellen() if q["aktiv"]}
 
 
+
+# Kompakte Anzeigenamen fuer Status-Badges (Kuerzel sind bewusst kurz,
+# die Monitore heissen aber voll ausgesprochen; Nutzer-Wunsch 29.09.:
+# der Pelican-Badge soll „Pelican" heissen).
+_ANZEIGE_NAMEN = {"pelik": "Pelican", "robo": "RoboForex",
+                  "vant": "Vantage", "zulu": "Zulu"}
+
+
+def anzeige_name(quelle: dict) -> str:
+    """Lesbarer Name fuer Badges/Status: bekanntes Kuerzel uebersetzt,
+    sonst das Name-Feld, sonst das Kuerzel."""
+    return _ANZEIGE_NAMEN.get(str(quelle.get("kuerzel") or ""),
+                              quelle.get("name") or str(quelle.get("kuerzel") or "Quelle"))
+
 def status_zeichen(pruefung: dict | None) -> str:
     """Ampel-Kurzzeichen für Tabellen/Badges (🟢/🟡/🔴/⚪ nie geprüft)."""
     farbe = str((pruefung or {}).get("farbe") or "")
