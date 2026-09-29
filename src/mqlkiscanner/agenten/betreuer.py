@@ -114,7 +114,7 @@ def _llm_einordnung(signal_id: int, signal_name: str, profil_text: str,
     except llm_client.LlmError as exc:
         journal.schritt_protokollieren(
             lauf_id, "betreuer", "llm_pruefung", status="fehler",
-            prompt=prompt, modell=modell, tokens=client.usage.total_tokens,
+            prompt=prompt, modell=modell, tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
             dauer_s=round(_time.monotonic() - beginn, 1),
             detail={"fehler": str(exc), "signal": signal_name})
         return None

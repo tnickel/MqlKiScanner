@@ -202,7 +202,7 @@ def _llm_digest(ereignisse: dict, settings: dict, lauf_id: int,
     except llm_client.LlmError as exc:
         journal.schritt_protokollieren(
             lauf_id, "melder", "llm_digest", status="fehler", prompt=prompt,
-            modell=modell, tokens=client.usage.total_tokens,
+            modell=modell, tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
             dauer_s=round(_time.monotonic() - beginn, 1),
             detail={"fehler": str(exc)})
         log(f"  Melder-LLM fehlgeschlagen: {exc}")

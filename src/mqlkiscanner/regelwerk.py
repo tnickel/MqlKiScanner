@@ -60,14 +60,16 @@ HARTREGELN: list[tuple[str, str]] = [
      "Das Startkapital ist nicht belegbar — Drawdown- und Schockprüfung "
      "sind unmöglich, harte Ablehnung."),
     ("🔴 Drawdown-Schranke verletzt",
-     "max(By-Equity-DD, By-Balance-DD, Trading-DD) über der Schranke — "
-     "harte Ablehnung. Der höchste der drei Werte entscheidet."),
+     "max(By-Equity-DD, By-Balance-DD, Trading-DD, Reko-EQ-DD) über der "
+     "Schranke — harte Ablehnung. Der höchste der vier Werte entscheidet "
+     "(Reko-EQ-DD nur bei belastbarer Kursdaten-Abdeckung)."),
     ("🔴 Martingale-Signatur nachgewiesen",
      "Lot-Eskalation nach Verlusten (Median > 1,3x) oder Korb-Muster aus "
      "der Trade-Forensik — harte Ablehnung."),
-    ("🟡 Ohne bewiesenen Stop kein Kandidat",
-     "Stop-Nachweis nur teilweise oder fehlend — nie Grün, unabhängig "
-     "von Score und Ertrag."),
+    ("🟡 Stop-Nachweis offen",
+     "Kein bewiesener Stop-Loss (Orderbuch/Cluster) — seit 28.09.2026 "
+     "NEUTRAL: kein Malus, keine Ampel-Sperre. Nur die KI-Analyse darf "
+     "begründet abwerten; bewiesener SL bleibt Entlastung."),
     ("🟡 Score oder Ertrag reichen nicht",
      "Risiko-Score ≥ 5 oder Ertrag unter der Mindestschwelle — nur "
      "Beobachtung."),
@@ -104,9 +106,9 @@ def regelwerk_markdown(settings: dict | None = None) -> str:
     zeilen += [
         "",
         f"Aktuelle Grenzwerte: Schranke {schranke:g} % Drawdown, "
-        f"Mindest-Ertrag {min_ertrag:g} %/Monat, Risiko vor Ertrag, "
-        "Stop-Loss muss bewiesen sein (Orderbuch oder Cluster-Signatur), "
-        "nicht nur behauptet.",
+        f"Mindest-Ertrag {min_ertrag:g} %/Monat, Risiko vor Ertrag. "
+        "Bewiesener Stop-Loss (Orderbuch/Cluster) entlastet; fehlender "
+        "Nachweis ist neutral (bindende Regel 28.09.2026).",
         "",
         "## Wann kommt ein Signal auf die Ausschlussliste?",
         "",

@@ -261,3 +261,27 @@ def test_dd_schranke_ohne_bal_wie_bisher():
                              trading_dd_pct=34.0))
     assert matrix["dd_schranke"].ampel == ROT
     assert "max(Trading-DD 34,00 %)" in matrix["dd_schranke"].detail
+
+
+# ------------------------- Review T1/2 29.09.: Vierfach-Maximum (M1)
+
+def test_dd_zelle_wertet_reko_eq_dd_als_viertes_maximum():
+    """M1: Die Audit-Zelle muss dasselbe Vierfach-Maximum zeigen wie die
+    Engine — sonst sagt das Urteil ROT und sein eigener Nachweis GRUEN."""
+    matrix = _matrix(_result(dd_equity_pct=10.0, dd_balance_pct=10.0,
+                             trading_dd_pct=10.0,
+                             equity_dd_rekonstruiert_pct=35.0))
+    assert matrix["dd_schranke"].ampel == ROT
+    assert "Reko-EQ-DD 35,00 %" in matrix["dd_schranke"].detail
+
+    # Der Tooltip beschreibt das Vierfach-Maximum:
+    tooltip = next(k.beschreibung for k in KRITERIEN if k.key == "dd_schranke")
+    assert "Reko-EQ-DD" in tooltip and "vier Werte" in tooltip
+
+
+def test_dd_zelle_ohne_reko_unveraendert():
+    """Reko nicht vorhanden (None) darf die bestehende Zelle nicht ändern."""
+    matrix = _matrix(_result(dd_equity_pct=3.8, trading_dd_pct=28.16,
+                             equity_dd_rekonstruiert_pct=None))
+    assert "max(EQ-DD 3,80 %, Trading-DD 28,16 %) = 28,16 %" \
+        in matrix["dd_schranke"].detail

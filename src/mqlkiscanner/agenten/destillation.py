@@ -99,7 +99,7 @@ def profil_erstellen(signal_id: int, signal_name: str, signal_url: str,
             journal.schritt_protokollieren(
                 lauf_id, "betreuer", "profil_destillation", status="fehler",
                 prompt=prompt, modell=modell,
-                tokens=client.usage.total_tokens,
+                tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
                 dauer_s=round(_time.monotonic() - beginn, 1),
                 detail={"fehler": str(exc), "signal": signal_name})
         log(f"  Destillation {signal_name} fehlgeschlagen: {exc}")

@@ -399,8 +399,11 @@ def _kriterien_text(settings: dict) -> str:
             "aus Kursdaten nachgemessenen Reko-EQ-DD (floating inklusive; nur "
             "bei belastbarer Abdeckung)\n"
             f"- Mindest-Ertrag: {settings.get('min_ertrag_pct_monat', 5)} %/Monat\n"
-            "- Risiko VOR Ertrag; Stop-Loss muss BEWIESEN sein (Orderbuch oder "
-            "eindeutige Cluster-Signatur), nicht nur behauptet\n"
+                        "- Risiko VOR Ertrag. Bewiesener Stop-Loss (Orderbuch oder eindeutige "
+            "Cluster-Signatur) entlastet; ein FEHLENDER Nachweis ist neutral - "
+            "kein Malus, keine Sperre, kein Abwertungsgrund (bindende Nutzer-Regel "
+            "28.09.2026). Abwerten darf nur die Analyse mit begründetem "
+            "Befund (z. B. Verhaltens-Signatur ohne Stop-Schutz)\n"
             "- Schockszenario (Peak-Exposure in USD) ist ein Stress-Szenario zur "
             "Gewichtung und Warnung — kein gemessener Verlust und allein KEIN "
             "Ablehnungsgrund\n"
@@ -1244,7 +1247,8 @@ class ScanPipeline:
         storage_error = ""
         try:
             db.store_analysis(self.PORTFOLIO_ANALYSIS_ID, "portfolio", model_strong,
-                              self.llm.usage.total_tokens, text)
+                              meta.get("total_tokens", self.llm.usage.total_tokens) or 0,
+                              text)
         except Exception as exc:  # DB-Fehler darf den Bericht nicht verlieren
             storage_error = f"Portfolio nicht in Datenbank gespeichert: {type(exc).__name__}: {exc}"
             log(f"  {storage_error}")
@@ -1254,7 +1258,8 @@ class ScanPipeline:
         if on_progress:
             on_progress(1, total, storage_error or "Portfolio-Vorschlag fertig")
         summary = {"text": text, "zeichen": meta.get("zeichen", len(text)),
-                "tokens": self.llm.usage.total_tokens, "model": model_strong,
+                "tokens": meta.get("total_tokens", self.llm.usage.total_tokens) or 0,
+                "model": model_strong,
                 "created_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
                 "reason": storage_error, "storage_error": storage_error}
         try:

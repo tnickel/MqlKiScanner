@@ -115,9 +115,17 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             ("risiko_analyse", "Risiko-Analyse", risk_prompt, 1, 8192, model_flash),
         ]
         outcomes = []
+        # meta je Call mitfuehren: store_analysis braucht die KOSTEN DIESES
+        # Calls (meta["total_tokens"]) — pipe.llm.usage.total_tokens ist der
+        # kumulierte Lauf-Zaehler und verfaelscht die Audit-Spalte (M3).
+        metas: dict[str, dict] = {}
         with ThreadPoolExecutor(max_workers=2) as pool:
-            futures = [(stage, pool.submit(pipe.llm.chat, stage[2], stufe=stage[3],
-                                          max_tokens=stage[4], meta_out={})) for stage in stages]
+            futures = []
+            for stage in stages:
+                meta: dict = {}
+                metas[stage[0]] = meta
+                futures.append((stage, pool.submit(pipe.llm.chat, stage[2], stufe=stage[3],
+                                                   max_tokens=stage[4], meta_out=meta)))
             for stage, future in futures:
                 try:
                     outcomes.append((stage, future.result(), None))
@@ -142,7 +150,9 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
                 continue
             try:
                 created_at = db.store_analysis(
-                    result.id, field, model, pipe.llm.usage.total_tokens, text, basis=basis)
+                    result.id, field, model,
+                    metas[field].get("total_tokens", pipe.llm.usage.total_tokens),
+                    text, basis=basis)
             except Exception as storage_error:
                 record_failure(RuntimeError(f"{label} nicht gespeichert: {storage_error}"),
                                "Speicherfehler")
@@ -167,7 +177,9 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
                 result, kriterien, result.trade_analyse, result.risiko_analyse)
             log(f"→ [3/3] Gesamtbericht für {result.name}: {len(prompt):,} Zeichen …")
             progress(f"Gesamtbericht 3/3: {result.name} · warte auf Modellantwort")
-            result.gesamtbericht = pipe.llm.chat(prompt, stufe=2, max_tokens=24576, meta_out={})
+            meta_gb: dict = {}
+            result.gesamtbericht = pipe.llm.chat(prompt, stufe=2, max_tokens=24576,
+                                                 meta_out=meta_gb)
             result.gesamtbericht_at = datetime.now().isoformat(sep=" ", timespec="seconds")
             result.gesamtbericht_model = model_strong
             result.kurzfassung = _extract_kurzfassung(result.gesamtbericht)
@@ -181,7 +193,8 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
         try:
             result.gesamtbericht_at = db.store_analysis(
                 result.id, "gesamtbericht", model_strong,
-                pipe.llm.usage.total_tokens, result.gesamtbericht, basis=basis)
+                meta_gb.get("total_tokens", pipe.llm.usage.total_tokens) or 0,
+                result.gesamtbericht, basis=basis)
         except Exception as exc:
             record_failure(RuntimeError(f"Gesamtbericht nicht gespeichert: {exc}"), "Speicherfehler")
         else:
@@ -243,14 +256,16 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
     # genug Tokens"): glm-5.3 bezahlt Reasoning-Tokens aus demselben Budget -
     # bei 24.576 brach die Antwort wiederholt mitten drin ab (finish_reason=
     # length, ~64 Tokens/s gemessen). Zeitlimit proportional (Faktor 2).
-    text = client.chat(prompt, stufe=2, max_tokens=131072, meta_out={})
+    meta_ta: dict = {}
+    text = client.chat(prompt, stufe=2, max_tokens=131072, meta_out=meta_ta)
     model = settings.get("model_stufe2", config.MODEL_STUFE2)
     try:
         basis = report_basis_for(result, settings)
     except Exception:
         basis = None
     created_at = db.store_analysis(result.id, "tiefenanalyse", model,
-                                   client.usage.total_tokens, text, basis=basis)
+                                   meta_ta.get("total_tokens", client.usage.total_tokens) or 0,
+                                   text, basis=basis)
     result.tiefenanalyse = text
     result.tiefenanalyse_at = created_at
     result.tiefenanalyse_model = model

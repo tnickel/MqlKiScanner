@@ -9,7 +9,10 @@ Drei Evidenzstufen:
    (Referenz: analyze_goldreaper.py / analyze_kiracat.py / martingale_exposure_test.py Test 3)
 3. Ribbon-Statistik: laengste Verlustserie + schlechtester Einzeltrade.
 
-"Kein Nachweis" = Warnflag, niemals Entlastung (AGENTS.md Regel 2).
+"Kein Nachweis" = NEUTRAL (bindende Nutzer-Regel 28.09.2026): kein
+Score-Malus, keine Ampel-Sperre, keine Matrix-Abwertung; abwerten darf
+nur die KI-Analyse mit begruendetem Befund. Bewiesener Stop bleibt
+die einzige Entlastung.
 """
 from __future__ import annotations
 
@@ -189,6 +192,11 @@ def _distance_clustering(trades) -> dict:
 
     n = best["n"]
     dists = best["dists"]
+    # BEWUSST konservativ (F3, Review T1/2 29.09.): per_symbol enthaelt nur
+    # Symbole mit Verlustbasis — faellt bei einem Symbol ein Verlust weg oder
+    # hat es < MIN_CLUSTER_LOSSES Verluste, ist das Signal-Level-Urteil nie
+    # "cluster". Das verwehrt nur Entlastung, erzeugt nie falsch-positive
+    # Stops; Verhalten bewusst erhalten.
     traded_symbols = {normalize_symbol(t.symbol) for t in trades}
     clustered = (set(per_symbol) == traded_symbols
                  and all(item["clustered"] for item in per_symbol.values()))
@@ -229,7 +237,11 @@ def _ribbon_statistics(trades) -> dict:
     window: list = []
     best_window: list = []
     for t in seq:
-        if t.profit <= 0:
+        if t.profit < 0:
+            # Verlustserie = konsekutive Verluste; Breakeven (profit == 0)
+            # ist kein Verlust und unterbricht die Serie wie ein Gewinn
+            # (F4, Review T1/2 29.09. — vorher zaehlte Breakeven als Verlust
+            # und vergroesserte die Serie).
             streak_len += 1
             streak_sum += t.profit
             window.append(t)

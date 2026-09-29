@@ -82,9 +82,16 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
     # der Export selbst keine Einzahlung vor dem ersten Trade enthaelt
     # (MT4-Orderbuch beginnt mit der Signalhistorie). Die Webseite belegt
     # das Startkapital des Signal-Kontos unabhaengig davon.
+    # Dieselbe Bedingung wie in forensics/exposure.py (F1, Review T1/2
+    # 29.09.): frueher reichte hier netto <= 0 — Einzahlung +100/Auszahlung
+    # -200 vor dem ersten Trade injizierte NUR im Drawdown, Exposure rechnete
+    # mit -100: derselbe Report mit zwei verschiedenen Startkapitalen.
+    hat_einzahlung_vor_start = any(
+        b.amount > 0 and b.time <= first_open for b in balances)
     injected = 0.0
     startkapital_quelle = "csv_einzahlungen"
-    if deposits_start <= 0 and kapitalbasis_usd is not None and kapitalbasis_usd > 0:
+    if (not hat_einzahlung_vor_start and kapitalbasis_usd is not None
+            and kapitalbasis_usd > 0):
         injected = float(kapitalbasis_usd)
         startkapital_quelle = kapitalbasis_quelle or "extern"
     startkapital = deposits_start + injected

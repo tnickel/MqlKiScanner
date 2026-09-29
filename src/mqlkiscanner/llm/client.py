@@ -67,6 +67,13 @@ class GlmClient:
         self.last_call: dict = {}
         # Trade- und Risiko-Analyse laufen parallel; Usage/last_call absichern.
         self._lock = threading.Lock()
+        # Reservierung laufender Calls (Review T1/2 29.09., M5): Der Budget-
+        # Check lief vor dem HTTP-Call, die Abrechnung erst nach der Antwort —
+        # zwei parallele Threads konnten beide passieren. Die konservative
+        # Obergrenze jedes Calls (max_tokens + Prompt-Schätzung) wird vor dem
+        # Call reserviert und nach der Abrechnung freigegeben; die Summe aus
+        # verbrauchten + reservierten Tokens haelt das Budget hart ein.
+        self._inflight_tokens = 0
 
     @property
     def has_key(self) -> bool:
@@ -87,104 +94,127 @@ class GlmClient:
         gefuellt wird — noetig bei parallelen Aufrufen (last_call allein rasant).
         """
         model = model or (self.model_stufe1 if stufe == 1 else self.model_stufe2)
+        # Konservative Reservierung: Antwort-Limit plus Prompt-Obergrenze
+        # (Bytes/3 deckt bytebasierte Tokenizer nach oben ab). Muss VOR dem
+        # Budget-Check stehen, sonst buchen parallele Calls gemeinsam über.
+        reservierung = max_tokens + len(prompt.encode("utf-8")) // 3 + 1024
         with self._lock:
-            if self.usage.total_tokens >= self.max_total_tokens:
+            if self.usage.total_tokens + self._inflight_tokens + reservierung \
+                    > self.max_total_tokens:
                 raise LlmBudgetError(
-                    f"Token-Budget erschoepft ({self.max_total_tokens} je Lauf). "
+                    f"Token-Budget erschoepft ({self.max_total_tokens} je Lauf; "
+                    f"{self.usage.total_tokens} verbraucht, "
+                    f"{self._inflight_tokens} fuer laufende Aufrufe reserviert). "
                     "Budget im Admin-Bereich erhoehen oder weniger Kandidaten auswerten.")
+            self._inflight_tokens += reservierung
 
-        body = {
-            "model": model,
-            "messages": ([{"role": "system", "content": system}] if system else [])
-            + [{"role": "user", "content": prompt}],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
-        last_error: Exception | None = None
-        for attempt in range(3):
-            start = time.monotonic()
-            # Ein Transportfehler darf nicht den gesamten Signal-Lauf abbrechen.
-            # Pro HTTP-Aufruf genau eine Wiederholung, dann ein LlmError.
-            for transport_attempt in range(2):
-                try:
-                    r = requests.post(f"{self.base_url}/chat/completions",
-                                      headers=self._headers(), data=json.dumps(body),
-                                      timeout=self.timeout)
-                    break
-                except requests.RequestException as exc:
-                    if transport_attempt:
-                        raise LlmError(
-                            f"GLM-Verbindungsfehler nach 2 Versuchen: "
-                            f"{type(exc).__name__}: {exc}") from exc
-                    time.sleep(5)
-            if r.status_code >= 400:
-                try:
-                    err = r.json().get("error", {})
-                except ValueError:
-                    err = {}
-                code = str(err.get("code") or "")
-                if code == "1113":
-                    raise LlmNoBalanceError(
-                        "GLM-Key gueltig, aber kein Kontingent auf diesem Endpunkt "
-                        f"(Z.ai-Code {code}). Bei Abo-Keys (GLM Coding "
-                        "Plan) muss der Coding-Endpunkt gesetzt sein "
-                        "(api.z.ai/api/coding/paas/v4), bei Guthaben-Keys der "
-                        "Standard-Endpunkt (api.z.ai/api/paas/v4) — im Admin-"
-                        "bereich umstellbar, ggf. dort aufladen.")
-                # 1302 bezeichnet das Parallelitätslimit, nicht fehlendes Guthaben.
-                # https://docs.z.ai/api-reference/api-code
-                if r.status_code == 429 or code == "1302":
-                    last_error = LlmError(
-                        f"GLM-Drosselung (HTTP {r.status_code}, Code {code or 'unbekannt'}): "
-                        f"{r.text[:200]}")
-                    if attempt < 2:
-                        time.sleep(5 * (attempt + 1))
-                    continue
-                raise LlmError(f"GLM-API HTTP {r.status_code}: {r.text[:300]}")
-            try:
-                data = r.json()
-            except ValueError as exc:
-                raise LlmError(
-                    f"GLM-API lieferte kein JSON (HTTP {r.status_code}): "
-                    f"{r.text[:200]!r}") from exc
-            try:
-                choice0 = data["choices"][0]
-                content = (choice0.get("message") or {}).get("content") or ""
-                finish = choice0.get("finish_reason")
-            except (KeyError, IndexError, TypeError) as exc:
-                raise LlmError(
-                    f"GLM-API-Antwort ohne gueltige choices: {str(data)[:200]}") from exc
-            usage = data.get("usage", {})
-            call_meta = {
+        verrechnet = False
+        try:
+            body = {
                 "model": model,
-                "prompt_tokens": int(usage.get("prompt_tokens", 0)),
-                "completion_tokens": int(usage.get("completion_tokens", 0)),
-                "reasoning_tokens": int((usage.get("completion_tokens_details") or {})
-                                        .get("reasoning_tokens", 0) or 0),
-                "dauer_s": round(time.monotonic() - start, 1),
-                "finish_reason": finish,
-                "zeichen": len(content),
-                "prompt_zeichen": len(prompt),
+                "messages": ([{"role": "system", "content": system}] if system else [])
+                + [{"role": "user", "content": prompt}],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
             }
-            with self._lock:
-                self.usage.add(model, int(usage.get("total_tokens", 0)))
-                self.last_call = call_meta
-                if meta_out is not None:
-                    meta_out.clear()
-                    meta_out.update(call_meta)
-            if finish not in (None, "stop"):
-                raise LlmIncompleteResponseError(
-                    f"Unvollständige Antwort von {model} (finish_reason={finish}). "
-                    "Nicht als fertiger Bericht gespeichert; bei length das "
-                    "Ausgabelimit erhöhen oder den Bericht kürzer anfordern.")
-            if not content:
-                raise LlmError(
-                    f"Leere Antwort von {model} (finish_reason={finish}, "
-                    f"completion_tokens={call_meta['completion_tokens']}). "
-                    "Moegliche Ursache: Reasoning hat das max_tokens-Budget "
-                    "aufgebraucht — Limit erhoehen.")
-            return content
-        raise last_error or LlmError("GLM-Aufruf fehlgeschlagen.")
+            last_error: Exception | None = None
+            for attempt in range(3):
+                start = time.monotonic()
+                # Ein Transportfehler darf nicht den gesamten Signal-Lauf abbrechen.
+                # Pro HTTP-Aufruf genau eine Wiederholung, dann ein LlmError.
+                for transport_attempt in range(2):
+                    try:
+                        r = requests.post(f"{self.base_url}/chat/completions",
+                                          headers=self._headers(), data=json.dumps(body),
+                                          timeout=self.timeout)
+                        break
+                    except requests.RequestException as exc:
+                        if transport_attempt:
+                            raise LlmError(
+                                f"GLM-Verbindungsfehler nach 2 Versuchen: "
+                                f"{type(exc).__name__}: {exc}") from exc
+                        time.sleep(5)
+                if r.status_code >= 400:
+                    try:
+                        err = r.json().get("error", {})
+                    except ValueError:
+                        err = {}
+                    code = str(err.get("code") or "")
+                    if code == "1113":
+                        raise LlmNoBalanceError(
+                            "GLM-Key gueltig, aber kein Kontingent auf diesem Endpunkt "
+                            f"(Z.ai-Code {code}). Bei Abo-Keys (GLM Coding "
+                            "Plan) muss der Coding-Endpunkt gesetzt sein "
+                            "(api.z.ai/api/coding/paas/v4), bei Guthaben-Keys der "
+                            "Standard-Endpunkt (api.z.ai/api/paas/v4) — im Admin-"
+                            "bereich umstellbar, ggf. dort aufladen.")
+                    # 1302 bezeichnet das Parallelitätslimit, nicht fehlendes Guthaben.
+                    # https://docs.z.ai/api-reference/api-code
+                    if r.status_code == 429 or code == "1302":
+                        last_error = LlmError(
+                            f"GLM-Drosselung (HTTP {r.status_code}, Code {code or 'unbekannt'}): "
+                            f"{r.text[:200]}")
+                        if attempt < 2:
+                            time.sleep(5 * (attempt + 1))
+                        continue
+                    raise LlmError(f"GLM-API HTTP {r.status_code}: {r.text[:300]}")
+                try:
+                    data = r.json()
+                except ValueError as exc:
+                    raise LlmError(
+                        f"GLM-API lieferte kein JSON (HTTP {r.status_code}): "
+                        f"{r.text[:200]!r}") from exc
+                try:
+                    choice0 = data["choices"][0]
+                    content = (choice0.get("message") or {}).get("content") or ""
+                    finish = choice0.get("finish_reason")
+                except (KeyError, IndexError, TypeError) as exc:
+                    raise LlmError(
+                        f"GLM-API-Antwort ohne gueltige choices: {str(data)[:200]}") from exc
+                usage = data.get("usage", {})
+                call_meta = {
+                    "model": model,
+                    # total_tokens = Kosten DIESES Calls (M3, Review T1/2 29.09.):
+                    #usage.total_tokens ist der kumulierte Lauf-Zahler und darf
+                    # fuer store_analysis/Journal nicht verwendet werden.
+                    "total_tokens": int(usage.get("total_tokens", 0)),
+                    "prompt_tokens": int(usage.get("prompt_tokens", 0)),
+                    "completion_tokens": int(usage.get("completion_tokens", 0)),
+                    "reasoning_tokens": int((usage.get("completion_tokens_details") or {})
+                                            .get("reasoning_tokens", 0) or 0),
+                    "dauer_s": round(time.monotonic() - start, 1),
+                    "finish_reason": finish,
+                    "zeichen": len(content),
+                    "prompt_zeichen": len(prompt),
+                }
+                with self._lock:
+                    # Reservierung gegen die echte (kleinere) Nutzung aufloesen
+                    self._inflight_tokens -= reservierung
+                    verrechnet = True
+                    self.usage.add(model, int(usage.get("total_tokens", 0)))
+                    self.last_call = call_meta
+                    if meta_out is not None:
+                        meta_out.clear()
+                        meta_out.update(call_meta)
+                if finish not in (None, "stop"):
+                    raise LlmIncompleteResponseError(
+                        f"Unvollständige Antwort von {model} (finish_reason={finish}). "
+                        "Nicht als fertiger Bericht gespeichert; bei length das "
+                        "Ausgabelimit erhöhen oder den Bericht kürzer anfordern.")
+                if not content:
+                    raise LlmError(
+                        f"Leere Antwort von {model} (finish_reason={finish}, "
+                        f"completion_tokens={call_meta['completion_tokens']}). "
+                        "Moegliche Ursache: Reasoning hat das max_tokens-Budget "
+                        "aufgebraucht — Limit erhoehen.")
+                return content
+            raise last_error or LlmError("GLM-Aufruf fehlgeschlagen.")
+        finally:
+            # Fehler VOR der Abrechnung: Reservierung zurueckgeben, sonst
+            # vergiftet jeder fehlgeschlagene Call das Budget.
+            if not verrechnet:
+                with self._lock:
+                    self._inflight_tokens -= reservierung
 
     def test_connection(self) -> dict:
         """Mini-Test fuer den Admin-Bereich.

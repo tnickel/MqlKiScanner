@@ -57,12 +57,14 @@ KRITERIEN: list[Kriterium] = [
     Kriterium(
         "dd_schranke", "Drawdown-Schranke",
         "Harte Nutzervorgabe: Das MAXIMUM aus Plattform-By-Equity-DD, "
-        "By-Balance-DD und aus den Trades rekonstruiertem Trading-DD darf "
-        "die Schranke (Standard 30 %) nicht überschreiten. Grün = mit Puffer "
-        "≥ 5 Punkten eingehalten, gelb = eingehalten, aber Puffer unter 5 "
-        "Punkte, rot = verletzt. Alle Werte fehlen → grau (keine Daten). "
-        "Der höchste der drei Werte entscheidet — MQL5's By Equity kann "
-        "deutlich niedriger als By Balance ausfallen."),
+        "By-Balance-DD, aus den Trades rekonstruiertem Trading-DD UND dem "
+        "aus Kursdaten nachgemessenen Reko-EQ-DD (nur bei belastbarer "
+        "Abdeckung) darf die Schranke (Standard 30 %) nicht überschreiten. "
+        "Grün = mit Puffer ≥ 5 Punkten eingehalten, gelb = eingehalten, aber "
+        "Puffer unter 5 Punkte, rot = verletzt. Alle Werte fehlen → grau "
+        "(keine Daten). Der höchste der vier Werte entscheidet — MQL5's By "
+        "Equity kann deutlich niedriger als By Balance ausfallen, und der "
+        "Reko-EQ-DD macht floating Verluste sichtbar."),
     Kriterium(
         "martingale", "Martingale",
         "Forensik-Test a) aus doc/03: Systematische Lot-Vergrößerung nach "
@@ -118,10 +120,14 @@ KRITERIEN: list[Kriterium] = [
 def _dd_zelle(r, settings) -> Zelle:
     limit = float(settings.get("schranke_eq_dd_pct", 30.0))
     # Konservativ: der HOECHSTE gemessene Drawdown entscheidet (By Equity,
-    # By Balance, aus Trades rekonstruiert) — Gold Spike: By Equity 3,8 %
-    # vs. By Balance 8,11 %.
+    # By Balance, aus Trades rekonstruiert UND Reko-EQ-DD aus Kursdaten —
+    # M1, Review T1/2 29.09.: die Engine wertet das Vierfach-Maximum, die
+    # Audit-Zelle musste dasselbe zeigen, sonst widerspricht das Urteil
+    # seinem eigenen Nachweis). Gold Spike: By Equity 3,8 % vs. By Balance
+    # 8,11 %.
     werte = {"EQ-DD": r.dd_equity_pct, "Bal-DD": r.dd_balance_pct,
-             "Trading-DD": r.trading_dd_pct}
+             "Trading-DD": r.trading_dd_pct,
+             "Reko-EQ-DD": getattr(r, "equity_dd_rekonstruiert_pct", None)}
     vorhanden = {k: v for k, v in werte.items() if v is not None}
     if not vorhanden:
         return Zelle(KEINE_DATEN, "keine DD-Werte",

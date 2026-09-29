@@ -106,7 +106,7 @@ def _llm_entscheidung(lage: dict, settings: dict, lauf_id: int,
     except llm_client.LlmError as exc:
         journal.schritt_protokollieren(
             lauf_id, "dirigent", "llm_entscheidung", status="fehler",
-            prompt=prompt, modell=modell, tokens=client.usage.total_tokens,
+            prompt=prompt, modell=modell, tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
             dauer_s=round(_time.monotonic() - beginn, 1),
             detail={"fehler": str(exc)})
         log(f"  Dirigent-LLM-Entscheidung fehlgeschlagen: {exc}")

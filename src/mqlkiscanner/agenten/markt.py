@@ -229,7 +229,7 @@ def _llm_lage(kennzahlen: dict, symbole: list[str], settings: dict,
     except llm_client.LlmError as exc:
         journal.schritt_protokollieren(
             lauf_id, "markt", "llm_lage", status="fehler", prompt=prompt,
-            modell=modell, tokens=client.usage.total_tokens,
+            modell=modell, tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
             dauer_s=round(_time.monotonic() - beginn, 1),
             detail={"fehler": str(exc)})
         log(f"  Markt-LLM fehlgeschlagen: {exc}")

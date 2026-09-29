@@ -21,7 +21,8 @@ def compute(parsed: ParsedExport) -> dict:
 
     seq_close = sorted(trades, key=lambda t: t.close_time)
     wins = [t for t in trades if t.profit > 0]
-    losses = [t for t in trades if t.profit <= 0]
+    # Breakeven (profit == 0) ist kein Verlust (F4, Review T1/2 29.09.)
+    losses = [t for t in trades if t.profit < 0]
     gross_profit = sum(t.profit for t in wins)
     gross_loss = sum(t.profit for t in losses)
     net = sum(t.net for t in trades)
@@ -34,7 +35,7 @@ def compute(parsed: ParsedExport) -> dict:
     best_streak_window: list = []
     cur_window: list = []
     for t in seq_close:
-        if t.profit <= 0:
+        if t.profit < 0:  # Breakeven unterbricht die Serie wie ein Gewinn (F4)
             streak_len += 1
             streak_sum += t.profit
             cur_window.append(t)
