@@ -132,6 +132,12 @@ class ScanResult:
     equity_dd_rekonstruiert_pct: float | None = None
     equity_dd_rekonstruiert_usd: float | None = None
     equity_rekon_gmt_h: int | None = None
+    # Vom Datenquellen-Monitor (Pelican/Robo/Vantage/Zulu) aus der vollen
+    # Trade-Kurve nachgemessener Max-EQ-DD (metrics "TradeEqDrawdownPct") —
+    # unabhängige Zweitmessung auf denselben Trades. Geht in DB und
+    # KI-Analyse, NICHT in die Drawdown-Schranke: Der Scanner misst selbst
+    # (Trading-DD + Reko-EQ-DD) und bleibt so verbindlich (Engine-Bindung).
+    monitor_trade_eq_dd_pct: float | None = None
     kapitalbasis_verwendet_quelle: str = ""
     broker_server: str | None = None
     symbole: str = ""               # gehandelte Assets ("XAUUSD, US30, ...")
@@ -261,6 +267,8 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             stop_nachweis=f.get("stop_nachweis") or "",
             stop_evidence=f.get("stop_evidence"),
             kapitalbasis_usd=stats.get("initial_deposit_usd"),
+            # Monitor-Nachmessung (Datenquellen-Signale; None ohne Quelle)
+            monitor_trade_eq_dd_pct=stats.get("monitor_trade_eq_dd_pct"),
             # Tatsächlich verwendete Kapitalbasis aus dem Forensik-Snapshot
             # (führt durch DB-Reload und Prompt-JSON; siehe ScanResult-Felder)
             equity_dd_rekonstruiert_pct=(f.get("equity_rekonstruktion") or {}).get(
@@ -446,6 +454,9 @@ def _forensik_json(r: ScanResult) -> str:
         # Nachgemessener Equity-DD aus Kursdaten (floating inklusive) — die KI
         # soll ihn als Messung deuten und gegen den gemeldeten Wert stellen.
         "equity_dd_rekonstruiert_pct": r.equity_dd_rekonstruiert_pct,
+        # Unabhängige Zweitmessung des Datenquellen-Monitors (volle Trade-
+        # Kurve) — Deutungsauftrag an die KI, kein Schranken-Kriterium.
+        "monitor_trade_eq_dd_pct": r.monitor_trade_eq_dd_pct,
     }, ensure_ascii=False)
 
 
@@ -807,6 +818,8 @@ class ScanPipeline:
             res.dd_balance_pct = stats.get("dd_balance_pct")
             res.ertrag_monat_pct = stats.get("monthly_growth_pct")
             res.pf = stats.get("profit_factor")
+            # Monitor-Nachmessung (nur Datenquellen-Signale; None sonst)
+            res.monitor_trade_eq_dd_pct = stats.get("monitor_trade_eq_dd_pct")
             if res.wochen is None:
                 res.wochen = stats.get("weeks")
             res.broker_server = stats.get("broker_server")
@@ -993,6 +1006,8 @@ class ScanPipeline:
                 "balance_usd": stats.get("balance_usd"),
                 # Virtuelle Annahme aus dem Quellen-Monitor (Audit-Snapshot)
                 "kapitalbasis_virtual_usd": stats.get("kapitalbasis_virtual_usd"),
+                # Monitor-Nachmessung Trade-EQ-DD (Audit-Snapshot, KI-Kontext)
+                "monitor_trade_eq_dd_pct": stats.get("monitor_trade_eq_dd_pct"),
             }
             if res.fehler and not res.forensik_vorhanden:
                 stats_payload["last_fehler"] = res.fehler

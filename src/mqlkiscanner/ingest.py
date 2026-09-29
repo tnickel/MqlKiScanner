@@ -192,5 +192,11 @@ def metrics_zu_stats(antwort: dict | None) -> dict:
         # als echtes InitialDeposit und nie in den Cent-genauen Abgleich.
         "kapitalbasis_virtual_usd": metrics.get("InitialDepositVirtual"),
         "balance_usd": metrics.get("Balance"),
+        # Vom Datenquellen-Monitor aus der VOLTEN Trade-Kurve nachgemessener
+        # Max-EQ-DD (TradeEqDrawdownPct) — unabhängige Zweitmessung neben dem
+        # gemeldeten Plattform-DD. Fliesst in KI-Analyse und DB, NICHT in die
+        # Drawdown-Schranke (der Scanner misst selbst). None = Monitor hat
+        # keinen Wert (Trades nie/nicht berechenbar geladen).
+        "monitor_trade_eq_dd_pct": metrics.get("TradeEqDrawdownPct"),
         "stats_quelle": "datenquelle_metrics",
     }

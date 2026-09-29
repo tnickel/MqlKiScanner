@@ -28,6 +28,13 @@ Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
    GROESSER als der gemeldete Wert, ist das ein Kernbefund: der Anbieter
    meldet seinen Drawdown schoener, als er war — benenne die Differenz mit
    beiden Zahlen. Fehlt die Rekonstruktion (kein Feld), sage nichts dazu.
+   Ggf. liegt zusaetzlich monitor_trade_eq_dd_pct vor: der vom Datenquellen-
+   Monitor (Pelican/Robo/Vantage/Zulu) aus der VOLTEN Trade-Kurve nachge-
+   messene Max-EQ-DD (Peak->Tief, Basis aus der Plattformrendite rueckge-
+   rechnet) — eine unabhaengige Zweitmessung auf denselben Trades. Weicht
+   er um Faktor 2 oder mehr vom gemeldeten Wert ab, ist das ebenfalls ein
+   Kernbefund (nenne beide Zahlen und den Faktor); null/fehlend → nichts
+   dazu sagen. Er ändert die Ampel nicht (Engine misst selbst).
 2. **Copy-Eignung**: Slippage-/Kontogroessen-Risiken.
 3. **Ein Satz Fazit**: Warnung oder Entlastung — mit Hauptgrund.
 

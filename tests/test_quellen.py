@@ -254,6 +254,38 @@ def test_metrics_cache_und_mapping():
     assert ingest.metrics_zu_stats(None)["dd_equity_pct"] is None
 
 
+def test_monitor_trade_eq_dd_wird_durchgereicht_und_gelandet(monkeypatch):
+    """TradeEqDrawdownPct (Monitor-Zweitmessung aus der vollen Trade-Kurve)
+    fließt durch metrics_zu_stats in ScanResult, stats_json (DB) und das
+    Forensik-JSON (KI-Kontext) — ohne die Drawdown-Schranke zu berühren."""
+    stats = ingest.metrics_zu_stats({"metrics": {
+        "EquityDrawdown": 0.8, "TradeEqDrawdownPct": 6.46}})
+    assert stats["monitor_trade_eq_dd_pct"] == 6.46
+    # Fehlend → None (nichts geraten)
+    assert ingest.metrics_zu_stats({"metrics": {}})["monitor_trade_eq_dd_pct"] is None
+
+    quelle = _quelle("pelik", "http://pelican:8090")
+    _verdrahte(monkeypatch, {"http://pelican:8090": FakeClient(
+        trades=MINI_CSV, metrics={"metrics": {
+            "EquityDrawdown": 8.0, "Average3MonthProfit": 5.5,
+            "InitialDepositVirtual": 10000.0, "TradeEqDrawdownPct": 6.46}})})
+    kandidat = ingest.kandidaten(quelle, [
+        {"signalId": "4711", "version": "pelican", "signalName": "Lexo",
+         "subscribers": 1, "weeks": 40}])[0]
+    pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    res = pipe.analyze_candidate(None, dict(
+        kandidat, quelle_id=quelle["id"], quelle_kuerzel=quelle["kuerzel"],
+        quelle_version="pelican"), lambda *_: None)
+    assert res.monitor_trade_eq_dd_pct == 6.46
+    import json as _json
+    forensik_json = _json.loads(pipeline._forensik_json(res))
+    assert forensik_json["monitor_trade_eq_dd_pct"] == 6.46
+    # Unabhängige Kontrolle: Der Wert darf die Schranke NICHT kippen —
+    # allein die eigenen Messungen (EQ-DD 8 %, Trading-DD aus MINI_CSV)
+    # zählen (Engine-Bindung).
+    assert res.schranke_verletzt is False
+
+
 # ------------------------------------------------------------------ Sync
 def _punkt(ts, wert, change=0):
     return {"timestamp": ts, "subscribers": wert, "change": change}
