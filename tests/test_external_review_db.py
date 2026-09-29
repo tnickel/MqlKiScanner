@@ -70,7 +70,7 @@ def test_pipeline_portfolio_saves_with_enforced_foreign_keys(monkeypatch):
     pipe = pipeline.ScanPipeline()
     pipe.llm = SimpleNamespace(has_key=True, usage=SimpleNamespace(total_tokens=10),
                                chat=Mock(return_value="Portfolio ohne Elternsignal"))
-    result = pipeline.ScanResult(id=123, forensik_vorhanden=True)
+    result = pipeline.ScanResult(id=123, forensik_vorhanden=True, ampel="🟢")
     summary = pipe.run_portfolio([result], lambda _: None)
     assert summary["storage_error"] == summary["reason"] == ""
     assert db.get_latest_analysis(None, "portfolio")["text"] == summary["text"]

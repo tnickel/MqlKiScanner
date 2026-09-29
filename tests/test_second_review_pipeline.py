@@ -170,8 +170,8 @@ def test_bad_csv_marks_one_signal_and_continues_with_valid_input(live_scan, tmp_
         bad.write_text("Time;Type\n" + "x" * 140_000, encoding="utf-8")
     pipe.llm = SimpleNamespace(has_key=True, usage=SimpleNamespace(total_tokens=0),
                                chat=Mock(return_value="Vollständiger Bericht"))
-    results = [pipeline.ScanResult(id=123, forensik_vorhanden=True, trades_path=str(bad)),
-               pipeline.ScanResult(id=124, forensik_vorhanden=True, trades_path=str(csv))]
+    results = [pipeline.ScanResult(id=123, forensik_vorhanden=True, ampel="🟢", trades_path=str(bad)),
+               pipeline.ScanResult(id=124, forensik_vorhanden=True, ampel="🟢", trades_path=str(csv))]
     summary = pipe.run_llm(results, lambda _: None)
     assert "Trade-Export nicht lesbar" in results[0].llm_fehler
     assert not results[0].gesamtbericht and not results[1].llm_fehler
@@ -187,7 +187,7 @@ def test_portfolio_database_failure_remains_visible_and_archivable(monkeypatch):
     pipe.llm = SimpleNamespace(has_key=True, usage=SimpleNamespace(total_tokens=15),
                                chat=Mock(return_value="Einzigartiger Portfolio-Bericht"))
     monkeypatch.setattr(db, "store_analysis", Mock(side_effect=sqlite3.OperationalError("disk full")))
-    results = [pipeline.ScanResult(id=123, forensik_vorhanden=True)]
+    results = [pipeline.ScanResult(id=123, forensik_vorhanden=True, ampel="🟢")]
     summary = pipe.run_portfolio(results, lambda _: None)
     assert summary["reason"] and summary["storage_error"]
     assert summary["text"] == "Einzigartiger Portfolio-Bericht"

@@ -92,7 +92,7 @@ def _llm_entscheidung(lage: dict, settings: dict, lauf_id: int,
             detail={"grund": "Tagesbudget erschöpft.", "modell": modell})
         return None
     zeitplan = {"phase": "A", "takt_dirigent": lage["start_zeit"],
-                "erkennte": "Phase A: nur Planung und Protokoll"}
+                "erkenntnisse": "Phase A: nur Planung und Protokoll"}
     prompt = rollen_prompts.fuellung(
         rollen_prompts.lade_vorlage("dirigent_planung"),
         {"lagestatus_json": json.dumps(lage, ensure_ascii=False, indent=2),
@@ -192,16 +192,21 @@ def tageslauf(quelle: str = "daemon", log=print) -> dict:
                 "zusammenfassung": str(exc)}
 
     aktion = "Tageslage & Einsatzplan der Agenten prüfen"
-    if entscheidung and entscheidung.get("begruendung"):
-        resultat = entscheidung["begruendung"]
-    elif lage.get("wochenende"):
+    # F-14 (Review 29.09.): Das RESULTAT ist maschinell (Lage-Regeln) —
+    # LLM-Freitext gehoert nicht in das verbindliche Feld, sondern bleibt
+    # im protokollierten Entscheidungsschritt (Phase A = Planung ohne
+    # Ausfuehrung, doc/19; Aktionen ausfuehren waere eine Nutzentscheidung).
+    if lage.get("wochenende"):
         resultat = "Wochenende: Forex-Märkte geschlossen — System im Ruhezustand."
     elif lage.get("tokens_heute", 0) >= lage.get("tagesbudget_tokens", 500_000):
         resultat = "Tagesbudget erreicht: Modell-Aufrufe bis morgen pausiert."
     else:
         resultat = "Regelbetrieb freigegeben: Keine offenen Aufgaben, alle Agentenrollen einsatzbereit."
 
-    zusammen = f"Phase-A-Tageslauf: {resultat}"
+    llm_hinweis = ""
+    if entscheidung and entscheidung.get("begruendung"):
+        llm_hinweis = f" | LLM-Einschaetzung: {entscheidung['begruendung']}"
+    zusammen = f"Phase-A-Tageslauf: {resultat}{llm_hinweis}"
     journal.lauf_abschliessen(lauf_id, "ok", zusammenfassung=zusammen,
                               aktion=aktion, resultat=resultat)
     log(f"Dirigent-Lauf {lauf_id} abgeschlossen: {resultat}")

@@ -63,9 +63,23 @@ def pruefe_neue_wechsel(log=print) -> list[dict]:
     """
     steuer = journal.steuerung_lesen()
     letzte_id = int(steuer.get(STEUERUNG_WECHSEL_KEY) or 0)
-    wechsel = [w for w in db.list_ampel_wechsel(limit=100)
+    wechsel = [w for w in db.list_ampel_wechsel(limit=500)
                if int(w["id"]) > letzte_id]
     if not wechsel:
+        return []
+    # F-15 (Review 29.09.): Erster Lauf (letzte_id=0) nach Installation oder
+    # Reset würde die Historie als Alarm-Flut nachladen — stattdessen EINE
+    # zusammenfassende Info und Marker auf den neuesten Stand.
+    if letzte_id == 0 and len(wechsel) > 5:
+        journal.meldung_speichern(
+            "info", "Ampel-Wechsel-Historie initialisiert",
+            f"{len(wechsel)} bereits bestehende Ampel-Wechsel beim ersten "
+            "Melder-Lauf vorgefunden — still als bearbeitet markiert, kein "
+            "Nachladen als Alarme. Neue Wechsel ab jetzt normal gemeldet.",
+            prioritaet=1,
+            quellen=[f"ampel_wechsel#{wechsel[0]['id']}–{wechsel[-1]['id']}"])
+        journal.steuerung_setzen(STEUERUNG_WECHSEL_KEY,
+                                 str(max(int(w["id"]) for w in wechsel)))
         return []
     for w in wechsel:
         richtung = w.get("richtung") or ""
@@ -82,8 +96,10 @@ def pruefe_neue_wechsel(log=print) -> list[dict]:
               quellen=[f"ampel_wechsel#{w['id']}",
                        f"signal#{w.get('signal_id')}"],
               quelle="watcher")
-    journal.steuerung_setzen(STEUERUNG_WECHSEL_KEY,
-                             str(max(int(w["id"]) for w in wechsel)))
+        # F-15: Marker JE Alert setzen — eine Exception mitten in der
+        # Schleife wiederholte sonst alle bisherigen Alerts im nächsten
+        # Tick (Doppel-Alerts).
+        journal.steuerung_setzen(STEUERUNG_WECHSEL_KEY, str(int(w["id"])))
     log(f"Melder: {len(wechsel)} neue Ampel-Wechsel gemeldet.")
     return wechsel
 

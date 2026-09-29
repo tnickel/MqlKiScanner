@@ -26,10 +26,12 @@ KATEGORIEN: list[tuple[str, str]] = [
      "Equity- oder Balance-Drawdown über der harten Schranke (Standard "
      "30 %). Größte Gruppe der Liste — z. B. EQ-DD 45,9 % bei „Low Risk "
      "Gold“: Der Name lügt, der Drawdown zählt."),
-    ("Martingale/Grid ohne bewiesenen Stop",
-     "Positions-Eskalation oder Grid-Struktur, deren Verluste ohne "
-     "belegten Stop frei laufen. Kapitalvernichtungsstruktur — binärer "
-     "Ausschluss unabhängig von den Ertragszahlen."),
+    ("Martingale/Grid-Struktur nachgewiesen",
+     "Positions-Eskalation oder Grid-Struktur aus dem Trade-Muster "
+     "nachgewiesen — Kapitalvernichtungsstruktur, binärer Ausschluss "
+     "unabhängig von den Ertragszahlen. Ausschlusskriterium ist allein die "
+     "STRUKTUR: Ein fehlender Stop-Nachweis für sich ist neutral "
+     "(Nutzer-Regel 28.09.2026) und begründet niemals einen Eintrag."),
     ("Ertrag dauerhaft unter der Schwelle",
      "Monatsertrag unter 5 % oder negativ. Risiko vor Ertrag: Wer im "
      "Guten schon kaum verdient, kompensiert keine Risiken."),

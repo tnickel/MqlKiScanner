@@ -105,7 +105,10 @@ def profil_historie(signal_id: int) -> list[dict]:
 
 # ── Beobachtungen ─────────────────────────────────────────────────
 
-EINORDNUNGEN = ("KONFORM", "AUFFAELLIG", "STILBRUCH", "KEINE_NEUEN_TRADES")
+# F-6 (Review 29.09.): NICHT_GEPRUEFT = Betriebsstoerung (Key/Budget/API),
+# keine Handelsauffaelligkeit —keine Bewertung des Handelns.
+EINORDNUNGEN = ("KONFORM", "AUFFAELLIG", "STILBRUCH", "KEINE_NEUEN_TRADES",
+                "NICHT_GEPRUEFT")
 
 
 def beobachtung_speichern(signal_id: int, einordnung: str, text: str,

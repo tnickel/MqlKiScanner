@@ -231,3 +231,82 @@ def test_signal_pruefen_reicht_quelle_durch(signal_mit_snapshot, monkeypatch):
                             log=lambda *_: None, quelle="gui")
     lauf = journal.list_laeufe(limit=3, rolle="betreuer")[0]
     assert lauf["quelle"] == "gui"
+
+
+# ── Review 29.09. (Bewertung+KI-Ablauf): F-1, F-2, F-6, F-16 ──────
+
+def test_einordnung_parsen_tolerant_stilbruch():
+    """F-1: Markdown-Betonung und Klein-/Grossschreibung dürfen STILBRUCH
+    nicht zu AUFFAELLIG verwischen — STILBRUCH loest den P3-Sofort-Alert aus,
+    AUFFAELLIG nicht."""
+    ein, _ = betreuer._einordnung_parsen("**EINORDNUNG:** STILBRUCH\nNachts.")
+    assert ein == "STILBRUCH"
+    ein, _ = betreuer._einordnung_parsen("Einordnung: KONFORM\nalles ruhig")
+    assert ein == "KONFORM"
+
+
+def test_einordnung_parsen_options_echo_ist_auffaellig():
+    """F-1: Echo der Optionsliste ist keine Entwarnung."""
+    ein, text = betreuer._einordnung_parsen(
+        "EINORDNUNG: KONFORM | AUFFAELLIG | STILBRUCH | KEINE_NEUEN_TRADES")
+    assert ein == "AUFFAELLIG"
+    assert "mehrdeutig" in text
+
+
+def test_betreuter_lauf_kumuliert_delta_nicht_mehr(signal_mit_snapshot, monkeypatch):
+    """F-2: Nach einem geprueften Lauf gilt der gepruefte Stand — derselbe
+    Export am naechsten Tag ist KEINE_NEUEN_TRADES (vorher verglich der
+    Betreuer gegen den Scan-Stand und pruefte dieselben Trades erneut)."""
+    antwort = "EINORDNUNG: KONFORM\nNormal gehandelt."
+    monkeypatch.setattr(betreuer, "_llm_einordnung",
+                        lambda *a, **k: (antwort, 7))
+    erste = betreuer.signal_pruefen(signal_mit_snapshot,
+                                    config.load_settings(), log=lambda *_: None)
+    assert erste["einordnung"] == "KONFORM"
+    assert dossier.deltas_lesen(2349227)[0]["neue_trades"] == 1
+
+    calls = []
+    monkeypatch.setattr(betreuer, "_llm_einordnung",
+                        lambda *a, **k: calls.append(1))
+    zweite = betreuer.signal_pruefen(signal_mit_snapshot,
+                                     config.load_settings(), log=lambda *_: None)
+    assert zweite["einordnung"] == "KEINE_NEUEN_TRADES"
+    assert calls == [], "kein erneuter Modellaufruf fuer bereits Geprueftes"
+    assert len(dossier.deltas_lesen(2349227)) == 1, "kein zweites Delta"
+
+
+def test_betreuter_lauf_llm_ausfall_ist_nicht_auffaellig(signal_mit_snapshot, monkeypatch):
+    """F-6: Kein Key/Budget/API-Fehler ist KEINE Handelsauffaelligigkeit —
+    eigener Status NICHT_GEPRUEFT, und das Delta gilt als unverbraucht
+    (kein Eintrag in trade_deltas, naechster Lauf prueft erneut)."""
+    monkeypatch.setattr(betreuer, "_llm_einordnung", lambda *a, **k: None)
+    ergebnis = betreuer.signal_pruefen(signal_mit_snapshot,
+                                       config.load_settings(), log=lambda *_: None)
+    assert ergebnis["einordnung"] == "NICHT_GEPRUEFT"
+    assert dossier.deltas_lesen(2349227) == [], "Delta nicht als geprueft markiert"
+    beob = dossier.beobachtungen_lesen(2349227)[0]
+    assert beob["einordnung"] == "NICHT_GEPRUEFT"
+
+
+def test_keine_neuen_trades_flutet_dossier_nicht(signal_mit_snapshot, monkeypatch):
+    """F-6: Die taegliche KEINE_NEUEN_TRADES-Zeile wird nur EINMAL geschrieben —
+    wiederholte Tage verdraengen echte Befunde nicht aus letzte_beobachtungen."""
+    snapshot_pfad = _snapshot_pfad()
+    monkeypatch.setattr(betreuer, "export_holen",
+                        lambda session, signal, settings: (snapshot_pfad, True))
+    for _ in range(3):
+        betreuer.signal_pruefen(signal_mit_snapshot,
+                                config.load_settings(), log=lambda *_: None)
+    keine = [b for b in dossier.beobachtungen_lesen(2349227)
+             if b["einordnung"] == "KEINE_NEUEN_TRADES"]
+    assert len(keine) == 1
+
+
+def test_delta_identische_trades_zaehlen(tmp_path):
+    """F-16: Multiset statt Set — zwei identische Grid-Legs (gleiche
+    Sekunde/Preis/Lot) im neuen Export gegen einen im alten liefern EINEN
+    neuen Trade, nicht null."""
+    identisch = _trade_zeile(1)
+    alt = _csv(tmp_path / "alt.csv", [identisch])
+    neu = _csv(tmp_path / "neu.csv", [identisch, identisch])
+    assert len(delta.neue_trades(alt, neu)) == 1

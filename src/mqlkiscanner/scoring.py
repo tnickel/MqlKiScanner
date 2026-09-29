@@ -58,6 +58,13 @@ def _trading_dd_for_risk(trading_dd: dict | None) -> float:
     return 0.0
 
 
+
+def dd_maximum(*werte) -> float:
+    """Das Drawdown-Vierfach-Maximum (None/0-safe) — EINE Definition statt
+    vier duplizierter (F-12, Review 29.09.): Trading-DD, By-Equity-DD,
+    By-Balance-DD und Reko-EQ-DD. None-Werte fallen weg; ohne jeden Wert 0."""
+    return max((float(w) for w in werte if w is not None), default=0.0)
+
 def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, float]:
     """7 Dimensionen (1-10, hoch = riskant) aus Engine-Report + Plattform-Fakten.
 
@@ -80,7 +87,13 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     real_dd = _trading_dd_for_risk(trading_dd)
     eq_dd = float(platform.get("eq_dd_pct") or 0.0)
     bal_dd = float(platform.get("bal_dd_pct") or 0.0)
-    dd_reference = real_dd if platform.get("eq_dd_caveat") else max(real_dd, eq_dd, bal_dd)
+    # F-12 (Review 29.09.): Der Reko-EQ-DD gehoert auch in die Score-Dimension
+    # — die Schranke wertet das Vierfach-Maximum, die Dimension liess ihn
+    # vorher weg und konnte KLEINER sein als das, was die Schranke sieht.
+    # (eq_dd_caveat bleibt bewusst: Plattform-EQ unbrauchbar => nur real+reko.)
+    reko_dd = float(platform.get("reko_eq_dd_pct") or 0.0)
+    dd_reference = (max(real_dd, reko_dd) if platform.get("eq_dd_caveat")
+                    else dd_maximum(real_dd, eq_dd, bal_dd, reko_dd))
     dd_dim = _interp(dd_reference, DD_MAP)
 
     # 2) Struktur: Stop-Nachweis, Martingale (Nachfolger + Korb-Leiter), Grid
@@ -143,7 +156,9 @@ def score(dims: dict[str, float], weights: dict[str, float] | None = None) -> fl
     w = dict(DEFAULT_WEIGHTS)
     if weights:
         w.update(weights)
-    total = sum(w[k] * dims[k] for k in w)
+    # F-17 (Review 29.09.): Fremde/fehlerhafte Gewichts-Keys duerfen den
+    # Lauf nicht mit KeyError abbrechen — unbekannte Keys fallen raus.
+    total = sum(w[k] * dims[k] for k in w if k in dims)
     return round(_clamp(total), 1)
 
 
@@ -171,7 +186,7 @@ def evaluate(report: dict, platform: dict | None = None,
     if platform.get("eq_dd_caveat"):
         barrier_dd = max(real_dd, reko_dd)
     else:
-        barrier_dd = max(real_dd, eq_dd, bal_dd, reko_dd)
+        barrier_dd = dd_maximum(real_dd, eq_dd, bal_dd, reko_dd)
     barrier = barrier_dd > float(schranke_eq_dd_pct)
     return {
         "dimensions": dims,

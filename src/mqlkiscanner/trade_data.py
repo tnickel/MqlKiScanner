@@ -57,8 +57,18 @@ def _trade_row(t: Trade) -> dict:
         "xp": t.exit_price,
         "pnl": round(t.net, 2),
         "hold_h": round(t.holding_hours, 2),
-        **({"exit": t.comment} if t.comment else {}),
+        # F-9 (Review 29.09.): Anbieter-kontrollierter Freitext — gekuerzt
+        # und von Steuerzeichen befreit in den Prompt (Prompt-Groesse und
+        # Injection-Flaeche begrenzen; die Ampel selbst rechnet im Code).
+        **({"exit": _comment_kompakt(t.comment)} if t.comment else {}),
     }
+
+
+def _comment_kompakt(comment: str, max_zeichen: int = 80) -> str:
+    """Anbieter-Kommentar fuer den LLM-Prompt: druckbare Zeichen, begrenzt."""
+    text = "".join(ch for ch in str(comment)
+                   if ch.isprintable() and ch not in "\r\n\t")
+    return text[:max_zeichen]
 
 
 def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:

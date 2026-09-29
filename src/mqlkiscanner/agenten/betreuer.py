@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime
 
 from .. import config, db
 from ..llm import client as llm_client
@@ -41,8 +42,12 @@ def _marktkontext_text() -> str:
                 "— z. B. Terminal aus oder Wochenende).")
     return f"Marktlage ({kontext['ts']}, Quelle: Marktbeobachter):\n{kontext['lage']}"
 
+# F-1 (Review 29.09.): tolerant gegen Markdown-Betonung (**), Gross-/Klein-
+# Schreibung und Leerzeichen um den Doppelpunkt; Treffer nur am Zeilenanfang.
 _EINORDNUNG_RE = re.compile(
-    r"EINORDNUNG:\s*(KONFORM|AUFFAELLIG|STILBRUCH|KEINE_NEUEN_TRADES)")
+    r"(?im)^[^\S\r\n]*\**[^\S\r\n]*EINORDNUNG[^\S\r\n]*\**[^\S\r\n]*:"
+    r"[^\S\r\n]*\**[^\S\r\n]*(KONFORM|AUFFAELLIG|STILBRUCH|KEINE_NEUEN_TRADES)")
+_EINORDNUNG_ALLE = ("KONFORM", "AUFFAELLIG", "STILBRUCH", "KEINE_NEUEN_TRADES")
 
 
 def kandidaten(settings: dict | None = None) -> list[dict]:
@@ -68,11 +73,29 @@ def export_holen(session: Mql5Session, signal: dict, settings: dict) -> tuple[st
         platform=signal.get("platform") or None)
 
 
-def _snapshot_sha(signal_id: int) -> tuple[str | None, str | None]:
+def _snapshot_sha(signal_id: int) -> tuple[str | None, str | None, str | None]:
+    """Vergleichs-Stand: der letzte GEPRÜFTE Stand des Signals.
+
+    F-2 (Review 29.09.): trade_files wird nur vom Scan fortgeschrieben —
+    verglich der Betreuer dagegen, kumulierte das Delta täglich (Tag n
+    enthielt Tage 1..n), das LLM prüfte alte Trades erneut und ein
+    STILBRUCH-Alert wiederholte sich. Massgeblich ist der neu_sha des
+    letzten Betreuter-Deltas; nur beim ersten Lauf fällt der Vergleich auf
+    den Scan-Stand zurück. Rueckgabe (sha, diff_pfad, delta_ts): diff_pfad
+    ist die (aeltere) Scan-Datei fuer den Inhaltsgleich, delta_ts begrenzt
+    zusaetzlich auf Trades, die NACH der letzten Pruefung geschlossen
+    wurden — so kumuliert auch ein zwischenzeitlicher Scan nichts.
+    """
     with db._connect() as conn:
+        delta = conn.execute(
+            "SELECT neu_sha256, ts FROM trade_deltas WHERE signal_id=? "
+            "ORDER BY id DESC LIMIT 1", (signal_id,)).fetchone()
         row = conn.execute("SELECT sha256, path FROM trade_files WHERE signal_id=?",
                            (signal_id,)).fetchone()
-    return (row["sha256"], row["path"]) if row else (None, None)
+    alt_pfad = row["path"] if row else None
+    if delta and delta["neu_sha256"]:
+        return delta["neu_sha256"], alt_pfad, delta["ts"]
+    return ((row["sha256"], alt_pfad, None) if row else (None, None, None))
 
 
 def _llm_einordnung(signal_id: int, signal_name: str, profil_text: str,
@@ -127,11 +150,24 @@ def _llm_einordnung(signal_id: int, signal_name: str, profil_text: str,
 
 
 def _einordnung_parsen(antwort: str) -> tuple[str, str]:
-    """'EINORDNUNG: X' aus der Antwort schneiden (Rest = Begründungstext)."""
+    """'EINORDNUNG: X' aus der Antwort schneiden (Rest = Begründungstext).
+
+    F-1 (Review 29.09.): Ein Echo der Optionsliste („EINORDNUNG: KONFORM |
+    AUFFAELLIG | …") ist KEINE Bewertung, sondern wiederholte Vorgabe —
+    mehr als ein Kandidat in der Trefferzeile gilt als mehrdeutig und wird
+    vorsichtig AUFFAELLIG geführt (nie still KONFORM).
+    """
     fund = _EINORDNUNG_RE.search(antwort)
     if not fund:
         return "AUFFAELLIG", ("Antwort ohne EINORDNUNG-Zeile — vorsichtig als "
                               "auffällig geführt:\n" + antwort)
+    zeilen_ende = antwort.find("\n", fund.start())
+    zeile = antwort[fund.start():zeilen_ende if zeilen_ende >= 0 else len(antwort)]
+    treffer = [w for w in _EINORDNUNG_ALLE
+               if re.search(rf"\b{w}\b", zeile, re.IGNORECASE)]
+    if len(treffer) > 1:
+        return "AUFFAELLIG", ("Einordnungs-Zeile mehrdeutig (Optionsliste "
+                              "wiederholt statt bewertet):\n" + antwort)
     einordnung = fund.group(1)
     text = antwort[fund.end():].strip()
     return einordnung, text or "(keine Begründung geliefert)"
@@ -194,7 +230,7 @@ def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
 
     pfad, aus_cache = export_holen(session, signal, settings)
     neu_sha = delta.datei_sha256(pfad)
-    alt_sha, alt_pfad = _snapshot_sha(signal["id"])
+    alt_sha, alt_pfad, delta_ts = _snapshot_sha(signal["id"])
     journal.schritt_protokollieren(
         lauf_id, "betreuer", "export", status="ok",
         detail={"signal": name, "aus_cache": aus_cache,
@@ -204,22 +240,36 @@ def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
             lauf_id, "betreuer", "sha_vergleich", status="ok",
             detail={"signal": name, "ergebnis": "unveraendert",
                     "hinweis": "kein Modellaufruf"})
-        dossier.beobachtung_speichern(
-            signal["id"], "KEINE_NEUEN_TRADES",
-            "Export unverändert (SHA identisch) — kein Modellaufruf nötig.")
+        # F-6 (Review 29.09.): Die taegliche KEINE_NEUEN_TRADES-Zeile
+        # verdraengte echte Befunde aus letzte_beobachtungen — nur
+        # schreiben, wenn die letzte Beobachtung eine ANDERE war.
+        letzte = dossier.beobachtungen_lesen(signal["id"], limit=1)
+        if not letzte or letzte[0]["einordnung"] != "KEINE_NEUEN_TRADES":
+            dossier.beobachtung_speichern(
+                signal["id"], "KEINE_NEUEN_TRADES",
+                "Export unverändert (SHA identisch) — kein Modellaufruf nötig.")
         return {"signal": name, "einordnung": "KEINE_NEUEN_TRADES",
                 "zusammenfassung": f"{name}: keine neuen Trades"}
 
     neue = delta.neue_trades(alt_pfad, pfad)
+    if delta_ts:
+        # F-2: Nur Trades nach der letzten Pruefung zaehlen — sonst
+        # kumuliert der Datei-Diff gegen den (aelteren) Scan-Stand.
+        try:
+            stichtag = datetime.fromisoformat(delta_ts)
+        except ValueError:
+            stichtag = None
+        if stichtag:
+            neue = [t for t in neue if t.close_time > stichtag]
     kzz = delta.kennzahlen(neue)
-    delta_id = dossier.delta_speichern(signal["id"], alt_sha, neu_sha,
-                                       len(neue), kzz)
     journal.schritt_protokollieren(
         lauf_id, "betreuer", "delta", status="ok",
         detail={"signal": name, "neue_trades": len(neue),
-                "delta_id": delta_id, "kennzahlen": kzz})
+                "kennzahlen": kzz})
     if not neue:
         # Geänderte Datei, aber keine neuen FILLED-Trades (z. B. nur Kontobewegung)
+        delta_id = dossier.delta_speichern(signal["id"], alt_sha, neu_sha,
+                                           0, kzz)
         dossier.beobachtung_speichern(
             signal["id"], "KEINE_NEUEN_TRADES",
             "Exportdatei geändert, aber keine neuen gefüllten Trades "
@@ -231,15 +281,26 @@ def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
                           json.dumps(kzz, ensure_ascii=False, indent=2),
                           settings, lauf_id)
     if llm is None:
-        grund = "LLM-Prüfung übersprungen — Delta gespeichert, Prüfung wiederholt sich nicht automatisch."
+        # F-6 (Review 29.09.): Betriebsstoerung (kein Key, Budget leer,
+        # API-Fehler) ist KEINE Handelsauffaelligigkeit — eigener Status,
+        # und das Delta gilt als NICHT verbraucht (kein delta_speichern),
+        # damit der naechste Lauf dieselben Trades erneut prueft.
+        journal.schritt_protokollieren(
+            lauf_id, "betreuer", "delta", status="skipped",
+            detail={"signal": name, "grund": "LLM nicht verfuegbar — "
+                    "Delta nicht als geprueft markiert"})
         dossier.beobachtung_speichern(
-            signal["id"], "AUFFAELLIG",
-            grund + " Delta-Kennzahlen im Protokoll (Schritt 'delta').",
-            delta_ref=delta_id)
-        return {"signal": name, "einordnung": "AUFFAELLIG",
-                "zusammenfassung": f"{name}: {grund}"}
+            signal["id"], "NICHT_GEPRUEFT",
+            "LLM-Prüfung nicht möglich (Key/Budget/API) — Delta-Kennzahlen "
+            "im Protokoll (Schritt 'delta'); Prüfung wird im nächsten Lauf "
+            "wiederholt.")
+        return {"signal": name, "einordnung": "NICHT_GEPRUEFT",
+                "zusammenfassung": f"{name}: LLM-Prüfung nicht möglich, "
+                                    "wird wiederholt"}
     antwort, schritt_id = llm
     einordnung, text = _einordnung_parsen(antwort)
+    delta_id = dossier.delta_speichern(signal["id"], alt_sha, neu_sha,
+                                       len(neue), kzz)
     beobachtung_id = dossier.beobachtung_speichern(
         signal["id"], einordnung, text, delta_ref=delta_id,
         schritt_ref=schritt_id)

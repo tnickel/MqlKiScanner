@@ -118,6 +118,7 @@ class GlmClient:
                 "max_tokens": max_tokens,
             }
             last_error: Exception | None = None
+            length_retry_offen = True
             for attempt in range(3):
                 start = time.monotonic()
                 # Ein Transportfehler darf nicht den gesamten Signal-Lauf abbrechen.
@@ -197,6 +198,31 @@ class GlmClient:
                         meta_out.clear()
                         meta_out.update(call_meta)
                 if finish not in (None, "stop"):
+                    # F-11 (Review 29.09.): finish_reason=length ist BEZAHLT
+                    # und wurde bisher verworfen — ein einmaliger Retry mit
+                    # doppeltem Ausgabelimit (neue Reservierung, Budget
+                    # geprueft) rettet den Bericht, statt ihn jeden Lauf
+                    # erneut zu bezahlen und zu verlieren.
+                    if finish == "length" and length_retry_offen:
+                        length_retry_offen = False
+                        max_tokens = min(max_tokens * 2, 262_144)
+                        neue_reservierung = (max_tokens
+                                             + len(prompt.encode("utf-8")) // 3
+                                             + 1024)
+                        with self._lock:
+                            if (self.usage.total_tokens
+                                    + self._inflight_tokens
+                                    + neue_reservierung > self.max_total_tokens):
+                                raise LlmIncompleteResponseError(
+                                    f"Unvollständige Antwort von {model} "
+                                    "(finish_reason=length); Retry-Budget "
+                                    "reicht nicht — Limit im Admin-Bereich "
+                                    "erhöhen.")
+                            self._inflight_tokens += neue_reservierung
+                        reservierung = neue_reservierung
+                        verrechnet = False
+                        body["max_tokens"] = max_tokens
+                        continue
                     raise LlmIncompleteResponseError(
                         f"Unvollständige Antwort von {model} (finish_reason={finish}). "
                         "Nicht als fertiger Bericht gespeichert; bei length das "

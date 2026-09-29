@@ -38,12 +38,12 @@ def test_run_portfolio_sends_all_reports_and_stores_analysis():
     fake = FakeLlm()
     pipe = _pipe_with_llm(fake)
     results = [
-        pipeline.ScanResult(id=111, name="A", forensik_vorhanden=True,
+        pipeline.ScanResult(id=111, name="A", forensik_vorhanden=True, ampel="🟢",
                             gesamtbericht="Bericht A", kurzfassung="Kurz A",
                             symbole="XAUUSD"),
-        pipeline.ScanResult(id=222, name="B", forensik_vorhanden=True,
+        pipeline.ScanResult(id=222, name="B", forensik_vorhanden=True, ampel="🟢",
                             gesamtbericht="Bericht B", symbole="US30, NZDCAD"),
-        pipeline.ScanResult(id=333, name="Fehlerfall", forensik_vorhanden=True,
+        pipeline.ScanResult(id=333, name="Fehlerfall", forensik_vorhanden=True, ampel="🟢",
                             fehler="export kaputt"),
     ]
     for result in results:
@@ -67,7 +67,7 @@ def test_run_portfolio_without_key_is_skipped():
     fake = FakeLlm()
     fake.has_key = False
     pipe = _pipe_with_llm(fake)
-    results = [pipeline.ScanResult(id=111, name="A", forensik_vorhanden=True)]
+    results = [pipeline.ScanResult(id=111, name="A", forensik_vorhanden=True, ampel="🟢")]
     summary = pipe.run_portfolio(results, pipeline.StepLog())
     assert summary["text"] == "" and "Key" in summary["reason"]
     assert not fake.calls
@@ -86,7 +86,7 @@ def test_run_portfolio_stops_before_model_call():
     fake = FakeLlm()
     pipe = _pipe_with_llm(fake)
     summary = pipe.run_portfolio(
-        [pipeline.ScanResult(id=1, name="A", forensik_vorhanden=True)],
+        [pipeline.ScanResult(id=1, name="A", forensik_vorhanden=True, ampel="🟢")],
         pipeline.StepLog(), should_stop=lambda: True)
     assert summary["text"] == "" and "Stop" in summary["reason"]
     assert not fake.calls
@@ -113,16 +113,24 @@ def test_run_portfolio_payload_enthaelt_ausschluss_urteil(monkeypatch):
         "ausgeschlossen": [{"id": 424242, "name": "Testsignal", "grund": "Testgrund"}]})
     fake = FakeLlm()
     pipe = _pipe_with_llm(fake)
-    results = [pipeline.ScanResult(id=424242, name="Testsignal",
-                                   forensik_vorhanden=True, gesamtbericht="B")]
-    results[0].berichte_basis = pipeline.report_basis_for(results[0], pipe.settings)
+    results = [
+        pipeline.ScanResult(id=424242, name="Testsignal",
+                            forensik_vorhanden=True, gesamtbericht="B"),
+        # F-8 (Review 29.09.): Der Portfolio-Prompt erhaelt nur 🟢/🟡 — das
+        # ⛔-Signal (in der Ausschlussliste) wird bewusst NICHT mehr bezahlt.
+        pipeline.ScanResult(id=555, name="Gruen", ampel="🟢",
+                            forensik_vorhanden=True, gesamtbericht="G"),
+    ]
+    for r in results:
+        r.berichte_basis = pipeline.report_basis_for(r, pipe.settings)
     pipe.run_portfolio(results, pipeline.StepLog())
     assert fake.calls, "Portfolio-Prompt wurde nicht gesendet"
     prompt = fake.calls[0][0]
+    assert "424242" not in prompt, "Ausgeschlossenes Signal gehoert nicht in den Prompt"
+    assert "555" in prompt
     block = prompt.split("## Alle Signale\n")[1].split("\n\n## Aufgabe")[0]
     entry = json.loads(block)[0]
-    assert entry["kandidat"]["ampel"] == "⛔"
-    assert entry["kandidat"]["urteil"].startswith("Ausgeschlossen (Liste): Testgrund")
+    assert entry["kandidat"]["id"] == 555
 
 
 def test_prompt_defaults_binden_engine_ampel():
@@ -151,7 +159,7 @@ def test_step5_portfolio_runs_and_displays(monkeypatch):
     at.run()
     assert not at.exception, at.exception
     at.session_state["scan_results"] = [
-        pipeline.ScanResult(id=1234567, name="A", forensik_vorhanden=True)]
+        pipeline.ScanResult(id=1234567, name="A", forensik_vorhanden=True, ampel="🟢")]
     at.button(key="step_btn_portfolio").click().run()
     warte_auf_lauf(at)
     assert not at.exception, at.exception
@@ -165,7 +173,7 @@ def test_step5_portfolio_without_key_is_skipped():
     at.run()
     assert not at.exception, at.exception
     at.session_state["scan_results"] = [
-        pipeline.ScanResult(id=1234567, name="A", forensik_vorhanden=True)]
+        pipeline.ScanResult(id=1234567, name="A", forensik_vorhanden=True, ampel="🟢")]
     at.button(key="step_btn_portfolio").click().run()
     warte_auf_lauf(at)
     assert not at.exception, at.exception

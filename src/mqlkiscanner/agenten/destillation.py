@@ -45,10 +45,20 @@ def profil_erstellen(signal_id: int, signal_name: str, signal_url: str,
     settings = settings if settings is not None else config.load_settings()
     modell = settings.get("agenten_betreuer_modell", rollen.STANDARD_MODELL)
     max_tokens = int(settings.get("agenten_betreuer_max_tokens", 8192))
-    if dossier.profil_lesen(signal_id):
-        return {"erstellt": False, "grund": "Profil vorhanden.",
-                "version": None}
     basis = grundlagen_lesen(signal_id)
+    # F-7 (Review 29.09.): Vorhandenes Profil nur behalten, wenn kein NEUERER
+    # Gesamtbericht vorliegt — der Docstring versprach Re-Destillation nach
+    # erneuter Analyse, der alte Skip übersprang aber immer (Profil veraltete,
+    # Folge: falsche STILBRUCH-Alerts). dossier_profil ist versioniert, das
+    # INSERT legt die nächste Version an.
+    profil = dossier.profil_lesen(signal_id)
+    bericht_neuer = bool(
+        basis["gesamtbericht_at"]
+        and str((profil or {}).get("erstellt") or "")
+        < basis["gesamtbericht_at"])
+    if profil and not bericht_neuer:
+        return {"erstellt": False, "grund": "Profil vorhanden und aktuell.",
+                "version": None}
     if not basis["tiefenanalyse"] and not basis["gesamtbericht"]:
         grund = ("Weder Tiefenanalyse noch Gesamtbericht vorhanden — "
                  "kein Profil ohne Belegbasis (nichts erfunden).")

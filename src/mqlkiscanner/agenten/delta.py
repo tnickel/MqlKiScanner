@@ -16,6 +16,8 @@ Regel: das LLM zitiert, es rechnet nicht).
 """
 from __future__ import annotations
 
+from collections import Counter
+
 import hashlib
 import statistics
 
@@ -47,8 +49,18 @@ def neue_trades(alt_pfad: str | None, neu_pfad: str) -> list[Trade]:
     """
     alt: list[Trade] = load_export(alt_pfad).trades if alt_pfad else []
     neu = load_export(neu_pfad).trades
-    alt_schluessel = {_trade_schluessel(t) for t in alt}
-    return [t for t in neu if _trade_schluessel(t) not in alt_schluessel]
+    # F-16 (Review 29.09.): Multiset statt Set — identische Trades (Grid-Legs
+    # mit Sekunde/Preis/Lot gleich) wurden als Duplikat verschluckt und
+    # fehlten dann im Delta.
+    alt_schluessel = Counter(_trade_schluessel(t) for t in alt)
+    neue: list[Trade] = []
+    for t in neu:
+        schluessel = _trade_schluessel(t)
+        if alt_schluessel[schluessel] > 0:
+            alt_schluessel[schluessel] -= 1
+        else:
+            neue.append(t)
+    return neue
 
 
 def kennzahlen(trades: list[Trade]) -> dict:

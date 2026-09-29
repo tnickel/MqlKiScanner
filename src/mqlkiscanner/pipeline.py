@@ -308,11 +308,11 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         if res.dd_equity_pct is not None or res.trading_dd_pct is not None \
                 or res.dd_balance_pct is not None:
             limit = float(settings.get("schranke_eq_dd_pct", 30.0))
-            eq = float(res.dd_equity_pct) if res.dd_equity_pct is not None else 0.0
-            real = float(res.trading_dd_pct) if res.trading_dd_pct is not None else 0.0
-            bal = float(res.dd_balance_pct) if res.dd_balance_pct is not None else 0.0
-            reko = float(res.equity_dd_rekonstruiert_pct)                 if res.equity_dd_rekonstruiert_pct is not None else 0.0
-            res.schranke_verletzt = max(eq, real, bal, reko) > limit
+            # F-12: EINE Schranken-Definition (scoring.dd_maximum) statt
+            # vier duplizierter max()-Aufrufe.
+            res.schranke_verletzt = scoring.dd_maximum(
+                res.dd_equity_pct, res.trading_dd_pct, res.dd_balance_pct,
+                res.equity_dd_rekonstruiert_pct) > limit
         if res.gesamtbericht:
             res.kurzfassung = _extract_kurzfassung(res.gesamtbericht)
         if any((res.trade_analyse, res.risiko_analyse, res.gesamtbericht,
@@ -365,13 +365,22 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
             "Kontostand, Profit, Deposits und Withdrawals abgeleitet — entnommenes "
             "Kapital uebertraf den Signalstart). Das Startkapital ist nicht "
             "belegbar, Drawdown- und Schockpruefung sind unmoeglich — harte Ablehnung.")
+    # F-3 (Review 29.09.): Eine bewiesene Schrankenverletzung schweigt nicht
+    # mehr hinter einem Zusatz-Fehler (45 % DD + Fehler = ROT, nicht Weiss).
+    # BEWEISBAR ist sie aber nur, wenn (a) die Plattform-DDs sie SELBST
+    # reissen (die brauchen keine Forensik) oder (b) die Forensik komplett
+    # ist — sonst ist ein hoher Trading-DD ein Platzhalter (z. B. 100 %
+    # bei unbekannter Kapitalbasis) und der Fall bleibt Fehler/Vorpruefung.
+    if result.schranke_verletzt:
+        limit = float(settings.get("schranke_eq_dd_pct", 30))
+        plattform_dd = scoring.dd_maximum(result.dd_equity_pct,
+                                          result.dd_balance_pct)
+        if plattform_dd > limit or result.forensik_vorhanden:
+            return "🔴", f"Schranke verletzt: Drawdown > {limit:g} % (harte Ablehnung)"
     if result.fehler and not result.forensik_vorhanden:
         return "⚪", f"Fehler: {result.fehler}"
     if result.fehler:
         return "⚪", f"Prüfung mit Fehler: {result.fehler}"
-    if result.schranke_verletzt:
-        limit = settings.get("schranke_eq_dd_pct", 30)
-        return "🔴", f"Schranke verletzt: Drawdown > {limit:g} % (harte Ablehnung)"
     if result.forensik_vorhanden:
         # Nutzer-Regel 28.09.2026: Fehlender SL-Nachweis ist NEUTRAL — die
         # meisten Broker übertragen keinen SL. Kandidat entscheidet sich über
@@ -513,6 +522,12 @@ def report_basis_for(result: ScanResult, settings: dict) -> str | None:
     Timestamps and storage paths are not evidence: identical CSV bytes and
     facts may reuse a report, while changed risk inputs must not do so.
     """
+    # F-4 (Review 29.09.): Risiko-relevante Kandidaten-Felder — volatile
+    # Meta-Daten (Abonnenten, Abo-Preis, Wochen, Broker, Autor) stehen
+    # bewusst NICHT darin.
+    _BASIS_FAKTEN_FELDER = frozenset(
+        {"id", "growth_pct", "ertrag_monat_pct", "pf",
+         "dd_equity_pct", "dd_balance_pct", "assets", "score_engine"})
     csv_hash = result.trades_sha256
     if not csv_hash and result.trades_path:
         try:
@@ -524,6 +539,13 @@ def report_basis_for(result: ScanResult, settings: dict) -> str | None:
     facts.pop("ampel", None)
     facts.pop("urteil", None)
     facts.pop("schranke_verletzt", None)
+    # F-4 (Review 29.09.): Nur RISIKO-relevante Felder identifizieren einen
+    # Bericht. Abonnenten/Abo-Preis/Wochen/Broker aendern sich nahezu jedem
+    # Scan — als Basis-Felder liessen sie JEDE existing KI-Analyse als
+    # "veraltet" aus der Ansicht verschwinden (restore_current_reports),
+    # obwohl sich an Risiko/Ertrag nichts geaendert hat. Sie bleiben im
+    # LLM-Payload (_kandidat_json), nur nicht in der Berichts-Identitaet.
+    facts = {k: v for k, v in facts.items() if k in _BASIS_FAKTEN_FELDER}
     forensics = json.loads(_forensik_json(result))
     forensics["martingale_evidenz"] = result.martingale_evidenz or []
     content = {
@@ -577,10 +599,9 @@ def refresh_report_verdict(result: ScanResult, settings: dict) -> None:
         # By-Balance-Wert (Gold Spike: By Equity 3,8 % vs. By Balance 8,11 %).
         # Rekonstruierter Equity-DD (aus Kursen, floating inklusive) geht bei
         # verlässlicher Abdeckung als viertes Maximum ein — Risiko vor Ertrag.
-        result.schranke_verletzt = max(result.dd_equity_pct or 0.0,
-                                       result.trading_dd_pct or 0.0,
-                                       result.dd_balance_pct or 0.0,
-                                       result.equity_dd_rekonstruiert_pct or 0.0) > limit
+        result.schranke_verletzt = scoring.dd_maximum(  # F-12: eine Definition
+            result.dd_equity_pct, result.trading_dd_pct,
+            result.dd_balance_pct, result.equity_dd_rekonstruiert_pct) > limit
     result.ampel, result.urteil = ampel_for(result, settings)
     # Kennzeichnung ueberlebt das Neubauen des Urteils (KI-Prompts, Portfolio,
     # DB-Neuladen rufen alle refresh_report_verdict).
@@ -1195,8 +1216,13 @@ class ScanPipeline:
         Bericht landet in der DB unter signal_id=NULL, kind='portfolio'.
         """
         total = 1
+        # F-8 (Review 29.09.): Nur 🟢/🟡 in den Portfolio-Prompt — der Prompt
+        # verbietet ⛔/🔴-Empfehlungen sowieso, aber sie wurden vorher mit
+        # vollem Gesamtbericht BEZAHLT und sprengten bei ~30 Signalen das
+        # Budget durch die Reservierung je Job.
         jobs = [r for r in results
-                if r.source_kind == "live" and r.forensik_vorhanden and not r.fehler]
+                if r.source_kind == "live" and r.forensik_vorhanden
+                and not r.fehler and r.ampel in ("🟢", "🟡")]
         if not self.llm.has_key:
             log("Portfolio übersprungen: kein GLM-Key gesetzt (Admin-Bereich).")
             if on_progress:

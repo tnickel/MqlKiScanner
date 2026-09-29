@@ -124,13 +124,15 @@ def test_truncated_summary_is_not_saved_as_complete(monkeypatch):
     monkeypatch.setattr("mqlkiscanner.llm.client.requests.post", post)
     db.init_db()
     db.upsert_signal(123)
-    result = pipeline.ScanResult(id=123, forensik_vorhanden=True)
+    result = pipeline.ScanResult(id=123, forensik_vorhanden=True, ampel="🟢")
     summary = pipe.run_llm([result], lambda _: None)
     assert summary["completed"] == 2 and summary["failed"] == 1
     assert "Unvollständige Antwort" in result.llm_fehler
     assert not result.gesamtbericht
     assert db.get_latest_analysis(123, "gesamtbericht") is None
-    assert pipe.llm.usage.total_tokens == 75  # Truncated output still used tokens.
+    # F-11 (Review 29.09.): finish_reason=length loest jetzt EINEN bezahlten
+    # Retry mit doppeltem Limit aus (75 + 25), erst danach Incomplete.
+    assert pipe.llm.usage.total_tokens == 100
 
 
 def test_archives_do_not_collide_even_with_identical_clock(monkeypatch):

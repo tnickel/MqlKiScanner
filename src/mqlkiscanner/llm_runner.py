@@ -248,6 +248,22 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
     if log:
         log(f"Trade-Daten geladen ({payload.get('meta', {}).get('trades', 0)} Trades) — "
             "Tiefenanalyse-Prompt wird gebaut …")
+    # F-10 (Review 29.09.): Basis und Urteil VOR dem bis zu 30-minuetigen
+    # Modellaufruf bestimmen — vorher stand die Basisberechnung NACH dem
+    # Call, und ein Fehler darin wurde still verschluckt (basis=None).
+    try:
+        refresh_report_verdict(result, settings)
+    except Exception as exc:
+        if log:
+            log(f"WARNUNG: Urteils-Auffrischung vor der Tiefenanalyse "
+                f"fehlgeschlagen ({exc}) — Analyse läuft mit DB-Stand.")
+    basis: str | None = None
+    try:
+        basis = report_basis_for(result, settings)
+    except Exception as exc:
+        if log:
+            log(f"WARNUNG: Berichtsbasis nicht berechenbar ({exc}) — "
+                "Tiefenanalyse wird ohne Basis gespeichert.")
     prompt = prompt_fill.build_tiefenanalyse_prompt(result, trades_json)
     if log:
         log(f"Modellaufruf Stufe 2 gestartet ({len(prompt):,} Zeichen Prompt) — "
@@ -259,10 +275,6 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
     meta_ta: dict = {}
     text = client.chat(prompt, stufe=2, max_tokens=131072, meta_out=meta_ta)
     model = settings.get("model_stufe2", config.MODEL_STUFE2)
-    try:
-        basis = report_basis_for(result, settings)
-    except Exception:
-        basis = None
     created_at = db.store_analysis(result.id, "tiefenanalyse", model,
                                    meta_ta.get("total_tokens", client.usage.total_tokens) or 0,
                                    text, basis=basis)
