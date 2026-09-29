@@ -769,7 +769,7 @@ def test_korrumpierte_trades_cachedatei_wird_neu_geschrieben(monkeypatch):
     _P(pfad1).write_bytes(b"kaputt;total;kaputt")   # Datei korrumpieren
     pfad2, geaendert2 = ingest.hole_trades(quelle, 987001, "pelican", client=client)
     assert geaendert2 is True                       # kein stummer Treffer
-    assert _P(pfad2).read_bytes() == MINI_CSV.encode("utf-8")
+    assert _P(pfad2).read_bytes() == MINI_CSV
 
 
 def test_korrumpierte_metrics_cachedatei_wird_neu_geschrieben(monkeypatch):
