@@ -131,7 +131,11 @@ def tagesdigest(quelle: str = "daemon", log=print,
                 settings: dict | None = None) -> dict:
     """Tagesdigest nach dem Betreuer; verschiebt sich, solange dieser läuft."""
     settings = settings if settings is not None else config.load_settings()
-    aktive_betreuer = journal.aktive_laeufe("betreuer")
+    # Verwaisten-Grenze (Review M1): Ein Betreuer-Lauf älter als 2 h gilt
+    # als verwaist (echte Läufe bleiben dank Export-Cache deutlich kürzer)
+    # — sonst blockiert EIN verwaister Betreuer-Row den Tagesdigest jeden
+    # Tag bis zum manuellen DB-Eingriff.
+    aktive_betreuer = journal.aktive_laeufe("betreuer", max_alter_s=2 * 3600)
     lauf_id = journal.lauf_starten("melder", quelle=quelle)
     if aktive_betreuer:
         grund = (f"Betreuer noch aktiv (Lauf {aktive_betreuer[0]['id']}) — "

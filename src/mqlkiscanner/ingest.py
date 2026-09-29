@@ -157,7 +157,7 @@ def hole_trades(quelle: dict, signal_id: int, version: str, *,
                 return str(alt["path"]), False
         except OSError:
             pass  # unlesbar: unten neu schreiben
-    pfad = _kuerzel_verzeichnis(quelle) / f"{_version_sicher(version)}_{signal_id}_trades.csv"
+    pfad = _kuerzel_verzeichnis(quelle) / f"{_version_sicher(version)}_{int(signal_id)}_trades.csv"
     pfad.write_bytes(roh)
     db.store_quellen_artefakt(int(quelle["id"]), signal_id, version,
                               "trades", sha, str(pfad))
@@ -184,7 +184,7 @@ def hole_metrics(quelle: dict, signal_id: int, version: str, *,
                 return json.loads(inhalt.decode("utf-8"))
         except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass  # defekter/korrumpierter Cache: neu schreiben (unten)
-    pfad = _kuerzel_verzeichnis(quelle) / f"{_version_sicher(version)}_{signal_id}_metrics.json"
+    pfad = _kuerzel_verzeichnis(quelle) / f"{_version_sicher(version)}_{int(signal_id)}_metrics.json"
     pfad.write_bytes(roh)
     db.store_quellen_artefakt(int(quelle["id"]), signal_id, version,
                               "metrics", sha, str(pfad))

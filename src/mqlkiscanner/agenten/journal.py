@@ -109,10 +109,15 @@ def zerlege_lauf(rolle: str, status: str, ztext: str = "", quelle: str = "") -> 
     z = (ztext or "").strip()
     status_lower = (status or "").lower()
 
-    # 1. Kollisionsschutz / Lock besetzt — NUR der echte Lock-Text, kein
+    # 1. Kollisionsschutz / Lock besetzt — NUR echte Lock-Texte, kein
     # Substring-„lock" („Betreuer BLOCKIERT (MT5 läuft)" enthält „lock"
-    # und wurde fälschlich als Kollisionsschutz gedeutet; Review 29.09.)
-    if "Lauf-Lock" in z or "lock belegt" in z.lower():
+    # und wurde fälschlich als Kollisionsschutz gedeutet; Review 29.09.).
+    # „Lauf-Lock" deckt alle heutigen Schreiber; der Regex zusätzlich
+    # künftige Varianten (Lock belegt/besetzt/gehalten/gesperrt) — nicht
+    # aber „blockiert" (Review M2: der frühere zweite Zweig war toter Code).
+    import re
+    if "Lauf-Lock" in z or re.search(
+            r"lock[ \-]?(belegt|besetzt|gehalten|gesperrt)", z.lower()):
         import re
         m = re.search(r"PID (\d+)", z)
         pid_info = f" (PID {m.group(1)})" if m else ""
@@ -277,15 +282,18 @@ def lauf_heute_erfolgreich(rolle: str, quelle: str) -> bool:
     ein Betreuer-Fehler den kompletten MQL5-Export erneut (Dauerlast,
     ToS-Risiko AGENTS.md Regel 6; Review 29.09., C). Retry = nächster Tag.
     Bereichs-Prädikat statt LIKE-Präfix (nutzt den Index auf start).
+    Obere Grenze = morgen 00:00:00 (exklusiv) — „< 23:59:59" hätte einen
+    Lauf genau auf dieser Sekunde ausgeschlossen (Review L1).
     """
     init_journal()
+    morgen = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
     with db._connect() as conn:
         row = conn.execute(
             "SELECT COUNT(*) AS n FROM agenten_laeufe "
             "WHERE rolle=? AND quelle=? AND status IN ('ok','skipped','fehler') "
             "AND start >= ? AND start < ?",
             (rolle, quelle, _heute() + " 00:00:00",
-             _heute() + " 23:59:59")).fetchone()
+             morgen + " 00:00:00")).fetchone()
     return int(row["n"] if row else 0) > 0
 
 

@@ -157,3 +157,50 @@ def test_aktive_laeufe_ignoriert_verwaiste_nach_alter():
     lauf = journal.lauf_starten("dirigent", quelle="daemon")
     assert scheduler._aktiver_scan() is True
     journal.lauf_abschliessen(lauf, "ok")
+
+
+# ------------------------------ Review 29.09. (3. Durchgang): M1/M2/L1
+
+def test_zerlege_lauf_lock_varianten_und_kein_blockiert():
+    """M2: „Lauf-Lock" deckt die heutigen Schreiber; künftige Varianten
+    (belegt/besetzt/gehalten/gesperrt) matchen den Regex — „blockiert"
+    weiterhin NICHT."""
+    _, r1 = journal.zerlege_lauf("x", "skipped", ztext="Lock gesperrt durch Fremdprozess")
+    assert "Kollisionsschutz" in r1
+    _, r2 = journal.zerlege_lauf("x", "skipped", ztext="lock-besetzt (Test)")
+    assert "Kollisionsschutz" in r2
+    _, r3 = journal.zerlege_lauf("betreuer", "skipped",
+                                 ztext="Betreuer blockiert (MT5 läuft)")
+    assert "Kollisionsschutz" not in r3
+
+
+def test_verwaister_dirigent_blockiert_chef_nicht_mehr():
+    """M1: chef.lagebericht wartet nur auf FRISCHE dirigent-Läufe — ein
+    5 h alter verwaister Row verschiebt den Lagebericht nicht mehr."""
+    from datetime import datetime, timedelta
+    from mqlkiscanner.agenten import chef
+    journal.init_journal()
+    alt = datetime.now() - timedelta(hours=5)
+    with journal.db._connect() as conn:
+        conn.execute(
+            "INSERT INTO agenten_laeufe (rolle, quelle, start, status) "
+            "VALUES ('dirigent','daemon',?,'laeuft')",
+            (alt.isoformat(sep=" ", timespec="seconds"),))
+    bericht = chef.lagebericht(quelle="test", log=lambda *_: None,
+                               settings={"chef_start_zeit": "18:00"})
+    assert "Verschoben: Scan-Lauf" not in str(bericht.get("resultat", ""))
+
+
+def test_verwaister_betreuer_blockiert_melder_nicht_mehr():
+    """M1: melder.tagesdigest wartet nur auf frische Betreuer-Läufe (2 h)."""
+    from datetime import datetime, timedelta
+    from mqlkiscanner.agenten import melder
+    journal.init_journal()
+    alt = datetime.now() - timedelta(hours=5)
+    with journal.db._connect() as conn:
+        conn.execute(
+            "INSERT INTO agenten_laeufe (rolle, quelle, start, status) "
+            "VALUES ('betreuer','daemon',?,'laeuft')",
+            (alt.isoformat(sep=" ", timespec="seconds"),))
+    digest = melder.tagesdigest(quelle="test", log=lambda *_: None)
+    assert "Verschoben: Betreuer-Lauf" not in str(digest.get("resultat", ""))

@@ -114,7 +114,8 @@ def faellige_rollen(jetzt: datetime, settings: dict) -> list[str]:
             continue
         if journal.lauf_heute_erfolgreich(rolle, "daemon"):
             continue
-        if rolle == "melder" and journal.aktive_laeufe("betreuer"):
+        if rolle == "melder" and journal.aktive_laeufe("betreuer",
+                                                       max_alter_s=2 * 3600):
             continue
         rollen.append(rolle)
     # Chefermittler (Phase E): sonntags abends UND am Full-Scan-Tag des

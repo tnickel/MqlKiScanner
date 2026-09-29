@@ -78,7 +78,13 @@ def lagebericht(quelle: str = "daemon", log=print,
                 settings: dict | None = None) -> dict:
     """Ein Lagebericht in das Postfach; verschiebt sich bei laufendem Scan."""
     settings = settings if settings is not None else config.load_settings()
-    aktive_scans = [eintrag for eintrag in journal.aktive_laeufe("dirigent")
+    # Verwaisten-Grenze (Review M1): Scan-Läufe (Rolle dirigent, daemon)
+    # älter als 4 h gelten als verwaist — sonst blockiert EIN entkommener
+    # Full-Scan-Fehler den Lagebericht bis zum Daemon-Neustart, während
+    # jeder Tick nur einen skipped-Lauf schreibt.
+    aktive_scans = [eintrag
+                    for eintrag in journal.aktive_laeufe("dirigent",
+                                                         max_alter_s=4 * 3600)
                     if eintrag["quelle"] == "daemon"]
     lauf_id = journal.lauf_starten("chef", quelle=quelle)
     if aktive_scans:
