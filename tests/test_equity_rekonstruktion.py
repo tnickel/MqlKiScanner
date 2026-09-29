@@ -195,3 +195,150 @@ def test_engine_ohne_kursanbieter_unchanged():
     f.write_text(csv, encoding="utf-8")
     report = engine.analyze(str(f))
     assert "equity_rekonstruktion" not in report["forensics"]
+
+
+# ------------------------------ Review 29.09. (fremde KI): 4 echte Fehler
+
+def _ein_bars(stunden: int, base=2000.0, schritt=7.0):
+    """Eindeutige Bänder (close ± 0.4, steigend) — genau EIN Offset trifft."""
+    out = []
+    for i in range(stunden):
+        t = dt.datetime(2026, 1, 1) + dt.timedelta(hours=i)
+        e = int(t.replace(tzinfo=dt.timezone.utc).timestamp()) // 3600 * 3600
+        c = base + schritt * i
+        out.append({"time": e, "open": c, "high": c + 0.4, "low": c - 0.4, "close": c})
+    return out
+
+
+def test_finaler_verlust_landet_in_der_kurve():
+    """Review B1 (KRITISCH): Der Endpunkt nach dem letzten Trade-Schluss muss
+    in der Kurve liegen — der break davor meldete einen 4.000-USD-Verlust als
+    0 % DD mit verlaesslich=True."""
+    bars = _ein_bars(14)
+    start = dt.datetime(2026, 1, 1)
+    trades = [
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+               start + dt.timedelta(hours=12), bars[1]["close"] - 0.1,
+               bars[12]["close"], pnl=1000.0),
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=11),
+               start + dt.timedelta(hours=12), bars[11]["close"] - 0.1,
+               bars[12]["close"], pnl=-4000.0),
+    ]
+    parsed = SimpleNamespace(trades=trades, balances=[], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}),
+                           startkapital=10_000.0)
+    assert erg["status"] == "ok", erg
+    # Peak = 10.000 + floating beider offenen Positionen bei Stunde 11
+    # (100·(2077−2006,9) + 100·(2077−2076,9)) = 17.020; Endpunkt = 7.000
+    assert erg["equity_dd_usd"] == 10_020.0, erg
+    assert erg["equity_dd_pct"] == 58.87, erg
+
+
+def test_schluss_mitten_in_der_stunde_wird_nicht_doppelt_verbucht():
+    """Review B2: Schluss 10:20 darf bei Rasterpunkt 10:00 NICHT gleichzeitig
+    realisiert und floating zählen (sonst Fake-Peak, DD zu groß)."""
+    bars = _ein_bars(14)
+    start = dt.datetime(2026, 1, 1)
+    t = _trade("XAUUSD", "buy", start + dt.timedelta(hours=8),
+               start + dt.timedelta(hours=10, minutes=20),
+               bars[8]["close"] - 0.1, bars[10]["close"], pnl=100.0)
+    parsed = SimpleNamespace(trades=[t], balances=[], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}),
+                           startkapital=10_000.0)
+    assert erg["status"] == "ok", erg
+    # Peak = floating bei Stunde 9 (100·(2063−2055,9) = 710) → 10.710;
+    # Endpunkt = 10.100. OHNE Fix: Fake-Peak 11.510 → DD 12,25 %
+    assert erg["equity_dd_usd"] == 610.0, erg
+    assert erg["equity_dd_pct"] == 5.7, erg
+
+
+def test_gmt_plateau_ist_mehrdeutig_und_skippt():
+    """Review B3: Treffen mehrere Offsets gleich gut (breite Bänder), ist der
+    Versatz NICHT bestimmbar — früher gewann der kleinste Betrag und meldete
+    100 % Erkennung (systematisch Richtung 0 verzerrt)."""
+    start = dt.datetime(2026, 1, 1)
+    breit = []
+    for i in range(24):
+        t = start + dt.timedelta(hours=i)
+        e = int(t.replace(tzinfo=dt.timezone.utc).timestamp()) // 3600 * 3600
+        breit.append({"time": e, "open": 2000, "high": 2100,
+                      "low": 1900, "close": 2000})
+    trades = [_trade("XAUUSD", "buy", start + dt.timedelta(hours=2),
+                     start + dt.timedelta(hours=3), 2050.0, 2050.0, pnl=0.0)]
+    erg = er.ermittle_gmt_offset(trades, {"XAUUSD": breit})
+    assert erg["offset_s"] is None
+    assert len(erg["plateau_h"]) > 1
+
+    parsed = SimpleNamespace(trades=trades, balances=[], pendings=[])
+    res = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": breit}),
+                           startkapital=1000.0)
+    assert res["status"] == "skipped"
+    assert "mehrdeutig" in res["grund"]
+
+
+def test_symbol_ohne_belegten_kontrakt_kein_phantom_wert():
+    """Review B4: Für Symbole ohne Spec/Klassenkontrakt darf KEIN Faktor
+    erfunden werden (früher still 100.000 → Phantom-Floating als verlässlich)."""
+    bars = _ein_bars(8, base=2000.0)
+    start = dt.datetime(2026, 1, 1)
+    t = _trade("WEIRDCOIN", "buy", start + dt.timedelta(hours=1),
+               start + dt.timedelta(hours=3), bars[1]["close"] - 0.1,
+               bars[3]["close"], pnl=10.0)
+    parsed = SimpleNamespace(trades=[t], balances=[], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"WEIRDCOIN": bars}),
+                           startkapital=10_000.0)
+    assert erg["status"] == "skipped", erg
+    assert "Kontrakt" in erg["grund"], erg
+
+
+def test_startkapital_null_skippt_statt_gruenem_null_dd():
+    """Review B5: Ohne Kapitalbasis ist der Prozentwert bedeutungslos —
+    früher status ok + dd 0.0 + verlaesslich=True."""
+    bars = _ein_bars(6)
+    start = dt.datetime(2026, 1, 1)
+    t = _trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+               start + dt.timedelta(hours=2), bars[1]["close"] - 0.1,
+               bars[2]["close"], pnl=10.0)
+    parsed = SimpleNamespace(trades=[t], balances=[], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}),
+                           startkapital=0.0)
+    assert erg["status"] == "skipped"
+    assert "Kapitalbasis" in erg["grund"]
+
+
+def test_fehlende_trades_machen_ergebnis_unzuverlaessig():
+    """Review B7: Fehlen 1-20 % der Trades (Kurse/Kontrakt), darf das Ergebnis
+    informativ sein, aber NICHT verlaesslich (deren PnL fehlt komplett)."""
+    bars = _ein_bars(14)
+    start = dt.datetime(2026, 1, 1)
+    trades = [
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+               start + dt.timedelta(hours=3), bars[1]["close"] - 0.1,
+               bars[3]["close"], pnl=100.0),
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=4),
+               start + dt.timedelta(hours=6), bars[4]["close"] - 0.1,
+               bars[6]["close"], pnl=100.0),
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=7),
+               start + dt.timedelta(hours=9), bars[7]["close"] - 0.1,
+               bars[9]["close"], pnl=100.0),
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=10),
+               start + dt.timedelta(hours=12), bars[10]["close"] - 0.1,
+               bars[12]["close"], pnl=100.0),
+        # 5. Trade: Symbol OHNE Bars — 80 % nutzbar (>= 0.8-Schwelle)
+        _trade("NOSUCH", "buy", start + dt.timedelta(hours=2),
+               start + dt.timedelta(hours=4), 2000.0, 2010.0, pnl=50.0),
+    ]
+    parsed = SimpleNamespace(trades=trades, balances=[], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}),
+                           startkapital=10_000.0)
+    assert erg["status"] == "unvollstaendig", erg
+    assert erg["verlaesslich"] is False, erg
+    assert "1 von 5 Trades" in erg["grund"], erg
+    assert erg["symbole_ohne_kurse"] == ["NOSUCH"]
+
+
+def test_skip_status_ohne_leerzeichen():
+    """Review B6: ' skipped' (führendes Leerzeichen) vs. 'skipped'."""
+    parsed = SimpleNamespace(trades=[], balances=[], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({}), startkapital=1000.0)
+    assert erg["status"] == "skipped"

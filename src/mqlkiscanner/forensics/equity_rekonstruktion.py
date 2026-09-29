@@ -78,7 +78,7 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
             return None
         return mappe[zeiten[pos]]
 
-    bester = None
+    quotes: dict[int, float] = {}
     for shift in GMT_KANDIDATEN_S:
         treffer = 0
         checks = 0
@@ -92,17 +92,25 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
                 tol = abs(preis) * _PREIS_TOLERANZ + 1e-12
                 if bar["low"] - tol <= preis <= bar["high"] + tol:
                     treffer += 1
-        quote = treffer / checks if checks else 0.0
-        # Tie-Break: bei gleicher Quote der Shift mit kleinem Betrag — bei
-        # flachen Kursen treffen mehrere Offsets, dann ist 0 h die ehrliche Wahl.
-        besser = bester is None or quote > bester[1] + 1e-9 or (
-            quote > bester[1] - 1e-9 and abs(shift) < abs(bester[0]))
-        if besser:
-            bester = (shift, quote, len(proben))
-    if bester is None or bester[1] < GMT_MIN_TREFFER:
-        return {"offset_s": None, "trefferquote": round(bester[1], 3) if bester else 0.0,
+        quotes[shift] = treffer / checks if checks else 0.0
+    if not quotes or max(quotes.values()) < GMT_MIN_TREFFER:
+        return {"offset_s": None,
+                "trefferquote": round(max(quotes.values()), 3) if quotes else 0.0,
                 "proben": len(proben)}
-    return {"offset_s": bester[0], "trefferquote": round(bester[1], 3),
+    beste = max(quotes.values())
+    # Plateau-Prüfung (Review 29.09.): Erreichen MEHRERE Shifts dieselbe beste
+    # Quote, ist der Versatz nicht eindeutig bestimmbar — breite H1-Bänder
+    # (plus Preis-Toleranz) treffen oft für benachbarte Offsets gleich gut,
+    # und der frühere Tie-Break „kleinster Betrag" verzerrte systematisch
+    # Richtung 0 h, während er 100 % Erkennung meldete. Mehrdeutig = ehrlich
+    # überspringen statt eine falsche Zahl mit Vollerkennung liefern
+    # (Projektregel: kein Nachweis = neutral, nichts erfinden).
+    plateau = sorted(s for s, q in quotes.items() if q >= beste - 1e-9)
+    if len(plateau) > 1:
+        return {"offset_s": None, "trefferquote": round(beste, 3),
+                "plateau_h": [s // 3600 for s in plateau], "proben": len(proben)}
+    bester_shift = plateau[0]
+    return {"offset_s": bester_shift, "trefferquote": round(beste, 3),
             "proben": len(proben)}
 
 
@@ -116,8 +124,15 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     """
     trades = [t for t in parsed.trades if t.close_time and t.open_time]
     if not trades:
-        return {"test": "equity_rekonstruktion", "status": " skipped",
+        return {"test": "equity_rekonstruktion", "status": "skipped",
                 "grund": "keine geschlossenen Trades"}
+    # Ohne belastbare Kapitalbasis ist der PROZENTwert bedeutungslos —
+    # sonst hieße „0 % DD" gesund, obwohl gar keine Bezugsbasis existiert
+    # (Review 29.09., Befund 5).
+    if startkapital is None or startkapital <= 0:
+        return {"test": "equity_rekonstruktion", "status": "skipped",
+                "grund": "keine belastbare Kapitalbasis "
+                         "(Startkapital fehlt oder ≤ 0) — Prozentwert nicht aussagekräftig"}
     symbole = sorted({t.symbol.strip().upper() for t in trades if t.symbol})
 
     von = min(_epoch(t.open_time) for t in trades)
@@ -135,16 +150,46 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             bars_je_symbol[s] = bars
         else:
             fehlende_symbole.append(s)
-    nutzbare = [t for t in trades if t.symbol.strip().upper() in bars_je_symbol]
+
+    # Kontrakt-/Quote-Auflösung je Symbol (einmalig) — NUR mit Beleg. Ohne
+    # Spec/Klassenkontrakt wäre jeder Faktor erfunden (der frühere stille
+    # 100-000-Default erzeugte Phantom-Floating und meldete es als
+    # verlässlich; Review 29.09., Befund 4): solche Symbole fliegen aus
+    # der Kurve, genau wie Symbole ohne Kurse.
+    aufgeloest: dict[str, dict] = {}
+    symbole_ohne_kontrakt: list[str] = []
+    for s in bars_je_symbol:
+        spec = _resolve_symbol(s, broker)
+        if spec is not None:
+            aufgeloest[s] = spec
+        else:
+            symbole_ohne_kontrakt.append(s)
+
+    def _nutzbar(t) -> bool:
+        s = t.symbol.strip().upper()
+        return s in bars_je_symbol and s in aufgeloest
+
+    nutzbare = [t for t in trades if _nutzbar(t)]
     if len(nutzbare) < 0.8 * len(trades):
+        fehlend = len(trades) - len(nutzbare)
+        detail = []
+        if fehlende_symbole:
+            detail.append(f"Kurse: {', '.join(fehlende_symbole[:5])}")
+        if symbole_ohne_kontrakt:
+            detail.append(f"Kontrakt unbelegt: {', '.join(symbole_ohne_kontrakt[:5])}")
         return {"test": "equity_rekonstruktion", "status": "skipped",
-                "grund": f"Kursdaten fehlen für {len(trades) - len(nutzbare)} "
-                         f"von {len(trades)} Trades "
-                         f"({', '.join(fehlende_symbole[:5])})"}
+                "grund": f"Kursdaten fehlen für {fehlend} "
+                         f"von {len(trades)} Trades ({' · '.join(detail)})"}
 
     gmt = ermittle_gmt_offset(nutzbare, bars_je_symbol)
     offset = gmt["offset_s"]
     if offset is None:
+        if gmt.get("plateau_h"):
+            return {"test": "equity_rekonstruktion", "status": "skipped",
+                    "grund": f"Auto-GMT mehrdeutig — mehrere Offsets "
+                             f"({', '.join(f'{h:+d} h' for h in gmt['plateau_h'][:6])}) "
+                             f"treffen zu {gmt['trefferquote']:.0%}; Zeitversatz "
+                             f"nicht eindeutig bestimmbar."}
         return {"test": "equity_rekonstruktion", "status": "skipped",
                 "grund": f"Auto-GMT ohne eindeutiges Ergebnis "
                          f"(Trefferquote {gmt['trefferquote']:.0%} < "
@@ -161,22 +206,20 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     for s, bars in bars_je_symbol.items():
         closes_je_symbol[s] = {(b["time"] // 3600) * 3600: b["close"] for b in bars}
 
-    # Kontrakt-/Quote-Auflösung je Symbol (einmalig)
-    aufgeloest: dict[str, dict] = {}
-    for s in bars_je_symbol:
-        aufgeloest[s] = _resolve_symbol(s, broker) or {
-            "factor": 100_000.0, "quote": "USD", "source": "FX-Annahme"}
-
     # Realisierte PnL kumulieren (Close-Zeit + Offset im Terminal-Raum).
     schliessungen = sorted(
         ((  ( (_epoch(t.close_time) + offset) // 3600) * 3600, t.net) for t in nutzbare),
         key=lambda x: x[0])
 
     # Offene Positionen je Rasterpunkt auswerten.
-    # Vorbereitung: Trades nach Open sortiert für Sliding-Window.
+    # Vorbereitung: Trades nach Open sortiert für Sliding-Window. Das Ende
+    # wird AUF DIE STUNDE GERUNDET — schliessungen rundet ebenso: Ein Schluss
+    # 10:20 wäre sonst bei Rasterpunkt 10:00 gleichzeitig realisiert UND
+    # floating verbucht (Doppelbuchung, verfälschter Peak; Review 29.09.,
+    # Befund 2).
     offen_sort = sorted(
         (( (_epoch(t.open_time) + offset) // 3600) * 3600,
-         (_epoch(t.close_time) + offset), t) for t in nutzbare)
+         ((_epoch(t.close_time) + offset) // 3600) * 3600, t) for t in nutzbare)
 
     fx_cache: dict[tuple[str, dt.date], float | None] = {}
     fx_fehlt = False
@@ -206,13 +249,9 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             aktiv.append((offen_sort[offen_idx][1], offen_sort[offen_idx][2]))
             offen_idx += 1
         aktiv = [a for a in aktiv if a[0] > punkt]
-        if not aktiv and schliess_idx >= len(schliessungen) \
-                and offen_idx >= len(offen_sort):
-            break
         floating = 0.0
         kurs_da = True
-        tag = dt.datetime.fromtimestamp(punkt - offset, dt.timezone.utc).date() \
-            if offset else dt.datetime.fromtimestamp(punkt, dt.timezone.utc).date()
+        tag = dt.datetime.fromtimestamp(punkt - offset, dt.timezone.utc).date()
         for _ende, t in aktiv:
             s = t.symbol.strip().upper()
             close = closes_je_symbol.get(s, {}).get(punkt)
@@ -234,6 +273,13 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             else:
                 punkte_ohne_kurs += 1
         curve.append((punkt, startkapital + realisiert + floating))
+        # Abbruch ERST NACH dem Anhängen: Der letzte Punkt (alles realisiert,
+        # nichts mehr offen) trägt den Endkontostand — exakt dort entsteht der
+        # finale Verlust. Der frühere break davor ließ echte Schlussverluste
+        # als 0 % DD durchgehen (Review 29.09., Befund 1).
+        if not aktiv and schliess_idx >= len(schliessungen) \
+                and offen_idx >= len(offen_sort):
+            break
 
     if len(curve) < 2:
         return {"test": "equity_rekonstruktion", "status": "skipped",
@@ -251,7 +297,13 @@ def rekonstruiere(parsed, kurse, startkapital: float,
 
     offen_gesamt = punkte_mit_kurs + punkte_ohne_kurs
     abdeckung = punkte_mit_kurs / offen_gesamt if offen_gesamt else 1.0
-    verlaesslich = abdeckung >= SCHRANKE_MIN_ABDECKUNG and not fx_fehlt
+    # Verlässlich nur mit vollständiger Basis: Fehlen Trades (Kurse ODER
+    # Kontrakt), fehlt deren PnL in Equity UND realisiert — bis zu 20 %
+    # durften bisher still verschwinden, während die 95-%-Abdeckungsprüfung
+    # nur Rasterpunkte offener Positionen zählte (Review 29.09., Befund 7).
+    trades_vollstaendig = len(nutzbare) == len(trades)
+    verlaesslich = (abdeckung >= SCHRANKE_MIN_ABDECKUNG and not fx_fehlt
+                    and trades_vollstaendig)
 
     ergebnis = {
         "test": "equity_rekonstruktion",
@@ -267,10 +319,18 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     }
     if fehlende_symbole:
         ergebnis["symbole_ohne_kurse"] = fehlende_symbole
+    if symbole_ohne_kontrakt:
+        ergebnis["symbole_ohne_kontrakt"] = symbole_ohne_kontrakt
     if fx_fehlt:
         ergebnis["fx_luecke"] = True
     if not verlaesslich:
-        ergebnis["grund"] = (f"Abdeckung {abdeckung:.0%} < "
-                             f"{SCHRANKE_MIN_ABDECKUNG:.0%}"
-                             + (" · EZB-Kurslücke" if fx_fehlt else ""))
+        gruende = []
+        if abdeckung < SCHRANKE_MIN_ABDECKUNG:
+            gruende.append(f"Abdeckung {abdeckung:.0%} < {SCHRANKE_MIN_ABDECKUNG:.0%}")
+        if fx_fehlt:
+            gruende.append("EZB-Kurslücke")
+        if not trades_vollstaendig:
+            gruende.append(f"Kursdaten fehlen für {len(trades) - len(nutzbare)} "
+                           f"von {len(trades)} Trades")
+        ergebnis["grund"] = " · ".join(gruende)
     return ergebnis

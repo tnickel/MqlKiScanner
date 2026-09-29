@@ -261,11 +261,19 @@ maximale Rückfall ist der Reko-EQ-DD.
 
 - **Auto-GMT:** Trade-Zeiten sind Signal-Broker-Zeit, Kurse Terminal-Zeit.
   Der Shift wird per Preisabgleich ermittelt (Open/Close in High-Low-Spanne
-  der getroffenen H1-Bar; ±14 h Kandidaten, ≥ 60 % Treffer, Tie-Break kleines
-  |Shift|). Ohne eindeutiges Ergebnis: ehrlicher Skip.
-- **Schranke:** Fließt nur bei Abdeckung ≥ 95 % der offenen H1-Punkte (und
-  ohne EZB-Kurslücke) als viertes Maximum in die 30-%-Drawdown-Schranke ein;
-  sonst informativ (Status unvollständig, kein Schranken-Wert).
+  der getroffenen H1-Bar; ±14 h Kandidaten, ≥ 60 % Treffer). Treffen
+  MEHRERE Offsets gleich gut (Plateau — bei breiten Bändern + Preis-
+  toleranz normal), ist der Versatz nicht bestimmbar → ehrlicher Skip
+  (Review 29.09.: der frühere Tie-Break „kleines |Shift|" verzerrte
+  systematisch Richtung 0 und meldete zugleich 100 % Erkennung).
+- **Schranke:** Fließt nur bei Abdeckung ≥ 95 % der offenen H1-Punkte, ohne
+  EZB-Kurslücke UND nur wenn ALLE Trades nutzbar sind (Symbole ohne
+  Kurse oder ohne belegten Kontrakt — kein erfundener Faktor — machen
+  das Ergebnis unzuverlässig) als viertes Maximum in die 30-%-Drawdown-
+  Schranke ein; sonst informativ (Status unvollständig, kein Schranken-Wert).
+- **Kapitalbasis:** Ohne Startkapital (≤ 0) entfällt die Prüfung — ein
+  Prozentwert ohne Bezugsbasis wäre bedeutungslos (früher „0 % DD,
+  verlässlich").
 - **Still ohne Terminal:** Ohne laufendes MT5-Terminal (und ohne
   markt_start_erlauben) entfällt die Prüfung kommentarlos — kein Malus.
 - Setting: `equity_rekonstruktion` (Default an). Terminal-Lebenszyklus wie
