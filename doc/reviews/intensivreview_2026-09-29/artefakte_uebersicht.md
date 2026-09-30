@@ -54,16 +54,32 @@
 
 | Datei | Inhalt |
 |---|---|
-| `review.md` | Gesamtbericht (Chronologie, Befunde B1–B16, Maßnahmen, 8 Antworten) |
+| `review.md` | Gesamtbericht (Chronologie, Befunde B1–B22, Maßnahmen, 8 Antworten) |
 | `nachrechnung_pruefung.py` | unabhängiger Parser + Kennzahlen (KEIN Import der Produktivmodule) |
 | `nachrechnung.csv` | 173 Vergleichszeilen für 9 Signale (Produktiv ↔ unabhängig) |
-| `portfolio_pruefung.py` + `portfolio_korrelation.csv` | Korrelationen aller 23 🟢/🟡 (Monat/Woche) |
-| `portfolio_pruefung.md` | Diversifikationsurteil + Grenzen |
-| `prompt_review.md` | Prompt-Matrix + Ersatzformulierungen |
+| `kapitalbasis_check.py` | **Nachtrag:** Kapitalbasis/Ertragstabelle für alle 33 Signale mit Forensik (10k- vs. implizite Basis) |
+| `historien_check.py` | **Nachtrag:** prüft, ob der Trade-Export je Signal die volle Provider-Historie abdeckt (Grundannahme von B3) |
+| `portfolio_check.py` | **Nachtrag:** Korrelationsmatrix **aller** 23 🟢/🟡, Instrument-Overlap, Verlustmonat-Cluster |
+| `korrelationen_alle.csv` | **Nachtrag:** 226 Paare (n≥6 Monate) mit r, n, Quelle, Ampel — sortiert |
+| `kapitalbasis.csv` | **Nachtrag:** 33 Zeilen Kapitalbasis/Ertrag (10k- vs. implizit), Rohdaten von `kapitalbasis_pruefung.md` |
+| `historien_abdeckung.csv` | **Nachtrag:** 30 pelik-Signale: Zeitspanne, Trade-Anzahl, `Σ PnL` aus CSV ↔ Forensik |
+| `portfolio_pruefung.py` + `portfolio_korrelation.csv` | Korrelationen des Empfehlungs-Trios (Monat/Woche) |
+| `portfolio_pruefung.md` | Diversifikationsurteil + **voller Portfolio-Korridor** (Klumpen, Juli-2026-Cluster) |
+| `kapitalbasis_pruefung.md` | **Nachtrag:** Kapitalbasis-Messung, B2/B3-Beleg, Historie-Abdeckung, Engine-Abgleich 33/33 |
+| `prompt_review.md` | Prompt-Matrix + Ersatzformulierungen (Nachtrag für Stand `fc4b3b9`) |
+| `antworten_check.py` + `antworten_check_out.txt` | **Nachtrag:** mechanischer Vollabgleich aller 157 Lauf-Antworten gegen die Forensik |
+| `antworten_pruefung.md` | **Nachtrag:** Ergebnis dieses Abgleichs — Ampelbindung 0/52, Ertragszahlen 0 abweichend, B11-Muster 0 Treffer, SL-Regel 17/17 korrekt |
 | `sub_pelican/notes.md` | Pelican-Tiefenprüfung (Währung, Kapitalbasis, weeks, lokale KI) |
 | `sub_scanner/notes.md` + `sub_scanner/*.py` | Scanner-Tiefenprüfung + 3 Prüfskripte |
-| `sub_ki_agenten/notes.md`, `fall_dumps.md`, `portfolio_antwort.txt` | Prompt-/Antwort-Tiefenprüfung |
-| `tmp/review_copy.db` | DB-Arbeitskopie (kann nach Abschluss gelöscht werden) |
+| `sub_ki_agenten/notes.md`, `fall_dumps.md`, `portfolio_antwort.txt` | Prompt-/Antwort-Tiefenprüfung; `fall_dumps.md` enthält die **vollständigen Forensik-JSONs** der 4 KI-Volltext-Fälle (Zitiergrundlage für `prompt_review.md`) |
+| `sub_pelican/java_fixes.md` | offene Punkte auf Monitor-Seite (B18 `/reports` leer) |
+| `sub_scanner/work/workcopy.db`, `sub_pelican/abonnenten_review.db` | DB-Arbeitskopien, per `.gitignore` ausgeschlossen |
+| `tmp/review_copy.db` | DB-Arbeitskopie, per `.gitignore` ausgeschlossen; **nach Abschluss des Reviews gelöscht** (alle Auswertungen sind in den CSV-/MD-Artefakten festgeschrieben). Neuerstellung: `copy data/mqlkiscanner.db tmp/review_copy.db` (WAL berücksichtigen, sonst siehe Beleglücke 1) |
+
+> **Alle vier Prüfskripte laufen aus dem Repo-Wurzelverzeichnis** (`python -m
+> pytest` bzw. `python doc/reviews/.../portfolio_check.py`); sie verwenden
+> repo-root-relative Pfade (`data/mqlkiscanner.db`) und scheitern aus dem
+> Review-Ordner mit `sqlite3.OperationalError: unable to open database file`.
 
 ## Beleglücken („nicht nachweisbar")
 
@@ -87,9 +103,40 @@
 7. **Abrufe der REST :8611 durch MqlRealMonitor** — kein Zugriffslog.
 8. **Crash-Uhrzeit des Vorläufer-Scans #1** — zwischen 23:55:52 (letzter
    Chronik-Eintrag) und 00:01:28 (Fix-Commit); exakter Moment nicht belegt.
-9. **Vollprüfung aller 52 KI-Berichte** — 4 Fälle + Portfolio vollständig,
-   12 Zahlenspotchecks, Rest stichprobenartig (Menge zu groß für Volltext-
-   Review in einem Durchgang).
+9. ~~**Vollprüfung aller 52 KI-Berichte**~~ — **Nachtrag:** der *mechanische*
+   Abgleich aller 157 Antworten des Laufs ist erfolgt (`antworten_pruefung.md`):
+   Ampelbindung, Ertragszahlen, B11-Einheitenmuster, SL-Regel und
+   Abonnenten-Argument. Offen bleibt der **inhaltliche Volltext**-Review
+   (Argumentation, Vollständigkeit, Ton) — dafür sind weiterhin 4 Fälle +
+   Portfolio im Volltext gelesen, der Rest stichprobenartig.
 10. **Semantik der Pelican-Metrics Total/Wins/Losses** (Lexo Total 6664 ≈
     2×(Wins+Losses)) — serverseitig, Quellcode der Plattform nicht verfügbar;
     Scanner rechnet selbst (keine Wirkung im Lauf).
+11. **Startdatum der Provider-Konten** — die Katalogeinträge liefern `weeks` =
+    `null` (B5), eine unabhängige Quelle für das Kontoanfangsdatum existiert
+    nicht. Die Historie-Abdeckung (Nachtrag) stützt sich auf die Plausibilität
+    des Exportverlaufs (eigener Anfangszeitpunkt je Signal, kein abgeschnittener
+    Kopf, `Σ PnL` deckungsgleich mit der Forensik), nicht auf einen Abgleich mit
+    Provider-Metadaten.
+12. **Re-Scan-Verifikation der Fixes B1–B3** — der Ziellauf entstand 15 Stunden
+    vor `fc4b3b9`; ein Lauf nach dem Fix steht aus und ist blockiert, weil der
+    PelicanMonitor offline ist. Alle Aussagen „im Code behoben" in `review.md`
+    sind **code-, nicht laufverifiziert**.
+13. **Testgrün-Beleg des Commits `fc4b3b9`** — der Commit meldete 898 grüne
+    Tests, hat aber einen abhängigen Test still gebrochen (B22: Fixture-Wert
+    `2010→2060` geändert, Test-Mutation nicht nachgezogen). Die Zahl ist damit
+    als Beleg entwertet; nach dem Fix hier im Review steht der Lauf bei
+    **1068 passed, 4 deselected** (10 min). Ob weitere Commits seit `fc4b3b9`
+    ähnliche Kopplungsbrüche eingeschleppt haben, ist **nicht** systematisch
+    geprüft — belegt ist nur dieser eine Fall.
+
+## Verifikation dieses Reviews
+
+| Prüfung | Ergebnis |
+|---|---|
+| `pytest -q` (vor B22-Fix) | 801 passed, **1 error** (5 Tests in `test_review18_ui.py`) |
+| `pytest tests/test_review18_ui.py tests/test_review15_reports.py -q` | 20 passed |
+| `pytest -q` (nach B22-Fix) | **1068 passed, 4 deselected** in 598,86 s |
+| Gegenprobe der neuen Trefferprüfung (Mutation testweise zurückgesetzt) | schlägt mit `AssertionError: Stop-Mutation … greift nicht — Fixture … geändert?` fehl, statt mit einem irreführenden `stop_evidence`-Fehlschlag |
+| `portfolio_check.py` / `kapitalbasis_check.py` / `antworten_check.py` | exit 0 (aus dem Repo-Wurzelverzeichnis) |
+| Produktionscode verändert? | nein — `git diff --stat -- src app_pages tests config` zeigt nur `tests/test_review18_ui.py` |

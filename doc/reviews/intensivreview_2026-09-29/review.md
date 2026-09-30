@@ -10,6 +10,68 @@ Kopien; unabhängige Nachrechnung mit eigenem Parser (kein Import von
 `src/mqlkiscanner`); parallel arbeitende Teil-Reviews (Sub-Notizen unter
 `sub_pelican/`, `sub_scanner/`, `sub_ki_agenten/`).
 
+> **NACHTRAG 30.09.2026, 16:30 (Code-Stand jetzt `fc4b3b9`).** Nach dem Ziellauf
+> wurden die Befunde B1–B3, B5, B6, B7, B9, B10, B12, B14–B16, R1, R2 sowie
+> alle Prompt-Härtungen in **einem** Commit `fc4b3b9` (30.09. 15:53) umgesetzt
+> (Pelican-seitig `cd9612f`, 15:40). Der geprüfte Lauf entstand **00:02–02:53**,
+> also rund 15 Stunden **vor** diesen Fixes.
+> Konsequenz für die Bewertung: **B1–B3 sind im Code behoben, im Lauf aber
+> unbestätigt** — der Ziellauf ist ein *Vorstufenzustand*. Alle unten als
+> „belegt" geführten Ampel-/Ertragsbefunde beschreiben den alten Stand, nicht den
+> aktuellen. Ein Re-Scan nach `fc4b3b9` steht **aus** (Blocker: PelicanMonitor
+> ist offline, s. R-Pelican; ohne ihn ist die B1/B2-Verifikation nicht möglich).
+> Neu aufgenommen in diesem Nachtrag: unabhängige Kapitalbasis-Messung
+> (`kapitalbasis_check.py`) und vollständige Korrelationsmatrix aller 23 🟢/🟡
+> (`portfolio_check.py`, 226 Paare) — beide in
+> `portfolio_pruefung.md` und `kapitalbasis_pruefung.md` zusammengefasst.
+> Daraus folgen **zwei neue, offene Befunde**: **B20** (Juli 2026 — sieben
+> Signale gleichzeitig im Verlust; das Portfolio prüft Korrelation statt
+> gleichzeitiger Belastung und nennt die Beobachtungstiefe des Trios nicht)
+> und **B21** (Instrument-
+> Überschneidung wird als Diversifikation fehlinterpretiert).
+>
+> **Korrektur zu B20 (im Nachtrag gemessen, `portfolio_check.py`):** Der
+> Schweregrad war zunächst **zu hoch** angesetzt. Von den drei Empfohlenen ist im
+> Juli 2026 **nur Gold Spike** im Minus, mit **−1,82 %** (Lexo +5,72 %,
+> PentagonForex +1,45 %) — ein gemeinsamer Verlust des Trios ist **nicht
+> eingetreten**, und der Juli stützt die Empfehlung sogar. Der tragfähige
+> Befund ist die **Fragestellung plus Stichprobenlücke**, nicht ein
+> Empfehlungsschaden: das Portfolio prüft paarweise Korrelation und verschweigt,
+> dass das gemeinsame Beobachtungsfenster des Trios nur **11 Monate** umfasst
+> — also gerade die Ausbruchsmonate des Sortiments (Precise Pair −106,6 %,
+> Gold Reaper −7,0 %) nicht abbildet. Die frühere Formulierung „das Trio sei
+> durch den Juli diversifiziert" war in **beiden** Richtungen nicht tragfähig:
+> ungeprüft nach gleichzeitiger Belastung, und mit „also unkritisch" nicht
+> durch die Stichprobe gedeckt.
+>
+> **Code-Stand:** geprüft wurde `fc4b3b9`; die Chronologie gilt unverändert —
+> `fc4b3b9` ist Vorfahr von HEAD (`69ab4e2`), die beiden Commits danach sind
+> Doku und eine `.gitignore`-Ergänzung, **kein** Code-Fix zu B1–B3.
+>
+> **Testgrün in diesem Review:** `pytest -q` → **1068 passed, 4 deselected**
+> (10 min). Dabei wurde ein **neuer Befund B22** entdeckt und behoben: `fc4b3b9`
+> hatte einen abhängigen Test still gebrochen (geänderte Fixture, nicht
+> nachgezogene Test-Mutation) — die im Commit gemeldeten „898 grün" sind
+> damit als Beleg entwertet.
+
+---
+
+> **Kernbotschaft des Nachtrags (30.09. 16:30 → fortgeschrieben, 21:5x durch
+> Gegenprobe des Hauptagenten präzisiert):** Die
+> technische Schicht ist nach `fc4b3b9` weitgehend in Ordnung; **der
+> eigentliche Fehler ist ein Bewertungsfehler.** Der Portfolio-Lauf prüft
+> *Korrelation* zwischen Empfehlungs-Kandidaten und schließt daraus
+> *Diversifikation*. Der Juli 2026 zeigt die Grenze: sieben
+> Signale gleichzeitig im Minus — vom empfohlenen Trio allerdings nur Gold
+> Spike (−1,82 %; Lexo +5,72 %, PentagonForex +1,45 %), die Empfehlung selbst
+> ist im Juli nicht beschädigt. Die Kritik bleibt richtig, aber sie zielt auf
+> die **Fragestellung und die Stichprobentiefe** (11 gemeinsame Monate), nicht
+> auf einen eingetretenen Schaden: Die richtige
+> Frage war nie „sind meine drei unabhängig?", sondern „wie stark trifft ein
+> gemeinsamer Schock mein Trio?" — und diese Frage wird derzeit nirgends
+> gestellt. Dazu kommt: 14 von 16 bewerteten Quellen-Signalen liegen unter
+> 5 %/Monat, sobald man die Kapitalbasis korrekt einsetzt (B3).
+
 ---
 
 ## 1. Gesamturteil
@@ -33,6 +95,27 @@ Schock (B2) und die virtuelle 10.000-USD-Basis die Risikoprozente bei
 Kleinkonten um Faktor 2–20 verzeichnet (B3). Die KI-Stufen (insbesondere der
 Portfolio-Bericht) kompensieren diese Lücken diesmal inhaltlich korrekt —
 das ist aber nicht bindend und kein harter Schutz.
+
+**Was der Nachtrag hinzufügt — und was wichtiger ist als jeder Einzelbefund:**
+Die KI-Schicht selbst ist **flächendeckend sauber** (0 Fehler über 157
+Antworten, `antworten_pruefung.md`). Damit fällt ein Verdacht weg und ein
+anderer wird schärfer:
+
+- **Fällt weg:** der Verdacht, die KI habe M2-Diskrepanzen (46,6 % / 241,3 %),
+  Ertragswidersprüche oder Kapitalbasis-Differenzen *nicht* erkannt. Sie hat
+  alle drei erkannt, benannt und zur Abwertung geführt (Lemonal, AccurateCopier,
+  Mr_Profit wurden daraufhin **aus dem Mix aussortiert**). Die Kompensation der
+  Engine-Lücken ist im Lauf also real — nur zufällig, nicht systematisch.
+- **Wird schärfer:** die KI prüft **genau das, wonach gefragt wird**. Sie
+  kann die Frage „sind drei Signale wenig korreliert?" nicht falsch beantworten
+  — und sie beantwortet sie auch dann nicht, wenn sie die falsche Frage ist.
+  Juli 2026: sieben Signale gleichzeitig im Minus (B20). Der Portfolio-Auftrag
+  fragt nach Korrelation; der Nutzer trägt aber Klumpenrisiko. **Eine saubere
+  Ausführung einer unzureichenden
+  Fragestellung sieht in der Antwort exakt gleich aus.** Das ist der
+  eigentliche Befund dieses Reviews, und er ist im Code, nicht in den Prompts
+  zu beheben: das Portfolio-Ergebnis braucht den schlechtesten beobachtbaren
+  Monat als Kennzahl, sonst ist „diversifiziert" im Projekt eine Behauptung.
 
 Für das eigentliche Ziel — 3–4 belastbare, wenig korrelierte Kandidaten —
 liefert der Lauf **einen** robusten Kandidaten (Gold Spike MT4) und zwei
@@ -127,6 +210,10 @@ Verdacht. ③ Einzelne REST-Latenzen/Statuscodes des Ziellaufs (kein Access-Log)
 | KI/Agenten | alle 5 Workflow- + 6 Agenten-Prompts, Prompt-Füllung im Code, 13 echte Antworten des Ziellaufs volltextlich, Portfolio-Antwort komplett, Analysen-Inventar (52×3+1), Rollen-Code (rollen/scheduler/tageskette/lock/journal), Budgets | `sub_ki_agenten/notes.md` + `fall_dumps.md` |
 | Unabhängige Nachrechnung | 9 Signale (2 Quellen, alle Ampelfarben, Grenzfälle), eigener Parser, DD/Netto/PF/Winrate/Serie/Martingale/Exposure/Schock/Monatsrenditen, SHA-Verifikation | `nachrechnung_pruefung.py`, `nachrechnung.csv` |
 | Portfolio | Monats-/Wochenrendite-Korrelationen aller 23 🟢/🟡, Verlustmonat-Cluster, Dreifach-Exposure-Überlappung, Hälften-Stabilität | `portfolio_pruefung.py`, `portfolio_korrelation.csv`, `portfolio_pruefung.md` |
+| **Nachtrag: Kapitalbasis** | alle 33 Signale mit Forensik: Netto, DD-USD, Monate, produktive Basis + Quelle, Web-Balance, **implizite Basis**, Ertrag %/M auf 10k- UND auf impliziter Basis, DD-% auf beiden; Abgleich Engine ↔ Nachrechnung | `kapitalbasis_pruefung.md`, `kapitalbasis_check.py` |
+| **Nachtrag: Korrelationsmatrix** | alle 23 🟢/🟡 (nicht nur das Trio): 34 Paare mit n≥6 Monaten, Instrument-Überschneidung, Verlustmonat-Cluster über **alle** Signale | `portfolio_pruefung.md` (Abschnitt „Voller Portfolio-Korridor"), `portfolio_check.py` |
+| **Nachtrag: Export-Historie** | alle 30 pelik-Signale: Zeitspanne (2,9–45,6 Mon.), eigener Anfangszeitpunkt je Signal, `Σ PnL` deckungsgleich mit der Forensik (30/30) — Grundannahme von B3 bestätigt | `historien_check.py`, `kapitalbasis_pruefung.md` §2 |
+| **Nachtrag: KI-Antwort-Vollabgleich** | **alle 157** Antworten des Laufs (52× trade + 52× risiko + 52× gesamt + 1× portfolio) mechanisch gegen die Forensik geprüft: Ampelbindung **0/52** Abweichungen, Ertrags-%/Monat **0** Abweichungen, B11-Einheitenmuster **0** Treffer, SL-Regel **17/17** korrekt angewandt, Abonnenten-Argument **0** Treffer | `antworten_pruefung.md`, `antworten_check.py` |
 | Nachgelagert | REST :8611 (live, 91 Signale, kein Altersmarker), Tradeserver-Sync (nicht gelaufen), Downloader-Sync (abgebrochen) | sub_scanner C) |
 
 ---
@@ -137,6 +224,31 @@ Schere: **[KRITISCH]/[HOCH]/[MITTEL]/[NIEDRIG]** · Sicherheit: belegt (Code+Dat
 des Laufs) / wahrscheinlich / nicht prüfbar. Jeder Befund mit Ort, Wirkung,
 Korrekturidee, Verifikationstest. Gegenprüfung: B1–B3, B6, B8, B9, B15 wurden
 vom Hauptagenten unabhängig nachgerechnet bzw. im Code nachgelesen (✓).
+
+### 0) Umsetzungsstand je Befund (Stand HEAD `fc4b3b9`)
+
+| Befund | Status im Code | Lauf-verifiziert? |
+|---|---|---|
+| B1 Monitor-EQ-DD als 5. Schranken-Maximum | ✅ `scoring.dd_maximum` (3 Stellen) + Ampel-Zelle | ❌ nein — kein Lauf nach dem Fix |
+| B2 `ertrag_monat_pct_forensik` maßgeblich | ✅ berechnet + persistiert + im Urteil | ❌ nein |
+| B3 implizite Kapitalbasis vor 10k-Fallback | ✅ `pipeline._implizite_kapitalbasis` | ❌ nein |
+| B4 Betreuer quellen-blind | ✅ filtert auf `mql5_kandidaten` (dokumentierter Skip) | n/a |
+| B5 `weeks` ehrlich null | ✅ Pelican `cd9612f` | ❌ Katalog-Cache ist Vorlauf |
+| B6 Parser-Artefakte, GER40-Alias, Öl-Broker | ✅ alle drei | ❌ nein |
+| B7 ⛔ ohne Forensik/LLM | ✅ via Fix-ID pinbar | n/a |
+| B8 `fix_signal_ids` gesetzt | ✅ `[2342895, 2375480]` | n/a |
+| B9 Downloader-404-Toleranz + URL-Warnung | ✅ | ❌ :8089 war down |
+| B10 Symbol-Suffix-Fallback für Reko | ✅ `suffix_annahmen` protokolliert | ❌ nein |
+| B11/B12/B13/B16 Prompt-Härtung | ✅ alle 5 Vorlagen | ❌ nein |
+| B14 CLI-Rollen-Lock | ✅ | ❌ nein |
+| B15 Platzhalter-Meldung | ✅ gelöscht | — |
+| B17 **DE40/GER40 EUR-Quote blockt USD-Schock dauerhaft** | ✅ **zurückgezogen** (Gegenprobe: läuft durch, EUR=EZB-Basis) | ✅ Gegenprobe mit echten Trades |
+| B18 **Pelican `/reports` hartkodiert leer** | ❌ **offen (Monitor)** | ❌ |
+| B19 **Peak-Positionen — Verdacht vom Vor-Nachtrag entkräftet** | ✅ kein Defekt | ✅ **16/16 exakt reproduziert** |
+| B20 **Juli 2026: 7 Signale gleichzeitig im Minus; Portfolio prüft Korrelation statt gemeinsamer Belastung; Beobachtungstiefe nur 11 Monate** | ❌ **offen** | ✅ gemessen (Trio-Ertrag in Juli: −1,82 / +5,72 / +1,45 %) — kein Trio-Schaden; Lücke ist die Fragestellung + Stichprobe |
+| B21 **Instrument-Overlap als Diversifikationskriterium fehlt (MH4-1/2: 15 Symbole, r = 0,26)** | ❌ **offen** | ❌ |
+| B22 **`fc4b3b9` brach einen abhängigen Test still (Fixture-Wert vs. Test-Mutation)** | ✅ **behoben** (Mutation korrigiert + Trefferprüfung als dauerhafte Absicherung) | ✅ **grün** (7/7 `test_review18_ui.py`, 20/20 mit `test_review15_reports.py`) |
+
 
 ### A) Bestätigte Fehler / Regelverstöße gegen das Projekziel
 
@@ -309,7 +421,157 @@ Strings (Signalnamen wie „💎t.me/Mr_Profit_FX", Autor, Broker) fließen unma
 in alle Prompts (`pipeline.py:424-437`); keine Vorlage markiert sie als Daten;
 nur Trade-Kommentare gekappt (F-9). Im Ziellauf keine Manipulation beobachtet.
 Korrektur: Daten-Delimiter + „Signalnamen sind Fremdtext"-Zeile in alle 5
-Workflow-Vorlagen.
+Workflow-Vorlagen. → **umgesetzt in `fc4b3b9`.**
+
+### A-Nachtrag) Befunde aus dem Nachtrag (30.09. 16:30, Code-Stand `fc4b3b9`)
+
+**B17 [ZURÜCKGEZOGEN durch Gegenprobe des Hauptagenten, 30.09. ~22:00] —
+DE40/GER40: die behauptete EUR-Quote-Sperre existiert nicht.**
+Die Diagnose des Nachtrags („die Fremdwährungs-Quote bleibt gesperrt → die
+2 GER40-Signale scheitern weiterhin an `exposure.run()` und landen ⚪") ist
+**empirisch widerlegt**: Mit dem Code-Stand `fc4b3b9` (GER40→DE40-Alias)
+durchlaufen die ECHTEN Trades des Ziellauf-Fails 2014626 „Deus ex machina"
+(`data/quellen/pelik/pelican_2014626_trades.csv`, 1.294 Trades, u. a. GER40/
+US30/AUDCAD) die Produktschiene `parser → forensics.exposure` sauber:
+`conversion_complete=True`, `temporal_risk_available=True`, Schock 5.674 USD
+(62,3 % auf 10k-Basis), keine Warnung. Der EUR-Quote-Pfad rechnet — EUR ist
+die **Basiswährung** der EZB-Referenzkurse, ein Kurs ist daher für jeden
+Handelstag belegt (anders als bei exotischen Quote mit Lücken). Die
+Ursachen-Kette des Nachtrags verwechselte „Sperre ohne Kurs" mit „Quote !=
+USD": Ersteres greift nur bei fehlendem Kurs im 10-Tage-Fenster, bei EUR nie.
+Damit ist **B6 für GER40 vollständig geschlossen** (2 der 8 Ziellauf-Fails
+entfallen); der früher geplante B17-Fix entfällt. Vorbehalt: 2014626 würde
+nach B1-Bewertung wegen Schock 62 % bzw. Ertrag nie grün — aber es bekommt
+ein **Urteil** statt ⚪, was der Befund verlangte.
+
+**B18 [MITTEL, belegt, OFFEN (Monitor)] — Pelican `/reports` ist hartkodiert
+leer; der PDF-Spiegel der Quellen-Signale bleibt dauerhaft leer.**
+`PelicanTrading/.../rest/RestApiServer.java:217` → `case "reports": return
+Resp.json(200, Map.of("count", 0, "items", List.of()));` (der Kommentar bei :42
+räumt es selbst ein). Vergleich: MqlDownloader `RestApiServer.java:494-500`
+liefert echte Dateien. Scanner-seitig gibt es in `ingest.py` **keinerlei**
+`reports`-Verarbeitung — die leere Liste wird nie überhaupt abgefragt. Folge: die
+KI-Risikoberichte des Pelican-Monitors (MD+PDF, in `data/reports`) erreichen den
+Scanner nie, der Downloader-Sync spiegelt keine Quellen-PDFs, und die
+PDF-Übergabe an MqlTradeMonitor bleibt für alle 30 pelik-Signale leer — bei
+gleichzeitig 60+ lokal erzeugten Scanner-PDFs. Korrektur: (a) Pelican liefert
+`/reports` aus dem Verzeichnis; (b) `ingest.py` spiegelt `reports` je Quelle in
+`quellen_artefakte` und in den Downloader/PDF-Sync. Betroffen ist die
+Vollständigkeit des Endkunden-Artefakts, nicht die Ampel.
+
+**B19 [ENTKRAFTET, verifiziert sauber] — `peak_positionen` (früherer
+Verdachts-Befund „Off-by-one/Overlap-Count") ist korrekt.** Unabhängige
+Overlap-Zählung der offenen Intervalle aus den Roh-Snapshots reproduziert den
+Engine-Wert **exakt für alle 16 pelik 🟢/🟡**: 2000028 37=37 · 2014074 481=481 ·
+2063644 32=32 · 2014076 56=56 · 2059368 39=39 · 2084818 13=13 · 2072334 13=13 ·
+2039057 18=18 · 2016702 19=19 · 2048285 9=9 · 2048284 27=27 · 2012139 88=88 ·
+2049613 6=6 · 2054437 40=40 · 2053240 7=7 · 2052727 70=70. **Kein Defekt, kein
+Fix nötig**; der Punkt fällt als Befund weg. (Gleiches gilt für die
+Capital-Basis-Rechnung: `kb_prod` meiner Nachrechnung == Engine
+`kapitalbasis_usd` für alle 33 Signale mit Forensik.)
+
+**B20 [MITTEL, belegt, OFFEN] — Juli 2026: sieben Signale gleichzeitig im
+Verlust. Das Portfolio prüft Korrelation, nicht gleichzeitige Belastung —
+die Frage, die den Nutzer tatsächlich trifft, wird nirgends gestellt.**
+Aus der Monatsrenditen-Matrix aller 23 🟢/🟡 (`portfolio_check.py`, Rohdaten
+`korrelationen_alle.csv`): **2026-07 = 7 Signale im Minus** (2026-05 = 3).
+Das ist der kohärenteste Belastungsmonat des gesamten Katalogs.
+
+**Wichtige Präzisierung (nachträglich gemessen, `portfolio_check.py`):** Der
+Schweregrad ist **geringer als zunächst angenommen**, und zwar in beide
+Richtungen. Die sieben Juli-Verlierer sind: Precise Pair Trading Pro
+(−106,59 %!), Gold Reaper (−7,04 %), Pure Gold 2000 (−2,86 %), **Gold Spike
+(−1,82 %)**, SafeGold (−1,10 %), AccurateCopier (−0,47 %), Grid King (−0,10 %).
+Von den **drei Empfohlenen ist nur Gold Spike** betroffen, und zwar mit
+−1,82 % — vernachlässigbar. Die vom Portfolio-Auftrag befürchtete
+„Trio-Katastrophe" ist in den Daten **nicht eingetreten**; die Juli-Zahlen
+stützen die Empfehlung sogar. Der eigentliche Befund von B20 ist deshalb
+**nicht** „die Empfehlung ist im Juli gescheitert", sondern:
+
+1. **Der Katastrophenmonat liegt außerhalb des Beobachtungsfensters der
+   Empfehlung.** −106,59 % (Precise Pair) und −7,04 % (Gold Reaper) sind
+   Größenordnungen, die keine Monatsrendite eines 🟢-Signals je erreicht hat.
+   Die 23 🟢/🟡 umfassen **3 bis 46 volle Handelsmonate**; das **gemeinsame**
+   Fenster des empfohlenen Trios ist **11 Monate (2025-11 bis 2026-09)** — genau
+   das Fenster, in dem die Korrelationen gemessen wurden. Ein Monat wie Juli
+   2026, in dem *mehrere* Systeme gleichzeitig einbrechen, ist in 11 Monaten
+   **nicht belegbar beobachtbar**. Die Empfehlung
+   „40/30/30" ist damit auf einen Beobachtungszeitraum gestützt, der genau die
+   Tail-Risiken nicht enthält, vor denen das Projekt schützen soll. Das ist
+   die eigentliche Lücke, und sie ist eine **Stichprobenlücke**, keine
+   Rechenlücke.
+2. **Die Methode prüft die falsche Größe.** `run_portfolio` summiert
+   Korrelationskoeffizienten der drei Empfehlungskandidaten. Ein Klumpenrisiko
+   kann vollständig unkorrelliert und dennoch real sein (ungekoppelt, aber
+   gemeinsam vom Goldpreis abhängig). Die Kennzahl, die fehlt, ist der
+   **gemeinsame Verlustmonat über alle bewerteten Signale** — nicht die
+   paarweise Korrelation der Empfehlung.
+3. **Ein realer Verlust der Empfehlung ist dokumentiert** (Gold Spike, Juli
+   2026, −1,82 %) und im Portfolio-Text **nicht erwähnt**. Er ist unkritisch,
+   aber seine Abwesenheit zeigt die Lücke: die Antwort nennt 9 Stichproben für
+   „Haltedauern" und „Exit-Logiken", aber **keinen einzigen Stress-Monat**.
+
+Korrektur: Portfolio-Prompt + Code-Kennzahl (a) „Verlustmonat-Cluster über
+alle 🟢/🟡" (Anzahl + Namen je Monat) und (b) „längster gemeinsamer
+Verlustzeitraum der Empfehlung" — plus die **ehrliche Angabe der
+Historie-Tiefe** je Position, damit der Nutzer sieht, dass die Empfehlung auf
+11 Monaten Beobachtung beruht.
+
+**B21 [MITTEL, belegt, OFFEN] — Instrument-Überschneidung wird als
+Diversifikation missverstanden: Master H4-1 und Master H4-2 teilen 15
+Symbole bei nur r = +0,26.** Die niedrige Korrelation der Monatsrenditen
+lässt zwei unabhängige Maschinen vermuten; die Rohdaten zeigen dieselbe
+Handwerkstatt mit demselben Instrumentensatz. Für die Empfehlung ist das
+nur relevant, wenn beide im Kandidatenraum stehen — die Bewertung stützt
+sich derzeit allein auf `r`. Korrektur: `run_portfolio`/Scoring sollte
+Instrument-Überlappung als **eigenes Diversifikationskriterium** führen
+(„gemeinsame Werkzeuge = gemeinsames Risiko"), nicht nur Rendite-
+Korrelation; ein Paar mit > 50 % Symbolüberschneidung und r < 0,5 ist
+**keine** Diversifikation, sondern Klumpenrisiko mit umgekehrtem Vorzeichen.
+(Belege: Holy Grail ↔ Master H4-1 = 13 Symbole, Holy Grail ↔ PentagonForex
+= 5; Positivbeispiele mit echtem Nutzen: Lemonal ↔ Gold Spike, AccurateCopier
+↔ Mr_Profit.)
+
+**B22 [HOCH, belegt, BEHOBEN] — `fc4b3b9` hat einen abhängigen Test still
+gebrochen: die Fixture wurde geändert, der Test nicht nachgezogen.** Beim
+Gesamtlauf (`pytest -q`) fielen 5 Tests in `tests/test_review18_ui.py` durch —
+ohne Fehlschlag des Produktionscodes. Ursache: Die Fixture
+`live_reports` in `tests/test_review15_reports.py` erzeugt ihre Orderbuch-Zeile
+als `…;2000;1990;2060;`. `fc4b3b9` änderte den Exit-/TP-Preis von **2010 auf
+2060** (B2-Kommentar: Grün verlangt jetzt ≥ 5 %/M auf der eigenen Kurve).
+Der abhängige Test `distinct_snapshots` mutiert die Datei aber mit
+`.replace(';1990;2010;', ';;2010;')` — **ein No-Op**. Bad und Good waren
+dadurch byte-identisch, beide ergaben korrekt `stop_evidence == 'direct'`, und
+die Assertion `results[1].stop_evidence == 'none'` schlug fehl.
+
+Zwei Lehren, die über diesen Test hinausgehen:
+1. **Ein Test, der eine Fixture „manipuliert", muss die Mutation auch
+   verifizieren.** `.replace()` ohne Trefferprüfung ist still — der Test prüft
+   dann nicht mehr das Beabsichtigte, sondern fällt nur durch, wenn etwas
+   anderes kaputt ist. Das Verschweigen ist schlimmer als der Fehlschlag: Der
+   Test hat seinen eigentlichen Zweck verloren (Snapshot-Identität bei
+   beschädigter SL-Spalte) und wird erst wieder aussagekräftig, wenn die
+   Mutation greift.
+2. **`fc4b3b9` hat 898 Tests als grün gemeldet und dabei diesen Bruch
+   eingeschleppt** — die Zahl im Commit ist damit als Beleg entwertet. Der
+   Commit fasste Änderungen an einer *geteilten* Fixture zusammen, ohne ihre
+   abhängigen Tests nachzuziehen. Bei der nächsten Änderung an
+   `live_reports` ist das der erste Ort zu prüfen.
+
+Behoben in `tests/test_review18_ui.py` (Mutation auf `;1990;2060;` → `;;2060;`
+plus Kommentar zur Fixture-Abhängigkeit) — und **dauerhaft abgesichert**: die
+Fixture wird jetzt einmal in `source_text` gelesen, die Mutation als Konstante
+`mutation` benannt und vor dem Schreiben mit
+`assert mutation in source_text, "… Fixture in test_review15_reports.py::live_reports
+geändert?"` **auf einen Treffer geprüft**; danach zusätzlich
+`assert bad != source_text`. Damit kann dieser Fehler Modus nicht mehr stumm
+wiederkehren. **Gegenprobe:** der Test wurde testweise auf den alten,
+nicht mehr passenden Wert `;1990;2010;` zurückgesetzt — er schlug daraufhin mit
+der exakten Meldung `AssertionError: Stop-Mutation ';1990;2010;' greift nicht —
+Fixture in test_review15_reports.py::live_reports geändert?` fehl (statt mit
+einem scheinbar kryptischen `stop_evidence`-Fehlschlag), nach
+Zurücksetzen wieder 7/7 grün. Verifiziert: 20/20 grün in `test_review18_ui.py`
++ `test_review15_reports.py`, Gesamtlauf siehe §0.
 
 ### B) Begründete Risiken (im Ziellauf nicht eingetreten)
 
@@ -360,10 +622,21 @@ Workflow-Vorlagen.
    erlaubt), Engine-Bindung 4/4 (kein Upgrade aus ⛔/🔴), Portfolio-Zahlen
    12/12 Spotchecks wahr, Budgets korrekt getrennt (Workflow 5 Mio vs. Agenten
    500k/Tag), Length-Retry + Thinking-Token-Behandlung vorhanden.
+   **Nachtrag — flächendeckend statt stichprobenartig** (`antworten_pruefung.md`):
+   über **alle 157** Antworten des Laufs **kein einziger belegbarer Fehler** in
+   fünf Dimensionen: Ampelbindung 0/52 Abweichungen, Ertrags-%/Monat 0
+   Abweichungen, B11-Einheitenmuster 0 Treffer, SL-Regel 17/17 korrekt
+   (durchgehend *Compliance*-Aussagen, keine Verstöße), Abonnenten als
+   Qualitätsmerkmal 0 Treffer. **Die KI-Schicht dieses Laufs ist sauber.**
 10. Portfolio-Empfehlung inhaltlich stark: sortiert Lemonal/AccurateCopier/
     Mr_Profit_FX **wegen** der M2-Diskrepanzen aus (Kompensation von B1/B2),
     SafeGold als „Duplikat Gold Spike" — von mir mit r = 0,77 numerisch
     bestätigt.
+11. **Nachtrag:** `peak_positionen` Engine == unabhängige Overlap-Zählung
+    16/16 (B19, entkräftet); `kapitalbasis_usd` Engine == unabhängige
+    Nachrechnung 33/33; die implizite Kapitalbasis (`_implizite_kapitalbasis`)
+    liefert für alle 26 pelik-Signale mit Forensik einen **positiven** Wert —
+    d. h. B3 ist im Code wirksam, war im Lauf aber noch nicht deployed.
 
 ---
 
@@ -398,11 +671,29 @@ Prompt-/Datenqualität gekoppelt (B12/B13).
 — **Nachträglich gestützt, im Lauf aber unbelegt.** Der Lauf behauptet
 „drei getrennte Märkte" ohne jede Korrelationsrechnung. Meine unabhängige
 Prüfung: Trio r = 0,043 / 0,033 / −0,201 (Monate, n=11) bzw. 0,075 / 0,137 /
-−0,121 (Wochen, n=46); nur 3,8 % der Stunden Dreifach-Exposure; Juli 2026
-(Community-Verlustmonat für 7 der 23, inkl. beider Gold-Grids) überstand das
-Trio ohne gemeinsamen Verlust. Einschränkend: n=11 → weite Konfidenzintervalle
-(r=0,04 ± ~0,55), Lexo×Pentagon instabil über Monatshälften (−0,60 → +0,83).
-Details: `portfolio_pruefung.md`.
+−0,121 (Wochen, n=46); nur 3,8 % der Stunden Dreifach-Exposure. **Die
+Diversifikation des Trios untereinander ist damit gemessen und bestätigt.**
+**Wichtige Einschränkung (B20, aufgenommen nach dem Korridor-Nachtrag):**
+Das Trio ist *untereinander* unabhängig — aber das ist eine schwächere
+Aussage als sie wirkt. Juli 2026 ist mit 7 Verlustsignalen der kohärenteste
+Belastungsmonat des gesamten Katalogs; von den drei Empfohlenen ist dort
+**nur Gold Spike** im Minus, und zwar mit **−1,82 %** (Lexo +5,72 %,
+PentagonForex +1,45 %). Ein gleichzeitiger Verlust des Trios ist damit
+**nicht belegt**. Was die Messung stattdessen zeigt, ist die **Stichproben-
+lücke**: der Juli 2026 gehört zu den Monaten, in denen das *Sortiment*
+einbrach (Precise Pair −106,6 %, Gold Reaper −7,0 %), und solche Monate sind
+in den 11 Monaten Portfoliohistorie **nicht repräsentiert enthalten** — die
+Empfehlung „40/30/30" ist damit auf ein Fenster gestützt, das genau die
+Tail-Szenarien nicht enthält. Diversität untereinander ersetzt keine
+Risikobudgetierung; das Trio sollte als **eine Gold-Position plus eine
+Fremdwährungs-Position** behandelt und je Makro-Cluster gedeckelt werden.
+Die ursprüngliche Formulierung dieses Abschnitts („das Trio überstand Juli
+ohne gemeinsamen Verlust") war eine **Fehldeutung nach beiden Seiten**:
+geprüft wurde nur die Korrelation zwischen dreien, nicht die gleichzeitige
+Belastung — und die Schlussfolgerung „also unkritisch" ist durch die
+begrenzte Historie nicht gedeckt. Einschränkend weiterhin: n=11 → weite
+Konfidenzintervalle (r = 0,04 ± ~0,55), Lexo×Pentagon instabil über
+Monatshälften (−0,60 → +0,83). Details: `portfolio_pruefung.md`.
 
 **Erzwungene 3–4-Empfehlung?** Nein — aber die Daten tragen nur **1 robusten**
 Kandidaten: Gold Spike (bewiesener SL 392/392, DD-Vierfach-Max 8,11 %,
@@ -416,20 +707,34 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
 
 ## 7. Priorisierte Maßnahmen
 
+> **Stand 30.09. 16:30:** Die Maßnahmen 1–3 (B1/B2/B3) und 4–12 sind in `fc4b3b9`
+> **umgesetzt**; offen bleiben die laufseitige Verifikation (Re-Scan, blockiert
+> durch Pelican-Ausfall), B18 (Pelican `/reports`) und
+> der grundsätzliche Portfolio-Korridor als Code-Befund (s. u.).
+
 | # | Maßnahme (Befund) | Nutzen für das Ziel | Aufwand |
 |---|---|---|---|
-| 1 | Monitor-EQ-DD in die Schranke/Matrix; 🟢-Sperre >30 % (B1) + pelik-Fixture-Test | schützt die Kernregel | klein |
-| 2 | `ertrag_monat_pct_forensik` aus eigener Kurve; Kriterium auf Forensik-Basis (B2) | Ertragsurteil wird kopierer-relevant | klein |
-| 3 | Implizite Kapitalbasis (web_balance − ΣPnL) vor 10k-Fallback (B3) | korrigiert DD-/Schock-%-Verzerrung | klein-mittel |
-| 4 | Betreuer quellenfest (B4) | verhindert 16 tägliche Fehlerläufe | mittel |
-| 5 | Parser-Artefakte + GER40-Alias + Öl-mit-Warnung (B6) | +6 Kandidaten/Lauf, Öl zurück im Kandidatenraum | klein |
-| 6 | ⛔ aus Auswahl/LLM sparen (B7) | 12 zusätzliche MQL5-Slots, −400k Tokens | klein |
-| 7 | fix_signal_ids setzen + Empfehlungs-Banner (B8) | schließt die KiraCat-Lücke | trivial |
-| 8 | Downloader-Sync 404-Toleranz + URL-Divergenz-Warnung (B9) | Verlauf/Bilanz nicht mehr stale | klein |
-| 9 | Symbol-Suffix-Auflösung für Reko (B10) | vierte Schranke wirkt bei ~30 % mehr MQL5-Signalen | mittel |
-| 10 | Prompt-Fixes: USD-Feld-Einheiten, Default-Drift, Tiefenanalyse-Ehrlichkeit, Injection-Delimiter (B11–B13, B16) | KI-Richtigkeit sistiert systematisch | klein |
-| 11 | CLI-Rollen-Lock (B14), Platzhalter-Meldung löschen (B15), REST-Altersmarker (R2), Quell-Kollisionsschutz (R1) | Betriebsrobustheit | klein |
-| 12 | Pelican „Stats für ALLE" takten + weeks=null-Ehrlichkeit (B5); PelicanMonitor-Autostart | Kandidatenraum wird echt | mittel |
+| 1 | ~~Monitor-EQ-DD in die Schranke/Matrix; 🟢-Sperre >30 % (B1)~~ **✅ `fc4b3b9`** | schützt die Kernregel | erledigt |
+| 2 | ~~`ertrag_monat_pct_forensik` aus eigener Kurve; Kriterium auf Forensik-Basis (B2)~~ **✅ `fc4b3b9`** | Ertragsurteil wird kopierer-relevant | erledigt |
+| 3 | ~~Implizite Kapitalbasis (web_balance − ΣPnL) vor 10k-Fallback (B3)~~ **✅ `fc4b3b9`** | korrigiert DD-/Schock-%-Verzerrung | erledigt |
+| 4 | ~~Betreuer quellenfest (B4)~~ **✅ `fc4b3b9`** | verhindert 16 tägliche Fehlerläufe | erledigt |
+| 5 | Parser-Artefakte + GER40-Alias + Öl-mit-Warnung (B6) — **✅ komplett** (B17-Gegenprobe: GER40 läuft inkl. EUR-Schock durch; Öl bleibt bewusst broker-gebunden) | +4 Kandidaten/Lauf (2× GER40 + Correction + Tail-Artefakt-Diagnose), Öl nach Broker-Freigabe | erledigt |
+| 6 | ~~⛔ aus Auswahl/LLM sparen (B7)~~ **✅ `fc4b3b9`** | 12 zusätzliche MQL5-Slots, −400k Tokens | erledigt |
+| 7 | ~~fix_signal_ids setzen + Empfehlungs-Banner (B8)~~ **✅ `fc4b3b9`** | schließt die KiraCat-Lücke | erledigt |
+| 8 | ~~Downloader-Sync 404-Toleranz + URL-Divergenz-Warnung (B9)~~ **✅ `fc4b3b9`** | Verlauf/Bilanz nicht mehr stale | erledigt |
+| 9 | ~~Symbol-Suffix-Auflösung für Reko (B10)~~ **✅ `fc4b3b9`** | vierte Schranke wirkt bei ~30 % mehr MQL5-Signalen | erledigt |
+| 10 | ~~Prompt-Fixes: USD-Feld-Einheiten, Default-Drift, Tiefenanalyse-Ehrlichkeit, Injection-Delimiter (B11–B13, B16)~~ **✅ `fc4b3b9`** | KI-Richtigkeit systematisiert | erledigt |
+| 11 | ~~CLI-Rollen-Lock (B14), Platzhalter-Meldung löschen (B15), REST-Altersmarker (R2), Quell-Kollisionsschutz (R1)~~ **✅ `fc4b3b9`** | Betriebsrobustheit | erledigt |
+| 12 | ~~Pelican „Stats für ALLE" takten + weeks=null-Ehrlichkeit (B5)~~ **✅ `cd9612f`**; PelicanMonitor-Autostart | Kandidatenraum wird echt | teilweise |
+| 13 | **Re-Scan nach `fc4b3b9` zur Lauf-Verifikation von B1–B3, B6, B10** (blockiert: PelicanMonitor offline) | bestätigt, dass die Fixes die Ampel tatsächlich ändern | klein, sobald Quelle läuft |
+
+| 15 | **B18: Pelican `/reports` befüllen + `ingest.py` reports-Spiegel** | Quellen-KI-Berichte + PDFs erreichen Scanner/Tradeserver | mittel (2 Projekte) |
+| 16 | **Portfolio-Korridor als Code-Befund**: Monatsrenditen-Korrelation + Instrument-Overlap + Verlustmonat-Cluster in den Portfolio-Prompt statt nur LLM-Aussage | die Kernbehauptung „wenig korreliert" wird gemessen, nicht behauptet | mittel |
+| 17 | **Kapitalbasis-Faktor im Forensik-JSON/Urteil explizit** (real vs. virtuell) | verhindert erneutes Misslesen wie B11 | klein |
+| 18 | **B20: Verlustmonat-Cluster als Portfolio-Pflichtausgabe + Historie-Tiefe je Position** — Zahl + Namen je Monat über alle 🟢/🟡, Empfehlung gegen den schlechtesten Monat prüfen, n-Monats-Tiefe ausweisen | verhindert die Kern-Fehlannahme „Trio ist diversifiziert" und die Untertiefung: die Empfehlung ruht auf 11 Monaten, Juli 2026 ist im Sortiment ein Ausbruchsmonat, im Trio nicht | klein (Prompt + Kennzahl) |
+| 19 | **B21: Instrument-Überlappung als eigenes Diversifikationskriterium** (Schwelle: > 50 % gemeinsame Symbole bei r < 0,5 = Klumpenrisiko) | trennt echte Streuung von Werkstatt-Klonen (Master H4-1/2: 15 Symbole, r = 0,26) | klein |
+| 20 | **Schock-Felder eindeutig benennen**: `shock_pct_peak_account` ist ein **USD-Betrag** (Kontostand am Peak), nicht ein Prozentwert; `shock_pct_max` = Schock ÷ Kontostand am Peak (nicht ÷ Kapitalbasis) | macht die B11-Verwechslung strukturell unmöglich; gleiche Klasse wie #17 | klein |
+| 21 | ~~**B22: stille Testkopplung** — Mutation in `test_review18_ui.py` auf den aktuellen Fixture-Wert nachziehen~~ **✅ in diesem Review behoben**; **generell:** Test-Mutationen mit Trefferprüfung versehen (`assert old in text` vor dem `replace`) | schützt die Testgrün-Aussage künftiger Fix-Commits | klein |
 
 ---
 
@@ -451,11 +756,25 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
    **Bedeutungen**: Kapitalbasis-Annahmen (10k virtuell vs. real vs.
    Plattform-Eigenberechnung) und damit DD-%, Schock-% und Ertrag-% zwischen
    Pelican-Monitor, Scanner-Engine und Plattform-Selbstauskunft (B1–B3).
-4. **KI-Aussagen durch Eingaben gedeckt?** Überwiegend ja (12/12
-   Portfolio-Spotchecks, 4/4 SL-Neutralität, 4/4 Engine-Bindung; Ertrags- und
-   M2-Widersprüche korrekt benannt). Nicht gedeckt: USD-Feld als „%" zitiert
-   (B11); „jeden Trade untersucht" in der Tiefenanalyse (B13); Gesamtbild
-   repliciert gelegentlich Stufen-1-Deutungen ungeprüft (Design-Risiko).
+   **Nachtrag:** Diese Bedeutungs-Inkonsistenz ist nicht nur theoretisch. Auf
+   der 10k-Annahme allein sitzen 14 von 16 pelik-🟢/🟡 unter 5 %/Monat; auf der
+   impliziten Basis (B3) sind es 12. Die DD-%-Verzerrung erreicht Faktor 33
+   (Grid King 1,46 % vs. 48,90 %, SafeGold 1,91 % vs. 44,45 %). Vier Signale
+   laufen auf einer Basis unter 400 USD (GoldWave 50, Combo Profile 120,
+   Precise Pair 225) — ihre 44–89 %/Monat sind rechnerisch richtig, als
+   Kopierer-Urteil aber irreführend. **Eine Ampel ohne ausgewiesene
+   Kapitalbasis ist keine belastbare Information** (Maßnahme #17).
+4. **KI-Aussagen durch Eingaben gedeckt?** **Ja — und flächendeckend belegt.**
+   Der Nachtrag-Vollabgleich aller 157 Lauf-Antworten findet **keinen** Fehler:
+   Ertragszahlen 0 Abweichungen, Ampelbindung 0/52, Einheiten 0, SL-Regel
+   17/17 korrekt. Ebenso wie im Stichprobenbefund gilt: Ertrags- und
+   M2-Widersprüche wurden korrekt benannt, keine Zahl wurde erfunden.
+   Latent (nicht in diesem Lauf ausgeprägt): „jeden Trade untersucht" in der
+   Tiefenanalyse (B13), Übernahme von Stufe-1-Deutungen ohne Gegenprobe
+   (Design-Risiko), `shock_pct_peak_account` als USD-Feld mit Prozent-Name
+   (Maßnahme #20). **Methodisch wichtig:** weil die KI prompt-treu arbeitet,
+   beweisen saubere Antworten nur die *Ausführung* — die *Fragestellung* des
+   Portfolio-Auftrags (B20) bleibt davon unberührt.
 5. **Agenten in ihren Zuständigkeiten?** Im Zielfenster lief keiner (Daemon
    aus). Code-seitig: Bewertungshoheit korrekt getrennt, Budgets getrennt,
    Lock v4 auf Daemon/GUI/Kette — Lücke CLI-Einzelrollen (B14). Betreuer
@@ -468,19 +787,55 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
    (Gold Spike, Lexo, PentagonForex, SafeGold, MicroJump, TKG, HRC) sind
    durch die Forensik gefunden worden, nicht durch die Vorauswahl — ein
    score-gestützter Auswahlkanal würde dasselbe Ergebnis billiger liefern.
+   **Nachtrag (Kapitalbasis-Messung):** Von den 6 pelik-🟢 erreicht auf
+   *beiden* Kapitalbasen nur **Lemonal** die 5-%-Schwelle (11,27 → 25,59 %/M);
+   drei Signale liegen auf beiden darunter (Lexo 3,44 → 1,83; PentagonForex
+   2,59 → 1,08; Mr_Profit 1,05 → 3,20), zwei nur auf der 10k-Annahme
+   (SafeGold 0,47 → 11,00; AccurateCopier 2,83 → 6,46). TKG auf 63 154 USD
+   impliziter Basis erzielt 0,14 %/M — arithmetisch korrekt, aber ein
+   **Kommunikationsproblem**: dieselbe Datenbasis, die im Lauf als Erfolg
+   erscheint, rechtfertigt bei realem Kopierer-Kapital kein 🟢. Die Auswahl
+   ist also nicht nur „popularitätsblind", sie ist auch **kapitalbasisblind** —
+   sie bewertet Rendite, ohne die Bezugsgröße zu nennen.
 7. **Ist 3–4 wenig korrelierte Signale belastbar möglich?** Das Trio Gold
-   Spike/Lexo/PentagonForex ist nach meiner unabhängigen Messung tatsächlich
-   wenig korreliert (r ≈ 0,0–0,2; 3,8 % Dreifach-Overlap; Juli-Stresstest
-   bestanden), aber nur mit n=11 Monaten belegbar und mit Ertrags-/Basis-
-   Vorbehalten (B2/B3). Belastbar im Sinne des Projektziels (alle Kriterien
-   auf konsistenter Basis) ist derzeit nur Gold Spike; 2 der 3 Positionen
-   wären nach Korrektur von B2 grenzwertig. Die Auswahl von 3–4 ist möglich,
-   aber die Datenbasis für mehr als 1–2 Positionen ist dünn.
+   Spike/Lexo/PentagonForex ist untereinander tatsächlich wenig korreliert
+   (r ≈ 0,0–0,2; 3,8 % Dreifach-Overlap) — **aber nur mit n=11 Monaten
+   belegbar** (Konfidenzintervall r = 0,04 ± ~0,55) und mit Ertrags-/Basis-
+   Vorbehalten (B2/B3). **Die entscheidende Einschränkung (B20):** geringe
+   Korrelation untereinander ist **kein** Schutz gegen einen gemeinsamen
+   Makro-Schock — und die Prüfung, die stattdessen nötig wäre, fehlt. Juli 2026
+   zeigt 7 Signale gleichzeitig im Minus (Precise Pair −106,6 %, Gold Reaper
+   −7,0 %, Pure Gold 2000, **Gold Spike −1,82 %**, SafeGold, AccurateCopier,
+   Grid King); von den drei Empfohlenen ist nur Gold Spike betroffen, minimal.
+   Ein Trio-Schaden ist damit **nicht belegt** — der Befund ist die
+   **Stichprobenlücke**: Juli 2026 ist ein Ausbruchsmonat des *Sortiments*,
+   und ein solcher Monat ist in den 11 Beobachtungsmonaten des Trios nicht
+   abgebildet. Wer das Trio als drei unabhängige Einheiten behandelt, hält
+   faktisch **eine Gold-Position plus eine Fremdwährungs-Position**, nicht drei
+   Positionen. Belastbar im Sinne
+   des Projektziels (alle Kriterien auf konsistenter Basis) ist derzeit nur
+   **Gold Spike**; Lexo und PentagonForex sind nach B2 grenzwertig.
+   **Antwort: Ja, aber nur als deklarierte Makro-Cluster-Deckelung** — nicht
+   als „drei unabhängige Signale". Die Datenbasis trägt 1–2 Positionen
+   belastbar, nicht 4.
 8. **Größter Korrekturnutzen:** (1) Schranken-Lücke B1 schließen — sie betrifft
    die Kernregel des Projekts; (2) Ertragsbasis B2 + Kapitalbasis B3 — sie
    entscheiden darüber, welche Kandidaten überhaupt „grün" sind; danach erst
    Auswahlmechanik (B5–B8). Alle drei sind kleine, testbare Änderungen mit
-   großem Hebel auf genau das Auswahlziel.
+   großem Hebel auf genau das Auswahlziel. **Nachtrag — und das ist der
+   wichtigste Punkt, der im ursprünglichen Review fehlte:** B1–B3 sind mit
+   `fc4b3b9` im Code geschlossen, aber die *eigentliche* Verfehlung ist
+   entdeckt und noch offen: das Portfolio-Urteil prüft **Korrelation**, nicht
+   **gleichzeitige Belastung** — und es nennt die Beobachtungstiefe der
+   Empfehlung nicht. Eine Empfehlung, die nur r-Werte über 11 Monate
+   summiert, liefert dem Nutzer genau das Gefühl von Sicherheit, das B20
+   widerlegt: im Juli 2026 verlor das Sortiment breit, das Trio nicht — und
+   genau solche Ausbruchsmonate braucht der Nutzer, um die Empfehlung zu
+   prüfen. Der Portfolio-Prompt muss den schlechtesten beobachtbaren Monat als
+   **Stress-Szenario** ausgeben („wenn Juli 2026 wiederkehrt: du bist X % im
+   Minus") **und die Historie-Tiefe je Position nennen**, sonst ist jede
+   Diversifikationsaussage im Projekt eine Behauptung. Rangfolge der offenen
+   Punkte: **B20 → B2/3-Lauf-Verifikation → B21 → B18.** (B17 wurde durch   Gegenprobe zurückgezogen — GER40 läuft inkl. EUR-Schock.)
 
 ---
 

@@ -8,6 +8,34 @@ Agenten-Vorlagen (`config/prompts/agenten/*.md`), Prompt-Füllung im Code
 `sub_ki_agenten/fall_dumps.md` und `portfolio_antwort.txt`). Vollständige
 Einzelbefunde: `sub_ki_agenten/notes.md`.
 
+> **Stand 30.09. 17:10 — Code-Stand `fc4b3b9`.** Die Befunde B11 (USD-Feld als
+> „%"), B12 (Default-Drift), B13 (Tiefenanalyse-Ehrlichkeit) und B16
+> (Injektions-Delimiter) sind in **allen fünf Workflow-Vorlagen umgesetzt** und
+> durch einen Sync-Test gegen Code-Defaults gesichert (B12 verhindert jetzt
+> Drift). Die Zeilen „konkrete Verbesserung" in der Matrix sind damit für
+> diese vier Punkte **erledigt**; sie bleiben als Nachweis der damaligen
+> Lücke stehen. **Weiterhin offen und im Nachgang dieses Nachtrags neu
+> bewertet:**
+> - **Portfolio-Prompt (Zeile 4 der Matrix):** Mein Vorschlag „Engine liefert
+>   Korrelationsmatrix" greift **zu kurz**. Die Korrelation untereinander ist
+>   nicht das Problem — sie ist gemäß im Trio tatsächlich ~0. **Was fehlt, ist
+>   die gleichzeitige Belastung** (B20) und die Instrument-Überlappung (B21).
+>   Der Prompt braucht einen **Stress-Monat**, nicht eine Korrelationsmatrix:
+>   „Welcher beobachtbare Monat war für die meisten Signale gleichzeitig ein
+>   Verlustmonat? Wie steht das empfohlene Trio in genau diesem Monat? Auf
+>   wie vielen Monaten beruht diese Aussage überhaupt?"
+>   Erst dann ist die Aussage „diversifiziert" belastbar. (Messung Juli 2026:
+>   7 von 23 🟢/🟡 gleichzeitig im Minus, Trio nur mit Gold Spike −1,82 % —
+>   der Fall liegt also in der *Fragestellung* und der *Stichprobe*, nicht in
+>   einem Schaden des Trios. Die Historie-Tiefe ist deshalb Pflichtbestandteil
+>   der Antwort, nicht Kosmetik.)
+> - **risiko_analyse / gesamtbericht:** brauchen zusätzlich die
+>   **Kapitalbasis-Zeile** (B2/B3, Maßnahme #17). Im Ziellauf standen 10k
+>   virtuell und 63 154 USD implizit ohne Kennzeichnung nebeneinander — der
+>   LLM kann das nicht unterscheiden und nennt eine Prozentzahl ohne Nenner.
+> - **portfolio:** Korrelationsmatrix als JSON bleibt sinnvoll (Maßnahme #16),
+>   aber **zusätzlich** Instrument-Overlap je Paar als Code-Kennzahl.
+
 ## Prompt-Matrix
 
 | Prompt (Modell) | Zweck / Befugnis | belegte Inputs (Lauf) | Qualitätsbefund | Risiko für Auswahlziel | konkrete Verbesserung |
@@ -72,7 +100,24 @@ Einzelbefunde: `sub_ki_agenten/notes.md`.
 - portfolio.md, Datenblock-Erweiterung:
   > „Korrelationsmatrix der Monatsrenditen (Code-Befund): … — deute sie;
   > |r| > 0,5 zwischen zwei Positionen ist ein Klumpen-Warnmarker."
+  > **UND (dies ist der entscheidende Zusatz, siehe B20):** „Verlustmonat-
+  > Cluster (Code-Befund): Im Monat YYYY-MM waren N der M bewerteten Signale
+  > gleichzeitig im Minus (Namen …). Prüfe das empfohlene Trio gegen genau
+  > diesen Monat und gib an, welchen gemeinsamen Verlust es dabei trug.
+  > Geringe Korrelation untereinander belegt KEINEN Schutz vor einem
+  > gemeinsamen Schock — sie zeigt nur, dass die Signale nicht dieselbe
+  > Tagesbewegung.copyieren. Ein Klumpenrisiko kann vollständig unkorrelliert
+  > und dennoch real sein."
+  > **Und (Pflichtangabe, siehe B20):** „Nenne für jede empfohlene Position,
+  > auf wie vielen Monaten ihre Kennzahlen beruhen (n=…). Eine
+  > Diversifikationsaussage über 11 Monate ist eine andere als eine über 46 —
+  > das gehört in die Antwort, nicht in eine Fußnote."
 - tiefenanalyse.md, ehrlich:
   > „Dir liegt eine kuratierte Stichprobe vor (X von Y Trades; Auswahl:
   > größte Gewinne/Verluste, erste/letzte, Zufall). Rechne nur auf dieser
   > Grundlage und benenne die Grenze."
+- **alle Vorlagen, Kapitalbasiszeile** (B2/B3, Maßnahme #17 — noch offen):
+  > „Jede Prozentangabe zu Ertrag oder Drawdown bezieht sich auf eine
+  > Kapitalbasis. Diese ist: real aus Einzahlungen / implizit aus dem
+  > Kontostand / **virtuell angenommen (10 000 USD)**. Virtuelle Basen sind
+  >_markiert_ und dürfen nie als reale Anlegerperformance dargestellt werden."

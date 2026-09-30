@@ -41,7 +41,20 @@ def distinct_snapshots(live_reports, monkeypatch, tmp_path):
     monkeypatch.setattr(config, 'KNOWN_SIGNALS_FILE', tmp_path / 'no-known-signals.json')
     good, bad = tmp_path / 'first_900001.csv', tmp_path / 'second_900001.csv'
     good.write_text(source.read_text(encoding='utf-8'), encoding='utf-8')
-    bad.write_text(source.read_text(encoding='utf-8').replace(';1990;2010;', ';;2010;'), encoding='utf-8')
+    # Aushängen des Stop-Loss: die SL-Spalte ist im Fixture 'S/L' (6), TP 'T/P' (7).
+    # Achtung, fc4b3b9 hat den Exit-Preis im Fixture von 2010 auf 2060 geändert —
+    # diese Mutation muss auf den AKTUELLEN Wert zielen, sonst bleibt sie eine
+    # No-Op und beide Dateien wären identisch (stop_evidence 'direct'/'none').
+    source_text = source.read_text(encoding='utf-8')
+    mutation = ';1990;2060;'
+    # Trefferprüfung: ein stiller No-Op (Fixturewert geändert, Mutation nicht
+    # nachgezogen) lässt der Test still die Prüfung ausfallen und scheitert nur
+    # scheinbar an einem ganz anderen Kriterium — siehe Review-Befund B22.
+    assert mutation in source_text, (
+        f"Stop-Mutation {mutation!r} greift nicht — Fixture in "
+        f"test_review15_reports.py::live_reports geändert?")
+    bad.write_text(source_text.replace(mutation, ';;2060;'), encoding='utf-8')
+    assert bad.read_text(encoding='utf-8') != source_text, 'Mutation blieb wirkungslos'
     results = pipeline.ScanPipeline.analyze_local_files([str(good), str(bad)])
     assert results[0].id == results[1].id
     assert results[0].stop_evidence == 'direct' and results[1].stop_evidence == 'none'

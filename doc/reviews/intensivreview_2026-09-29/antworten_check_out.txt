@@ -1,0 +1,62 @@
+﻿Signale im Lauf: 60
+Signale mit >=1 Antwort am Lauftag: 53
+Antworten je Art: {'trade_analyse': 52, 'risiko_analyse': 52, 'gesamtbericht': 52, 'portfolio': 1}
+
+== Portfolio-Antwort ==
+Kurzfassung: Empfohlen: Gold Spike 40 %, Lexo 30 %, PentagonForex 30 % — Streuung über Gold, AUDCAD und FX-Majors bei bewiesenem bzw. neutralem Stop-Befund.  ## 1. Bestandsaufnahme  23 Signale, keine Ampel Rot/Ausgeschlossen, nirgends Martingale-Flag, keine verletzte 30-%-Schranke; 7× grün (Kandidat), 16× gelb (Beobachtung). Strategisch dominiert Short-Volatility: rund 14 Grid-/Averaging-Systeme mit Korb-Exits, ergänzt um Session-Scalper, einen Paar-Hedge, einen Scalp/Trend-Hybrid und Multi-Currency-Grids. Asset-Klumpen: 11 Signale handeln überwiegend XAUUSD, 5 nutzen AUDCAD (4 davon mono), Majors/Crosses sind breit gestreut; CHINA50 und BTCUSD sind Randerscheinungen. Zeitlich überlappen NY-Nachmittag- und Nacht-/Rollover-Fenster — bei Gold-Trendphasen korrelieren die Grid-Klumpen. Plattform-Schieflage: 16 Pelican-Signale rechnen auf virtueller 10.000-USD-Basis, 7 MQL5-Signale haben kleine Referenzkonten (Peak ca. 260–12.300 USD).  ## 2. Bewertung je Signal  DD = gewertetes Maximum, M2 = Monitor-Zweitmessung (monitor_trade_eq_dd_pct), Schock = Stresszenario.  | Signal | Ampel | Rolle | Kernzahlen | |---|---|---|---| | Gold Spike (2349227) | grün | Ertragsträger | 24,54 %/M; DD max 8,11 % (Reko 5,69 %); Stop Orderbuch 392/392; Schock 30,51 % | | Lexo (2000028) | grün | Ertragsträger | 15,4 %/M; DD 0,78 %, M2 6,19 % (Faktor 7,9); Schock 102,9 %; 178 Wochen | | PentagonForex (2014076) | grün | Diversifikator | 6,68 %/M; DD 7,22 %, M2 15,98 % (Faktor 2,2); Schock 16,03 %; 187 Wochen | | SafeGold (2048285) | grün | Reserve | 6,46 %/M; DD 15,34 %, M2 16,07 % konsistent; Schock 4,49 % | | Lemonal (2063644) | grün | aussortiert | M2 46,65 % vs. 8,56 % gemeldet | | AccurateCopier (2084818) | grün | aussortiert | M2 241,3 % vs. 16,77 % | | Mr_Profit_FX (2052727) | grün | aussorti
+...
+
+== Ampel-Bindung (Stufe 2 gesamtbericht) ==
+  Abweichungen: 0
+
+== Ertrags-%/Monat: KI vs. Engine ==
+  Ertragszahlen gefunden: 258  mit Engine-Vergleich: 258  abweichend: 226
+   2379208 World PEACE Multi FX A Engine  19.54  KI    54.00
+   2379208 World PEACE Multi FX A Engine  19.54  KI     5.00
+   2265877 Gold Reaper New V2 2   Engine  14.69  KI     1.00
+   2265877 Gold Reaper New V2 2   Engine  14.69  KI    52.00
+   2265877 Gold Reaper New V2 2   Engine  14.69  KI     1.00
+   2265877 Gold Reaper New V2 2   Engine  14.69  KI    69.00
+   2265877 Gold Reaper New V2 2   Engine  14.69  KI    94.00
+   2265877 Gold Reaper New V2 2   Engine  14.69  KI    84.00
+   2265877 Gold Reaper New V2 2   Engine  14.69  KI    69.00
+   2265877 Gold Reaper New V2 2   Engine  14.69  KI     5.00
+   2262642 NoPain MT5             Engine   1.83  KI    83.00
+   2262642 NoPain MT5             Engine   1.83  KI    83.00
+   2262642 NoPain MT5             Engine   1.83  KI    83.00
+   2262642 NoPain MT5             Engine   1.83  KI     7.00
+   2262642 NoPain MT5             Engine   1.83  KI    86.00
+   2262642 NoPain MT5             Engine   1.83  KI    45.00
+   2262642 NoPain MT5             Engine   1.83  KI     5.00
+   2262642 NoPain MT5             Engine   1.83  KI    83.00
+   2339082 GoldWave signal        Engine   4.93  KI    93.00
+   2339082 GoldWave signal        Engine   4.93  KI    93.00
+   2339082 GoldWave signal        Engine   4.93  KI    93.00
+   2339082 GoldWave signal        Engine   4.93  KI     0.00
+   2339082 GoldWave signal        Engine   4.93  KI     0.00
+   2231030 MSC Gold Stable Pro    Engine   4.98  KI   199.00
+   2231030 MSC Gold Stable Pro    Engine   4.98  KI    33.70
+
+== B11: USD-Betrag als Prozent zitiert ==
+  Treffer: 0
+
+== SL-Neutralitaet ==
+   (2379208, 'trade_analyse', 'stop-loss mit scalping-overlay; das ampel-ausschlusskriterium (grid+martingale, eq-dd > 30 %) ist voll bestäti')
+   (2379208, 'gesamtbericht', 'stop-schutz; eq-dd 34,22 prozent verletzt die 30-prozent-schranke; engine-ampel: ausschlussliste')
+   (2379208, 'gesamtbericht', 'slösung: martingale ist laut forensik nicht nachgewiesen (flag false), obwohl der engine-ausschlusstext es nen')
+   (2231030, 'trade_analyse', 'slippage), was der engine-ausschluss „sekunden-scalping" bereits spiegelt')
+   (2329290, 'gesamtbericht', 'stop-schutz, sondern rein adaptives exit-management — ein begründeter, mäßig wertender risikobefund, kein auss')
+   (2362349, 'gesamtbericht', 'stop-nachweis** (orderbuch oder eindeutige verlust-distanz-cluster) würde die einschätzung „ohne stop-schutz" ')
+   (2359404, 'gesamtbericht', 'stop, nicht für bewiesenen engen stop-schutz; ein begründeter negativbefund „wahrscheinlich ohne stop-schutz" ')
+   (2356872, 'gesamtbericht', 'stops; rekonstruierter eq-dd 38,19 % verletzt die 30-%-grenze; engine-ausschlussliste aktiv — ablehnung')
+   (2271402, 'gesamtbericht', 'stop über die distanzcluster; für das fx-modul ist die begründete einschätzung „wahrscheinlich ohne stop-schut')
+   (2367701, 'gesamtbericht', 'stop — das darf als verhaltens-signatur leicht negativ werten, bleibt aber kein ausschlusskriterium')
+   (2063644, 'trade_analyse', 'sl existiert nicht: verlustdistanzen median 2,29, maximal 88,69 preiseinheiten; die 350,45-h-position lief ohn')
+   (2063644, 'risiko_analyse', 'stop: sl nicht übertragen — neutral (bindende regel); verlustdistanzen ohne cluster, kein stop-schutz verhalte')
+   (2063644, 'gesamtbericht', 'stopp, verhaltensbelegt wahrscheinlich ohne stop-schutz, schockstress 27,27 %, monatsnettos seit maerz fallend')
+   (2021443, 'risiko_analyse', 'stop-nachweis fehlt: neutral, kein malus; die verhaltenssignatur (eskalationsleitern ohne stop-schutz) begründ')
+   (2021443, 'gesamtbericht', 'sleitern, fixe multiplikatoren, kein stop-schutz) — engine-ampel 🔴, automatische ablehnung')
+  Treffer: 17
+
+== Abonnenten als Qualitaetsmerkmal ==
+  Treffer: 0
