@@ -179,6 +179,18 @@ Herkunft reichen strukturiert bis in die KI-Prompt-JSONs und in die
 Berichtsbindung (`report_basis_for` — Wechsel virtuell → belegt ergibt
 einen neuen Berichtsschlüssel).
 
+**Nachtrag 30.09.2026 (Intensiv-Review B1–B3/B5/B6):** Die virtuelle
+Annahme ist nur noch LETZTER Fallback — vorher greift die implizite Basis
+`Web-Balance − Σ Trade-Netto` (`KAPITALBASIS_QUELLE_IMPLIZIT`, Urteil
+„Kapitalbasis implizit"; der Cent-Abgleich überspringt sie, da tautologisch).
+Der Monitor-Wert `TradeEqDrawdownPct` ist seit B1 fünftes Maximum der
+Drawdown-Schranke (nicht mehr nur KI-Kontext), und das Ertrags-Kriterium
+wertet `ertrag_monat_pct_forensik` (eigene Kurve) statt nur
+`Average3MonthProfit`. PelicanMonitor liefert seit cd9612f `weeks: null`
+statt 0, wenn nie Stats geladen wurden (der Scanner-Vorfilter behandelt
+unbekanntes Mindestalter als nicht bestanden), und `metrics.Broker`
+(häufigster ServerCode der Trades) für cross_broker-Kontraktspecs (USOIL).
+
 **Erweiterter `metrics`-Satz** (28.09.2026, ebenfalls additiv): `Equity`,
 `Leverage`, `MinTradesPerMonth`, `MaxTradesPerMonth`, `MarketsCount`,
 `TopMarkets`, `CopiersAum`, `CopiersProfitYear`, `CopiersProfitMonth` —

@@ -97,6 +97,17 @@ die Prüfung still — kein Signal wird dafür schlechter bewertet
 (Einstellung „equity_rekonstruktion", Standard an; Terminal-Politik wie beim
 Markt-Beobachter: einmal pro Scanlauf, danach beendet).
 
+**Schranke und Ertrag seit 30.09.2026 strenger/ehrlicher (Intensiv-Review):**
+Bei Signalen aus Datenquellen (z. B. Pelican) geht die floating-inclusive
+Zweitmessung des Monitors („Monitor-EQ-DD") als weiterer Wert in dieselbe
+harte 30-%-Schranke ein — ein grünes Signal mit Zweitmessung über 30 % gibt
+es damit nicht mehr. Das Ertrags-Kriterium (≥ 5 %/Monat) zählt die EIGENE
+Trade-Kurve auf der Kapitalbasis, gegen die auch Drawdown und Schock
+gerechnet werden; der von der Plattform gemeldete Ertrag steht daneben als
+Zusatzinformation. Und ohne echtes Startkapital wird die Basis bevorzugt
+aus „aktueller Kontostand minus erwirtschaftetem Gewinn“ abgeleitet
+(„Kapitalbasis implizit“) statt pauschal 10.000 USD anzunehmen.
+
 ### Ampel-Verlauf und Wechsel-Protokoll
 
 **Farben werden bei jedem Lauf aufgezeichnet:** Jeder erfolgreich gespeicherte

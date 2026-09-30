@@ -181,3 +181,28 @@ Manuelle Vollanalyse je Signal, außerhalb des Workflows:
   Preisabgleich). Geht bei Abdeckung >=95 % als viertes Maximum in die
   30-%-Schranke; Prompts/Score werten ihn aus; ohne MT5-Terminal still aus.
 - Details: doc/03 Abschnitt 5 + AGENTS.md Umsetzungsstand.
+
+## Ergänzt 30.09.2026: Intensiv-Review-Fixes B1–B16 + R1/R2
+
+End-to-End-Review des Ziellaufs 2026-09-30 (doc/reviews/intensivreview_
+2026-09-29/) mit anschließender Umsetzungswelle (fc4b3b9, +27 Tests):
+
+- **B1** Monitor-EQ-DD als FÜNFTES Maximum in der 30-%-Schranke (Score,
+  Dimension, Neu-Berechnung, Ampel-Zelle) — 🟢 bei floating-Zweitmessung
+  über Schranke ist unmöglich.
+- **B2** Ertrag/Monat maßgeblich auf der Forensik-Kapitalbasis
+  (`ertrag_monat_pct_forensik`); Plattformwert nur noch Zusatzinfo.
+- **B3** Implizite Kapitalbasis (Web-Balance − Σ Trade-Netto) vor der
+  virtuellen 10k-Annahme; Urteil/Kennzeichnung entsprechend.
+- **B4** Betreuer nur MQL5 (Quellen-Signale dokumentiert übersprungen, bis
+  doc/20 Stufe 3). **B7** ⛔ belegt keine Slots/kein LLM. **B9** Downloader-
+  Abgleich 404-tolerant + URL-Divergenz-Warnung. **B10** Kursdaten-Symbol-
+  Fallback auf Basis-Symbol bei Broker-Suffixen (Reko wirkt ~22/28 statt
+  14/28 MQL5-Signale). **B6** Parser-Typ Correction + GER40-Alias +
+  metrics.Broker (PelicanTrading cd9612f); abgebrochene CSV-Endzeilen
+  bleiben bewusst laute Fehler (Cache-Poisoning-Abwehr) mit neuem
+  Diagnose-Hinweis.
+- Prompt-Härtung (Einheiten, Fremdtext-Guard, Default-Sync-Test),
+  CLI-Rollen-Lock, ID-Kollisionsschutz, REST-Altersmarker (stale),
+  weeks=null-Ehrlichkeit beim Pelican-Katalog.
+- Details: AGENTS.md Umsetzungsstand + Review-Verzeichnis.

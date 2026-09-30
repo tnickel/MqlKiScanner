@@ -291,7 +291,38 @@ Alle drei Prompt-Vorlagen (config/prompts/) deuten den Wert gezielt:
 - **gesamtbericht.md** (Prompt 3): Drawdown-Dreiklang; Reko über Schranke =
   hartes Ablehnungskriterium.
 - **portfolio.md**: DD-Arten im Portfolioteil genannt.
-- **Kriterien-Text** (pipeline._kriterien_text): erklärt das Vierfach-Maximum
-  der Schranke (EQ/Bal/Trading/Reko) — die KI kennt die Engine-Regel.
+- **Kriterien-Text** (pipeline._kriterien_text): erklärt das Fünffach-Maximum
+  der Schranke (EQ/Bal/Trading/Reko/Monitor, s. u.) — die KI kennt die
+  Engine-Regel.
 - **scoring.evaluate**: `reko_eq_dd_pct` als viertes Maximum (auch bei
   eq_dd_caveat); Pipeline reicht ihn nur bei verlässlicher Rekonstruktion durch.
+
+### Schranke, Ertrags-Basis und Kapitalbasis (30.09.2026, Intensiv-Review B1–B3)
+
+Drei Regeländerungen aus dem End-to-End-Review des Ziellaufs
+2026-09-30 (doc/reviews/intensivreview_2026-09-29/):
+
+1. **Monitor-EQ-DD als fünftes Schranken-Maximum (B1).** Der Datenquellen-
+   Monitor (Pelican etc.) misst einen floating-inclusiven Max-EQ-DD aus der
+   vollen Trade-Kurve (`monitor_trade_eq_dd_pct`). Seit 30.09. gehört er in
+   `scoring.dd_maximum` — an allen drei Stellen synchron (evaluate,
+   dimension_inputs, refresh_report_verdict) und in der Ampel-Zelle
+   dd_schranke. Grund: Bei Quellen-Signalen wurde die Kursdaten-Reko bei
+   vorhandenem Monitorwert geskippt UND der Monitorwert nicht in die Schranke
+   genommen — die floating-Schranke war für diese Signale wirkungslos
+   (Ziellauf: Lemonal 🟢 bei 46,65 % Zweitmessung). Vorbehalt: Der Monitor
+   rechnet gegen seine eigene (ggf. rückgerechnete) Basis — Werte über
+   100 % überzeichnen absolut (Kennzeichnung im Zellen-Text), bleiben aber
+   harte Warnmarker in Schranken-Richtung.
+2. **Ertrag/Monat auf der Forensik-Basis (B2).** Neu berechnet:
+   `ertrag_monat_pct_forensik` = Σ Trade-Netto / Startkapital / Monate aus
+   der EIGENEN Kurve — dieselbe Basis, gegen die DD und Schock gerechnet
+   werden. Dieses Kriterium ist maßgeblich für die Ertrags-Zelle und den
+   Grün-Weg; der Plattformwert (`ertrag_monat_pct`, fremde Kapitalbasis)
+   bleibt als gekennzeichnete Selbstauskunft daneben.
+3. **Implizite Kapitalbasis vor der virtuellen Annahme (B3).** Ohne echtes
+   Initial Deposit ist die erste Wahl jetzt Web-Balance − Σ Trade-Netto
+   (`KAPITALBASIS_QUELLE_IMPLIZIT`, Urteil: „Kapitalbasis implizit");
+   die starre 10.000-USD-Annahme (`virtuelle_annahme`) ist nur noch letzter
+   Fallback. Der Cent-Abgleich überspringt die implizite Basis (sie ist per
+   Konstruktion aus der Balance abgeleitet — der Abgleich wäre tautologisch).
