@@ -52,3 +52,6 @@ doc/zielrechner_ns1mqsv_betrieb.md
 config/app_settings.json
 config/deploy.local.json
 tests/tmp_*.py
+
+# Laufzeit-Cache der Datenquellen-Artefakte (SHA-Cache, ändert sich je Scan)
+data/quellen/
