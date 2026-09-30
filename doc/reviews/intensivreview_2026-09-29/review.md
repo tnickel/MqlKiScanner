@@ -229,11 +229,11 @@ vom Hauptagenten unabhängig nachgerechnet bzw. im Code nachgelesen (✓).
 
 | Befund | Status im Code | Lauf-verifiziert? |
 |---|---|---|
-| B1 Monitor-EQ-DD als 5. Schranken-Maximum | ✅ `scoring.dd_maximum` (3 Stellen) + Ampel-Zelle | ❌ nein — kein Lauf nach dem Fix |
-| B2 `ertrag_monat_pct_forensik` maßgeblich | ✅ berechnet + persistiert + im Urteil | ❌ nein |
-| B3 implizite Kapitalbasis vor 10k-Fallback | ✅ `pipeline._implizite_kapitalbasis` | ❌ nein |
+| B1 Monitor-EQ-DD als 5. Schranken-Maximum | ✅ `scoring.dd_maximum` (3 Stellen) + Ampel-Zelle | ✅ **LIVE 30.09.** (`lauf_verifikation_b1_b3.py`: Lemonal 🔴 46,65 %, AccurateCopier 🔴 241,3 %) |
+| B2 `ertrag_monat_pct_forensik` maßgeblich | ✅ berechnet + persistiert + im Urteil | ✅ **LIVE 30.09.** (Lexo 1,86 statt 15,4 · PentagonForex 1,12 statt 6,68 · Mr_Profit 3,33 statt 63,8 %/M → 🟡) |
+| B3 implizite Kapitalbasis vor 10k-Fallback | ✅ `pipeline._implizite_kapitalbasis` | ✅ **LIVE 30.09.** (6/6 Signale mit `implizit_aus_balance`, z. B. SafeGold 430 USD statt 10.000) |
 | B4 Betreuer quellen-blind | ✅ filtert auf `mql5_kandidaten` (dokumentierter Skip) | n/a |
-| B5 `weeks` ehrlich null | ✅ Pelican `cd9612f` | ❌ Katalog-Cache ist Vorlauf |
+| B5 `weeks` ehrlich null | ✅ Pelican `cd9612f` | ✅ **LIVE 30.09.** (Katalog: kein weeks=0 mehr, null überwiegt) |
 | B6 Parser-Artefakte, GER40-Alias, Öl-Broker | ✅ alle drei | ❌ nein |
 | B7 ⛔ ohne Forensik/LLM | ✅ via Fix-ID pinbar | n/a |
 | B8 `fix_signal_ids` gesetzt | ✅ `[2342895, 2375480]` | n/a |
