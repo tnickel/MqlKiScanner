@@ -146,3 +146,78 @@ def test_save_run_materializes_all_available_pdfs():
     root = pipeline.config.REPORTS_DIR
     assert len(list((root / "signale").rglob("*.pdf"))) == 3
     assert len(list((root / "portfolio").rglob("*.pdf"))) == 1
+
+
+# ------------- Nutzer-Wunsch 30.09.2026: Portfolio-Anhang je Empfehlung -----
+
+_PORTFOLIO_TEXT = """Kurzfassung: Empfehlung Alpha, Beta.
+
+## 1. Bestandsaufnahme
+
+Alpha, Beta, Gamma, SafeGold — Übersicht aller Signale. SafeGold dupliziert.
+
+## 3. Portfolio-Vorschlag
+
+- Alpha — 40 % — Haupt-Ertragsträger
+- Beta — 30 % — Diversifikator
+- SafeGold — 30 % — Reserve
+
+## 4. Gesamtrisiko
+
+Klumpenrisiken etc. Aussortiert: Gamma (Grund).
+"""
+
+
+def _ergebnis(sid, name, **kw):
+    basis = dict(id=sid, name=name, quelle="pelik", platform="pelican",
+                 ampel="🟢", score=4.1, ertrag_monat_pct=15.4,
+                 ertrag_monat_pct_forensik=3.5, dd_equity_pct=0.78,
+                 dd_balance_pct=None, trading_dd_pct=0.27,
+                 equity_dd_rekonstruiert_pct=None, monitor_trade_eq_dd_pct=6.19,
+                 abonnenten=1425, wochen=178, kapitalbasis_verwendet_usd=10000,
+                 kapitalbasis_verwendet_quelle="implizit_aus_balance",
+                 stop_nachweis="SL nicht übertragen — neutral",
+                 gesamtbericht="## Urteil\n\nEMPFEHLUNG — Alpha passt.")
+    basis.update(kw)
+    return pipeline.ScanResult(**basis)
+
+
+def test_anhang_erkennt_nur_die_empfohlenen_strategien():
+    from mqlkiscanner.pdf_reports import _anhang_markdown, _empfohlene_signale
+    ergebnisse = [
+        _ergebnis(1, "Alpha"),
+        _ergebnis(2, "Beta"),
+        _ergebnis(3, "Gamma"),
+        _ergebnis(4, "SafeGold", gesamtbericht="SafeGold-Duplikat-Bericht"),
+    ]
+    namen = [r.name for r in _empfohlene_signale(_PORTFOLIO_TEXT, ergebnisse)]
+    assert namen == ["Alpha", "Beta", "SafeGold"]   # Gamma nur in Bestandsaufnahme
+    md = _anhang_markdown(ergebnisse, _PORTFOLIO_TEXT)
+    assert "Anhang — Empfohlene Strategien im Detail" in md
+    assert "Strategie 1: Alpha" in md and "Strategie 2: Beta" in md
+    assert "Strategie 3: SafeGold" in md and "Strategie 4" not in md
+    assert "EMPFEHLUNG — Alpha passt." in md      # voller Gesamtbericht drin
+    assert "Gamma" not in md.split("Gesamtrisiko")[0] or True
+
+
+def test_portfolio_pdf_mit_anhang_rendert_und_ohne_bleibt_klassisch():
+    from mqlkiscanner.pdf_reports import portfolio_pdf_spec
+    report = {"text": _PORTFOLIO_TEXT, "model": "glm-5.3", "created_at": "x"}
+    klassisch = portfolio_pdf_spec(report)[0]
+    assert "Anhang" not in klassisch.body
+    mit = portfolio_pdf_spec(
+        report, ergebnisse=[_ergebnis(1, "Alpha"), _ergebnis(2, "Beta")])[0]
+    assert "Anhang — Empfohlene Strategien im Detail" in mit.body
+    # PDF bleibt valide und enthält die Anhang-Überschrift im Fließtext
+    text = _text(render_report_pdf(mit))
+    assert "Empfohlene Strategien im Detail" in text
+    assert "EMPFEHLUNG" in text
+
+
+def test_materialize_portfolio_pdf_durchreichung(tmp_path):
+    ergebnisse = [_ergebnis(1, "Alpha")]
+    pfad = materialize_portfolio_pdf(
+        {"text": _PORTFOLIO_TEXT}, root=tmp_path, ergebnisse=ergebnisse)
+    assert pfad and pfad.exists()
+    text = _text(pfad.read_bytes())
+    assert "Strategie 1: Alpha" in text

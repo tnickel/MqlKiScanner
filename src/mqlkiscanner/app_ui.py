@@ -132,14 +132,20 @@ def render_result_pdf_viewer(
         st.caption(f"Automatisch gespeichert: `{_display_path(path)}`")
 
 
-def render_portfolio_pdf_viewer(report: dict, *, key: str) -> None:
-    """Persist and toggle the portfolio PDF inside the page."""
-    pdf_report, filename = portfolio_pdf_spec(report)
+def render_portfolio_pdf_viewer(report: dict, *, key: str,
+                                ergebnisse=None) -> None:
+    """Persist and toggle the portfolio PDF inside the page.
+
+    ergebnisse: aktuelle 🟢-Ergebnisse — erzeugt den Detail-Anhang der
+    empfohlenen Strategien (Nutzer-Wunsch 30.09.2026). Aufrufer ohne
+    Ergebnisse bekommen das klassische Nur-Text-PDF.
+    """
+    pdf_report, filename = portfolio_pdf_spec(report, ergebnisse=ergebnisse)
     path = None
     error = ""
     if pdf_report.body.strip():
         try:
-            path = materialize_portfolio_pdf(report)
+            path = materialize_portfolio_pdf(report, ergebnisse=ergebnisse)
         except (PdfRenderError, OSError) as exc:
             error = str(exc)
     visible_key = f"{key}_visible"

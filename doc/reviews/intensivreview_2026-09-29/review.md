@@ -44,9 +44,14 @@ Kopien; unabhängige Nachrechnung mit eigenem Parser (kein Import von
 > ungeprüft nach gleichzeitiger Belastung, und mit „also unkritisch" nicht
 > durch die Stichprobe gedeckt.
 >
-> **Code-Stand:** geprüft wurde `fc4b3b9`; die Chronologie gilt unverändert —
-> `fc4b3b9` ist Vorfahr von HEAD (`69ab4e2`), die beiden Commits danach sind
-> Doku und eine `.gitignore`-Ergänzung, **kein** Code-Fix zu B1–B3.
+> **Code-Stand:** Der Review wurde gegen `fc4b3b9` geprüft; die Chronologie
+> des Ziellaufs bleibt davon unberührt (der Lauf entstand 15 h **vor** dem
+> Commit). HEAD ist inzwischen `33c11ac`; die Kette
+> `fc4b3b9` → `9942e7d` → `0e1b2b8` → `33c11ac` enthält **keinen** Code-Fix,
+> der die Aussagen dieses Reviews über den **Ziellauf** verändert — sie
+> betrifft ausschließlich den Stand *nach* dem Lauf. Insbesondere ist B17
+> (`fc4b3b9`) widerlegt und B20/B21 (`33c11ac`) nachträglich umgesetzt; die
+> Auswertung des Ziellaufs in den Abschnitten 1–6 bleibt davon unberührt.
 >
 > **Testgrün in diesem Review:** `pytest -q` → **1068 passed, 4 deselected**
 > (10 min). Dabei wurde ein **neuer Befund B22** entdeckt und behoben: `fc4b3b9`
@@ -116,6 +121,21 @@ anderer wird schärfer:
   eigentliche Befund dieses Reviews, und er ist im Code, nicht in den Prompts
   zu beheben: das Portfolio-Ergebnis braucht den schlechtesten beobachtbaren
   Monat als Kennzahl, sonst ist „diversifiziert" im Projekt eine Behauptung.
+  > **Nachtrag 30.09. 23:15:** Die Verletzung ist im Code behoben
+  > (`portfolio_statistik.py`, `33c11ac`) — die drei Kennzahlen sind
+  > Berechnung, nicht LLM-Interpretation. Die Aussage dieses Abschnitts
+  > beschreibt damit den **Zustand im Ziellauf**, nicht mehr den Projektstand.
+
+> **Was davon am Projektstand noch offen ist (30.09. 23:15, HEAD `33c11ac`):**
+> Die Kernmechanik des Ziellaufs ist geschlossen. Es bleiben (a) **B18** —
+> der Pelican-Monitor liefert `/reports` leer, die Quellen-KI-Berichte und
+> PDFs fehlen weiterhin; (b) die **Kapitalbasis-Angabe im Forensik-JSON/Urteil**
+> (Maßnahme #17), damit der Nutzer sieht, auf welcher Bezugsgröße ein 🟢
+> beruht; (c) die Einheiten-Klarstellung an `shock_pct_peak_account` (B11/#20).
+> Und eine methodische Lehre, die keine Code-Änderung behebt: die Ampel ist
+> inzwischen **laufverifiziert**, die Kompensation durch die KI bleibt aber
+> **Zufall** — sie ist nicht systematisch garantiert und darf nicht als
+> Sicherheitsnetz eingeplant werden.
 
 Für das eigentliche Ziel — 3–4 belastbare, wenig korrelierte Kandidaten —
 liefert der Lauf **einen** robusten Kandidaten (Gold Spike MT4) und zwei
@@ -225,7 +245,12 @@ des Laufs) / wahrscheinlich / nicht prüfbar. Jeder Befund mit Ort, Wirkung,
 Korrekturidee, Verifikationstest. Gegenprüfung: B1–B3, B6, B8, B9, B15 wurden
 vom Hauptagenten unabhängig nachgerechnet bzw. im Code nachgelesen (✓).
 
-### 0) Umsetzungsstand je Befund (Stand HEAD `fc4b3b9`)
+### 0) Umsetzungsstand je Befund (Stand HEAD `33c11ac`, 30.09. 23:15)
+
+> **Bilanz: 21 von 23 Befunden geschlossen.** B1–B16 in `fc4b3b9`,
+> B17 widerlegt, B22 in `9942e7d`, B1–B3 **live verifiziert** in `0e1b2b8`,
+> B20/B21 in `33c11ac`. **Offen: allein B18** (Pelican `/reports` liefert
+> weiterhin eine leere Liste) plus die beiden Feld-Klarstellungen #17/#20.
 
 | Befund | Status im Code | Lauf-verifiziert? |
 |---|---|---|
@@ -707,10 +732,14 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
 
 ## 7. Priorisierte Maßnahmen
 
-> **Stand 30.09. 16:30:** Die Maßnahmen 1–3 (B1/B2/B3) und 4–12 sind in `fc4b3b9`
-> **umgesetzt**; offen bleiben die laufseitige Verifikation (Re-Scan, blockiert
-> durch Pelican-Ausfall), B18 (Pelican `/reports`) und
-> der grundsätzliche Portfolio-Korridor als Code-Befund (s. u.).
+> **Stand 30.09. 23:15 (HEAD `33c11ac`):** Von 21 Maßnahmen sind **19
+> umgesetzt** — B1–B16 in `fc4b3b9`, B17 durch Gegenprobe **widerlegt**,
+> B1–B3 in `0e1b2b8` **erstmals live verifiziert** (Monitor-Schranke liefert
+> jetzt 🔴 für Lemonal/AccurateCopier), B20/B21 in `33c11ac` als
+> Code-Befund im Portfolio-Prompt. **Offen bleiben nur B18 (Pelican
+> `/reports`, zwei Projekte) und die beiden Feld-/Einheiten-Klarstellungen
+> (#17, #20).** Der frühere Blocker „Re-Scan nicht möglich (PelicanMonitor
+> offline)" ist **erledigt** — der Monitor läuft wieder.
 
 | # | Maßnahme (Befund) | Nutzen für das Ziel | Aufwand |
 |---|---|---|---|
@@ -726,13 +755,13 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
 | 10 | ~~Prompt-Fixes: USD-Feld-Einheiten, Default-Drift, Tiefenanalyse-Ehrlichkeit, Injection-Delimiter (B11–B13, B16)~~ **✅ `fc4b3b9`** | KI-Richtigkeit systematisiert | erledigt |
 | 11 | ~~CLI-Rollen-Lock (B14), Platzhalter-Meldung löschen (B15), REST-Altersmarker (R2), Quell-Kollisionsschutz (R1)~~ **✅ `fc4b3b9`** | Betriebsrobustheit | erledigt |
 | 12 | ~~Pelican „Stats für ALLE" takten + weeks=null-Ehrlichkeit (B5)~~ **✅ `cd9612f`**; PelicanMonitor-Autostart | Kandidatenraum wird echt | teilweise |
-| 13 | **Re-Scan nach `fc4b3b9` zur Lauf-Verifikation von B1–B3, B6, B10** (blockiert: PelicanMonitor offline) | bestätigt, dass die Fixes die Ampel tatsächlich ändern | klein, sobald Quelle läuft |
-
+| 13 | ~~**Re-Scan nach `fc4b3b9` zur Lauf-Verifikation von B1–B3**~~ **✅ `0e1b2b8`** — Live-Abnahme am Bestand: Lemonal/AccurateCopier jetzt 🔴 via Monitor-Schranke, Ertrag auf impliziter Basis für 6 Ex-Grün, `weeks=null` und `Broker=ICMarketsLive20` bestätigt | Fixes ändern die Ampel tatsächlich — nicht mehr nur codeseitig belegt | erledigt |
+| 14 | ~~**B17: EUR→USD-Schockpfad für DE40/GER40**~~ **✅ widerlegt** — Gegenprobe mit echten Trades läuft durch (EUR = EZB-Basis) | kein Defekt | erledigt |
 | 15 | **B18: Pelican `/reports` befüllen + `ingest.py` reports-Spiegel** | Quellen-KI-Berichte + PDFs erreichen Scanner/Tradeserver | mittel (2 Projekte) |
-| 16 | **Portfolio-Korridor als Code-Befund**: Monatsrenditen-Korrelation + Instrument-Overlap + Verlustmonat-Cluster in den Portfolio-Prompt statt nur LLM-Aussage | die Kernbehauptung „wenig korreliert" wird gemessen, nicht behauptet | mittel |
+| 16 | ~~**Portfolio-Korridor als Code-Befund** (Monatsrenditen-Korrelation + Instrument-Overlap + Verlustmonat-Cluster in den Portfolio-Prompt)~~ **✅ `33c11ac`** (`portfolio_statistik.py`, +10 Tests) | die Kernbehauptung „wenig korreliert" wird gemessen, nicht behauptet | erledigt |
 | 17 | **Kapitalbasis-Faktor im Forensik-JSON/Urteil explizit** (real vs. virtuell) | verhindert erneutes Misslesen wie B11 | klein |
-| 18 | **B20: Verlustmonat-Cluster als Portfolio-Pflichtausgabe + Historie-Tiefe je Position** — Zahl + Namen je Monat über alle 🟢/🟡, Empfehlung gegen den schlechtesten Monat prüfen, n-Monats-Tiefe ausweisen | verhindert die Kern-Fehlannahme „Trio ist diversifiziert" und die Untertiefung: die Empfehlung ruht auf 11 Monaten, Juli 2026 ist im Sortiment ein Ausbruchsmonat, im Trio nicht | klein (Prompt + Kennzahl) |
-| 19 | **B21: Instrument-Überlappung als eigenes Diversifikationskriterium** (Schwelle: > 50 % gemeinsame Symbole bei r < 0,5 = Klumpenrisiko) | trennt echte Streuung von Werkstatt-Klonen (Master H4-1/2: 15 Symbole, r = 0,26) | klein |
+| 18 | ~~**B20: Verlustmonat-Cluster + Historie-Tiefe je Position im Portfolio-Prompt**~~ **✅ `33c11ac`** — Verlustmonat-Cluster, Historie-Tiefe und gemeinsames Beobachtungsfenster sind jetzt Code-Befunde im Prompt; Live-Abnahme: Juli-Cluster (n=5) sichtbar, Gesamtfenster nur 2 Monate | die Stichprobenlücke steht jetzt **im Prompt** statt nur im Review | erledigt |
+| 19 | ~~**B21: Instrument-Überlappung als Diversifikationskriterium**~~ **✅ `33c11ac`** — Paar-Overlap (Jaccard ≥ 0,3, ≥ 3 gemeinsame Symbole) im Prompt; H4-1×H4-2 entfällt korrekt, Holy Grail×MetaTrading2 (J = 0,33) erscheint | trennt echte Streuung von Werkstatt-Klonen | erledigt |
 | 20 | **Schock-Felder eindeutig benennen**: `shock_pct_peak_account` ist ein **USD-Betrag** (Kontostand am Peak), nicht ein Prozentwert; `shock_pct_max` = Schock ÷ Kontostand am Peak (nicht ÷ Kapitalbasis) | macht die B11-Verwechslung strukturell unmöglich; gleiche Klasse wie #17 | klein |
 | 21 | ~~**B22: stille Testkopplung** — Mutation in `test_review18_ui.py` auf den aktuellen Fixture-Wert nachziehen~~ **✅ in diesem Review behoben**; **generell:** Test-Mutationen mit Trefferprüfung versehen (`assert old in text` vor dem `replace`) | schützt die Testgrün-Aussage künftiger Fix-Commits | klein |
 
@@ -834,8 +863,18 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
    prüfen. Der Portfolio-Prompt muss den schlechtesten beobachtbaren Monat als
    **Stress-Szenario** ausgeben („wenn Juli 2026 wiederkehrt: du bist X % im
    Minus") **und die Historie-Tiefe je Position nennen**, sonst ist jede
-   Diversifikationsaussage im Projekt eine Behauptung. Rangfolge der offenen
-   Punkte: **B20 → B2/3-Lauf-Verifikation → B21 → B18.** (B17 wurde durch   Gegenprobe zurückgezogen — GER40 läuft inkl. EUR-Schock.)
+   Diversifikationsaussage im Projekt eine Behauptung.
+   **Stand 30.09. 23:15:** Genau das ist mit `33c11ac`
+   (`portfolio_statistik.py`) **umgesetzt** — Verlustmonat-Cluster,
+   gemeinsames Beobachtungsfenster und Instrument-Overlap liegen jetzt als
+   Code-Befund im Portfolio-Prompt, nicht mehr nur in diesem Review. Damit ist
+   die Kernschwäche der Empfehlung **behoben**, nicht nur beschrieben;
+   offen bleibt die Beobachtung, ob der nächste echte Lauf die neuen
+   Zahlen korrekt nutzt. **Rangfolge der offenen Punkte: B18 (Pelican
+   `/reports`, zwei Projekte) → #17/#20 (Kapitalbasis- und Einheiten-Felder
+   explizit) → laufende Verifikation von B20/B21 am nächsten Volllauf.**
+   (B17 wurde durch Gegenprobe zurückgezogen — GER40 läuft inkl.
+   EUR-Schock; B1–B3 sind in `0e1b2b8` live verifiziert.)
 
 ---
 
@@ -852,3 +891,8 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
 - Ob MqlRealMonitor :8611 tatsächlich abruft (kein Zugriffslog).
 - Vollständige inhaltliche Prüfung aller 52 Berichte (4 Fälle + Portfolio
   vollständig, 12 Zahlenspotchecks, Rest statistisch).
+- **Verwendung der neuen Portfolio-Kennzahlen durch die KI im echten Betrieb.**
+  `portfolio_statistik.py` ist gegen den vorhandenen Bestand abgenommen (die
+  Zahlen erscheinen im Prompt), aber es gibt **noch keinen Lauf**, in dem die
+  KI sie korrekt interpretiert hat. Der Test deckt die Berechnung ab, nicht
+  ihre Auswertung. Erster Beobachtungspunkt: der nächste Volllauf.

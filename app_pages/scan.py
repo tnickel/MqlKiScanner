@@ -1246,7 +1246,13 @@ if st.session_state.get("portfolio_bericht"):
         portfolio_result = st.session_state.get("portfolio_result") or {
             "text": st.session_state.portfolio_bericht,
         }
-        render_portfolio_pdf_viewer(portfolio_result, key="scan_portfolio_pdf")
+        # Detail-Anhang je empfohlener Strategie (Nutzer-Wunsch 30.09.2026):
+        # die 🟢-Ergebnisse des Laufs liefern die vollständigen Berichte.
+        render_portfolio_pdf_viewer(
+            portfolio_result, key="scan_portfolio_pdf",
+            ergebnisse=[r for r in (st.session_state.get("results") or [])
+                        if getattr(r, "ampel", "") == "🟢"
+                        and getattr(r, "gesamtbericht", "")])
         st.markdown(urteile_farbig(st.session_state.portfolio_bericht),
                     unsafe_allow_html=True)
         if issue := portfolio_result.get("storage_error") or portfolio_result.get("reason"):

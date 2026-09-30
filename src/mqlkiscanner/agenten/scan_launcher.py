@@ -14,9 +14,10 @@ Herzschlag bleibt frisch, und der Chefermittler wartet auf den Abschluss.
 from __future__ import annotations
 
 import threading
+import time
 from datetime import date
 
-from .. import config, fix_signale, pipeline
+from .. import config, fix_signale, pipeline, scan_fortschritt
 from ..mql5.session import Mql5Session
 from . import journal, lock
 
@@ -107,10 +108,23 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
     """Die Stationen der Scan-Seite, headless: Listen → Kandidaten →
     Auswahl → Forensik → KI-Berichte → Portfolio."""
     pipe = pipeline.ScanPipeline(settings, quelle=modus)
+    start_ts = time.time()
+
+    def _f(station: str, done: int, total: int, detail: str = "") -> None:
+        """Live-Fortschritt für die Agenten-Seite (Nutzer-Wunsch 30.09.:
+        Balken + Schritt + Restanzeige) — atomar in die Statusdatei."""
+        try:
+            scan_fortschritt.aktualisieren(station, done, total, detail,
+                                           start_ts, modus)
+        except Exception:   # Anzeige darf den Scan nie brechen
+            pass
+
+    _f("listen", 0, 1, "Signallisten werden geholt …")
     journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
                                    detail={"modus": modus, "station": "listen"})
     signale = pipe.crawl(on_progress=lambda *a: None,
                          log=lambda m: log(f"  [listen] {m}"))
+    _f("kandidaten", 0, 1, "Vorfilter und Auswahl …")
     kandidaten = pipe.build_candidates(
         signale, log=lambda m: log(f"  [kandidaten] {m}"))
 
@@ -166,6 +180,8 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
         for i, kandidat in enumerate(scope, 1):
             log(f"  [forensik {i}/{len(scope)}] "
                 f"{kandidat.get('name')} #{kandidat['id']}")
+            _f("forensik", i, len(scope),
+               f"{kandidat.get('name')} #{kandidat['id']}")
             try:
                 ergebnisse.append(
                     pipe.analyze_candidate(session, kandidat,
@@ -189,7 +205,10 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
         journal.schritt_protokollieren(
             lauf_id, "dirigent", "scan",
             detail={"modus": modus, "station": "ki", "signale": len(jobs)})
-        zusammen = pipe.run_llm(jobs, log=lambda m: log(f"  [ki] {m}"))
+        _f("ki", 0, max(1, 3 * len(jobs)), "KI-Berichte starten …")
+        zusammen = pipe.run_llm(
+            jobs, log=lambda m: log(f"  [ki] {m}"),
+            on_progress=lambda d, t, txt: _f("ki", d, max(1, t), str(txt)[:160]))
         berichte = int(zusammen.get("completed", 0))
     elif not pipe.llm.has_key:
         log("  [ki] Kein GLM-Key — Berichte entfallen (Engine-Ergebnisse "
@@ -200,9 +219,17 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
         journal.schritt_protokollieren(
             lauf_id, "dirigent", "scan",
             detail={"modus": modus, "station": "portfolio"})
+        _f("portfolio", 0, 1, "Portfolio-Vorschlag wird erstellt …")
         zusammen = pipe.run_portfolio(
-            ergebnisse, log=lambda m: log(f"  [portfolio] {m}"))
+            ergebnisse, log=lambda m: log(f"  [portfolio] {m}"),
+            on_progress=lambda d, t, txt: _f("portfolio", d, max(1, t),
+                                             str(txt)[:160]))
         portfolio = str(zusammen.get("text") or "")[:200]
+    try:
+        scan_fortschritt.aktualisieren("portfolio", 1, 1, "abgeschlossen",
+                                       start_ts, modus, status="fertig")
+    except Exception:
+        pass
 
     # Ampel-Wechsel sind bereits über analyze_candidate in der DB-Chronik —
     # der Wechsel-Watcher des Melders übernimmt sie beim nächsten Tick.

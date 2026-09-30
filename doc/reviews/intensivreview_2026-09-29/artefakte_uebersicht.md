@@ -118,10 +118,17 @@
     des Exportverlaufs (eigener Anfangszeitpunkt je Signal, kein abgeschnittener
     Kopf, `Σ PnL` deckungsgleich mit der Forensik), nicht auf einen Abgleich mit
     Provider-Metadaten.
-12. **Re-Scan-Verifikation der Fixes B1–B3** — der Ziellauf entstand 15 Stunden
-    vor `fc4b3b9`; ein Lauf nach dem Fix steht aus und ist blockiert, weil der
-    PelicanMonitor offline ist. Alle Aussagen „im Code behoben" in `review.md`
-    sind **code-, nicht laufverifiziert**.
+12. ~~**Re-Scan-Verifikation der Fixes B1–B3**~~ — **Nachtrag 30.09. 23:15:
+    erledigt.** Der Ziellauf entstand 15 Stunden vor `fc4b3b9`; der
+    Re-Scan-Verlauf ist in `0e1b2b8` dokumentiert (Skript
+    `doc/reviews/intensivreview_2026-09-29/lauf_verifikation_b1_b3.py`,
+    isoliert ohne DB-Schreiben/KI). Ergebnis: Lemonal und AccurateCopier
+    sind **🔴** über die Monitor-Schranke (46,65 % bzw. 241,3 %), der
+    Forensik-Ertrag liegt für 6 Ex-🟢 auf der impliziten Kapitalbasis,
+    `weeks=null` und `Broker=ICMarketsLive20` sind bestätigt. B1–B3 sind
+    damit **lauf- und nicht mehr nur codeverifiziert**. Nicht Teil dieses
+    Laufs: der B20/B21-Code-Befund (`33c11ac`) ist separat abgenommen
+    (Live-Abnahme am Bestand).
 13. **Testgrün-Beleg des Commits `fc4b3b9`** — der Commit meldete 898 grüne
     Tests, hat aber einen abhängigen Test still gebrochen (B22: Fixture-Wert
     `2010→2060` geändert, Test-Mutation nicht nachgezogen). Die Zahl ist damit

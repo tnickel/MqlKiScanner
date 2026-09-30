@@ -1435,7 +1435,10 @@ class ScanPipeline:
                 "reason": storage_error, "storage_error": storage_error}
         try:
             from .pdf_reports import materialize_portfolio_pdf
-            materialize_portfolio_pdf(summary)
+            # Anhang „Empfohlene Strategien im Detail" (Nutzer-Wunsch
+            # 30.09.2026): Kennzahlen + vollständiger Gesamtbericht je
+            # empfohlener Strategie aus dem Portfolio-Text.
+            materialize_portfolio_pdf(summary, ergebnisse=jobs)
         except Exception as exc:
             pdf_error = f"Portfolio-PDF nicht gespeichert: {type(exc).__name__}: {exc}"
             summary["storage_error"] = "; ".join(filter(None, (storage_error, pdf_error)))
@@ -1540,7 +1543,12 @@ class ScanPipeline:
                     f"Signal #{result.id}: {result.pdf_fehler}")
         if portfolio and portfolio.get("text"):
             try:
-                materialize_portfolio_pdf(portfolio)
+                # Anhang je empfohlener Strategie (Nutzer-Wunsch 30.09.):
+                # 🟢-Ergebnisse dieses Laufs liefern die Detail-Berichte.
+                materialize_portfolio_pdf(portfolio, ergebnisse=[
+                    r for r in results
+                    if getattr(r, "ampel", "") == "🟢"
+                    and getattr(r, "gesamtbericht", "")])
             except Exception as exc:
                 error = f"Portfolio-PDF nicht gespeichert: {type(exc).__name__}: {exc}"
                 portfolio["storage_error"] = "; ".join(

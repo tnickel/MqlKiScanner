@@ -325,7 +325,7 @@ with st.container(border=True):
                'Signalseite einzeln geladen.')
 
 
-def _render_portfolio_report(report: dict) -> None:
+def _render_portfolio_report(report: dict, ergebnisse=None) -> None:
     catalog_portfolio = selected_run.startswith('Datenbank')
     portfolio_title = ('Portfolio-Vorschlag · historischer Stand'
                        if catalog_portfolio else 'Portfolio-Vorschlag')
@@ -341,7 +341,8 @@ def _render_portfolio_report(report: dict) -> None:
         st.caption(f"Stand: {report.get('created_at') or 'nicht gespeichert'} · "
                    f"Modell: {report.get('model') or 'nicht gespeichert'} · Keine Anlageberatung.")
         render_portfolio_pdf_viewer(
-            report, key=f"results_portfolio_pdf_{'catalog' if catalog_portfolio else 'source'}")
+            report, key=f"results_portfolio_pdf_{'catalog' if catalog_portfolio else 'source'}",
+            ergebnisse=ergebnisse)
         if catalog_portfolio:
             st.info('Historische Momentaufnahme: Dieser Bericht wurde nicht mit den '
                     'aktuellen Katalogbewertungen abgeglichen.',
@@ -491,7 +492,13 @@ with st.expander('Regelwerk · Ausschlussliste', expanded=False,
     st.markdown(regelwerk.regelwerk_markdown(config.load_settings()))
 
 if portfolio:
-    _render_portfolio_report(portfolio)
+    # Detail-Anhang je empfohlener Strategie aus den aktuellen Ergebnissen
+    # (Nutzer-Wunsch 30.09.2026) — nur 🟢 mit Gesamtbericht sind Kandidaten.
+    _render_portfolio_report(
+        portfolio,
+        ergebnisse=[r for r in results
+                    if getattr(r, 'ampel', '') == '🟢'
+                    and getattr(r, 'gesamtbericht', '')])
 
 if visible:
     with st.expander('Urteile im Überblick', expanded=False, icon=':material/summarize:'):

@@ -178,11 +178,94 @@ def result_pdf_spec(result, kind: str) -> tuple[PdfReport, str]:
     return report, filename
 
 
-def portfolio_pdf_spec(report: dict) -> tuple[PdfReport, str]:
-    """Build immutable PDF inputs from one stored portfolio report."""
+def _empfohlene_signale(portfolio_text: str, ergebnisse) -> list:
+    """Die im Portfolio-Text EMPFOHLENEN Signale (Nutzer-Wunsch 30.09.2026:
+    Anhang mit Detail-Begründung je empfohlener Strategie).
+
+    Erkannt wird der Abschnitt „Portfolio-Vorschlag" bis zur nächsten
+    ##-Überschrift; dort gezählte 🟢-Namen gelten als Empfehlung — die
+    „Aussortiert"-Liste und die Bestandsaufnahme stehen bewusst NICHT im
+    Abschnitt und führen so zu keinem Anhang. Reihenfolge = Auftreten im
+    Text. Namens-Match als Präfix (die KI kürzt teils mit ID in Klammern).
+    """
+    text = str(portfolio_text or "")
+    start = text.find("Portfolio-Vorschlag")
+    if start < 0:
+        return []
+    rest = text[start:]
+    naechste = rest.find("\n## ", 1)
+    abschnitt = rest if naechste < 0 else rest[:naechste]
+    treffer: list[tuple[int, object]] = []
+    for result in ergebnisse or []:
+        if getattr(result, "ampel", "") != "🟢":
+            continue
+        name = str(getattr(result, "name", "")).strip()
+        if not name:
+            continue
+        position = abschnitt.lower().find(name[:12].lower())
+        if position >= 0:
+            treffer.append((position, result))
+    treffer.sort(key=lambda paar: paar[0])
+    return [result for _, result in treffer]
+
+
+def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
+    """Anhang „Empfohlene Strategien im Detail" als Markdown: je Strategie
+    Trennblatt mit Kennzahlen-Tabelle plus dem VOLLSTÄNDIGEN Gesamtbericht."""
+    empfehlungen = _empfohlene_signale(portfolio_text, ergebnisse)
+    if not empfehlungen:
+        return ""
+    teile = [
+        "\\pagebreak",
+        "# Anhang — Empfohlene Strategien im Detail",
+        "",
+        "Je empfohlener Strategie die vollständige Begründung: erst die "
+        "Kennzahlen der Engine (dieselbe Basis wie im Hauptteil), danach "
+        "der ungekürzte Gesamtbericht der KI-Analyse.",
+    ]
+    for nummer, r in enumerate(empfehlungen, 1):
+        def _f(wert, nachkomma=2, suffix=""):
+            return ("—" if wert is None else f"{wert:.{nachkomma}f}".replace(".", ",") + suffix)
+        teile += [
+            "\\pagebreak",
+            f"# Strategie {nummer}: {r.name} (#{r.id})",
+            "",
+            "| Kennzahl | Wert |",
+            "|---|---|",
+            f"| Quelle / Plattform | {getattr(r, 'quelle', 'mql5')} / {r.platform} |",
+            f"| Engine-Ampel | {r.ampel} |",
+            f"| Risiko-Score (Engine, 1-10) | {_f(r.score, 1)} |",
+            f"| Ertrag/Monat (Forensik-Basis) | {_f(getattr(r, 'ertrag_monat_pct_forensik', None), 2, ' %')} |",
+            f"| Ertrag/Monat (Plattform meldet) | {_f(r.ertrag_monat_pct, 2, ' %')} |",
+            f"| Drawdown-Maximum (Schranke) | {_f(max(filter(None, [r.dd_equity_pct, r.dd_balance_pct, r.trading_dd_pct, getattr(r, 'equity_dd_rekonstruiert_pct', None), getattr(r, 'monitor_trade_eq_dd_pct', None)]), default=0.0), 2, ' %')} |",
+            f"| Abonnenten / Wochen | {r.abonnenten if r.abonnenten is not None else '—'} / {r.wochen if r.wochen is not None else '—'} |",
+            f"| Kapitalbasis | {getattr(r, 'kapitalbasis_verwendet_quelle', '') or '—'}"
+            f" ({_f(getattr(r, 'kapitalbasis_verwendet_usd', None), 0, ' USD')}) |",
+            f"| Stop-Befund | {r.stop_nachweis or '—'} |",
+            "",
+            "## Gesamtbericht (ungekürzt)",
+            "",
+            str(getattr(r, "gesamtbericht", "") or "(kein Gesamtbericht vorhanden)"),
+        ]
+    return "\n".join(teile)
+
+
+def portfolio_pdf_spec(report: dict, ergebnisse=None) -> tuple[PdfReport, str]:
+    """Build immutable PDF inputs from one stored portfolio report.
+
+    ergebnisse (Nutzer-Wunsch 30.09.2026): Liste der ScanResults des
+    Laufs — dann hängt der PDF-Körper den Anhang „Empfohlene Strategien
+    im Detail" an (Kennzahlen + vollständiger Gesamtbericht je Empfehlung).
+    Ohne ergebnisse bleibt das PDF wie bisher nur der Portfolio-Text.
+    """
+    body = str(report.get("text") or "")
+    if ergebnisse:
+        anhang = _anhang_markdown(ergebnisse, body)
+        if anhang:
+            body = body + "\n\n" + anhang
     pdf_report = PdfReport(
         kind="portfolio",
-        body=str(report.get("text") or ""),
+        body=body,
         created_at=report.get("created_at"),
         model=report.get("model"),
     )
@@ -260,9 +343,14 @@ def materialize_result_pdfs(result, *, root: Path | None = None) -> dict[str, Pa
     return paths
 
 
-def materialize_portfolio_pdf(report: dict, *, root: Path | None = None) -> Path | None:
-    """Persist one portfolio report if it contains report text."""
-    pdf_report, _ = portfolio_pdf_spec(report)
+def materialize_portfolio_pdf(report: dict, *, root: Path | None = None,
+                              ergebnisse=None) -> Path | None:
+    """Persist one portfolio report if it contains report text.
+
+    ergebnisse: ScanResult-Liste des Laufs — hängt den Detail-Anhang der
+    empfohlenen Strategien an (Nutzer-Wunsch 30.09.2026).
+    """
+    pdf_report, _ = portfolio_pdf_spec(report, ergebnisse=ergebnisse)
     if not pdf_report.body.strip():
         return None
     return persist_report_pdf(pdf_report, root=root)

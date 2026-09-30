@@ -55,3 +55,7 @@ tests/tmp_*.py
 
 # Laufzeit-Cache der Datenquellen-Artefakte (SHA-Cache, ändert sich je Scan)
 data/quellen/
+tmp/
+data/scan_fortschritt.json
+data/*.lock
+tmp/

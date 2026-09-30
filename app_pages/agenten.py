@@ -9,6 +9,7 @@ sagt, steht im Protokoll", Nutzer-Vorgabe statt Trockenmodus).
 from __future__ import annotations
 
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
@@ -22,6 +23,50 @@ from mqlkiscanner.ui_design import action_button, apply_theme, info_button, \
     page_header
 
 apply_theme()
+
+
+@st.fragment(run_every="5 s")
+def _render_scan_fortschritt(lauf_aktiv: bool) -> None:
+    """Live-Fortschritt eines laufenden Scans: Balken, aktueller Schritt,
+    Restzeitschätzung (Nutzer-Wunsch 30.09.2026).
+
+    Quelle 1: Statusdatei des Scan-Launchers (scan_fortschritt). Quelle 2
+    (Fallback, sofort wirksam auch für Läufe ohne Launcher-Support): DB-Puls
+    — die Forensik schreibt je Signal signals.updated_at, der Zähler steigt.
+    """
+    from mqlkiscanner import scan_fortschritt
+
+    eintrag = scan_fortschritt.lesen()
+    aktiv = bool(eintrag and eintrag.get("status") == "laufend")
+    with st.container(border=True):
+        if aktiv:
+            anteil = scan_fortschritt.gesamt_anteil(eintrag) or 0.0
+            st.progress(anteil, text=(
+                f"🛰️ Scan ({eintrag.get('modus')}) · "
+                f"{str(eintrag.get('station')).capitalize()} "
+                f"{eintrag.get('done')}/{eintrag.get('total')} · "
+                f"{eintrag.get('detail') or ''}"))
+            rest = scan_fortschritt.restzeit_s(eintrag)
+            rest_txt = (f"noch ca. {int(rest // 60)} min"
+                        if rest is not None else "Restzeit wird geschätzt …")
+            st.caption(f"{rest_txt} · laufend seit "
+                       f"{time.strftime('%H:%M', time.localtime(float(eintrag.get('start_ts') or 0)))} Uhr")
+        elif eintrag and eintrag.get("status") == "fertig":
+            st.caption(f"✅ Letzter Scan fertig: {eintrag.get('detail')} "
+                       f"(Station {eintrag.get('station')}).")
+        elif lauf_aktiv:
+            # Fallback: aktiver Agentenlauf ohne Statusdatei — DB-Puls.
+            laeufe = journal.list_laeufe(limit=1)
+            start = (laeufe[0]["start"] if laeufe else "") or ""
+            puls = scan_fortschritt.puls_aus_db(str(start))
+            if puls and puls["erledigt"] > 0:
+                st.caption(f"🛰️ Agentenlauf aktiv (Start {str(start)[:16]}) — "
+                           f"bisher {puls['erledigt']} Signal(e) bearbeitet, "
+                           f"zuletzt: {puls['letztes']}. "
+                           "Detaillierter Balken ab dem nächsten Scan.")
+            else:
+                st.caption("🛰️ Agentenlauf aktiv (Rollen-Arbeit, kein Scan) — "
+                           "der Fortschrittsbalken erscheint bei Scan-Läufen.")
 
 agenten_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_agenten_banner.jpg"
 page_header(
@@ -85,6 +130,8 @@ with live_tab:
                        "Dirigent → Markt → Betreuer → Tagesdigest. Chefermittler "
                        "und autonome Scans bleiben an ihre Takte gebunden "
                        "(Sonntag/Monatsbeginn).")
+
+        _render_scan_fortschritt(lauf_aktiv)
 
     from mqlkiscanner.agenten import ui_tree
     ui_tree.rendere_agenten_baum()
