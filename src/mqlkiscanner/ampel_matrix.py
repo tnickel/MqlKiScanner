@@ -57,14 +57,18 @@ KRITERIEN: list[Kriterium] = [
     Kriterium(
         "dd_schranke", "Drawdown-Schranke",
         "Harte Nutzervorgabe: Das MAXIMUM aus Plattform-By-Equity-DD, "
-        "By-Balance-DD, aus den Trades rekonstruiertem Trading-DD UND dem "
+        "By-Balance-DD, aus den Trades rekonstruiertem Trading-DD, dem "
         "aus Kursdaten nachgemessenen Reko-EQ-DD (nur bei belastbarer "
-        "Abdeckung) darf die Schranke (Standard 30 %) nicht überschreiten. "
-        "Grün = mit Puffer ≥ 5 Punkten eingehalten, gelb = eingehalten, aber "
-        "Puffer unter 5 Punkte, rot = verletzt. Alle Werte fehlen → grau "
-        "(keine Daten). Der höchste der vier Werte entscheidet — MQL5's By "
-        "Equity kann deutlich niedriger als By Balance ausfallen, und der "
-        "Reko-EQ-DD macht floating Verluste sichtbar."),
+        "Abdeckung) UND der floating-inclusiven Zweitmessung des "
+        "Datenquellen-Monitors (Monitor-EQ-DD) darf die Schranke (Standard "
+        "30 %) nicht überschreiten. Grün = mit Puffer ≥ 5 Punkten eingehalten, "
+        "gelb = eingehalten, aber Puffer unter 5 Punkte, rot = verletzt. Alle "
+        "Werte fehlen → grau (keine Daten). Der höchste Wert entscheidet — "
+        "MQL5's By Equity kann deutlich niedriger als By Balance ausfallen, "
+        "und Reko-/Monitor-EQ-DD machen floating Verluste sichtbar. "
+        "Vorbehalt Monitor-EQ-DD: Der Monitor rechnet gegen seine eigene "
+        "(ggf. rückgerechnete) Kapitalbasis — Werte über 100 % überzeichnen "
+        "absolut, bleiben aber ein harter Warnmarker."),
     Kriterium(
         "martingale", "Martingale",
         "Forensik-Test a) aus doc/03: Systematische Lot-Vergrößerung nach "
@@ -83,9 +87,12 @@ KRITERIEN: list[Kriterium] = [
     Kriterium(
         "ertrag", "Ertrag/Monat",
         "Nutzerkriterium: über der Mindestschwelle (Standard 5 %/Monat). "
-        "Historische Kennzahl, keine Prognose. Grün = Schwelle erreicht, "
-        "gelb = positiv, aber darunter, orange = negativ, grau = unbekannt. "
-        "Risiko geht vor: schöner Ertrag korrigiert keine rote Zelle."),
+        "Maßgeblich ist der Ertrag auf der FORENSIK-Kapitalbasis (eigene "
+        "Trade-Kurve, dieselbe Basis wie DD/Schock); der Plattformwert ist "
+        "Zusatzinformation (Selbstauskunft mit eigener Basis). Historische "
+        "Kennzahl, keine Prognose. Grün = Schwelle erreicht, gelb = positiv, "
+        "aber darunter, orange = negativ, grau = unbekannt. Risiko geht vor: "
+        "schöner Ertrag korrigiert keine rote Zelle."),
     Kriterium(
         "score", "Risiko-Score",
         "Aggregierte Engine-Bewertung 1–10 aus der Forensik-Batterie "
@@ -120,14 +127,16 @@ KRITERIEN: list[Kriterium] = [
 def _dd_zelle(r, settings) -> Zelle:
     limit = float(settings.get("schranke_eq_dd_pct", 30.0))
     # Konservativ: der HOECHSTE gemessene Drawdown entscheidet (By Equity,
-    # By Balance, aus Trades rekonstruiert UND Reko-EQ-DD aus Kursdaten —
-    # M1, Review T1/2 29.09.: die Engine wertet das Vierfach-Maximum, die
-    # Audit-Zelle musste dasselbe zeigen, sonst widerspricht das Urteil
-    # seinem eigenen Nachweis). Gold Spike: By Equity 3,8 % vs. By Balance
-    # 8,11 %.
+    # By Balance, aus Trades rekonstruiert, Reko-EQ-DD aus Kursdaten und —
+    # B1, Intensiv-Review 29./30.09.2026 — die floating-inclusive Zweit-
+    # messung des Datenquellen-Monitors. Ohne sie war die Schranke fuer
+    # Quellen-Signale ohne harte floating-Messung (Lemonal 🟢 bei 46,65 %,
+    # AccurateCopier 🟢 bei 241 %). Gold Spike: By Equity 3,8 % vs. By
+    # Balance 8,11 %.
     werte = {"EQ-DD": r.dd_equity_pct, "Bal-DD": r.dd_balance_pct,
              "Trading-DD": r.trading_dd_pct,
-             "Reko-EQ-DD": getattr(r, "equity_dd_rekonstruiert_pct", None)}
+             "Reko-EQ-DD": getattr(r, "equity_dd_rekonstruiert_pct", None),
+             "Monitor-EQ-DD": getattr(r, "monitor_trade_eq_dd_pct", None)}
     vorhanden = {k: v for k, v in werte.items() if v is not None}
     if not vorhanden:
         return Zelle(KEINE_DATEN, "keine DD-Werte",
@@ -137,19 +146,24 @@ def _dd_zelle(r, settings) -> Zelle:
     relevant = max(vorhanden.values())
     herleitung = "max(" + ", ".join(f"{k} {_num(v)} %" for k, v in vorhanden.items()) \
                  + f") = {_num(relevant)} %"
+    vorbehalt = (" Monitor-EQ-DD ist eine Monitor-Zweitmessung auf dessen "
+                 "eigener Kapitalbasis — über 100 % überzeichnet sie absolut."
+                 if "Monitor-EQ-DD" in vorhanden
+                 and vorhanden["Monitor-EQ-DD"] > 100 else "")
     if relevant > limit:
         return Zelle(ROT, f"{_num(relevant)} % > {limit:g} %",
                      f"{herleitung} liegt ÜBER der Schranke von {limit:g} % "
-                     "(harte Ablehnung).")
+                     f"(harte Ablehnung).{vorbehalt}")
     puffer = limit - relevant
     if puffer < 5:
         return Zelle(GELB, f"Puffer nur {_num(puffer)} Punkte",
                      f"{herleitung} hält die Schranke {limit:g} % ein, aber "
                      f"der Puffer beträgt nur {_num(puffer)} Punkte — eine "
-                     "Wiederholung des Regimes kann sie durchbrechen.")
+                     "Wiederholung des Regimes kann sie durchbrechen."
+                     + vorbehalt)
     return Zelle(GRUEN, f"Puffer {_num(puffer)} Punkte",
                  f"{herleitung} hält die Schranke {limit:g} % mit "
-                 f"{_num(puffer, 1)} Punkten Abstand ein.")
+                 f"{_num(puffer, 1)} Punkten Abstand ein." + vorbehalt)
 
 
 def _martingale_zelle(r) -> Zelle:
@@ -194,22 +208,38 @@ def _stop_zelle(r) -> Zelle:
 
 def _ertrag_zelle(r, settings) -> Zelle:
     minimum = float(settings.get("min_ertrag_pct_monat", 5.0))
-    if r.ertrag_monat_pct is None:
+    # B2 (Intensiv-Review 29./30.09.2026): Maßgeblich ist der Ertrag auf der
+    # FORENSIK-Kapitalbasis (eigene Kurve, dieselbe Basis wie DD/Schock).
+    # Der Plattformwert ist eine Selbstauskunft mit fremder Basis — er steht
+    # im Detail daneben, entscheidet aber nicht mehr.
+    wert = getattr(r, "ertrag_monat_pct_forensik", None)
+    plattform = r.ertrag_monat_pct
+    if wert is None and plattform is None:
         return Zelle(KEINE_DATEN, "unbekannt",
                      "Ertrag/Monat nicht erfasst — Schwelle nicht prüfbar.")
-    wert = r.ertrag_monat_pct
+    basis_hinweis = ""
+    if wert is not None and plattform is not None:
+        basis_hinweis = (f" Forensik-Basis {(_num(wert, 1))} %/Monat "
+                         f"(Plattform meldet {_num(plattform, 1)} %/Monat auf "
+                         "eigener Kapitalbasis — Selbstauskunft, nicht "
+                         "maßgeblich).")
+    if wert is None:
+        wert = plattform
+        basis_hinweis = (" Nur der Plattformwert vorhanden (keine eigene "
+                         "Forensik-Kurve) — Selbstauskunft.")
     if wert >= minimum:
         return Zelle(GRUEN, f"{_num(wert, 1)} %/Monat",
                      f"{_num(wert, 1)} %/Monat ≥ Mindestschwelle "
-                     f"{minimum:g} %/Monat.")
+                     f"{minimum:g} %/Monat (Forensik-Basis).{basis_hinweis}")
     if wert >= 0:
         return Zelle(GELB, f"{_num(wert, 1)} % < {minimum:g} %",
                      f"{_num(wert, 1)} %/Monat liegt unter der Mindest-"
                      f"schwelle von {minimum:g} %/Monat (positive Werte, "
-                     "aber zu wenig).")
+                     f"aber zu wenig; Forensik-Basis).{basis_hinweis}")
     return Zelle(ORANGE, f"{_num(wert, 1)} % (negativ)",
                  f"Ertrag {(_num(wert, 1))} %/Monat ist negativ — das "
-                 f"Kriterium {minimum:g} %/Monat ist klar verfehlt.")
+                 f"Kriterium {minimum:g} %/Monat ist klar verfehlt."
+                 f"{basis_hinweis}")
 
 
 def _score_zelle(r) -> Zelle:

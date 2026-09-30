@@ -51,13 +51,29 @@ _EINORDNUNG_ALLE = ("KONFORM", "AUFFAELLIG", "STILBRUCH", "KEINE_NEUEN_TRADES")
 
 
 def kandidaten(settings: dict | None = None) -> list[dict]:
-    """Alle 🟢/🟡-Signale aus der DB (Ampel exakt wie die Ergebnis-Ansicht)."""
+    """Alle 🟢/🟡-Signale aus der DB (Ampel exakt wie die Ergebnis-Ansicht),
+    inkl. Quellen-Feld — der Tageslauf filtert MQL5 heraus (B4)."""
     from ..pipeline import results_from_db  # spät: kein Kreisimport
     ergebnisse = results_from_db(settings)
     return [{"id": r.id, "name": r.name, "platform": getattr(r, "platform", ""),
-             "ampel": r.ampel}
+             "ampel": r.ampel, "quelle": getattr(r, "quelle", "mql5") or "mql5"}
             for r in ergebnisse if r.ampel in ("🟢", "🟡")
             and getattr(r, "forensik_vorhanden", False)]
+
+
+def mql5_kandidaten(settings: dict | None = None) -> tuple[list[dict], int]:
+    """MQL5-🟢/🟡 plus Anzahl übersprungener Quellen-Signale.
+
+    B4 (Intensiv-Review 29./30.09.2026): Der Betreuer prüft über den
+    MQL5-Export und destilliert von mql5.com — für Quellen-Signale
+    (pelik/robo/vant/zulu) hätte er keinen Export-Weg und würde täglich
+    fehlschlagen (16 von 23 Zielen im Ziellauf). Quellen-Signale werden
+    SAUBER übersprungen und im Tageslauf protokolliert, bis die Umstellung
+    auf den Quellen-Cache (doc/20 Stufe 3) gebaut ist.
+    """
+    alle = kandidaten(settings)
+    nur_mql5 = [k for k in alle if k.get("quelle", "mql5") == "mql5"]
+    return nur_mql5, len(alle) - len(nur_mql5)
 
 
 def export_holen(session: Mql5Session, signal: dict, settings: dict) -> tuple[str, bool]:
@@ -319,10 +335,14 @@ def tageslauf(quelle: str = "daemon", log=print, settings: dict | None = None,
     gemeinsam pacingender Rate-Limiter statt je Signal neuer Bursts.
     """
     settings = settings if settings is not None else config.load_settings()
-    signale = kandidaten(settings)
+    signale, uebersprungen = mql5_kandidaten(settings)
     if nur_signal_ids is not None:
         signale = [s for s in signale if s["id"] in nur_signal_ids]
     log(f"Betreuer-Tageslauf: {len(signale)} Kandidat(en).")
+    if uebersprungen:
+        log(f"Betreuer: {uebersprungen} Quellen-Signal(e) (🟢/🟡, z. B. pelik) "
+            "übersprungen — Betreuer prüft bisher nur den MQL5-Weg "
+            "(doc/20 Stufe 3: Quellen-Cache offen).")
     session = Mql5Session(settings)
     ergebnisse = [signal_pruefen(s, settings, log, session=session,
                                   quelle=quelle)

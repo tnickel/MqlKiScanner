@@ -428,6 +428,52 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Beispiel KiraCat #2342895 (MT5, 43 Wochen sauber geparst). 948 Tests
   grün (+14 in tests/test_fix_signale.py, inkl. AppTest Ende-zu-Ende:
   ID eingeben → setzen → 📌 FIX in der Tabelle).
+- ✅ Intensiv-Review-Fixes B1–B16 (30.09.2026, Review
+  `doc/reviews/intensivreview_2026-09-29/review.md`, Umsetzung nach
+  Nutzer-Freigabe): **B1 [kritisch]** Monitor-EQ-DD
+  (`monitor_trade_eq_dd_pct`, floating-inclusive Zweitmessung des
+  Quellen-Monitors) ist FÜNFTES Maximum in der Drawdown-Schranke
+  (scoring.dd_maximum an allen 3 Stellen: evaluate, dimension_inputs,
+  refresh_report_verdict) und in der Ampel-Zelle dd_schranke — 🟢 bei
+  Zweitmessung >30 % ist unmöglich (Ziellauf-Fälle Lemonal 46,65 %,
+  AccurateCopier 241,3 % wären 🔴); >100 % tragen einen Basis-Vorbehalt-
+  Hinweis. **B2** `ertrag_monat_pct_forensik` (netto/startkapital/Monate
+  aus eigener Kurve auf der DD-Basis) wird berechnet, persistiert und ist
+  MAASSGEBLICH für Ertrags-Kriterium + Grün-Weg (Plattformwert nur noch
+  Zusatzinfo; SafeGold-Fall: 0,5 statt 6,46 %/M). **B3** implizite
+  Kapitalbasis (Web-Balance − Σ Trade-Netto, `_implizite_kapitalbasis`,
+  `KAPITALBASIS_QUELLE_IMPLIZIT`) greift VOR der virtuellen 10k-Annahme;
+  Urteil nennt „Kapitalbasis implizit". **B4** Betreuer prüft nur noch
+  MQL5 (`mql5_kandidaten`), Quellen-🟢/🟡 werden im Tageslauf als Skip
+  protokolliert (bis doc/20 Stufe 3). **B6** Parser kennt Datensatztyp
+  `Correction` (Kontobewegung); abgeschnittene LETZTE Zeilen bleiben
+  bewusst LAUTE FEHLER mit neuem Diagnose-Hinweis „Download vermutlich
+  unvollständig" (Cache-Poisoning-Abwehr schlägt Skip-Toleranz);
+  GER40→DE40-Alias in contract_specs; ingest mappt metrics `Broker`
+  (häufigster ServerCode, PelicanTrading cd9612f) auf broker_server →
+  cross_broker=false-Specs (USOIL) entscheiden wieder korrekt. **B7**
+  ⛔ (Ausschlussliste) belegt keine Forensik-Slots/KEIN LLM mehr
+  (via Fix-ID pinbar); **B8** fix_signal_ids=[2342895, 2375480]
+  gesetzt. **B9** Downloader-Abgleich bricht nur noch ab, wenn KEINE
+  Quelle antwortet (404-only zählt als erreicht) + Warnung bei
+  Setting-/Datenquellen-URL-Divergenz. **B10** Kursdaten fallen bei
+  Broker-Suffix-Symbolen (AUDCADR, XAUUSD.F, EURUSD+, *-ECN) auf das
+  normalisierte Basis-Symbol zurück (`suffix_annahmen` protokolliert) —
+  Equity-Reko wirkt damit für ca. 22/28 statt 14/28 MQL5-Signale.
+  **B11** Forensik-JSON nennt Einheiten explizit (shock_pct_peak_account
+  = USD; Alias-Feld `_usd`; LLM-Misslesen-Befund). **B12** eingebaute
+  Prompt-Defaults sind identisch mit den Dateien (Sync-Test verhindert
+  Drift). **B13** Tiefenanalyse-Vorlage nennt die Kuratierung ehrlich.
+  **B14** CLI-Einzelrollen nehmen den Rollen-Lock (wie Daemon/GUI).
+  **B15** Platzhalter-Meldung „Titel/Text" aus Produktiv-DB gelöscht.
+  **B16** alle 5 Workflow-Prompts markieren Anbieter-Strings als
+  FREMDTEXT (Injektions-Guard) + Einheitenzeile + Abonnenten≠Qualität +
+  Historie≠Prognose. **R1** ID-Kollisionsschutz: upsert_signal
+  überschreibt eine dokumentierte Quelle nicht mehr stillschweigend.
+  **R2** REST liefert `forensikUpdatedAt` + `stale` je Signal.
+  **B5** PelicanMonitor liefert weeks=null statt 0 (Stats nie geladen);
+  Scanner-Vorfilter behandelt unbekanntes Mindestalter als nicht belegt.
+  Tests: +27 in tests/test_intensivreview_fixes.py.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

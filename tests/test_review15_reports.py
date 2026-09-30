@@ -21,8 +21,11 @@ def live_reports(tmp_path, monkeypatch):
     for i in range(26):
         opened = datetime(2024, 1, 1) + timedelta(days=30 * i)
         closed = opened + timedelta(hours=1)
-        rows.append(f"{opened:%Y.%m.%d %H:%M:%S};Buy;0.01;XAUUSD;2000;1990;2010;"
-                    f"{closed:%Y.%m.%d %H:%M:%S};2010;0;0;10;")
+        # B2 (Intensiv-Review 29./30.09.2026): Grün verlangt Ertrag >= 5 %/M
+        # auf der EIGENEN Kurve — 26x +60 USD auf 1000 USD Basis uber ~25,6
+        # Monate = ~6,1 %/M (vorher +10 USD = ~1 %/M => seit B2 nur noch 🟡).
+        rows.append(f"{opened:%Y.%m.%d %H:%M:%S};Buy;0.01;XAUUSD;2000;1990;2060;"
+                    f"{closed:%Y.%m.%d %H:%M:%S};2060;0;0;60;")
     path.write_text("\n".join(rows) + "\n", encoding="utf-8")
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", Mock(return_value={
         "dd_equity_pct": 5, "monthly_growth_pct": 10, "weeks": 110,
@@ -66,7 +69,7 @@ def test_changed_csv_separates_old_recommendation_from_current_result_and_portfo
     assert first.stop_evidence == "direct" and first.ampel == "🟢"
     pipe.run_llm([first], lambda _: None)
     old_text = first.gesamtbericht
-    path.write_text(path.read_text(encoding="utf-8").replace(";1990;2010;", ";;2010;"),
+    path.write_text(path.read_text(encoding="utf-8").replace(";1990;2060;", ";;2060;"),
                     encoding="utf-8")
     changed = scan()
     # Nutzer-Regel 28.09.2026: fehlender SL ist neutral — Kandidat bleibt

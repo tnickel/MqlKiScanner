@@ -274,9 +274,43 @@ def test_dd_zelle_wertet_reko_eq_dd_als_viertes_maximum():
     assert matrix["dd_schranke"].ampel == ROT
     assert "Reko-EQ-DD 35,00 %" in matrix["dd_schranke"].detail
 
-    # Der Tooltip beschreibt das Vierfach-Maximum:
+    # Der Tooltip beschreibt das Fünffach-Maximum (B1, Intensiv-Review
+    # 29./30.09.2026: Monitor-EQ-DD kam als fünfte Komponente dazu):
     tooltip = next(k.beschreibung for k in KRITERIEN if k.key == "dd_schranke")
-    assert "Reko-EQ-DD" in tooltip and "vier Werte" in tooltip
+    assert "Reko-EQ-DD" in tooltip and "Monitor-EQ-DD" in tooltip
+
+
+# ------------- Intensiv-Review 29./30.09.2026: B1 Monitor-Zweitmessung -------
+
+def test_dd_zelle_wertet_monitor_eq_dd_als_fuenftes_maximum():
+    """B1: Die Monitor-Zweitmessung (floating-inclusive) muss in der Audit-
+    Zelle dieselbe harte Schranke reißen wie in der Engine — Lemonal blieb
+    im Ziellauf 🟢 bei 46,65 % Zweitmessung."""
+    matrix = _matrix(_result(dd_equity_pct=8.56, dd_balance_pct=None,
+                             trading_dd_pct=2.37,
+                             equity_dd_rekonstruiert_pct=None,
+                             monitor_trade_eq_dd_pct=46.65))
+    assert matrix["dd_schranke"].ampel == ROT
+    assert "Monitor-EQ-DD 46,65 %" in matrix["dd_schranke"].detail
+    assert "46,65 % > 30 %" in matrix["dd_schranke"].kurz
+
+
+def test_dd_zelle_monitor_ueber_100_prozent_bekommt_vorbehalt():
+    """Werte über 100 % überzeichnen absolut (Monitor-Basis) — die Zelle
+    bleibt ROT, der Detail-Text nennt den Basis-Vorbehalt."""
+    matrix = _matrix(_result(dd_equity_pct=16.77, trading_dd_pct=2.89,
+                             monitor_trade_eq_dd_pct=241.3))
+    assert matrix["dd_schranke"].ampel == ROT
+    assert "überzeichnet" in matrix["dd_schranke"].detail
+
+
+def test_dd_zelle_ohne_monitor_unveraendert():
+    """Ohne Monitorwert bleibt die Zelle bei den bisherigen Werten."""
+    matrix = _matrix(_result(dd_equity_pct=3.8, trading_dd_pct=28.16,
+                             equity_dd_rekonstruiert_pct=None,
+                             monitor_trade_eq_dd_pct=None))
+    assert "max(EQ-DD 3,80 %, Trading-DD 28,16 %) = 28,16 %" \
+        in matrix["dd_schranke"].detail
 
 
 def test_dd_zelle_ohne_reko_unveraendert():
@@ -285,3 +319,35 @@ def test_dd_zelle_ohne_reko_unveraendert():
                              equity_dd_rekonstruiert_pct=None))
     assert "max(EQ-DD 3,80 %, Trading-DD 28,16 %) = 28,16 %" \
         in matrix["dd_schranke"].detail
+
+
+# ------------- Intensiv-Review 29./30.09.2026: B2 Ertrag auf Forensik-Basis --
+
+def test_ertrag_zelle_massgeblich_ist_forensik_basis():
+    """B2: Plattform meldet 6,46 %/Monat, die eigene Kurve auf der DD-Basis
+    liefert 0,5 %/Monat (Fall SafeGold) — die Zelle muss GELB zeigen und
+    beide Werte im Detail nennen."""
+    matrix = _matrix(_result(ertrag_monat_pct=6.46,
+                             ertrag_monat_pct_forensik=0.5))
+    assert matrix["ertrag"].ampel == GELB
+    assert "0,5 % < 5 %" in matrix["ertrag"].kurz
+    assert "Plattform meldet 6,5 %/Monat" in matrix["ertrag"].detail
+    assert "nicht maßgeblich" in matrix["ertrag"].detail
+
+
+def test_ertrag_zelle_forensik_ueber_schwelle_bleibt_gruen():
+    """Forensik-Basis über der Schwelle bleibt GRÜN (Fall Gold Spike:
+    8,6 %/Monat auf eigener Basis)."""
+    matrix = _matrix(_result(ertrag_monat_pct=24.54,
+                             ertrag_monat_pct_forensik=8.6))
+    assert matrix["ertrag"].ampel == GRUEN
+    assert "8,6 %/Monat" in matrix["ertrag"].kurz
+
+
+def test_ertrag_zelle_ohne_forensikwert_fallback_plattform():
+    """Ohne Forensik-Kurve (keine Trades) entscheidet weiterhin der
+    Plattformwert — klar als Selbstauskunft gekennzeichnet."""
+    matrix = _matrix(_result(ertrag_monat_pct=21.5,
+                             ertrag_monat_pct_forensik=None))
+    assert matrix["ertrag"].ampel == GRUEN
+    assert "Selbstauskunft" in matrix["ertrag"].detail

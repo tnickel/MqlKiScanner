@@ -69,11 +69,20 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
       eine große Quelle (2223 MQL5-Signale) verdrängt eine kleine
       (Pelican) nicht mehr aus der Prüfung. Kandidaten ohne
       quelle_kuerzel zählen als „mql5" (Crawler-Weg).
+    - B7 (Intensiv-Review 29./30.09.2026): Ausschlüsse (known_signals,
+      ⛔) belegen KEINE Slots mehr und verbrauchen keine Forensik/KI —
+      im Ziellauf hielten 13 ⛔ 43 % der MQL5-Slots und ~400k Tokens
+      gebunden, während 12 normale Kandidaten ungeprüft blieben. Wer ein
+      ⛔ trotzdem beobachten will, pinned es als Fix-ID (bewusste Wahl).
 
     Rückgabe (auswahl, infos): auswahl = finale Reihenfolge; infos =
     [{quelle, angeboten, genommen}] für das Log.
     """
     fix_vorne, rest = ordne_fix_vorne(cands, settings)
+    ausgeschlossen = {e.get("id") for e in
+                      config.load_known_signals().get("ausgeschlossen", [])}
+    rest_mit_ausschluss = [c for c in rest if c.get("id") in ausgeschlossen]
+    rest = [c for c in rest if c.get("id") not in ausgeschlossen]
     gruppen: dict[str, list[dict]] = {}
     reihenfolge: list[str] = []
     for c in rest:
@@ -92,6 +101,10 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
         auswahl.extend(genommen)
         infos.append({"quelle": k, "angeboten": len(gruppe),
                       "genommen": len(genommen)})
+    if rest_mit_ausschluss:
+        infos.append({"quelle": "ausschlussliste",
+                      "angeboten": len(rest_mit_ausschluss),
+                      "genommen": 0})
     return auswahl, infos
 
 

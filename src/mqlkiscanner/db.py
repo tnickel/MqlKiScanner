@@ -204,8 +204,27 @@ def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str =
                   _connection=None) -> None:
     """Kopfdaten je Signal. `quelle` (Herkunfts-Kürzel) wird nur geschrieben,
     wenn übergeben — ein Update aus einer anderen Quelle überklebtert die
-    dokumentierte Herkunft nicht stillschweigend."""
+    dokumentierte Herkunft nicht stillschweigend.
+
+    R1 (Intensiv-Review 29./30.09.2026): Schreibt eine ANDERE Quelle dieselbe
+    Signal-ID (numerischer Überlapp mql5 ~2,37 Mio. vs. pelik ~2,0–2,1 Mio.),
+    bleibt die dokumentierte Herkunft stehen und der Vorfall wird geloggt —
+    kein stillsprechendes Überschreiben mehr, bis die Composite-Identität
+    (quelle, signal_id) aus doc/20 Stufe 2 migriert ist."""
+    import logging as _logging
     with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
+        if quelle is not None:
+            alt = conn.execute(
+                "SELECT quelle FROM signals WHERE signal_id=?",
+                (signal_id,)).fetchone()
+            alt_quelle = (alt[0] if alt and alt[0] else None)
+            if alt_quelle and alt_quelle != quelle:
+                _logging.getLogger("mqlkiscanner.db").warning(
+                    "ID-Kollision abgewehrt: Signal %s gehört Quelle %r; "
+                    "Schreibversuch aus Quelle %r — Herkunft bleibt %r "
+                    "(bis Composite-Identität, doc/20 Stufe 2).",
+                    signal_id, alt_quelle, quelle, alt_quelle)
+                quelle = alt_quelle
         if quelle is None:
             conn.execute(
                 """INSERT INTO signals (signal_id, name, platform, url, autor, abo_preis,

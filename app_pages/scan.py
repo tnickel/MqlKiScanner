@@ -959,6 +959,7 @@ if command:
             w_step("downloader", "skipped", detail="Keine Live-Signale im Lauf")
             return
         log = w_log_for("downloader")
+        downloader_sync.warne_url_divergenz(log)  # B9: Setting vs. Datenquelle
         w_step("downloader", "running", total=len(ziele),
                detail="Abonnenten-Verläufe und Testreport-PDFs werden geholt …")
         summary = downloader_sync.sync_many(

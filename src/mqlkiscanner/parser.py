@@ -106,9 +106,20 @@ def load_export(path: str) -> ParsedExport:
     for line, row in enumerate(rows[1:], start=2):
         if not row or not any(cell.strip() for cell in row):
             continue
+        # B6 (Intensiv-Review 29./30.09.2026): Eine unvollstaendige LETZTE
+        # Datenzeile ist meist ein ABGEBROCHENER Download (Beleg: Signal
+        # 840474, "Zeile 9220: Pflichtfeld fehlt (Buy)") — bewusst KEIN
+        # Skip-Tolerieren: Ein teilweise geladener Export muss ungültig
+        # bleiben (Cache-Poisoning-Abwehr, tests/test_second_review_
+        # ingestion), sonst sieht ein halber Download wie eine voll-
+        # staendige, einfach ruhigere Historie aus. Der Fehlertext nennt
+        # stattdessen die wahrscheinliche Ursache.
+        tail_hint = (" — letzte Datenzeile: Download vermutlich unvollständig, "
+                     "erneut laden" if line == len(rows) else "")
         if len(row) != expected_columns:
             raise ValueError(f"{path}: Zeile {line}: {len(row)} statt "
-                             f"{expected_columns} Felder (unvollstaendiger Export)")
+                             f"{expected_columns} Felder (unvollstaendiger "
+                             f"Export){tail_hint}")
         row_type = row[1].strip()
         if not row_type:
             # MT5-Exporte enthalten vereinzelt Zeilen mit NUR einem Zeitstempel
@@ -121,20 +132,28 @@ def load_export(path: str) -> ParsedExport:
                 raise ValueError(f"{path}: Zeile {line}: Datensatz ohne Typ "
                                  f"mit Inhalt (defekte Zeile)")
             continue
+        # B6-Nachtrag: abgebrochene LETZTE Zeile in voller Breite (Pflichtfeld
+        # leer) — derselbe Truncation-Fall, ebenfalls bewusst lauter Fehler.
         if _is_mt4_summary_row(row, fmt):
             # MT4-Orderbuch-Footer: Typ Buy/Sell, Symbol 'profit', keine Preise,
             # Profit-Spalte = Gesamtsumme. Kein Trade — sonst verfaelscht die
             # Summe als Riesen-Trade jede Statistik.
             continue
-        if row_type not in (*FILLED_TYPES, *PENDING_TYPES, "Balance", "Credit"):
+        # B6 (Intensiv-Review): MT4-History kennt neben Balance/Credit den
+        # Datensatztyp 'Correction' (Broker-Korrektur, Betrag in der Profit-
+        # Spalte; Beleg: Signal 2268766, "unbekannter Datensatztyp 'Correction'").
+        # Semantik wie eine Kontobewegung, kein Trade.
+        if row_type not in (*FILLED_TYPES, *PENDING_TYPES,
+                            "Balance", "Credit", "Correction"):
             raise ValueError(f"{path}: Zeile {line}: unbekannter Datensatztyp {row_type!r}")
         required = [0, 1]
         if row_type in FILLED_TYPES:
             required += [2, 3, 4, 7, 8, profit_idx] if fmt == "mt4_orderbook" else [2, 3, 4, 6, 7, profit_idx]
-        elif row_type in ("Balance", "Credit"):
+        elif row_type in ("Balance", "Credit", "Correction"):
             required.append(profit_idx)
         if any(not row[idx].strip() for idx in required):
-            raise ValueError(f"{path}: Zeile {line}: Pflichtfeld fehlt ({row_type})")
+            raise ValueError(f"{path}: Zeile {line}: Pflichtfeld fehlt "
+                             f"({row_type}){tail_hint}")
         if row_type in FILLED_TYPES:
             if fmt == "mt4_orderbook":
                 trade = Trade(
@@ -159,7 +178,7 @@ def load_export(path: str) -> ParsedExport:
             if trade.volume <= 0 or trade.close_time < trade.open_time:
                 raise ValueError(f"{path}: Zeile {line}: ungueltiges Volumen oder Handelszeitraum")
             result.trades.append(trade)
-        elif row_type == "Balance":
+        elif row_type in ("Balance", "Correction"):
             amount = _row_number(row, profit_idx)
             if amount is not None:
                 result.balances.append(BalanceRow(time=parse_time(row[0]), amount=amount))

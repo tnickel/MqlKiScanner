@@ -47,6 +47,51 @@ LogCb = Callable[[str], None]
 # belegtes Initial Deposit: kein Cent-Abgleich gegen die Web-Balance, keine
 # rote Kapitalbasis-Regel, transparent im Urteil.
 KAPITALBASIS_QUELLE_VIRTUELL = "virtuelle_annahme"
+# B3 (Intensiv-Review 29./30.09.2026): Bei Quellen-Signalen ohne echtes
+# Initial Deposit ist die beste belegbare Basis die IMPLIZITE: Web-Balance
+# minus Summe der Trade-Nettoergebnisse (= Startkapital, das die heutige
+# Balance zusammen mit der Handelsleistung erklärt). Die starre 10.000-USD-
+# Annahme (InitialDepositVirtual) verzerrte DD-/Schock-Prozente um Faktor
+# 2–20 (SafeGold: real 998 USD, MicroJump 530 USD) — die implizite Basis
+# kommt vor den Virtual-Fallback und bleibt im Forensik-JSON gekennzeichnet.
+KAPITALBASIS_QUELLE_IMPLIZIT = "implizit_aus_balance"
+
+
+def _implizite_kapitalbasis(balance, trade_pfad: str,
+                            log: LogCb | None = None) -> float | None:
+    """Startkapital = Web-Balance − Σ Trade-Netto (nur positive Ergebnisse).
+
+    Keine Messung, aber eine belegte Ableitung aus zwei Plattformwerten —
+    deutlich näher an der Realbalance als die starre Virtual-Annahme.
+    Parse-Fehler oder nicht-positive Ergebnisse liefern None (dann greift
+    der Virtual-Fallback bzw. bleibt die Forensik ohne Basis).
+    """
+    if isinstance(balance, bool) or not isinstance(balance, (int, float)):
+        return None
+    balance = float(balance)
+    if not math.isfinite(balance) or balance <= 0:
+        return None
+    try:
+        from .parser import load_export
+        parsed = load_export(trade_pfad)
+        netto = sum(t.net for t in parsed.trades)
+    except Exception as exc:  # grobe Schaetzung darf den Lauf nie brechen
+        if log:
+            log(f"Kapitalbasis: implizite Basis nicht berechenbar ({exc}) — "
+                "nächste Stufe (virtuelle Annahme).")
+        return None
+    implizit = balance - netto
+    if implizit <= 0:
+        if log:
+            log(f"Kapitalbasis: implizite Basis {implizit:,.0f} USD nicht "
+                "positiv (Gewinne übersteigen die Balance — Ein-/Auszahlungen "
+                "unbekannt) — nächste Stufe (virtuelle Annahme).")
+        return None
+    if log:
+        log(f"Kapitalbasis: implizite Annahme {implizit:,.0f} USD "
+            f"(Web-Balance {balance:,.0f} − Trade-Netto {netto:,.0f}) — "
+            "DD-/Schock-Prozente damit gerechnet.")
+    return implizit
 
 
 def _virtuelle_kapitalbasis(wert, log: LogCb | None = None) -> float | None:
@@ -99,6 +144,11 @@ class ScanResult:
     wochen: float | None = None
     growth_pct: float | None = None
     ertrag_monat_pct: float | None = None
+    # B2 (Intensiv-Review 29./30.09.2026): Ertrag/Monat aus der EIGENEN
+    # Trade-Kurve auf der Kapitalbasis, gegen die auch DD/Schock gerechnet
+    # werden (netto_gesamt / startkapital / Monate). Die Plattformzahl
+    # (ertrag_monat_pct) bleibt als Selbstauskunft daneben stehen.
+    ertrag_monat_pct_forensik: float | None = None
     pf: float | None = None
     dd_equity_pct: float | None = None     # Plattform "By Equity"
     dd_balance_pct: float | None = None    # Plattform "By Balance"
@@ -134,15 +184,20 @@ class ScanResult:
     equity_rekon_gmt_h: int | None = None
     # Vom Datenquellen-Monitor (Pelican/Robo/Vantage/Zulu) aus der vollen
     # Trade-Kurve nachgemessener Max-EQ-DD (metrics "TradeEqDrawdownPct") —
-    # unabhängige Zweitmessung auf denselben Trades. Geht in DB und
-    # KI-Analyse, NICHT in die Drawdown-Schranke: Der Scanner misst selbst
-    # (Trading-DD + Reko-EQ-DD) und bleibt so verbindlich (Engine-Bindung).
+    # unabhängige Zweitmessung auf denselben Trades. Geht seit B1
+    # (Intensiv-Review 29./30.09.2026) als FÜNFTES Maximum in die Drawdown-
+    # Schranke (floating-inclusive; davor war sie für Quellen-Signale ohne
+    # harte floating-Messung, weil die Kursdaten-Reko bei vorhandenem
+    # Monitorwert geskippt wird). Basis-Vorbehalt: Der Monitor rechnet gegen
+    # seine eigene (ggf. rückgerechnete) Kapitalbasis.
     monitor_trade_eq_dd_pct: float | None = None
     kapitalbasis_verwendet_quelle: str = ""
     broker_server: str | None = None
     symbole: str = ""               # gehandelte Assets ("XAUUSD, US30, ...")
     # Bewertung
     score: float | None = None
+    forensik_stale: bool = False        # R2: Forensik älter als letzter Lauf/fehlerhaft
+    forensik_aktualisiert: str = ""     # R2: Zeitstempel der Forensik (REST-Altersmarker)
     schranke_verletzt: bool = False
     ampel: str = "⚪"
     urteil: str = "Vorprüfung (ohne Forensik)"
@@ -245,11 +300,14 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             quelle=str(row.get("quelle") or "mql5"),
             growth_pct=stats.get("growth_pct"),
             ertrag_monat_pct=stats.get("ertrag_monat_pct"),
+            ertrag_monat_pct_forensik=stats.get("ertrag_monat_pct_forensik"),
             pf=stats.get("pf"),
             dd_equity_pct=stats.get("eq_dd_pct"),
             dd_balance_pct=stats.get("bal_dd_pct"),
             forensik_vorhanden=bool(f) and vollstaendig and not forensik_stale,
             forensik_version=f.get("version"),
+            forensik_stale=forensik_stale,
+            forensik_aktualisiert=forensik_updated,
             trading_dd_pct=trading.get("pct", f.get("trading_dd_pct")),
             trading_dd_usd=trading.get("usd", f.get("trading_dd_usd")),
             winrate_pct=f.get("winrate_pct"),
@@ -374,7 +432,8 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
     if result.schranke_verletzt:
         limit = float(settings.get("schranke_eq_dd_pct", 30))
         plattform_dd = scoring.dd_maximum(result.dd_equity_pct,
-                                          result.dd_balance_pct)
+                                          result.dd_balance_pct,
+                                          result.monitor_trade_eq_dd_pct)
         if plattform_dd > limit or result.forensik_vorhanden:
             return "🔴", f"Schranke verletzt: Drawdown > {limit:g} % (harte Ablehnung)"
     if result.fehler and not result.forensik_vorhanden:
@@ -393,7 +452,13 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
         }.get(result.stop_evidence or "", "SL nicht übertragen (neutral — KI schätzt ab)")
         if result.score is not None and result.score < 5.0:
             min_return = settings.get("min_ertrag_pct_monat", 5.0)
-            if (result.ertrag_monat_pct or 0) >= min_return:
+            # B2 (Intensiv-Review): Grünt das Ertragskriterium, zählt die
+            # EIGENE Kurve auf der Forensik-Kapitalbasis — die Plattformzahl
+            # (fremde Basis) steht daneben, entscheidet aber nicht mehr.
+            ertrag_wert = (result.ertrag_monat_pct_forensik
+                           if result.ertrag_monat_pct_forensik is not None
+                           else result.ertrag_monat_pct)
+            if (ertrag_wert or 0) >= min_return:
                 return "🟢", (f"Kandidat: Forensik bestanden, Score < 5, Ertrag ok · "
                               f"{stop_kontext}")
             return "🟡", f"Forensik ok ({stop_kontext}), aber Ertrag < {min_return:g} %/Monat"
@@ -404,10 +469,16 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
 def _kriterien_text(settings: dict) -> str:
     return (f"- Harte Schranke: max. {settings.get('schranke_eq_dd_pct', 30)} % Drawdown — "
             "gewertet wird das MAXIMUM aus Plattform-By-Equity-DD, Plattform-"
-            "By-Balance-DD, aus den Trades rekonstruiertem Trading-DD UND dem "
+            "By-Balance-DD, aus den Trades rekonstruiertem Trading-DD, dem "
             "aus Kursdaten nachgemessenen Reko-EQ-DD (floating inklusive; nur "
-            "bei belastbarer Abdeckung)\n"
-            f"- Mindest-Ertrag: {settings.get('min_ertrag_pct_monat', 5)} %/Monat\n"
+            "bei belastbarer Abdeckung) UND der floating-inclusiven "
+            "Zweitmessung des Datenquellen-Monitors (Monitor-EQ-DD; dessen "
+            "Kapitalbasis kann von der Scanner-Basis abweichen — über 100 % "
+            "überzeichnen absolut)\n"
+            f"- Mindest-Ertrag: {settings.get('min_ertrag_pct_monat', 5)} %/Monat — "
+            "maßgeblich ist der Ertrag auf der FORENSIK-Kapitalbasis "
+            "(ertrag_monat_pct_forensik); der Plattformwert ist "
+            "Zusatzinformation\n"
                         "- Risiko VOR Ertrag. Bewiesener Stop-Loss (Orderbuch oder eindeutige "
             "Cluster-Signatur) entlastet; ein FEHLENDER Nachweis ist neutral - "
             "kein Malus, keine Sperre, kein Abwertungsgrund (bindende Nutzer-Regel "
@@ -427,6 +498,7 @@ def _kandidat_json(r: ScanResult) -> str:
         "wochen": r.wochen, "abonnenten": r.abonnenten,
         "abo_preis_usd": r.abo_preis_usd,
         "growth_pct": r.growth_pct, "ertrag_monat_pct": r.ertrag_monat_pct,
+        "ertrag_monat_pct_forensik": r.ertrag_monat_pct_forensik,
         "pf": r.pf, "dd_equity_pct": r.dd_equity_pct,
         "dd_balance_pct": r.dd_balance_pct,
         "broker_server": r.broker_server,
@@ -444,30 +516,43 @@ def _forensik_json(r: ScanResult) -> str:
         "winrate_pct": r.winrate_pct,
         "max_verlustserie": r.max_verlustserie,
         "verlustserie_usd": r.verlustserie_usd,
-        "peak_exposure": {"positionen": r.peak_positionen,
-                          "netto_lots": r.peak_netto_lots,
-                          "schock_usd": r.shock_usd,
-                          "shock_pct_max": r.shock_pct_max,
-                          "shock_pct_peak_time": r.shock_pct_peak_time,
-                          "shock_pct_peak_account": r.shock_pct_peak_account,
-                          "shock_pct_peak_usd": r.shock_pct_peak_usd},
+        "peak_exposure": {
+            "positionen": r.peak_positionen,
+            "netto_lots": r.peak_netto_lots,
+            "schock_usd": r.shock_usd,
+            # EINHEITEN (B11, Intensiv-Review 29./30.09.2026 — beide LLM-
+            # Stufen lasen das USD-Feld als Prozent): Felder mit Suffix _usd
+            # sind USD-BETRAEGE, Felder mit _pct sind PROZENT.
+            # shock_pct_max = einziger Prozentwert (Schock in % des Kontos);
+            # shock_pct_peak_account ist der historische Kontostand in USD am
+            # Peak (Namensaltlast, Wert = USD), shock_pct_peak_usd der
+            # Schockbetrag in USD am Peak.
+            "shock_pct_max": r.shock_pct_max,
+            "shock_pct_peak_time": r.shock_pct_peak_time,
+            "shock_pct_peak_account": r.shock_pct_peak_account,
+            "shock_pct_peak_account_usd": r.shock_pct_peak_account,
+            "shock_pct_peak_usd": r.shock_pct_peak_usd},
         "martingale_flag": r.martingale_flag,
         "martingale_evidenz": r.martingale_evidenz,
         "stop_nachweis": r.stop_nachweis,
         "stop_evidence": r.stop_evidence,
         # Bezugsgröße der Risikoprozente, solange sie eine ANNAHME ist: Die
-        # KI soll wissen, ob DD/Schock gegen eine virtuelle Basis gerechnet
-        # sind (Interpretationsauftrag, nicht Neu-Rechnen — Design-Regel 1).
-        # Belegte/csv-Basen ändern die Aussage nicht und bleiben draußen —
-        # auch, damit existierende Berichtsschlüssel unangetastet bleiben.
+        # KI soll wissen, ob DD/Schock gegen eine virtuelle/implizite Basis
+        # gerechnet sind (Interpretationsauftrag, nicht Neu-Rechnen —
+        # Design-Regel 1). Belegte/csv-Basen ändern die Aussage nicht und
+        # bleiben draußen.
         "kapitalbasis_verwendet": (
             {"usd": r.kapitalbasis_verwendet_usd, "quelle": r.kapitalbasis_verwendet_quelle}
-            if r.kapitalbasis_verwendet_quelle == KAPITALBASIS_QUELLE_VIRTUELL else None),
+            if r.kapitalbasis_verwendet_quelle in
+            (KAPITALBASIS_QUELLE_VIRTUELL, KAPITALBASIS_QUELLE_IMPLIZIT) else None),
         # Nachgemessener Equity-DD aus Kursdaten (floating inklusive) — die KI
         # soll ihn als Messung deuten und gegen den gemeldeten Wert stellen.
         "equity_dd_rekonstruiert_pct": r.equity_dd_rekonstruiert_pct,
         # Unabhängige Zweitmessung des Datenquellen-Monitors (volle Trade-
-        # Kurve) — Deutungsauftrag an die KI, kein Schranken-Kriterium.
+        # Kurve, floating inklusive) — geht seit B1 (Intensiv-Review
+        # 29./30.09.2026) als fünftes Maximum in die Drawdown-Schranke
+        # ein. Basis-Vorbehalt: Der Monitor rechnet gegen seine eigene
+        # (ggf. rückgerechnete) Kapitalbasis.
         "monitor_trade_eq_dd_pct": r.monitor_trade_eq_dd_pct,
     }, ensure_ascii=False)
 
@@ -494,11 +579,13 @@ def _kapitalbasis_abgleich(drawdown_befund: dict, stats: dict) -> tuple[bool, st
     Returns (ok, fehlermeldung). Bei Kapitalbasis aus CSV-Einzahlungen ent-
     faellt der Check — ein aelterer Cache-Export darf real abweichen, ohne
     die Bewertung umzuwerfen. Dasselbe gilt fuer die VIRTUELLE Annahme aus
-    einem Quellen-Monitor: Sie ist per Definition kein Plattformwert und
-    hat keine Webseiten-Balance zum Abgleich.
+    einem Quellen-Monitor (kein Plattformwert) und die IMPLIZITE Basis
+    (B3, Intensiv-Review): Sie ist per Konstruktion aus der Web-Balance
+    abgeleitet — der Abgleich wäre tautologisch.
     """
     quelle = drawdown_befund.get("startkapital_quelle", "csv_einzahlungen")
-    if quelle in ("csv_einzahlungen", KAPITALBASIS_QUELLE_VIRTUELL):
+    if quelle in ("csv_einzahlungen", KAPITALBASIS_QUELLE_VIRTUELL,
+                  KAPITALBASIS_QUELLE_IMPLIZIT):
         return True, ""
     web_kontostand = stats.get("balance_usd")
     real = drawdown_befund.get("end_balance_real")
@@ -588,6 +675,13 @@ def _kennezeichne_virtuelle_kapitalbasis(result: ScanResult) -> None:
             and result.forensik_vorhanden and not result.fehler
             and hinweis not in (result.urteil or "")):
         result.urteil = (result.urteil or "") + " · " + hinweis
+    # B3 (Intensiv-Review): auch die implizite Basis ist eine Ableitung,
+    # keine belegte Einzahlung — sie muss im Urteil sichtbar bleiben.
+    hinweis_implizit = "Kapitalbasis implizit (Web-Balance − Trade-Netto)"
+    if (result.kapitalbasis_verwendet_quelle == KAPITALBASIS_QUELLE_IMPLIZIT
+            and result.forensik_vorhanden and not result.fehler
+            and hinweis_implizit not in (result.urteil or "")):
+        result.urteil = (result.urteil or "") + " · " + hinweis_implizit
 
 
 def refresh_report_verdict(result: ScanResult, settings: dict) -> None:
@@ -599,9 +693,14 @@ def refresh_report_verdict(result: ScanResult, settings: dict) -> None:
         # By-Balance-Wert (Gold Spike: By Equity 3,8 % vs. By Balance 8,11 %).
         # Rekonstruierter Equity-DD (aus Kursen, floating inklusive) geht bei
         # verlässlicher Abdeckung als viertes Maximum ein — Risiko vor Ertrag.
+        # Die Monitor-Zweitmessung als fünftes (B1, Intensiv-Review
+        # 29./30.09.2026): identische Definition zur Scan-Zeit-Berechnung
+        # in scoring.evaluate, sonst würde die Neu-Berechnung (DB-Load,
+        # Anzeige) die Schranke schwächer sehen als der Scan.
         result.schranke_verletzt = scoring.dd_maximum(  # F-12: eine Definition
             result.dd_equity_pct, result.trading_dd_pct,
-            result.dd_balance_pct, result.equity_dd_rekonstruiert_pct) > limit
+            result.dd_balance_pct, result.equity_dd_rekonstruiert_pct,
+            result.monitor_trade_eq_dd_pct) > limit
     result.ampel, result.urteil = ampel_for(result, settings)
     # Kennzeichnung ueberlebt das Neubauen des Urteils (KI-Prompts, Portfolio,
     # DB-Neuladen rufen alle refresh_report_verdict).
@@ -762,7 +861,12 @@ class ScanPipeline:
                 n_fix += 1
                 continue
             weeks = s.get("wochen")
-            if weeks is not None and weeks < min_wochen:
+            # B5/B6 (Intensiv-Review 29./30.09.2026): weeks=None heißt seit
+            # der PelicanMonitor-Korrektur ehrlich „Handelshistorie unbekannt"
+            # (früher fälschlich 0 = „jung"). Für einen Mindestalter-Filter
+            # gilt Unbekannt als NICHT belegt — das Verhalten (Rauswurf)
+            # bleibt wie bei weeks=0, nur die Datenlage lügt nicht mehr.
+            if weeks is None or weeks < min_wochen:
                 continue
             if (s.get("abonnenten") or 0) < min_abo:
                 continue
@@ -901,12 +1005,19 @@ class ScanPipeline:
                 # Broker mitgeben: cross_broker=false-Kontraktspecs (z. B. Oel)
                 # gelten nur fuer den gelisteten Broker des Signals.
                 # Kapitalbasis: 1) Signalseite "Initial Deposit" (belegt,
-                # Cent-Abgleich), 2) virtuelle Annahme aus dem Quellen-Monitor
-                # ("InitialDepositVirtual", z. B. Pelican) — greift nur, wenn
+                # Cent-Abgleich), 2) implizite Basis Web-Balance − Σ Trade-
+                # Netto (B3, Intensiv-Review), 3) virtuelle Annahme aus dem
+                # Quellen-Monitor ("InitialDepositVirtual") — greift nur, wenn
                 # der Export keine Einzahlung vor dem ersten Trade enthaelt
                 # (Quellen-CSVs haben keine Kontobewegungszeilen).
                 kapitalbasis = stats.get("initial_deposit_usd")
                 kapitalbasis_quelle = "signalseite_initial_deposit"
+                if kapitalbasis is None:
+                    implizit = _implizite_kapitalbasis(
+                        stats.get("balance_usd"), path, log)
+                    if implizit is not None:
+                        kapitalbasis = implizit
+                        kapitalbasis_quelle = KAPITALBASIS_QUELLE_IMPLIZIT
                 if kapitalbasis is None:
                     virtuell = _virtuelle_kapitalbasis(stats.get("kapitalbasis_virtual_usd"), log)
                     if virtuell is not None:
@@ -993,10 +1104,28 @@ class ScanPipeline:
                     "eq_dd_pct": res.dd_equity_pct or 0,
                     "bal_dd_pct": res.dd_balance_pct or 0,
                     "reko_eq_dd_pct": res.equity_dd_rekonstruiert_pct or 0,
+                    # B1 (Intensiv-Review 29./30.09.2026): Die Monitor-
+                    # Zweitmessung gehört in Schranke und Score-Dimension —
+                    # vorher war sie nur KI-Deutungsauftrag und 🟢 bei 46 %
+                    # bzw. 241 % Zweitmessung war möglich.
+                    "monitor_trade_eq_dd_pct": res.monitor_trade_eq_dd_pct or 0,
                     "weeks": res.wochen,
                     "broker_risk": 5.0,      # Default offshore; Detailpruefung manuell
                     "transparency_risk": 5.0,
                 }
+                # B2 (Intensiv-Review): Ertrag/Monat auf der GLEICHEN Basis
+                # wie DD und Schock (eigene Kurve), statt nur der Plattform-
+                # Selbstauskunft mit fremder Kapitalbasis.
+                dd_befund = fx["drawdown"]
+                netto_gesamt = dd_befund.get("net_total")
+                startkapital = dd_befund.get("startkapital")
+                span_wochen = float(st.get("span_weeks") or 0)
+                if (netto_gesamt is not None and startkapital
+                        and startkapital > 0 and span_wochen > 0):
+                    monate = span_wochen * 7.0 / 30.44
+                    res.ertrag_monat_pct_forensik = round(
+                        100.0 * float(netto_gesamt) / float(startkapital)
+                        / monate, 2)
                 ev = scoring.evaluate(
                     report, platform=platform,
                     schranke_eq_dd_pct=self.settings.get("schranke_eq_dd_pct", 30.0))
@@ -1034,6 +1163,9 @@ class ScanPipeline:
                 "eq_dd_pct": res.dd_equity_pct,
                 "bal_dd_pct": res.dd_balance_pct,
                 "ertrag_monat_pct": res.ertrag_monat_pct,
+                # B2 (Intensiv-Review): Ertrag auf der Forensik-Kapitalbasis —
+                # dieselbe Basis wie DD/Schock (Persistenz + REST/Anzeige).
+                "ertrag_monat_pct_forensik": res.ertrag_monat_pct_forensik,
                 "pf": res.pf, "growth_pct": res.growth_pct,
                 "broker_server": res.broker_server,
                 # Expliziter Vollstaendigkeitsstatus (verhindert Gruen aus alter Forensik).

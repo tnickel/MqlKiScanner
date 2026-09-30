@@ -48,17 +48,46 @@ def _ueber_quellen(fn: Callable[[downloader_client.DownloaderClient], list]) -> 
             "Keine Datenquelle konfiguriert. Admin → Datenquellen.")
     ergebnis: list = []
     systemic: BaseException | None = None
+    erreicht = False  # mind. eine Quelle hat geantwortet (auch nur mit 404s)
     for quelle in quellen_liste:
         try:
             ergebnis.extend(fn(quellen.client_fuer_quelle(quelle)))
+            erreicht = True
         except downloader_client.DownloaderNotFound:
+            erreicht = True  # Quelle lebt — sie kennt nur dieses Signal nicht
             continue  # Signal existiert in dieser Quelle nicht — keine Daten, kein Fehler
         except (downloader_client.DownloaderAuthError,
                 downloader_client.DownloaderConnectionError) as exc:
             systemic = systemic or exc
-    if systemic is not None and not ergebnis:
+    # B9 (Intensiv-Review 29./30.09.2026): Der Abgleich bricht nur noch ab,
+    # wenn KEINE einzige Quelle geantwortet hat. Vorher genügte eine leere
+    # Ergebnismenge (alle Signale dieser Quelle unbekannt + andere Quelle
+    # down) zum Raise — der Ziellauf schrieb deswegen 0 Verlaufs-Punkte und
+    # der PDF-Spiegel blieb auf dem Stand vom 20.09. stehen.
+    if systemic is not None and not ergebnis and not erreicht:
         raise systemic
     return ergebnis
+
+
+def warne_url_divergenz(log=print) -> bool:
+    """B9 (Intensiv-Review): Settings-Downloader-URL vs. Datenquelle mql5.
+
+    Beide existieren getrennt (Legacy-Setting + Quellen-Registry) und
+    divergierten im Ziellauf unbeachtet (192.168.178.164 vs. localhost)
+    — die ConnectionError-Meldung deutete auf den falschen Host. Gibt
+    True zurück, wenn gewarnt wurde.
+    """
+    settings_url = (config.load_settings().get("downloader_base_url") or "").strip()
+    if not settings_url:
+        return False
+    for q in db.list_quellen():
+        if (q.get("kuerzel") or "").lower() == "mql5" and q.get("base_url"):
+            if str(q["base_url"]).rstrip("/") not in settings_url.rstrip("/"):
+                log(f"Warnung: Downloader-URL divergiert — Setting "
+                    f"{settings_url!r} vs. Datenquelle mql5 {q['base_url']!r}. "
+                    "Fehlermeldungen zeigen nur eine der beiden Adressen.")
+                return True
+    return False
 
 
 def _client() -> downloader_client.DownloaderClient:

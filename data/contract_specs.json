@@ -20,7 +20,10 @@
       "stress_move": 5000.0,
       "unit_label": "USD Kursbewegung",
       "cross_broker": true,
-      "aliases": ["XBTUSD", "BITCOIN"],
+      "aliases": [
+        "XBTUSD",
+        "BITCOIN"
+      ],
       "source": "https://www.tickmill.com/instruments/btcusd",
       "retrieved": "2026-09-08",
       "note": "1 Lot = 1 Bitcoin. Brancheneinheitlich bei Retail-Brokern (Tickmill, IC Markets, Pepperstone). Volumen Schritt 0.01."
@@ -56,7 +59,10 @@
       "stress_move": 50.0,
       "unit_label": "EUR Kursbewegung",
       "cross_broker": true,
-      "aliases": ["GOLD-EUR", "XAUEUR-MINI"],
+      "aliases": [
+        "GOLD-EUR",
+        "XAUEUR-MINI"
+      ],
       "source": "https://www.tickmill.com/instruments/xaueur",
       "retrieved": "2026-09-08",
       "note": "1 Lot = 100 Unzen Gold, in EUR quotiert. Wegen EUR-Quote bleibt der USD-Schock gesperrt (wie FX-Kreuze); der native Schockbetrag in EUR erscheint in den je-Symbol-Szenarien."
@@ -68,8 +74,14 @@
       "stress_move": 10.0,
       "unit_label": "USD Kursbewegung",
       "cross_broker": false,
-      "brokers": ["tickmill"],
-      "aliases": ["USOUSD", "USOIL", "WTIUSD"],
+      "brokers": [
+        "tickmill"
+      ],
+      "aliases": [
+        "USOUSD",
+        "USOIL",
+        "WTIUSD"
+      ],
       "source": "https://www.tickmill.com/instruments/xtiusd (EU-Seite: Contract Size 1, Min./Schritt 1 Lot, Max. 10.000 Lots)",
       "retrieved": "2026-09-08",
       "note": "ACHTUNG, brokerabhaengig: Tickmill definiert 1 Lot = 1 Barrel (Mindestvolumen 1 Lot). Viele andere Broker (z. B. TMGM, laut FXNX-Referenz die Retail-Mehrheit) nutzen 100 Barrel je Lot — Faktor 100 Unterschied. Deshalb gilt diese Spec NUR bei Tickmill-Konten; fuer andere Broker hier eine broker-spezifische Ergaenzung eintragen.",
@@ -85,8 +97,12 @@
       "stress_move": 10.0,
       "unit_label": "USD Kursbewegung",
       "cross_broker": false,
-      "brokers": ["vtmarkets"],
-      "aliases": ["USOUSD"],
+      "brokers": [
+        "vtmarkets"
+      ],
+      "aliases": [
+        "USOUSD"
+      ],
       "source": "https://get.vtmarkets.help/hc/en-us/articles/56126804545561-How-does-dynamic-leverage-affect-my-trading",
       "retrieved": "2026-09-19",
       "note": "VT Markets rechnet im offiziellen USOUSD-Beispiel 1 Lot mit 1.000 Contract Units. USOUSD ist WTI Crude Oil Cash und wird im Beispiel in USD bepreist. Die öffentliche Quelle nennt die Einheit nicht ausdrücklich Barrel; im Zweifel im MT5-Dialog 'Specification' auf dem konkreten VTMarkets-Live-Server gegenprüfen."
@@ -98,7 +114,11 @@
       "stress_move": 500.0,
       "unit_label": "Punkte",
       "cross_broker": true,
-      "aliases": ["DAX", "DAX40"],
+      "aliases": [
+        "DAX",
+        "DAX40",
+        "GER40"
+      ],
       "source": "https://www.tickmill.com/instruments/de40 (Lot Size 1, Typical Spread 0.91 Punkte)",
       "retrieved": "2026-09-08",
       "note": "1 Lot = 1 Indexpunkt. Der DAX ist EUR-denominiert: Wie FX-Kreuze bleibt der USD-Schock gesperrt; der native EUR-Punktwert 1 je Lot ist die uebliche Retail-Konvention."
@@ -110,7 +130,11 @@
       "stress_move": 500.0,
       "unit_label": "Punkte",
       "cross_broker": true,
-      "aliases": ["USTECH", "NASUSD", "NDX"],
+      "aliases": [
+        "USTECH",
+        "NASUSD",
+        "NDX"
+      ],
       "source": "https://www.tickmill.com/instruments/ustec",
       "retrieved": "2026-09-08",
       "note": "1 Lot = 1 Indexpunkt in USD, gleiche Konvention wie US30/US100/US500 im Kern der Engine. NASUSD ist die Pepperstone-Schreibweise fuer den Nasdaq-100-CFD."
@@ -122,7 +146,9 @@
       "stress_move": 500.0,
       "unit_label": "Punkte",
       "cross_broker": true,
-      "aliases": ["A50"],
+      "aliases": [
+        "A50"
+      ],
       "source": "https://www.tickmill.com/instruments/china50 (Lot Size 1, Typical Spread 10 Punkte)",
       "retrieved": "2026-09-08",
       "note": "FTSE China A50, USD-denominiert (SGX-Konvention), 1 Lot = 1 Indexpunkt. Bei abweichendem Punktwert des Signal-Brokers hier korrigieren."

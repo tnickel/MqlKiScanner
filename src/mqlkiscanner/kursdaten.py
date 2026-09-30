@@ -29,6 +29,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .agenten.marktdata import broker_symbol, terminal_beenden, terminal_laueft
+from .symbols import normalize_symbol
 
 ERLAUBTE_MT5_AUFRUFE = frozenset((
     "initialize", "shutdown", "terminal_info", "last_error",
@@ -56,6 +57,9 @@ class KursDaten:
         self._aktiv = False
         self._selbststart = False
         self._cache: dict[str, list[dict]] = {}
+        # B10: roh-Symbol → tatsächlich verwendetes Terminal-Symbol, wenn
+        # das exakte (suffigierte) Symbol nicht existierte.
+        self.suffix_annahmen: dict[str, str] = {}
 
     # ------------------------------------------------------------ Lebenszyklus
 
@@ -104,21 +108,39 @@ class KursDaten:
         Terminal-Raum (Ergebnis der Auto-GMT-Erkennung, in Sekunden).
         Rückgabe: aufsteigend sortierte Liste [{time, open, high, low,
         close}] oder None, wenn das Symbol keine Daten liefert.
+
+        B10 (Intensiv-Review 29./30.09.2026): Findet das eigene Terminal
+        das exakte Symbol nicht (Fremdbroker-Suffixe wie AUDCADR,
+        XAUUSD.F, EURUSD+, AUDCAD-ECN — im Ziellauf deshalb 8 von 28
+        MQL5-Signalen ohne wirksame Equity-Reko), wird das normalisierte
+        Basis-Symbol als zweiter Versuch genommen und in
+        suffix_annahmen protokolliert (raw → verwendet).
         """
         if not self._aktiv or self._mt5 is None:
             return None
         key = f"{symbol}|{von_epoch}|{bis_epoch}|{gmt_offset_s}"
         if key in self._cache:
             return self._cache[key]
-        am_broker = broker_symbol(symbol, self.settings)
         mt5 = self._mt5
-        if not mt5.symbol_select(am_broker, True):
+        normalisiert = normalize_symbol(symbol)
+        am_broker = broker_symbol(symbol, self.settings)
+        kandidaten = [am_broker]
+        if normalisiert != symbol.upper().strip():
+            kandidaten.append(broker_symbol(normalisiert, self.settings))
+        gewaehlt = None
+        for kandidat in kandidaten:
+            if mt5.symbol_select(kandidat, True):
+                gewaehlt = kandidat
+                break
+        if gewaehlt is None:
             self._cache[key] = None
             return None
+        if gewaehlt != kandidaten[0]:
+            self.suffix_annahmen[symbol] = gewaehlt
         import datetime as _dt
         von = _dt.datetime.fromtimestamp(von_epoch + gmt_offset_s, tz=_dt.timezone.utc)
         bis = _dt.datetime.fromtimestamp(bis_epoch + gmt_offset_s, tz=_dt.timezone.utc)
-        rates = mt5.copy_rates_range(am_broker, mt5.TIMEFRAME_H1, von, bis)
+        rates = mt5.copy_rates_range(gewaehlt, mt5.TIMEFRAME_H1, von, bis)
         if rates is None or len(rates) == 0:
             self._cache[key] = None
             return None

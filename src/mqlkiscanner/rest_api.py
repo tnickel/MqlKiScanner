@@ -155,6 +155,11 @@ def signal_payload(results, ampel_filter: set[str] | None = None) -> dict:
             "score": r.score,
             "urteil": r.urteil or "",
             "kurzfassung": getattr(r, "kurzfassung", "") or "",
+            # R2 (Intensiv-Review 29./30.09.2026): Für Maschinen-Clients
+            # erkennbar, wie frisch eine Ampel ist (KiraCat stand wochen-
+            # alt unverändert im Katalog, ohne Alters-Hinweis).
+            "forensikUpdatedAt": getattr(r, "forensik_aktualisiert", "") or "",
+            "stale": bool(getattr(r, "forensik_stale", False)),
         })
     return {
         "service": SERVICE_NAME,

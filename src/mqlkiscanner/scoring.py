@@ -92,8 +92,17 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     # vorher weg und konnte KLEINER sein als das, was die Schranke sieht.
     # (eq_dd_caveat bleibt bewusst: Plattform-EQ unbrauchbar => nur real+reko.)
     reko_dd = float(platform.get("reko_eq_dd_pct") or 0.0)
-    dd_reference = (max(real_dd, reko_dd) if platform.get("eq_dd_caveat")
-                    else dd_maximum(real_dd, eq_dd, bal_dd, reko_dd))
+    # B1 (Intensiv-Review 29./30.09.2026): Die Monitor-Zweitmessung
+    # (TradeEqDrawdownPct, floating-inclusive aus der vollen Trade-Kurve)
+    # gehoert ebenfalls in Schranke UND Dimension. Vorher galt sie nur dem
+    # LLM-Deutungsauftrag — ein 🟢 bei Zweitmessung 46 %/241 % war die Folge.
+    # Vorbehalt: Der Monitor rechnet gegen seine eigene (ggf. rueckgerechnete)
+    # Basis — der Wert ueberzeichnet bei >100 % absolut, schuetzt die Schranke
+    # aber in die richtige Richtung (Risiko vor Ertrag).
+    monitor_dd = float(platform.get("monitor_trade_eq_dd_pct") or 0.0)
+    dd_reference = (dd_maximum(real_dd, reko_dd, monitor_dd)
+                    if platform.get("eq_dd_caveat")
+                    else dd_maximum(real_dd, eq_dd, bal_dd, reko_dd, monitor_dd))
     dd_dim = _interp(dd_reference, DD_MAP)
 
     # 2) Struktur: Stop-Nachweis, Martingale (Nachfolger + Korb-Leiter), Grid
@@ -165,13 +174,21 @@ def score(dims: dict[str, float], weights: dict[str, float] | None = None) -> fl
 def evaluate(report: dict, platform: dict | None = None,
              weights: dict[str, float] | None = None,
              schranke_eq_dd_pct: float = 30.0) -> dict:
-    """Score + Gate. Harte Schranke: max(Trading-DD, EQ-DD, Bal-DD) > Schranke.
+    """Score + Gate. Harte Schranke: max(Trading-DD, EQ-DD, Bal-DD, Reko-DD,
+    Monitor-DD) > Schranke.
 
     Vom Plattform-Drawdown zählt der HOECHSTE By-Equity-/By-Balance-Wert
     (MQL5's By Equity kann deutlich niedriger als By Balance ausfallen —
     Fall Gold Spike 3,8 % vs. 8,11 %). Ausnahme: platform['eq_dd_caveat']
-    (KiraCat-Fussnote) — dann nur Trading-DD. Fehlt der Plattform-EQ-DD,
-    greift trotzdem der rekonstruierte Trading-DD.
+    (KiraCat-Fussnote) — dann nur Trading-DD/Reko/Monitor. Fehlt der
+    Plattform-EQ-DD, greift trotzdem der rekonstruierte Trading-DD.
+
+    Reko-EQ-DD (Kursdaten, floating inklusive, nur belastbare Abdeckung) seit
+    28.09. und Monitor-EQ-DD (Datenquellen-Zweitmessung TradeEqDrawdownPct,
+    B1 Intensiv-Review 29./30.09.2026) als weitere Maxima: Ohne den
+    Monitorwert war die floating-inclusive Schranke fuer Quellen-Signale
+    wirkungslos (die Kursdaten-Reko wird dort wegen des Monitorwerts
+    geskippt).
     """
     platform = platform or {}
     dims = dimension_inputs(report, platform)
@@ -183,10 +200,16 @@ def evaluate(report: dict, platform: dict | None = None,
     # Abdeckung wird er von der Pipeline hierher gereicht; er geht als
     # viertes Maximum in die Schranke ein (Risiko vor Ertrag, 28.09.2026).
     reko_dd = float(platform.get("reko_eq_dd_pct") or 0.0)
+    # Monitor-Zweitmessung als fuenftes Maximum (B1, Intensiv-Review
+    # 29./30.09.2026): haette Lemonal (46,65 %) und AccurateCopier (241 %)
+    # als 🔴 statt 🟢 gestellt. Basis-Vorbehalt: Der Monitor rechnet gegen
+    # seine eigene Basis — bei >100 % ueberzeichnet der Wert absolut, bleibt
+    # aber ein hartes Warnsignal in Schranken-Richtung.
+    monitor_dd = float(platform.get("monitor_trade_eq_dd_pct") or 0.0)
     if platform.get("eq_dd_caveat"):
-        barrier_dd = max(real_dd, reko_dd)
+        barrier_dd = dd_maximum(real_dd, reko_dd, monitor_dd)
     else:
-        barrier_dd = dd_maximum(real_dd, eq_dd, bal_dd, reko_dd)
+        barrier_dd = dd_maximum(real_dd, eq_dd, bal_dd, reko_dd, monitor_dd)
     barrier = barrier_dd > float(schranke_eq_dd_pct)
     return {
         "dimensions": dims,
