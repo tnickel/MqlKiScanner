@@ -103,13 +103,22 @@ def build_gesamtbericht_prompt(result, kriterien: str,
                                   "{kriterien}": kriterien})
 
 
-def build_portfolio_prompt(eintraege_json: str, kriterien: str) -> str:
-    """Prompt 4 — Portfolio-Vorschlag ueber ALLE Signale (starkes Modell)."""
+def build_portfolio_prompt(eintraege_json: str, kriterien: str,
+                           statistik_json: str = "") -> str:
+    """Prompt 4 — Portfolio-Vorschlag ueber ALLE Signale (starkes Modell).
+
+    statistik_json: Portfolio-Statistik als Code-Befund (B20/B21,
+    Intensiv-Review-Nachtrag: Verlustmonat-Cluster, Historie-Tiefe,
+    Instrument-Overlap). Leer-Default hält alte Aufrufer/tests kompatibel,
+    das Template muss den Platzhalter enthalten (assert schlägt sonst an).
+    """
     template = assert_template_covered(
         llm_prompts.load_prompt("portfolio"),
-        ("{kandidaten_json}", "{kriterien}"), "portfolio")
+        ("{kandidaten_json}", "{kriterien}", "{portfolio_statistik}"),
+        "portfolio")
     return fill_prompt(template, {"{kandidaten_json}": eintraege_json,
-                                  "{kriterien}": kriterien})
+                                  "{kriterien}": kriterien,
+                                  "{portfolio_statistik}": statistik_json})
 
 
 def build_tiefenanalyse_prompt(result, trades_json: str) -> str:

@@ -245,8 +245,8 @@ vom Hauptagenten unabhängig nachgerechnet bzw. im Code nachgelesen (✓).
 | B17 **DE40/GER40 EUR-Quote blockt USD-Schock dauerhaft** | ✅ **zurückgezogen** (Gegenprobe: läuft durch, EUR=EZB-Basis) | ✅ Gegenprobe mit echten Trades |
 | B18 **Pelican `/reports` hartkodiert leer** | ❌ **offen (Monitor)** | ❌ |
 | B19 **Peak-Positionen — Verdacht vom Vor-Nachtrag entkräftet** | ✅ kein Defekt | ✅ **16/16 exakt reproduziert** |
-| B20 **Juli 2026: 7 Signale gleichzeitig im Minus; Portfolio prüft Korrelation statt gemeinsamer Belastung; Beobachtungstiefe nur 11 Monate** | ❌ **offen** | ✅ gemessen (Trio-Ertrag in Juli: −1,82 / +5,72 / +1,45 %) — kein Trio-Schaden; Lücke ist die Fragestellung + Stichprobe |
-| B21 **Instrument-Overlap als Diversifikationskriterium fehlt (MH4-1/2: 15 Symbole, r = 0,26)** | ❌ **offen** | ❌ |
+| B20 **Juli 2026: 7 Signale gleichzeitig im Minus; Portfolio prüft Korrelation statt gemeinsamer Belastung; Beobachtungstiefe nur 11 Monate** | ✅ **`portfolio_statistik` (0-Fix-Welle)**: Verlustmonat-Cluster + Historie-Tiefe + gemeinsames Fenster als Code-Befund im Portfolio-Prompt | ✅ Live-Abnahme am Bestand: Juli-Cluster n=5 sichtbar, Gesamtfenster nur 2 Monate — die Stichprobenlücke steht jetzt IM Prompt |
+| B21 **Instrument-Overlap als Diversifikationskriterium fehlt (MH4-1/2: 15 Symbole, r = 0,26)** | ✅ **`portfolio_statistik`**: Paar-Overlap (Jaccard ≥ 0.3, ≥ 3 gemeinsame Symbole) im Prompt, Deutungsregel „Overlap = Klumpenrisiko trotz r≈0" | ✅ Live-Abnahme: H4-1×H4-2 entfällt (H4-1 seit B1 🔴), Holy Grail×MetaTrading2 (J=0,33) & Co. erscheinen |
 | B22 **`fc4b3b9` brach einen abhängigen Test still (Fixture-Wert vs. Test-Mutation)** | ✅ **behoben** (Mutation korrigiert + Trefferprüfung als dauerhafte Absicherung) | ✅ **grün** (7/7 `test_review18_ui.py`, 20/20 mit `test_review15_reports.py`) |
 
 

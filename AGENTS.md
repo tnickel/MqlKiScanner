@@ -474,6 +474,28 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   **B5** PelicanMonitor liefert weeks=null statt 0 (Stats nie geladen);
   Scanner-Vorfilter behandelt unbekanntes Mindestalter als nicht belegt.
   Tests: +27 in tests/test_intensivreview_fixes.py.
+  **Live-Verifikation 30.09. abends** (PelicanMonitor neu gestartet,
+  `doc/reviews/intensivreview_2026-09-29/lauf_verifikation_b1_b3.py`,
+  isoliert ohne DB-Schreiben/KI): Lemonal 🔴 (46,65 % Schranke),
+  AccurateCopier 🔴 (241,3 %), Lexo/PentagonForex/Mr_Profit 🟡 (Ertrag
+  1,86/1,12/3,33 statt 15,4/6,68/63,8 %/M), alle mit impliziter Basis.
+- ✅ Portfolio-Statistik als Code-Befund B20/B21 (30.09.2026 nachts,
+  Intensiv-Review-Nachtrag der Parallel-KI): Neues Modul
+  `portfolio_statistik.py` liefert dem Portfolio-Prompt Maschinen-Fakten
+  statt nur Rendite-Korrelation: (1) **Verlustmonat-Cluster** (Monate mit
+  ≥2 gleichzeitigen Verlierern unter den 🟢/🟡 — der schlechteste
+  beobachtbare Monat ist das Stress-Szenario und MUSS im Bericht mit
+  Namen/Werten stehen), (2) **Historie-Tiefe je Signal + gemeinsames
+  Beobachtungsfenster** (<24 Monate = schwach belegte Diversifikation,
+  explizit zu nennen), (3) **Instrument-Overlap** (Paare mit ≥3 gemeinsamen
+  Symbolen und Jaccard ≥0,3 = Klumpenrisiko selbst bei r≈0). Monatsrenditen
+  auf der virtuellen Forensik-Kurve (tatsächlich verwendete Kapitalbasis).
+  Template portfolio.md + Default synchron (B12-Test wacht darüber),
+  run_portfolio loggt Cluster-/Klumpen-Zahl. Live-Abnahme am Bestand:
+  Juli-2026-Cluster (n=5) und Gesamtfenster von nur 2 Monaten erscheinen
+  im Prompt; Master H4-1×H4-2 entfällt als Paar, weil H4-1 seit B1
+  korrekt 🔴 ist (Monitor-TDD 66,5 %). +10 Tests in
+  tests/test_portfolio_statistik.py.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

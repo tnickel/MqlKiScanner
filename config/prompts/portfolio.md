@@ -17,6 +17,22 @@ Signal nur nach den Maschinendaten.
 ## Entscheidungs-Kriterien des Nutzers
 {kriterien}
 
+## Portfolio-Statistik (Code-Befund — B20/B21, Intensiv-Review)
+{portfolio_statistik}
+
+Deutungsregeln fur diese Statistik (bindend):
+1. **Verlustmonat-Cluster** sind gemeinsame Schocks. Nenne den Monat mit den
+   meisten gleichzeitigen Verlusten MIT Namen und Werten als Stress-Szenario
+   („wenn dieser Monat wiederkehrt, verliert das Sortiment X Positionen").
+2. **Historie-Tiefe**: Gib je empfohlener Position die beobachteten Monate an
+   und das gemeinsame Fenster. Unter ~24 gemeinsamen Monaten ist die
+   Diversifikationsaussage schwach belegt — sage das explizit, statt
+   Sicherheit zu suggerieren.
+3. **Instrument-Overlap**: Paare mit vielen gemeinsamen Symbolen (siehe
+   jaccard) tragen gemeinsames Risiko SELBST BEI r nahe 0 — gleiche
+   Werkstatt, gleiche Instrumente. Solche Paare nicht als Diversifikation
+   gegeneinander rechtfertigen.
+
 ## Alle Signale
 {kandidaten_json}
 

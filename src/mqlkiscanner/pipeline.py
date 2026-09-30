@@ -23,7 +23,7 @@ from typing import Callable
 
 import requests
 
-from . import ampel_verlauf, config, fix_signale, scoring
+from . import ampel_verlauf, config, fix_signale, portfolio_statistik, scoring
 from . import db
 from . import downloader_client
 from . import fx_rates
@@ -1377,8 +1377,19 @@ class ScanPipeline:
                 "kurzfassung": r.kurzfassung,
                 "gesamtbericht": r.gesamtbericht or "(nicht erstellt)",
             })
+        # B20/B21 (Intensiv-Review-Nachtrag): Portfolio-Statistik als
+        # Code-Befund — Verlustmonat-Cluster (gemeinsame Schocks),
+        # Historie-Tiefe/gemeinsames Fenster und Instrument-Overlap.
+        # Code rechnet, KI deutet (Design-Regel 1).
+        pstat = portfolio_statistik.statistik(jobs)
+        n_cluster = len(pstat["verlustmonate_cluster"])
+        n_klumpen = len(pstat["instrument_overlap"])
+        log(f"Portfolio-Statistik (Code-Befund): {n_cluster} Verlustmonat-"
+            f"Cluster, {n_klumpen} Instrument-Klumpen, gemeinsames Fenster "
+            f"{pstat['gemeinsames_fenster']['monate']} Monate.")
         prompt = prompt_fill.build_portfolio_prompt(
-            json.dumps(eintraege, ensure_ascii=False), kriterien)
+            json.dumps(eintraege, ensure_ascii=False), kriterien,
+            statistik_json=json.dumps(pstat, ensure_ascii=False))
         model_strong = self.settings.get("model_stufe2", config.MODEL_STUFE2)
         log(f"→ Portfolio: {len(eintraege)} Signal-Berichte "
             f"({len(prompt):,} Zeichen) an {model_strong} …")
