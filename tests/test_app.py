@@ -46,14 +46,17 @@ def test_app_boots_without_exception():
 def test_scan_page_renders_steps():
     at = _run_main()
     body = _body(at)
-    assert "Signale holen" in body and "KI-Bericht" in body and "Portfolio" in body
+    component = next(e for e in at.get("bidi_component")
+                     if e.key == "scan_station_stepper")
+    stepper = json.loads(component.proto.json)["html"]
+    assert "Signale holen" in stepper and "KI-Bericht" in stepper and "Portfolio" in stepper
     assert at.button(key="scan_start").label == "Full-Scan"
     assert at.button(key="scan_gelbgruen").label == "Teilscan"
     # Sektionskopf der Analyse-Zentrale (Titel ist ein subheader, hier die Caption)
-    assert "fünf nachvollziehbare Stationen" in body
-    assert "Signallisten und Handelsdaten von MQL5 laden" in body
+    assert "sechs nachvollziehbare Stationen" in body
+    assert "Signallisten und Handelsdaten von MQL5 laden" in stepper
     # Die alte Story-Reihe ist entfernt: Beschreibungen stecken jetzt im Stepper.
-    assert body.count("Signallisten und Handelsdaten") == 1
+    assert stepper.count("Signallisten und Handelsdaten") == 1
 
 
 def test_verification_button_loads_raw_data_and_saves_isolated_run():

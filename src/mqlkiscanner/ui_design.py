@@ -4,8 +4,10 @@ from __future__ import annotations
 import base64
 import html
 import re
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import quote
 
 import streamlit as st
 
@@ -281,6 +283,10 @@ def _stylesheet() -> str:
         transform: scale(1.12);
         box-shadow: 0 0 14px rgba(34, 211, 238, .55);
         border-color: #67E8F9;
+    }}
+    a.mks-node:focus-visible {{
+        outline: 3px solid #67E8F9;
+        outline-offset: 3px;
     }}
     .mks-step--running .mks-node {{
         background: linear-gradient(135deg, #00D2D3, #0891B2);
@@ -561,8 +567,8 @@ def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
     steps: [{nr, sid, title, status, meta, frac}] — frac (0..1) steuert den
     Mini-Balken und wird nur bei laufenden Stationen angezeigt; overall
     (0..1) füllt die Schiene zwischen den Knoten proportional auf. Mit
-    `sid` werden die Kugeln als Klick-Link (?station=<sid>) gerendert —
-    der Streamlit query-Param öffnet den Erklär-Dialog (scan.py).
+    `sid` werden die Kugeln interaktiv. Die CCv2-Komponente übermittelt
+    Doppelklicks an Python; Stations-URLs bleiben als Fallback verfügbar.
     """
     n = len(steps)
     fill = max(0.0, min(1.0, (overall * n - 0.5) / (n - 1))) if n > 1 else 0.0
@@ -577,19 +583,20 @@ def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
         mark = _NODE_MARK.get(status, str(s["nr"]))
         title = html.escape(str(s["title"]))
         meta = html.escape(str(s.get("meta") or ""))
-        aria = html.escape(f"Station {s['nr']} von {n}: {s.get('label', status)}")
+        aria = html.escape(
+            f"Station {s['nr']} von {n}: {s['title']} · {s.get('label', status)}")
         mini = ""
         if status == "running" and s.get("frac") is not None:
             mini = (f'<div class="mks-mini" aria-hidden="true">'
                     f'<i style="width:{s["frac"] * 100:.0f}%"></i></div>')
-        # Nutzer-Wunsch 02.10.: Kugeln direkt klickbar — als <a> mit
-        # ?station=<sid>, der Streamlit query-Param öffnet den Erklär-Dialog.
+        # Alle Zustände bleiben erreichbar, auch vor dem ersten Lauf.
         sid_raw = str(s.get("sid") or "").strip()
-        klickbar = bool(sid_raw) and status != "pending"
+        klickbar = bool(sid_raw)
         if klickbar:
             node = (f'<a class="mks-node" role="button" '
-                    f'href="?station={sid_raw}" '
-                    f'title="Klicken fuer Erklärung dieser Station" '
+                    f'data-station="{html.escape(sid_raw, quote=True)}" '
+                    f'href="?station={quote(sid_raw, safe="")}" target="_self" '
+                    f'title="Doppelklick für Erklärung und Tabelle dieser Station" '
                     f'aria-label="{aria}">{mark}</a>')
         else:
             node = (f'<div class="mks-node" role="img" '
@@ -602,6 +609,82 @@ def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
             f'<div class="mks-step-meta">{meta}</div>{mini}</div></div>')
     parts.append("</div>")
     return "".join(parts)
+
+
+# CCv2 hält die Sitzung einschließlich der laufenden Ergebnisse am Leben.
+# Die Knoten werden beim Live-Tick erhalten, damit beide Klicks desselben
+# Doppelklicks auch bei wechselndem Fortschritt denselben Knoten treffen.
+_WORKFLOW_STEPPER_JS = """
+export default function(component) {
+    const { parentElement, data, setTriggerValue } = component;
+    const root = parentElement.querySelector('.mks-stepper-root');
+    const next = document.createElement('div');
+    next.innerHTML = data.html;
+    const currentSteps = root.querySelectorAll('.mks-step');
+    const nextSteps = next.querySelectorAll('.mks-step');
+    if (currentSteps.length !== nextSteps.length || !currentSteps.length) {
+        root.innerHTML = data.html;
+    } else {
+        root.querySelector('.mks-stepper').style.cssText =
+            next.querySelector('.mks-stepper').style.cssText;
+        currentSteps.forEach((step, index) => {
+            const fresh = nextSteps[index];
+            step.className = fresh.className;
+            const node = step.querySelector('.mks-node');
+            const freshNode = fresh.querySelector('.mks-node');
+            for (const attr of freshNode.attributes) {
+                node.setAttribute(attr.name, attr.value);
+            }
+            if (node.innerHTML !== freshNode.innerHTML) {
+                node.innerHTML = freshNode.innerHTML;
+            }
+            step.querySelector('.mks-step-body').innerHTML =
+                fresh.querySelector('.mks-step-body').innerHTML;
+        });
+    }
+    const stationNode = event => event.target.closest('[data-station]');
+    const preventNavigation = event => {
+        if (stationNode(event)) event.preventDefault();
+    };
+    const openStation = event => {
+        const node = stationNode(event);
+        if (!node) return;
+        event.preventDefault();
+        setTriggerValue('station', node.dataset.station);
+    };
+    const keyboard = event => {
+        if (event.key === 'Enter' || event.key === ' ') openStation(event);
+    };
+    root.addEventListener('click', preventNavigation);
+    root.addEventListener('dblclick', openStation);
+    root.addEventListener('keydown', keyboard);
+    return () => {
+        root.removeEventListener('click', preventNavigation);
+        root.removeEventListener('dblclick', openStation);
+        root.removeEventListener('keydown', keyboard);
+    };
+}
+"""
+
+
+def render_workflow_stepper(
+    steps: list[dict], overall: float, *, key: str,
+    on_station_change: Callable[[], None],
+) -> None:
+    """Stationsdetails per Doppelklick/Tastatur ohne Browser-Neuladung."""
+    # Identische Definition ist idempotent. Registrierung gehört zur aktiven
+    # Runtime, nicht zum Python-Modulcache (u. a. bei mehreren AppTest-Instanzen).
+    component = st.components.v2.component(
+        "workflow_station_stepper",
+        html='<div class="mks-stepper-root"></div>',
+        isolate_styles=False,
+        js=_WORKFLOW_STEPPER_JS,
+    )
+    component(
+        data={"html": workflow_stepper_html(steps, overall)},
+        key=key,
+        on_station_change=on_station_change,
+    )
 
 
 # --------------------------------------------------------------- Urteile

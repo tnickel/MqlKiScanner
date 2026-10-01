@@ -35,7 +35,7 @@ from mqlkiscanner.app_ui import (
 )
 from mqlkiscanner.ui_design import (
     action_button, aktivitaets_html, apply_theme, page_header, section_header,
-    urteile_farbig, workflow_stepper_html,
+    urteile_farbig, render_workflow_stepper,
 )
 
 apply_theme()
@@ -170,7 +170,7 @@ if reattached:
             "wieder verbunden; Status und Stop-Button steuern denselben Lauf.")
 section_header(
     "Analyse starten",
-    "Ein Start, fünf nachvollziehbare Stationen, ein gespeicherter Ergebnisstand.",
+    "Ein Start, sechs nachvollziehbare Stationen, ein gespeicherter Ergebnisstand.",
     help_key="scan_workflow",
 )
 
@@ -230,6 +230,14 @@ def _recent_log_lines(n: int = 3) -> list[str]:
     for sid, *_rest in STEPS:
         lines.extend(logs.get(sid) or [])
     return lines[-n:]
+
+
+def _station_requested() -> None:
+    """Ein Stationsereignis für die Detailansicht vormerken."""
+    event = st.session_state.get("scan_station_stepper") or {}
+    sid = event.get("station")
+    if sid in {step[0] for step in STEPS}:
+        st.session_state["_scan_station_dialog"] = sid
 
 
 @st.fragment(run_every=1.0)
@@ -346,12 +354,20 @@ def _live_status() -> None:
             "frac": _step_fraction(step) if step["status"] == "running" else None,
             "hint": sid == first_pending and status != "running",
         })
-    # Klickbare Kugeln (Nutzer-Wunsch 02.10.): Der Stepper rendert die
-    # Kugeln als <a href="?station=<sid>>. Ein Klick löst einen FULL RERUN
-    # aus (neuer query-Param) — der Dialog wird im HAUPT-Script geöffnet
-    # (unten nach _live_status()), denn @st.dialog aus einem FRAGMENT
-    # heraus öffnet nicht (Streamlit-Einschränkung).
-    st.markdown(workflow_stepper_html(payload, overall), unsafe_allow_html=True)
+    # Doppelklick meldet die Station direkt an Python. Keine Navigation:
+    # Sitzung, Worker und Laufdaten bleiben für die Detailansicht erhalten.
+    render_workflow_stepper(
+        payload, overall, key="scan_station_stepper",
+        on_station_change=_station_requested,
+    )
+    # Auch während eines Laufs nur dieses Fragment neu zeichnen. Die
+    # Dialogfunktionen sind nach dem initialen App-Lauf vollständig definiert;
+    # Stationsklicks brauchen keine erneuten Verbindungsprüfungen der Seite.
+    station = st.session_state.get("_scan_station_dialog")
+    dialog = globals().get("_station_dialoge", {}).get(station)
+    if dialog is not None:
+        st.session_state.pop("_scan_station_dialog", None)
+        dialog()
 
     # Letzte Meldungen statt Logfile-Wand: kurz beweisen, dass sich was tut.
     recent = _recent_log_lines()
@@ -447,20 +463,8 @@ with st.container(border=True, key="scan_control_panel"):
                    if fix_hinweis else ""))
 
     _live_status()
+    st.caption("Doppelklick auf einen Kreis öffnet die Erklärung mit Tabelle.")
 
-    # Klick auf eine Stations-Kugel (Nutzer-Wunsch 02.10.): Der Klick setzt
-    # ?station=<sid> und löst einen FULL RERUN aus — hier im Haupt-Script
-    # (NICHT im _live_status-Fragment, denn @st.dialog aus einem Fragment
-    # heraus öffnet nicht). Danach Param entfernen, damit der Dialog nicht
-    # bei jedem Tick wiederkehrt.
-    _station_klick = (st.query_params.get("station") or "").strip()
-    _dialog_namen = {"listen": "_dialog_listen", "kandidaten": "_dialog_auswahl",
-                     "forensik": "_dialog_forensik", "llm": "_dialog_llm",
-                     "portfolio": "_dialog_portfolio",
-                     "downloader": "_dialog_downloader"}
-    if _station_klick in _dialog_namen:
-        st.query_params.clear()
-        globals()[_dialog_namen[_station_klick]]()
     if not has_login:
         st.warning(
             "Ohne MQL5-Zugang ist nur eine Vorprüfung möglich. Für belastbare "
@@ -1236,34 +1240,108 @@ def _probleme_dialog(probleme: list, gesamt: int) -> None:
 @st.dialog("📡 Station 1 · Signale holen — was kam rein?", width="large")
 def _dialog_listen() -> None:
     """Signale je Quelle: was der Crawl geliefert hat und was fehlte."""
-    import json as _json
-    from pathlib import Path as _P
-    datei = _P("data") / "auswahl_begruendung.json"
-    daten = _json.loads(datei.read_text(encoding="utf-8")) if datei.exists() else {}
-    eintraege = daten.get("eintraege") or []
-    st.caption("Diese Signale und Datenquellen wurden im letzten Lauf geholt — "
-               "MQL5-Direkt (Top-Listen + Kennzahlen) und alle aktiven REST-Datenquellen.")
+    import pandas as pd
     from collections import Counter as _C
-    quellen = _C(e.get("quelle") or "mql5" for e in eintraege)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("MQL5-Direkt", quellen.get("mql5", 0))
-    c2.metric("Pelican (pelik)", quellen.get("pelik", 0))
-    c3.metric("Vantage (vant)", quellen.get("vant", 0))
-    st.info("Fehlende Quellen stehen im Meldungs-Feed („Katalog nicht erreichbar“) — "
-            "deren 🟢/🟡 werden im Teilscan automatisch aus der DB ergänzt.")
+    st.markdown("**Was passiert hier?** Der Scanner lädt die Signalkataloge aus den "
+                "eingestellten Quellen. Bei MQL5 werden Top-Listen und fehlende Fix-IDs "
+                "abgerufen, bei REST-Quellen deren Kataloge. Die Handelsdaten für die "
+                "Risikoprüfung folgen in Station 3. Ein geladenes Signal ist noch keine Empfehlung.")
+    datei = config.DATA_DIR / "auswahl_begruendung.json"
+    daten = {}
+    if datei.exists():
+        try:
+            daten = json.loads(datei.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            st.warning(f"Die gespeicherte Auswahl kann nicht gelesen werden: {exc}")
+    eintraege = list(st.session_state.get("scan_signals") or [])
+    sitzungsdaten = bool(eintraege)
+    if eintraege:
+        st.caption("Signale aus dem Lauf in dieser Sitzung.")
+    else:
+        eintraege = daten.get("eintraege") or []
+        if daten:
+            st.caption(f"Gespeicherter Lauf: {daten.get('zeitstempel', '?')}.")
+        else:
+            st.info("Noch keine Signale geladen. Die Tabelle zeigt die konfigurierten "
+                    "Quellen; Signalzahlen erscheinen nach Station 1.")
+    def _herkunft(e):
+        kuerzel = e.get("quelle_kuerzel") or e.get("quelle") or "mql5"
+        if sitzungsdaten:
+            zugriff = "REST" if e.get("quelle_kuerzel") or e.get("quelle_id") or e.get("quelle") else "MQL5-Direkt"
+        else:
+            zugriff = "REST" if kuerzel != "mql5" else "Nicht aufgezeichnet"
+        return kuerzel, zugriff
+
+    quellen = _C(_herkunft(e) for e in eintraege)
+    konfigurierte = {q["kuerzel"]: q for q in db.list_quellen()}
+    modus = str(settings.get("listen_modus") or "mql5").strip().lower()
+    mql5_nicht_getrennt = bool(quellen.get(("mql5", "Nicht aufgezeichnet")))
+    rows = [{"Quelle": "MQL5-Direkt", "Kürzel": "mql5", "Zugriff": "MQL5-Direkt",
+             "Im Scan aktiv": "Ja" if modus in ("mql5", "beides") else "Nein",
+             "Geladene Signale": (quellen.get(("mql5", "MQL5-Direkt"), 0)
+                                  if eintraege and not mql5_nicht_getrennt else None),
+             "Letzter Verbindungstest": "—", "Geprüft am": "—"}]
+    rest_kuerzel = {k for k, zugriff in quellen if zugriff == "REST"}
+    for kuerzel in sorted(set(konfigurierte) | rest_kuerzel):
+        q = konfigurierte.get(kuerzel) or {}
+        pruefung = q.get("letzte_pruefung") or {}
+        im_scan = bool(q.get("aktiv")) and modus in ("quellen", "beides")
+        zahl = quellen.get((kuerzel, "REST"), 0) if eintraege else None
+        if kuerzel == "mql5" and mql5_nicht_getrennt:
+            zahl = None
+        rows.append({"Quelle": q.get("name") or kuerzel, "Kürzel": kuerzel,
+                     "Zugriff": "REST",
+                     "Im Scan aktiv": "Ja" if im_scan else "Nein",
+                     "Geladene Signale": zahl,
+                     "Letzter Verbindungstest": {
+                         "ok": "Erreichbar", "eingeschraenkt": "Eingeschränkt",
+                         "fehler": "Nicht erreichbar",
+                     }.get(pruefung.get("status"), pruefung.get("text") or "Nicht geprüft"),
+                     "Geprüft am": pruefung.get("geprueft") or "—"})
+    quellen_tabelle = pd.DataFrame(rows, columns=["Quelle", "Kürzel", "Zugriff", "Im Scan aktiv",
+                 "Geladene Signale", "Letzter Verbindungstest", "Geprüft am"])
+    quellen_tabelle["Geladene Signale"] = pd.array(quellen_tabelle["Geladene Signale"], dtype="Int64")
+    st.dataframe(quellen_tabelle, width="stretch", hide_index=True)
+    st.caption("Die Tabelle verwendet gespeicherte Verbindungstests. "
+               "Aktivierung zeigt die aktuellen Einstellungen.")
+    if mql5_nicht_getrennt:
+        st.caption(f"Die gespeicherte Auswahl enthält {quellen[('mql5', 'Nicht aufgezeichnet')]} "
+                   "Signale mit Kürzel mql5. MQL5-Direkt und MqlDownloader wurden dort "
+                   "nicht getrennt aufgezeichnet; ihre einzelnen Signalzahlen sind unbekannt.")
+    if eintraege:
+        st.dataframe(pd.DataFrame([
+            {"Signal": e.get("name", ""), "ID": e.get("id"),
+             "Quelle": _herkunft(e)[0], "Zugriff": _herkunft(e)[1],
+             "Wochen": e.get("wochen"), "Abonnenten": e.get("abonnenten")}
+            for e in eintraege]), width="stretch", hide_index=True)
+    st.caption("Nicht erreichbare Kataloge stehen im Meldungs-Feed. Im Teilscan "
+               "können gespeicherte 🟢/🟡-Signale aus der DB ergänzt werden.")
 
 
 @st.dialog("🔍 Station 2 · Auswahl — warum jedes Signal drin oder draußen ist", width="large")
 def _dialog_auswahl() -> None:
     """Scrollbare Tabelle: ALLE Kandidaten mit Begründung."""
-    import json as _json
-    from pathlib import Path as _P
-    datei = _P("data") / "auswahl_begruendung.json"
+    import pandas as pd
+    st.markdown("**Was passiert hier?** Der Vorfilter prüft Mindestalter und "
+                "Mindest-Abonnentenzahl. Aus den verbleibenden Kandidaten erhalten "
+                "je Quelle die abonnentenstärksten Signale die Forensik-Slots. "
+                "Fix-IDs umgehen diese Vorfilter und stehen in der Export-Auswahl "
+                "vorne. Die spätere Bewertung gilt für sie unverändert.")
+    st.caption(f"Aktuelle Einstellungen: mindestens {settings['min_wochen']} Wochen, "
+               f"{settings['min_abonnenten']} Abonnenten, "
+               f"Top {settings['top_n_export']} je Quelle. Abonnentenzahl ist kein Qualitätsnachweis.")
+    datei = config.DATA_DIR / "auswahl_begruendung.json"
     if not datei.exists():
-        st.info("Noch kein Lauf mit der neuen Begründungs-Aufzeichnung — "
-                "starte einen Scan, dann steht hier jede Entscheidung.")
+        st.info("Noch keine Auswahl aufgezeichnet. Nach dem Scan zeigt die Tabelle "
+                "für jedes Signal, warum es ausgewählt oder aussortiert wurde.")
+        st.dataframe(pd.DataFrame(columns=["Signal", "Quelle", "Wochen", "Abos", "Grund"]),
+                     width="stretch", hide_index=True)
         return
-    daten = _json.loads(datei.read_text(encoding="utf-8"))
+    try:
+        daten = json.loads(datei.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        st.warning(f"Die gespeicherte Auswahl kann nicht gelesen werden: {exc}")
+        return
     eintraege = daten.get("eintraege") or []
     st.caption(f"Stand: {daten.get('zeitstempel', '?')} · Top {daten.get('top_n_export', '?')} je Quelle")
     tab = st.tabs(["✅ Ausgewählt", "📌 Fix-IDs", "❌ Ohne Slot", "⛔ Ausgeschlossen",
@@ -1275,32 +1353,32 @@ def _dialog_auswahl() -> None:
         st.dataframe(
             [{"Signal": e["name"], "Quelle": e["quelle"], "Wochen": e.get("wochen"),
               "Abos": e.get("abonnenten"), "Grund": e.get("grund", "")} for e in rows],
-            use_container_width=True, hide_index=True)
+            width="stretch", hide_index=True)
         st.caption(f"{len(rows)} Signale in der Forensik.")
     with tab[1]:
         rows = _t("FIX")
         st.dataframe(
             [{"Signal": e["name"], "ID": e["id"], "Grund": e.get("grund", "")} for e in rows],
-            use_container_width=True, hide_index=True)
+            width="stretch", hide_index=True)
     with tab[2]:
         rows = _t("OHNE_SLOT")
         st.dataframe(
             [{"Signal": e["name"], "Quelle": e["quelle"], "Abos": e.get("abonnenten"),
               "Grund": e.get("grund", "")} for e in rows],
-            use_container_width=True, hide_index=True)
+            width="stretch", hide_index=True)
         st.caption(f"{len(rows)} Kandidaten bestanden den Vorfilter, bekamen aber "
                    "keinen der Top-N-Slots je Quelle.")
     with tab[3]:
         rows = _t("AUSGESCHLOSSEN")
         st.dataframe(
             [{"Signal": e["name"], "Grund": e.get("grund", "")} for e in rows],
-            use_container_width=True, hide_index=True)
+            width="stretch", hide_index=True)
     with tab[4]:
         rows = _t("DRAUSSEN")
         st.dataframe(
             [{"Signal": e["name"], "Quelle": e["quelle"], "Wochen": e.get("wochen"),
               "Abos": e.get("abonnenten"), "Grund": e.get("grund", "")} for e in rows],
-            use_container_width=True, hide_index=True)
+            width="stretch", hide_index=True)
         st.caption(f"{len(rows)} Signale fielen durch den Vorfilter (Mindestalter "
                    "oder Mindest-Abonnenten).")
 
@@ -1308,16 +1386,28 @@ def _dialog_auswahl() -> None:
 @st.dialog("🔬 Station 3 · Prüfen & speichern — Forensik-Ergebnisse", width="large")
 def _dialog_forensik() -> None:
     """Forensik je Signal: Ampel, Score, was bestanden wurde."""
-    results = st.session_state.get("results") or []
+    import pandas as pd
+    st.markdown("**Was passiert hier?** Der Scanner prüft Handelsdaten auf "
+                "Martingale, gleichzeitig offene Positionen, Exposure, "
+                "Stop-Signaturen und Drawdown. Der Code berechnet Kennzahlen, "
+                "Ampel und Score und speichert die Befunde. Die Drawdown-Schranke "
+                "liegt bei 30 %. Fehlender Stop-Nachweis ist neutral.")
+    results = list(st.session_state.get("scan_results") or [])
     if not results:
-        st.info("Kein Lauf-Ergebnis im Speicher — Ergebnisseite nach dem Scan öffnen.")
-        return
+        st.info("Noch kein Lauf-Ergebnis in dieser Sitzung. Nach Station 3 stehen "
+                "hier die geprüften Signale und ihre Kennzahlen.")
     data = [{"Signal": r.name, "ID": r.id, "Ampel": r.ampel,
              "Score": r.score, "Trading-DD %": r.trading_dd_pct,
              "Ertrag/M": getattr(r, "ertrag_monat_pct_forensik", None),
              "RetDD": getattr(r, "retdd_monat", None),
              "Fehler": (r.fehler or "")[:100]} for r in results]
-    st.dataframe(data, use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(data, columns=["Signal", "ID", "Ampel", "Score",
+                 "Trading-DD %", "Ertrag/M", "RetDD", "Fehler"]),
+                 width="stretch", hide_index=True)
+    st.caption("Trading-DD ist der aus geschlossenen Trades gemessene Drawdown. "
+               "Die Schranke berücksichtigt zusätzlich verfügbare Equity-Messungen. "
+               "Ertrag/M ist der lineare Forensik-Ertrag in Prozent; RetDD nutzt "
+               "den geometrischen Monatsertrag je Prozent maximalem Drawdown.")
     probleme = [r for r in results if r.fehler]
     if probleme:
         st.warning(f"{len(probleme)} Signal(e) mit Fehler — Details auf der Ergebnisseite "
@@ -1327,24 +1417,41 @@ def _dialog_forensik() -> None:
 @st.dialog("🧠 Station 4 · KI-Berichte", width="large")
 def _dialog_llm() -> None:
     """KI-Berichte: welche Signale bekamen Berichte und wie ausführlich."""
-    results = st.session_state.get("results") or []
+    import pandas as pd
+    st.markdown("**Was passiert hier?** Die optionalen KI-Schritte beschreiben "
+                "Strategie und Risiko anhand der Trades und berechneten Befunde "
+                "und erstellen einen Gesamtbericht. Die Tabelle zeigt, welche "
+                "Berichte für jedes Signal vorliegen.")
+    results = list(st.session_state.get("scan_results") or [])
     if not results:
-        st.info("Kein Lauf-Ergebnis im Speicher.")
-        return
+        st.info("Noch kein Lauf-Ergebnis in dieser Sitzung. Berichte erscheinen "
+                "nach Station 4, sofern KI-Berichte eingeschaltet sind.")
     data = [{"Signal": r.name, "Ampel": r.ampel,
              "Trade-Analyse": "✓" if getattr(r, "trade_analyse", "") else "—",
              "Risiko-Analyse": "✓" if getattr(r, "risiko_analyse", "") else "—",
              "Gesamtbericht": "✓" if getattr(r, "gesamtbericht", "") else "—",
              "Kurzfassung": (getattr(r, "kurzfassung", "") or "")[:120]} for r in results]
-    st.dataframe(data, use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(data, columns=["Signal", "Ampel", "Trade-Analyse",
+                 "Risiko-Analyse", "Gesamtbericht", "Kurzfassung"]),
+                 width="stretch", hide_index=True)
     st.caption("Nur 🟢/🟡 erhalten das volle KI-Paket (Design-Regel: Budget sparen).")
 
 
 @st.dialog("🥧 Station 5 · Portfolio", width="large")
 def _dialog_portfolio() -> None:
     """Portfolio-Vorschlag: Empfehlung und Statistik-Deutung."""
+    st.markdown("**Was passiert hier?** Die KI führt die Berichte der 🟢/🟡-Signale "
+                "zusammen. Code-Befunde zu gemeinsamen Verlustmonaten, "
+                "Historienlänge und Instrument-Überschneidungen helfen, "
+                "Kombinationen und Klumpenrisiken einzuschätzen. Historische "
+                "Diversifikation ist keine Prognose.")
+    st.dataframe([
+        {"Prüfung": "Gemeinsame Verluste", "Grundlage": "Monate mit mehreren gleichzeitig verlierenden Signalen"},
+        {"Prüfung": "Beobachtungsfenster", "Grundlage": "Historienlänge je Signal und gemeinsamer Zeitraum"},
+        {"Prüfung": "Klumpenrisiko", "Grundlage": "Gemeinsame Instrumente und Rendite-Risiko-Effizienz"},
+    ], width="stretch", hide_index=True)
     p = st.session_state.get("portfolio_result") or {}
-    text = p.get("text") or ""
+    text = p.get("text") or st.session_state.get("portfolio_bericht") or ""
     if not text:
         st.info("Noch kein Portfolio in diesem Lauf — läuft nach dem letzten KI-Bericht.")
         return
@@ -1356,9 +1463,41 @@ def _dialog_portfolio() -> None:
 @st.dialog("🔄 Station 6 · Abgleich", width="large")
 def _dialog_downloader() -> None:
     """Downloader-Abgleich: was gespiegelt wurde."""
-    st.info("Abgleich mit dem MqlDownloader: Abonnenten-Verläufe und PDFs spiegeln "
-            "(best-effort, nie Neubewertung). Ergebnisse stehen im Workflow-Log "
-            "unter [downloader] und auf der Ergebnisseite unter „Abonnenten-Verlauf“.")
+    import pandas as pd
+    st.markdown("**Was passiert hier?** Der Abgleich lädt Abonnenten-Verläufe "
+                "und vorhandene Testreport-PDFs aus den aktiven Datenquellen. "
+                "Bereits vorhandene Dateien werden anhand ihres Inhalts erkannt. "
+                "Ein Teilausfall wird protokolliert; die Bewertung der Signale "
+                "ändert sich durch diesen Schritt nicht.")
+    step = (st.session_state.get("scan_workflow") or {}).get("steps", {}).get("downloader") or {}
+    st.dataframe([
+        {"Eintrag": "Status", "Wert": STATES.get(step.get("status"), ("Noch nicht gestartet",))[0]},
+        {"Eintrag": "Fortschritt", "Wert": f"{step.get('done', 0)} von {step.get('total') or '—'} Signalen"},
+        {"Eintrag": "Befund", "Wert": step.get("detail") or "Noch nicht gestartet"},
+    ], width="stretch", hide_index=True)
+    log = list((st.session_state.get("scan_logs") or {}).get("downloader") or [])
+    if log:
+        st.dataframe(pd.DataFrame({"Abgleich-Protokoll": log}), width="stretch", hide_index=True)
+    else:
+        st.info("Noch kein Abgleich-Protokoll in dieser Sitzung. Nach Station 6 "
+                "erscheinen hier die geladenen Daten und Hinweise.")
+    st.caption("Die gespeicherten Abonnenten-Verläufe und PDFs sind auf der Ergebnisseite erreichbar.")
+
+
+# Erst dispatchen, nachdem alle Dialogfunktionen definiert sind.
+# Der CCv2-Trigger wird einmal verbraucht; ältere Stations-URLs bleiben gültig.
+_station_klick = st.session_state.pop("_scan_station_dialog", None)
+if _station_klick is None:
+    _station_klick = (st.query_params.get("station") or "").strip()
+_station_dialoge = {
+    "listen": _dialog_listen, "kandidaten": _dialog_auswahl,
+    "forensik": _dialog_forensik, "llm": _dialog_llm,
+    "portfolio": _dialog_portfolio, "downloader": _dialog_downloader,
+}
+if "station" in st.query_params:
+    del st.query_params["station"]
+if _station_klick in _station_dialoge:
+    _station_dialoge[_station_klick]()
 
 
 section_header(
@@ -1427,7 +1566,7 @@ if st.session_state.get("portfolio_bericht"):
 def _begruendung_speichern(begruendung: list[dict], top_n: int) -> None:
     """Auswahl-Begründung je Signal ablegen (Station-Dialog „Auswahl treffen")."""
     try:
-        datei = Path("data") / "auswahl_begruendung.json"
+        datei = config.DATA_DIR / "auswahl_begruendung.json"
         datei.write_text(json.dumps({
             "zeitstempel": datetime.now().isoformat(sep=" ", timespec="seconds"),
             "top_n_export": top_n,
