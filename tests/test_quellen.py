@@ -9,6 +9,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+from pathlib import Path
 
 from mqlkiscanner import (config, db, downloader_client, downloader_sync, ingest,
                           pipeline, quellen, secrets_store)
@@ -801,3 +802,41 @@ def _ing_cache_pfad(quelle, signal_id):
     from mqlkiscanner import ingest as _ing
     return str(_ing._kuerzel_verzeichnis(quelle)
                / f"pelican_{signal_id}_metrics.json")
+
+
+# ---------------- Übergabe-Review 01.10. (Low 1+2, ingest.py) ---------------
+
+def test_cache_exception_saetze_symmetrisch():
+    """Low 1: hole_trades und hole_metrics fangen denselben Satz —
+    OSError + ValueError (deckt JSON-/UnicodeDecode-Fehler)."""
+    import inspect
+    from mqlkiscanner import ingest
+    quelltext = inspect.getsource(ingest)
+    assert quelltext.count("except (OSError, ValueError):") >= 2
+    assert "except OSError:" not in quelltext
+    assert "JSONDecodeError, OSError, UnicodeDecodeError" not in quelltext
+
+
+def test_cache_datei_wird_atomar_geschrieben(monkeypatch):
+    """Low 2: Abbruch zwischen Datei-Schreiben und DB-Eintrag darf keine
+    halbierte Datei als Forensik-Grundlage hinterlassen — Schreiben via
+    tmp + replace; ein Crash im write hinterlässt KEINE Zieldatei."""
+    from mqlkiscanner import ingest
+    ziel_pfad = {}
+
+    class BöserClient:
+        def trades_csv(self, signal_id, version):
+            return MINI_CSV
+
+    def böses_schreiben(pfad, daten):
+        ziel_pfad["pfad"] = Path(pfad)
+        raise OSError("Crash mitten im Schreiben (Simulationsabbruch)")
+
+    monkeypatch.setattr(ingest.Path, "write_bytes", böses_schreiben, raising=False)
+    quelle = _quelle(kuerzel="pelik", base="http://pelican:8090")
+    with pytest.raises(OSError):
+        ingest.hole_trades(quelle, 4712, "pelican", client=BöserClient())
+    # tmp-Datei wird aufgeräumt, Zieldatei existiert NICHT (kein Halbstand)
+    assert not list(ziel_pfad["pfad"].parent.glob("*.tmp"))
+    assert not ziel_pfad["pfad"].exists() or \
+        ziel_pfad["pfad"].read_bytes() != MINI_CSV[: len(MINI_CSV) // 2]

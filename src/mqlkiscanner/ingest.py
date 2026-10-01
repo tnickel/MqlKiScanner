@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 
 from pathlib import Path
@@ -155,10 +156,12 @@ def hole_trades(quelle: dict, signal_id: int, version: str, *,
         try:
             if hashlib.sha256(Path(alt["path"]).read_bytes()).hexdigest() == sha:
                 return str(alt["path"]), False
-        except OSError:
+        except (OSError, ValueError):
+            # Übergabe-Review 01.10.: symmetrisch zu hole_metrics — ValueError
+            # deckt Dekodier-/JSON-Fehler ab, OSError Lese-/Sperrfehler.
             pass  # unlesbar: unten neu schreiben
     pfad = _kuerzel_verzeichnis(quelle) / f"{_version_sicher(version)}_{int(signal_id)}_trades.csv"
-    pfad.write_bytes(roh)
+    _atomar_schreiben(pfad, roh)
     db.store_quellen_artefakt(int(quelle["id"]), signal_id, version,
                               "trades", sha, str(pfad))
     return str(pfad), True
@@ -182,13 +185,31 @@ def hole_metrics(quelle: dict, signal_id: int, version: str, *,
             inhalt = Path(alt["path"]).read_bytes()
             if hashlib.sha256(inhalt).hexdigest() == sha:
                 return json.loads(inhalt.decode("utf-8"))
-        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        except (OSError, ValueError):
+            # JSONDecodeError/UnicodeDecodeError sind ValueError-Unterklassen —
+            # ein Satz für beide Caches (Übergabe-Review 01.10.).
             pass  # defekter/korrumpierter Cache: neu schreiben (unten)
     pfad = _kuerzel_verzeichnis(quelle) / f"{_version_sicher(version)}_{int(signal_id)}_metrics.json"
-    pfad.write_bytes(roh)
+    _atomar_schreiben(pfad, roh)
     db.store_quellen_artefakt(int(quelle["id"]), signal_id, version,
                               "metrics", sha, str(pfad))
     return antwort
+
+
+def _atomar_schreiben(pfad: Path, daten: bytes) -> None:
+    """Übergabe-Review 01.10. (Low 2): Cache-Datei atomar schreiben —
+    write_bytes + DB-Eintrag waren nicht atomar; ein Abbruch dazwischen
+    hinterließ eine halbierte Datei als mögliche Forensik-Grundlage.
+    tmp + replace (gleiche Partition) macht den Pfad nur mit vollständigen
+    Bytes sichtbar; die tmp-Datei trägt die PID, gegen Kollisionen
+    paralleler Schreiber."""
+    pfad.parent.mkdir(parents=True, exist_ok=True)
+    tmp = pfad.with_name(f"{pfad.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_bytes(daten)
+        os.replace(tmp, pfad)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def metrics_zu_stats(antwort: dict | None) -> dict:
