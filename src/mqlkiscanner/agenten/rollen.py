@@ -61,8 +61,14 @@ ROLLEN: tuple[Rolle, ...] = (
 
 ROLLEN_NACH_KEY: dict[str, Rolle] = {r.key: r for r in ROLLEN}
 
-# Standard-Modell JE Rolle (Nutzer-Vorgabe 22.09.2026: glm-5.3, nicht Flash).
+# Standard-Modell JE Rolle. Grundvorgabe 22.09.2026: glm-5.3, nicht Flash.
+# Übersteuert 01.10.2026 (Nutzer): die Leichtgewicht-Rollen Dirigent (nur
+# whitelistgefilterte Rand-JSON-Entscheidung) und Melder (Postfach-Text)
+# laufen auf Flash — schnell und günstig, keine Analysequalität nötig.
+# Die analysierenden Rollen (Markt, Betreuer, Chef) bleiben auf glm-5.3.
 STANDARD_MODELL = "glm-5.3"
+FLASH_MODELL = "glm-5.3-flash"
+FLASH_ROLLEN = frozenset(("dirigent", "melder"))
 
 # Auswahl im Admin-Bereich; Freitext erlaubt beliebige OpenAI-kompatible Modelle.
 MODELL_AUSWAHL = ("glm-5.3", "glm-5.3-flash")
@@ -79,7 +85,8 @@ def rollen_defaults() -> dict:
     defaults: dict = {}
     for r in ROLLEN:
         defaults[f"agenten_{r.key}_aktiv"] = True
-        defaults[f"agenten_{r.key}_modell"] = STANDARD_MODELL
+        defaults[f"agenten_{r.key}_modell"] = (
+            FLASH_MODELL if r.key in FLASH_ROLLEN else STANDARD_MODELL)
         defaults[f"agenten_{r.key}_max_tokens"] = r.max_tokens
     return defaults
 

@@ -2,9 +2,11 @@
 """Rollen-Registry, Settings-Defaults und Rollen-Prompts (Phase A).
 
 Nutzer-Vorgabe 22.09.2026: GLM-5.3 (nicht Flash) ist Standard-Modell für
-ALLE Rollen — dieser Vertrag wird hier festgenagelt. Die Vorlagen folgen
-dem prompt_fill-Muster: Zwei-Phasen-Füllung, unver­sorgte Platzhalter sind
-ein klarer Fehler.
+ALLE Rollen — übersteuert 01.10.2026: die Leichtgewicht-Rollen Dirigent
+(Whitelist-Randentscheidung) und Melder (Postfach-Text) laufen auf Flash;
+die analysierenden Rollen (Markt, Betreuer, Chef) bleiben auf glm-5.3.
+Die Vorlagen folgen dem prompt_fill-Muster: Zwei-Phasen-Füllung,
+unver­sorgte Platzhalter sind ein klarer Fehler.
 """
 import pytest
 
@@ -18,12 +20,16 @@ def test_fuenf_rollen_mit_eindeutigen_schluesseln():
     assert len({r.key for r in rollen.ROLLEN}) == 5
 
 
-def test_glm_53_ist_standardmodell_aller_rollen():
-    """Nutzer-Vorgabe: glm-5.3 überall — kein Flash als Default."""
+def test_standardmodelle_je_rolle():
+    """Flash für Dirigent/Melder (01.10.2026), glm-5.3 für den Rest."""
     settings = config.load_settings()
     for rolle in rollen.ROLLEN:
-        assert settings[f"agenten_{rolle.key}_modell"] == "glm-5.3", rolle.key
+        erwartung = ("glm-5.3-flash" if rolle.key in rollen.FLASH_ROLLEN
+                     else "glm-5.3")
+        assert settings[f"agenten_{rolle.key}_modell"] == erwartung, rolle.key
     assert rollen.STANDARD_MODELL == "glm-5.3"
+    assert rollen.FLASH_MODELL == "glm-5.3-flash"
+    assert rollen.FLASH_ROLLEN == frozenset(("dirigent", "melder"))
 
 
 def test_rollen_defaults_in_settings():
