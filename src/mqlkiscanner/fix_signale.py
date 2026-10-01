@@ -60,7 +60,9 @@ def ordne_fix_vorne(cands: list[dict], settings: dict | None = None) -> tuple[li
 
 
 def waehle_fuer_export(cands: list[dict], top_n: int,
-                       settings: dict | None = None) -> tuple[list[dict], list[dict]]:
+                       settings: dict | None = None,
+                       begruendung: list[dict] | None = None
+                       ) -> tuple[list[dict], list[dict]]:
     """Auswahl für die Forensik (Nutzer-Wunsch 29.09.: „30 von jedem").
 
     - Fix-IDs zuerst — die Grenze trifft sie nie, und sie verbrauchen
@@ -94,9 +96,27 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
     auswahl = list(fix_vorne)
     infos = []
     limit = max(0, int(top_n or 0))
+    # Slot-Begründungen (Nutzer-Wunsch 02.10.: Auswahl nachvollziehbar)
+    def _slot_grund(c: dict, rang: int, genommen_: bool) -> dict:
+        if genommen_:
+            return {"id": c.get("id"), "name": c.get("name") or "",
+                    "quelle": k, "wochen": c.get("wochen"),
+                    "abonnenten": c.get("abonnenten"), "status": "AUSGEWAEHLT",
+                    "grund": f"✓ Ausgewählt: Rang {rang} in Quelle {k} "
+                             f"(Abonnenten-absteigend, Top {limit} je Quelle)."}
+        return {"id": c.get("id"), "name": c.get("name") or "",
+                "quelle": k, "wochen": c.get("wochen"),
+                "abonnenten": c.get("abonnenten"), "status": "OHNE_SLOT",
+                "grund": f"✗ Nicht ausgewählt: Rang {rang} in Quelle {k} — "
+                         f"nur die Top {limit} je Quelle kommen in die "
+                         "Forensik (Abonnenten-Rang)."}
     for k in reihenfolge:
         gruppe = sorted(gruppen[k],
                         key=lambda c: -(float(c.get("abonnenten") or 0)))
+        genommen_ids = {c.get("id") for c in gruppe[:limit]}
+        if begruendung is not None:
+            for rang, c in enumerate(gruppe, 1):
+                begruendung.append(_slot_grund(c, rang, c.get("id") in genommen_ids))
         genommen = gruppe[:limit]
         auswahl.extend(genommen)
         infos.append({"quelle": k, "angeboten": len(gruppe),
@@ -105,6 +125,16 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
         infos.append({"quelle": "ausschlussliste",
                       "angeboten": len(rest_mit_ausschluss),
                       "genommen": 0})
+        if begruendung is not None:
+            for c in rest_mit_ausschluss:
+                begruendung.append({
+                    "id": c.get("id"), "name": c.get("name") or "",
+                    "quelle": c.get("quelle_kuerzel") or "mql5",
+                    "wochen": c.get("wochen"),
+                    "abonnenten": c.get("abonnenten"), "status": "AUSGESCHLOSSEN",
+                    "grund": "⛔ Steht auf der Ausschlussliste "
+                             "(known_signals.json) — belegt keinen Slot und "
+                             "kein KI-Budget (B7). Bei Bedarf als Fix-ID pinnen."})
     return auswahl, infos
 
 
@@ -121,3 +151,47 @@ def teilscan_ziel_ids(alt_ergebnisse, settings: dict | None = None) -> set[int]:
            if r.ampel in ("🟢", "🟡")
            and getattr(r, "source_kind", "live") == "live"}
     return ids | fix_ids(settings)
+
+
+def teilscan_ergaenze_aus_db(ziel_ids: set[int], vorhanden_ids: set[int],
+                             settings: dict | None = None) -> list[dict]:
+    """Teilscan-Vertrag („nur 🟢/🟡 laut DB") auch bei OFFLINE-Quelle erfüllen.
+
+    Nutzer-Fall 02.10.2026: 12 pelik-🟡 waren laut DB im Teilscan-Scope,
+    aber die Quelle antwortete nicht → sie fehlten im Crawl → sie wurden
+    still übersprungen. Diese Ergänzung baut Kandidaten aus dem DB-Stand
+    (ScanResult → Kandidaten-Format); die Forensik nutzt dann die
+    gecachten Metrics/Trades-Artefakte (ingest-Offline-Fallback).
+
+    Nur Quellen-Signale (quelle != mql5) werden ergänzt — MQL5-Direkt-
+    Signale brauchen die Kennzahlen-Seite live (mql5.com) und werden vom
+    Fix-ID-Mechanismus bzw. dem Crawl abgedeckt.
+    """
+    if not ziel_ids:
+        return []
+    fehlen = ziel_ids - vorhanden_ids
+    if not fehlen:
+        return []
+    from . import db as _db  # spät: kein Kreisimport
+    from .pipeline import results_from_db  # spät: kein Kreisimport
+    quellen_nach_kuerzel = {q["kuerzel"]: q for q in _db.list_quellen(nur_aktiv=True)}
+    ergaenzungen: list[dict] = []
+    for r in results_from_db(settings):
+        if r.id not in fehlen or r.quelle == "mql5":
+            continue
+        q = quellen_nach_kuerzel.get(r.quelle)
+        if q is None:
+            continue
+        version = (r.platform or "mql5").lower()
+        ergaenzungen.append({
+            "id": r.id,
+            "name": r.name,
+            "platform": r.platform or "",
+            "url": r.url or f"https://www.mql5.com/en/signals/{r.id}",
+            "abonnenten": r.abonnenten,
+            "wochen": r.wochen,
+            "quelle_kuerzel": r.quelle,
+            "quelle_id": q["id"],
+            "quelle_version": version,
+        })
+    return ergaenzungen

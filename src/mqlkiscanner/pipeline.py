@@ -914,7 +914,12 @@ class ScanPipeline:
             log(f"Fix-ID {sid}: nicht in den Top-Listen — einzeln von der "
                 f"Signalseite geladen ({overview.get('name') or overview.get('url')}).")
 
-    def build_candidates(self, signals: list[dict], log: LogCb) -> list[dict]:
+    def build_candidates(self, signals: list[dict], log: LogCb,
+                         begruendung: list[dict] | None = None) -> list[dict]:
+        """Vorfilter + Kandidatenliste. Wenn `begruendung` (Liste) übergeben
+        wird, erhält JEDES Eingangssignal einen Erklärungs-Datensatz
+        (Nutzer-Wunsch 02.10.2026: Auswahl nachvollziehbar — warum drin,
+        warum draußen)."""
         min_abo = int(self.settings.get("min_abonnenten", 0))
         min_wochen = float(self.settings.get("min_wochen", 26))
         fix = fix_signale.fix_ids(self.settings)
@@ -926,6 +931,15 @@ class ScanPipeline:
             if s.get("id") in fix:
                 candidates.append(s)
                 n_fix += 1
+                if begruendung is not None:
+                    begruendung.append({
+                        "id": s.get("id"), "name": s.get("name") or "",
+                        "quelle": s.get("quelle_kuerzel") or "mql5",
+                        "wochen": s.get("wochen"),
+                        "abonnenten": s.get("abonnenten"),
+                        "status": "FIX",
+                        "grund": "📌 Fix-ID — immer im Scope, umgeht Vorfilter "
+                                 "und belegt keinen Quellen-Slot."})
                 continue
             weeks = s.get("wochen")
             # B5/B6 (Intensiv-Review 29./30.09.2026): weeks=None heißt seit
@@ -934,10 +948,39 @@ class ScanPipeline:
             # gilt Unbekannt als NICHT belegt — das Verhalten (Rauswurf)
             # bleibt wie bei weeks=0, nur die Datenlage lügt nicht mehr.
             if weeks is None or weeks < min_wochen:
+                if begruendung is not None:
+                    grund = ("✗ Alter unbekannt (weeks fehlt bei der Quelle) — "
+                             "Mindestalter kann nicht belegt werden."
+                             if weeks is None else
+                             f"✗ Alter: {weeks:g} Wochen < Mindestalter "
+                             f"{min_wochen:g} Wochen.")
+                    begruendung.append({
+                        "id": s.get("id"), "name": s.get("name") or "",
+                        "quelle": s.get("quelle_kuerzel") or "mql5",
+                        "wochen": weeks, "abonnenten": s.get("abonnenten"),
+                        "status": "DRAUSSEN", "grund": grund})
                 continue
             if (s.get("abonnenten") or 0) < min_abo:
+                if begruendung is not None:
+                    begruendung.append({
+                        "id": s.get("id"), "name": s.get("name") or "",
+                        "quelle": s.get("quelle_kuerzel") or "mql5",
+                        "wochen": weeks, "abonnenten": s.get("abonnenten"),
+                        "status": "DRAUSSEN",
+                        "grund": f"✗ Abonnenten: "
+                                 f"{s.get('abonnenten') or 0} < Mindestabo "
+                                 f"{min_abo}."})
                 continue
             candidates.append(s)
+            if begruendung is not None:
+                begruendung.append({
+                    "id": s.get("id"), "name": s.get("name") or "",
+                    "quelle": s.get("quelle_kuerzel") or "mql5",
+                    "wochen": weeks, "abonnenten": s.get("abonnenten"),
+                    "status": "KANDIDAT",
+                    "grund": f"✓ Vorfilter bestanden ({weeks:g} Wochen, "
+                             f"{s.get('abonnenten') or 0} Abonnenten) — "
+                             "Slot-Entscheidung folgt in „Auswahl treffen“."})
         log(f"Vorfilter (Wochen >= {min_wochen:g}, Abonnenten >= {min_abo}): "
             f"{len(signals)} -> {len(candidates)} Kandidaten"
             + (f" (davon {n_fix} Fix-ID(s) ohne Vorfilter)." if n_fix else "."))

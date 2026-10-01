@@ -15,6 +15,7 @@ App-Rerun aus (Ergebnisse übernehmen + Endstand rendern).
 from __future__ import annotations
 
 import html
+import json
 import sys
 import time
 from datetime import datetime
@@ -686,7 +687,9 @@ if command:
             return []
         w_step("kandidaten", "running", total=len(signals),
                detail="Alter und Abonnenten prüfen …")
-        candidates = pipe.build_candidates(signals, w_log_for("kandidaten"))
+        begruendung: list[dict] = []
+        candidates = pipe.build_candidates(signals, w_log_for("kandidaten"),
+                                           begruendung=begruendung)
         control["candidates"] = candidates
         w_step("kandidaten", "complete", done=len(signals),
                detail=f"{len(candidates)} passende Signale aus {len(signals)}")
@@ -707,6 +710,15 @@ if command:
             ziel_ids = fix_signale.teilscan_ziel_ids(alt_ergebnisse, cfg)
             vorher = len(cands)
             cands = [c for c in cands if c["id"] in ziel_ids]
+            # Quelle offline (z. B. PelicanMonitor aus): deren 🟢/🟡 aus der
+            # DB ergänzen — Forensik aus den Cache-Artefakten (Nutzer-Fall
+            # 02.10.: 12 pelik-🟡 wurden still übersprungen).
+            ergaenzungen = fix_signale.teilscan_ergaenze_aus_db(
+                ziel_ids, {c["id"] for c in cands}, cfg)
+            if ergaenzungen:
+                cands.extend(ergaenzungen)
+                log(f"+{len(ergaenzungen)} 🟢/🟡 aus der DB ergänzt "
+                    "(Quelle offline — Forensik aus Cache-Artefakten).")
             log(f"Teilscan: {len(cands)} von {vorher} Kandidaten sind "
                 "aktuell 🟢/🟡 oder Fix-ID — nur diese werden geprüft.")
             if not cands:
@@ -717,7 +729,8 @@ if command:
         # Quelle die top_n abonnentenstärksten Kandidaten (Nutzer-Wunsch
         # 29.09.: „30 von jedem" — MQL5 und Pelican konkurrieren nicht
         # mehr um dieselben Slots).
-        scope, export_infos = fix_signale.waehle_fuer_export(cands, cfg["top_n_export"], cfg)
+        scope, export_infos = fix_signale.waehle_fuer_export(
+            cands, cfg["top_n_export"], cfg, begruendung=begruendung)
         n_export = len(scope)
         log("Auswahl je Quelle: " + " · ".join(
             f"{i['quelle']}: {i['genommen']}/{i['angeboten']}" for i in export_infos)
@@ -1259,3 +1272,16 @@ if st.session_state.get("portfolio_bericht"):
                     unsafe_allow_html=True)
         if issue := portfolio_result.get("storage_error") or portfolio_result.get("reason"):
             st.warning(f"Portfolio-Hinweis: {issue}")
+
+
+def _begruendung_speichern(begruendung: list[dict], top_n: int) -> None:
+    """Auswahl-Begründung je Signal ablegen (Station-Dialog „Auswahl treffen")."""
+    try:
+        datei = Path("data") / "auswahl_begruendung.json"
+        datei.write_text(json.dumps({
+            "zeitstempel": datetime.now().isoformat(sep=" ", timespec="seconds"),
+            "top_n_export": top_n,
+            "eintraege": begruendung,
+        }, ensure_ascii=False, indent=1), encoding="utf-8")
+    except OSError:
+        pass

@@ -143,9 +143,21 @@ def kandidaten_aus_quellen(log=None) -> list[dict]:
 
 def hole_trades(quelle: dict, signal_id: int, version: str, *,
                 client: downloader_client.DownloaderClient | None = None) -> tuple[str, bool]:
-    """Trades-CSV holen und SHA-gespiegelt cachen. Rückgabe (Pfad, geändert)."""
+    """Trades-CSV holen und SHA-gespiegelt cachen. Rückgabe (Pfad, geändert).
+
+    Offline-Fallback (Nutzer-Fall 02.10.: Teilscan bei offline Quelle):
+    Scheitert der Abruf (Verbindung), wird das letzte gecachte Artefakt
+    geliefert (geändert=False) — der Teilscan prüft dann den BEKANNTEN
+    Stand weiter, statt die DB-🟢/🟡 still zu überspringen."""
     cli = client or quellen.client_fuer_quelle(quelle)
-    roh = cli.trades_csv(signal_id, version)
+    try:
+        roh = cli.trades_csv(signal_id, version)
+    except downloader_client.DownloaderConnectionError:
+        alt_offline = db.get_quellen_artefakt(int(quelle["id"]), signal_id,
+                                              version, "trades")
+        if alt_offline and alt_offline.get("path")                 and Path(alt_offline["path"]).exists():
+            return str(alt_offline["path"]), False
+        raise
     sha = hashlib.sha256(roh).hexdigest()
     alt = db.get_quellen_artefakt(int(quelle["id"]), signal_id, version, "trades")
     if alt and alt.get("sha256") == sha and alt.get("path") \
@@ -169,9 +181,19 @@ def hole_trades(quelle: dict, signal_id: int, version: str, *,
 
 def hole_metrics(quelle: dict, signal_id: int, version: str, *,
                  client: downloader_client.DownloaderClient | None = None) -> dict:
-    """Metrics-Antwort holen und cachen; Rückgabe ist das gecachte JSON."""
+    """Metrics-Antwort holen und cachen; Rückgabe ist das gecachte JSON.
+
+    Offline-Fallback wie hole_trades: Verbindung fehlgeschlagen + Cache
+    vorhanden → letzter bekannter Stand (geändert=False logisch)."""
     cli = client or quellen.client_fuer_quelle(quelle)
-    antwort = cli.metrics(signal_id, version)
+    try:
+        antwort = cli.metrics(signal_id, version)
+    except downloader_client.DownloaderConnectionError:
+        alt_offline = db.get_quellen_artefakt(int(quelle["id"]), signal_id,
+                                              version, "metrics")
+        if alt_offline and alt_offline.get("path")                 and Path(alt_offline["path"]).exists():
+            return json.loads(Path(alt_offline["path"]).read_text(encoding="utf-8"))
+        raise
     # Kanonische Serialisierung: Der SHA beschreibt EXAKT die geschriebenen
     # Bytes (früher: SHA über sort_keys, Datei über indent OHNE sort_keys —
     # der gespeicherte SHA stimmte nie mit der Datei; Review 29.09.).
