@@ -348,6 +348,28 @@ def _live_status() -> None:
         })
     st.markdown(workflow_stepper_html(payload, overall), unsafe_allow_html=True)
 
+    # Stations-Kugeln sind rein HTML — Streamlit kennt keinen nativen Klick
+    # auf HTML-Elemente. Daher: eine Button-Reihe in Stations-Optik je
+    # Station, die den jeweiligen Erklär-Dialog öffnet (Nutzer-Wunsch
+    # 02.10.: „alles nachvollziehbar, bei jedem Schritt").
+    _station_knoepfe = {
+        "listen": ("📡 Signale", _dialog_listen),
+        "kandidaten": ("🔍 Auswahl", _dialog_auswahl),
+        "forensik": ("🔬 Forensik", _dialog_forensik),
+        "llm": ("🧠 KI-Berichte", _dialog_llm),
+        "portfolio": ("🥧 Portfolio", _dialog_portfolio),
+        "downloader": ("🔄 Abgleich", _dialog_downloader),
+    }
+    _spalten = st.columns(len(STEPS))
+    for _spalte, (_sid, _title, *_rest) in zip(_spalten, STEPS):
+        with _spalte:
+            _label, _fn = _station_knoepfe.get(_sid, (_title, None))
+            if _fn is not None:
+                if st.button(_label, key=f"station_dialog_{_sid}",
+                             use_container_width=True,
+                             help="Klicken für Erklärung und Details dieser Station"):
+                    _fn()
+
     # Letzte Meldungen statt Logfile-Wand: kurz beweisen, dass sich was tut.
     recent = _recent_log_lines()
     if recent:
@@ -691,6 +713,7 @@ if command:
         candidates = pipe.build_candidates(signals, w_log_for("kandidaten"),
                                            begruendung=begruendung)
         control["candidates"] = candidates
+        control["begruendung"] = begruendung
         w_step("kandidaten", "complete", done=len(signals),
                detail=f"{len(candidates)} passende Signale aus {len(signals)}")
         return candidates
@@ -729,8 +752,10 @@ if command:
         # Quelle die top_n abonnentenstärksten Kandidaten (Nutzer-Wunsch
         # 29.09.: „30 von jedem" — MQL5 und Pelican konkurrieren nicht
         # mehr um dieselben Slots).
+        _begr = control.get("begruendung") or []
         scope, export_infos = fix_signale.waehle_fuer_export(
-            cands, cfg["top_n_export"], cfg, begruendung=begruendung)
+            cands, cfg["top_n_export"], cfg, begruendung=_begr)
+        _begruendung_speichern(_begr, cfg["top_n_export"])
         n_export = len(scope)
         log("Auswahl je Quelle: " + " · ".join(
             f"{i['quelle']}: {i['genommen']}/{i['angeboten']}" for i in export_infos)
@@ -1209,6 +1234,134 @@ def _probleme_dialog(probleme: list, gesamt: int) -> None:
             else:
                 st.markdown("Keine vollständige forensische Prüfung vorhanden — nur Vorprüfung.")
             st.caption(hinweis)
+
+
+@st.dialog("📡 Station 1 · Signale holen — was kam rein?", width="large")
+def _dialog_listen() -> None:
+    """Signale je Quelle: was der Crawl geliefert hat und was fehlte."""
+    import json as _json
+    from pathlib import Path as _P
+    datei = _P("data") / "auswahl_begruendung.json"
+    daten = _json.loads(datei.read_text(encoding="utf-8")) if datei.exists() else {}
+    eintraege = daten.get("eintraege") or []
+    st.caption("Diese Signale und Datenquellen wurden im letzten Lauf geholt — "
+               "MQL5-Direkt (Top-Listen + Kennzahlen) und alle aktiven REST-Datenquellen.")
+    from collections import Counter as _C
+    quellen = _C(e.get("quelle") or "mql5" for e in eintraege)
+    c1, c2, c3 = st.columns(3)
+    c1.metric("MQL5-Direkt", quellen.get("mql5", 0))
+    c2.metric("Pelican (pelik)", quellen.get("pelik", 0))
+    c3.metric("Vantage (vant)", quellen.get("vant", 0))
+    st.info("Fehlende Quellen stehen im Meldungs-Feed („Katalog nicht erreichbar“) — "
+            "deren 🟢/🟡 werden im Teilscan automatisch aus der DB ergänzt.")
+
+
+@st.dialog("🔍 Station 2 · Auswahl — warum jedes Signal drin oder draußen ist", width="large")
+def _dialog_auswahl() -> None:
+    """Scrollbare Tabelle: ALLE Kandidaten mit Begründung."""
+    import json as _json
+    from pathlib import Path as _P
+    datei = _P("data") / "auswahl_begruendung.json"
+    if not datei.exists():
+        st.info("Noch kein Lauf mit der neuen Begründungs-Aufzeichnung — "
+                "starte einen Scan, dann steht hier jede Entscheidung.")
+        return
+    daten = _json.loads(datei.read_text(encoding="utf-8"))
+    eintraege = daten.get("eintraege") or []
+    st.caption(f"Stand: {daten.get('zeitstempel', '?')} · Top {daten.get('top_n_export', '?')} je Quelle")
+    tab = st.tabs(["✅ Ausgewählt", "📌 Fix-IDs", "❌ Ohne Slot", "⛔ Ausgeschlossen",
+                   "🚫 Vorfilter raus"])
+    def _t(status):
+        return [e for e in eintraege if e.get("status") == status]
+    with tab[0]:
+        rows = _t("AUSGEWAEHLT")
+        st.dataframe(
+            [{"Signal": e["name"], "Quelle": e["quelle"], "Wochen": e.get("wochen"),
+              "Abos": e.get("abonnenten"), "Grund": e.get("grund", "")} for e in rows],
+            use_container_width=True, hide_index=True)
+        st.caption(f"{len(rows)} Signale in der Forensik.")
+    with tab[1]:
+        rows = _t("FIX")
+        st.dataframe(
+            [{"Signal": e["name"], "ID": e["id"], "Grund": e.get("grund", "")} for e in rows],
+            use_container_width=True, hide_index=True)
+    with tab[2]:
+        rows = _t("OHNE_SLOT")
+        st.dataframe(
+            [{"Signal": e["name"], "Quelle": e["quelle"], "Abos": e.get("abonnenten"),
+              "Grund": e.get("grund", "")} for e in rows],
+            use_container_width=True, hide_index=True)
+        st.caption(f"{len(rows)} Kandidaten bestanden den Vorfilter, bekamen aber "
+                   "keinen der Top-N-Slots je Quelle.")
+    with tab[3]:
+        rows = _t("AUSGESCHLOSSEN")
+        st.dataframe(
+            [{"Signal": e["name"], "Grund": e.get("grund", "")} for e in rows],
+            use_container_width=True, hide_index=True)
+    with tab[4]:
+        rows = _t("DRAUSSEN")
+        st.dataframe(
+            [{"Signal": e["name"], "Quelle": e["quelle"], "Wochen": e.get("wochen"),
+              "Abos": e.get("abonnenten"), "Grund": e.get("grund", "")} for e in rows],
+            use_container_width=True, hide_index=True)
+        st.caption(f"{len(rows)} Signale fielen durch den Vorfilter (Mindestalter "
+                   "oder Mindest-Abonnenten).")
+
+
+@st.dialog("🔬 Station 3 · Prüfen & speichern — Forensik-Ergebnisse", width="large")
+def _dialog_forensik() -> None:
+    """Forensik je Signal: Ampel, Score, was bestanden wurde."""
+    results = st.session_state.get("results") or []
+    if not results:
+        st.info("Kein Lauf-Ergebnis im Speicher — Ergebnisseite nach dem Scan öffnen.")
+        return
+    data = [{"Signal": r.name, "ID": r.id, "Ampel": r.ampel,
+             "Score": r.score, "Trading-DD %": r.trading_dd_pct,
+             "Ertrag/M": getattr(r, "ertrag_monat_pct_forensik", None),
+             "RetDD": getattr(r, "retdd_monat", None),
+             "Fehler": (r.fehler or "")[:100]} for r in results]
+    st.dataframe(data, use_container_width=True, hide_index=True)
+    probleme = [r for r in results if r.fehler]
+    if probleme:
+        st.warning(f"{len(probleme)} Signal(e) mit Fehler — Details auf der Ergebnisseite "
+                   "unter „Probleme in diesem Lauf“.")
+
+
+@st.dialog("🧠 Station 4 · KI-Berichte", width="large")
+def _dialog_llm() -> None:
+    """KI-Berichte: welche Signale bekamen Berichte und wie ausführlich."""
+    results = st.session_state.get("results") or []
+    if not results:
+        st.info("Kein Lauf-Ergebnis im Speicher.")
+        return
+    data = [{"Signal": r.name, "Ampel": r.ampel,
+             "Trade-Analyse": "✓" if getattr(r, "trade_analyse", "") else "—",
+             "Risiko-Analyse": "✓" if getattr(r, "risiko_analyse", "") else "—",
+             "Gesamtbericht": "✓" if getattr(r, "gesamtbericht", "") else "—",
+             "Kurzfassung": (getattr(r, "kurzfassung", "") or "")[:120]} for r in results]
+    st.dataframe(data, use_container_width=True, hide_index=True)
+    st.caption("Nur 🟢/🟡 erhalten das volle KI-Paket (Design-Regel: Budget sparen).")
+
+
+@st.dialog("🥧 Station 5 · Portfolio", width="large")
+def _dialog_portfolio() -> None:
+    """Portfolio-Vorschlag: Empfehlung und Statistik-Deutung."""
+    p = st.session_state.get("portfolio_result") or {}
+    text = p.get("text") or ""
+    if not text:
+        st.info("Noch kein Portfolio in diesem Lauf — läuft nach dem letzten KI-Bericht.")
+        return
+    st.markdown(text[:8000])
+    if len(text) > 8000:
+        st.caption("… (gekürzt — vollständiger Bericht auf der Ergebnisseite)")
+
+
+@st.dialog("🔄 Station 6 · Abgleich", width="large")
+def _dialog_downloader() -> None:
+    """Downloader-Abgleich: was gespiegelt wurde."""
+    st.info("Abgleich mit dem MqlDownloader: Abonnenten-Verläufe und PDFs spiegeln "
+            "(best-effort, nie Neubewertung). Ergebnisse stehen im Workflow-Log "
+            "unter [downloader] und auf der Ergebnisseite unter „Abonnenten-Verlauf“.")
 
 
 section_header(
