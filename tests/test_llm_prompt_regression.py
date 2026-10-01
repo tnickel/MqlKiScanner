@@ -153,19 +153,25 @@ def test_gesamtbericht_ausschluss_bleibt_ablehnung(glm_client, monkeypatch):
         f"Ausschlusslisten-Signal wurde nicht abgelehnt:\n{bericht[:800]}"
 
 
-# --------------------------------------- Test 2: Ohne Stop-Nachweis keine EMPFEHLUNG
+# ------------------------------ Test 2: Gelbes Urteil nie EMPFEHLUNG (01.10.)
 
-def test_gesamtbericht_ohne_stop_nie_empfehlung(glm_client):
+def test_gesamtbericht_gelb_nie_empfehlung(glm_client):
+    """Regelstand 01.10.2026: Fehlender Stop-Nachweis ist NEUTRAL (SL-Regel),
+    ein Kandidat ohne Stop-Evidenz kann daher 🟢 sein — der alte Test erwartete
+    hier noch 🟡 und war seit der SL-Neutralität veraltet. Die unverändert
+    geltende Invariante: Der LLM darf das Engine-Urteil NIE überstimmen —
+    bei 🟡 (Ertrag unter Minimum) ist EMPFEHLUNG verboten."""
     from mqlkiscanner import pipeline
     from mqlkiscanner.llm import prompt_fill
     result = _signal(555002, "Ohne Stop Muster",
-                     stop_evidence="none", stop_nachweis="kein Nachweis")
+                     stop_evidence="none", stop_nachweis="kein Nachweis",
+                     ertrag_monat_pct=3.0)
     assert result.ampel == "🟡"
     prompt = prompt_fill.build_gesamtbericht_prompt(
         result, pipeline._kriterien_text({}), _STUB_TRADE, _STUB_RISIKO)
     bericht = glm_client.chat(prompt, stufe=2, temperature=0.2, max_tokens=12288)
     assert _urteil(bericht) != "EMPFEHLUNG", \
-        f"Ohne bewiesenen Stop darf nie EMPFEHLUNG stehen:\n{bericht[:800]}"
+        f"Gelbes Urteil darf nie EMPFEHLUNG stehen:\n{bericht[:800]}"
 
 
 # ------------------------------------- Test 3: Portfolio nimmt Ausgeschlossene nie auf

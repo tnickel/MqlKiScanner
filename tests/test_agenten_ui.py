@@ -75,9 +75,14 @@ def test_admin_tab_zeigt_rollen_budget_und_prompts(admin_frame):
     modell_wahl = [sb for sb in at.selectbox if "_modell_ui" in (sb.key or "")]
     assert len(aktiv_toggles) == 5
     assert len(modell_wahl) == 5
-    # Standard-Modell GLM-5.3 überall vorausgewählt.
+    # Vorauswahl je Rolle (01.10.2026): Flash für Dirigent/Melder,
+    # glm-5.3 für die analysierenden Rollen.
+    from mqlkiscanner.agenten import rollen
     for sb in modell_wahl:
-        assert sb.value == "glm-5.3"
+        rolle = (sb.key or "").split("_modell_ui")[0].replace("agenten_", "")
+        erwartung = ("glm-5.3-flash" if rolle in rollen.FLASH_ROLLEN
+                     else "glm-5.3")
+        assert sb.value == erwartung, sb.key
     # Budget und Start/Stopp vorhanden; die Default-Vorlage (dirigent_planung)
     # liegt im Editor (segmented_control selbst ist in AppTest kein selectbox).
     assert at.number_input(key="admin_agenten_budget_tag")

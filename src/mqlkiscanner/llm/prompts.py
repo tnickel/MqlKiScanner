@@ -137,7 +137,14 @@ Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
    rechnet) — eine unabhaengige Zweitmessung auf denselben Trades. Weicht
    er um Faktor 2 oder mehr vom gemeldeten Wert ab, ist das ebenfalls ein
    Kernbefund (nenne beide Zahlen und den Faktor); null/fehlend → nichts
-   dazu sagen. Er ändert die Ampel nicht (Engine misst selbst).
+   dazu sagen. monitor_trade_eq_dd_pct fliesst von der Engine als
+   zusaetzlicher Wert in das massgebliche Drawdown-Maximum ein: Er
+   beeinflusst die Drawdown-Risikodimension und die harte Drawdown-Schranke.
+   Uebersteigt das Maximum die konfigurierte Schranke (Standard 30 Prozent,
+   geprueft strikt > Grenzwert), ist die Schranke verletzt. Erlaeutere das
+   uebergebene Engine-Ergebnis; der LLM-Bericht veraendert weder Ampel noch
+   Score. Ein fehlender oder nullwertiger Monitor-Befund ist kein
+   zusaetzlicher Risikonachweis und keine Entlastung.
 2. **Copy-Eignung**: Slippage-/Kontogroessen-Risiken.
 3. **Ein Satz Fazit**: Warnung oder Entlastung — mit Hauptgrund.
 
