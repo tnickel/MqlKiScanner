@@ -31,7 +31,8 @@ Schockbetrag in USD am Peak. Zitiere Einheiten exakt.
 ## Aufgabe
 Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
 0. **RetDD-Effizienz** (Nutzer-Regel 01.10.): Bewerte retdd_monat
-   (Forensik-Ertrag je Prozent DD-Maximum) und retdd_jahr. Niedriges
+   (GEOMETRISCHER Monats-Ertrag je Prozent DD — Zinseszins-wahr) und
+   retdd_jahr (= echter Calmar CAGR/DD). Nenne auch ertrag_monat_geom_pct. Niedriges
    Risiko allein genügt nicht — ohne angemessenen Gewinn ist ein Signal
    unattraktiv. >= 0.5 effizient, 0.167 = exakte Projektmaße, darunter
    ineffizient (nenne beides: Ertrag UND Drawdown).

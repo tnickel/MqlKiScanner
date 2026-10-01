@@ -156,6 +156,11 @@ class ScanResult:
     # (5 %/M bei 30 % DD), steht bei 0,167 — alles darunter ist ineffizient.
     retdd_monat: float | None = None
     retdd_jahr: float | None = None
+    # Nutzer-Frage 01.10. (Zinseszins): geometrisches Monatsmittel der
+    # Monatsrenditen (wachsender Kontostand als Nenner — NICHT die fixe
+    # Startbasis) und daraus der echte Calmar (CAGR ÷ MaxDD).
+    ertrag_monat_geom_pct: float | None = None
+    cagr_jahr_pct: float | None = None
     pf: float | None = None
     dd_equity_pct: float | None = None     # Plattform "By Equity"
     dd_balance_pct: float | None = None    # Plattform "By Balance"
@@ -468,8 +473,11 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
             if (ertrag_wert or 0) >= min_return:
                 retdd_text = (f", RetDD {result.retdd_monat:g}/M"
                               if result.retdd_monat is not None else "")
+                geom_text = (f" (geom. {result.ertrag_monat_geom_pct:g} %/M)"
+                             if result.ertrag_monat_geom_pct is not None else "")
                 return "🟢", (f"Kandidat: Forensik bestanden, Score < 5, "
-                              f"Ertrag ok{retdd_text} · {stop_kontext}")
+                              f"Ertrag ok{geom_text}{retdd_text} · "
+                              f"{stop_kontext}")
             return "🟡", f"Forensik ok ({stop_kontext}), aber Ertrag < {min_return:g} %/Monat"
         return "🟡", f"Forensik bestanden ({stop_kontext}), Score {result.score} (kein Kandidat)"
     return "⚪", "Vorprüfung (ohne Trade-Export-Forensik)"
@@ -519,6 +527,8 @@ def _kandidat_json(r: ScanResult) -> str:
         # 30 % DD) = 0.167; ab 0.5 gilt ein Signal als effizient.
         "retdd_monat": r.retdd_monat,
         "retdd_jahr": r.retdd_jahr,
+        "ertrag_monat_geom_pct": r.ertrag_monat_geom_pct,
+        "cagr_jahr_pct": r.cagr_jahr_pct,
         "pf": r.pf, "dd_equity_pct": r.dd_equity_pct,
         "dd_balance_pct": r.dd_balance_pct,
         "broker_server": r.broker_server,
@@ -594,6 +604,8 @@ def _forensik_json(r: ScanResult) -> str:
         # ineffizient trotz moeglicherweise grüner Einzelkriterien.
         "retdd_monat": r.retdd_monat,
         "retdd_jahr": r.retdd_jahr,
+        "ertrag_monat_geom_pct": r.ertrag_monat_geom_pct,
+        "cagr_jahr_pct": r.cagr_jahr_pct,
         # Nachgemessener Equity-DD aus Kursdaten (floating inklusive) — die KI
         # soll ihn als Messung deuten und gegen den gemeldeten Wert stellen.
         "equity_dd_rekonstruiert_pct": r.equity_dd_rekonstruiert_pct,

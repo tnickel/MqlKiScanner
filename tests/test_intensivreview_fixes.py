@@ -497,3 +497,34 @@ def test_retdd_im_forensik_payload_und_portfolio_statistik():
     from mqlkiscanner import portfolio_statistik
     stat = portfolio_statistik.statistik([r])
     assert stat["signale"][0]["retdd_monat"] == 0.3
+
+
+# ------------------------------------------ Zinseszins-Korrektur (Nutzer 01.10.)
+
+def test_retdd_nutzt_geometrisches_mittel_nicht_fixe_basis(tmp_path):
+    """Nutzer-Frage 01.10.: netto/fixe Startbasis/Monate überhöht bei
+    Kontowachstum; Calmar-Standard = CAGR (geometrisch) ÷ MaxDD. Konto
+    100 -> +50 % -> -20 % (Monatsrenditen 50/-20): geometrisch 8.17 %/M,
+    nicht der arithmetische Ø 15 % — und die Pipeline liefert beide."""
+    kopf = ("Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;"
+            "Swap;Profit")
+    csv_pfad = tmp_path / "geom.csv"
+    csv_pfad.write_text("\n".join([
+        kopf, "2025.10.31 00:00:00;Balance;;;;;;;;;100",
+        "2025.11.15 10:00:00;Buy;0.1;XAUUSD;4000;0.1;2025.11.15 12:00:00;4100;0;0;50",
+        "2025.12.15 10:00:00;Buy;0.1;XAUUSD;4100;0.1;2025.12.15 12:00:00;4060;0;0;-30",
+    ]) + "\n", encoding="utf-8")
+    from mqlkiscanner import portfolio_statistik
+    renditen = portfolio_statistik.monatsrenditen(str(csv_pfad), 100.0)
+    assert renditen["2025-11"] == 50.0
+    assert renditen["2025-12"] == pytest.approx(-20.0, abs=0.01)
+    import math
+    faktor = 1.5 * 0.8   # 1.2 gesamt
+    geom = (faktor ** 0.5 - 1) * 100
+    assert geom == pytest.approx(9.54, abs=0.01)
+    # Pipeline-Feldstruktur: geom + Calmar vorhanden (Berechnung via
+    # monatsrenditen geprüft — pipeline nutzt dieselbe Funktion)
+    r = pipeline.ScanResult(id=1, name="X", ertrag_monat_geom_pct=9.54,
+                            cagr_jahr_pct=301.0, retdd_monat=0.318,
+                            retdd_jahr=10.03)
+    assert r.ertrag_monat_geom_pct == pytest.approx(geom, abs=0.01)

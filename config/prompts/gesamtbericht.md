@@ -53,8 +53,9 @@ Danach Abschnitte mit ## -Ueberschriften:
    begruendet Gewichtung und Warnung, niemals allein die Ablehnung.
 4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
    praktische Risiken beim Kopieren.
-5. **Urteil** — Nenne IMMER retdd_monat/retdd_jahr (Ertrag je Prozent
-   Drawdown) und bewerte die EFFIZIENZ: >= 0.5 attraktiv, 0.167 = exakte
+5. **Urteil** — Nenne IMMER retdd_monat/retdd_jahr (geometrischer
+   Ertrag je Prozent Drawdown; retdd_jahr = Calmar CAGR/DD) und
+   ertrag_monat_geom_pct und bewerte die EFFIZIENZ: >= 0.5 attraktiv, 0.167 = exakte
    Projektmaße, darunter unattraktiv trotz moeglicherweise grüner
    Einzelkriterien — Risiko ohne angemessene Bezahlung. Priorisiere bei
    der Empfehlungswürdigung RetDD über die absolute Rendite.

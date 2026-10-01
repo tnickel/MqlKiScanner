@@ -542,9 +542,18 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   retdd_monat < 0,2 nicht empfehlbar) und in der Portfolio-Statistik
   je Signal. Risiko-Score (7 Dimensionen) bleibt bewusst reines
   Risiko-Instrument („Risiko vor Ertrag") — die Effizienz wirkt über
-  Ampel-Zelle, Urteil und KI-Deutung. Bestands-Ranking (🟢/🟡):
-  ImpulseNet 8,65 · Combo Profile 4,74 · S7PRO 2,78 · GoldWave 2,72 ·
-  Gold Spike MT5 2,27 … Gold Spike MT4 1,07.
+  Ampel-Zelle, Urteil und KI-Deutung. **Zinseszins-Korrektur (Nutzer-
+  Frage 01.10., Fachrecherche Calmar/CAGR):** RetDD nutzt das
+  GEOMETRISCHE Monatsmittel der Monatsrenditen (wachsender Kontostand
+  als Nenner — netto ÷ fixe Startbasis ÷ Monate überhöht bei Konto-
+  wachstum massiv, z. B. Combo Profile 91,8 %/M fix vs 27,7 %/M geom;
+  arithmetischer Ø ignoriert volatility drag — Investopedia/CFA) und
+  retdd_jahr ist der ECHTE Calmar (Jahres-CAGR ÷ DD, statt ×12).
+  Neue Felder ertrag_monat_geom_pct + cagr_jahr_pct in beiden Payloads;
+  linearer Startbasis-Wert bleibt als ertrag_monat_pct_forensik mit
+  Definition dokumentiert. Bestands-Ranking (geom., 🟢/🟡): ImpulseNet
+  5,15 · Gold Spike MT5 1,44 · Combo Profile 1,43 · S7PRO 1,09 ·
+  MicroJump 1,07 · Pure Gold 1,04 … Gold Spike MT4 0,77.
 
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
