@@ -219,12 +219,18 @@ def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str =
                 (signal_id,)).fetchone()
             alt_quelle = (alt[0] if alt and alt[0] else None)
             if alt_quelle and alt_quelle != quelle:
-                _logging.getLogger("mqlkiscanner.db").warning(
-                    "ID-Kollision abgewehrt: Signal %s gehört Quelle %r; "
-                    "Schreibversuch aus Quelle %r — Herkunft bleibt %r "
-                    "(bis Composite-Identität, doc/20 Stufe 2).",
-                    signal_id, alt_quelle, quelle, alt_quelle)
-                quelle = alt_quelle
+                # F3 (Fremd-Review 01.10.): Ein unverändertes Quellenlabel
+                # ist KEIN Kollisionsschutz — Name/Plattform/Forensik würden
+                # trotzdem mit den Inhalten der fremden Quelle überschrieben
+                # (Gegenprobe: MQL5 123, dann Pelican 123 -> Pelican-Inhalt
+                # unter Label mql5). Bei Konflikt wird der SCHREIBVERSUCH
+                # ganz abgewiesen; die Identität (quelle, signal_id) ist
+                # bis zur Composite-Migration (doc/20 Stufe 2) getrennt.
+                raise ValueError(
+                    f"ID-Kollision abgewehrt: Signal {signal_id} gehört "
+                    f"Quelle {alt_quelle!r}; Schreibversuch aus Quelle "
+                    f"{quelle!r} verworfen (bis Composite-Identität, "
+                    "doc/20 Stufe 2).")
         if quelle is None:
             conn.execute(
                 """INSERT INTO signals (signal_id, name, platform, url, autor, abo_preis,

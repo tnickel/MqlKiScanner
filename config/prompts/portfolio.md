@@ -20,6 +20,21 @@ Signal nur nach den Maschinendaten.
 ## Portfolio-Statistik (Code-Befund — B20/B21, Intensiv-Review)
 {portfolio_statistik}
 
+Bindende Zusatzregeln (K2/K3, Fremd-Review 01.10.):
+- **Widerspruchs-Pflicht:** Empfiehlst du ein Signal, dessen Gesamtbericht
+  (Prompt 3) mit WATCHLIST oder ABLEHNUNG endete, musst du die Vorbehalte
+  ausdruecklich benennen und begruenden, warum sie die Empfehlung nicht
+  tragen — sonst darf das Signal nicht empfohlen werden. WATCHLIST-Berichte
+  koennen nur mit benannten Bedingungen (z. B. Copy-Test, DD-Schwelle,
+  Frist) in den Mix.
+- **SL-Kurzurteil-Verbot:** Begruende Ausschluesse NIE mit „0/x SL“ oder
+  aehnlichen Nachweis-Nullen — das ist Datenverfuegbarkeit, kein Risiko.
+  Nenne stattdessen die Verhaltens-Einschaetzung aus dem Einzelbericht
+  (z. B. „Stop-Schutz unwahrscheinlich, weil …“) oder die echten
+  Risiko-Zahlen. Ein Abverkauf/Abbruch einer Position darf niemals mit
+  „Wegfall des SL-Nachweises“ begruendet werden — nur mit tatsaechlichem
+  Verlust des Stop-Schutzes laut Verhaltensanalyse oder Schrankenverletzung.
+
 Deutungsregeln fur diese Statistik (bindend):
 1. **Verlustmonat-Cluster** sind gemeinsame Schocks. Nenne den Monat mit den
    meisten gleichzeitigen Verlusten MIT Namen und Werten als Stress-Szenario

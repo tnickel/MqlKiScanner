@@ -1,0 +1,871 @@
+{
+  "run": {
+    "id": 98,
+    "rolle": "dirigent",
+    "quelle": "cli",
+    "start": "2026-09-30 23:40:13",
+    "ende": "2026-10-01 02:43:30",
+    "status": "ok",
+    "signal_id": null,
+    "zusammenfassung": "full: 54 Signale geprüft, 162 Berichte erstellt, Portfolio aktualisiert.",
+    "aktion": "Autonomer Full-Scan (Gesamtkatalog) durchgeführt",
+    "resultat": "54 Signale geprüft, 162 Berichte erstellt, Portfolio aktualisiert."
+  },
+  "log": "tmp/scan_full_err.log",
+  "log_lines": 1155,
+  "scope_count": 62,
+  "scope_ids": [
+    {
+      "id": 2342895,
+      "name": "KiraCat",
+      "line": 11
+    },
+    {
+      "id": 2375480,
+      "name": "Gold Spike MT5",
+      "line": 21
+    },
+    {
+      "id": 2265877,
+      "name": "Gold Reaper New V2 2",
+      "line": 31
+    },
+    {
+      "id": 2339082,
+      "name": "GoldWave signal",
+      "line": 41
+    },
+    {
+      "id": 2327790,
+      "name": "ATong",
+      "line": 51
+    },
+    {
+      "id": 2349227,
+      "name": "Gold Spike",
+      "line": 61
+    },
+    {
+      "id": 2329290,
+      "name": "Precise Pair Trading Pro",
+      "line": 71
+    },
+    {
+      "id": 2379236,
+      "name": "EURUSD Night Scalper AI",
+      "line": 80
+    },
+    {
+      "id": 2362349,
+      "name": "Combo Profile 2026",
+      "line": 90
+    },
+    {
+      "id": 2308093,
+      "name": "UpFuji MT4",
+      "line": 100
+    },
+    {
+      "id": 2362868,
+      "name": "Pure Gold 2000 Vantage",
+      "line": 110
+    },
+    {
+      "id": 2300694,
+      "name": "RAZOR EA",
+      "line": 120
+    },
+    {
+      "id": 2153920,
+      "name": "MCA100",
+      "line": 129
+    },
+    {
+      "id": 2386939,
+      "name": "Forex fibonacci chart 2",
+      "line": 139
+    },
+    {
+      "id": 2351091,
+      "name": "Gold Breakout PRO All Star",
+      "line": 149
+    },
+    {
+      "id": 2271402,
+      "name": "Deux ex machina",
+      "line": 158
+    },
+    {
+      "id": 2307342,
+      "name": "Techno Long Term",
+      "line": 168
+    },
+    {
+      "id": 2357156,
+      "name": "Farmed Hedge Yield VCopy",
+      "line": 177
+    },
+    {
+      "id": 840474,
+      "name": "MySingalStart 2",
+      "line": 186
+    },
+    {
+      "id": 2370312,
+      "name": "Sferica Trading Automation",
+      "line": 217
+    },
+    {
+      "id": 1560883,
+      "name": "Scalp IC Markets MT5",
+      "line": 227
+    },
+    {
+      "id": 2330000,
+      "name": "Sputnik Hyperion 1",
+      "line": 237
+    },
+    {
+      "id": 2332166,
+      "name": "SolarFlare",
+      "line": 247
+    },
+    {
+      "id": 2368681,
+      "name": "BTC One Shot",
+      "line": 256
+    },
+    {
+      "id": 2354305,
+      "name": "Testing Plus",
+      "line": 295
+    },
+    {
+      "id": 2331134,
+      "name": "Sputnik SI Auto",
+      "line": 304
+    },
+    {
+      "id": 1760039,
+      "name": "MySingalStart 3",
+      "line": 313
+    },
+    {
+      "id": 2368490,
+      "name": "S7PRO",
+      "line": 344
+    },
+    {
+      "id": 2348377,
+      "name": "ORDER FLOW System",
+      "line": 354
+    },
+    {
+      "id": 2340704,
+      "name": "XAUUSD AND XAUEUR",
+      "line": 364
+    },
+    {
+      "id": 2391620,
+      "name": "Van PM",
+      "line": 374
+    },
+    {
+      "id": 2367606,
+      "name": "EUR Trader",
+      "line": 384
+    },
+    {
+      "id": 2019435,
+      "name": "AIT FX www.ALLinTraders.com",
+      "line": 393
+    },
+    {
+      "id": 2000028,
+      "name": "Lexo",
+      "line": 436
+    },
+    {
+      "id": 2014074,
+      "name": "The Holy Grail",
+      "line": 447
+    },
+    {
+      "id": 2063644,
+      "name": "🍋 Lemonal 🍋 t.me/lemonal1",
+      "line": 458
+    },
+    {
+      "id": 2014076,
+      "name": "PentagonForex",
+      "line": 469
+    },
+    {
+      "id": 2059368,
+      "name": "gemslime",
+      "line": 480
+    },
+    {
+      "id": 2084818,
+      "name": "AccurateCopier",
+      "line": 491
+    },
+    {
+      "id": 2014626,
+      "name": "Deus ex machina",
+      "line": 502
+    },
+    {
+      "id": 2072334,
+      "name": "GOLD Tokyo Scalping",
+      "line": 513
+    },
+    {
+      "id": 2039057,
+      "name": "Master H4-2",
+      "line": 524
+    },
+    {
+      "id": 2016702,
+      "name": "Master H4-1",
+      "line": 535
+    },
+    {
+      "id": 2041912,
+      "name": "Sydney Sunrise",
+      "line": 546
+    },
+    {
+      "id": 2048285,
+      "name": "SafeGold",
+      "line": 557
+    },
+    {
+      "id": 2074880,
+      "name": "Gold VIP (t.me/GD_AxiCopy)",
+      "line": 568
+    },
+    {
+      "id": 2041931,
+      "name": "Big Ben Breakout",
+      "line": 579
+    },
+    {
+      "id": 2048284,
+      "name": "ImpulseNet",
+      "line": 590
+    },
+    {
+      "id": 2000892,
+      "name": "Mtrader2",
+      "line": 601
+    },
+    {
+      "id": 2021443,
+      "name": "Golden Paradise (t.me/GP_FX)",
+      "line": 646
+    },
+    {
+      "id": 2012139,
+      "name": "Grid King $1000",
+      "line": 657
+    },
+    {
+      "id": 2049613,
+      "name": "MicroJump",
+      "line": 668
+    },
+    {
+      "id": 2041033,
+      "name": "❄𝗠𝗶𝗱𝗮𝘀𝗔𝗹𝗴𝗼❄MirrorM≥1",
+      "line": 679
+    },
+    {
+      "id": 2065185,
+      "name": "Whales365 Élite",
+      "line": 690
+    },
+    {
+      "id": 2059824,
+      "name": "GOLD PRECISION SCALPER",
+      "line": 701
+    },
+    {
+      "id": 2019075,
+      "name": "TradeSystem",
+      "line": 712
+    },
+    {
+      "id": 2005451,
+      "name": "Mtrader Holy",
+      "line": 747
+    },
+    {
+      "id": 2054437,
+      "name": "TKG",
+      "line": 792
+    },
+    {
+      "id": 2053240,
+      "name": "HRC Algo",
+      "line": 803
+    },
+    {
+      "id": 2052727,
+      "name": "💎t.me/Mr_Profit_FX",
+      "line": 814
+    },
+    {
+      "id": 2007510,
+      "name": "Yu Trading Club",
+      "line": 825
+    },
+    {
+      "id": 2064854,
+      "name": "ALPHA-SEVEN",
+      "line": 870
+    }
+  ],
+  "failed_signals": [
+    840474,
+    1760039,
+    2000892,
+    2005451,
+    2007510,
+    2019075,
+    2019435,
+    2368681
+  ],
+  "error_entries": [
+    {
+      "id": 840474,
+      "line": 190,
+      "message": "ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trades\\tmppvyvc_7o.csv: Zeile 9227: Pflichtfeld fehlt (Buy)"
+    },
+    {
+      "id": 840474,
+      "line": 205,
+      "message": "ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trades\\tmp11qlel01.csv: Zeile 9227: Pflichtfeld fehlt (Buy)"
+    },
+    {
+      "id": 2368681,
+      "line": 263,
+      "message": "ValueError: Unbekannte Instrumente ohne belegte Kontraktgroesse: DE30M, XCUUSDM — in data/contract_specs.json eintragen (Kontraktgroesse, Gewinnwaehrung, Quelle), dann erneut pruefen."
+    },
+    {
+      "id": 2368681,
+      "line": 282,
+      "message": "ValueError: Unbekannte Instrumente ohne belegte Kontraktgroesse: DE30M, XCUUSDM — in data/contract_specs.json eintragen (Kontraktgroesse, Gewinnwaehrung, Quelle), dann erneut pruefen."
+    },
+    {
+      "id": 1760039,
+      "line": 317,
+      "message": "ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trades\\tmpfq6ko6jy.csv: Zeile 12115: Pflichtfeld fehlt (Buy)"
+    },
+    {
+      "id": 1760039,
+      "line": 332,
+      "message": "ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trades\\tmpsjququ4z.csv: Zeile 12115: Pflichtfeld fehlt (Buy)"
+    },
+    {
+      "id": 2019435,
+      "line": 402,
+      "message": "ValueError: Keine anwendbare Kontraktspec (cross_broker=false, Broker des Signals ('AxiTrader2') nicht freigegeben): USOIL — Broker in data/contract_specs.json freigeben (Eintrag 'brokers' ergänzen), dann erneut prüfen."
+    },
+    {
+      "id": 2019435,
+      "line": 423,
+      "message": "ValueError: Keine anwendbare Kontraktspec (cross_broker=false, Broker des Signals ('AxiTrader2') nicht freigegeben): USOIL — Broker in data/contract_specs.json freigeben (Eintrag 'brokers' ergänzen), dann erneut prüfen."
+    },
+    {
+      "id": 2000892,
+      "line": 611,
+      "message": "ValueError: Keine anwendbare Kontraktspec (cross_broker=false, Broker des Signals ('AxiTraderUs07Live') nicht freigegeben): USOIL — Broker in data/contract_specs.json freigeben (Eintrag 'brokers' ergänzen), dann erneut prüfen."
+    },
+    {
+      "id": 2000892,
+      "line": 633,
+      "message": "ValueError: Keine anwendbare Kontraktspec (cross_broker=false, Broker des Signals ('AxiTraderUs07Live') nicht freigegeben): USOIL — Broker in data/contract_specs.json freigeben (Eintrag 'brokers' ergänzen), dann erneut prüfen."
+    },
+    {
+      "id": 2019075,
+      "line": 723,
+      "message": "ValueError: Forensik unvollständig: Kontostand war bei offenen Positionen <= 0 (z. B. Auszahlung mitten im Handel): kein belastbarer Bezugswert — Schockanteil in Prozent und die 30-%-Schranke sind nicht berechenbar."
+    },
+    {
+      "id": 2019075,
+      "line": 740,
+      "message": "ValueError: Forensik unvollständig: Kontostand war bei offenen Positionen <= 0 (z. B. Auszahlung mitten im Handel): kein belastbarer Bezugswert — Schockanteil in Prozent und die 30-%-Schranke sind nicht berechenbar."
+    },
+    {
+      "id": 2005451,
+      "line": 757,
+      "message": "ValueError: Keine anwendbare Kontraktspec (cross_broker=false, Broker des Signals ('AxiTraderUs07Live') nicht freigegeben): USOIL — Broker in data/contract_specs.json freigeben (Eintrag 'brokers' ergänzen), dann erneut prüfen."
+    },
+    {
+      "id": 2005451,
+      "line": 779,
+      "message": "ValueError: Keine anwendbare Kontraktspec (cross_broker=false, Broker des Signals ('AxiTraderUs07Live') nicht freigegeben): USOIL — Broker in data/contract_specs.json freigeben (Eintrag 'brokers' ergänzen), dann erneut prüfen."
+    },
+    {
+      "id": 2007510,
+      "line": 835,
+      "message": "ValueError: Keine anwendbare Kontraktspec (cross_broker=false, Broker des Signals ('AxiTrader5') nicht freigegeben): USOIL — Broker in data/contract_specs.json freigeben (Eintrag 'brokers' ergänzen), dann erneut prüfen."
+    },
+    {
+      "id": 2007510,
+      "line": 857,
+      "message": "ValueError: Keine anwendbare Kontraktspec (cross_broker=false, Broker des Signals ('AxiTrader5') nicht freigegeben): USOIL — Broker in data/contract_specs.json freigeben (Eintrag 'brokers' ergänzen), dann erneut prüfen."
+    }
+  ],
+  "analysis_counts": {
+    "trade_analyse": 54,
+    "risiko_analyse": 54,
+    "gesamtbericht": 54,
+    "portfolio": 1
+  },
+  "persisted_tokens": 1856424,
+  "logged_tokens": 1866388,
+  "token_difference": 9964,
+  "grades": {
+    "🔴": 30,
+    "🟡": 22,
+    "🟢": 2
+  },
+  "selected_examples": [
+    {
+      "id": 2000028,
+      "name": "Lexo",
+      "source": "pelik",
+      "ampel": "🟡",
+      "score": 4.9,
+      "return_pct": 1.86,
+      "capital": {
+        "usd": 18739.96,
+        "quelle": "implizit_aus_balance",
+        "end_balance_real": 32146.55,
+        "webseite_balance_usd": 32146.55
+      },
+      "matrix": {
+        "grenzen": {
+          "schranke_eq_dd_pct": 30.0,
+          "min_ertrag_pct_monat": 5.0
+        },
+        "kriterien": {
+          "dd_schranke": {
+            "ampel": "🟢",
+            "kurz": "Puffer 23,81 Punkte",
+            "detail": "max(EQ-DD 0,78 %, Trading-DD 0,15 %, Monitor-EQ-DD 6,19 %) = 6,19 % hält die Schranke 30 % mit 23,8 Punkten Abstand ein."
+          },
+          "martingale": {
+            "ampel": "🟢",
+            "kurz": "keine Signatur",
+            "detail": "Keine Lot-Eskalation nach Verlusten und kein Korb-Muster erkannt (Median-Faktor-Schwelle 1,3x nicht überschritten)."
+          },
+          "stop": {
+            "ampel": "⚪",
+            "kurz": "neutral (nicht übertragen)",
+            "detail": "SL in den Trade-Daten nicht sichtbar: kein eindeutiges Stop-Niveau erkennbar — neutral — neutral, kein Nachteil (viele Broker übertragen keinen SL). Die KI-Analyse schätzt aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist."
+          },
+          "ertrag": {
+            "ampel": "🟡",
+            "kurz": "1,9 % < 5 %",
+            "detail": "1,9 %/Monat liegt unter der Mindest-schwelle von 5 %/Monat (positive Werte, aber zu wenig; Forensik-Basis). Forensik-Basis 1,9 %/Monat (Plattform meldet 15,4 %/Monat auf eigener Kapitalbasis — Selbstauskunft, nicht maßgeblich)."
+          },
+          "score": {
+            "ampel": "🟢",
+            "kurz": "Score 4,9",
+            "detail": "Engine-Risiko-Score 4,9 von 10 — unter der Kandidaten-Schwelle 5."
+          },
+          "schock": {
+            "ampel": "🟡",
+            "kurz": "67,8 %",
+            "detail": "50-USD-Schock über Peak-Netto-Lots ≈ 17339 USD = 67,8 % des Kontos am 2026-03-10 17:30:00 — erhebliche Stress-Belastung. Stress-Szenario, kein gemessener Verlust; begründet Gewichtung, nicht allein die Ablehnung."
+          },
+          "serie": {
+            "ampel": "🟡",
+            "kurz": "11 in Folge",
+            "detail": "Längste Verlustserie: 11 Trades, Summe -30 USD — deutliche Regime-Belastung."
+          },
+          "liste": {
+            "ampel": "🟢",
+            "kurz": "nicht gelistet",
+            "detail": "Signal steht weder auf der Ausschlussliste noch auf der Watchlist (known_signals.json)."
+          }
+        }
+      },
+      "equity_reconstruction": null
+    },
+    {
+      "id": 2014076,
+      "name": "PentagonForex",
+      "source": "pelik",
+      "ampel": "🟡",
+      "score": 4.3,
+      "return_pct": 1.12,
+      "capital": {
+        "usd": 23866.36,
+        "quelle": "implizit_aus_balance",
+        "end_balance_real": 29557.44,
+        "webseite_balance_usd": 29557.44
+      },
+      "matrix": {
+        "grenzen": {
+          "schranke_eq_dd_pct": 30.0,
+          "min_ertrag_pct_monat": 5.0
+        },
+        "kriterien": {
+          "dd_schranke": {
+            "ampel": "🟢",
+            "kurz": "Puffer 14,02 Punkte",
+            "detail": "max(EQ-DD 7,22 %, Trading-DD 0,10 %, Monitor-EQ-DD 15,98 %) = 15,98 % hält die Schranke 30 % mit 14,0 Punkten Abstand ein."
+          },
+          "martingale": {
+            "ampel": "🟢",
+            "kurz": "keine Signatur",
+            "detail": "Keine Lot-Eskalation nach Verlusten und kein Korb-Muster erkannt (Median-Faktor-Schwelle 1,3x nicht überschritten)."
+          },
+          "stop": {
+            "ampel": "⚪",
+            "kurz": "neutral (nicht übertragen)",
+            "detail": "SL in den Trade-Daten nicht sichtbar: kein eindeutiges Stop-Niveau erkennbar — neutral — neutral, kein Nachteil (viele Broker übertragen keinen SL). Die KI-Analyse schätzt aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist."
+          },
+          "ertrag": {
+            "ampel": "🟡",
+            "kurz": "1,1 % < 5 %",
+            "detail": "1,1 %/Monat liegt unter der Mindest-schwelle von 5 %/Monat (positive Werte, aber zu wenig; Forensik-Basis). Forensik-Basis 1,1 %/Monat (Plattform meldet 6,7 %/Monat auf eigener Kapitalbasis — Selbstauskunft, nicht maßgeblich)."
+          },
+          "score": {
+            "ampel": "🟢",
+            "kurz": "Score 4,3",
+            "detail": "Engine-Risiko-Score 4,3 von 10 — unter der Kandidaten-Schwelle 5."
+          },
+          "schock": {
+            "ampel": "🟢",
+            "kurz": "7,4 %",
+            "detail": "50-USD-Schock über Peak-Netto-Lots ≈ 1893 USD = 7,4 % des Kontos am 2025-08-14 11:24:18 — beherrschbar. Stress-Szenario, kein gemessener Verlust."
+          },
+          "serie": {
+            "ampel": "🟢",
+            "kurz": "8 in Folge",
+            "detail": "Längste Verlustserie: 8 Trades, Summe -7 USD."
+          },
+          "liste": {
+            "ampel": "🟢",
+            "kurz": "nicht gelistet",
+            "detail": "Signal steht weder auf der Ausschlussliste noch auf der Watchlist (known_signals.json)."
+          }
+        }
+      },
+      "equity_reconstruction": null
+    },
+    {
+      "id": 2084818,
+      "name": "AccurateCopier",
+      "source": "pelik",
+      "ampel": "🔴",
+      "score": 5.8,
+      "return_pct": 6.64,
+      "capital": {
+        "usd": 4378.26,
+        "quelle": "implizit_aus_balance",
+        "end_balance_real": 5226.73,
+        "webseite_balance_usd": 5226.73
+      },
+      "matrix": {
+        "grenzen": {
+          "schranke_eq_dd_pct": 30.0,
+          "min_ertrag_pct_monat": 5.0
+        },
+        "kriterien": {
+          "dd_schranke": {
+            "ampel": "🔴",
+            "kurz": "241,32 % > 30 %",
+            "detail": "max(EQ-DD 16,77 %, Trading-DD 6,25 %, Monitor-EQ-DD 241,32 %) = 241,32 % liegt ÜBER der Schranke von 30 % (harte Ablehnung). Monitor-EQ-DD ist eine Monitor-Zweitmessung auf dessen eigener Kapitalbasis — über 100 % überzeichnet sie absolut."
+          },
+          "martingale": {
+            "ampel": "🟢",
+            "kurz": "keine Signatur",
+            "detail": "Keine Lot-Eskalation nach Verlusten und kein Korb-Muster erkannt (Median-Faktor-Schwelle 1,3x nicht überschritten)."
+          },
+          "stop": {
+            "ampel": "⚪",
+            "kurz": "neutral (nicht übertragen)",
+            "detail": "SL in den Trade-Daten nicht sichtbar: Verlustdistanzen ohne Cluster — SL nicht uebertragen (neutral; KI schatzt aus dem Verhalten ab) — neutral, kein Nachteil (viele Broker übertragen keinen SL). Die KI-Analyse schätzt aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist."
+          },
+          "ertrag": {
+            "ampel": "🟢",
+            "kurz": "6,6 %/Monat",
+            "detail": "6,6 %/Monat ≥ Mindestschwelle 5 %/Monat (Forensik-Basis). Forensik-Basis 6,6 %/Monat (Plattform meldet 23,6 %/Monat auf eigener Kapitalbasis — Selbstauskunft, nicht maßgeblich)."
+          },
+          "score": {
+            "ampel": "🟡",
+            "kurz": "Score 5,8",
+            "detail": "Engine-Risiko-Score 5,8 von 10 — Kandidaten-Schwelle 5 überschritten (kein Kandidat)."
+          },
+          "schock": {
+            "ampel": "🟢",
+            "kurz": "22,6 %",
+            "detail": "50-USD-Schock über Peak-Netto-Lots ≈ 1000 USD = 22,6 % des Kontos am 2026-07-07 15:30:02 — beherrschbar. Stress-Szenario, kein gemessener Verlust."
+          },
+          "serie": {
+            "ampel": "🟢",
+            "kurz": "7 in Folge",
+            "detail": "Längste Verlustserie: 7 Trades, Summe -38 USD."
+          },
+          "liste": {
+            "ampel": "🟢",
+            "kurz": "nicht gelistet",
+            "detail": "Signal steht weder auf der Ausschlussliste noch auf der Watchlist (known_signals.json)."
+          }
+        }
+      },
+      "equity_reconstruction": null
+    },
+    {
+      "id": 2342895,
+      "name": "KiraCat",
+      "source": "mql5",
+      "ampel": "🟡",
+      "score": 6.3,
+      "return_pct": 21.55,
+      "capital": {
+        "usd": 9535.48,
+        "quelle": "csv_einzahlungen",
+        "end_balance_real": 1003.56,
+        "webseite_balance_usd": 1003.56
+      },
+      "matrix": {
+        "grenzen": {
+          "schranke_eq_dd_pct": 30.0,
+          "min_ertrag_pct_monat": 5.0
+        },
+        "kriterien": {
+          "dd_schranke": {
+            "ampel": "🟡",
+            "kurz": "Puffer nur 4,02 Punkte",
+            "detail": "max(EQ-DD 25,98 %, Bal-DD 7,08 %, Trading-DD 8,14 %) = 25,98 % hält die Schranke 30 % ein, aber der Puffer beträgt nur 4,02 Punkte — eine Wiederholung des Regimes kann sie durchbrechen."
+          },
+          "martingale": {
+            "ampel": "🟢",
+            "kurz": "keine Signatur",
+            "detail": "Keine Lot-Eskalation nach Verlusten und kein Korb-Muster erkannt (Median-Faktor-Schwelle 1,3x nicht überschritten)."
+          },
+          "stop": {
+            "ampel": "⚪",
+            "kurz": "neutral (nicht übertragen)",
+            "detail": "SL in den Trade-Daten nicht sichtbar: kein eindeutiges Stop-Niveau erkennbar — neutral — neutral, kein Nachteil (viele Broker übertragen keinen SL). Die KI-Analyse schätzt aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist."
+          },
+          "ertrag": {
+            "ampel": "🟢",
+            "kurz": "21,6 %/Monat",
+            "detail": "21,6 %/Monat ≥ Mindestschwelle 5 %/Monat (Forensik-Basis). Forensik-Basis 21,6 %/Monat (Plattform meldet 3,5 %/Monat auf eigener Kapitalbasis — Selbstauskunft, nicht maßgeblich)."
+          },
+          "score": {
+            "ampel": "🟡",
+            "kurz": "Score 6,3",
+            "detail": "Engine-Risiko-Score 6,3 von 10 — Kandidaten-Schwelle 5 überschritten (kein Kandidat)."
+          },
+          "schock": {
+            "ampel": "🟠",
+            "kurz": "111,3 %",
+            "detail": "50-USD-Schock über Peak-Netto-Lots ≈ 10681 USD = 111,3 % des Kontos am 2026-08-26 08:08:36 — übersteigt die Konto-Referenz rechnerisch. Stress-Szenario, kein gemessener Verlust; begründet Gewichtung und Beobachtung, nicht allein die Ablehnung."
+          },
+          "serie": {
+            "ampel": "🟢",
+            "kurz": "5 in Folge",
+            "detail": "Längste Verlustserie: 5 Trades, Summe -1007 USD."
+          },
+          "liste": {
+            "ampel": "🟢",
+            "kurz": "nicht gelistet",
+            "detail": "Signal steht weder auf der Ausschlussliste noch auf der Watchlist (known_signals.json)."
+          }
+        }
+      },
+      "equity_reconstruction": {
+        "test": "equity_rekonstruktion",
+        "status": "unvollstaendig",
+        "gmt_offset_h": 0,
+        "gmt_trefferquote": 0.95,
+        "equity_dd_pct": 20.89,
+        "equity_dd_usd": 5556.95,
+        "abdeckung_pct": 96.7,
+        "rasterpunkte": 5489,
+        "verlaesslich": false,
+        "symbole_mit_kursen": [
+          "NZDCAD",
+          "US30",
+          "USDCAD",
+          "XAUUSD"
+        ],
+        "symbole_ohne_kurse": [
+          "US100"
+        ],
+        "grund": "Kursdaten fehlen für 4 von 556 Trades"
+      }
+    },
+    {
+      "id": 2349227,
+      "name": "Gold Spike",
+      "source": "mql5",
+      "ampel": "🟢",
+      "score": 4.1,
+      "return_pct": 8.71,
+      "capital": {
+        "usd": 3116.0,
+        "quelle": "csv_einzahlungen",
+        "end_balance_real": 2409.55,
+        "webseite_balance_usd": 2409.55
+      },
+      "matrix": {
+        "grenzen": {
+          "schranke_eq_dd_pct": 30.0,
+          "min_ertrag_pct_monat": 5.0
+        },
+        "kriterien": {
+          "dd_schranke": {
+            "ampel": "🟢",
+            "kurz": "Puffer 21,89 Punkte",
+            "detail": "max(EQ-DD 3,80 %, Bal-DD 8,11 %, Trading-DD 4,57 %, Reko-EQ-DD 5,69 %) = 8,11 % hält die Schranke 30 % mit 21,9 Punkten Abstand ein."
+          },
+          "martingale": {
+            "ampel": "🟢",
+            "kurz": "keine Signatur",
+            "detail": "Keine Lot-Eskalation nach Verlusten und kein Korb-Muster erkannt (Median-Faktor-Schwelle 1,3x nicht überschritten)."
+          },
+          "stop": {
+            "ampel": "🟢",
+            "kurz": "bewiesen (Orderbuch)",
+            "detail": "Stop direkt belegt: Orderbuch: 393/393 mit SL"
+          },
+          "ertrag": {
+            "ampel": "🟢",
+            "kurz": "8,7 %/Monat",
+            "detail": "8,7 %/Monat ≥ Mindestschwelle 5 %/Monat (Forensik-Basis). Forensik-Basis 8,7 %/Monat (Plattform meldet 24,5 %/Monat auf eigener Kapitalbasis — Selbstauskunft, nicht maßgeblich)."
+          },
+          "score": {
+            "ampel": "🟢",
+            "kurz": "Score 4,1",
+            "detail": "Engine-Risiko-Score 4,1 von 10 — unter der Kandidaten-Schwelle 5."
+          },
+          "schock": {
+            "ampel": "🟡",
+            "kurz": "30,5 %",
+            "detail": "50-USD-Schock über Peak-Netto-Lots ≈ 600 USD = 30,5 % des Kontos am 2026-08-19 16:12:32 — erhebliche Stress-Belastung. Stress-Szenario, kein gemessener Verlust; begründet Gewichtung, nicht allein die Ablehnung."
+          },
+          "serie": {
+            "ampel": "🟡",
+            "kurz": "13 in Folge",
+            "detail": "Längste Verlustserie: 13 Trades, Summe -155 USD — deutliche Regime-Belastung."
+          },
+          "liste": {
+            "ampel": "🟢",
+            "kurz": "nicht gelistet",
+            "detail": "Signal steht weder auf der Ausschlussliste noch auf der Watchlist (known_signals.json)."
+          }
+        }
+      },
+      "equity_reconstruction": {
+        "test": "equity_rekonstruktion",
+        "status": "ok",
+        "gmt_offset_h": 0,
+        "gmt_trefferquote": 0.958,
+        "equity_dd_pct": 5.69,
+        "equity_dd_usd": 239.52,
+        "abdeckung_pct": 100.0,
+        "rasterpunkte": 5332,
+        "verlaesslich": true,
+        "symbole_mit_kursen": [
+          "XAUUSD"
+        ]
+      }
+    },
+    {
+      "id": 2375480,
+      "name": "Gold Spike MT5",
+      "source": "mql5",
+      "ampel": "🟢",
+      "score": 4.9,
+      "return_pct": 20.85,
+      "capital": {
+        "usd": 1246.0,
+        "quelle": "csv_einzahlungen",
+        "end_balance_real": 2392.49,
+        "webseite_balance_usd": 2392.49
+      },
+      "matrix": {
+        "grenzen": {
+          "schranke_eq_dd_pct": 30.0,
+          "min_ertrag_pct_monat": 5.0
+        },
+        "kriterien": {
+          "dd_schranke": {
+            "ampel": "🟢",
+            "kurz": "Puffer 20,83 Punkte",
+            "detail": "max(EQ-DD 5,26 %, Bal-DD 9,14 %, Trading-DD 9,14 %, Reko-EQ-DD 9,17 %) = 9,17 % hält die Schranke 30 % mit 20,8 Punkten Abstand ein."
+          },
+          "martingale": {
+            "ampel": "🟢",
+            "kurz": "keine Signatur",
+            "detail": "Keine Lot-Eskalation nach Verlusten und kein Korb-Muster erkannt (Median-Faktor-Schwelle 1,3x nicht überschritten)."
+          },
+          "stop": {
+            "ampel": "⚪",
+            "kurz": "neutral (nicht übertragen)",
+            "detail": "SL in den Trade-Daten nicht sichtbar: kein eindeutiges Stop-Niveau erkennbar — neutral — neutral, kein Nachteil (viele Broker übertragen keinen SL). Die KI-Analyse schätzt aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist."
+          },
+          "ertrag": {
+            "ampel": "🟢",
+            "kurz": "20,9 %/Monat",
+            "detail": "20,9 %/Monat ≥ Mindestschwelle 5 %/Monat (Forensik-Basis). Forensik-Basis 20,9 %/Monat (Plattform meldet 32,6 %/Monat auf eigener Kapitalbasis — Selbstauskunft, nicht maßgeblich)."
+          },
+          "score": {
+            "ampel": "🟢",
+            "kurz": "Score 4,9",
+            "detail": "Engine-Risiko-Score 4,9 von 10 — unter der Kandidaten-Schwelle 5."
+          },
+          "schock": {
+            "ampel": "🟡",
+            "kurz": "36,8 %",
+            "detail": "50-USD-Schock über Peak-Netto-Lots ≈ 600 USD = 36,8 % des Kontos am 2026-08-19 16:12:33 — erhebliche Stress-Belastung. Stress-Szenario, kein gemessener Verlust; begründet Gewichtung, nicht allein die Ablehnung."
+          },
+          "serie": {
+            "ampel": "🟢",
+            "kurz": "6 in Folge",
+            "detail": "Längste Verlustserie: 6 Trades, Summe -66 USD."
+          },
+          "liste": {
+            "ampel": "🟢",
+            "kurz": "nicht gelistet",
+            "detail": "Signal steht weder auf der Ausschlussliste noch auf der Watchlist (known_signals.json)."
+          }
+        }
+      },
+      "equity_reconstruction": {
+        "test": "equity_rekonstruktion",
+        "status": "ok",
+        "gmt_offset_h": 0,
+        "gmt_trefferquote": 0.992,
+        "equity_dd_pct": 9.17,
+        "equity_dd_usd": 138.87,
+        "abdeckung_pct": 100.0,
+        "rasterpunkte": 2060,
+        "verlaesslich": true,
+        "symbole_mit_kursen": [
+          "XAUUSD"
+        ]
+      }
+    }
+  ],
+  "portfolio": {
+    "id": 1115,
+    "signal_id": null,
+    "kind": "portfolio",
+    "model": "glm-5.3",
+    "tokens": 91927,
+    "created_at": "2026-10-01 02:43:30"
+  },
+  "portfolio_text": "Kurzfassung: Nur die zwei grünen Kandidaten Gold Spike (60 %) und Gold Spike MT5 (40 %) kopieren; alle 22 Watchlist-Signale bleiben bis vollständiger Forensik außen.\n\n## 1. Bestandsaufnahme\n\nDas Universum besteht zu etwa zwei Dritteln aus Grid-/Averaging-Korbsystemen (u. a. Lexo, The Holy Grail, SafeGold, Master H4-2, ImpulseNet, MicroJump, TKG, HRC Algo, EUR Trader, Sferica, Pure Gold 2000, Gold Reaper, Combo Profile 2026), dazu Session-/Spike-Scalper (beide Gold-Spike-Varianten, GoldWave, SolarFlare, S7PRO, GOLD Tokyo Scalping) und ein Pair-Trading-Hybrid (Precise Pair Trading Pro). Asset-Klumpen: 16 von 24 Signalen handeln XAUUSD; AUDCAD exklusiv bei Lexo, ImpulseNet, MicroJump und Mr_Profit_FX. Stressmonat Juli 2026 — der dichteste Verlustcluster: Precise Pair −17,67 %, SafeGold −11,08 %, Gold Spike MT5 −3,86 %, Gold Reaper −2,0 %, SolarFlare −1,77 %, Pure Gold −1,13 %, Gold Spike −1,09 %; kehren solche Gold-Trendphasen wieder, verlieren bis zu sieben Positionen gleichzeitig. Das gemeinsame Fenster aller 24 Signale umfasst nur 2 Monate (2026-05 bis 2026-06) — Diversifikationsaussagen sind schwach belegt. Code-befundeter Instrument-Overlap: Sferica/Holy Grail und Holy Grail/PentagonForex (je 5 gemeinsame Symbole, Jaccard 0,31) — keine Diversifikation gegeneinander. Beide grünen Kandidaten stammen lt. Datenfeld vom selben Autorennamen, handeln ausschließlich XAUUSD mit gleichem Strategietyp — sie sind kein Gegengewicht zueinander.\n\n## 2. Bewertung je Signal\n\n- Gold Spike (MT4) — Ertragsträger: Stop bewiesen (393/393 Orderbuch), DD-Max 8,11 %, Reko 5,69 %, Schock 30,51 %, Ertrag 8,71 %/Monat, 11 Monate Historie.\n- Gold Spike MT5 — Ertragsträger: DD-Max 9,17 % (Reko), Schock 36,75 %, Stop neutral (Basket-Cut plausibel), Ertrag 20,85 %/Monat, nur 5 Monate Historie, 55 % des Ertrags aus September.\n- KiraCat — Risikoträger: EQ-DD 25,98 %, Schock 111,27 %, Ertragsverfall, Reko/Monitor fehlen.\n- Gold Reaper New V2 2 — Risikoträger: Reko 18,52 % vs. 7,18 % gemeldet, 24 Monate, Watchlist.\n- GoldWave signal — Risikoträger: Schock 223,06 %, Mikro-Basis, kein Cut-Cluster.\n- Precise Pair Trading Pro — Risikoträger: Trading-DD 24,02 %, Juli −17,67 %, Batterie unvollständig.\n- Combo Profile 2026 — Risikoträger: Schock 669,95 % auf 161-USD-Basis, Stop-Schutz unwahrscheinlich.\n- Pure Gold 2000 Vantage — Risikoträger: Reko 20,38 % (Faktor 3 über Meldung), 32er-Peak.\n- Sferica Trading Automation — Risikoträger: 0/296 SL, Schock 114,21 %, Overlap mit Holy Grail.\n- SolarFlare — potenzieller Ertragsträger, gesperrt: SL 693/700 belegt, DD-Max 13,46 %, aber Reko/Monitor fehlen.\n- S7PRO — Risikoträger: Schock 338,82 %, Monatsleistung März→September −79 %.\n- EUR Trader — Risikoträger: Grid, DD 21,73 %, Schock 125 %, 49-Tage-Haltungen.\n- Lexo / The Holy Grail / PentagonForex / gemslime / TKG / Master H4-2 / MicroJump / Mr_Profit_FX — überflüssig als Ertragsträger: Forensik-Ertrag 1,86 / 4,06 / 1,12 / 1,21 / 0,16 / 0,57 / 3,46 / 3,33 % — alle unter 5 %.\n- GOLD Tokyo Scalping — gesperrt: Ertrag 8,74 %, aber Reko fehlt, Schock 73,37 %.\n- SafeGold — Risikoträger: Trading-DD 18,18 %, Schock 98,91 %, Juli −11,08 %.\n- ImpulseNet — gesperrt: DD-Max 1,55 %, Ertrag 13,41 %, aber Schock 252,93 %, Reko fehlt.\n- HRC Algo — gesperrt: Ertrag 16,55 %, DD-Max 12,85 %, aber Reko fehlt, Schock 204,22 %.\n\n## 3. Portfolio-Vorschlag\n\nBindende Engine-Ampel: nur die zwei grünen Kandidaten sind aufnahmefähig; jede andere Position verstieße gegen „keine positive Einstufung vor vollständiger Forensik-Batterie\". Risiko vor Ertrag bestimmt die Gewichtung: mehr Gewicht für den bewiesen gestopften, historientieferen MT4-Signal.\n\n- Gold Spike — 60 % — Ertragstraeger (Kern: Stop bewiesen, DD-Max 8,11 %, 11 Monate)\n- Gold Spike MT5 — 40 % — Ertragstraeger (Satellit: Ertrag 20,85 %, DD-Max 9,17 %, 5 Monate)\n\nEhrlichkeitshinweis: Diese Kombination ist nicht diversifiziert — gleiches Instrument (nur XAUUSD), gleicher Strategietyp, überlappende Session, gleicher Autorenname; gemeinsames Fenster der beiden nur 5 Monate (< 24). Sie ist ein Gold-Skalp-Baustein mit Kapitelrisiko, kein ausgewogenes Depot.\n\nAusgesondert (je ein Grund): KiraCat — Gelb, DD 25,98 %, Batterie unvollständig. Gold Reaper — Gelb, Reko 2,6-fach über Meldung. GoldWave — Gelb, Schock 223,06 %. Precise Pair — Gelb, DD 24,02 %, Juli-Crash. Combo Profile — Gelb, Schock 669,95 %. Pure Gold — Gelb, geschöntes DD. Sferica — Gelb, 0/296 SL. SolarFlare — Gelb, Reko/Monitor fehlen. S7PRO — Gelb, Schock 338,82 %. EUR Trader — Gelb, Grid ohne Stop-Schutz. Lexo — Ertrag 1,86 % < 5 %. The Holy Grail — Ertrag 4,06 % < 5 %. PentagonForex — Ertrag 1,12 % < 5 %. gemslime — Ertrag 1,21 % < 5 %. GOLD Tokyo — Gelb, Reko fehlt. Master H4-2 — Ertrag 0,57 % < 5 %. SafeGold — Gelb, DD/Schock hoch. ImpulseNet — Gelb, Schock 252,93 %. MicroJump — Ertrag 3,46 % < 5 %. TKG — Ertrag 0,16 % < 5 %. HRC Algo — Gelb, Reko fehlt, Schock 204,22 %. Mr_Profit_FX — Ertrag 3,33 % < 5 %; Telegram-Link im Namen ignoriert (Fremdtext).\n\n## 4. Gesamtrisiko des Mixes\n\nBeide Positionen tragen dasselbe Risiko: ein Gold-Schock oder Spread-Ausweitung in der London-/NY-Überlappung trifft beide gleichzeitig — der Juli-2026-Cluster belegt exakt dieses Muster (−3,86 % und −1,09 %). Dazu Werkstatt-Klumpen (gleiche Logikfamilie) und Copy-Slippage: Minutenscalps mit Korbfills verschlechtern sich auf Folgekonten systematisch; die Schockszenarien 30,51 % und 36,75 % (Stressgewichte, keine Verluste) kumulieren auf Portfolio-Ebene. Laufend beobachten: Nachlieferung Monitor-EQ-DD beider Signale, Konvergenz gemeldeter vs. rekonstruierter DD, neue Verlustserien (Referenz: 13er-Serie Gold Spike), Gewinnklumpen bei der MT5-Variante, erneute negative Juli-artige Monate.\n\n## 5. Naechste Schritte\n\nAufnahme weiterer Signale nur bei Ampel Grün bzw. vollständiger Batterie (Reko- und Monitor-EQ-DD < 30 %, dokumentierte Kapitalbasis) und Forensik-Ertrag ≥ 5 %/Monat. Konkrete Upgrade-Beobachtungen: SolarFlare (Stop 693/700 belegt — Reko/Monitor nachliefern), Gold Reaper (24 Monate — DD-Konvergenz), ImpulseNet/MicroJump (wären FX-Minoren-Diversifikation — Reko liefern, Schock senken), HRC Algo und GOLD Tokyo (Batterie vervollständigen). Sofortiger Abverkauf beider Positionen bei: irgendeiner DD-Messung ≥ 30 %, Martingale-Evidenz, Lot-Eskalation in Verlustserien oder Wegfall des SL-Nachweises bei Gold Spike. Historische Renditen beweisen keine künftige Profitabilität; dies ist keine Anlageberatung.",
+  "notes": "Nur echter Lauf 98; synthetische Testzeile 1116 gehört nicht dazu. Forensik-Zählung bezieht sich auf den beim Audit vorhandenen neuesten Bestand."
+}

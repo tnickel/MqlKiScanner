@@ -24,7 +24,11 @@ from pathlib import Path
 
 from . import config, db
 
-STATUS_DATEI = Path(config.DATA_DIR) / "scan_fortschritt.json"
+def _status_datei() -> Path:
+    """F9 (Fremd-Review 01.10.): Pfad ERST beim Zugriff aus der Konfiguration
+    lösen — ein einmalig beim Import berechneter Pfad ließ sich in Tests
+    nicht isolieren und schrieb in die Produktiv-Datei."""
+    return Path(config.DATA_DIR) / "scan_fortschritt.json"
 
 # Station -> (Start-Anteil, Ende-Anteil) am GESAMTBalken (0..1).
 GEWICHTE = {
@@ -44,15 +48,15 @@ def aktualisieren(station: str, done: int, total: int, detail: str,
         "detail": str(detail)[:160], "start_ts": float(start_ts),
         "modus": modus, "status": status, "updated_ts": time.time(),
     }
-    tmp = STATUS_DATEI.with_suffix(".tmp")
+    tmp = _status_datei().with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-    os.replace(tmp, STATUS_DATEI)
+    os.replace(tmp, _status_datei())
 
 
 def lesen(max_alter_s: float = 120.0) -> dict | None:
     """Aktueller Fortschritt oder None (kein/veraltet/defekt)."""
     try:
-        eintrag = json.loads(STATUS_DATEI.read_text(encoding="utf-8"))
+        eintrag = json.loads(_status_datei().read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
     if time.time() - float(eintrag.get("updated_ts") or 0) > max_alter_s:
@@ -62,7 +66,7 @@ def lesen(max_alter_s: float = 120.0) -> dict | None:
 
 def loeschen() -> None:
     try:
-        STATUS_DATEI.unlink(missing_ok=True)
+        _status_datei().unlink(missing_ok=True)
     except OSError:
         pass
 

@@ -119,6 +119,7 @@ class GlmClient:
             }
             last_error: Exception | None = None
             length_retry_offen = True
+            verworfene_tokens = 0   # F8 (Fremd-Review 01.10.)
             for attempt in range(3):
                 start = time.monotonic()
                 # Ein Transportfehler darf nicht den gesamten Signal-Lauf abbrechen.
@@ -195,8 +196,16 @@ class GlmClient:
                     self.usage.add(model, int(usage.get("total_tokens", 0)))
                     self.last_call = call_meta
                     if meta_out is not None:
+                        # F8: jeder bezahlte Versuch zaehlt — die Tokens
+                        # verworfener length-Retries aufsummieren, statt den
+                        # letzten Versuch allein zu speichern.
                         meta_out.clear()
                         meta_out.update(call_meta)
+                        if verworfene_tokens:
+                            meta_out["total_tokens"] = (
+                                int(call_meta.get("total_tokens", 0))
+                                + verworfene_tokens)
+                            meta_out["verworfene_retry_tokens"] = verworfene_tokens
                 if finish not in (None, "stop"):
                     # F-11 (Review 29.09.): finish_reason=length ist BEZAHLT
                     # und wurde bisher verworfen — ein einmaliger Retry mit
@@ -205,6 +214,7 @@ class GlmClient:
                     # erneut zu bezahlen und zu verlieren.
                     if finish == "length" and length_retry_offen:
                         length_retry_offen = False
+                        verworfene_tokens += int(usage.get("total_tokens", 0))
                         max_tokens = min(max_tokens * 2, 262_144)
                         neue_reservierung = (max_tokens
                                              + len(prompt.encode("utf-8")) // 3

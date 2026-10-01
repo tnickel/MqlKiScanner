@@ -159,8 +159,11 @@ def test_scan_ohne_mql5_login_abbrechend(fake_pipeline, monkeypatch):
                         property(lambda self: False))
     ergebnis = scan_launcher.starte_scan("full", quelle="test",
                                          log=lambda *_: None)
-    assert ergebnis["status"] == "ok"  # Lauf sauber abgeschlossen …
-    assert "Kein MQL5-Login" in ergebnis["zusammenfassung"]  # … mit klarem Grund
+    # F4 (Fremd-Review 01.10.): Ein Login-Abbruch ist KEIN erfolgreicher
+    # Lauf — status "skipped"; der Tages-/Monatsmerker bleibt unberührt
+    # (vorher galt der Monat als versorgt, obwohl null Prüfungen liefen).
+    assert ergebnis["status"] == "skipped"
+    assert "Kein MQL5-Login" in ergebnis["zusammenfassung"]
     assert "analyze" not in str(fake_pipeline.aufrufe)
 
 

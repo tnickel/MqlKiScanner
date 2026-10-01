@@ -497,6 +497,37 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   korrekt 🔴 ist (Monitor-TDD 66,5 %). +10 Tests in
   tests/test_portfolio_statistik.py.
 
+- ✅ Fremd-Review 01.10. (doc/reviews/codereview_2026-10-01/): Alle 4 P1
+  und alle P2 behoben. **F1** Equity-Reko führt USD- und PROZENT-Maximum
+  getrennt (1000→600→2000→1500 meldet jetzt 40 % statt 25 % — der Wert
+  in der Schranke war unterschätzt). **F2** Punkte ohne vollständiges
+  Floating sind keine Messpunkte mehr (fehlender Kurs erfand DD; finale
+  Schlussverluste bleiben messbar). **F5** Abdeckungs-Nenner zählt volle
+  aktive Stunden laut Trade-Zeiten abzüglich echter Marktpausen (globale
+  Bar-Lücken ≥20 h); Datenlöcher drücken die Abdeckung ehrlich.
+  **F3** ID-Kollision verwirft jetzt den GANZEN Schreibversuch (Raise)
+  statt nur das Quellenlabel zu erhalten. **F4** Login-Abbruch/leerer
+  Scope = status „skipped" — Tages-/Monatsmerker werden NICHT gesetzt;
+  Erfolgsmeldung nennt „X von Y geprüft, N endgültig fehlgeschlagen".
+  **F6** MQL5-Login nur noch bei MQL5-Direkt-Kandidaten im Scope (reine
+  Quellenläufe laufen ohne). **F7** Plattform-Dedup normalisiert
+  MT5/mt5 (MQL5-Direkt gewinnt jetzt auch beim Spiegel-Doppel).
+  **F8** length-Retry akkumuliert verworfene Tokens in meta_out statt
+  sie zu ersetzen (+ Feld verworfene_retry_tokens). **F9** STATUS_DATEI
+  lazy; neue Tests auf kanonischen Import umgestellt (kein Doppelmodul
+  mehr, das Analyse 1116 in die Produktiv-DB schrieb). **K1** Forensik-
+  Payload nennt forensik_vollstaendig, IMMER die Kapitalbasis (auch
+  CSV), Status optionaler Messungen (null = nicht verfügbar, OPTIONAL)
+  und die Ertrags-Definition (linearer Ø seit Start). **K2/K3**
+  Prompt-Regeln: Widerspruchs-Pflicht (WATCHLIST nur mit benannten
+  Bedingungen empfehlbar), SL-Kurzurteil-Verbot („0/x SL" ist nie ein
+  Grund; Abverkauf niemals wegen Wegfall des NACHWEISES) + Nutzer-
+  Präambel 01.10. (SL intern, nicht voraussetzbar; Abschätzung nur über
+  Verhaltensanalyse wie wiederholte DD-Auslöschungen). Cache/neu-Log
+  korrigiert (hole_trades liefert geändert); Journal-Läufe 95/97
+  nachträglich als abgebrochen markiert. +4 Tests
+  test_equity_rekonstruktion_fremdreview.py, +1 K1-Test.
+
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

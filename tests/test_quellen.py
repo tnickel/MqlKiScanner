@@ -613,10 +613,14 @@ def test_csv_einzahlung_schlaegt_virtuelle_annahme(monkeypatch):
     assert result.kapitalbasis_verwendet_quelle == "csv_einzahlungen"
     assert result.kapitalbasis_verwendet_usd == 1000.0
     assert "Kapitalbasis virtuell" not in (result.urteil or "")
-    # Und der Prompt-JSON bleibt ohne Annahme-Vermerk
+    # K1 (Fremd-Review 01.10.): Die Basis wird IMMER genannt (auch eine
+    # belegte CSV-Basis — null wurde von der KI als fehlende Basis
+    # missdeutet). Der Annahme-Vermerk im URTEIL bleibt trotzdem weg.
     import json as _json
     forensik = _json.loads(pipeline._forensik_json(result))
-    assert forensik["kapitalbasis_verwendet"] is None
+    assert forensik["kapitalbasis_verwendet"] == {
+        "usd": 1000.0, "quelle": "csv_einzahlungen"}
+    assert forensik["forensik_vollstaendig"] is True
 
 
 def test_roboforex_ende_zu_ende_wird_akzeptiert(monkeypatch):

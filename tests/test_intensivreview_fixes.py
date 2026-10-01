@@ -10,9 +10,11 @@ B3: Implizite Kapitalbasis (Web-Balance − Σ Trade-Netto) vor der virtuellen
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from src.mqlkiscanner import pipeline, scoring
+from mqlkiscanner import pipeline, scoring
 
 
 # ----------------------------------------------------------------- B1-Schranke
@@ -166,14 +168,14 @@ def test_b3_urteil_kennzeichnet_implizite_basis():
 # ------------------------------------------------------------------ B4 Betreuer
 
 def test_b4_betreuer_nimmt_nur_mql5_und_zaehlt_quellen(monkeypatch):
-    from src.mqlkiscanner.agenten import betreuer
+    from mqlkiscanner.agenten import betreuer
     class R:
         def __init__(self, sid, ampel, quelle):
             self.id, self.ampel, self.quelle = sid, ampel, quelle
             self.name, self.platform = f"S{sid}", "MT5"
             self.forensik_vorhanden = True
     monkeypatch.setattr(
-        "src.mqlkiscanner.pipeline.results_from_db",
+        "mqlkiscanner.pipeline.results_from_db",
         lambda settings=None: [R(1, "🟢", "mql5"), R(2, "🟡", "pelik"),
                                R(3, "🔴", "mql5"), R(4, "🟢", "pelik")])
     kands, uebersprungen = betreuer.mql5_kandidaten({})
@@ -193,7 +195,7 @@ KOPF13 = ("Time;Type;Volume;Symbol;Price;S/L;T/P;Time;Price;Commission;"
 
 
 def test_b6_correction_ist_kontobewegung(tmp_path):
-    from src.mqlkiscanner import parser
+    from mqlkiscanner import parser
     p = _schreibe_csv(tmp_path, [
         KOPF13,
         "2026.01.05 10:00:00;Buy;0.10;XAUUSD;4000.00;0;0;2026.01.05 12:00:00;"
@@ -210,7 +212,7 @@ def test_b6_abgeschnittene_letztdatenzeile_bleibt_invalid_mit_hinweis(tmp_path):
     Poisoning-Abwehr eines früheren Reviews: ein halber Download darf nie
     wie eine vollständige Historie aussehen). Neu ist der Diagnose-Hinweis
     im Fehlertext, der die wahrscheinliche Ursache nennt."""
-    from src.mqlkiscanner import parser
+    from mqlkiscanner import parser
     # Variante A: zu wenige Spalten am Dateiende
     p = _schreibe_csv(tmp_path, [
         KOPF13,
@@ -230,7 +232,7 @@ def test_b6_abgeschnittene_letztdatenzeile_bleibt_invalid_mit_hinweis(tmp_path):
 
 
 def test_b6_unvollstaendige_zeile_mitten_in_datei_bleibt_lauter_fehler(tmp_path):
-    from src.mqlkiscanner import parser
+    from mqlkiscanner import parser
     p = _schreibe_csv(tmp_path, [
         KOPF13,
         "2026.01.05 10:00:00;Buy;0.10;XAUUSD;4000.00;0;0;2026.01.05 12:00:00;"
@@ -243,14 +245,19 @@ def test_b6_unvollstaendige_zeile_mitten_in_datei_bleibt_lauter_fehler(tmp_path)
 
 
 def test_b6_ger40_loest_auf_de40_spec():
-    from src.mqlkiscanner.symbols import spec_for, normalize_symbol
-    from src.mqlkiscanner.forensics import exposure
+    import shutil
+    from mqlkiscanner import config, symbols
+    shutil.copy(Path(__file__).resolve().parents[1] / "data" / "contract_specs.json",
+                config.CONTRACT_SPECS_FILE)
+    symbols._SPECS_CACHE.clear()
+    from mqlkiscanner.symbols import spec_for, normalize_symbol
+    from mqlkiscanner.forensics import exposure
     entry = spec_for(normalize_symbol("GER40"))
     assert entry is not None and entry.get("class") == "INDEX"
 
 
 def test_b6_ingest_mappt_broker_aus_metrics():
-    from src.mqlkiscanner.ingest import metrics_zu_stats
+    from mqlkiscanner.ingest import metrics_zu_stats
     stats = metrics_zu_stats({"metrics": {"Broker": "ICM"}})
     assert stats.get("broker_server") == "ICM"
     assert metrics_zu_stats({"metrics": {}}).get("broker_server") is None
@@ -259,7 +266,7 @@ def test_b6_ingest_mappt_broker_aus_metrics():
 # ------------------------------------------------------------- B7 ⛔-Auswahl
 
 def test_b7_ausschluesse_belegen_keine_slots(tmp_path, monkeypatch):
-    from src.mqlkiscanner import fix_signale
+    from mqlkiscanner import fix_signale
     monkeypatch.setattr(fix_signale.config, "load_known_signals",
                         lambda: {"ausgeschlossen": [{"id": 999, "grund": "Test"}]})
     monkeypatch.setattr(fix_signale.config, "load_settings", lambda: {})
@@ -277,7 +284,7 @@ def test_b9_nur_404_quelle_plus_down_quelle_liest_keinen_raise():
     """Szenario Ziellauf: Quelle A (mql5-Registry) down, Quelle B antwortet,
     kennt aber jedes Signal nicht (404) — Ergebnis leer, aber KEIN Raise;
     nur wenn GAR KEINE Quelle antwortet, wird abgebrochen."""
-    from src.mqlkiscanner import downloader_client, downloader_sync, quellen
+    from mqlkiscanner import downloader_client, downloader_sync, quellen
 
     def fn_nur_404(client):
         raise downloader_client.DownloaderNotFound("gibt es nicht")
@@ -313,7 +320,12 @@ def test_b9_nur_404_quelle_plus_down_quelle_liest_keinen_raise():
 # ------------------------------------------------------- B10 Suffix-Kursdaten
 
 def test_b10_normalize_stript_die_beobachteten_suffixe():
-    from src.mqlkiscanner.symbols import normalize_symbol
+    import shutil
+    from mqlkiscanner import config, symbols
+    shutil.copy(Path(__file__).resolve().parents[1] / "data" / "contract_specs.json",
+                config.CONTRACT_SPECS_FILE)
+    symbols._SPECS_CACHE.clear()
+    from mqlkiscanner.symbols import normalize_symbol
     assert normalize_symbol("AUDCADR") == "AUDCAD"
     assert normalize_symbol("XAUUSD.F") == "XAUUSD"
     assert normalize_symbol("EURUSD+") == "EURUSD"
@@ -323,7 +335,7 @@ def test_b10_normalize_stript_die_beobachteten_suffixe():
 
 
 def test_b10_kursdaten_faellt_auf_basis_symbol_zurueck():
-    from src.mqlkiscanner.kursdaten import KursDaten
+    from mqlkiscanner.kursdaten import KursDaten
     kd = KursDaten({})
     kd._aktiv = True
 
@@ -350,7 +362,7 @@ def test_b10_kursdaten_whitelist_bleibt_nur_lesend():
     """R-Whitelist (Intensiv-Review): die MT5-Aufruf-Whitelist von kursdaten
     darf keine Order-/Kontofunktionen enthalten — statisch bewacht, wie bei
     marktdata (test_agenten_phase_c)."""
-    from src.mqlkiscanner import kursdaten
+    from mqlkiscanner import kursdaten
     verboten = {"order_send", "order_check", "positions_open", "positions_modify",
                 "positions_close", "orders_total", "positions_get",
                 "account_info", "trade_request"}
@@ -367,7 +379,7 @@ def test_b12_default_prompts_sind_mit_den_dateien_synchron():
     bei Datei-Verlust/Reset kehrte sonst die alte harte 'Ablehnung'-
     Regel zurück."""
     from pathlib import Path
-    from src.mqlkiscanner.llm import prompts as P
+    from mqlkiscanner.llm import prompts as P
     basis = Path(P.__file__).resolve().parents[3] / "config" / "prompts"
     for konst, datei in [("DEFAULT_TRADE_ANALYSE", "trade_analyse.md"),
                          ("DEFAULT_RISIKO_ANALYSE", "risiko_analyse.md"),
@@ -394,12 +406,12 @@ def test_b14_cli_einzelrolle_respektiert_rolle_lock(tmp_path, monkeypatch, caplo
     """B14: CLI-Einzelstart überspringt sauber, wenn der Rollen-Lock von
     einem lebenden Prozess gehalten wird (vorher: Doppel-Export möglich)."""
     import sys
-    from src.mqlkiscanner.agenten import __main__ as cli, lock
-    from src.mqlkiscanner import config
+    from mqlkiscanner.agenten import __main__ as cli, lock
+    from mqlkiscanner import config
 
     monkeypatch.setattr(config, "DATA_DIR", tmp_path)
     aufgerufen = []
-    monkeypatch.setattr("src.mqlkiscanner.agenten.dirigent.tageslauf",
+    monkeypatch.setattr("mqlkiscanner.agenten.dirigent.tageslauf",
                         lambda **kw: aufgerufen.append(kw) or {"status": "ok"})
     with lock.lauf_lock(tmp_path, lock.rolle_lock_name("dirigent")):
         monkeypatch.setattr(sys, "argv", ["prog", "--once"])
@@ -409,3 +421,28 @@ def test_b14_cli_einzelrolle_respektiert_rolle_lock(tmp_path, monkeypatch, caplo
     monkeypatch.setattr(sys, "argv", ["prog", "--once"])
     cli.main()
     assert len(aufgerufen) == 1
+
+
+# ---------------------------------------------- K1 (Fremd-Review 01.10.2026)
+
+def test_k1_forensik_payload_nennt_vollstaendigkeit_und_basis():
+    """K1: 18/54 Gesamtberichte erklärten die Batterie aus null-Feldern
+    fälschlich für unvollständig — der Payload muss Vollständigkeit,
+    IMMER eine Kapitalbasis (auch CSV) und Status optionaler Messungen
+    sowie die Ertrags-Definition explizit nennen."""
+    import json as _json
+    r = pipeline.ScanResult(
+        id=1, name="X", quelle="mql5", platform="MT4",
+        forensik_vorhanden=True, kapitalbasis_verwendet_usd=3116.0,
+        kapitalbasis_verwendet_quelle="csv_einzahlungen",
+        ertrag_monat_pct=24.54, ertrag_monat_pct_forensik=8.71)
+    payload = _json.loads(pipeline._forensik_json(r))
+    assert payload["forensik_vollstaendig"] is True
+    basis = payload["kapitalbasis_verwendet"]
+    assert basis == {"usd": 3116.0, "quelle": "csv_einzahlungen"}
+    status = payload["status_optionaler_messungen"]
+    assert "OPTIONAL" in status["reko_eq_dd"]
+    assert "OPTIONAL" in status["monitor_eq_dd"]
+    assert "linearer Durchschnitt" in payload["ertrag_forensik_definition"]
+    kandidat = _json.loads(pipeline._kandidat_json(r))
+    assert "maßgeblich" in kandidat["ertrag_hinweis"]

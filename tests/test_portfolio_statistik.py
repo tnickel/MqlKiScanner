@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from src.mqlkiscanner import pipeline, portfolio_statistik
-from src.mqlkiscanner.llm import prompt_fill
+from mqlkiscanner import pipeline, portfolio_statistik
+from mqlkiscanner.llm import prompt_fill
 
 KOPF = ("Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;"
         "Swap;Profit")
@@ -139,7 +139,7 @@ def test_portfolio_prompt_leerer_default_fuellt_platzhalter():
 
 def test_defaults_bleiben_mit_datei_synchron():
     basis = Path(prompt_fill.__file__).resolve().parents[3] / "config" / "prompts"
-    from src.mqlkiscanner.llm import prompts as P
+    from mqlkiscanner.llm import prompts as P
     assert P.DEFAULT_PORTFOLIO == (basis / "portfolio.md").read_text(encoding="utf-8")
 
 
@@ -153,6 +153,8 @@ def test_run_portfolio_reicht_statistik_an_prompt(tmp_path, monkeypatch):
         pipeline.prompt_fill, "build_portfolio_prompt",
         lambda e, k, statistik_json="": gefangen.update(
             {"stat": statistik_json}) or "Kurzfassung: ok")
+    from mqlkiscanner import db
+    db.init_db()
     pipe = pipeline.ScanPipeline()
     pipe.llm = SimpleNamespace(
         has_key=True, usage=SimpleNamespace(total_tokens=0),

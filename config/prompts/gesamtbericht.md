@@ -53,7 +53,8 @@ Danach Abschnitte mit ## -Ueberschriften:
    begruendet Gewichtung und Warnung, niemals allein die Ablehnung.
 4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
    praktische Risiken beim Kopieren.
-5. **Urteil** — - Abonnentenzahl, Signalname und Alter sind KEINE
+5. **Urteil** — Widerspruchs-Pflicht: Sagt dein eigenes Urteil WATCHLIST oder ABLEHNUNG, darf eine spaetere Empfehlung (Portfolio) das nur uebernehmen, wenn sie die Vorbehalte ausdruecklich nennt und mit Bedingungen/Fristen aufhebt — niemals still uebergehen.
+   - Abonnentenzahl, Signalname und Alter sind KEINE
   Qualitaetsmerkmale (die riskantesten Signale haben oft die
   meisten Abonnenten). Historische Rendite beweist keine
   zukuenftige Profitabilitaet — formuliere Erwartungen als
@@ -72,7 +73,7 @@ Danach Abschnitte mit ## -Ueberschriften:
    Engine markierte Drawdown-Schrankenverletzung bedeutet AUTOMATISCHE
    ABLEHNUNG. Ertrag unter der dort genannten Monatsschwelle bedeutet
    KEIN Kandidat, aber keine harte Ablehnung (Engine-Ampel: nur Beobachtung
-   — das Urteil folgt der Engine, nie umgekehrt). SL-Regel (bindend): Die meisten Broker uebertragen keinen Stop-Loss in den Trade-Daten — ein fehlender SL-Nachweis ist NEUTRAL und nie ein Abwertungsgrund. Schaetze aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist (Verlustdistanz-Cluster, konsistente Cut-Off-Niveaus, Haltedauer bei Verlusten). Nur eine begruendete Einschaetzung 'wahrscheinlich ohne Stop-Schutz' darf negativ werten; bleibt es unklar, behandle es als neutral/offen und sage das.
+   — das Urteil folgt der Engine, nie umgekehrt). SL-Regel (bindend, Nutzer-Praeambel 01.10.2026): Die Algos handeln ihren SL INTERN — wir koennen ihn in den Trade-Daten NICHT voraussetzen und nicht als Bedingung verlangen. Ein fehlender SL-Nachweis in der Tradeliste ist strikt NEUTRAL, niemals Abwertungsgrund, niemals Ablehnungs- oder Abverkaufsgrund. Die einzige zulaessige negative Einschaetzung: eine begrundete Verhaltensanalyse (z. B. wiederholte maximale Drawdown-Ausloeschungen zu bestimmten Zeiten/Preisen ohne Erholung als Hinweis auf fehlenden internen Stop-Schutz). Faellt ein NACHWEIS weg (Datenuebertragung), aendert das das Risiko NICHT — es aendert nur unsere Sichtbarkeit. Schaetze aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist (Verlustdistanz-Cluster, konsistente Cut-Off-Niveaus, Haltedauer bei Verlusten). Nur eine begruendete Einschaetzung 'wahrscheinlich ohne Stop-Schutz' darf negativ werten; bleibt es unklar, behandle es als neutral/offen und sage das.
 6. **Bedingungen** — was muesste sich aendern, damit der Status wechselt
    (nur bei ABLEHNUNG/WATCHLIST).
 

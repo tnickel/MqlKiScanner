@@ -36,6 +36,10 @@ _PREIS_TOLERANZ = 0.001
 # Ab-deckem Anteil offen gehaltener H1-Punkte mit Kursen, damit das
 # Ergebnis in die Schranke eingeht (sonst nur informativ).
 SCHRANKE_MIN_ABDECKUNG = 0.95
+# F5 (Fremd-Review 01.10.): Globale Bar-Luecken ab dieser Stundenlaenge
+# gelten als Marktpause (Wochenende/Feiertag) und zaehlen NICHT als
+# Datenluecke in den Abdeckungs-Nenner. Kuerzere Luecken sind Datenloecher.
+MARKTPAUSE_MIN_H = 20
 
 
 def _epoch(naive: dt.datetime) -> int:
@@ -247,13 +251,39 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             fx_cache[key] = kurs["rate"] if kurs else None
         return fx_cache[key]
 
-    curve: list[tuple[int, float]] = []
+    curve: list[tuple[int, float, bool]] = []   # (stunde, equity, messpunkt)
     realisiert = 0.0
     schliess_idx = 0
     offen_idx = 0
     aktiv: list = []           # (end_epoch_stunde_exklusiv, trade)
     punkte_mit_kurs = 0
     punkte_ohne_kurs = 0
+    # F5 (Fremd-Review 01.10.): Der Abdeckungs-Nenner darf nicht nur aus
+    # vorhandenen Bar-Stunden bestehen — sonst verschwinden Datenlöcher
+    # still aus der Rechnung (Probe: 8 offene Stunden, 3 mit Bars -> 100 %).
+    # Nenner: jede volle Stunde, in der laut Trade-Zeiten eine Position
+    # aktiv wäre, MINUS erkannte Marktpausen (globale Bar-Luecken >= 20 h,
+    # klassisch Wochenende/Feiertag — solche Stunden sind keine Datenlücke).
+    aktiv_laut_zeit: set[int] = set()
+    for _offen, _ende, _t in offen_sort:
+        aktiv_laut_zeit.update(range((_offen // 3600) * 3600, _ende, 3600))
+    bar_stunden: set[int] = set(raster)
+    pausen: set[int] = set()
+    if aktiv_laut_zeit and bar_stunden:
+        erste = min(aktiv_laut_zeit)
+        letzte = max(aktiv_laut_zeit)
+        stunde = erste
+        luecke: list[int] = []
+        while stunde <= letzte:
+            if stunde in bar_stunden:
+                if len(luecke) >= MARKTPAUSE_MIN_H:
+                    pausen.update(luecke)
+                luecke = []
+            elif stunde in aktiv_laut_zeit:
+                luecke.append(stunde)
+            stunde += 3600
+        if len(luecke) >= MARKTPAUSE_MIN_H:
+            pausen.update(luecke)
 
     for punkt in raster:
         while schliess_idx < len(schliessungen) and schliessungen[schliess_idx][0] <= punkt:
@@ -286,7 +316,15 @@ def rekonstruiere(parsed, kurse, startkapital: float,
                 punkte_mit_kurs += 1
             else:
                 punkte_ohne_kurs += 1
-        curve.append((punkt, startkapital + realisiert + floating))
+        # F2 (Fremd-Review 01.10.): Ein Punkt mit AKTIVER Position, aber
+        # unvollstaendigem Floating ist kein Messpunkt — sein fehlendes PnL
+        # wuerde sonst einen erfundenen Rueckfall (oder eine verdeckte
+        # Belastung) erzeugen. Stunden ohne offene Position bleiben
+        # Messpunkte (floating=0 ist dort korrekt — der finale
+        # Schlussverlust, B1-Fix 29.09., muss messbar bleiben).
+        # Realisiert laeuft kumulativ weiter, spaeter vollstaendige Punkte
+        # bleiben korrekt; die DD-Messung ueberspringt die Luecke.
+        curve.append((punkt, startkapital + realisiert + floating, kurs_da))
         # Abbruch ERST NACH dem Anhängen: Der letzte Punkt (alles realisiert,
         # nichts mehr offen) trägt den Endkontostand — exakt dort entsteht der
         # finale Verlust. Der frühere break davor ließ echte Schlussverluste
@@ -303,21 +341,40 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # Fehler) wuerde den Rueckfallvergleich still falsch machen und am Ende
     # "0 % DD" melden — ohne dass verlaesslich es abfingt. Nicht endliche
     # Werte = Reko unbrauchbar -> ehrlich skippen statt Schoenrechnen.
-    if not all(math.isfinite(wert) for _t, wert in curve):
+    if not all(math.isfinite(wert) for _t, wert, _m in curve):
         return {"test": "equity_rekonstruktion", "status": "skipped",
                 "grund": "NaN/Inf in der Equity-Kurve (Kursdaten unbrauchbar)"}
 
     hoch = curve[0][1]
     dd_usd = 0.0
-    dd_pct = 0.0
-    for _t, wert in curve:
-        hoch = max(hoch, wert)
+    dd_pct = 0.0      # relative Groesse am USD-Maximum (Anker)
+    dd_pct_max = 0.0  # F1 (Fremd-Review 01.10.): MAXIMALES RELATIVES DD —
+                      # getrennt fuehren wie drawdown._max_drawdown. Vorher
+                      # ersetzte ein spaeterer groesserer USD-Rueckfall bei
+                      # gewachsenem Konto einen frueheren groesseren
+                      # PROZENTVerlust (1000->600->2000->1500 meldete 25 %
+                      # statt 40 %) — genau die Zahl, die in die Schranke geht.
+    for _t, wert, messpunkt in curve:
+        if not messpunkt:
+            continue   # F2: unvollstaendige Punkte sind keine Messpunkte
+        if wert > hoch:
+            hoch = wert
         rueckfall = hoch - wert
         if rueckfall > dd_usd:
             dd_usd = rueckfall
             dd_pct = (rueckfall / hoch * 100.0) if hoch > 0 else 0.0
+        if hoch > 0:
+            rel = rueckfall / hoch * 100.0
+            if rel > dd_pct_max:
+                dd_pct_max = rel
 
     offen_gesamt = punkte_mit_kurs + punkte_ohne_kurs
+    # F5: Nenner = aktive Stunden laut Trade-Zeiten abzueglich Marktpausen
+    # (globale Bar-Luecken >= MARKTPAUSE_MIN_H). Der bisherige Nenner
+    # (Bar-Stunden mit Aktivitaet) liess Datenloecher still verschwinden.
+    soll_stunden = len(aktiv_laut_zeit) - len(pausen & aktiv_laut_zeit)
+    if soll_stunden > 0 and soll_stunden > offen_gesamt:
+        offen_gesamt = soll_stunden
     abdeckung = punkte_mit_kurs / offen_gesamt if offen_gesamt else 1.0
     # Verlässlich nur mit vollständiger Basis: Fehlen Trades (Kurse ODER
     # Kontrakt), fehlt deren PnL in Equity UND realisiert — bis zu 20 %
@@ -332,7 +389,9 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         "status": "ok" if verlaesslich else "unvollstaendig",
         "gmt_offset_h": offset // 3600,
         "gmt_trefferquote": gmt["trefferquote"],
-        "equity_dd_pct": round(dd_pct, 2),
+        "equity_dd_pct": round(max(dd_pct, dd_pct_max), 2),
+        "equity_dd_pct_am_usd_max": round(dd_pct, 2),
+        "equity_dd_pct_max_rel": round(dd_pct_max, 2),
         "equity_dd_usd": round(dd_usd, 2),
         "abdeckung_pct": round(abdeckung * 100, 1),
         "rasterpunkte": len(curve),

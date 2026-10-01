@@ -499,6 +499,12 @@ def _kandidat_json(r: ScanResult) -> str:
         "abo_preis_usd": r.abo_preis_usd,
         "growth_pct": r.growth_pct, "ertrag_monat_pct": r.ertrag_monat_pct,
         "ertrag_monat_pct_forensik": r.ertrag_monat_pct_forensik,
+        # K1: Plattformwert = Selbstauskunft auf EIGENER Basis; der
+        # Forensikwert ist der comparable Maßstab (s. Definition im
+        # Forensik-JSON). Kein Widerspruch, sondern zwei Basen.
+        "ertrag_hinweis": "ertrag_monat_pct_forensik ist maßgeblich "
+                          "(siehe ertrag_forensik_definition im "
+                          "Forensik-JSON)",
         "pf": r.pf, "dd_equity_pct": r.dd_equity_pct,
         "dd_balance_pct": r.dd_balance_pct,
         "broker_server": r.broker_server,
@@ -536,15 +542,36 @@ def _forensik_json(r: ScanResult) -> str:
         "martingale_evidenz": r.martingale_evidenz,
         "stop_nachweis": r.stop_nachweis,
         "stop_evidence": r.stop_evidence,
-        # Bezugsgröße der Risikoprozente, solange sie eine ANNAHME ist: Die
-        # KI soll wissen, ob DD/Schock gegen eine virtuelle/implizite Basis
-        # gerechnet sind (Interpretationsauftrag, nicht Neu-Rechnen —
-        # Design-Regel 1). Belegte/csv-Basen ändern die Aussage nicht und
-        # bleiben draußen.
+        # K1 (Fremd-Review 01.10.): Die Engine-Vollstaendigkeit EXPLIZIT
+        # nennen — 18 von 54 Gesamtberichten erklaerten die Pflichtbatterie
+        # aus nullwertigen Payload-Feldern fälschlich für unvollständig,
+        # obwohl die Engine vollstaendig=true gespeichert hatte. Und die
+        # Kapitalbasis IMMER liefern (auch belegt per CSV): null wurde als
+        # "fehlende Basis" missdeutet.
+        "forensik_vollstaendig": bool(r.forensik_vorhanden and not r.fehler),
         "kapitalbasis_verwendet": (
-            {"usd": r.kapitalbasis_verwendet_usd, "quelle": r.kapitalbasis_verwendet_quelle}
-            if r.kapitalbasis_verwendet_quelle in
-            (KAPITALBASIS_QUELLE_VIRTUELL, KAPITALBASIS_QUELLE_IMPLIZIT) else None),
+            {"usd": r.kapitalbasis_verwendet_usd,
+             "quelle": r.kapitalbasis_verwendet_quelle or "csv_einzahlungen"}
+            if r.kapitalbasis_verwendet_usd is not None else None),
+        # K1: Optionale Messungen brauchen einen STATUS statt stiller null —
+        # null heißt jetzt ausdrücklich "Messung nicht verfügbar/geskippt",
+        # nicht "Pflicht fehlt".
+        "status_optionaler_messungen": {
+            "reko_eq_dd": ("gemessen" if r.equity_dd_rekonstruiert_pct is not None
+                           else "nicht_verfuegbar (kein Terminal/Abdeckung "
+                                "unter 95 %/Monitor liefert Wert) — OPTIONAL, "
+                                "kein Pflichtteil"),
+            "monitor_eq_dd": ("gemessen" if r.monitor_trade_eq_dd_pct is not None
+                              else "nicht_verfuegbar (Datenquelle ohne "
+                                   "Zweitmessung) — OPTIONAL, kein Pflichtteil"),
+        },
+        # K1/B2-Präzisierung (Fremd-Review 01.10.): Definition des
+        # Forensik-Ertrags offenlegen — linearer Ø seit Start auf der
+        # Start-Basis, KEINE zeitgewichtete Rendite; die Plattformzahl kann
+        # eine andere Basis nutzen.
+        "ertrag_forensik_definition": (
+            "linearer Durchschnitt: Summe Trade-Netto / Startkapital / Monate "
+            "seit erstem Trade; Basis identisch mit DD-/Schock-Rechnung"),
         # Nachgemessener Equity-DD aus Kursdaten (floating inklusive) — die KI
         # soll ihn als Messung deuten und gegen den gemeldeten Wert stellen.
         "equity_dd_rekonstruiert_pct": r.equity_dd_rekonstruiert_pct,
@@ -807,9 +834,15 @@ class ScanPipeline:
         if modus == "beides":
             from . import ingest
             quellen_signale = ingest.kandidaten_aus_quellen(log)
-            gesehen = {(s.get("id"), s.get("platform")) for s in signals}
+            # F7 (Fremd-Review 01.10.): Plattform-Normalisierung — der
+            # Crawler liefert 'MT5'/'MT4', der Quellen-Ingest 'mt5'/'mt4';
+            # der exakte Vergleich nahm denselben MQL5-Spiegel-Eintrag
+            # zweimal auf (Slots/KI doppelt verbraucht).
+            gesehen = {(s.get("id"), str(s.get("platform") or "").lower())
+                       for s in signals}
             neu = [s for s in quellen_signale
-                   if (s.get("id"), s.get("platform")) not in gesehen]
+                   if (s.get("id"), str(s.get("platform") or "").lower())
+                   not in gesehen]
             signals.extend(neu)
             log(f"Vereinigt: +{len(neu)} Signale nur aus Datenquellen "
                 f"(MQL5-Direkt gewinnt bei Doppelung) — gesamt {len(signals)}.")
@@ -969,8 +1002,12 @@ class ScanPipeline:
                 try:
                     if quelle_row is not None:
                         from . import ingest
-                        path, from_cache = ingest.hole_trades(
+                        # Rueckgabe ist (pfad, geaendert) — Cache-Meldung
+                        # entsprechend drehen (Fremd-Review 01.10.: Log
+                        # vertauschte Cache/neu geladen).
+                        path, geaendert = ingest.hole_trades(
                             quelle_row, res.id, quelle_version)
+                        from_cache = not geaendert
                     else:
                         path, from_cache = exporter.export_positions(
                             session, res.id,

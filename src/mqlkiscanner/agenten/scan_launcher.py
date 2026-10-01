@@ -64,8 +64,23 @@ def starte_scan(modus: str, quelle: str = "daemon", log=print) -> dict:
     try:
         with lock.lauf_lock(config.DATA_DIR):
             ergebnis = _scan_innerhalb(modus, settings, lauf_id, log)
-        aktion = f"Autonomer {modus_name} durchgeführt"
         resultat = ergebnis.get("resultat") or ergebnis["zusammenfassung"]
+        # F4 (Fremd-Review 01.10.): Ein Login-Abbruch/leerer Scope ist KEIN
+        # erfolgreicher Lauf — Status "skipped" darf den Tages-/Monats-
+        # merker NICHT setzen, sonst gilt der Monat als versorgt, obwohl
+        # null Prüfungen liefen (Gegenprobe bestätigte genau das).
+        if ergebnis.get("status") == "skipped":
+            aktion = f"Autonomer {modus_name} übersprungen"
+            journal.lauf_abschliessen(lauf_id, "skipped", ergebnis["zusammenfassung"],
+                                      aktion=aktion, resultat=resultat)
+            journal.meldung_speichern(
+                MELDUNG_TYP, f"Scan {modus} ({modus_name}) ÜBERSPRUNGEN",
+                resultat, prioritaet=2, quellen=[f"lauf#{lauf_id}"])
+            log(f"Scan {modus} übersprungen: {resultat} — Merker NICHT gesetzt.")
+            return {"status": "skipped", "lauf_id": lauf_id, "aktion": aktion,
+                    "resultat": resultat, **{k: v for k, v in ergebnis.items()
+                                             if k != "status"}}
+        aktion = f"Autonomer {modus_name} durchgeführt"
         journal.lauf_abschliessen(lauf_id, "ok", ergebnis["zusammenfassung"],
                                   aktion=aktion, resultat=resultat)
         journal.meldung_speichern(
@@ -151,23 +166,37 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
         journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
                                        status="skipped",
                                        detail={"grund": grund, "modus": modus})
-        return {"zusammenfassung": grund, "geprueft": 0, "berichte": 0}
+        return {"status": "skipped", "zusammenfassung": grund,
+                "geprueft": 0, "berichte": 0}
 
-    session = Mql5Session(settings)
-    if not session.has_credentials:
-        grund = "Kein MQL5-Login konfiguriert — autonomer Scan nicht möglich."
-        journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
-                                       status="skipped",
-                                       detail={"grund": grund})
-        return {"zusammenfassung": grund, "geprueft": 0, "berichte": 0}
-    from ..mql5.browser_session import ensure_mql5_cookies
-    if not ensure_mql5_cookies(settings, session,
-                               log=lambda m: log(f"  [login] {m}")):
-        grund = "MQL5-Login fehlgeschlagen — Scan abgebrochen (Login prüfen)."
-        journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
-                                       status="skipped",
-                                       detail={"grund": grund})
-        return {"zusammenfassung": grund, "geprueft": 0, "berichte": 0}
+    # F6 (Fremd-Review 01.10.): MQL5-Login ist nur fuer Direkt-Exporte
+    # noetig — Kandidaten aus Datenquellen (quelle_kuerzel gesetzt) kommen
+    # ohne MQL5-Kontakt durch die Forensik. Ein reiner Quellenlauf darf
+    # nicht an fehlenden Credentials scheitern.
+    braucht_mql5 = any(not c.get("quelle_kuerzel") for c in scope)
+    session = None
+    if braucht_mql5:
+        session = Mql5Session(settings)
+        if not session.has_credentials:
+            grund = ("Kein MQL5-Login konfiguriert — für MQL5-Direkt-Kandidaten "
+                     "nicht möglich (reine Quellen-Kandidaten wären möglich).")
+            journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
+                                           status="skipped",
+                                           detail={"grund": grund})
+            return {"status": "skipped", "zusammenfassung": grund,
+                    "geprueft": 0, "berichte": 0}
+        from ..mql5.browser_session import ensure_mql5_cookies
+        if not ensure_mql5_cookies(settings, session,
+                                   log=lambda m: log(f"  [login] {m}")):
+            grund = "MQL5-Login fehlgeschlagen — Scan abgebrochen (Login prüfen)."
+            journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
+                                           status="skipped",
+                                           detail={"grund": grund})
+            return {"status": "skipped", "zusammenfassung": grund,
+                    "geprueft": 0, "berichte": 0}
+    else:
+        log("Keine MQL5-Direkt-Kandidaten im Scope — MQL5-Login nicht nötig "
+            "(reiner Quellenlauf).")
 
     journal.schritt_protokollieren(
         lauf_id, "dirigent", "scan",
@@ -234,7 +263,13 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
     # Ampel-Wechsel sind bereits über analyze_candidate in der DB-Chronik —
     # der Wechsel-Watcher des Melders übernimmt sie beim nächsten Tick.
     entschieden = sum(1 for r in ergebnisse if r.forensik_vorhanden)
-    resultat = (f"{entschieden} Signale geprüft, {berichte} Berichte erstellt"
+    # Fremd-Review 01.10.: Erfolgsmeldung nennt Versuche UND endgueltige
+    # Fehlschlaege — „54 geprüft" allein verschwieg bisher 8 Ausfälle.
+    fails = len(scope) - len(ergebnisse) + sum(
+        1 for r in ergebnisse if not r.forensik_vorhanden)
+    resultat = (f"{entschieden} von {len(scope)} Signalen geprüft"
+                + (f", {fails} endgültig fehlgeschlagen" if fails else "")
+                + f", {berichte} Berichte erstellt"
                 + (", Portfolio aktualisiert." if portfolio else "."))
     zusammenfassung = f"{modus}: {resultat}"
     return {"zusammenfassung": zusammenfassung, "geprueft": entschieden,
