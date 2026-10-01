@@ -157,9 +157,11 @@ running = command is not None or _thread_lebt
 hero_banner = Path(__file__).resolve().parents[1] / "assets" / "hero_scan_banner.jpg"
 page_header(
     "RISIKOPRÜFUNG",
-    "MQL5-Signale belastbar prüfen",
-    "Eine Analyse verbindet Handelsdaten, forensische Risikotests und optional "
-    "KI-Berichte. **Schutz muss belegt sein; 30 % Drawdown ist die harte Grenze.**",
+    "Handelssignale aller Quellen belastbar prüfen",
+    "Eine Analyse verbindet Handelsdaten aus allen angeschlossenen Quellen "
+    "(MQL5, Pelican, RoboForex, Vantage, Zulu — je nach Konfiguration), "
+    "forensische Risikotests und optional KI-Berichte. **Schutz muss belegt "
+    "sein; 30 % Drawdown ist die harte Grenze.**",
     image_path=str(hero_banner) if hero_banner.exists() else None,
 )
 if reattached:
