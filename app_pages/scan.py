@@ -352,23 +352,26 @@ def _live_status() -> None:
     # auf HTML-Elemente. Daher: eine Button-Reihe in Stations-Optik je
     # Station, die den jeweiligen Erklär-Dialog öffnet (Nutzer-Wunsch
     # 02.10.: „alles nachvollziehbar, bei jedem Schritt").
+    # Lazy: Dialog-Funktionen sind als @st.dialog weiter unten im Modul
+    # definiert — beim Fragment-Tick werden sie per globals() nachgeschlagen,
+    # nicht als frühe Referenz eingebettet (AppTest-Falle: Name vor Definition).
     _station_knoepfe = {
-        "listen": ("📡 Signale", _dialog_listen),
-        "kandidaten": ("🔍 Auswahl", _dialog_auswahl),
-        "forensik": ("🔬 Forensik", _dialog_forensik),
-        "llm": ("🧠 KI-Berichte", _dialog_llm),
-        "portfolio": ("🥧 Portfolio", _dialog_portfolio),
-        "downloader": ("🔄 Abgleich", _dialog_downloader),
+        "listen": ("📡 Signale", "_dialog_listen"),
+        "kandidaten": ("🔍 Auswahl", "_dialog_auswahl"),
+        "forensik": ("🔬 Forensik", "_dialog_forensik"),
+        "llm": ("🧠 KI-Berichte", "_dialog_llm"),
+        "portfolio": ("🥧 Portfolio", "_dialog_portfolio"),
+        "downloader": ("🔄 Abgleich", "_dialog_downloader"),
     }
     _spalten = st.columns(len(STEPS))
     for _spalte, (_sid, _title, *_rest) in zip(_spalten, STEPS):
         with _spalte:
-            _label, _fn = _station_knoepfe.get(_sid, (_title, None))
-            if _fn is not None:
+            _label, _fname = _station_knoepfe.get(_sid, (_title, None))
+            if _fname is not None:
                 if st.button(_label, key=f"station_dialog_{_sid}",
                              use_container_width=True,
                              help="Klicken für Erklärung und Details dieser Station"):
-                    _fn()
+                    globals()[_fname]()
 
     # Letzte Meldungen statt Logfile-Wand: kurz beweisen, dass sich was tut.
     recent = _recent_log_lines()
