@@ -30,6 +30,11 @@ Schockbetrag in USD am Peak. Zitiere Einheiten exakt.
 
 ## Aufgabe
 Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
+0. **RetDD-Effizienz** (Nutzer-Regel 01.10.): Bewerte retdd_monat
+   (Forensik-Ertrag je Prozent DD-Maximum) und retdd_jahr. Niedriges
+   Risiko allein genügt nicht — ohne angemessenen Gewinn ist ein Signal
+   unattraktiv. >= 0.5 effizient, 0.167 = exakte Projektmaße, darunter
+   ineffizient (nenne beides: Ertrag UND Drawdown).
 1. **Risikobefunde**: Martingale/Grid/Exposure/Stop-Befund/Verlustserien —
    mit Zahlen. Fehlender SL-Nachweis ist NEUTRAL (viele Broker uebertragen
    keinen SL); nenne Verlustdistanz-Muster als Hinweis, ohne abzuwerten.

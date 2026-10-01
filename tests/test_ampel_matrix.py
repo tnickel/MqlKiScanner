@@ -24,6 +24,8 @@ def _result(**kwargs) -> pipeline.ScanResult:
         max_verlustserie=7, verlustserie_usd=-120.0, forensik_vorhanden=True,
         shock_pct_max=17.5, shock_pct_peak_time="2026-08-19 16:12:32",
         shock_pct_peak_account=1966.84,  # Kontostand in USD am Peak (kein %!)
+        # RetDD (Nutzer 01.10.): Referenz 21,5 %/M bei 8,11 % DD = 2.65/M
+        ertrag_monat_pct_forensik=21.5, retdd_monat=2.65, retdd_jahr=31.8,
     )
     base.update(kwargs)
     return pipeline.ScanResult(**base)
@@ -81,12 +83,15 @@ def test_stop_nachweis_stufen():
 
 
 def test_ertrag_grenzwerte():
-    f = lambda wert: _matrix(_result(ertrag_monat_pct=wert))["ertrag"].ampel
+    # Forensik-Wert nullen, damit der variierte Plattformwert greift
+    f = lambda wert: _matrix(_result(ertrag_monat_pct=wert,
+                                     ertrag_monat_pct_forensik=None))["ertrag"].ampel
     assert f(5.0) == GRUEN      # Schwelle ist inklusiv
     assert f(4.99) == GELB
     assert f(0.0) == GELB
     assert f(-1.2) == ORANGE
-    assert _matrix(_result(ertrag_monat_pct=None))["ertrag"].ampel == KEINE_DATEN
+    assert _matrix(_result(ertrag_monat_pct=None,
+                           ertrag_monat_pct_forensik=None))["ertrag"].ampel == KEINE_DATEN
 
 
 def test_score_grenzwerte():
@@ -142,7 +147,8 @@ def test_listen_kriterium_ausschluss_watchlist_frei(monkeypatch):
 def test_eigene_grenzwerte_aus_settings():
     settings = {"schranke_eq_dd_pct": 20.0, "min_ertrag_pct_monat": 15.0}
     matrix = _matrix(_result(dd_equity_pct=22.0, trading_dd_pct=None,
-                             ertrag_monat_pct=12.0), settings)
+                             ertrag_monat_pct=12.0,
+                             ertrag_monat_pct_forensik=None), settings)
     assert matrix["dd_schranke"].ampel == ROT      # 22 > 20
     assert matrix["ertrag"].ampel == GELB          # 12 < 15
     assert "20 %" in matrix["dd_schranke"].detail

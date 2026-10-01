@@ -82,6 +82,11 @@ def statistik(results: list) -> dict:
         negativ = sorted(m for m, v in kurve.items() if v < 0)
         zeilen.append({
             "id": r.id, "name": r.name,
+            # RetDD (Nutzer 01.10.): Ertrag je Prozent DD — Effizienz für
+            # die Priorisierung im Portfolio (gleiche Rendite bei halbem
+            # Drawdown ist doppelt so gut).
+            "retdd_monat": getattr(r, "retdd_monat", None),
+            "retdd_jahr": getattr(r, "retdd_jahr", None),
             "monate": len(kurve),
             "erste": min(kurve) if kurve else None,
             "letzte": max(kurve) if kurve else None,
@@ -142,7 +147,11 @@ def statistik(results: list) -> dict:
             "Diversifikationsaussage schwach belegt und als solche zu nennen; "
             "(3) Instrument-Overlap — Paare mit vielen gemeinsamen Symbolen "
             "tragen gemeinsames Risiko selbst bei r nahe 0 (gleiche "
-            "Werkstatt, gleiche Instrumente)."),
+            "Werkstatt, gleiche Instrumente). "
+            "(4) RetDD je Signal (retdd_monat/retdd_jahr) — priorisiere "
+            "Effizienz: gleiche Rendite bei halbem Drawdown ist doppelt so "
+            "gut; Signale mit retdd_monat < 0.2 nicht empfehlen, auch wenn "
+            "Einzelkriterien grün sind."),
         "signale": zeilen,
         "verlustmonate_cluster": cluster,
         "gemeinsames_fenster": fenster,

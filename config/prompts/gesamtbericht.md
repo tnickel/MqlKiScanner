@@ -53,7 +53,12 @@ Danach Abschnitte mit ## -Ueberschriften:
    begruendet Gewichtung und Warnung, niemals allein die Ablehnung.
 4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
    praktische Risiken beim Kopieren.
-5. **Urteil** — Widerspruchs-Pflicht: Sagt dein eigenes Urteil WATCHLIST oder ABLEHNUNG, darf eine spaetere Empfehlung (Portfolio) das nur uebernehmen, wenn sie die Vorbehalte ausdruecklich nennt und mit Bedingungen/Fristen aufhebt — niemals still uebergehen.
+5. **Urteil** — Nenne IMMER retdd_monat/retdd_jahr (Ertrag je Prozent
+   Drawdown) und bewerte die EFFIZIENZ: >= 0.5 attraktiv, 0.167 = exakte
+   Projektmaße, darunter unattraktiv trotz moeglicherweise grüner
+   Einzelkriterien — Risiko ohne angemessene Bezahlung. Priorisiere bei
+   der Empfehlungswürdigung RetDD über die absolute Rendite.
+   Widerspruchs-Pflicht: Sagt dein eigenes Urteil WATCHLIST oder ABLEHNUNG, darf eine spaetere Empfehlung (Portfolio) das nur uebernehmen, wenn sie die Vorbehalte ausdruecklich nennt und mit Bedingungen/Fristen aufhebt — niemals still uebergehen.
    - Abonnentenzahl, Signalname und Alter sind KEINE
   Qualitaetsmerkmale (die riskantesten Signale haben oft die
   meisten Abonnenten). Historische Rendite beweist keine

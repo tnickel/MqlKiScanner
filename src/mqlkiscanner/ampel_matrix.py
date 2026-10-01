@@ -114,6 +114,18 @@ KRITERIEN: list[Kriterium] = [
         "schlechten Marktregime. Grün = unter 10, gelb = 10–19, orange = "
         "ab 20 Verlusten in Folge (Information, keine harte Schranke)."),
     Kriterium(
+        "retdd", "RetDD (Ertrag je DD)",
+        "Nutzer-Kriterium 01.10.2026 — Rendite-Risiko-EFFIZIENZ: Niedriges "
+        "Risiko allein genügt nicht, der Gewinn muss das eingegangene "
+        "Risiko tragen. RetDD = Forensik-Ertrag/Monat ÷ Drawdown-Maximum "
+        "(gleiche Kapitalbasis; ×12 = annualisiert, Calmar-artig). Grün = "
+        "ab 0,5 (deutlich effizient), gelb = 0,167–0,5, orange = unter "
+        "0,167 — die Kombination 5 %/Monat bei 30 % DD steht exakt auf "
+        "0,167; wer darunter liegt, erfüllt selbst die Projektmaße nur "
+        "ineffizient. Grau = ohne Forensik-Ertrag oder DD nicht messbar. "
+        "Allein keine harte Sperre — aber Grün ohne Punkt hier ist ein "
+        "unattraktives Grün."),
+    Kriterium(
         "liste", "Ausschlussliste",
         "Manuell kuratierte Liste (data/known_signals.json) aus der "
         "Analyse-Reihe: rot = ausgeschlossen (Grund im Tooltip; überschreibt "
@@ -326,11 +338,39 @@ def _listen_zelle(r) -> Zelle:
                  "Watchlist (known_signals.json).")
 
 
+def _retdd_zelle(r) -> Zelle:
+    """RetDD = Forensik-Ertrag/Monat je Prozent DD-Maximum (Nutzer 01.10.:
+    Gewinn muss das Risiko tragen — niedriges Risiko allein bringt es
+    nicht). Schwellen: 0.5 / 0.167 (5 %/M bei 30 % DD = exakt 0.167)."""
+    wert = getattr(r, "retdd_monat", None)
+    if wert is None:
+        return Zelle(KEINE_DATEN, "unbekannt",
+                     "RetDD ohne Forensik-Ertrag oder DD-Maximum nicht "
+                     "berechenbar (kein Rendite-Risiko-Urteil möglich).")
+    jahr = getattr(r, "retdd_jahr", None)
+    jahres_text = f" (annualisiert {jahr:g})" if jahr is not None else ""
+    if wert >= 0.5:
+        return Zelle(GRUEN, f"{wert:g} / Monat",
+                     f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — der "
+                     "Ertrag trägt das Risiko deutlich (Schwelle 0,5).")
+    if wert >= 0.167:
+        return Zelle(GELB, f"{wert:g} / Monat",
+                     f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — "
+                     "effizient genug für die Projektmaße (0,167 = exakt "
+                     "5 %/M bei 30 % DD), aber Reserve dünn.")
+    return Zelle(ORANGE, f"{wert:g} / Monat",
+                 f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — selbst "
+                 "für die Projektmaße ineffizient: das eingegangene Risiko "
+                 "wird nicht angemessen bezahlt. Grün-Empfehlungen mit "
+                 "diesem Wert sind unattraktiv.")
+
+
 _BERECHNER = {
     "dd_schranke": lambda r, s: _dd_zelle(r, s),
     "martingale": lambda r, s: _martingale_zelle(r),
     "stop": lambda r, s: _stop_zelle(r),
     "ertrag": lambda r, s: _ertrag_zelle(r, s),
+    "retdd": lambda r, s: _retdd_zelle(r),
     "score": lambda r, s: _score_zelle(r),
     "schock": lambda r, s: _schock_zelle(r),
     "serie": lambda r, s: _serie_zelle(r),

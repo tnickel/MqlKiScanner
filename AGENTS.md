@@ -528,6 +528,24 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   nachträglich als abgebrochen markiert. +4 Tests
   test_equity_rekonstruktion_fremdreview.py, +1 K1-Test.
 
+- ✅ RetDD — Rendite-Risiko-EFFIZIENZ als durchgängiges Kriterium
+  (Nutzer-Wunsch 01.10.2026: „niedriges Risiko allein bringt es nicht"):
+  `retdd_monat` = Forensik-Ertrag ÷ DD-Maximum (gleiche Kapitalbasis;
+  ×12 annualisiert, Calmar-artig) — berechnet je Signal, im Kandidaten-
+  UND Forensik-Payload (mit Definition und Deutungsschwellen: ≥ 0,5
+  effizient, 0,167 = exakte Projektmaße 5 %/M bei 30 % DD, darunter
+  unattraktiv), als 9. Ampel-Matrix-Zelle „RetDD (Ertrag je DD)"
+  (grün ≥ 0,5 · gelb 0,167–0,5 · orange darunter · ⚪ ohne Basis —
+  allein keine harte Sperre, aber Grün ohne Punkt hier ist ein
+  unattraktives Grün), im Grün-Urteilstext, im Portfolio-Prompt mit
+  bindender Priorisierungsregel (Effizienz über absolute Rendite;
+  retdd_monat < 0,2 nicht empfehlbar) und in der Portfolio-Statistik
+  je Signal. Risiko-Score (7 Dimensionen) bleibt bewusst reines
+  Risiko-Instrument („Risiko vor Ertrag") — die Effizienz wirkt über
+  Ampel-Zelle, Urteil und KI-Deutung. Bestands-Ranking (🟢/🟡):
+  ImpulseNet 8,65 · Combo Profile 4,74 · S7PRO 2,78 · GoldWave 2,72 ·
+  Gold Spike MT5 2,27 … Gold Spike MT4 1,07.
+
 Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

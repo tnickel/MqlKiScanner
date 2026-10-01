@@ -113,6 +113,11 @@ Schockbetrag in USD am Peak. Zitiere Einheiten exakt.
 
 ## Aufgabe
 Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
+0. **RetDD-Effizienz** (Nutzer-Regel 01.10.): Bewerte retdd_monat
+   (Forensik-Ertrag je Prozent DD-Maximum) und retdd_jahr. Niedriges
+   Risiko allein genügt nicht — ohne angemessenen Gewinn ist ein Signal
+   unattraktiv. >= 0.5 effizient, 0.167 = exakte Projektmaße, darunter
+   ineffizient (nenne beides: Ertrag UND Drawdown).
 1. **Risikobefunde**: Martingale/Grid/Exposure/Stop-Befund/Verlustserien —
    mit Zahlen. Fehlender SL-Nachweis ist NEUTRAL (viele Broker uebertragen
    keinen SL); nenne Verlustdistanz-Muster als Hinweis, ohne abzuwerten.
@@ -195,7 +200,12 @@ Danach Abschnitte mit ## -Ueberschriften:
    begruendet Gewichtung und Warnung, niemals allein die Ablehnung.
 4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
    praktische Risiken beim Kopieren.
-5. **Urteil** — Widerspruchs-Pflicht: Sagt dein eigenes Urteil WATCHLIST oder ABLEHNUNG, darf eine spaetere Empfehlung (Portfolio) das nur uebernehmen, wenn sie die Vorbehalte ausdruecklich nennt und mit Bedingungen/Fristen aufhebt — niemals still uebergehen.
+5. **Urteil** — Nenne IMMER retdd_monat/retdd_jahr (Ertrag je Prozent
+   Drawdown) und bewerte die EFFIZIENZ: >= 0.5 attraktiv, 0.167 = exakte
+   Projektmaße, darunter unattraktiv trotz moeglicherweise grüner
+   Einzelkriterien — Risiko ohne angemessene Bezahlung. Priorisiere bei
+   der Empfehlungswürdigung RetDD über die absolute Rendite.
+   Widerspruchs-Pflicht: Sagt dein eigenes Urteil WATCHLIST oder ABLEHNUNG, darf eine spaetere Empfehlung (Portfolio) das nur uebernehmen, wenn sie die Vorbehalte ausdruecklich nennt und mit Bedingungen/Fristen aufhebt — niemals still uebergehen.
    - Abonnentenzahl, Signalname und Alter sind KEINE
   Qualitaetsmerkmale (die riskantesten Signale haben oft die
   meisten Abonnenten). Historische Rendite beweist keine
@@ -260,6 +270,15 @@ Bindende Zusatzregeln (K2/K3, Fremd-Review 01.10.):
   Risiko-Zahlen. Ein Abverkauf/Abbruch einer Position darf niemals mit
   „Wegfall des SL-Nachweises“ begruendet werden — nur mit tatsaechlichem
   Verlust des Stop-Schutzes laut Verhaltensanalyse oder Schrankenverletzung.
+
+Bindende RetDD-Regel (Nutzer 01.10.2026):
+- Jede empfohlene Position nennt retdd_monat (Ertrag je Prozent
+  Drawdown). Priorisiere EFFIZIENZ über absolute Rendite: 6 %/M bei
+  2 % DD (RetDD 3,0) schlägt 20 %/M bei 25 % DD (RetDD 0,8).
+- Signale mit retdd_monat unter 0,2 werden NICHT empfohlen — niedriges
+  Risiko ohne Gewinn und hohes Risiko ohne adäquate Bezahlung sind
+  beide unattraktiv.
+- Gewichte begründen sich zusätzlich zur Risiko-Streuung aus RetDD.
 
 Deutungsregeln fur diese Statistik (bindend):
 1. **Verlustmonat-Cluster** sind gemeinsame Schocks. Nenne den Monat mit den

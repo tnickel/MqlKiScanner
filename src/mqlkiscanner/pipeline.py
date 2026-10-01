@@ -149,6 +149,13 @@ class ScanResult:
     # werden (netto_gesamt / startkapital / Monate). Die Plattformzahl
     # (ertrag_monat_pct) bleibt als Selbstauskunft daneben stehen.
     ertrag_monat_pct_forensik: float | None = None
+    # Nutzer-Wunsch 01.10.2026: Rendite-Risiko-EFFIZIENZ (RetDD) —
+    # niedriges Risiko allein bringt nichts ohne Gewinn. RetDD =
+    # Forensik-Ertrag je Prozent Drawdown-Maximum (monatlich; ×12
+    # annualisiert, Calmar-artig). Wer die Projektkriterien exakt erfüllt
+    # (5 %/M bei 30 % DD), steht bei 0,167 — alles darunter ist ineffizient.
+    retdd_monat: float | None = None
+    retdd_jahr: float | None = None
     pf: float | None = None
     dd_equity_pct: float | None = None     # Plattform "By Equity"
     dd_balance_pct: float | None = None    # Plattform "By Balance"
@@ -459,8 +466,10 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
                            if result.ertrag_monat_pct_forensik is not None
                            else result.ertrag_monat_pct)
             if (ertrag_wert or 0) >= min_return:
-                return "🟢", (f"Kandidat: Forensik bestanden, Score < 5, Ertrag ok · "
-                              f"{stop_kontext}")
+                retdd_text = (f", RetDD {result.retdd_monat:g}/M"
+                              if result.retdd_monat is not None else "")
+                return "🟢", (f"Kandidat: Forensik bestanden, Score < 5, "
+                              f"Ertrag ok{retdd_text} · {stop_kontext}")
             return "🟡", f"Forensik ok ({stop_kontext}), aber Ertrag < {min_return:g} %/Monat"
         return "🟡", f"Forensik bestanden ({stop_kontext}), Score {result.score} (kein Kandidat)"
     return "⚪", "Vorprüfung (ohne Trade-Export-Forensik)"
@@ -505,6 +514,11 @@ def _kandidat_json(r: ScanResult) -> str:
         "ertrag_hinweis": "ertrag_monat_pct_forensik ist maßgeblich "
                           "(siehe ertrag_forensik_definition im "
                           "Forensik-JSON)",
+        # RetDD (Nutzer 01.10.): Ertrag je Prozent Drawdown — Effizienz,
+        # nicht nur absolutes Risiko. Projekt-Mindesteffizienz (5 %/M bei
+        # 30 % DD) = 0.167; ab 0.5 gilt ein Signal als effizient.
+        "retdd_monat": r.retdd_monat,
+        "retdd_jahr": r.retdd_jahr,
         "pf": r.pf, "dd_equity_pct": r.dd_equity_pct,
         "dd_balance_pct": r.dd_balance_pct,
         "broker_server": r.broker_server,
@@ -572,6 +586,14 @@ def _forensik_json(r: ScanResult) -> str:
         "ertrag_forensik_definition": (
             "linearer Durchschnitt: Summe Trade-Netto / Startkapital / Monate "
             "seit erstem Trade; Basis identisch mit DD-/Schock-Rechnung"),
+        # RetDD (Nutzer 01.10.2026): Rendite-Risiko-EFFIZIENZ — niedriges
+        # Risiko ohne Gewinn reicht nicht. RetDD_monat = Forensik-Ertrag ÷
+        # DD-Maximum (beide in %, gleiche Basis); ×12 = annualisiert
+        # (Calmar-artig). Deutung: >= 0.5 effizient, 0.167 = exakte
+        # Projekt-Mindestkombination (5 %/M bei 30 % DD), darunter
+        # ineffizient trotz moeglicherweise grüner Einzelkriterien.
+        "retdd_monat": r.retdd_monat,
+        "retdd_jahr": r.retdd_jahr,
         # Nachgemessener Equity-DD aus Kursdaten (floating inklusive) — die KI
         # soll ihn als Messung deuten und gegen den gemeldeten Wert stellen.
         "equity_dd_rekonstruiert_pct": r.equity_dd_rekonstruiert_pct,

@@ -35,6 +35,15 @@ Bindende Zusatzregeln (K2/K3, Fremd-Review 01.10.):
   „Wegfall des SL-Nachweises“ begruendet werden — nur mit tatsaechlichem
   Verlust des Stop-Schutzes laut Verhaltensanalyse oder Schrankenverletzung.
 
+Bindende RetDD-Regel (Nutzer 01.10.2026):
+- Jede empfohlene Position nennt retdd_monat (Ertrag je Prozent
+  Drawdown). Priorisiere EFFIZIENZ über absolute Rendite: 6 %/M bei
+  2 % DD (RetDD 3,0) schlägt 20 %/M bei 25 % DD (RetDD 0,8).
+- Signale mit retdd_monat unter 0,2 werden NICHT empfohlen — niedriges
+  Risiko ohne Gewinn und hohes Risiko ohne adäquate Bezahlung sind
+  beide unattraktiv.
+- Gewichte begründen sich zusätzlich zur Risiko-Streuung aus RetDD.
+
 Deutungsregeln fur diese Statistik (bindend):
 1. **Verlustmonat-Cluster** sind gemeinsame Schocks. Nenne den Monat mit den
    meisten gleichzeitigen Verlusten MIT Namen und Werten als Stress-Szenario

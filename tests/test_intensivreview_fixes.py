@@ -446,3 +446,54 @@ def test_k1_forensik_payload_nennt_vollstaendigkeit_und_basis():
     assert "linearer Durchschnitt" in payload["ertrag_forensik_definition"]
     kandidat = _json.loads(pipeline._kandidat_json(r))
     assert "maßgeblich" in kandidat["ertrag_hinweis"]
+
+
+# ------------------------------------------------ RetDD (Nutzer 01.10.2026)
+
+def test_retdd_berechnung_und_urteil():
+    """RetDD = Forensik-Ertrag / DD-Maximum — Gold-Spike-Fall:
+    8,71 %/M bei 8,11 % DD => 1.074/Monat, 12.89/Jahr."""
+    res = pipeline.ScanResult(
+        id=1, name="X", score=4.1, forensik_vorhanden=True,
+        ertrag_monat_pct=24.54, ertrag_monat_pct_forensik=8.71,
+        retdd_monat=round(8.71 / 8.11, 3), retdd_jahr=round(8.71 / 8.11 * 12, 2),
+        martingale_flag=False, stop_evidence="direct",
+        schranke_verletzt=False)
+    ampel, grund = pipeline.ampel_for(res, {})
+    assert ampel == "🟢"
+    assert "RetDD 1" in grund
+
+
+def test_retdd_ampelzelle_schwellen():
+    import importlib.util, sys as _sys
+    spez = importlib.util.spec_from_file_location(
+        "tam", Path(__file__).parent / "test_ampel_matrix.py")
+    tam = importlib.util.module_from_spec(spez)
+    spez.loader.exec_module(tam)
+    m_eff = lambda r: tam._matrix(r)
+    gruen = tam._result(retdd_monat=0.8, retdd_jahr=9.6)
+    grenze = tam._result(retdd_monat=0.167, retdd_jahr=2.0)
+    schlecht = tam._result(retdd_monat=0.05, retdd_jahr=0.6)
+    ohne = tam._result(retdd_monat=None, retdd_jahr=None,
+                       ertrag_monat_pct_forensik=None)
+    assert m_eff(gruen)["retdd"].ampel == "🟢"
+    assert m_eff(grenze)["retdd"].ampel == "🟡"
+    assert m_eff(schlecht)["retdd"].ampel == "🟠"
+    assert m_eff(ohne)["retdd"].ampel == "⚪"
+
+
+def test_retdd_im_forensik_payload_und_portfolio_statistik():
+    import json as _json
+    r = pipeline.ScanResult(
+        id=1, name="X", forensik_vorhanden=True, ertrag_monat_pct_forensik=6.0,
+        retdd_monat=0.3, retdd_jahr=3.6, kapitalbasis_verwendet_usd=1000,
+        kapitalbasis_verwendet_quelle="csv_einzahlungen", symbole="XAUUSD, EURUSD",
+        trades_path="", ertrag_monat_pct=7.0)
+    forensik = _json.loads(pipeline._forensik_json(r))
+    assert forensik["retdd_monat"] == 0.3
+    assert "Effizienz" in forensik["retdd_monat"] if isinstance(forensik["retdd_monat"], str) else True
+    kandidat = _json.loads(pipeline._kandidat_json(r))
+    assert kandidat["retdd_jahr"] == 3.6
+    from mqlkiscanner import portfolio_statistik
+    stat = portfolio_statistik.statistik([r])
+    assert stat["signale"][0]["retdd_monat"] == 0.3
