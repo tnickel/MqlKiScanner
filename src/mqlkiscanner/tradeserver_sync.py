@@ -93,6 +93,19 @@ def signal_zeilen(results: Iterable, fresh_ids: set[int] | None = None) -> list[
             "ddEquityPct": _runden(r.dd_equity_pct),
             "ddBalancePct": _runden(r.dd_balance_pct),
             "ertragMonatPct": _runden(r.ertrag_monat_pct),
+            # Zinseszins-wahre Ertrags- und Effizienzkennzahlen
+            # (Nutzer-Wunsch 01.10.2026, MqlTradeMonitor-Anzeige):
+            # ertragMonatForensikPct = linearer Ø auf eigener Basis,
+            # ertragMonatGeomPct = geometrisches Monatsmittel (CAGR-Basis),
+            # cagrJahrPct = annualisierter CAGR, retddMonat/retddJahr =
+            # Ertrag je Prozent DD (retddJahr = echter Calmar).
+            "ertragMonatForensikPct": _runden(
+                getattr(r, "ertrag_monat_pct_forensik", None)),
+            "ertragMonatGeomPct": _runden(
+                getattr(r, "ertrag_monat_geom_pct", None)),
+            "cagrJahrPct": _runden(getattr(r, "cagr_jahr_pct", None)),
+            "retddMonat": _runden(getattr(r, "retdd_monat", None), 3),
+            "retddJahr": _runden(getattr(r, "retdd_jahr", None), 2),
             "growthPct": _runden(r.growth_pct),
             "pf": _runden(r.pf),
             "winratePct": _runden(r.winrate_pct),
