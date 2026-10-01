@@ -547,9 +547,11 @@ _NODE_MARK = {
 def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
     """HTML für den Stations-Stepper.
 
-    steps: [{nr, title, status, meta, frac}] — frac (0..1) steuert den
+    steps: [{nr, sid, title, status, meta, frac}] — frac (0..1) steuert den
     Mini-Balken und wird nur bei laufenden Stationen angezeigt; overall
-    (0..1) füllt die Schiene zwischen den Knoten proportional auf.
+    (0..1) füllt die Schiene zwischen den Knoten proportional auf. Mit
+    `sid` werden die Kugeln als Klick-Link (?station=<sid>) gerendert —
+    der Streamlit query-Param öffnet den Erklär-Dialog (scan.py).
     """
     n = len(steps)
     fill = max(0.0, min(1.0, (overall * n - 0.5) / (n - 1))) if n > 1 else 0.0
@@ -569,9 +571,21 @@ def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
         if status == "running" and s.get("frac") is not None:
             mini = (f'<div class="mks-mini" aria-hidden="true">'
                     f'<i style="width:{s["frac"] * 100:.0f}%"></i></div>')
+        # Nutzer-Wunsch 02.10.: Kugeln direkt klickbar — als <a> mit
+        # ?station=<sid>, der Streamlit query-Param öffnet den Erklär-Dialog.
+        sid_attr = html.escape(str(s.get("sid") or ""), quote=True)
+        klickbar = bool(sid_attr) and status != "pending"
+        if klickbar:
+            node = (f'<a class="mks-node" role="button" '
+                    f'href="?station={sid_attr}" '
+                    f'title="Klicken für Erklärung dieser Station" '
+                    f'aria-label="{aria}">{mark}</a>')
+        else:
+            node = (f'<div class="mks-node" role="img" '
+                    f'aria-label="{aria}">{mark}</div>')
         parts.append(
             f'<div class="mks-step mks-step--{status}{hint}" role="listitem">'
-            f'<div class="mks-node" role="img" aria-label="{aria}">{mark}</div>'
+            f'{node}'
             f'<div class="mks-step-body">'
             f'<div class="mks-step-title">{title}</div>'
             f'<div class="mks-step-meta">{meta}</div>{mini}</div></div>')

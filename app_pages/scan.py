@@ -340,38 +340,26 @@ def _live_status() -> None:
     for nr, (sid, title, _icon, _unit, beschreibung) in enumerate(STEPS, 1):
         step = steps_state[sid]
         payload.append({
-            "nr": nr, "title": title, "status": step["status"],
+            "nr": nr, "sid": sid, "title": title, "status": step["status"],
             "label": STATES[step["status"]][0],
             "meta": step.get("detail") if step["status"] != "pending" else beschreibung,
             "frac": _step_fraction(step) if step["status"] == "running" else None,
             "hint": sid == first_pending and status != "running",
         })
-    st.markdown(workflow_stepper_html(payload, overall), unsafe_allow_html=True)
+    # Klickbare Kugeln (Nutzer-Wunsch 02.10.: direkt auf die Kreise
+    # klicken, kein Extra-Button). Die Kugeln rendert der Stepper als
+    # <a href="?station=listen"> — der query-Param öffnet den Dialog
+    # beim nächsten Rerun (Streamlit-native, kein JS nötig).
+    _query_station = (st.query_params.get("station") or "").strip()
+    _dialog_namen = {"listen": "_dialog_listen", "kandidaten": "_dialog_auswahl",
+                     "forensik": "_dialog_forensik", "llm": "_dialog_llm",
+                     "portfolio": "_dialog_portfolio",
+                     "downloader": "_dialog_downloader"}
+    if _query_station in _dialog_namen:
+        globals()[_dialog_namen[_query_station]]()
+        st.query_params.clear()
 
-    # Stations-Kugeln sind rein HTML — Streamlit kennt keinen nativen Klick
-    # auf HTML-Elemente. Daher: eine Button-Reihe in Stations-Optik je
-    # Station, die den jeweiligen Erklär-Dialog öffnet (Nutzer-Wunsch
-    # 02.10.: „alles nachvollziehbar, bei jedem Schritt").
-    # Lazy: Dialog-Funktionen sind als @st.dialog weiter unten im Modul
-    # definiert — beim Fragment-Tick werden sie per globals() nachgeschlagen,
-    # nicht als frühe Referenz eingebettet (AppTest-Falle: Name vor Definition).
-    _station_knoepfe = {
-        "listen": ("📡 Signale", "_dialog_listen"),
-        "kandidaten": ("🔍 Auswahl", "_dialog_auswahl"),
-        "forensik": ("🔬 Forensik", "_dialog_forensik"),
-        "llm": ("🧠 KI-Berichte", "_dialog_llm"),
-        "portfolio": ("🥧 Portfolio", "_dialog_portfolio"),
-        "downloader": ("🔄 Abgleich", "_dialog_downloader"),
-    }
-    _spalten = st.columns(len(STEPS))
-    for _spalte, (_sid, _title, *_rest) in zip(_spalten, STEPS):
-        with _spalte:
-            _label, _fname = _station_knoepfe.get(_sid, (_title, None))
-            if _fname is not None:
-                if st.button(_label, key=f"station_dialog_{_sid}",
-                             use_container_width=True,
-                             help="Klicken für Erklärung und Details dieser Station"):
-                    globals()[_fname]()
+    st.markdown(workflow_stepper_html(payload, overall), unsafe_allow_html=True)
 
     # Letzte Meldungen statt Logfile-Wand: kurz beweisen, dass sich was tut.
     recent = _recent_log_lines()
