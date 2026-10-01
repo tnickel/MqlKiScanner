@@ -136,6 +136,16 @@ anderer wird schärfer:
 > inzwischen **laufverifiziert**, die Kompensation durch die KI bleibt aber
 > **Zufall** — sie ist nicht systematisch garantiert und darf nicht als
 > Sicherheitsnetz eingeplant werden.
+>
+> **Neu seit 01.10. (B23):** Alle bisherigen Maßnahmen betrafen *Korrektheit*
+> („ist der DD richtig gemessen?", „auf welcher Kapitalbasis?"). Eine Frage der
+> **Auswahl** ist davon unberührt: das Verhältnis Gewinn/Drawdown kommt im
+> gesamten Code nicht vor. Die Zwei-Schwellen-Logik (30 % DD **und** 5 %/M)
+> beantwortet „ist es zulässig?" — nicht „lohnt es sich?". Im Bestand stehen
+> 6 von 16 bewerteten 🟢/🟡 unter Ret/DD 1,0, und die beste Effizienz
+> (ImpulseNet 8,65) sieht schlechter aus als KiraCat (0,83), weil der Score
+> kein Ertragsgewicht führt. Das ist keine Verletzung der Kernregel
+> „Risiko VOR Ertrag", aber eine Lücke im eigentlichen Zweck.
 
 Für das eigentliche Ziel — 3–4 belastbare, wenig korrelierte Kandidaten —
 liefert der Lauf **einen** robusten Kandidaten (Gold Spike MT4) und zwei
@@ -247,10 +257,13 @@ vom Hauptagenten unabhängig nachgerechnet bzw. im Code nachgelesen (✓).
 
 ### 0) Umsetzungsstand je Befund (Stand HEAD `33c11ac`, 30.09. 23:15)
 
-> **Bilanz: 21 von 23 Befunden geschlossen.** B1–B16 in `fc4b3b9`,
+> **Bilanz: 21 von 24 Befunden geschlossen.** B1–B16 in `fc4b3b9`,
 > B17 widerlegt, B22 in `9942e7d`, B1–B3 **live verifiziert** in `0e1b2b8`,
-> B20/B21 in `33c11ac`. **Offen: allein B18** (Pelican `/reports` liefert
-> weiterhin eine leere Liste) plus die beiden Feld-Klarstellungen #17/#20.
+> B20/B21 in `33c11ac`. **Offen: B18** (Pelican `/reports` liefert
+> weiterhin eine leere Liste), die beiden Feld-Klarstellungen #17/#20 und
+> **neu B23** (Return/Drawdown fehlt als Kriterium, Nutzer-Anforderung
+> 01.10.2026 — im Bestand belegt: 6 von 16 🟢/🟡 unter Ret/DD 1,0, und die
+> beste Effizienz sieht schlechter aus als die schlechteste).
 
 | Befund | Status im Code | Lauf-verifiziert? |
 |---|---|---|
@@ -273,6 +286,7 @@ vom Hauptagenten unabhängig nachgerechnet bzw. im Code nachgelesen (✓).
 | B20 **Juli 2026: 7 Signale gleichzeitig im Minus; Portfolio prüft Korrelation statt gemeinsamer Belastung; Beobachtungstiefe nur 11 Monate** | ✅ **`portfolio_statistik` (0-Fix-Welle)**: Verlustmonat-Cluster + Historie-Tiefe + gemeinsames Fenster als Code-Befund im Portfolio-Prompt | ✅ Live-Abnahme am Bestand: Juli-Cluster n=5 sichtbar, Gesamtfenster nur 2 Monate — die Stichprobenlücke steht jetzt IM Prompt |
 | B21 **Instrument-Overlap als Diversifikationskriterium fehlt (MH4-1/2: 15 Symbole, r = 0,26)** | ✅ **`portfolio_statistik`**: Paar-Overlap (Jaccard ≥ 0.3, ≥ 3 gemeinsame Symbole) im Prompt, Deutungsregel „Overlap = Klumpenrisiko trotz r≈0" | ✅ Live-Abnahme: H4-1×H4-2 entfällt (H4-1 seit B1 🔴), Holy Grail×MetaTrading2 (J=0,33) & Co. erscheinen |
 | B22 **`fc4b3b9` brach einen abhängigen Test still (Fixture-Wert vs. Test-Mutation)** | ✅ **behoben** (Mutation korrigiert + Trefferprüfung als dauerhafte Absicherung) | ✅ **grün** (7/7 `test_review18_ui.py`, 20/20 mit `test_review15_reports.py`) |
+| B23 **Return/Drawdown (Calmar) ist als Kriterium nirgends vorhanden — zwei absolute Schranken ersetzen das Verhältnis nicht** | ❌ **offen** (Nutzer-Anforderung 01.10.2026) | ✅ **Bestandsrechnung:** 6 von 16 🟢/🟡 unter Ret/DD 1,0; Median 1,71; schlechtester 0,40. Zusätzlich Fehlurteil-Richtung belegt: beste Effizienz (8,65) sieht schlechter aus als schlechte (0,83), weil der Score kein Ertragsgewicht hat |
 
 
 ### A) Bestätigte Fehler / Regelverstöße gegen das Projekziel
@@ -598,6 +612,91 @@ einem scheinbar kryptischen `stop_evidence`-Fehlschlag), nach
 Zurücksetzen wieder 7/7 grün. Verifiziert: 20/20 grün in `test_review18_ui.py`
 + `test_review15_reports.py`, Gesamtlauf siehe §0.
 
+**B23 [HOCH, belegt, OFFEN (Nutzer-Anforderung 01.10.2026)] — Return/Drawdown
+(Calmar) ist als Kriterium **nirgends** vorhanden. Zwei absolute Schranken
+ersetzen das Verhältnis nicht. „Niedriges Risiko allein reicht nicht", „Kauf
+macht Gewinn bringt es auch nicht" — im Bestand stehen beide Fehlurte
+tatsächlich nebeneinander.**
+
+Belege, Stufe für Stufe:
+
+1. **Code:** in `src/`, `config/` und `app_pages/` **kein einziges Vorkommen**
+   von `ret_dd`, `return_dd`, `calmar` oder `sharpe` als Auswahlgröße.
+   `stats.py:91` und `signal_stats.py:144/145` berechnen `profit_factor`/`sharpe`,
+   aber **kein Consumer** wertet sie aus — sie sind reine Anzeige.
+2. **Vorfilter `pipeline.py:883`:** prüft ausschließlich `min_wochen` und
+   `min_abonnenten`. Keine Kennzahl, die Ertrag oder DD berührt.
+3. **Exportauswahl `fix_signale.py:96`:** pro Quelle die Top-30 **sortiert nach
+   `-abonnenten`**. Damit geht der teuerste Slot (Trade-Export + Forensik +
+   zweistufige KI) an die marketingstärksten Signale — obwohl AGENTS.md
+   Regel 4 selbst festhält, dass Abonnenten mit Marketing korrelieren, nicht
+   mit Qualität.
+4. **Score `scoring.py:19`:** 7 Dimensionen, Gewichte summieren 1,00 —
+   drawdown 0,25 · structure 0,25 · margin 0,15 · copy 0,15 · track 0,10 ·
+   transparency 0,05 · broker 0,05. **Ertrag kommt nicht vor.** Der Score ist
+   reines Risiko; identische Bewertung für die beste und die schlechteste
+   Effizienz.
+5. **Gates:** `scoring.py:210` (Schranke 30 %), `pipeline.py:461` (Ertrag
+   ≥ 5 %/Monat), `ampel_matrix.py:127`/`209`. Zwei **absolute** Grenzen, die
+   nie ins Verhältnis gesetzt werden.
+6. **Prompts:** in 10 der 11 Dateien kein Effizienz-Auftrag. Einziger Treffer
+   ist `tiefenanalyse.md:68` („Max Drawdown vs. durchschnittlicher Gewinn;
+   Win-Rate vs. Risk-Reward-Ratio") — eine **qualitative** Textvorgabe an den
+   einen manuellen Tiefenanalyse-Prompt, ohne Zahlengrundlage, ohne Schwellen,
+   ohne Wirkung auf Ampel/Score/Urteil.
+
+**Empirischer Beleg am Bestand** (16 von 24 🟢/🟡 auswertbar, Ret/DD =
+`ertrag_monat_pct_forensik` ÷ DDmax aus `forensik.kriterien_matrix`):
+
+| Kennzahl | Wert |
+|---|---|
+| Median | **1,71** |
+| schlechtester | GOLD Tokyo Scalping **0,40** |
+| Bestwert | ImpulseNet 8,65 |
+| **unter 1,0** | **6 von 16** (KiraCat 0,83 · Gold Reaper 0,78 · SafeGold 0,64 · EUR Trader 0,94 · GOLD Tokyo 0,40 · Sferica 0,85) |
+| unter 2,0 | 10 von 16 |
+
+**Fehlurteil 1 — schlechtes Verhältnis bleibt Beobachtung:** SafeGold
+(0,64), KiraCat (0,83) und Gold Reaper (0,78) stehen auf 🟡, obwohl sie
+schlechter abschneiden als 1:1. Sie halten nur die 5-%-Schwelle.
+
+**Fehlurteil 2 — gutes Verhältnis sieht schlechter aus:** ImpulseNet mit
+Ret/DD **8,65** wirkt schlechter als KiraCat mit 0,83, weil der Score 5,3 vs.
+6,3 ist. Der Score misst Struktur und Track Record, nicht Effizienz — die
+Aussage „die beste Risiko-Ertrags-Effizienz sieht schlecht aus" ist damit
+Systematik, nicht Zufall.
+
+**Der Konflikt mit der Kernregel „Risiko VOR Ertrag".** In `dd_schranke` ist
+sie korrekt umgesetzt (harte Ablehnung, überschreibt alles). Der Preis: „Risiko"
+heißt dort nur *unter 30 % DD*, nicht *effizient*. Ein Signal auf 28 % DD mit
+5,5 %/Monat (Ret/DD 0,20) ist formal gleich bewertet wie eines auf 5 % mit
+8 %/Monat (1,60). **Die Zwei-Schwellen-Logik bildet ab, was erlaubt ist, nicht
+was sich lohnt.** Die Nutzer-Regel wird also nicht verletzt — aber der
+eigentliche Zweck (Risiko *und* Ertrag in Relation) ist nicht abgebildet.
+
+**Korrektur zu einer ersten Lesart:** „in keinem Prompt" wäre falsch gewesen —
+`tiefenanalyse.md:68` nennt das Verhältnis durchaus. Präzise ist: qualitative
+Textvorgabe in **einer** manuellen Analyse ohne Schwellen und ohne Wirkung auf
+Ampel/Score/Urteil.
+
+**Maßnahmen** (siehe §7 Nr. 22–24) — aufsteigend nach Aufwand, alle drei
+bewusst **additiv**, ohne die Schranken oder die Risiko-vor-Ertrag-Reihenfolge
+anzutasten:
+(a) Ampel-Kriterium `effizienz` (Ret/DD mit Buckets 🟢 ≥ 2 / 🟡 1–2 / 🟠 < 1);
+(b) Score-Dimension `ertrag_effizienz` ~0,10–0,15, Gewichte auf 1,00 normiert;
+(c) **Exportauswahl nach Ret/DD statt Abonnenten** — der wirksamste Hebel,
+    weil dort der teure Slot vergeben wird. Braucht vor der Forensik eine
+    Zahlengrundlage: `stats_json` des Katalogs (Average3MonthProfit / EQ-DD)
+    oder eine Quick-Messung in `build_candidates`. (c) ist die einzige Maßnahme
+    mit echter Hebelwirkung auf die tatsächlich geprüfte Menge.
+
+**Beleglücke:** Es gibt keinen Lauf, in dem eine KI das neue Kriterium
+korrekt interpretiert; `profit_factor`/`sharpe` sind als Anzeige nie auf einen
+Effizienz-Ampel abgebildet worden. Vor der Implementierung ist zu klären, welche
+Schwellen der Nutzer als „lohnend" betrachtet (Vorschlag 1,0 = Mindestqualität,
+2,0 = Ziel) — die Werte oben sind eine **Rechnung aus dem Bestand**, keine
+vom Nutzer gesetzte Schwelle.
+
 ### B) Begründete Risiken (im Ziellauf nicht eingetreten)
 
 - **R1 ID-Kollision mql5↔pelik möglich und würde still überschreiben**
@@ -764,6 +863,13 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
 | 19 | ~~**B21: Instrument-Überlappung als Diversifikationskriterium**~~ **✅ `33c11ac`** — Paar-Overlap (Jaccard ≥ 0,3, ≥ 3 gemeinsame Symbole) im Prompt; H4-1×H4-2 entfällt korrekt, Holy Grail×MetaTrading2 (J = 0,33) erscheint | trennt echte Streuung von Werkstatt-Klonen | erledigt |
 | 20 | **Schock-Felder eindeutig benennen**: `shock_pct_peak_account` ist ein **USD-Betrag** (Kontostand am Peak), nicht ein Prozentwert; `shock_pct_max` = Schock ÷ Kontostand am Peak (nicht ÷ Kapitalbasis) | macht die B11-Verwechslung strukturell unmöglich; gleiche Klasse wie #17 | klein |
 | 21 | ~~**B22: stille Testkopplung** — Mutation in `test_review18_ui.py` auf den aktuellen Fixture-Wert nachziehen~~ **✅ in diesem Review behoben**; **generell:** Test-Mutationen mit Trefferprüfung versehen (`assert old in text` vor dem `replace`) | schützt die Testgrün-Aussage künftiger Fix-Commits | klein |
+| 22 | **B23 (a): Ampel-Kriterium `effizienz`** — Ret/DD aus `ertrag_monat_pct_forensik` ÷ DDmax, Buckets 🟢 ≥ 2 / 🟡 1–2 / 🟠 < 1; additiv neben DD und Ertrag, Schranken bleiben unverändert | macht „schlechtes Verhältnis" sichtbar — 6 Signale < 1,0 fallen derzeit nicht auf | klein |
+| 23 | **B23 (b): Score-Dimension `ertrag_effizienz`** ~0,10–0,15, Gewichte auf 1,00 normiert (`scoring.py:19`); **prompts:** Verhältnis als Pflichtangabe statt nur in `tiefenanalyse.md:68` | ein Score, der Qualität *und*Effizienz misst, nicht nur Risiko | mittel |
+| 24 | **B23 (c): Exportauswahl nach Ret/DD statt Abonnenten** (`fix_signale.py:96`) — Zahlengrundlage vor der Forensik aus `stats_json` oder Quick-Messung in `build_candidates` | **der wirksamste Hebel:** der teure Forensik-/KI-Slot geht heute an Marketingstärke (AGENTS.md Regel 4) | **mittel–hoch** |
+
+> **B23-Schwellen sind Vorschlag, nicht Festlegung.** Die Ret/DD-Werte in §B23
+> sind aus dem Bestand gerechnet. Vor der Umsetzung muss der Nutzer festlegen,
+> was „lohnend" heißt (1,0 = Mindestqualität, 2,0 = Ziel o. Ä.).
 
 ---
 
@@ -875,6 +981,16 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
    explizit) → laufende Verifikation von B20/B21 am nächsten Volllauf.**
    (B17 wurde durch Gegenprobe zurückgezogen — GER40 läuft inkl.
    EUR-Schock; B1–B3 sind in `0e1b2b8` live verifiziert.)
+
+      **Stand 01.10.2026 — B23 rückt in der Rangfolge nach vorn:** Die drei
+      Punkte oben betreffen *Vollständigkeit und Korrektheit*. B23 betrifft die
+      **Auswahl selbst** und damit unmittelbar die Erfüllung des Projektzels:
+      Nach allen Korrekturen ist die Kette verlässlich, aber sie bevorzugt weiter
+      Signale, die *zulässig* sind, über die, die sich *lohnen*. Rangfolge neu:
+      **B23(c) Exportauswahl nach Ret/DD** (der wirksamste Hebel, weil dort der
+      teure Forensik-/KI-Slot vergeben wird) → **B23(a)+(b)** (Sichtbarkeit und
+      Score-Gewicht) → B18 → #17/#20. Voraussetzung für (c): der Nutzer legt die
+      lohnende Schwelle fest (siehe §7 Nr. 22–24).
 
 ---
 
