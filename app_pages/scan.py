@@ -346,19 +346,11 @@ def _live_status() -> None:
             "frac": _step_fraction(step) if step["status"] == "running" else None,
             "hint": sid == first_pending and status != "running",
         })
-    # Klickbare Kugeln (Nutzer-Wunsch 02.10.: direkt auf die Kreise
-    # klicken, kein Extra-Button). Die Kugeln rendert der Stepper als
-    # <a href="?station=listen"> — der query-Param öffnet den Dialog
-    # beim nächsten Rerun (Streamlit-native, kein JS nötig).
-    _query_station = (st.query_params.get("station") or "").strip()
-    _dialog_namen = {"listen": "_dialog_listen", "kandidaten": "_dialog_auswahl",
-                     "forensik": "_dialog_forensik", "llm": "_dialog_llm",
-                     "portfolio": "_dialog_portfolio",
-                     "downloader": "_dialog_downloader"}
-    if _query_station in _dialog_namen:
-        globals()[_dialog_namen[_query_station]]()
-        st.query_params.clear()
-
+    # Klickbare Kugeln (Nutzer-Wunsch 02.10.): Der Stepper rendert die
+    # Kugeln als <a href="?station=<sid>>. Ein Klick löst einen FULL RERUN
+    # aus (neuer query-Param) — der Dialog wird im HAUPT-Script geöffnet
+    # (unten nach _live_status()), denn @st.dialog aus einem FRAGMENT
+    # heraus öffnet nicht (Streamlit-Einschränkung).
     st.markdown(workflow_stepper_html(payload, overall), unsafe_allow_html=True)
 
     # Letzte Meldungen statt Logfile-Wand: kurz beweisen, dass sich was tut.
@@ -455,6 +447,20 @@ with st.container(border=True, key="scan_control_panel"):
                    if fix_hinweis else ""))
 
     _live_status()
+
+    # Klick auf eine Stations-Kugel (Nutzer-Wunsch 02.10.): Der Klick setzt
+    # ?station=<sid> und löst einen FULL RERUN aus — hier im Haupt-Script
+    # (NICHT im _live_status-Fragment, denn @st.dialog aus einem Fragment
+    # heraus öffnet nicht). Danach Param entfernen, damit der Dialog nicht
+    # bei jedem Tick wiederkehrt.
+    _station_klick = (st.query_params.get("station") or "").strip()
+    _dialog_namen = {"listen": "_dialog_listen", "kandidaten": "_dialog_auswahl",
+                     "forensik": "_dialog_forensik", "llm": "_dialog_llm",
+                     "portfolio": "_dialog_portfolio",
+                     "downloader": "_dialog_downloader"}
+    if _station_klick in _dialog_namen:
+        st.query_params.clear()
+        globals()[_dialog_namen[_station_klick]]()
     if not has_login:
         st.warning(
             "Ohne MQL5-Zugang ist nur eine Vorprüfung möglich. Für belastbare "

@@ -270,6 +270,17 @@ def _stylesheet() -> str:
         border: 1px solid rgba(148, 163, 184, .28);
         background: #121E31;
         color: #64748B;
+        text-decoration: none;
+    }}
+    /* Nutzer-Wunsch 02.10.: klickbare Kugeln — Cursor + Hover-Glanz */
+    a.mks-node {{
+        cursor: pointer;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }}
+    a.mks-node:hover {{
+        transform: scale(1.12);
+        box-shadow: 0 0 14px rgba(34, 211, 238, .55);
+        border-color: #67E8F9;
     }}
     .mks-step--running .mks-node {{
         background: linear-gradient(135deg, #00D2D3, #0891B2);
@@ -573,12 +584,12 @@ def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
                     f'<i style="width:{s["frac"] * 100:.0f}%"></i></div>')
         # Nutzer-Wunsch 02.10.: Kugeln direkt klickbar — als <a> mit
         # ?station=<sid>, der Streamlit query-Param öffnet den Erklär-Dialog.
-        sid_attr = html.escape(str(s.get("sid") or ""), quote=True)
-        klickbar = bool(sid_attr) and status != "pending"
+        sid_raw = str(s.get("sid") or "").strip()
+        klickbar = bool(sid_raw) and status != "pending"
         if klickbar:
             node = (f'<a class="mks-node" role="button" '
-                    f'href="?station={sid_attr}" '
-                    f'title="Klicken für Erklärung dieser Station" '
+                    f'href="?station={sid_raw}" '
+                    f'title="Klicken fuer Erklärung dieser Station" '
                     f'aria-label="{aria}">{mark}</a>')
         else:
             node = (f'<div class="mks-node" role="img" '
