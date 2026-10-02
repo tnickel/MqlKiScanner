@@ -101,7 +101,7 @@ def test_dirigent_tageslauf_schliesst_lauf_bei_ausnahme(monkeypatch):
     'laeuft' verwaisen lassen (er blockierte sonst Chef/Scans für immer)."""
     from mqlkiscanner.agenten import dirigent, journal
 
-    def _boom(settings):
+    def _boom(settings, ohne_lauf_id=None):
         raise RuntimeError("Datenbank kaputt")
 
     monkeypatch.setattr(dirigent, "_lagestatus", _boom)

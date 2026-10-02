@@ -104,11 +104,19 @@ def pruefe_neue_wechsel(log=print) -> list[dict]:
     return wechsel
 
 
-def _ereignisse_heute(settings: dict) -> dict:
-    """DeterministischeDigest-Grundlage — alles maschinell gezählt."""
+def _ereignisse_heute(settings: dict, ohne_lauf_id: int | None = None) -> dict:
+    """DeterministischeDigest-Grundlage — alles maschinell gezählt.
+
+    ohne_lauf_id: der EIGENE, noch laufende Digest-Eintrag wird ausgeschlossen
+    — sonst steht im protokollierten Prompt „je_status: laeuft: 1" und liest
+    sich, als liefe noch etwas, obwohl nur der Digest sich selbst zählt
+    (Nutzer-Missverständnis 02.10.).
+    """
     heute = datetime.now().strftime("%Y-%m-%d")
     laeufe = journal.list_laeufe(limit=200)
-    von_heute = [lauf for lauf in laeufe if lauf["start"].startswith(heute)]
+    von_heute = [lauf for lauf in laeufe
+                 if lauf["start"].startswith(heute)
+                 and lauf.get("id") != ohne_lauf_id]
     je_status: dict[str, int] = {}
     fehler: list[str] = []
     for lauf in von_heute:
@@ -165,7 +173,7 @@ def tagesdigest(quelle: str = "daemon", log=print,
         return {"status": "skipped", "grund": grund, "lauf_id": lauf_id,
                 "aktion": aktion, "resultat": resultat}
 
-    ereignisse = _ereignisse_heute(settings)
+    ereignisse = _ereignisse_heute(settings, ohne_lauf_id=lauf_id)
     journal.schritt_protokollieren(lauf_id, "melder", "grundlage",
                                    detail=ereignisse)
     text = _llm_digest(ereignisse, settings, lauf_id, log)

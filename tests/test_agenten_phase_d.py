@@ -102,6 +102,26 @@ def test_digest_grundlage_zaehlt_laeufe_und_budget():
     assert isinstance(ereignisse["beobachtungen"], dict)
 
 
+def test_digest_grundlage_zaehlt_eigenen_lauf_nicht_als_laeuft():
+    # Der Digest legt SEINEN Lauf-Eintrag an, BEVOR er die Grundlage liest
+    # (lauf_starten → _ereignisse_heute). Ohne Ausschluss steht im
+    # protokollierten Prompt „je_status: laeuft: 1" und liest sich, als
+    # liefe noch etwas — Nutzer-Missverständnis 02.10.
+    journal.lauf_abschliessen(journal.lauf_starten("betreuer", quelle="test",
+                                                   signal_id=1), "ok")
+    eigener = journal.lauf_starten("melder", quelle="test")  # bleibt laeuft
+    ereignisse = melder._ereignisse_heute(config.load_settings(),
+                                          ohne_lauf_id=eigener)
+    assert "laeuft" not in ereignisse["laeufe_heute"]["je_status"]
+    assert ereignisse["laeufe_heute"]["je_status"].get("ok", 0) >= 1
+    journal.lauf_abschliessen(eigener, "ok")
+    # Ohne den Parameter wird der eigene Lauf wieder gezählt (Realität vor
+    # dem Fix) — der Ausschluss ist also wirklich die Ursache.
+    ereignisse2 = melder._ereignisse_heute(config.load_settings())
+    assert ereignisse2["laeufe_heute"]["anzahl"] == \
+        ereignisse["laeufe_heute"]["anzahl"] + 1
+
+
 # ── Betreuer: Stilbruch → Sofort-Alert ─────────────────────────────
 
 def test_stilbruch_im_betreuer_loest_alert_aus(tmp_path, monkeypatch):

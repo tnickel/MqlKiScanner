@@ -27,11 +27,17 @@ ERLAUBTE_AKTIONEN = frozenset((
 ))
 
 
-def _lagestatus(settings: dict) -> dict:
-    """Deterministische Ist-Aufnahme — alles, was der Plan braucht."""
+def _lagestatus(settings: dict, ohne_lauf_id: int | None = None) -> dict:
+    """Deterministische Ist-Aufnahme — alles, was der Plan braucht.
+
+    ohne_lauf_id schließt den EIGENEN, noch laufenden Dirigent-Eintrag aus
+    (Selbstzählung — sonst behauptet die Anzahl einen Lauf mehr, als real
+    fertig ist; gleiche Wurzel wie der Digest-Fix 02.10.).
+    """
     journal.init_journal()
     von_heute = [lauf for lauf in journal.list_laeufe(limit=50)
-                 if lauf["start"].startswith(datetime.now().strftime("%Y-%m-%d"))]
+                 if lauf["start"].startswith(datetime.now().strftime("%Y-%m-%d"))
+                 and lauf.get("id") != ohne_lauf_id]
     return {
         "jetzt": datetime.now().isoformat(sep=" ", timespec="seconds"),
         "wochentag": datetime.now().strftime("%A"),
@@ -166,7 +172,7 @@ def tageslauf(quelle: str = "daemon", log=print) -> dict:
     journal.schritt_protokollieren(lauf_id, "dirigent", "lock", status="ok",
                                    detail={"inhaber_pid": "self"})
     try:
-        lage = _lagestatus(settings)
+        lage = _lagestatus(settings, ohne_lauf_id=lauf_id)
         journal.schritt_protokollieren(lauf_id, "dirigent", "lagestatus",
                                        detail=lage)
         plan = _tagesplan(lage)
