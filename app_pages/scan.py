@@ -733,12 +733,15 @@ if command:
             alt_ergebnisse = pipeline.results_from_db(cfg)
             ziel_ids = fix_signale.teilscan_ziel_ids(alt_ergebnisse, cfg)
             vorher = len(cands)
+            fix_signale.begruende_teilscan_scope(
+                control.get("begruendung"), cands, ziel_ids, alt_ergebnisse)
             cands = [c for c in cands if c["id"] in ziel_ids]
             # Quelle offline (z. B. PelicanMonitor aus): deren 🟢/🟡 aus der
             # DB ergänzen — Forensik aus den Cache-Artefakten (Nutzer-Fall
             # 02.10.: 12 pelik-🟡 wurden still übersprungen).
             ergaenzungen = fix_signale.teilscan_ergaenze_aus_db(
-                ziel_ids, {c["id"] for c in cands}, cfg)
+                ziel_ids, {c["id"] for c in cands}, cfg,
+                begruendung=control.get("begruendung"))
             if ergaenzungen:
                 cands.extend(ergaenzungen)
                 log(f"+{len(ergaenzungen)} 🟢/🟡 aus der DB ergänzt "
@@ -755,8 +758,10 @@ if command:
         # mehr um dieselben Slots).
         _begr = control.get("begruendung") or []
         scope, export_infos = fix_signale.waehle_fuer_export(
-            cands, cfg["top_n_export"], cfg, begruendung=_begr)
-        _begruendung_speichern(_begr, cfg["top_n_export"])
+            cands, cfg["top_n_export"], cfg, begruendung=_begr,
+            modus=("gelbgruen" if mode == "gelbgruen" else "full"))
+        _begruendung_speichern(_begr, cfg["top_n_export"],
+                               modus=("Teilscan" if mode == "gelbgruen" else "Full-Scan"))
         n_export = len(scope)
         log("Auswahl je Quelle: " + " · ".join(
             f"{i['quelle']}: {i['genommen']}/{i['angeboten']}" for i in export_infos)
@@ -1213,6 +1218,100 @@ def _problem_art(result) -> tuple[str, str, str]:
     )
 
 
+# ---------------------------------------------------------- Stations-Helfer
+# Nutzer-Wunsch 02.10.2026: JEDE Filter-Entscheidung der Pipeline je Signal
+# nachvollziehbar — Vollliste je Station, Quelle, Link zum Ursprungssignal,
+# Filterleiste (Anzeige/Quelle/Suche), Default „beides anzeigen“.
+
+_STATUS_ICON = {
+    "AUSGEWAEHLT": "✅ In der Forensik",
+    "FIX": "📌 Fix-ID (immer scannen)",
+    "NICHT_IM_SCOPE": "⏭️ Nicht im Teilscan-Scope",
+    "OHNE_SLOT": "❌ Kein Forensik-Slot",
+    "AUSGESCHLOSSEN": "⛔ Ausschlussliste",
+    "DRAUSSEN": "🚫 Vorfilter raus",
+    "KANDIDAT": "➡️ Kandidat",
+}
+_GEWAHLT_STATUS = {"AUSGEWAEHLT", "FIX"}
+
+
+def _signal_link(e: dict) -> str:
+    """Echte Signal-URL oder leer. Pelican liefert nur den Plattform-Root —
+    das ist kein Signal-Link und wird nicht ausgegeben (keine URLs erfinden).
+    Vantage liefert discoverDetail-URLs je Strategie, MQL5 /signals/{id}."""
+    url = str(e.get("url") or "").strip()
+    quelle = str(e.get("quelle") or e.get("quelle_kuerzel") or "mql5")
+    sid = e.get("id")
+    if not url and quelle == "mql5" and sid is not None:
+        url = f"https://www.mql5.com/en/signals/{sid}"
+    if "/signals/" in url or "strategyId=" in url:
+        return url
+    return ""
+
+
+def _filterleiste(rows: list[dict], key_suffix: str,
+                  label_gewaehlt: str = "Nur gewählt",
+                  label_raus: str = "Nur nicht gewählt") -> list[dict]:
+    """Filterleiste über den Signaltabellen: Anzeige (Default: alle),
+    Quelle (Default: alle) und Freitextsuche nach Name oder ID."""
+    c1, c2, c3 = st.columns([1.5, 1.2, 1.8])
+    hat_status = any(r.get("_gewaehlt") is not None for r in rows)
+    if hat_status:
+        anzeige = c1.segmented_control(
+            "Anzeige", ["Alle", label_gewaehlt, label_raus],
+            default="Alle", key=f"_flt_anzeige_{key_suffix}")
+    else:
+        anzeige = "Alle"
+        c1.caption("Anzeige: alle (keine Auswahlentscheidung in dieser Stufe)")
+    quellen = sorted({str(r.get("Quelle")) for r in rows if r.get("Quelle")})
+    qsel = c2.multiselect("Quelle", quellen, default=quellen,
+                          key=f"_flt_quelle_{key_suffix}",
+                          help="Herkunft der Signale — MQL5-Direkt oder eine "
+                               "der angeschlossenen Datenquellen (REST).")
+    suche = (c3.text_input("Suchen (Name oder ID)",
+                           key=f"_flt_suche_{key_suffix}") or "").strip().lower()
+    out = rows
+    if hat_status and anzeige == label_gewaehlt:
+        out = [r for r in out if r["_gewaehlt"]]
+    elif hat_status and anzeige == label_raus:
+        out = [r for r in out if r["_gewaehlt"] is False]
+    if qsel:
+        erlaubt = set(qsel)
+        out = [r for r in out if str(r.get("Quelle")) in erlaubt]
+    if suche:
+        out = [r for r in out if suche in str(r.get("Signal", "")).lower()
+               or suche in str(r.get("ID", "")).lower()]
+    return out
+
+
+def _link_spalte() -> object:
+    return st.column_config.LinkColumn("Ursprung", display_text="↗ öffnen")
+
+
+def _ohne_intern(rows: list[dict]) -> list[dict]:
+    """Interne Filter-Marker (_gewaehlt) nicht als Spalte anzeigen."""
+    return [{k: v for k, v in r.items() if not k.startswith("_")} for r in rows]
+
+
+def _begruendung_zeilen(eintraege: list[dict]) -> list[dict]:
+    """Begründungs-Einträge (auswahl_begruendung.json) in Tabellen-Zeilen."""
+    rows = []
+    for e in eintraege:
+        status = str(e.get("status") or "KANDIDAT")
+        rows.append({
+            "Status": _STATUS_ICON.get(status, status),
+            "Signal": e.get("name") or f"#{e.get('id')}",
+            "ID": e.get("id"),
+            "Quelle": e.get("quelle") or "mql5",
+            "Wochen": e.get("wochen"),
+            "Abos": e.get("abonnenten"),
+            "Grund": e.get("grund") or "",
+            "Link": _signal_link(e),
+            "_gewaehlt": status in _GEWAHLT_STATUS,
+        })
+    return rows
+
+
 @st.dialog("Probleme in diesem Lauf", width="large")
 def _probleme_dialog(probleme: list, gesamt: int) -> None:
     """Großes Fenster: jedes Problem verständlich erklärt — was passierte, was tun."""
@@ -1309,33 +1408,44 @@ def _dialog_listen() -> None:
                    "Signale mit Kürzel mql5. MQL5-Direkt und MqlDownloader wurden dort "
                    "nicht getrennt aufgezeichnet; ihre einzelnen Signalzahlen sind unbekannt.")
     if eintraege:
-        st.dataframe(pd.DataFrame([
-            {"Signal": e.get("name", ""), "ID": e.get("id"),
-             "Quelle": _herkunft(e)[0], "Zugriff": _herkunft(e)[1],
-             "Wochen": e.get("wochen"), "Abonnenten": e.get("abonnenten")}
-            for e in eintraege]), width="stretch", hide_index=True)
+        zeilen = []
+        for e in eintraege:
+            kuerzel, zugriff = _herkunft(e)
+            zeilen.append({
+                "Signal": e.get("name", ""), "ID": e.get("id"),
+                "Quelle": kuerzel, "Zugriff": zugriff,
+                "Wochen": e.get("wochen"), "Abos": e.get("abonnenten"),
+                "Link": _signal_link(e)})
+        st.caption(f"**Alle {len(zeilen)} geladenen Signale** — Herkunft je "
+                   "Signal; über die Filter lässt sich je Quelle einschränken.")
+        zeilen = _filterleiste(zeilen, "listen")
+        st.dataframe(zeilen, width="stretch", hide_index=True,
+                     column_config={"Link": _link_spalte()})
+        st.caption("Pelican-Signale haben keinen klickbaren Ursprungs-Link — "
+                   "die Plattform liefert keine Signal-URL (nur die Startseite); "
+                   "MQL5- und Vantage-Signale verlinken auf ihre Detailseite.")
     st.caption("Nicht erreichbare Kataloge stehen im Meldungs-Feed. Im Teilscan "
                "können gespeicherte 🟢/🟡-Signale aus der DB ergänzt werden.")
 
 
 @st.dialog("🔍 Station 2 · Auswahl — warum jedes Signal drin oder draußen ist", width="large")
 def _dialog_auswahl() -> None:
-    """Scrollbare Tabelle: ALLE Kandidaten mit Begründung."""
-    import pandas as pd
-    st.markdown("**Was passiert hier?** Der Vorfilter prüft Mindestalter und "
-                "Mindest-Abonnentenzahl. Aus den verbleibenden Kandidaten erhalten "
-                "je Quelle die abonnentenstärksten Signale die Forensik-Slots. "
-                "Fix-IDs umgehen diese Vorfilter und stehen in der Export-Auswahl "
-                "vorne. Die spätere Bewertung gilt für sie unverändert.")
-    st.caption(f"Aktuelle Einstellungen: mindestens {settings['min_wochen']} Wochen, "
-               f"{settings['min_abonnenten']} Abonnenten, "
-               f"Top {settings['top_n_export']} je Quelle. Abonnentenzahl ist kein Qualitätsnachweis.")
+    """EINE scrollbare Tabelle: ALLE Signale des Laufs mit Grund je Signal,
+    Filterleiste (Anzeige/Quelle/Suche) — Nutzer-Wunsch 02.10."""
+    st.markdown("**Was passiert hier?** Drei Filter hintereinander: "
+                "(1) der **Vorfilter** prüft Mindestalter und Mindest-"
+                "Abonnentenzahl, (2) der **Scan-Modus** entscheidet den Scope — "
+                "im Teilscan werden nur aktuell 🟢/🟡 laut Datenbank plus "
+                "Fix-IDs geprüft, im Full-Scan alle Kandidaten — und (3) die "
+                "**Slots**: je Quelle kommen die abonnentenstärksten Kandidaten "
+                "in die Forensik (Fix-IDs umgehen alles und belegen keinen "
+                "Slot). Für jedes Signal steht der Grund in der Tabelle.")
     datei = config.DATA_DIR / "auswahl_begruendung.json"
     if not datei.exists():
-        st.info("Noch keine Auswahl aufgezeichnet. Nach dem Scan zeigt die Tabelle "
-                "für jedes Signal, warum es ausgewählt oder aussortiert wurde.")
-        st.dataframe(pd.DataFrame(columns=["Signal", "Quelle", "Wochen", "Abos", "Grund"]),
-                     width="stretch", hide_index=True)
+        st.info("Noch keine Auswahl aufgezeichnet. Nach dem Scan zeigt die "
+                "Tabelle für jedes Signal, warum es ausgewählt oder "
+                "aussortiert wurde.")
+        st.dataframe([], width="stretch", hide_index=True)
         return
     try:
         daten = json.loads(datei.read_text(encoding="utf-8"))
@@ -1343,75 +1453,139 @@ def _dialog_auswahl() -> None:
         st.warning(f"Die gespeicherte Auswahl kann nicht gelesen werden: {exc}")
         return
     eintraege = daten.get("eintraege") or []
-    st.caption(f"Stand: {daten.get('zeitstempel', '?')} · Top {daten.get('top_n_export', '?')} je Quelle")
-    tab = st.tabs(["✅ Ausgewählt", "📌 Fix-IDs", "❌ Ohne Slot", "⛔ Ausgeschlossen",
-                   "🚫 Vorfilter raus"])
-    def _t(status):
-        return [e for e in eintraege if e.get("status") == status]
-    with tab[0]:
-        rows = _t("AUSGEWAEHLT")
-        st.dataframe(
-            [{"Signal": e["name"], "Quelle": e["quelle"], "Wochen": e.get("wochen"),
-              "Abos": e.get("abonnenten"), "Grund": e.get("grund", "")} for e in rows],
-            width="stretch", hide_index=True)
-        st.caption(f"{len(rows)} Signale in der Forensik.")
-    with tab[1]:
-        rows = _t("FIX")
-        st.dataframe(
-            [{"Signal": e["name"], "ID": e["id"], "Grund": e.get("grund", "")} for e in rows],
-            width="stretch", hide_index=True)
-    with tab[2]:
-        rows = _t("OHNE_SLOT")
-        st.dataframe(
-            [{"Signal": e["name"], "Quelle": e["quelle"], "Abos": e.get("abonnenten"),
-              "Grund": e.get("grund", "")} for e in rows],
-            width="stretch", hide_index=True)
-        st.caption(f"{len(rows)} Kandidaten bestanden den Vorfilter, bekamen aber "
-                   "keinen der Top-N-Slots je Quelle.")
-    with tab[3]:
-        rows = _t("AUSGESCHLOSSEN")
-        st.dataframe(
-            [{"Signal": e["name"], "Grund": e.get("grund", "")} for e in rows],
-            width="stretch", hide_index=True)
-    with tab[4]:
-        rows = _t("DRAUSSEN")
-        st.dataframe(
-            [{"Signal": e["name"], "Quelle": e["quelle"], "Wochen": e.get("wochen"),
-              "Abos": e.get("abonnenten"), "Grund": e.get("grund", "")} for e in rows],
-            width="stretch", hide_index=True)
-        st.caption(f"{len(rows)} Signale fielen durch den Vorfilter (Mindestalter "
-                   "oder Mindest-Abonnenten).")
+    if not eintraege:
+        st.info("Die gespeicherte Auswahl ist leer.")
+        st.dataframe([], width="stretch", hide_index=True)
+        return
+    # Filter-Kette als Zahlen — jede Zeile der Tabelle erklärt den Sprung.
+    n_gesamt = len(eintraege)
+    n_draussen = sum(1 for e in eintraege if e.get("status") == "DRAUSSEN")
+    n_kandidaten = sum(1 for e in eintraege
+                       if e.get("status") != "DRAUSSEN")
+    n_gewaehlt = sum(1 for e in eintraege
+                     if e.get("status") in _GEWAHLT_STATUS)
+    modus = daten.get("modus") or "—"
+    st.caption(f"Stand: {daten.get('zeitstempel', '?')} · Modus: {modus} · "
+               f"mindestens {settings['min_wochen']} Wochen, "
+               f"{settings['min_abonnenten']} Abonnenten, "
+               f"Top {daten.get('top_n_export', '?')} je Quelle. "
+               "Abonnentenzahl ist kein Qualitätsnachweis.")
+    st.markdown(f"**Filter-Kette:** {n_gesamt} Signale geladen "
+                f"→ {n_draussen} fielen durch den **Vorfilter** "
+                f"→ {n_kandidaten} Kandidaten → {n_gewaehlt} kamen in die "
+                "**Forensik** (Modus-Scope + Slots).")
+    zeilen = _begruendung_zeilen(eintraege)
+    zeilen = _filterleiste(zeilen, "auswahl")
+    st.caption(f"Angezeigt: {len(zeilen)} von {n_gesamt} Signalen.")
+    st.dataframe(_ohne_intern(zeilen), width="stretch", hide_index=True,
+                 column_config={"Link": _link_spalte()})
+    st.caption("Status-Bedeutung: ✅ geprüft · 📌 Fix-ID (immer scannen) · "
+               "⏭️ im Teilscan nicht dran (letztes Urteil nicht 🟢/🟡) · "
+               "❌ Kandidat, aber hinter den Top-N-Slots je Quelle · "
+               "⛔ Ausschlussliste (kuratiert, belegt keinen Slot) · "
+               "🚫 Vorfilter (Alter/Abonnenten). Pelican-Signale ohne "
+               "Ursprungs-Link: Plattform liefert keine Signal-URL.")
 
 
 @st.dialog("🔬 Station 3 · Prüfen & speichern — Forensik-Ergebnisse", width="large")
 def _dialog_forensik() -> None:
-    """Forensik je Signal: Ampel, Score, was bestanden wurde."""
-    import pandas as pd
-    st.markdown("**Was passiert hier?** Der Scanner prüft Handelsdaten auf "
-                "Martingale, gleichzeitig offene Positionen, Exposure, "
+    """Kombinierte Sicht: alle Kandidaten des Laufs — wer geprüft wurde
+    (mit Ergebnis) und wer nicht (mit Grund), Filterleiste oben."""
+    st.markdown("**Was passiert hier?** Für die ausgewählten Signale lädt der "
+                "Scanner Handelsdaten (Export bzw. Quellen-Artefakte) und "
+                "prüft Martingale, gleichzeitig offene Positionen, Exposure, "
                 "Stop-Signaturen und Drawdown. Der Code berechnet Kennzahlen, "
-                "Ampel und Score und speichert die Befunde. Die Drawdown-Schranke "
-                "liegt bei 30 %. Fehlender Stop-Nachweis ist neutral.")
+                "Ampel und Score. Die Drawdown-Schranke liegt bei 30 %. "
+                "Fehlender Stop-Nachweis ist neutral.")
     results = list(st.session_state.get("scan_results") or [])
+    aus_db = False
     if not results:
-        st.info("Noch kein Lauf-Ergebnis in dieser Sitzung. Nach Station 3 stehen "
-                "hier die geprüften Signale und ihre Kennzahlen.")
-    data = [{"Signal": r.name, "ID": r.id, "Ampel": r.ampel,
-             "Score": r.score, "Trading-DD %": r.trading_dd_pct,
-             "Ertrag/M": getattr(r, "ertrag_monat_pct_forensik", None),
-             "RetDD": getattr(r, "retdd_monat", None),
-             "Fehler": (r.fehler or "")[:100]} for r in results]
-    st.dataframe(pd.DataFrame(data, columns=["Signal", "ID", "Ampel", "Score",
-                 "Trading-DD %", "Ertrag/M", "RetDD", "Fehler"]),
-                 width="stretch", hide_index=True)
-    st.caption("Trading-DD ist der aus geschlossenen Trades gemessene Drawdown. "
-               "Die Schranke berücksichtigt zusätzlich verfügbare Equity-Messungen. "
-               "Ertrag/M ist der lineare Forensik-Ertrag in Prozent; RetDD nutzt "
-               "den geometrischen Monatsertrag je Prozent maximalem Drawdown.")
+        # Ohne Sitzungs-Daten den letzten DB-Stand zeigen — klar markiert.
+        try:
+            results = list(pipeline.results_from_db(settings))
+            aus_db = bool(results)
+        except Exception:
+            results = []
+    if aus_db:
+        st.caption("Kein Lauf in dieser Sitzung — angezeigt ist der letzte "
+                   "gespeicherte Datenbank-Stand (kann älter sein als der "
+                   "letzte Lauf).")
+    res_map = {r.id: r for r in results}
+    datei = config.DATA_DIR / "auswahl_begruendung.json"
+    eintraege: list[dict] = []
+    if datei.exists():
+        try:
+            daten = json.loads(datei.read_text(encoding="utf-8"))
+            eintraege = [e for e in (daten.get("eintraege") or [])
+                         if e.get("status") != "DRAUSSEN"]
+            if daten:
+                st.caption(f"Auswahl-Stand: {daten.get('zeitstempel', '?')}"
+                           + (f" · Modus {daten.get('modus')}" if daten.get("modus") else ""))
+        except (OSError, ValueError):
+            eintraege = []
+    if not eintraege and not results:
+        st.info("Noch keine Kandidaten und kein Lauf-Ergebnis. Nach einem Scan "
+                "steht hier für jedes Signal, ob es geprüft wurde — und das "
+                "Ergebnis.")
+        st.dataframe([], width="stretch", hide_index=True)
+        return
+    zeilen = []
+    for e in eintraege:
+        status = str(e.get("status") or "KANDIDAT")
+        r = res_map.get(e.get("id"))
+        geprueft = r is not None and r.forensik_vorhanden
+        zeilen.append({
+            "Geprüft": "✓ ja" if geprueft else "— nein",
+            "Signal": e.get("name") or f"#{e.get('id')}",
+            "ID": e.get("id"),
+            "Quelle": e.get("quelle") or "mql5",
+            "Ampel": (r.ampel if r else None),
+            "Score": (r.score if geprueft else None),
+            "Trading-DD %": (r.trading_dd_pct if geprueft else None),
+            "Ertrag/M": (getattr(r, "ertrag_monat_pct_forensik", None)
+                         if geprueft else None),
+            "RetDD": (getattr(r, "retdd_monat", None) if geprueft else None),
+            "Grund": (e.get("grund") or "")
+                     + ((" · ⚠ " + (r.fehler or "")[:90]) if r and r.fehler else ""),
+            "Link": _signal_link(e),
+            "_gewaehlt": geprueft,
+        })
+    # Ergebnisse ohne Eintrag in der Begründungsliste (z. B. ältere DB-Zeilen
+    # ohne Lauf in der Datei) dürfen nicht still verschwinden.
+    bekannte = {z["ID"] for z in zeilen}
+    for r in results:
+        if r.id in bekannte or not r.forensik_vorhanden:
+            continue
+        zeilen.append({
+            "Geprüft": "✓ ja", "Signal": r.name, "ID": r.id,
+            "Quelle": r.quelle or "mql5", "Ampel": r.ampel, "Score": r.score,
+            "Trading-DD %": r.trading_dd_pct,
+            "Ertrag/M": getattr(r, "ertrag_monat_pct_forensik", None),
+            "RetDD": getattr(r, "retdd_monat", None),
+            "Grund": "Aus dem Datenbank-Stand (kein Eintrag in der gespeicherten "
+                     "Auswahl dieses Laufs).",
+            "Link": _signal_link({"url": r.url, "id": r.id,
+                                  "quelle": r.quelle or "mql5"}),
+            "_gewaehlt": True})
+    if eintraege:
+        n_da = sum(1 for z in zeilen if z["_gewaehlt"])
+        st.caption(f"**{len(zeilen)} Kandidaten im Lauf — {n_da} geprüft, "
+                   f"{len(zeilen) - n_da} nicht geprüft** (Grund je Signal "
+                   "in der Tabelle).")
+    zeilen = _filterleiste(zeilen, "forensik",
+                           label_gewaehlt="Nur geprüft",
+                           label_raus="Nur nicht geprüft")
+    st.dataframe(_ohne_intern(zeilen), width="stretch", hide_index=True,
+                 column_config={"Link": _link_spalte()})
+    st.caption("Trading-DD ist der aus geschlossenen Trades gemessene "
+               "Drawdown; die Schranke berücksichtigt zusätzlich verfügbare "
+               "Equity-Messungen. Ertrag/M ist der lineare Forensik-Ertrag "
+               "in Prozent; RetDD nutzt den geometrischen Monatsertrag je "
+               "Prozent maximalem Drawdown.")
     probleme = [r for r in results if r.fehler]
     if probleme:
-        st.warning(f"{len(probleme)} Signal(e) mit Fehler — Details auf der Ergebnisseite "
-                   "unter „Probleme in diesem Lauf“.")
+        st.warning(f"{len(probleme)} Signal(e) mit Fehler — Details auf der "
+                   "Ergebnisseite unter „Probleme in diesem Lauf“.")
 
 
 @st.dialog("🧠 Station 4 · KI-Berichte", width="large")
@@ -1424,16 +1598,31 @@ def _dialog_llm() -> None:
                 "Berichte für jedes Signal vorliegen.")
     results = list(st.session_state.get("scan_results") or [])
     if not results:
+        try:
+            results = list(pipeline.results_from_db(settings))
+            if results:
+                st.caption("Kein Lauf in dieser Sitzung — angezeigt ist der "
+                           "letzte gespeicherte Datenbank-Stand.")
+        except Exception:
+            results = []
+    if not results:
         st.info("Noch kein Lauf-Ergebnis in dieser Sitzung. Berichte erscheinen "
                 "nach Station 4, sofern KI-Berichte eingeschaltet sind.")
-    data = [{"Signal": r.name, "Ampel": r.ampel,
+        st.dataframe([], width="stretch", hide_index=True)
+        return
+    data = [{"Signal": r.name, "Quelle": r.quelle or "mql5", "Ampel": r.ampel,
              "Trade-Analyse": "✓" if getattr(r, "trade_analyse", "") else "—",
              "Risiko-Analyse": "✓" if getattr(r, "risiko_analyse", "") else "—",
              "Gesamtbericht": "✓" if getattr(r, "gesamtbericht", "") else "—",
-             "Kurzfassung": (getattr(r, "kurzfassung", "") or "")[:120]} for r in results]
-    st.dataframe(pd.DataFrame(data, columns=["Signal", "Ampel", "Trade-Analyse",
-                 "Risiko-Analyse", "Gesamtbericht", "Kurzfassung"]),
-                 width="stretch", hide_index=True)
+             "Kurzfassung": (getattr(r, "kurzfassung", "") or "")[:120],
+             "Link": _signal_link({"url": r.url, "id": r.id,
+                                   "quelle": r.quelle or "mql5"}),
+             "_gewaehlt": bool(getattr(r, "gesamtbericht", ""))}
+            for r in results]
+    data = _filterleiste(data, "llm", label_gewaehlt="Nur mit Bericht",
+                         label_raus="Nur ohne Bericht")
+    st.dataframe(_ohne_intern(data), width="stretch", hide_index=True,
+                 column_config={"Link": _link_spalte()})
     st.caption("Nur 🟢/🟡 erhalten das volle KI-Paket (Design-Regel: Budget sparen).")
 
 
@@ -1458,6 +1647,27 @@ def _dialog_portfolio() -> None:
     st.markdown(text[:8000])
     if len(text) > 8000:
         st.caption("… (gekürzt — vollständiger Bericht auf der Ergebnisseite)")
+    # Welche Signale in die Portfolio-Bewertung eingeflossen sind (Nutzer-
+    # Wunsch 02.10.: Herkunft je Signal sichtbar + Link zum Ursprung).
+    basis = [r for r in (st.session_state.get("scan_results") or [])
+             if r.ampel in ("🟢", "🟡")]
+    if not basis:
+        try:
+            basis = [r for r in pipeline.results_from_db(settings)
+                     if r.ampel in ("🟢", "🟡")]
+        except Exception:
+            basis = []
+    if basis:
+        st.caption("Eingeflossen sind die 🟢/🟡-Signale des Laufs (Datenbasis "
+                   "der KI-Zusammenfassung):")
+        st.dataframe([{"Signal": r.name, "Quelle": r.quelle or "mql5",
+                       "Ampel": r.ampel, "Ertrag/M (geom.)":
+                       getattr(r, "ertrag_monat_geom_pct", None),
+                       "RetDD": getattr(r, "retdd_monat", None),
+                       "Link": _signal_link({"url": r.url, "id": r.id,
+                                             "quelle": r.quelle or "mql5"})}
+                      for r in basis], width="stretch", hide_index=True,
+                     column_config={"Link": _link_spalte()})
 
 
 @st.dialog("🔄 Station 6 · Abgleich", width="large")
@@ -1563,13 +1773,15 @@ if st.session_state.get("portfolio_bericht"):
             st.warning(f"Portfolio-Hinweis: {issue}")
 
 
-def _begruendung_speichern(begruendung: list[dict], top_n: int) -> None:
+def _begruendung_speichern(begruendung: list[dict], top_n: int,
+                           modus: str = "") -> None:
     """Auswahl-Begründung je Signal ablegen (Station-Dialog „Auswahl treffen")."""
     try:
         datei = config.DATA_DIR / "auswahl_begruendung.json"
         datei.write_text(json.dumps({
             "zeitstempel": datetime.now().isoformat(sep=" ", timespec="seconds"),
             "top_n_export": top_n,
+            "modus": modus,
             "eintraege": begruendung,
         }, ensure_ascii=False, indent=1), encoding="utf-8")
     except OSError:

@@ -91,8 +91,13 @@ class _FakePipeline:
         return [{"id": 2349227, "name": "Gold Spike"},
                 {"id": 2, "name": "Rot"}]
 
-    def build_candidates(self, signale, log):
+    def build_candidates(self, signale, log, begruendung=None):
         _FakePipeline.aufrufe.append("kandidaten")
+        if begruendung is not None:
+            for s in signale:
+                begruendung.append({"id": s["id"], "name": s["name"],
+                                    "quelle": "mql5", "status": "KANDIDAT",
+                                    "grund": "Fake"})
         return [{"id": s["id"], "name": s["name"]} for s in signale]
 
     def analyze_candidate(self, session, kandidat, log, should_stop=None):

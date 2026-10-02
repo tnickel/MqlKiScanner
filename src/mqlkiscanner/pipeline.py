@@ -925,6 +925,10 @@ class ScanPipeline:
         fix = fix_signale.fix_ids(self.settings)
         candidates = []
         n_fix = 0
+
+        def _eintrag(s: dict, status: str, grund: str) -> dict:
+            return fix_signale.begruendungseintrag(s, status, grund)
+
         for s in signals:
             # Fix-IDs umgehen die Vorfilter (Nutzer-Wunsch: immer scannen) —
             # ein gepinntes Signal darf nicht an Wochen/Abonnenten scheitern.
@@ -932,14 +936,10 @@ class ScanPipeline:
                 candidates.append(s)
                 n_fix += 1
                 if begruendung is not None:
-                    begruendung.append({
-                        "id": s.get("id"), "name": s.get("name") or "",
-                        "quelle": s.get("quelle_kuerzel") or "mql5",
-                        "wochen": s.get("wochen"),
-                        "abonnenten": s.get("abonnenten"),
-                        "status": "FIX",
-                        "grund": "📌 Fix-ID — immer im Scope, umgeht Vorfilter "
-                                 "und belegt keinen Quellen-Slot."})
+                    begruendung.append(_eintrag(
+                        s, "FIX",
+                        "📌 Fix-ID — immer im Scope, umgeht Vorfilter "
+                        "und belegt keinen Quellen-Slot."))
                 continue
             weeks = s.get("wochen")
             # B5/B6 (Intensiv-Review 29./30.09.2026): weeks=None heißt seit
@@ -954,33 +954,23 @@ class ScanPipeline:
                              if weeks is None else
                              f"✗ Alter: {weeks:g} Wochen < Mindestalter "
                              f"{min_wochen:g} Wochen.")
-                    begruendung.append({
-                        "id": s.get("id"), "name": s.get("name") or "",
-                        "quelle": s.get("quelle_kuerzel") or "mql5",
-                        "wochen": weeks, "abonnenten": s.get("abonnenten"),
-                        "status": "DRAUSSEN", "grund": grund})
+                    begruendung.append(_eintrag(s, "DRAUSSEN", grund))
                 continue
             if (s.get("abonnenten") or 0) < min_abo:
                 if begruendung is not None:
-                    begruendung.append({
-                        "id": s.get("id"), "name": s.get("name") or "",
-                        "quelle": s.get("quelle_kuerzel") or "mql5",
-                        "wochen": weeks, "abonnenten": s.get("abonnenten"),
-                        "status": "DRAUSSEN",
-                        "grund": f"✗ Abonnenten: "
-                                 f"{s.get('abonnenten') or 0} < Mindestabo "
-                                 f"{min_abo}."})
+                    begruendung.append(_eintrag(
+                        s, "DRAUSSEN",
+                        f"✗ Abonnenten: {s.get('abonnenten') or 0} < "
+                        f"Mindestabo {min_abo}."))
                 continue
             candidates.append(s)
             if begruendung is not None:
-                begruendung.append({
-                    "id": s.get("id"), "name": s.get("name") or "",
-                    "quelle": s.get("quelle_kuerzel") or "mql5",
-                    "wochen": weeks, "abonnenten": s.get("abonnenten"),
-                    "status": "KANDIDAT",
-                    "grund": f"✓ Vorfilter bestanden ({weeks:g} Wochen, "
-                             f"{s.get('abonnenten') or 0} Abonnenten) — "
-                             "Slot-Entscheidung folgt in „Auswahl treffen“."})
+                begruendung.append(_eintrag(
+                    s, "KANDIDAT",
+                    f"✓ Vorfilter bestanden ({weeks:g} Wochen, "
+                    f"{s.get('abonnenten') or 0} Abonnenten) — über die "
+                    "Auswahl (Slots bzw. Teilscan-Scope) wird als Nächstes "
+                    "entschieden."))
         log(f"Vorfilter (Wochen >= {min_wochen:g}, Abonnenten >= {min_abo}): "
             f"{len(signals)} -> {len(candidates)} Kandidaten"
             + (f" (davon {n_fix} Fix-ID(s) ohne Vorfilter)." if n_fix else "."))

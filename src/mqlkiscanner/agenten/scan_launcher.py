@@ -155,13 +155,16 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
         alt = pipeline.results_from_db(settings)
         ziel_ids = fix_signale.teilscan_ziel_ids(alt, settings)
         vorher = len(kandidaten)
+        fix_signale.begruende_teilscan_scope(
+            begruendung, kandidaten, ziel_ids, alt)
         kandidaten = [c for c in kandidaten if c["id"] in ziel_ids]
         # Nutzer-Fall 02.10.: Quelle offline (z. B. PelicanMonitor aus) —
         # deren 🟢/🟡 fehlen im Crawl und wurden still übersprungen. Der
         # Vertrag „laut DB" wird jetzt erfüllt: Kandidaten aus dem DB-Stand
         # ergänzen; Forensik nutzt die gecachten Artefakte (Offline-Fallback).
         ergaenzungen = fix_signale.teilscan_ergaenze_aus_db(
-            ziel_ids, {c["id"] for c in kandidaten}, settings)
+            ziel_ids, {c["id"] for c in kandidaten}, settings,
+            begruendung=begruendung)
         if ergaenzungen:
             kandidaten.extend(ergaenzungen)
             log(f"Teilscan: +{len(ergaenzungen)} 🟢/🟡 aus der DB ergänzt "
@@ -173,10 +176,12 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
     # abonnentenstärksten Kandidaten (Nutzer-Wunsch 29.09.: „30 von jedem").
     scope, export_infos = fix_signale.waehle_fuer_export(
         kandidaten, int(settings.get("top_n_export", 30)), settings,
-        begruendung=begruendung)
+        begruendung=begruendung,
+        modus=("gelbgruen" if modus == "gelbgruen" else "full"))
     log("Auswahl je Quelle: " + " · ".join(
         f"{i['quelle']}: {i['genommen']}/{i['angeboten']}" for i in export_infos))
-    _begruendung_speichern(begruendung, settings.get("top_n_export", 30))
+    _begruendung_speichern(begruendung, settings.get("top_n_export", 30),
+                           modus=("Teilscan" if modus == "gelbgruen" else "Full-Scan"))
     if not scope:
         grund = (f"Keine zu prüfenden Kandidaten (Modus {modus}) — "
                  "kein Login/Export nötig.")
@@ -301,7 +306,8 @@ def starte_scan_thread(modus: str, log=print) -> threading.Thread | None:
     return thread
 
 
-def _begruendung_speichern(begruendung: list[dict], top_n: int) -> None:
+def _begruendung_speichern(begruendung: list[dict], top_n: int,
+                           modus: str = "") -> None:
     """Auswahl-Begründung je Signal persistent ablegen (Nutzer-Wunsch
     02.10.2026: Station-Dialoge zeigen ALLE Signale + Grund)."""
     if not begruendung:
@@ -311,6 +317,7 @@ def _begruendung_speichern(begruendung: list[dict], top_n: int) -> None:
         datei.write_text(json.dumps({
             "zeitstempel": datetime.now().isoformat(sep=" ", timespec="seconds"),
             "top_n_export": top_n,
+            "modus": modus,
             "eintraege": begruendung,
         }, ensure_ascii=False, indent=1), encoding="utf-8")
     except OSError:

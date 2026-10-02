@@ -59,9 +59,40 @@ def ordne_fix_vorne(cands: list[dict], settings: dict | None = None) -> tuple[li
     return vorne, rest
 
 
+def begruendungseintrag(c: dict, status: str, grund: str) -> dict:
+    """Einheitlicher Erklärungs-Datensatz je Signal (Nutzer-Wunsch 02.10.:
+    jede Filter-Entscheidung nachvollziehbar). `url` ist die Signal-URL,
+    soweit die Quelle eine liefert (mql5/Vantage ja, Pelican nur Plattform-Root).
+    """
+    return {"id": c.get("id"), "name": c.get("name") or "",
+            "quelle": c.get("quelle_kuerzel") or "mql5",
+            "wochen": c.get("wochen"),
+            "abonnenten": c.get("abonnenten"),
+            "url": c.get("url") or "",
+            "status": status, "grund": grund}
+
+
+def begruendung_upsert(begruendung: list[dict], eintrag: dict) -> None:
+    """Eintrag einfügen ODER vorhandenen (gleiche Quelle + ID) ersetzen.
+
+    Ohne Upsert stünde ein Signal doppelt in der Liste, sobald der Vorfilter
+    es als KANDIDAT vermerkt hat und die Slot-/Scope-Entscheidung danach
+    den Status präzisiert (konkreter Fall 02.10.: 974 Zeilen, davon 20 doppelt).
+    """
+    key = (eintrag.get("quelle"), eintrag.get("id"))
+    for i, alt in enumerate(begruendung):
+        if (alt.get("quelle"), alt.get("id")) == key:
+            neu = dict(alt)
+            neu.update(eintrag)
+            begruendung[i] = neu
+            return
+    begruendung.append(eintrag)
+
+
 def waehle_fuer_export(cands: list[dict], top_n: int,
                        settings: dict | None = None,
-                       begruendung: list[dict] | None = None
+                       begruendung: list[dict] | None = None,
+                       modus: str = "full"
                        ) -> tuple[list[dict], list[dict]]:
     """Auswahl für die Forensik (Nutzer-Wunsch 29.09.: „30 von jedem").
 
@@ -78,7 +109,10 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
       ⛔ trotzdem beobachten will, pinned es als Fix-ID (bewusste Wahl).
 
     Rückgabe (auswahl, infos): auswahl = finale Reihenfolge; infos =
-    [{quelle, angeboten, genommen}] für das Log.
+    [{quelle, angeboten, genommen}] für das Log. `modus` steuert nur den
+    Begründungs-Text: "full" erklärt die Slot-Ränge, "gelbgruen" den
+    Teilscan-Scope (dort sind die Kandidaten vorab schon auf 🟢/🟡/Fix
+    gefiltert — Ränge spielen dann keine Rolle).
     """
     fix_vorne, rest = ordne_fix_vorne(cands, settings)
     ausgeschlossen = {e.get("id") for e in
@@ -96,27 +130,33 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
     auswahl = list(fix_vorne)
     infos = []
     limit = max(0, int(top_n or 0))
-    # Slot-Begründungen (Nutzer-Wunsch 02.10.: Auswahl nachvollziehbar)
+    teilscan = modus == "gelbgruen"
+
     def _slot_grund(c: dict, rang: int, genommen_: bool) -> dict:
-        if genommen_:
-            return {"id": c.get("id"), "name": c.get("name") or "",
-                    "quelle": k, "wochen": c.get("wochen"),
-                    "abonnenten": c.get("abonnenten"), "status": "AUSGEWAEHLT",
-                    "grund": f"✓ Ausgewählt: Rang {rang} in Quelle {k} "
-                             f"(Abonnenten-absteigend, Top {limit} je Quelle)."}
-        return {"id": c.get("id"), "name": c.get("name") or "",
-                "quelle": k, "wochen": c.get("wochen"),
-                "abonnenten": c.get("abonnenten"), "status": "OHNE_SLOT",
-                "grund": f"✗ Nicht ausgewählt: Rang {rang} in Quelle {k} — "
-                         f"nur die Top {limit} je Quelle kommen in die "
-                         "Forensik (Abonnenten-Rang)."}
+        if teilscan:
+            grund = ("✓ Im Teilscan-Scope: aktuell 🟢/🟡 laut letztem Lauf "
+                     "— wird geprüft (Rang " + str(rang) + " je Quelle spielte "
+                     "keine Rolle, alle Quellen-Slots reichten).")
+            status = "AUSGEWAEHLT"
+        elif genommen_:
+            grund = (f"✓ Ausgewählt: Rang {rang} in Quelle {k} "
+                     f"(Abonnenten-absteigend, Top {limit} je Quelle).")
+            status = "AUSGEWAEHLT"
+        else:
+            grund = (f"✗ Nicht ausgewählt: Rang {rang} in Quelle {k} — "
+                     f"nur die Top {limit} je Quelle kommen in die "
+                     "Forensik (Abonnenten-Rang).")
+            status = "OHNE_SLOT"
+        return begruendungseintrag(c, status, grund)
+
     for k in reihenfolge:
         gruppe = sorted(gruppen[k],
                         key=lambda c: -(float(c.get("abonnenten") or 0)))
         genommen_ids = {c.get("id") for c in gruppe[:limit]}
         if begruendung is not None:
             for rang, c in enumerate(gruppe, 1):
-                begruendung.append(_slot_grund(c, rang, c.get("id") in genommen_ids))
+                begruendung_upsert(
+                    begruendung, _slot_grund(c, rang, c.get("id") in genommen_ids))
         genommen = gruppe[:limit]
         auswahl.extend(genommen)
         infos.append({"quelle": k, "angeboten": len(gruppe),
@@ -127,15 +167,45 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
                       "genommen": 0})
         if begruendung is not None:
             for c in rest_mit_ausschluss:
-                begruendung.append({
-                    "id": c.get("id"), "name": c.get("name") or "",
-                    "quelle": c.get("quelle_kuerzel") or "mql5",
-                    "wochen": c.get("wochen"),
-                    "abonnenten": c.get("abonnenten"), "status": "AUSGESCHLOSSEN",
-                    "grund": "⛔ Steht auf der Ausschlussliste "
-                             "(known_signals.json) — belegt keinen Slot und "
-                             "kein KI-Budget (B7). Bei Bedarf als Fix-ID pinnen."})
+                begruendung_upsert(begruendung, begruendungseintrag(
+                    c, "AUSGESCHLOSSEN",
+                    "⛔ Steht auf der Ausschlussliste (known_signals.json) — "
+                    "belegt keinen Slot und kein KI-Budget (B7). "
+                    "Bei Bedarf als Fix-ID pinnen."))
     return auswahl, infos
+
+
+def begruende_teilscan_scope(begruendung: list[dict] | None, cands: list[dict],
+                             ziel_ids: set[int], alt_ergebnisse) -> None:
+    """Teilscan-Filter erklären (Nutzer-Wunsch 02.10.: die Sprünge
+    974 → Kandidaten → geprüfte müssen je Signal begründet sein).
+
+    Für jeden Kandidaten, der NICHT im Teilscan-Scope ist, wird der
+    KANDIDAT-Eintrag zu NICHT_IM_SCOPE präzisiert — mit dem Ampel-Stand
+    aus der DB, der die Entscheidung getragen hat. Noch nie bewertete
+    Signale werden genauso ehrlich benannt.
+    """
+    if begruendung is None:
+        return
+    ampeln = {r.id: getattr(r, "ampel", None) for r in alt_ergebnisse}
+    namen = {r.id: getattr(r, "name", "") or "" for r in alt_ergebnisse}
+    for c in cands:
+        if c.get("id") in ziel_ids:
+            continue
+        ampel = ampeln.get(c.get("id"))
+        if ampel is None:
+            grund = ("✗ Teilscan: noch nie bewertet (kein DB-Eintrag) — "
+                     "geprüft werden nur aktuell 🟢/🟡 laut Datenbank "
+                     "plus Fix-IDs. Der nächste Full-Scan bewertet neu.")
+        else:
+            grund = (f"✗ Teilscan: letztes Urteil {ampel or '⚪'} — geprüft "
+                     "werden nur aktuell 🟢/🟡 laut Datenbank plus Fix-IDs.")
+        eintrag = begruendungseintrag(c, "NICHT_IM_SCOPE", grund)
+        # Namens-/Ampel-Stand aus der DB ist aktueller als der Katalog
+        db_name = namen.get(c.get("id"))
+        if db_name:
+            eintrag["name"] = db_name
+        begruendung_upsert(begruendung, eintrag)
 
 
 def teilscan_ziel_ids(alt_ergebnisse, settings: dict | None = None) -> set[int]:
@@ -154,7 +224,8 @@ def teilscan_ziel_ids(alt_ergebnisse, settings: dict | None = None) -> set[int]:
 
 
 def teilscan_ergaenze_aus_db(ziel_ids: set[int], vorhanden_ids: set[int],
-                             settings: dict | None = None) -> list[dict]:
+                             settings: dict | None = None,
+                             begruendung: list[dict] | None = None) -> list[dict]:
     """Teilscan-Vertrag („nur 🟢/🟡 laut DB") auch bei OFFLINE-Quelle erfüllen.
 
     Nutzer-Fall 02.10.2026: 12 pelik-🟡 waren laut DB im Teilscan-Scope,
@@ -194,4 +265,12 @@ def teilscan_ergaenze_aus_db(ziel_ids: set[int], vorhanden_ids: set[int],
             "quelle_id": q["id"],
             "quelle_version": version,
         })
+        if begruendung is not None:
+            begruendung_upsert(begruendung, {
+                "id": r.id, "name": r.name, "quelle": r.quelle,
+                "wochen": r.wochen, "abonnenten": r.abonnenten,
+                "url": r.url or "", "status": "AUSGEWAEHLT",
+                "grund": (f"✓ Im Teilscan-Scope ({r.ampel}) — Quelle offline, "
+                          "aus dem DB-Stand ergänzt; Forensik lief aus den "
+                          "gecachten Trade-/Metrics-Artefakten.")})
     return ergaenzungen

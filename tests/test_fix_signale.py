@@ -316,3 +316,84 @@ def test_export_auswahl_ohne_quelle_kuerzel_zaehlt_als_mql5():
     auswahl, infos = fix_signale.waehle_fuer_export(cands, 30, {})
     assert len(auswahl) == 5
     assert infos == [{"quelle": "mql5", "angeboten": 5, "genommen": 5}]
+
+
+# ---------------- Auswahl-Nachvollziehbarkeit (Nutzer-Wunsch 02.10.2026) —
+
+def _beg(cands, status="KANDIDAT"):
+    return fix_signale.begruendungseintrag(cands, status, "grund")
+
+
+def test_begruendung_upsert_verhindert_duplikate():
+    """Vorfilter setzt KANDIDAT, die Slot-Entscheidung präzisiert denselben
+    Eintrag — am Ende steht jedes Signal GENAU EINMAL in der Liste."""
+    cand = _k(1001, 50)
+    begr = []
+    fix_signale.begruendung_upsert(begr, _beg(cand))
+    fix_signale.begruendung_upsert(
+        begr, fix_signale.begruendungseintrag(cand, "AUSGEWAEHLT", "Slot 1"))
+    assert len(begr) == 1
+    assert begr[0]["status"] == "AUSGEWAEHLT"
+    # Verschiedene Quellen mit derselben ID bleiben getrennt (IDs sind nur
+    # je Quelle eindeutig).
+    cand_pelik = _k(1001, 50, "pelik")
+    fix_signale.begruendung_upsert(begr, _beg(cand_pelik, "OHNE_SLOT"))
+    assert len(begr) == 2
+
+
+def test_begruendungseintrag_uebernimmt_url_und_quelle():
+    cand = _k(4711, 10, "vant")
+    cand["url"] = ("https://secure.vantagemarkets.com/copyTrading/visitor/"
+                   "discover/discoverDetail?strategyId=4711&mode=visitor")
+    eintrag = _beg(cand)
+    assert eintrag["url"] == cand["url"]
+    assert eintrag["quelle"] == "vant"
+
+
+def test_export_auswahl_teilscan_modus_begruendet_scope_statt_rang():
+    """Im Teilscan sind die Kandidaten vorab schon auf 🟢/🟡/Fix gefiltert —
+    der Grund darf dann nicht vom Abonnenten-Rang reden."""
+    cands = [_k(1000 + i, 1000 - i) for i in range(3)]
+    begr = []
+    fix_signale.waehle_fuer_export(cands, 30, {}, begruendung=begr,
+                                   modus="gelbgruen")
+    assert len(begr) == 3
+    assert all(e["status"] == "AUSGEWAEHLT" for e in begr)
+    assert all("Teilscan-Scope" in e["grund"] for e in begr)
+    assert not any("Rang 1 in Quelle" in e["grund"] for e in begr)
+
+
+def test_export_auswahl_updatet_kandidat_eintraege_ohne_doppelte():
+    """build_candidates hat KANDIDAT-Einträge gesetzt — die Slot-Entscheidung
+    ersetzt sie (keine Doppel-Zeilen mehr in auswahl_begruendung.json)."""
+    cands = [_k(1000 + i, 1000 - i) for i in range(5)]
+    begr = [_beg(c) for c in cands]
+    fix_signale.waehle_fuer_export(cands, 2, {}, begruendung=begr)
+    ids = [e["id"] for e in begr]
+    assert len(ids) == len(set(ids)) == 5
+    status = {e["id"]: e["status"] for e in begr}
+    assert sum(1 for s in status.values() if s == "AUSGEWAEHLT") == 2
+    assert sum(1 for s in status.values() if s == "OHNE_SLOT") == 3
+
+
+class _AltResult:
+    """Minimaler ScanResult-Stub für teilscan-Statusquen."""
+
+    def __init__(self, sid, ampel, name=""):
+        self.id = sid
+        self.ampel = ampel
+        self.name = name
+
+
+def test_begruende_teilscan_scope_nennt_ampel_und_neuheit():
+    cands = [_k(1001, 50), _k(1002, 50), _k(1003, 50)]
+    alt = [_AltResult(1001, "🟢", "Gruen"), _AltResult(1002, "🔴", "Rot")]
+    begr = [_beg(c) for c in cands]
+    fix_signale.begruende_teilscan_scope(begr, cands, {1001}, alt)
+    by_id = {e["id"]: e for e in begr}
+    assert by_id[1001]["status"] == "KANDIDAT"          # im Scope — Slot folgt
+    assert by_id[1002]["status"] == "NICHT_IM_SCOPE"
+    assert "🔴" in by_id[1002]["grund"] and "Teilscan" in by_id[1002]["grund"]
+    assert by_id[1002]["name"] == "Rot"                 # DB-Name gewinnt
+    assert by_id[1003]["status"] == "NICHT_IM_SCOPE"
+    assert "noch nie bewertet" in by_id[1003]["grund"]

@@ -156,6 +156,50 @@ def test_component_station_event_opens_dialog_without_discarding_session():
     assert "_scan_station_dialog" not in at.session_state
 
 
+def test_auswahl_station_zeigt_vollliste_mit_grund_quelle_und_link():
+    """Nutzer-Wunsch 02.10.: ALLE Signale (auch Vorfilter-Raus) in EINER
+    Tabelle — mit Grund, Quelle und klickbarem Ursprungs-Link; Filter
+    stehen bereit, Default zeigt alles."""
+    rows = [
+        {"id": 1001, "name": "Im Slot", "quelle": "mql5", "wochen": 83,
+         "abonnenten": 70, "url": "https://www.mql5.com/en/signals/1001",
+         "status": "AUSGEWAEHLT", "grund": "Rang 1"},
+        {"id": 2002, "name": "Ohne Slot", "quelle": "pelik", "wochen": 40,
+         "abonnenten": 5, "url": "https://pelican.copy-trade.io",
+         "status": "OHNE_SLOT", "grund": "Rang 47"},
+        {"id": 3003, "name": "Zu jung", "quelle": "vant", "wochen": 4,
+         "abonnenten": 492,
+         "url": "https://secure.vantagemarkets.com/copyTrading/visitor/"
+                "discover/discoverDetail?strategyId=3003&mode=visitor",
+         "status": "DRAUSSEN", "grund": "4 Wochen < 26"},
+    ]
+    (config.DATA_DIR / "auswahl_begruendung.json").write_text(json.dumps({
+        "zeitstempel": "2026-10-02 09:00:00", "top_n_export": 30,
+        "modus": "Teilscan", "eintraege": rows,
+    }), encoding="utf-8")
+    at = _app("kandidaten").run()
+    dialog = _dialog(at)
+    text = _text(dialog)
+    assert "3 Signale geladen" in text
+    assert "1 fielen durch den **Vorfilter**" in text
+    assert "2 Kandidaten" in text and "1 kamen in die" in text
+    assert "Modus: Teilscan" in text
+    tables = dialog.get("dataframe")
+    tabelle = tables[-1].value
+    assert list(tabelle["Signal"]) == ["Im Slot", "Ohne Slot", "Zu jung"]
+    assert set(tabelle["Quelle"]) == {"mql5", "pelik", "vant"}
+    assert "Grund" in tabelle.columns and "Status" in tabelle.columns
+    # Nur echte Signal-Links werden ausgegeben: MQL5 + Vantage ja,
+    # Pelican-Plattform-Root nein (keine URLs erfinden).
+    links = dict(zip(tabelle["Signal"], tabelle["Link"]))
+    assert links["Im Slot"].endswith("/signals/1001")
+    assert "strategyId=3003" in links["Zu jung"]
+    assert not links["Ohne Slot"]
+    # Filterleiste ist da: Quellen-Multiselect und Suche, Anzeige-Default „Alle“
+    assert dialog.get("multiselect"), "Quellen-Filter erwartet"
+    assert dialog.get("text_input"), "Suche erwartet"
+
+
 def test_station_one_distinguishes_direct_and_rest_signals_from_session():
     db.init_db()
     rest_id = db.add_quelle("mql5", "Mein Downloader", "http://mql5.invalid", aktiv=False)
