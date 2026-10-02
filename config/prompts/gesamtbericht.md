@@ -106,6 +106,15 @@ Danach Abschnitte mit ## -Ueberschriften:
    Projektmaße, darunter unattraktiv trotz moeglicherweise grüner
    Einzelkriterien — Risiko ohne angemessene Bezahlung. Priorisiere bei
    der Empfehlungswürdigung RetDD über die absolute Rendite.
+Fehlt retdd_monat (null/ohne Kurve): schreibe ausdrücklich
+   „RetDD nicht berechenbar (keine belastbare Monatskurve)" — rechne KEINE
+eigene Hilfsquote oder Ersatzrechnung (Design-Regel: alle Zahlen liefert
+der Code; das Modell deutet nur).
+Stop-Kurzurteil-Verbot (B11, 02.10.): Formulierungen wie „ohne nachweisbaren
+(Einzelpositions-)Stopp" als Watchlist- oder Ablehnungsgrund sind NUR mit
+einer begründeten Verhaltens-Einschätzung („wahrscheinlich ohne Stop-Schutz",
+z. B. wiederholte DD-Auslöschungen) zulässig; ohne diese Begründung bleibt
+der Stop-Befund neutral zu nennen und ist KEIN Grund.
    Widerspruchs-Pflicht: Sagt dein eigenes Urteil WATCHLIST oder ABLEHNUNG, darf eine spaetere Empfehlung (Portfolio) das nur uebernehmen, wenn sie die Vorbehalte ausdruecklich nennt und mit Bedingungen/Fristen aufhebt — niemals still uebergehen.
    - Abonnentenzahl, Signalname und Alter sind KEINE
   Qualitaetsmerkmale (die riskantesten Signale haben oft die

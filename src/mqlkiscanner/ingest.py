@@ -155,8 +155,23 @@ def hole_trades(quelle: dict, signal_id: int, version: str, *,
     except downloader_client.DownloaderConnectionError:
         alt_offline = db.get_quellen_artefakt(int(quelle["id"]), signal_id,
                                               version, "trades")
-        if alt_offline and alt_offline.get("path")                 and Path(alt_offline["path"]).exists():
-            return str(alt_offline["path"]), False
+        if alt_offline and alt_offline.get("path") \
+                and Path(alt_offline["path"]).exists():
+            # B5 (Lauf-Review 02.10.): Auch offline NUR bei intaktem Inhalt —
+            # dieselbe SHA-Prüfung wie beim Cache-Treffer. Eine veränderte
+            # Datei (falscher Hash) ist KEIN belastbarer Bekannter Stand,
+            # sondern ein vergifteter Cache: ehrlich scheitern statt still
+            # falsche Forensik rechnen.
+            try:
+                if alt_offline.get("sha256") == hashlib.sha256(
+                        Path(alt_offline["path"]).read_bytes()).hexdigest():
+                    return str(alt_offline["path"]), False
+                raise downloader_client.DownloaderConnectionError(
+                    f"Quelle offline und Cache verändert (SHA weicht ab): "
+                    f"{alt_offline['path']} — Artefakt nicht belastbar.")
+            except OSError as exc:
+                raise downloader_client.DownloaderConnectionError(
+                    f"Quelle offline und Cache unlesbar: {exc}") from exc
         raise
     sha = hashlib.sha256(roh).hexdigest()
     alt = db.get_quellen_artefakt(int(quelle["id"]), signal_id, version, "trades")
@@ -191,8 +206,23 @@ def hole_metrics(quelle: dict, signal_id: int, version: str, *,
     except downloader_client.DownloaderConnectionError:
         alt_offline = db.get_quellen_artefakt(int(quelle["id"]), signal_id,
                                               version, "metrics")
-        if alt_offline and alt_offline.get("path")                 and Path(alt_offline["path"]).exists():
-            return json.loads(Path(alt_offline["path"]).read_text(encoding="utf-8"))
+        if alt_offline and alt_offline.get("path") \
+                and Path(alt_offline["path"]).exists():
+            # B5 (Lauf-Review 02.10.): Offline nur bei intaktem Inhalt —
+            # SHA der Datei gegen den gespeicherten Vermerk prüfen (dieselbe
+            # Kanonisierung wie beim Schreiben: sort_keys/indent/default=str).
+            try:
+                inhalt = Path(alt_offline["path"]).read_bytes()
+                if alt_offline.get("sha256") != hashlib.sha256(inhalt).hexdigest():
+                    raise downloader_client.DownloaderConnectionError(
+                        "Quelle offline und Metrics-Cache verändert "
+                        "(SHA weicht ab) — Artefakt nicht belastbar.")
+                return json.loads(inhalt.decode("utf-8"))
+            except downloader_client.DownloaderError:
+                raise
+            except (OSError, ValueError) as exc:
+                raise downloader_client.DownloaderConnectionError(
+                    f"Quelle offline und Metrics-Cache unlesbar: {exc}") from exc
         raise
     # Kanonische Serialisierung: Der SHA beschreibt EXAKT die geschriebenen
     # Bytes (früher: SHA über sort_keys, Datei über indent OHNE sort_keys —

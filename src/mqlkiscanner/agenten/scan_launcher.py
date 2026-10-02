@@ -83,6 +83,24 @@ def starte_scan(modus: str, quelle: str = "daemon", log=print) -> dict:
             return {"status": "skipped", "lauf_id": lauf_id, "aktion": aktion,
                     "resultat": resultat, **{k: v for k, v in ergebnis.items()
                                              if k != "status"}}
+        # B8 (Lauf-Review 02.10.): Ein nichtleerer Scope mit NULL erfolgrei-
+        # chen Prüfungen ist KEIN versorgter Monat — der Monats-/Tagesmerker
+        # bliebe sonst gesetzt und unterdrückte die Wiederholung, obwohl
+        # nichts Brauchbares lief (Gegenprobe: geprueft=0, Merker gesetzt).
+        if ergebnis.get("geprueft", 0) == 0:
+            aktion = f"Autonomer {modus_name} OHNE erfolgreiche Prüfung"
+            journal.lauf_abschliessen(lauf_id, "fehler", ergebnis["zusammenfassung"],
+                                      aktion=aktion, resultat=resultat)
+            journal.meldung_speichern(
+                MELDUNG_TYP, f"Scan {modus} ({modus_name}) FEHLGESCHLAGEN — "
+                             "keine einzige Prüfung erfolgreich",
+                resultat + " — Wiederholung beim nächsten Takt.",
+                prioritaet=2, quellen=[f"lauf#{lauf_id}"])
+            log(f"Scan {modus} ohne erfolgreiche Prüfung: {resultat} — "
+                "Merker NICHT gesetzt.")
+            return {"status": "fehler", "lauf_id": lauf_id, "aktion": aktion,
+                    "resultat": resultat, **{k: v for k, v in ergebnis.items()
+                                             if k != "status"}}
         aktion = f"Autonomer {modus_name} durchgeführt"
         journal.lauf_abschliessen(lauf_id, "ok", ergebnis["zusammenfassung"],
                                   aktion=aktion, resultat=resultat)

@@ -41,8 +41,12 @@ def _successor_test(seq) -> dict:
                 ratio = b.volume / a.volume
                 # L9: Netto statt Brutto — Kommission/Swap zaehlt zum
                 # Verlust (gleiches Mass wie Drawdown-Kurve/Equity-Reko).
+                # B9 (Lauf-Review 02.10.): Breakeven (netto == 0) ist KEIN
+                # Verlust (F4-Konvention der stats.py) — sonst erzeugen
+                # Break-even-Trades eine Phantom-Verlustnachfolge und damit
+                # eine falsche Martingale-Signatur.
                 netto = a.net if a.net is not None else a.profit
-                (losses if netto <= 0 else wins).append(ratio)
+                (losses if netto < 0 else wins).append(ratio)
         median = statistics.median(losses) if losses else None
         per_symbol[symbol] = {
             "n_after_loss": len(losses),

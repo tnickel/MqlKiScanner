@@ -134,10 +134,19 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
 
     def _slot_grund(c: dict, rang: int, genommen_: bool) -> dict:
         if teilscan:
-            grund = ("✓ Im Teilscan-Scope: aktuell 🟢/🟡 laut letztem Lauf "
-                     "— wird geprüft (Rang " + str(rang) + " je Quelle spielte "
-                     "keine Rolle, alle Quellen-Slots reichten).")
-            status = "AUSGEWAEHLT"
+            # B12 (Lauf-Review 02.10.): Auch im Teilscan zählt die Slot-
+            # Grenze — eine Quelle mit mehr Scope-Kandidaten als Slots
+            # darf Überzählige nicht als „wird geprüft" beschreiben.
+            if genommen_:
+                grund = ("✓ Im Teilscan-Scope: aktuell 🟢/🟡 laut letztem Lauf "
+                         "— wird geprüft (Rang " + str(rang) + " je Quelle spielte "
+                         "keine Rolle, alle Quellen-Slots reichten).")
+                status = "AUSGEWAEHLT"
+            else:
+                grund = ("✗ Im Teilscan-Scope (🟢/🟡), aber Rang " + str(rang) +
+                         " in Quelle " + k + " hinter der Slot-Grenze (Top " +
+                         str(limit) + " je Quelle) — nicht geprüft.")
+                status = "OHNE_SLOT"
         elif genommen_:
             grund = (f"✓ Ausgewählt: Rang {rang} in Quelle {k} "
                      f"(Abonnenten-absteigend, Top {limit} je Quelle).")

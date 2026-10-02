@@ -786,7 +786,15 @@ if command:
             return
         if w_skip_if_stopped("forensik"):
             return
-        if not session.has_credentials:
+        # B7 (Lauf-Review 02.10.): Login nur, wenn MQL5-DIREKT-Kandidaten im
+        # Scope sind (F6-Logik des autonomen Launchers) — reine Quellen-Läufe
+        # brauchen kein mql5.com und dürfen an einem Login-Ausfall nicht
+        # scheitern.
+        hat_mql5_direkt = any(not c.get("quelle_kuerzel") for c in cands)
+        if not hat_mql5_direkt:
+            log("Keine MQL5-Direkt-Kandidaten im Scope — MQL5-Login nicht "
+                "erforderlich (nur Datenquellen werden geprüft).")
+        elif not session.has_credentials:
             log("Kein MQL5-Login — nur Kennzahlen möglich, Trade-Exporte entfallen "
                 "(Vorprüfung). Login unter Einstellungen ergänzen.")
         else:
@@ -1029,13 +1037,14 @@ if command:
             "llm": "llm", "local": "forensik", "step_listen": "listen",
             "step_kandidaten": "kandidaten", "step_forensik": "forensik",
             "step_llm": "llm", "step_portfolio": "portfolio",
+            "step_downloader": "downloader",
         }.get(mode, "listen")
         try:
             try:
                 if mode in ("local", "llm", "step_llm", "step_forensik", "step_kandidaten",
-                            "step_portfolio"):
+                            "step_portfolio", "step_downloader"):
                     for sid in ("listen", "kandidaten"):
-                        if mode in ("local", "llm", "step_portfolio") or (
+                        if mode in ("local", "llm", "step_portfolio", "step_downloader") or (
                                 sid == "listen" and mode in ("step_kandidaten", "step_forensik")
                                 and not signals_vorhanden):
                             w_step(sid, "skipped", detail="Vorhandene Daten verwenden")
@@ -1093,6 +1102,19 @@ if command:
                     w_run_llm(results, run_config)
                 elif mode == "step_portfolio":
                     w_run_portfolio(results, run_config)
+                elif mode == "step_downloader":
+                    # B2 (Lauf-Review 02.10.): „Nur Station 6" darf KEINEN
+                    # kompletten Scan starten (vorher fiel der Modus durch
+                    # alle Zweige und lief Crawl + Forensik + KI). Der
+                    # Abgleich nutzt die Ergebnisse der laufenden Sitzung
+                    # bzw. des letzten Laufs — ohne neue Prüfungen.
+                    if not results:
+                        w_step("downloader", "skipped",
+                               detail="Keine Ergebnisse in dieser Sitzung — "
+                                      "erst scannen (der Abgleich spiegelt "
+                                      "Lauf-Signale)")
+                    else:
+                        w_run_downloader(results, run_config)
                 else:
                     signals = w_run_listen(run_config)
                     current_step = "kandidaten"
@@ -1151,7 +1173,8 @@ if command:
 
     try:
         started = scan_worker.start(_worker, workflow=workflow, control=control,
-                                    logs=logs, results=results)
+                                    logs=logs, results=results,
+                                    lock_basis=config.DATA_DIR)
     except Exception as exc:
         workflow.update(status="error", activity=f"Worker konnte nicht gestartet werden: {exc}",
                         finished_at=datetime.now().isoformat(timespec="seconds"))
@@ -1347,7 +1370,12 @@ def _dialog_listen() -> None:
             daten = json.loads(datei.read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
             st.warning(f"Die gespeicherte Auswahl kann nicht gelesen werden: {exc}")
-    eintraege = list(st.session_state.get("scan_signals") or [])
+    # B13 (Lauf-Review 02.10.): Während eines laufenden Workflows hat
+    # Station 1 die FRISCHE Liste in control['signals'] geschrieben — die
+    # alte Session-Liste (scan_signals) würde den vorigen Stand zeigen.
+    # Lauf-Daten gehen vor, danach Session, dann gespeicherter Lauf.
+    eintraege = list((st.session_state.get("scan_control") or {}).get("signals")
+                     or st.session_state.get("scan_signals") or [])
     sitzungsdaten = bool(eintraege)
     if eintraege:
         st.caption("Signale aus dem Lauf in dieser Sitzung.")

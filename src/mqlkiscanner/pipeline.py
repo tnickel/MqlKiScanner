@@ -389,10 +389,15 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
                 or res.dd_balance_pct is not None:
             limit = float(settings.get("schranke_eq_dd_pct", 30.0))
             # F-12: EINE Schranken-Definition (scoring.dd_maximum) statt
-            # vier duplizierter max()-Aufrufe.
+            # vier duplizierter max()-Aufrufe. B6 (Lauf-Review 02.10.): Auch
+            # beim DB-Laden gehört die Monitor-Zweitmessung ins Maximum —
+            # sonst verliert eine unvollständige Forensik die rote Sperre
+            # (identisch zu refresh_report_verdict, sonst wäre die Anzeige
+            # schwächer als der Scan).
             res.schranke_verletzt = scoring.dd_maximum(
                 res.dd_equity_pct, res.trading_dd_pct, res.dd_balance_pct,
-                res.equity_dd_rekonstruiert_pct) > limit
+                res.equity_dd_rekonstruiert_pct,
+                res.monitor_trade_eq_dd_pct) > limit
         if res.gesamtbericht:
             res.kurzfassung = _extract_kurzfassung(res.gesamtbericht)
         if any((res.trade_analyse, res.risiko_analyse, res.gesamtbericht,
@@ -817,14 +822,34 @@ def restore_current_reports(result: ScanResult, settings: dict) -> bool:
         current = db.get_latest_analysis(result.id, kind, basis=basis) if basis else None
         setattr(result, kind, current["text"] if current else "")
         setattr(result, f"{kind}_at", (current["created_at"] or "") if current else "")
-        setattr(result, f"{kind}_model", (current["model"] or "") if current else "")
+        setattr(result, f"{kind}_model", (current["model"] if "model" in current else "") if current else "")
         stale = stale or bool(previous and current is None)
+    # B10 (Lauf-Review 02.10.): Tiefenanalysen (manuell, Prompt 5) genauso an
+    # die Datenbasis binden — 47 Bestandsfälle zeigten alte Texte neben neuer
+    # Basis ohne Kennzeichnung; sie könnten ungeprüft in PDF-Anhänge laufen.
+    # Ohne EVERY Forensik (Vorprüfung) gibt es keine vergleichbare Basis:
+    # dann bleibt die letzte Tiefenanalyse sichtbar (Bestehendes Verhalten).
+    tiefe_previous = db.get_latest_analysis(result.id, "tiefenanalyse")
+    tiefe_current = (db.get_latest_analysis(result.id, "tiefenanalyse", basis=basis)
+                     if basis else tiefe_previous)
+    result.tiefenanalyse = tiefe_current["text"] if tiefe_current else ""
+    result.tiefenanalyse_at = (tiefe_current["created_at"] or "") if tiefe_current else ""
+    result.tiefenanalyse_model = ((tiefe_current.get("model") or "")
+                                  if tiefe_current else "")
+    tiefe_stale = bool(tiefe_previous and tiefe_current is None)
     result.kurzfassung = _extract_kurzfassung(result.gesamtbericht)
     result.berichte_basis = basis or ""
-    result.bericht_hinweis = (
-        "Vorhandene KI-Berichte sind veraltet oder keiner geprüften Datengrundlage zugeordnet. "
-        "Sie bleiben im Archiv bzw. in der Datenbank-Historie erhalten; aktuelle Berichte neu erstellen."
-        if stale else "")
+    if stale:
+        result.bericht_hinweis = (
+            "Vorhandene KI-Berichte sind veraltet oder keiner geprüften Datengrundlage zugeordnet. "
+            "Sie bleiben im Archiv bzw. in der Datenbank-Historie erhalten; aktuelle Berichte neu erstellen.")
+    elif tiefe_stale:
+        result.bericht_hinweis = (
+            "Die gespeicherte erweiterte KI-Analyse (Tiefenanalyse) stammt "
+            "von einer ÄLTEREN Datenbasis — für PDF-Anhänge und Entscheidungen "
+            "neu erstellen (die Historie bleibt erhalten).")
+    else:
+        result.bericht_hinweis = ""
     return bool(result.gesamtbericht)
 
 
@@ -1431,8 +1456,12 @@ class ScanPipeline:
                 "abonnenten": res.abonnenten, "wochen": res.wochen,
                 "stats": stats_payload,
             }
-            if cand.get("quelle_kuerzel"):
-                signal_payload["quelle"] = str(cand["quelle_kuerzel"])
+            # B4 (Lauf-Review 02.10.): Die Quelle IMMER explizit übergeben —
+            # vorher nur bei REST-Kandidaten, womit ein MQL5-Direkt-Lauf
+            # unter einer bereits als Quellen-Signal dokumentierten ID den
+            # Kollisionsschutz (R1/F3 in db.upsert_signal) umging und den
+            # Inhalt still unter falschem Quellenlabel ersetzte.
+            signal_payload["quelle"] = str(cand.get("quelle_kuerzel") or "mql5")
             saved_trades_path = db.store_scan_result(
                 res.id, signal_payload,
                 trades_path=res.trades_path, forensik=forensik_payload)

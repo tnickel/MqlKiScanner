@@ -77,7 +77,13 @@ def batch_starten(ziele: list, settings: dict | None = None,
                 zustand["abgebrochen"] = True
                 break
             # Skip frisch aus der DB: fertige Tiefenanalysen kosten nichts.
-            if db.get_latest_analysis(result.id, "tiefenanalyse"):
+            # B10 (Lauf-Review 02.10.): NUR bei AKTUELLER Datenbasis — alte
+            # Texte neben geändertem Befund werden neu erstellt statt still
+            # weiterverwendet (47 Bestandsfälle mit veralteter Basis).
+            from .pipeline import report_basis_for as _basis_fuer
+            _basis = _basis_fuer(result, einstellungen)
+            if db.get_latest_analysis(result.id, "tiefenanalyse",
+                                      basis=_basis):
                 zustand["uebersprungen"] += 1
                 zustand["done"] = i
                 continue
