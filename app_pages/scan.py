@@ -238,6 +238,7 @@ def _station_requested() -> None:
     sid = event.get("station")
     if sid in {step[0] for step in STEPS}:
         st.session_state["_scan_station_dialog"] = sid
+        st.rerun("scan_station_dialog_host")
 
 
 @st.fragment(run_every=1.0)
@@ -360,14 +361,9 @@ def _live_status() -> None:
         payload, overall, key="scan_station_stepper",
         on_station_change=_station_requested,
     )
-    # Auch während eines Laufs nur dieses Fragment neu zeichnen. Die
-    # Dialogfunktionen sind nach dem initialen App-Lauf vollständig definiert;
-    # Stationsklicks brauchen keine erneuten Verbindungsprüfungen der Seite.
-    station = st.session_state.get("_scan_station_dialog")
-    dialog = globals().get("_station_dialoge", {}).get(station)
-    if dialog is not None:
-        st.session_state.pop("_scan_station_dialog", None)
-        dialog()
+    # Stationsdialoge öffnet ein unabhängiges Fragment. Als Kind dieses
+    # Status-Fragments würden sie beim nächsten Tick intern entfernt,
+    # obwohl das Fenster sichtbar bleibt und weiter Filterklicks annimmt.
 
     # Letzte Meldungen statt Logfile-Wand: kurz beweisen, dass sich was tut.
     recent = _recent_log_lines()
@@ -1275,9 +1271,8 @@ def _filterleiste(rows: list[dict], key_suffix: str,
         out = [r for r in out if r["_gewaehlt"]]
     elif hat_status and anzeige == label_raus:
         out = [r for r in out if r["_gewaehlt"] is False]
-    if qsel:
-        erlaubt = set(qsel)
-        out = [r for r in out if str(r.get("Quelle")) in erlaubt]
+    erlaubt = set(qsel)
+    out = [r for r in out if str(r.get("Quelle")) in erlaubt]
     if suche:
         out = [r for r in out if suche in str(r.get("Signal", "")).lower()
                or suche in str(r.get("ID", "")).lower()]
@@ -1336,7 +1331,6 @@ def _probleme_dialog(probleme: list, gesamt: int) -> None:
             st.caption(hinweis)
 
 
-@st.fragment()
 @st.dialog("📡 Station 1 · Signale holen — was kam rein?", width="large")
 def _dialog_listen() -> None:
     """Signale je Quelle: was der Crawl geliefert hat und was fehlte."""
@@ -1429,7 +1423,6 @@ def _dialog_listen() -> None:
                "können gespeicherte 🟢/🟡-Signale aus der DB ergänzt werden.")
 
 
-@st.fragment()
 @st.dialog("🔍 Station 2 · Auswahl — warum jedes Signal drin oder draußen ist", width="large")
 def _dialog_auswahl() -> None:
     """EINE scrollbare Tabelle: ALLE Signale des Laufs mit Grund je Signal,
@@ -1489,7 +1482,6 @@ def _dialog_auswahl() -> None:
                "Ursprungs-Link: Plattform liefert keine Signal-URL.")
 
 
-@st.fragment()
 @st.dialog("🔬 Station 3 · Prüfen & speichern — Forensik-Ergebnisse", width="large")
 def _dialog_forensik() -> None:
     """Kombinierte Sicht: alle Kandidaten des Laufs — wer geprüft wurde
@@ -1575,9 +1567,11 @@ def _dialog_forensik() -> None:
         st.caption(f"**{len(zeilen)} Kandidaten im Lauf — {n_da} geprüft, "
                    f"{len(zeilen) - n_da} nicht geprüft** (Grund je Signal "
                    "in der Tabelle).")
+    n_gesamt = len(zeilen)
     zeilen = _filterleiste(zeilen, "forensik",
                            label_gewaehlt="Nur geprüft",
                            label_raus="Nur nicht geprüft")
+    st.caption(f"Angezeigt: {len(zeilen)} von {n_gesamt} Kandidaten.")
     st.dataframe(_ohne_intern(zeilen), width="stretch", hide_index=True,
                  column_config={"Link": _link_spalte()})
     st.caption("Trading-DD ist der aus geschlossenen Trades gemessene "
@@ -1591,7 +1585,6 @@ def _dialog_forensik() -> None:
                    "Ergebnisseite unter „Probleme in diesem Lauf“.")
 
 
-@st.fragment()
 @st.dialog("🧠 Station 4 · KI-Berichte", width="large")
 def _dialog_llm() -> None:
     """KI-Berichte: welche Signale bekamen Berichte und wie ausführlich."""
@@ -1630,7 +1623,6 @@ def _dialog_llm() -> None:
     st.caption("Nur 🟢/🟡 erhalten das volle KI-Paket (Design-Regel: Budget sparen).")
 
 
-@st.fragment()
 @st.dialog("🥧 Station 5 · Portfolio", width="large")
 def _dialog_portfolio() -> None:
     """Portfolio-Vorschlag: Empfehlung und Statistik-Deutung."""
@@ -1675,7 +1667,6 @@ def _dialog_portfolio() -> None:
                      column_config={"Link": _link_spalte()})
 
 
-@st.fragment()
 @st.dialog("🔄 Station 6 · Abgleich", width="large")
 def _dialog_downloader() -> None:
     """Downloader-Abgleich: was gespiegelt wurde."""
@@ -1700,20 +1691,32 @@ def _dialog_downloader() -> None:
     st.caption("Die gespeicherten Abonnenten-Verläufe und PDFs sind auf der Ergebnisseite erreichbar.")
 
 
-# Erst dispatchen, nachdem alle Dialogfunktionen definiert sind.
-# Der CCv2-Trigger wird einmal verbraucht; ältere Stations-URLs bleiben gültig.
-_station_klick = st.session_state.pop("_scan_station_dialog", None)
-if _station_klick is None:
-    _station_klick = (st.query_params.get("station") or "").strip()
 _station_dialoge = {
     "listen": _dialog_listen, "kandidaten": _dialog_auswahl,
     "forensik": _dialog_forensik, "llm": _dialog_llm,
     "portfolio": _dialog_portfolio, "downloader": _dialog_downloader,
 }
-if "station" in st.query_params:
-    del st.query_params["station"]
-if _station_klick in _station_dialoge:
-    _station_dialoge[_station_klick]()
+
+
+@st.fragment(key="scan_station_dialog_host")
+def _station_dialog_host() -> None:
+    """Dialog-Lebensdauer unabhängig vom sekündlichen Status-Fragment.
+
+    Der Stations-Callback rerunnt nur diesen Host; st.dialog übernimmt
+    anschließend die Reruns seiner Filter. Der Trigger wird einmal verbraucht.
+    """
+    station = st.session_state.pop("_scan_station_dialog", None)
+    if station is None:
+        station = (st.query_params.get("station") or "").strip()
+    if "station" in st.query_params:
+        del st.query_params["station"]
+    if station in _station_dialoge:
+        _station_dialoge[station]()
+
+
+# Nach den Dialogdefinitionen in jedem App-Lauf registrieren; dadurch ist der
+# Host als Ziel für Stationsklicks verfügbar. Alte Stations-URLs bleiben gültig.
+_station_dialog_host()
 
 
 section_header(

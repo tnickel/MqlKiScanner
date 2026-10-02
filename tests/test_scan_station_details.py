@@ -9,6 +9,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from mqlkiscanner import config, db, downloader_sync, pipeline
+from test_station_dialog_interaktion import FragmentRuns, _open_station_from_stepper
 
 ROOT = Path(__file__).resolve().parents[1]
 STATIONS = (
@@ -127,8 +128,9 @@ def test_portfolio_station_reads_saved_session_text_fallback():
     assert "PORTFOLIO AUS AKTUELLER SITZUNG" in _text(_dialog(at))
 
 
-def test_component_station_event_opens_dialog_without_discarding_session():
+def test_component_station_event_opens_dialog_without_discarding_session(monkeypatch):
     """Send the CCv2 trigger payload used by double-clicks to the real app."""
+    fragment_runs = FragmentRuns(monkeypatch)
     at = _app().run()
     assert not at.exception, at.exception
     stepper = next(item for item in at.get("bidi_component")
@@ -139,15 +141,7 @@ def test_component_station_event_opens_dialog_without_discarding_session():
                                  forensik_vorhanden=True, ampel="🟡")
     at.session_state["scan_results"] = [result]
     at.query_params = {"unrelated": "keep-me"}
-    widget_states = at._tree.get_widget_states()
-    # AppTest does not serialize unsupported CCv2 widgets automatically.
-    state = widget_states.widgets.add()
-    state.id = stepper.proto.id
-    state.json_value = "{}"
-    trigger = widget_states.widgets.add()
-    trigger.id = f"$$STREAMLIT_INTERNAL_KEY_{stepper.proto.id}__events"
-    trigger.json_trigger_value = json.dumps([{"event": "station", "value": "forensik"}])
-    at._run(widget_states)
+    _open_station_from_stepper(at, fragment_runs, "forensik")
     dialog = _dialog(at)
     assert "Station 3" in dialog.proto.dialog.title
     assert dialog.get("dataframe")[0].value.loc[0, "Signal"] == "BLEIBT IN DER SITZUNG"

@@ -6,6 +6,7 @@ Kandidaten) bleiben sitzungsfest. Der Crawler wird gemockt — kein Netzwerk.
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -44,11 +45,17 @@ def _btn(at: AppTest, key: str):
     return found[0]
 
 
+def _stepper_html(at: AppTest) -> str:
+    stepper = next(item for item in at.get("bidi_component")
+                   if item.key == "scan_station_stepper")
+    return json.loads(stepper.proto.json)["html"]
+
+
 def test_step_numbers_blink_when_pending_and_stop_when_done(mocked_crawler):
     at = _scan_page()
     at.run()
     assert not at.exception
-    html = "\n".join(m.value for m in at.markdown)
+    html = _stepper_html(at)
     assert "mks-step--pending" in html and "mks-step--idle-hint" in html, \
         "Idle-Hinweis auf der nächsten offenen Station fehlt"
     # Schritt 1 klicken -> danach abgeschlossen, Hinweis wandert zur nächsten Station
@@ -59,7 +66,7 @@ def test_step_numbers_blink_when_pending_and_stop_when_done(mocked_crawler):
     wf = at.session_state["scan_workflow"]
     assert wf["steps"]["listen"]["status"] == "complete"
     assert len(at.session_state["scan_signals"]) == 2
-    html = "\n".join(m.value for m in at.markdown)
+    html = _stepper_html(at)
     assert "mks-step--complete" in html, "fertige Station zeigt kein Häkchen"
     assert html.count("mks-step--idle-hint") == 1, \
         "genau eine offene Station darf den Idle-Hinweis tragen"
@@ -117,15 +124,16 @@ def test_running_step_glow_and_pulse():
     at.session_state["scan_workflow"]["steps"]["forensik"]["status"] = "running"
     at.run()
     assert not at.exception, at.exception
-    html = "\n".join(m.value for m in at.markdown)
+    html = _stepper_html(at)
     assert html.count("mks-step--running") == 1, "laufende Station ist nicht genau eine"
-    assert 'aria-label="Station 3 von 6: Läuft"' in html, \
+    assert 'aria-label="Station 3 von 6: Prüfen &amp; speichern · Läuft"' in html, \
         "laufende Station trägt keine Läuft-Kennung"
     # Das ganze Zentrale-Panel bekommt die Hintergrundbeleuchtung injiziert.
-    assert ".st-key-scan_control_panel" in html and "mks-backlight" in html, \
+    panel_html = "\n".join(m.value for m in at.markdown)
+    assert ".st-key-scan_control_panel" in panel_html and "mks-backlight" in panel_html, \
         "Panel-Backlight fehlt während ein Schritt läuft"
     # Nicht-laufende Stationen bleiben ohne Lauf-Status.
-    assert 'aria-label="Station 1 von 6: Läuft"' not in html
+    assert 'aria-label="Station 1 von 6: Signale holen · Läuft"' not in html
 
 
 def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):
