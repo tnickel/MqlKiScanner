@@ -221,3 +221,45 @@ def test_materialize_portfolio_pdf_durchreichung(tmp_path):
     assert pfad and pfad.exists()
     text = _text(pfad.read_bytes())
     assert "Strategie 1: Alpha" in text
+
+
+def test_anhang_sammelt_alle_berichte_je_strategie():
+    """Nutzer-Wunsch 02.10.: Im Anhang steht ALLES zu jeder empfohlenen
+    Strategie — Kurzfassung, Risiko-Analyse (Stufe 1), Trade-Analyse
+    (Stufe 2), Gesamtbericht und die Tiefenanalyse, jeweils mit Modell-
+    Angabe; fehlende Berichte werden ehrlich benannt."""
+    from mqlkiscanner.pdf_reports import _anhang_markdown
+    alpha = _ergebnis(
+        1, "Alpha",
+        kurzfassung="Kurz: Alpha solide.",
+        risiko_analyse="RISIKO-ALPHA-TEXT", risiko_analyse_model="glm-5.3-flash",
+        risiko_analyse_at="2026-10-02 08:00:00",
+        trade_analyse="TRADE-ALPHA-TEXT", trade_analyse_model="glm-5.3",
+        tiefenanalyse="TIEFEN-ALPHA", tiefenanalyse_model="glm-5.3")
+    beta = _ergebnis(2, "Beta")   # ohne jeden Nebenbericht
+    md = _anhang_markdown([alpha, beta], _PORTFOLIO_TEXT)
+    alpha_block = md.split("Strategie 1: Alpha")[1].split("Strategie 2: Beta")[0]
+    assert "Kurz: Alpha solide." in alpha_block
+    assert "Risiko-Analyse (Stufe 1" in alpha_block
+    assert "RISIKO-ALPHA-TEXT" in alpha_block and "glm-5.3-flash" in alpha_block
+    assert "Trade-Analyse (Stufe 2)" in alpha_block
+    assert "TRADE-ALPHA-TEXT" in alpha_block
+    assert "Gesamtbericht (ungekürzt)" in alpha_block
+    assert "EMPFEHLUNG — Alpha passt." in alpha_block
+    assert "Erweiterte KI-Analyse (Tiefenanalyse, manuell)" in alpha_block
+    assert "TIEFEN-ALPHA" in alpha_block
+    beta_block = md.split("Strategie 2: Beta")[1]
+    assert "nicht vorhanden" in beta_block      # ehrlich statt still fehlen
+    assert "RISIKO-ALPHA-TEXT" not in beta_block
+
+
+def test_portfolio_pdf_anhang_rendert_alle_berichtsteile():
+    """Ende-zu-Ende: Der gerenderte PDF-Text enthält je Strategie die
+    Berichtsteile — nicht nur den Gesamtbericht."""
+    from mqlkiscanner.pdf_reports import portfolio_pdf_spec
+    alpha = _ergebnis(
+        1, "Alpha", risiko_analyse="RISIKO-IM-PDF", trade_analyse="TRADE-IM-PDF")
+    report = {"text": _PORTFOLIO_TEXT, "model": "glm-5.3", "created_at": "x"}
+    mit = portfolio_pdf_spec(report, ergebnisse=[alpha])[0]
+    text = _text(render_report_pdf(mit))
+    assert "RISIKO-IM-PDF" in text and "TRADE-IM-PDF" in text

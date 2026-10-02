@@ -211,7 +211,10 @@ def _empfohlene_signale(portfolio_text: str, ergebnisse) -> list:
 
 def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
     """Anhang „Empfohlene Strategien im Detail" als Markdown: je Strategie
-    Trennblatt mit Kennzahlen-Tabelle plus dem VOLLSTÄNDIGEN Gesamtbericht."""
+    Trennblatt mit Kennzahlen-Tabelle und ALLEN vorhandenen Berichten
+    gesammelt (Nutzer-Wunsch 02.10.: alles zu Strategie 1, dann alles zu
+    Strategie 2 …) — Kurzfassung, Risiko-Analyse, Trade-Analyse,
+    Gesamtbericht und — falls vorhanden — die manuelle Tiefenanalyse."""
     empfehlungen = _empfohlene_signale(portfolio_text, ergebnisse)
     if not empfehlungen:
         return ""
@@ -219,10 +222,27 @@ def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
         "\\pagebreak",
         "# Anhang — Empfohlene Strategien im Detail",
         "",
-        "Je empfohlener Strategie die vollständige Begründung: erst die "
-        "Kennzahlen der Engine (dieselbe Basis wie im Hauptteil), danach "
-        "der ungekürzte Gesamtbericht der KI-Analyse.",
+        "Je empfohlener Strategie ist hier ALLES gesammelt, was zum Signal "
+        "vorliegt: erst die Kennzahlen der Engine (dieselbe Basis wie im "
+        "Hauptteil), danach die Kurzfassung, die Risiko-Analyse (Stufe 1, "
+        "Flash-Modell), die Trade-Analyse (Stufe 2) und der ungekürzte "
+        "Gesamtbericht. Eine vorhandene erweiterte KI-Analyse (Tiefenanalyse) "
+        "schließt die Strategie ab.",
     ]
+
+    def _bericht(ergebnis, ueberschrift: str, text: str,
+                 modell: str = "", erstellt: str = "") -> list[str]:
+        quelle = " · ".join(filter(None, (
+            f"Modell: {modell}" if modell else "",
+            f"erstellt: {erstellt}" if erstellt else "")))
+        kopf = [f"## {ueberschrift}"]
+        if quelle:
+            kopf += ["", f"*{quelle}*"]
+        if not (text or "").strip():
+            return kopf + ["", "(nicht vorhanden — z. B. KI-Berichte für "
+                             "dieses Signal deaktiviert oder fehlgeschlagen.)"]
+        return kopf + ["", str(text)]
+
     for nummer, r in enumerate(empfehlungen, 1):
         def _f(wert, nachkomma=2, suffix=""):
             return ("—" if wert is None else f"{wert:.{nachkomma}f}".replace(".", ",") + suffix)
@@ -242,11 +262,31 @@ def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
             f"| Kapitalbasis | {getattr(r, 'kapitalbasis_verwendet_quelle', '') or '—'}"
             f" ({_f(getattr(r, 'kapitalbasis_verwendet_usd', None), 0, ' USD')}) |",
             f"| Stop-Befund | {r.stop_nachweis or '—'} |",
-            "",
-            "## Gesamtbericht (ungekürzt)",
-            "",
-            str(getattr(r, "gesamtbericht", "") or "(kein Gesamtbericht vorhanden)"),
         ]
+        if (getattr(r, "kurzfassung", "") or "").strip():
+            teile += ["", "## Kurzfassung", "",
+                      str(r.kurzfassung)]
+        teile += [""] + _bericht(
+            r, "Risiko-Analyse (Stufe 1 · Flash-Modell)",
+            getattr(r, "risiko_analyse", ""),
+            getattr(r, "risiko_analyse_model", ""),
+            getattr(r, "risiko_analyse_at", ""))
+        teile += _bericht(
+            r, "Trade-Analyse (Stufe 2)",
+            getattr(r, "trade_analyse", ""),
+            getattr(r, "trade_analyse_model", ""),
+            getattr(r, "trade_analyse_at", ""))
+        teile += _bericht(
+            r, "Gesamtbericht (ungekürzt)",
+            getattr(r, "gesamtbericht", ""),
+            getattr(r, "gesamtbericht_model", ""),
+            getattr(r, "gesamtbericht_at", ""))
+        if (getattr(r, "tiefenanalyse", "") or "").strip():
+            teile += _bericht(
+                r, "Erweiterte KI-Analyse (Tiefenanalyse, manuell)",
+                r.tiefenanalyse,
+                getattr(r, "tiefenanalyse_model", ""),
+                getattr(r, "tiefenanalyse_at", ""))
     return "\n".join(teile)
 
 

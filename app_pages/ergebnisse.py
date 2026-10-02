@@ -493,12 +493,13 @@ with st.expander('Regelwerk · Ausschlussliste', expanded=False,
 
 if portfolio:
     # Detail-Anhang je empfohlener Strategie aus den aktuellen Ergebnissen
-    # (Nutzer-Wunsch 30.09.2026) — nur 🟢 mit Gesamtbericht sind Kandidaten.
+    # (Nutzer-Wunsch 30.09.2026, erweitert 02.10. auf ALLE Berichte je
+    # Strategie) — 🟢 sind die Kandidaten; fehlende Berichte benennt der
+    # Anhang ehrlich, statt die Strategie ganz wegzulassen.
     _render_portfolio_report(
         portfolio,
         ergebnisse=[r for r in results
-                    if getattr(r, 'ampel', '') == '🟢'
-                    and getattr(r, 'gesamtbericht', '')])
+                    if getattr(r, 'ampel', '') == '🟢'])
 
 if visible:
     with st.expander('Urteile im Überblick', expanded=False, icon=':material/summarize:'):

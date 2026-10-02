@@ -1540,8 +1540,9 @@ class ScanPipeline:
         try:
             from .pdf_reports import materialize_portfolio_pdf
             # Anhang „Empfohlene Strategien im Detail" (Nutzer-Wunsch
-            # 30.09.2026): Kennzahlen + vollständiger Gesamtbericht je
-            # empfohlener Strategie aus dem Portfolio-Text.
+            # 30.09.2026, erweitert 02.10. auf ALLE Berichte je Strategie):
+            # Kennzahlen + Kurzfassung + Risiko-/Trade-Analyse +
+            # Gesamtbericht (+ Tiefenanalyse) je empfohlener Strategie.
             materialize_portfolio_pdf(summary, ergebnisse=jobs)
         except Exception as exc:
             pdf_error = f"Portfolio-PDF nicht gespeichert: {type(exc).__name__}: {exc}"
@@ -1647,12 +1648,13 @@ class ScanPipeline:
                     f"Signal #{result.id}: {result.pdf_fehler}")
         if portfolio and portfolio.get("text"):
             try:
-                # Anhang je empfohlener Strategie (Nutzer-Wunsch 30.09.):
-                # 🟢-Ergebnisse dieses Laufs liefern die Detail-Berichte.
+                # Anhang je empfohlener Strategie (Nutzer-Wunsch 30.09.,
+                # erweitert 02.10. auf ALLE Berichte je Strategie):
+                # 🟢-Ergebnisse dieses Laufs liefern die Detail-Berichte —
+                # auch ohne Gesamtbericht (der Anhang nennt Fehlendes ehrlich).
                 materialize_portfolio_pdf(portfolio, ergebnisse=[
                     r for r in results
-                    if getattr(r, "ampel", "") == "🟢"
-                    and getattr(r, "gesamtbericht", "")])
+                    if getattr(r, "ampel", "") == "🟢"])
             except Exception as exc:
                 error = f"Portfolio-PDF nicht gespeichert: {type(exc).__name__}: {exc}"
                 portfolio["storage_error"] = "; ".join(
