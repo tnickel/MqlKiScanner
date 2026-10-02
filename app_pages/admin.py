@@ -793,7 +793,7 @@ with prompts_tab:
                   "gesamtbericht": "3 · Gesamtbericht", "portfolio": "4 · Portfolio-Vorschlag",
                   "tiefenanalyse": "ℹ️ Tiefenanalyse"}
         placeholders = {
-            "trade_analyse": ("kandidat_json", "trades_json"),
+            "trade_analyse": ("kandidat_json", "trades_json", "forensik_json"),
             "risiko_analyse": ("kandidat_json", "forensik_json", "kriterien"),
             "gesamtbericht": ("kandidat_json", "forensik_json", "trade_analyse", "risiko_analyse", "kriterien"),
             "portfolio": ("kandidaten_json", "kriterien"),
@@ -803,7 +803,7 @@ with prompts_tab:
         prompt_flow = {
             "trade_analyse": {
                 "why": "Erkennt Handelslogik und Muster, ohne Risikokennzahlen neu zu rechnen.",
-                "input": "Kandidatendaten + vorbereitete Trades",
+                "input": "Kandidatendaten + vorbereitete Trades + Forensik",
                 "output": "Zwischenbericht: Handelsweise",
             },
             "risiko_analyse": {

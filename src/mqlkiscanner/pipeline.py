@@ -183,6 +183,9 @@ class ScanResult:
     martingale_evidenz: list | None = None
     stop_nachweis: str = ""
     stop_evidence: str | None = None  # direct | cluster | partial | none; nie aus Freitext ableiten
+    # Full code evidence, including SL executions and coordinated loss exits.
+    # Behavioural hints never turn into the direct/cluster proof flag.
+    stop_befund: dict | None = None
     kapitalbasis_usd: float | None = None  # Signalseite "Initial Deposit" (kann negativ sein)
     # Von der Forensik TATSÄCHLICH verwendete Kapitalbasis (Engine-Befund,
     # nicht die Lauf-Absicht): csv_einzahlungen schlägt jede Injektion. Wird
@@ -336,6 +339,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             martingale_evidenz=f.get("martingale_evidenz") or [],
             stop_nachweis=f.get("stop_nachweis") or "",
             stop_evidence=f.get("stop_evidence"),
+            stop_befund=f.get("stop_befund") if isinstance(f.get("stop_befund"), dict) else None,
             kapitalbasis_usd=stats.get("initial_deposit_usd"),
             # Monitor-Nachmessung (Datenquellen-Signale; None ohne Quelle)
             monitor_trade_eq_dd_pct=stats.get("monitor_trade_eq_dd_pct"),
@@ -566,6 +570,9 @@ def _forensik_json(r: ScanResult) -> str:
         "martingale_evidenz": r.martingale_evidenz,
         "stop_nachweis": r.stop_nachweis,
         "stop_evidence": r.stop_evidence,
+        # Preserve the identity of legacy reports that did not carry these
+        # facts; new scans bind their complete stop evidence to report_basis.
+        **({"stop_befund": r.stop_befund} if r.stop_befund is not None else {}),
         # K1 (Fremd-Review 01.10.): Die Engine-Vollstaendigkeit EXPLIZIT
         # nennen — 18 von 54 Gesamtberichten erklaerten die Pflichtbatterie
         # aus nullwertigen Payload-Feldern fälschlich für unvollständig,
@@ -621,13 +628,22 @@ def _forensik_json(r: ScanResult) -> str:
 def _stop_evidence_text(stops: dict) -> str:
     if stops.get("evidence_level") == 1:
         if "positions_with_sl" in stops:
-            return f"Orderbuch: {stops['positions_with_sl']}/{stops.get('positions_total')} mit SL"
-        return (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
-                f"{stops.get('positions_total')} mit SL/TP")
-    # Nutzer-Regel 28.09.2026: fehlender SL-Nachweis ist neutral — kein
-    # "kein Nachweis"-Wertungstext, sondern Offenlegung + KI-Auftrag.
-    return stops.get("verdict",
-                     "SL nicht übertragen — neutral (KI schätzt aus dem Verhalten ab)")
+            text = f"Orderbuch: {stops['positions_with_sl']}/{stops.get('positions_total')} mit SL"
+        else:
+            text = (f"Orderbuch: {stops.get('positions_with_sl_tp')}/"
+                    f"{stops.get('positions_total')} mit SL/TP")
+        if stops.get("exits_sl"):
+            text += f"; {stops['exits_sl']} [sl]-Ausführungen"
+    else:
+        # Missing exported SL is neutral, not evidence of absent protection.
+        text = stops.get("verdict",
+                         "SL nicht übertragen — neutral (KI schätzt aus dem Verhalten ab)")
+    signature = stops.get("schutzsignatur") or {}
+    if signature.get("qualifizierte_verlustgruppen"):
+        text += (f"; {signature['qualifizierte_verlustgruppen']} koordinierte Verlust-Exits "
+                 f"an {signature.get('tage_mit_verlustgruppen', 0)} Tagen "
+                 f"(Schutz-{signature.get('status')}, kein zusätzlicher SL-Beweis)")
+    return text
 
 
 def _kapitalbasis_abgleich(drawdown_befund: dict, stats: dict) -> tuple[bool, str]:
@@ -1197,6 +1213,7 @@ class ScanPipeline:
                 stops = fx["stops"]
                 res.stop_nachweis = _stop_evidence_text(stops)
                 res.stop_evidence = stops.get("stop_evidence")
+                res.stop_befund = stops
                 log(f"✓ Forensik: Winrate {res.winrate_pct} % · Trading-DD "
                     f"{res.trading_dd_pct} % · Serie {res.max_verlustserie} · "
                     f"Peak {res.peak_positionen} Pos · Martingale "
@@ -1326,6 +1343,7 @@ class ScanPipeline:
                     "martingale_evidenz": res.martingale_evidenz,
                     "stop_nachweis": res.stop_nachweis,
                     "stop_evidence": res.stop_evidence,
+                    "stop_befund": res.stop_befund,
                     "symbole": res.symbole,
                     # Kapitalbasis samt Herkunft (Audit-Snapshot)
                     "kapitalbasis": {
@@ -1604,6 +1622,7 @@ class ScanPipeline:
             stops = fx["stops"]
             r.stop_nachweis = _stop_evidence_text(stops)
             r.stop_evidence = stops.get("stop_evidence")
+            r.stop_befund = stops
             ev = scoring.evaluate(
                 report, schranke_eq_dd_pct=settings.get("schranke_eq_dd_pct", 30.0))
             r.score = ev["score"]

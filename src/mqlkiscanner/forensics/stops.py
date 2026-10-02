@@ -18,13 +18,21 @@ from __future__ import annotations
 
 import statistics
 import re
+import math
+from bisect import bisect_left
 from collections import Counter, defaultdict
+from dataclasses import astuple
 
 from ..models import ParsedExport
 from ..symbols import normalize_symbol, symbol_class, fx_pip_size
 
 MIN_CLUSTER_LOSSES = 8
 MIN_CLUSTER_REPEATS = 3
+# Seconds are export resolution, not an inferred order execution delay.
+# A wider 5-second window merged extra partial exits in the real controls.
+SYNC_CLOSE_SECONDS = 2
+MIN_PROTECTIVE_GROUPS = 3
+MIN_PROTECTIVE_DAYS = 2
 
 
 def run(parsed: ParsedExport) -> dict:
@@ -36,6 +44,10 @@ def run(parsed: ParsedExport) -> dict:
         result.update(_distance_clustering(trades))
         result["stop_evidence"] = "cluster" if result.get("clustered") else "none"
     result["ribbon"] = _ribbon_statistics(trades)
+    # A coordinated loss exit is useful behavioural evidence, but neither
+    # proves a broker SL nor distinguishes manual exits, stop-out and grid
+    # resets. Keep it separate from the existing direct/cluster proof flag.
+    result["schutzsignatur"] = _synchronized_loss_exits(trades)
     return result
 
 
@@ -223,6 +235,130 @@ def _distance_clustering(trades) -> dict:
                   if free_running else
                   "kein eindeutiges Stop-Niveau erkennbar — neutral")
         ),
+    }
+
+
+# ------------------------------------------------ Verhaltensbefund
+def _synchronized_loss_exits(trades) -> dict:
+    """Describe repeated loss exits without promoting them to SL proof.
+
+    Inspect complete symbol windows before looking at PnL. Filtering losses
+    first would turn a profitable grid basket with losing legs into apparent
+    protection. Windows are anchored at the first close (no chaining). Exact
+    duplicate rows cannot manufacture independent positions for this test;
+    the actual engine's PnL and other evidence are unaffected here.
+    """
+    by_symbol: dict[str, list] = defaultdict(list)
+    seen = set()
+    duplicate_count = 0
+    for trade in trades:
+        identity = astuple(trade)
+        if identity in seen:
+            duplicate_count += 1
+            continue
+        seen.add(identity)
+        by_symbol[normalize_symbol(trade.symbol)].append(trade)
+
+    counts = dict(gruppen_gesamt=0, reine_verlustgruppen=0,
+                  qualifizierte_verlustgruppen=0, gemischte_gruppen=0,
+                  gemischte_netto_positive_gruppen=0,
+                  gewinngruppen=0, null_gruppen=0, hedge_gruppen=0,
+                  verlustpositionen=0, vollstaendige_symbol_schliessungen=0)
+    days = set()
+    examples = []
+    qualifying_net = []
+    for symbol in sorted(by_symbol):
+        sequence = sorted(by_symbol[symbol], key=lambda t: (t.close_time, t.open_time,
+                                                           t.direction, t.volume, t.profit))
+        opens = sorted(t.open_time for t in sequence)
+        closes = sorted(t.close_time for t in sequence)
+        index = 0
+        while index < len(sequence):
+            start = sequence[index].close_time
+            end = index + 1
+            while (end < len(sequence)
+                   and (sequence[end].close_time-start).total_seconds() <= SYNC_CLOSE_SECONDS):
+                end += 1
+            group = sequence[index:end]
+            index = end
+            if len(group) < 2:
+                continue
+            counts["gruppen_gesamt"] += 1
+            nets = [t.net for t in group]
+            if any(net < 0 for net in nets) and any(net > 0 for net in nets) and math.fsum(nets) > 0:
+                counts["gemischte_netto_positive_gruppen"] += 1
+            directions = {t.direction for t in group}
+            if len(directions) > 1:
+                counts["hedge_gruppen"] += 1
+            if all(net < 0 for net in nets):
+                counts["reine_verlustgruppen"] += 1
+            elif all(net > 0 for net in nets):
+                counts["gewinngruppen"] += 1
+                continue
+            elif any(net == 0 for net in nets):
+                counts["null_gruppen"] += 1
+                continue
+            else:
+                counts["gemischte_gruppen"] += 1
+                continue
+            # They must have coexisted BEFORE the first close and have the
+            # same direction; alternating trades and hedges are not this
+            # particular signature. Missing it still has no adverse meaning.
+            if len(directions) != 1 or any(t.open_time >= start for t in group):
+                continue
+            counts["qualifizierte_verlustgruppen"] += 1
+            counts["verlustpositionen"] += len(group)
+            days.add(start.date().isoformat())
+            net = math.fsum(nets)
+            qualifying_net.append(net)
+            active = bisect_left(opens, start) - bisect_left(closes, start)
+            if active == len(group):
+                counts["vollstaendige_symbol_schliessungen"] += 1
+            distances = [d for t in group for d in [t.loss_distance()] if d is not None]
+            examples.append({
+                "symbol": symbol, "richtung": group[0].direction,
+                "von": start.isoformat(sep=" "),
+                "bis": group[-1].close_time.isoformat(sep=" "),
+                "anzahl": len(group), "netto_usd": round(net, 2),
+                "offene_symbol_positionen_vorher": active,
+                "geschlossen_anteil_pct": round(len(group)/active*100, 1) if active else None,
+                "lot_min": min(t.volume for t in group),
+                "lot_max": max(t.volume for t in group),
+                "verlustdistanz_min": min(distances) if distances else None,
+                "verlustdistanz_max": max(distances) if distances else None,
+            })
+
+    n = counts["qualifizierte_verlustgruppen"]
+    plausible = n >= MIN_PROTECTIVE_GROUPS and len(days) >= MIN_PROTECTIVE_DAYS
+    status = "plausibel" if plausible else "hinweis" if n else "nicht_beobachtet"
+    interpretation = (
+        "Wiederholte koordinierte Nettoverlust-Exits: beobachtete "
+        "Verlustbegrenzung macht einen internen Schutzmechanismus plausibel."
+        if plausible else
+        "Koordinierte Nettoverlust-Exits beobachtet; zu wenige unabhängige "
+        "Ereignisse/Tage für eine wiederholte Schutzsignatur."
+        if n else
+        "Keine qualifizierte synchrone Verlustgruppe beobachtet; neutral, "
+        "kein Nachweis fehlenden Stop-Schutzes.")
+    return {
+        "version": 1, "status": status, "plausibel": plausible,
+        "fenster_sekunden": SYNC_CLOSE_SECONDS,
+        "min_ereignisse": MIN_PROTECTIVE_GROUPS, "min_tage": MIN_PROTECTIVE_DAYS,
+        **counts, "tage_mit_verlustgruppen": len(days),
+        "exakte_duplikate_ignoriert": duplicate_count,
+        "groesster_gruppenverlust_usd": round(min(qualifying_net), 2) if qualifying_net else None,
+        # Bound prompt size; order by loss magnitude, then time, not CSV order.
+        "beispiele": sorted(examples, key=lambda e: (e["netto_usd"], e["von"], e["symbol"]))[:5],
+        "interpretation": interpretation,
+        "grenzen": (
+            "Heuristik, keine kalibrierte Wahrscheinlichkeit und kein SL-Beweis. "
+            "Export enthält nur geschlossene Positionen; offene Restpositionen "
+            "und Intratrade-Equity fehlen. Verlustgruppen können auch manuelle "
+            "Exits, Grid-Resets oder Margin-Stop-outs sein. Gewinn-/gemischte "
+            "Körbe belegen keinen Verluststopp. Ein niedriger historischer "
+            "Equity-DD stützt die Risikobegrenzung, beweist weder SL noch "
+            "künftige Verlustobergrenze. Stop-Evidenz, Risiko-Score und "
+            "Drawdown-Schranke werden durch diese Signatur nicht geändert."),
     }
 
 

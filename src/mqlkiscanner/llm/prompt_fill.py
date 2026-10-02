@@ -69,12 +69,13 @@ def assert_template_covered(template: str, keys, vorlage: str) -> str:
 
 def build_trade_prompt(result, trades_json: str) -> str:
     """Prompt 1 — Strategie aus den Trades (starkes Modell)."""
-    from ..pipeline import _kandidat_json  # spaeter Import: kein Kreisimport
+    from ..pipeline import _forensik_json, _kandidat_json  # spaeter Import: kein Kreisimport
     template = assert_template_covered(
         llm_prompts.load_prompt("trade_analyse"),
-        ("{kandidat_json}", "{trades_json}"), "trade_analyse")
+        ("{kandidat_json}", "{trades_json}", "{forensik_json}"), "trade_analyse")
     return fill_prompt(template, {"{kandidat_json}": _kandidat_json(result),
-                                  "{trades_json}": trades_json})
+                                  "{trades_json}": trades_json,
+                                  "{forensik_json}": _forensik_json(result)})
 
 
 def build_risk_prompt(result, kriterien: str) -> str:

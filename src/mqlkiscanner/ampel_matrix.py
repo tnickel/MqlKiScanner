@@ -206,6 +206,14 @@ def _stop_zelle(r) -> Zelle:
         return Zelle(GELB, "teilweise",
                      f"Stop-Nachweis teilweise vorhanden: {nachweis}")
     if r.stop_evidence == "none":
+        signature = (getattr(r, "stop_befund", None) or {}).get("schutzsignatur") or {}
+        if signature.get("qualifizierte_verlustgruppen"):
+            return Zelle(KEINE_DATEN, "Verlustbegrenzung beobachtet",
+                         f"{nachweis}. Koordinierte reine Verlustschließungen sind "
+                         "ein Verhaltenshinweis auf begrenzende Exits; SL, manuelle "
+                         "Schließung, Grid-Reset und Margin-Stop-out sind damit "
+                         "nicht unterscheidbar. Kein direkter SL-Beweis, kein "
+                         "Score-Bonus und keine Abwertung fehlender SL-Felder.")
         # Nutzer-Regel 28.09.2026: kein SL in den Daten = NEUTRAL, kein
         # Warnflag — die meisten Broker übertragen keinen SL. Abwerten darf
         # nur die KI-Analyse mit begründeter Verhaltens-Einschätzung.
