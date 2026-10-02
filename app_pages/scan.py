@@ -1336,6 +1336,7 @@ def _probleme_dialog(probleme: list, gesamt: int) -> None:
             st.caption(hinweis)
 
 
+@st.fragment()
 @st.dialog("📡 Station 1 · Signale holen — was kam rein?", width="large")
 def _dialog_listen() -> None:
     """Signale je Quelle: was der Crawl geliefert hat und was fehlte."""
@@ -1428,6 +1429,7 @@ def _dialog_listen() -> None:
                "können gespeicherte 🟢/🟡-Signale aus der DB ergänzt werden.")
 
 
+@st.fragment()
 @st.dialog("🔍 Station 2 · Auswahl — warum jedes Signal drin oder draußen ist", width="large")
 def _dialog_auswahl() -> None:
     """EINE scrollbare Tabelle: ALLE Signale des Laufs mit Grund je Signal,
@@ -1487,6 +1489,7 @@ def _dialog_auswahl() -> None:
                "Ursprungs-Link: Plattform liefert keine Signal-URL.")
 
 
+@st.fragment()
 @st.dialog("🔬 Station 3 · Prüfen & speichern — Forensik-Ergebnisse", width="large")
 def _dialog_forensik() -> None:
     """Kombinierte Sicht: alle Kandidaten des Laufs — wer geprüft wurde
@@ -1588,6 +1591,7 @@ def _dialog_forensik() -> None:
                    "Ergebnisseite unter „Probleme in diesem Lauf“.")
 
 
+@st.fragment()
 @st.dialog("🧠 Station 4 · KI-Berichte", width="large")
 def _dialog_llm() -> None:
     """KI-Berichte: welche Signale bekamen Berichte und wie ausführlich."""
@@ -1626,6 +1630,7 @@ def _dialog_llm() -> None:
     st.caption("Nur 🟢/🟡 erhalten das volle KI-Paket (Design-Regel: Budget sparen).")
 
 
+@st.fragment()
 @st.dialog("🥧 Station 5 · Portfolio", width="large")
 def _dialog_portfolio() -> None:
     """Portfolio-Vorschlag: Empfehlung und Statistik-Deutung."""
@@ -1670,6 +1675,7 @@ def _dialog_portfolio() -> None:
                      column_config={"Link": _link_spalte()})
 
 
+@st.fragment()
 @st.dialog("🔄 Station 6 · Abgleich", width="large")
 def _dialog_downloader() -> None:
     """Downloader-Abgleich: was gespiegelt wurde."""
