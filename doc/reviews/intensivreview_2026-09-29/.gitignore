@@ -1,6 +1,0 @@
-tmp/
-*.db
-*.db-shm
-*.db-wal
-__pycache__/
-sub_scanner/work/

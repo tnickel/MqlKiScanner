@@ -97,6 +97,12 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 6. Vision/Bildanalyse wird für den Kern NICHT benötigt (Daten kommen als
    HTML/CSV) — optional als Extra für Ad-hoc-Screenshots.
 
+- **Review-Archiv (02.10., Nutzer-Wunsch):** Erledigte Review-/CR-Protokolle
+  liegen in `../waste/` — OUTHALB des Repos, bewusst nicht auf GitHub, aber
+  nicht gelöscht (codereview_2026-10-01, intensivreview_2026-09-29,
+  laufreview_2026-10-02, stop_erkennung_2026-10-02). Neue Reviews zunächst
+  unter doc/reviews/ führen; nach vollständiger Umsetzung dorthin verschieben.
+
 ## Projektstruktur
 
 - `doc/` — Doku: Analyse-Verlauf, MQL5-Technik, Forensik-Test-Spec, Roadmap,
@@ -429,7 +435,7 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   grün (+14 in tests/test_fix_signale.py, inkl. AppTest Ende-zu-Ende:
   ID eingeben → setzen → 📌 FIX in der Tabelle).
 - ✅ Intensiv-Review-Fixes B1–B16 (30.09.2026, Review
-  `doc/reviews/intensivreview_2026-09-29/review.md`, Umsetzung nach
+  `../waste/intensivreview_2026-09-29/review.md` (Archiv), Umsetzung nach
   Nutzer-Freigabe): **B1 [kritisch]** Monitor-EQ-DD
   (`monitor_trade_eq_dd_pct`, floating-inclusive Zweitmessung des
   Quellen-Monitors) ist FÜNFTES Maximum in der Drawdown-Schranke
@@ -475,7 +481,7 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Scanner-Vorfilter behandelt unbekanntes Mindestalter als nicht belegt.
   Tests: +27 in tests/test_intensivreview_fixes.py.
   **Live-Verifikation 30.09. abends** (PelicanMonitor neu gestartet,
-  `doc/reviews/intensivreview_2026-09-29/lauf_verifikation_b1_b3.py`,
+  `../waste/intensivreview_2026-09-29/lauf_verifikation_b1_b3.py` (Archiv),
   isoliert ohne DB-Schreiben/KI): Lemonal 🔴 (46,65 % Schranke),
   AccurateCopier 🔴 (241,3 %), Lexo/PentagonForex/Mr_Profit 🟡 (Ertrag
   1,86/1,12/3,33 statt 15,4/6,68/63,8 %/M), alle mit impliziter Basis.
@@ -497,7 +503,7 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   korrekt 🔴 ist (Monitor-TDD 66,5 %). +10 Tests in
   tests/test_portfolio_statistik.py.
 
-- ✅ Fremd-Review 01.10. (doc/reviews/codereview_2026-10-01/): Alle 4 P1
+- ✅ Fremd-Review 01.10. (Archiv ../waste/codereview_2026-10-01/): Alle 4 P1
   und alle P2 behoben. **F1** Equity-Reko führt USD- und PROZENT-Maximum
   getrennt (1000→600→2000→1500 meldet jetzt 40 % statt 25 % — der Wert
   in der Schranke war unterschätzt). **F2** Punkte ohne vollständiges
@@ -567,7 +573,7 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
     nicht aus dem laufenden System. Reihenfolge: Berechnung in `pipeline.py`
     nach `:1231` (`dd_maximum` aus `scoring.py:62` zwingend verwenden) →
     Mitlesen in `results_from_db():296-360` → Tests auf Pipeline-Ebene.
-    Details: `doc/reviews/intensivreview_2026-09-29/review.md` §A B24.
+    Details: `../waste/intensivreview_2026-09-29/review.md` §A B24 (Archiv).
   - 🚨 **BEFUND B25 (02.10.2026) — doppelte Trade-Zeilen verzerren die
     Forensik.** 38 von 97 Signalen enthalten exakte Duplikate (Spitze The
     Holy Grail: 4.197 überzählige Zeilen von 15.340 = 27,4 %). Nachgerechnet:
