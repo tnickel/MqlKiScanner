@@ -554,8 +554,47 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Definition dokumentiert. Bestands-Ranking (geom., 🟢/🟡): ImpulseNet
   5,15 · Gold Spike MT5 1,44 · Combo Profile 1,43 · S7PRO 1,09 ·
   MicroJump 1,07 · Pure Gold 1,04 … Gold Spike MT4 0,77.
+  - 🚨 **BEFUND B24 (02.10.2026, Lauf-Prüfung) — RetDD ist TOter Code.**
+    Der vorige Eintrag beschreibt die *Verdrahtung* (Ampel-Zelle, Payloads,
+    Prompts, Sync) korrekt — aber **die Werte werden nirgends berechnet**.
+    `pipeline.py:157-163` deklariert `retdd_monat`/`retdd_jahr`/
+    `ertrag_monat_geom_pct`/`cagr_jahr_pct`, **keine Zuweisung existiert**
+    (Suche über alle `src/`: der einzige Treffer ist ein Kommentar). Live
+    geprüft: **0 von 97 Signalen** haben einen Wert; die Ampel-Zelle `retdd`
+    ist immer ⚪; kein einziges Urteil enthält den RetDD-Text; die Prompts
+    verlangen trotzdem die Nennung eines Wertes, der immer `null` ist.
+    Das obige Bestands-Ranking stammt aus einer **manuellen Nachrechnung**,
+    nicht aus dem laufenden System. Reihenfolge: Berechnung in `pipeline.py`
+    nach `:1231` (`dd_maximum` aus `scoring.py:62` zwingend verwenden) →
+    Mitlesen in `results_from_db():296-360` → Tests auf Pipeline-Ebene.
+    Details: `doc/reviews/intensivreview_2026-09-29/review.md` §A B24.
+  - 🚨 **BEFUND B25 (02.10.2026) — doppelte Trade-Zeilen verzerren die
+    Forensik.** 38 von 97 Signalen enthalten exakte Duplikate (Spitze The
+    Holy Grail: 4.197 überzählige Zeilen von 15.340 = 27,4 %). Nachgerechnet:
+    Drawdown **9,46 % → 12,12 %** (zu niedrig), Verlustserie **120 → 50**
+    (2,4× zu hoch). Der Parser arbeitet **1:1** zur Datei (15340 = 15340,
+    SHA stimmt) — die Duplikate kommen aus dem gelieferten Snapshot, nicht aus
+    dem Cache. **Konsequenz:** Drawdown-Schancen betroffener Signale können
+    erst nach Dedup + Re-Scan als gesichert gelten.
+  - B26 (02.10.2026, MITTEL): `winrate_pct` und `trading_dd` gehen ohne `n`
+    bzw. ohne Bezugsgröße in die KI-Nutzlast — „95,5 % Trefferquote" und
+    „0,1 % DD" sind so nicht prüfbar.
+  - ✅ **B24+B25+B26 BEHOBEN (02.10.2026, gleicher Tag).** B24: Produzent
+    `portfolio_statistik.effizienz_kennzahlen()` berechnet je Signal
+    ertrag_monat_geom_pct/cagr_jahr_pct/retdd_monat/retdd_jahr auf der
+    Forensik-Kurve (DD über scoring.dd_maximum), verdrahtet in
+    analyze_candidate, persistiert in stats_json UND forensik-JSON,
+    results_from_db liest sie zurück. **Nutzer-Regel 02.10.: RetDD ≥ 1,0
+    ist Mindestqualität** — Grün-Weg in ampel_for hart gesperrt (retdd < 1,0
+    ODER unbelegt → 🟡 mit Begründung), Ampel-Zelle grün ab 1,0/gelb ab
+    0,5/orange, Portfolio-/Risiko-/Gesamtbericht-Prompts nennen 1,0 als
+    Empfehlungsminimum (statt 0,2). B25: parser.load_export entfernt exakte
+    Zeilen-Duplikate VOR dem Parsen (THG: 4.197 entfernt), Zähler
+    `duplikate_entfernt` in stats + Forensik-JSON + Log-Meldung. B26:
+    `trades_anzahl` + `duplikate_entfernt` im Forensik-Payload. Bestand
+    braucht einen Re-Scan, damit DB-Werte + Dedubel-Forensik wirksam werden.
 
-Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
+  Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:
       `--scan gelbgruen|full` (plus `--once`, `--markt`, `--betreuer`,

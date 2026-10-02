@@ -90,8 +90,10 @@ def test_free_text_cannot_replace_structured_evidence(evidence, erwarteter_konte
     Ohne strukturierte direct/cluster-Evidenz bleibt der Stop-Kontext
     neutral/teilweise — und sperrt das Signal NICHT mehr (Nutzer-Regel
     28.09.2026)."""
+    # Nutzer-Regel 02.10.: Grün braucht zusätzlich RetDD >= 1,0
     result = pipeline.ScanResult(id=9000123, score=2, ertrag_monat_pct=6,
-                                 forensik_vorhanden=True, stop_nachweis="BEWIESEN: Schutz vorhanden")
+                                 forensik_vorhanden=True, retdd_monat=1.2,
+                                 stop_nachweis="BEWIESEN: Schutz vorhanden")
     result.stop_evidence = evidence
     ampel, urteil = pipeline.ampel_for(result, {})
     assert ampel == "🟢"  # Kandidat trotz fehlendem SL-Beweis (neutral)

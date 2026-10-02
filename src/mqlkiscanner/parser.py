@@ -89,6 +89,35 @@ def load_export(path: str) -> ParsedExport:
         rows = list(csv.reader(fh, delimiter=";"))
     if not rows:
         raise ValueError(f"Leere Datei: {path}")
+    # B25 (Lauf-Review 02.10.): Exakte Zeilen-Duplikate bei MASSIERTem
+    # Auftreten entfernen, BEVOR geparst wird. Zwei belegte reale Phänomene:
+    # (a) Liefer-Duplikate ganzer Historienteile aus Datenquellen-Monitoren
+    # (The Holy Grail: 4.197/15.340 = 27,4 % — Drawdown systematisch nach
+    # unten verfälscht); (b) ECHTE Zwillings-Grid-Legs (F-16, Multiset:
+    # Gold-Spike-MT5-Referenz matched 98 NUR mit Zwillingen — dort 2 exakte
+    # Duplikate, echt). Unterscheidbar sind beide nur über die MASSE:
+    # bereinigt wird erst ab MIN_DEDUPLICATE (10+) Zeilen UND >= 1 % Anteil
+    # — echte Einzelfall-Zwillinge bleiben zählen, Massen-Doppellieferungen
+    # werden entfernt. Der Zähler geht in den Forensik-Befund.
+    gesehen: set[tuple[str, ...]] = set()
+    mit_duplikaten: list[list[str]] = [rows[0]]
+    ohne_duplikate: list[list[str]] = [rows[0]]
+    roh_doppelte = 0
+    for zeile in rows[1:]:
+        mit_duplikaten.append(zeile)
+        schluessel = tuple(zelle.strip() for zelle in zeile)
+        if schluessel in gesehen and any(schluessel):
+            roh_doppelte += 1
+            continue
+        gesehen.add(schluessel)
+        ohne_duplikate.append(zeile)
+    datenzeilen = max(len(rows) - 1, 1)
+    if roh_doppelte >= 10 and roh_doppelte / datenzeilen >= 0.01:
+        rows = ohne_duplikate
+        doppelte = roh_doppelte
+    else:
+        rows = mit_duplikaten
+        doppelte = 0
     header = rows[0]
     if not header or header[0].strip() != "Time":
         raise ValueError(
@@ -101,7 +130,8 @@ def load_export(path: str) -> ParsedExport:
         raise ValueError(f"{path}: {exc}") from exc
     expected_columns = 13 if fmt == "mt4_orderbook" else 11
     profit_idx = profit_idx_for(fmt)
-    result = ParsedExport(source_path=path, source_format=fmt)
+    result = ParsedExport(source_path=path, source_format=fmt,
+                          duplikate_entfernt=doppelte)
 
     for line, row in enumerate(rows[1:], start=2):
         if not row or not any(cell.strip() for cell in row):

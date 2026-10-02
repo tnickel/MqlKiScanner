@@ -23,7 +23,10 @@ def _csv(pfad, zeilen):
 
 
 def _trade_zeile(n, stunde=10, profit="10.00", volume="0.01"):
-    datum = f"2026.09.{20 + n // 24:02d}"
+    # Ein Trade je Tag: n bestimmt den Tag DIREKT (früher n//24 machte
+    # n=1 und n=2 zu exakten Zwillingen — seit B25-Dedup wäre das ein
+    # Trade statt zweien; echte Trades unterscheiden sich immer).
+    datum = f"2026.09.{20 + n:02d}"
     return (f"{datum} {stunde:02d}:15:00;Buy;{volume};XAUUSD;1900.5;{volume};"
             f"{datum} {stunde + 1:02d}:15:00;1910.5;0;0;{profit}\n")
 
@@ -303,10 +306,19 @@ def test_keine_neuen_trades_flutet_dossier_nicht(signal_mit_snapshot, monkeypatc
 
 
 def test_delta_identische_trades_zaehlen(tmp_path):
-    """F-16: Multiset statt Set — zwei identische Grid-Legs (gleiche
-    Sekunde/Preis/Lot) im neuen Export gegen einen im alten liefern EINEN
-    neuen Trade, nicht null."""
+    """F-16/B25-Entscheidung (02.10.): Der PARSER entfernt exakte Zeilen-
+    Duplikate VOR jedem Vergleich (B25: Quellen liefern teils ganze
+    Historien doppelt — THG 27,4 %, was Drawdown systematisch nach unten
+    verfälscht hätte). Ein im neuen Export doppelt geliefertes Exemplar
+    ist damit KEIN neuer Trade; das Delta vergleicht weiterhin Multimengen
+    — Unterscheidbare Trades (z. B. andere Sekunde) zählen einzeln.
+    Akzeptierter Trade-off: ein echter Zwillings-Grid-Leg mit identischer
+    Sekunde/Preis/Lot/Profit wird als EIN Trade gezählt (seltener Einzelfall
+    contra systematischer DD-Verfälschung — Risiko vor Ertrag)."""
     identisch = _trade_zeile(1)
     alt = _csv(tmp_path / "alt.csv", [identisch])
     neu = _csv(tmp_path / "neu.csv", [identisch, identisch])
+    # Einzelfall bleibt Multiset: 2 identische Grid-Legs im neuen Export
+    # gegen einen im alten = EIN neuer Trade (B25-Dedup greift erst ab
+    # Massen-Doppellieferung: 10+ Zeilen und >= 1 %).
     assert len(delta.neue_trades(alt, neu)) == 1

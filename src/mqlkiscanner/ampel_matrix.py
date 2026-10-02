@@ -347,30 +347,33 @@ def _listen_zelle(r) -> Zelle:
 
 
 def _retdd_zelle(r) -> Zelle:
-    """RetDD = Forensik-Ertrag/Monat je Prozent DD-Maximum (Nutzer 01.10.:
-    Gewinn muss das Risiko tragen — niedriges Risiko allein bringt es
-    nicht). Schwellen: 0.5 / 0.167 (5 %/M bei 30 % DD = exakt 0.167)."""
+    """RetDD = geometrischer Forensik-Ertrag/Monat je Prozent DD-Maximum
+    (Nutzer 01.10.: Gewinn muss das Risiko tragen — niedriges Risiko allein
+    bringt es nicht). Nutzer-Regel 02.10.: **1,0 ist die Mindestqualität** —
+    Grün-Empfehlungen brauchen RetDD >= 1,0 (Grün-Weg in ampel_for setzt das
+    hart durch). Schwellen: 1,0 grün / 0,5 gelb / darunter orange."""
     wert = getattr(r, "retdd_monat", None)
     if wert is None:
         return Zelle(KEINE_DATEN, "unbekannt",
-                     "RetDD ohne Forensik-Ertrag oder DD-Maximum nicht "
-                     "berechenbar (kein Rendite-Risiko-Urteil möglich).")
+                     "RetDD ohne Monatskurve oder DD-Maximum nicht "
+                     "berechenbar (kein Rendite-Risiko-Urteil möglich; "
+                     "ohne diesen Nachweis kein Grün).")
     jahr = getattr(r, "retdd_jahr", None)
     jahres_text = f" (annualisiert {jahr:g})" if jahr is not None else ""
-    if wert >= 0.5:
+    if wert >= 1.0:
         return Zelle(GRUEN, f"{wert:g} / Monat",
                      f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — der "
-                     "Ertrag trägt das Risiko deutlich (Schwelle 0,5).")
-    if wert >= 0.167:
+                     "Ertrag trägt das Risiko deutlich (Mindestqualität 1,0, "
+                     "Nutzer-Regel 02.10.).")
+    if wert >= 0.5:
         return Zelle(GELB, f"{wert:g} / Monat",
                      f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — "
-                     "effizient genug für die Projektmaße (0,167 = exakt "
-                     "5 %/M bei 30 % DD), aber Reserve dünn.")
+                     "unter der Mindestqualität 1,0: beobachtbar, aber der "
+                     "Ertrag trägt das Risiko nur begrenzt.")
     return Zelle(ORANGE, f"{wert:g} / Monat",
-                 f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — selbst "
-                 "für die Projektmaße ineffizient: das eingegangene Risiko "
-                 "wird nicht angemessen bezahlt. Grün-Empfehlungen mit "
-                 "diesem Wert sind unattraktiv.")
+                 f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — das "
+                 "eingegangene Risiko wird nicht angemessen bezahlt "
+                 "(Mindestqualität 1,0, Nutzer-Regel 02.10.).")
 
 
 _BERECHNER = {

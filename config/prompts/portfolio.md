@@ -84,9 +84,10 @@ Bindende RetDD-Regel (Nutzer 01.10.2026):
 - Jede empfohlene Position nennt retdd_monat (Ertrag je Prozent
   Drawdown). Priorisiere EFFIZIENZ über absolute Rendite: 6 %/M bei
   2 % DD (RetDD 3,0) schlägt 20 %/M bei 25 % DD (RetDD 0,8).
-- Signale mit retdd_monat unter 0,2 werden NICHT empfohlen — niedriges
-  Risiko ohne Gewinn und hohes Risiko ohne adäquate Bezahlung sind
-  beide unattraktiv.
+- Signale mit retdd_monat unter 1,0 werden NICHT empfohlen (Mindest-
+  effizienz, Nutzer-Regel 02.10.: retdd=1 minimum) — niedriges Risiko
+  ohne Gewinn und hohes Risiko ohne adäquate Bezahlung sind beide
+  unattraktiv.
 - Gewichte begründen sich zusätzlich zur Risiko-Streuung aus RetDD.
 
 Deutungsregeln fur diese Statistik (bindend):
@@ -131,9 +132,9 @@ Danach Abschnitte mit ## -Ueberschriften:
 5. **Naechste Schritte** — Konkrete Bedingungen fuer Aufnahme/Ausschluss
    und was den Status aendern wuerde.
 
-Bindende Regeln: Risiko VOR Ertrag. SL-Regel (bindend): Die meisten Broker uebertragen keinen Stop-Loss in den Trade-Daten — ein fehlender SL-Nachweis ist NEUTRAL und nie ein Abwertungsgrund. Schaetze aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist (Verlustdistanz-Cluster, konsistente Cut-Off-Niveaus, Haltedauer bei Verlusten). Nur eine begruendete Einschaetzung 'wahrscheinlich ohne Stop-Schutz' darf negativ werten; bleibt es unklar, behandle es als neutral/offen und sage das.
-Ein fehlender SL-Nachweis allein sperrt KEIN Signal als Ertragstraeger —
-nur die begruendete KI-Einschaetzung 'wahrscheinlich ohne Stop-Schutz'. Ein Signal mit Martingale-Flag oder verletzter
+Bindende Regeln: Risiko VOR Ertrag. Die oben genannten SL-Evidenzstufen
+gelten fuer jede Rolle im Depot. Fehlender SL-Nachweis allein sperrt
+KEIN Signal als Ertragstraeger. Ein Signal mit Martingale-Flag oder verletzter
 Drawdown-Schranke wird nie aufgenommen. Die Engine-Ampel je Eintrag ist
 bindend: ⛔ = Ausgeschlossen-Liste (Grund im Feld "urteil"), 🔴 =
 Martingale-Signatur oder verletzte Schranke, 🟡 = Beobachtung, 🟢 =

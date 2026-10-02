@@ -1,0 +1,5 @@
+RETDD {"actual": {"retdd_monat": null, "retdd_jahr": null, "ertrag_monat_geom_pct": null, "cagr_jahr_pct": null}, "expected_geom": 18.32159566199232, "expected_cagr": 652.9535999999997, "expected_retdd_month": 0.9160797830996159, "expected_retdd_year": 32.64767999999999}
+.BREAKEVEN {"net_profits": [0.0, 2.0], "actual": {"test": "martingale", "threshold": 1.3, "n_after_loss": 1, "n_after_win": 0, "median_ratio_after_loss": 2.0, "mean_ratio_after_loss": 2.0, "median_ratio_after_win": null, "median_ratio_after_loss_per_symbol_max": 2.0, "flag": true, "per_symbol": {"XAUUSD": {"n_after_loss": 1, "median_ratio_after_loss": 2.0, "flag": true}}, "basket_ladder": {"escalating_baskets": 0, "examples": [], "flag": false}, "evidence": ["Nachfolger-Median nach Verlust je Instrument: XAUUSD 2.0x > 1.3"], "interpretation": "Martingale-Signatur (Lots eskalieren nach Verlusten)"}, "ampel": "🔴", "verdict": "Martingale-Signatur nachgewiesen (Ablehnung)"}
+.MONITOR_RELOAD {"monitor_dd": 46.65, "reload_color": "⚪", "after_same_refresh": "🔴"}
+..
+4 passed in 0.25s

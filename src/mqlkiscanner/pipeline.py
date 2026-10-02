@@ -326,6 +326,12 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             trading_dd_pct=trading.get("pct", f.get("trading_dd_pct")),
             trading_dd_usd=trading.get("usd", f.get("trading_dd_usd")),
             winrate_pct=f.get("winrate_pct"),
+            # B24-Fix (02.10.): RetDD-Kennzahlen aus dem Forensik-Snapshot
+            # mitlesen — sonst wären sie nach DB-Reload/Neustart weg.
+            ertrag_monat_geom_pct=f.get("ertrag_monat_geom_pct"),
+            cagr_jahr_pct=f.get("cagr_jahr_pct"),
+            retdd_monat=f.get("retdd_monat"),
+            retdd_jahr=f.get("retdd_jahr"),
             max_verlustserie=f.get("max_verlustserie"),
             verlustserie_usd=f.get("verlustserie_usd"),
             peak_positionen=peak.get("positionen", f.get("peak_positionen")),
@@ -475,6 +481,22 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
                            if result.ertrag_monat_pct_forensik is not None
                            else result.ertrag_monat_pct)
             if (ertrag_wert or 0) >= min_return:
+                # Nutzer-Regel 02.10. („retdd=1 minimum — RetDD ist wichtig
+                # und gehört in die Berechnung"): Grün erfordert die
+                # Mindest-Effizienz. Ohne belegbare RetDD-Basis gibt es
+                # ebenfalls kein Grün (Risiko VOR Ertrag — eine unbezahlte
+                # oder unbelegte Effizienz ist keine Empfehlungsgrundlage).
+                if result.retdd_monat is None:
+                    return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), "
+                                  "aber RetDD unbelegt (keine Monatskurve) — "
+                                  "ohne Effizienznachweis kein Kandidat "
+                                  "(Nutzer-Regel 02.10.)")
+                if result.retdd_monat < 1.0:
+                    return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), aber "
+                                  f"RetDD {result.retdd_monat:g} < 1,0 — der "
+                                  "Ertrag trägt das eingegangene Risiko nicht "
+                                  "ausreichend (Mindest-Effizienz, Nutzer-Regel "
+                                  "02.10.)")
                 retdd_text = (f", RetDD {result.retdd_monat:g}/M"
                               if result.retdd_monat is not None else "")
                 geom_text = (f" (geom. {result.ertrag_monat_geom_pct:g} %/M)"
@@ -1199,6 +1221,12 @@ class ScanPipeline:
                 res.shock_pct_peak_account = expo.get("shock_pct_peak_account")
                 res.shock_pct_peak_usd = expo.get("shock_pct_peak_usd")
                 reko = fx.get("equity_rekonstruktion") or {}
+                if st.get("duplikate_entfernt"):
+                    # B25 (02.10.): Bereinigung sichtbar machen — die Quellen-
+                    # Lieferung enthielt exakte Doppelzeilen (Forensik rechnet
+                    # sauber, aber der Nutzer soll es sehen).
+                    log(f"✓ {st['duplikate_entfernt']} exakte Duplikat-Zeilen "
+                        "aus der Lieferung entfernt (Quelle lieferte doppelt).")
                 if reko.get("status") == "ok" and reko.get("verlaesslich"):
                     res.equity_dd_rekonstruiert_pct = reko.get("equity_dd_pct")
                     res.equity_dd_rekonstruiert_usd = reko.get("equity_dd_usd")
@@ -1247,6 +1275,21 @@ class ScanPipeline:
                     res.ertrag_monat_pct_forensik = round(
                         100.0 * float(netto_gesamt) / float(startkapital)
                         / monate, 2)
+                # B24-Fix (Lauf-Review 02.10.): RetDD-Effizienz WIRKLICH
+                # berechnen — Deklaration/Verbraucher existierten seit dem
+                # 01.10., die Zuweisung nie (0/97 Signale hatten Werte).
+                # Basis: dieselbe Kurve wie der Forensik-Ertrag; DD-Maximum
+                # über die EINE Definition (scoring.dd_maximum, F-12).
+                dd_max = scoring.dd_maximum(
+                    res.dd_equity_pct, res.dd_balance_pct, res.trading_dd_pct,
+                    res.equity_dd_rekonstruiert_pct, res.monitor_trade_eq_dd_pct)
+                eff = portfolio_statistik.effizienz_kennzahlen(
+                    res.trades_path, startkapital, dd_max)
+                if eff:
+                    res.ertrag_monat_geom_pct = eff["ertrag_monat_geom_pct"]
+                    res.cagr_jahr_pct = eff["cagr_jahr_pct"]
+                    res.retdd_monat = eff["retdd_monat"]
+                    res.retdd_jahr = eff["retdd_jahr"]
                 ev = scoring.evaluate(
                     report, platform=platform,
                     schranke_eq_dd_pct=self.settings.get("schranke_eq_dd_pct", 30.0))
@@ -1287,6 +1330,12 @@ class ScanPipeline:
                 # B2 (Intensiv-Review): Ertrag auf der Forensik-Kapitalbasis —
                 # dieselbe Basis wie DD/Schock (Persistenz + REST/Anzeige).
                 "ertrag_monat_pct_forensik": res.ertrag_monat_pct_forensik,
+                # B24-Fix (02.10.): RetDD-Effizienz persistieren — geometrischer
+                # Monatsertrag, echter Calmar, RetDD je Monat/Jahr.
+                "ertrag_monat_geom_pct": res.ertrag_monat_geom_pct,
+                "cagr_jahr_pct": res.cagr_jahr_pct,
+                "retdd_monat": res.retdd_monat,
+                "retdd_jahr": res.retdd_jahr,
                 "pf": res.pf, "growth_pct": res.growth_pct,
                 "broker_server": res.broker_server,
                 # Expliziter Vollstaendigkeitsstatus (verhindert Gruen aus alter Forensik).
@@ -1330,6 +1379,19 @@ class ScanPipeline:
                     "vollstaendig": bool(res.forensik_vorhanden),
                     "trading_dd": {"pct": res.trading_dd_pct, "usd": res.trading_dd_usd},
                     "winrate_pct": res.winrate_pct,
+                    # B26 (02.10.): Bezugsgrößen für Winrate/DD — ohne n ist
+                    # „95,5 % bei wie vielen Trades?“ nicht auflösbar.
+                    "trades_anzahl": st.get("trades_anzahl"),
+                    # B25 (02.10.): entfernte exakte Duplikat-Zeilen (Quellen-
+                    # Monitore liefern teils doppelt; THG-Fall 27,4 %).
+                    "duplikate_entfernt": st.get("duplikate_entfernt", 0),
+                    # B24-Fix (02.10.): RetDD-Effizienz — geometrischer Monats-
+                    # ertrag, echter Calmar, RetDD je Monat/Jahr (produziert
+                    # in analyze_candidate, hier persistiert für DB-Reload).
+                    "ertrag_monat_geom_pct": res.ertrag_monat_geom_pct,
+                    "cagr_jahr_pct": res.cagr_jahr_pct,
+                    "retdd_monat": res.retdd_monat,
+                    "retdd_jahr": res.retdd_jahr,
                     "max_verlustserie": res.max_verlustserie,
                     "verlustserie_usd": res.verlustserie_usd,
                     "peak_exposure": {"positionen": res.peak_positionen,

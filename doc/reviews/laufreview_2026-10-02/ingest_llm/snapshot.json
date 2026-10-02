@@ -1,0 +1,680 @@
+{
+  "isolated": {
+    "direct_source_collision": {
+      "name": "Direct MQL5 123",
+      "platform": "mt5",
+      "quelle": "pelik"
+    },
+    "explicit_source_guard": "blocked correctly",
+    "offline_cache_sha_bypass": {
+      "modified_reported": false,
+      "original_profit": 10,
+      "used_profit": 1000
+    },
+    "same_basis_retry_mixture": {
+      "trade": "new trade",
+      "risk": "old risk",
+      "total": "old total",
+      "summary": "old summary",
+      "status": {
+        "completed": 1,
+        "total": 3,
+        "failed": 1,
+        "skipped": 1,
+        "reason": "Einzelne Modellaufrufe oder Speicherungen fehlgeschlagen",
+        "updated_ids": [
+          999001
+        ]
+      }
+    }
+  },
+  "production_readonly": {
+    "signals": 97,
+    "current_report_basis_mismatches": [],
+    "restored_stale_deep_analyses": [
+      {
+        "id": 683917,
+        "name": "Scalp IC Markets ECN",
+        "created_at": "2026-09-21 15:58:35",
+        "saved_basis": "872ed8e200f9844fd98c721b9157baa742579024800a0cfeafb67171d395432b",
+        "current_basis": "92cd491c6dab3b52ed7941a11924a58237b488c441ddf73167360e35676b5a45"
+      },
+      {
+        "id": 884935,
+        "name": "Relax EA",
+        "created_at": "2026-09-21 15:46:15",
+        "saved_basis": "e52fb16c8409799778e7957799f37ff0dbe327dabae00d1ec99318e73a8319a5",
+        "current_basis": "7c0930b29bfdefe412af2b6831fcadb3f1f64d72d17b0131d5527923c0fe2f7d"
+      },
+      {
+        "id": 1496203,
+        "name": "SEA South East EA",
+        "created_at": "2026-09-21 16:09:02",
+        "saved_basis": "63389958e25645f3882d264d2ffb9523beb5a3a843fb5dabf3ff34b2bc90f380",
+        "current_basis": ""
+      },
+      {
+        "id": 1560883,
+        "name": "Scalp IC Markets MT5",
+        "created_at": "2026-09-21 16:03:32",
+        "saved_basis": "e1ac46468d895358f6606ca26b0bc9e6fc1325f4bba41c0d45ca77a2ab78442b",
+        "current_basis": "e89ce079a67bb7847e4c7511216f96ee36adc38f3c252d3f3227847f98275904"
+      },
+      {
+        "id": 2023752,
+        "name": "NoStress MT5",
+        "created_at": "2026-09-21 15:24:57",
+        "saved_basis": "fcc0b13802246bd894ac7a06cdf52aa03ab220e6640299c4d27e89b53975f069",
+        "current_basis": "5d5cb5750197104640f5e392b9828fbe895e6579b6bc28aab8827a63dd888365"
+      },
+      {
+        "id": 2049326,
+        "name": "SFE Impulse",
+        "created_at": "2026-09-21 16:21:29",
+        "saved_basis": "57d396f81876e5c4cad0eb33405b1271c9e2395142756c9c34277225cd9db41f",
+        "current_basis": ""
+      },
+      {
+        "id": 2084890,
+        "name": "Goldtrade Pro ICM",
+        "created_at": "2026-09-21 14:00:35",
+        "saved_basis": "044c03e24b45b56eb263c66b1db6023b21c77c9065d4f87045c153a8e36e2405",
+        "current_basis": "2592326afee56ffc587412a68d7d868742b0f8b2a01555fab8dc591cdabd7b88"
+      },
+      {
+        "id": 2153920,
+        "name": "MCA100",
+        "created_at": "2026-09-21 14:56:22",
+        "saved_basis": "ce4e26bc12443ec06b1b32f0c176193e82a894b824d80333d58404057dbd012e",
+        "current_basis": "41179bc051707be10ce98d4df4de7c2e0a8c9cb01a3bef9eaea584bbc4988321"
+      },
+      {
+        "id": 2231030,
+        "name": "MSC Gold Stable Pro",
+        "created_at": "2026-09-21 15:09:45",
+        "saved_basis": "d2536f6f0dbf01502ddafc2f2041bc69ae8d89538a481d01d64a19264519a22e",
+        "current_basis": "884f3ee6ba0523e7008f03d9e48044109fc69dd706183c115b355fd40eb18a26"
+      },
+      {
+        "id": 2262642,
+        "name": "NoPain MT5",
+        "created_at": "2026-09-20 16:35:31",
+        "saved_basis": "732be12b957c6f023af9a70eee52a22fab7037d6d62806112bb19a88da6e3be9",
+        "current_basis": "606f3fa866667d90d90ef742200b4cb61c55308c6b4d03b1502cf9a58c2a954f"
+      },
+      {
+        "id": 2265877,
+        "name": "Gold Reaper New V2 2",
+        "created_at": "2026-09-21 13:48:34",
+        "saved_basis": "1652389b13bec6f469c96065347f37a32ba644b6727471d7421785a850eac997",
+        "current_basis": "f2df0624c9241c6307657a897205ffe987c9055b4d3bd4e0ec26d7e81a779319"
+      },
+      {
+        "id": 2271402,
+        "name": "Deux ex machina",
+        "created_at": "2026-09-20 18:32:03",
+        "saved_basis": "d38a96d181cc8123b4d2acf4decfbde238cde9e8e0079c6194f1e668c4f0f8e4",
+        "current_basis": "82e4aac032053485dbea0fcb8824ff88a6f4222325407c67f9ba16bc7678e7f6"
+      },
+      {
+        "id": 2280569,
+        "name": "MagicGW audcad L",
+        "created_at": "2026-09-21 14:48:17",
+        "saved_basis": "fa2fc994f4794c17aa76881d20ddcf32573c50c1af9d2bdcd15979e0102c0f31",
+        "current_basis": "299693c17b4d613f458d15cf5ecf911b5b6c814051f513293e48537b1287587d"
+      },
+      {
+        "id": 2300694,
+        "name": "RAZOR EA",
+        "created_at": "2026-09-21 15:40:09",
+        "saved_basis": "b1686db7b2db3c8c110a5e5d2ed380e64326599eddfd03ee7f5fef0606ff4b31",
+        "current_basis": "a5a62294ce4d921816f17a5d2af6a7fd4d14e8ecacc3ab43271ee64f53181718"
+      },
+      {
+        "id": 2304847,
+        "name": "MSC SuperGold Pro",
+        "created_at": "2026-09-21 15:14:51",
+        "saved_basis": "bb8f9d9e4c9d6d8d972d5e083920cf6f477344c46d7931f721f02f2f79c14169",
+        "current_basis": "6773bed24c0aaae4094f0bec76e533c95452bc5de7c59b7d28f4aef7ba57ebb9"
+      },
+      {
+        "id": 2306053,
+        "name": "Kenni Trades Gold Breakout",
+        "created_at": "2026-09-21 14:17:36",
+        "saved_basis": "39f7a4ff1e8644eb0d248a5aca653a971b1c1259b8489fafa23bc97eba5198ea",
+        "current_basis": "0cba4ff29225bbd6727ce30337f8bc552d91cd3037859393febbd9518556a5af"
+      },
+      {
+        "id": 2320903,
+        "name": "GOLD BR",
+        "created_at": "2026-09-20 19:01:42",
+        "saved_basis": "f78fd4bc8d039a3a4e85ad298f478eca4a796c33072aa54a4b3996e36b72498d",
+        "current_basis": "351af2ac76cb3d37b21d0828c583f55cdec7b3f47a158661b6b3b17dd4bf9290"
+      },
+      {
+        "id": 2327790,
+        "name": "ATong",
+        "created_at": "2026-09-20 18:17:24",
+        "saved_basis": "01fcb1e2138d63c29fbbfc023f00b523ea4ea7a1d0ed55f410f34ec3aab4cea8",
+        "current_basis": "eed05107da50722d1262c817082c2ff3bf366de249e07097d9abdb8da32e7d43"
+      },
+      {
+        "id": 2329290,
+        "name": "Precise Pair Trading Pro",
+        "created_at": "2026-09-21 15:30:10",
+        "saved_basis": "42a747b500a3baf58ea25c409b6b0ee570cb1f9076814165e03c0fa96b46c42c",
+        "current_basis": "b5f487154234baf5ee73e4896df6350170c089171c19e06fe66031eb4d573853"
+      },
+      {
+        "id": 2332166,
+        "name": "SolarFlare",
+        "created_at": "2026-09-21 16:42:28",
+        "saved_basis": "977ea88cad50745012584a6a5a47a37c17d932025fe417c1dd3f51aef3da47d7",
+        "current_basis": "ca7e9bb5cce8eabfdc5697f1021866047fc78728a70c08a46956b24fd44c131b"
+      },
+      {
+        "id": 2332746,
+        "name": "Lunar Express Mission 11M",
+        "created_at": "2026-09-21 14:43:20",
+        "saved_basis": "861cb21a8c743d8c24544e4721776a6ffe4fa703188b1fa192e3064059bb87f9",
+        "current_basis": ""
+      },
+      {
+        "id": 2339082,
+        "name": "GoldWave signal",
+        "created_at": "2026-09-21 14:05:59",
+        "saved_basis": "aeeff548c4fb99dc243aecd201c2e651b8b22c36c80eeae25ae5866577d026c1",
+        "current_basis": "7d3dabe9fc0392ab9ef0b67923428fe5b66ed1f16c3b2b4a99e1346ca6f45d35"
+      },
+      {
+        "id": 2342895,
+        "name": "KiraCat",
+        "created_at": "2026-09-21 14:22:27",
+        "saved_basis": "c802950fb0106086a117bbaa655a8ba9773c0e4820c427ccd70e5748562594eb",
+        "current_basis": "3f3da3c3cf598c8a7cac6c24839741bd01347b18721c11045256142377c9713f"
+      },
+      {
+        "id": 2347343,
+        "name": "SERONGGA",
+        "created_at": "2026-09-21 16:14:46",
+        "saved_basis": "8939f26e139289b85a894ef8f9faaf4cf8e202e1b83e8addd756f636773c522c",
+        "current_basis": "63346beb9d786f4557ce64d72e1fd56499c31e0212422a6ab19842ad1c95e730"
+      },
+      {
+        "id": 2349227,
+        "name": "Gold Spike",
+        "created_at": "2026-09-21 13:51:44",
+        "saved_basis": "219588c0d6a2d0b48e215acddb003faabfefcea097d060eda36148316717943c",
+        "current_basis": "7c631c5208c3b4485632443b303878daf5bb92158dda501383af0f2cf939ac91"
+      },
+      {
+        "id": 2351091,
+        "name": "Gold Breakout PRO All Star",
+        "created_at": "2026-09-20 19:07:04",
+        "saved_basis": "c3ab2624c03b73d3a6e29dd2821a993009d4ea1d72dcf0b2b4df13f5654a88bc",
+        "current_basis": "d4d13985921bd1b1e650e39378dea240cc9c99f52ba13bb4106991afe575e6f2"
+      },
+      {
+        "id": 2356441,
+        "name": "FXtrading",
+        "created_at": "2026-09-20 18:55:11",
+        "saved_basis": "8c2393637332cb7879f8eb25a7973b5c2642243e88cd4409eecda3f37ab707b0",
+        "current_basis": "cc5292c0fc0100651d9d52383297b46e9923214a795b39246383e5842270f272"
+      },
+      {
+        "id": 2356872,
+        "name": "Smart Boss",
+        "created_at": "2026-09-21 16:37:30",
+        "saved_basis": "05946553b2e86d457cfd7cd78a9d55b8348954dc3cc03cc59ae1b2e7abe52fef",
+        "current_basis": "ef08e496755b46a3fa8c2af1718371fdc3cbcc2fa1956fb039ab2dac065213b4"
+      },
+      {
+        "id": 2357156,
+        "name": "Farmed Hedge Yield VCopy",
+        "created_at": "2026-09-20 18:42:50",
+        "saved_basis": "188d134de833f4b0f10b2f1e82b443d06e24859f61cec0c7884a9cda2a1fad0d",
+        "current_basis": "b8fae43f7768ca58e59f8010958d2f35f8e619e0a41dbb4382e8bb47ea3ae76b"
+      },
+      {
+        "id": 2359404,
+        "name": "Lucky Cat MT5",
+        "created_at": "2026-09-21 14:37:49",
+        "saved_basis": "ac78f9f877ec5700f5015ba6029565362c1a98a5f13892819cde9dcd2917fa79",
+        "current_basis": "0969a4a207ff4983339637fe5ac04dfb5e0cb9fa5193b33cfb9361c4d2dc6da0"
+      },
+      {
+        "id": 2362349,
+        "name": "Combo Profile 2026",
+        "created_at": "2026-09-20 18:26:45",
+        "saved_basis": "2006504772379bbffd6c3321128a6581ee53267d78130d443a11537767149d18",
+        "current_basis": "710949228bc182f0d9e0770e2c2012131ad83e1572f90cd23c210ae1977ae3f6"
+      },
+      {
+        "id": 2362868,
+        "name": "Pure Gold 2000 Vantage",
+        "created_at": "2026-09-21 15:35:39",
+        "saved_basis": "e645df270fa17637b8c18b03a88373c9a6a65d5c969cac9c38941ebb74c210ec",
+        "current_basis": "7705790ea04c0ad6c7ac5e3e3fab168c984a9e1c86bd9b5b48de4dc6568f0675"
+      },
+      {
+        "id": 2364704,
+        "name": "MetaTrading2",
+        "created_at": "2026-09-21 15:05:54",
+        "saved_basis": "7830825355b0d2ea5c77f97b31a8b474b05081546d34aa67fc2fe87e8f12f86f",
+        "current_basis": "584d39ae84ba16b36d4e226ca69c96d44bf3a74082c69e269f19cc8cb3fe6b79"
+      },
+      {
+        "id": 2364821,
+        "name": "Gold Whisperer Low Risk",
+        "created_at": "2026-09-21 13:55:43",
+        "saved_basis": "83c8703521ea19abf1fb2f6ccd2728ca0041d328f62b956cbe895a1b4ac51335",
+        "current_basis": "49004c971d3c491cfed8b9f9bf9deff0f3b1881dafb423d39b2a8ba01af74c28"
+      },
+      {
+        "id": 2365401,
+        "name": "HedGinG GUCJ B",
+        "created_at": "2026-09-21 14:13:43",
+        "saved_basis": "07e5ea94417103d016282a4a5fba866aa0053a4a8209a0d30b0d66e5d9e4dd06",
+        "current_basis": "7a38943a2f378f0728cba2b67e98a23e82e1a21311734b7cb8c3953d5d986ded"
+      },
+      {
+        "id": 2367701,
+        "name": "LUBOTFX",
+        "created_at": "2026-09-21 14:33:10",
+        "saved_basis": "395cdaff379b5dd67dde5883342072e0ec1b92254b102cafb2b430117f9cc378",
+        "current_basis": "197774422ea26616fbbef7a39989027fbdfd44349093cde3a0d13a1951091bd1"
+      },
+      {
+        "id": 2368490,
+        "name": "S7PRO",
+        "created_at": "2026-09-21 15:51:46",
+        "saved_basis": "631a1ab1c62d9524552d070cbfd7bd5baf0f6c46c603641bc73205df35d1c48c",
+        "current_basis": "d998308fb4224a88e9dd5953fc90a128301f1f8acfd70a3ea833508d33140afd"
+      },
+      {
+        "id": 2370312,
+        "name": "Sferica Trading Automation",
+        "created_at": "2026-09-21 16:27:38",
+        "saved_basis": "0bafc9ff1b41ad1be16c67d6efa46aa457e12f37f107c30d68a11f763c60b06d",
+        "current_basis": "e2dcc32159332f29e1b84297d6c734129d767f7fb815bec3aa9632b7349a8736"
+      },
+      {
+        "id": 2371777,
+        "name": "AlgoForge",
+        "created_at": "2026-09-20 18:11:10",
+        "saved_basis": "2bd59af3f19fbdec880de16bb204884ea2da37924c2ab63f21fedf6182f30dbe",
+        "current_basis": "cbdc596efcc84c65d370e009fc996835873da12dff9a854f61060a6b5f321b92"
+      },
+      {
+        "id": 2375343,
+        "name": "Multi EA Trading",
+        "created_at": "2026-09-21 15:20:34",
+        "saved_basis": "7d24f39330850d28155428752b237b5b94ec874cb10aba27e4287796dbcf1b21",
+        "current_basis": "a015fedffb8127abb6de00fe11711cd8680b26f60c265dafb79a328e56ef1f88"
+      },
+      {
+        "id": 2376393,
+        "name": "GUNS FX V2",
+        "created_at": "2026-09-21 14:09:44",
+        "saved_basis": "391c5fd70cec02e3525b58d2020cf7178bcc3cf571c43c283af8fd34097fd718",
+        "current_basis": "948f056847f3631a27c0f59e4b26f3b9e679f294448b453879c0662510498860"
+      },
+      {
+        "id": 2379236,
+        "name": "EURUSD Night Scalper AI",
+        "created_at": "2026-09-20 18:38:24",
+        "saved_basis": "e7395fa4d642a3299b62434312c06171c7e896da62be3ece2d79ecfd2a14b887",
+        "current_basis": "c0b5f4158549d6ba7e9d65f95c9da11246fdfee5830a282d6af4a8e25fb990ea"
+      },
+      {
+        "id": 2381247,
+        "name": "AgiFX 6",
+        "created_at": "2026-09-20 18:03:23",
+        "saved_basis": "a2f5994d12d98ca8488f0f02dbe4f31a6f641f8d01a9dfefbee9479e912be416",
+        "current_basis": "c6b93c3ba5b6c63f31d9af0eb8da8752e5788c4b2d922cd5e695c1383c8bec28"
+      },
+      {
+        "id": 2383310,
+        "name": "Low Risk Gold",
+        "created_at": "2026-09-21 14:28:04",
+        "saved_basis": "040f80ef9f776be6077feb06b35e1f1353983083bbe147fab9e7ab81b51a12b3",
+        "current_basis": "da6452d543557fd23bc995f551c4c8e2594de00d04e1f3bae4bc1c8f237fbcd5"
+      },
+      {
+        "id": 2385675,
+        "name": "Meridian Extreme Risk Mode",
+        "created_at": "2026-09-21 15:01:57",
+        "saved_basis": "ce4db825228ed75efddb3b8113b004b596ef071d75ed5c8db6281ac612594122",
+        "current_basis": "264d6b79422b5d98861cd1d67a1c1329412809933817bf0356de13c5d5f76425"
+      },
+      {
+        "id": 2386274,
+        "name": "Basket",
+        "created_at": "2026-09-20 18:22:49",
+        "saved_basis": "4d068d37e5ca614dd50ed6b845dcbf464ac652cc91e619ea824c970f5f387663",
+        "current_basis": ""
+      },
+      {
+        "id": 2386939,
+        "name": "Forex fibonacci chart 2",
+        "created_at": "2026-09-20 18:49:17",
+        "saved_basis": "89c85fd89ad9d9abc990d684f3c1e39a724b5b00d33e51e7a2ec0689146dac46",
+        "current_basis": "37993fa53e52f067cdb62edfb0f0dc73734d0bcb32d519ed80bd6d1596edafca"
+      }
+    ],
+    "current_scan_phases": [
+      {
+        "id": 2000028,
+        "name": "Lexo",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 11:55:27",
+        "risk_at": "2026-10-02 11:55:27",
+        "total_at": "2026-10-02 11:57:28",
+        "basis": "19af9e3c8dd6832a25ff1d2cceb850b44b31f57542b7332c9fd92732d71e191b",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 18937.7,
+        "ertrag_forensik": 1.85
+      },
+      {
+        "id": 2014074,
+        "name": "The Holy Grail",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 11:59:11",
+        "risk_at": "2026-10-02 11:59:11",
+        "total_at": "2026-10-02 12:01:24",
+        "basis": "6b0eb21adf40c34fa75d08d948285ffc570db5826a0fdddf30f66f424dba1003",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 35230.72,
+        "ertrag_forensik": 4.02
+      },
+      {
+        "id": 2014076,
+        "name": "PentagonForex",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 12:03:08",
+        "risk_at": "2026-10-02 12:03:08",
+        "total_at": "2026-10-02 12:04:55",
+        "basis": "23d93371a2b8724219de25996fe977f598b113010a5543dfebe2d96d842d3bfa",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 23926.1,
+        "ertrag_forensik": 1.11
+      },
+      {
+        "id": 2039057,
+        "name": "Master H4-2",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 12:15:24",
+        "risk_at": "2026-10-02 12:15:24",
+        "total_at": "2026-10-02 12:16:48",
+        "basis": "5c0881ecbed8e677cb888a5548c16a0fadf0f157b519e25902102ba0a313cf89",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 1587.68,
+        "ertrag_forensik": 0.57
+      },
+      {
+        "id": 2048284,
+        "name": "ImpulseNet",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 09:23:00",
+        "risk_at": "2026-10-02 09:23:00",
+        "total_at": "2026-10-02 09:25:43",
+        "basis": "e514fc0d3d1005e15b8520fdb094aec155610d8ef84c70e40fdf63d49c92ced1",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 357.43,
+        "ertrag_forensik": 13.41
+      },
+      {
+        "id": 2048285,
+        "name": "SafeGold",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 12:18:27",
+        "risk_at": "2026-10-02 12:18:27",
+        "total_at": "2026-10-02 12:20:21",
+        "basis": "98d29d0dd7f149323c6bf20e6e5ebef4acff3cba20be1da5e46b1d1ec673a885",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 427.74,
+        "ertrag_forensik": 11.62
+      },
+      {
+        "id": 2049613,
+        "name": "MicroJump",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 09:26:42",
+        "risk_at": "2026-10-02 09:26:42",
+        "total_at": "2026-10-02 09:28:21",
+        "basis": "259b5892fa75cb5ec2dbaf257567b2f981db34cf5b9c59cb877a986e93333212",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 381.78,
+        "ertrag_forensik": 3.45
+      },
+      {
+        "id": 2052727,
+        "name": "💎t.me/Mr_Profit_FX",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 09:32:33",
+        "risk_at": "2026-10-02 09:32:33",
+        "total_at": "2026-10-02 09:34:18",
+        "basis": "12a4c49e8905650f1a32b80e188b98cc50e532ac4b3d31a9f722dcfefc7fe9f3",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 3291.9,
+        "ertrag_forensik": 3.32
+      },
+      {
+        "id": 2053240,
+        "name": "HRC Algo",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 09:35:31",
+        "risk_at": "2026-10-02 09:35:31",
+        "total_at": "2026-10-02 09:37:46",
+        "basis": "e69db9386a0a1b6b07e2bcc0a1a4229ae6ab6718484c194c7529e7160a87fcab",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 1707.34,
+        "ertrag_forensik": 16.62
+      },
+      {
+        "id": 2054437,
+        "name": "TKG",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 09:30:10",
+        "risk_at": "2026-10-02 09:30:10",
+        "total_at": "2026-10-02 09:31:32",
+        "basis": "3ae8fbcfe77d6c8cc943b08b174c08c90a6a60a810394332b467380eed744634",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 63153.91,
+        "ertrag_forensik": 0.16
+      },
+      {
+        "id": 2059368,
+        "name": "gemslime",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 12:06:46",
+        "risk_at": "2026-10-02 12:06:46",
+        "total_at": "2026-10-02 12:09:53",
+        "basis": "d4c3736270c5348c318ba234c81be16bc1e8bbc2997c0885418519ab791c1381",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 9109.7,
+        "ertrag_forensik": 1.21
+      },
+      {
+        "id": 2072334,
+        "name": "GOLD Tokyo Scalping",
+        "quelle": "pelik",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 12:11:29",
+        "risk_at": "2026-10-02 12:11:29",
+        "total_at": "2026-10-02 12:13:53",
+        "basis": "e41ac0092546f2ea5e6eecffa435d71647514562750632446094363c89369f4c",
+        "basis_source": "implizit_aus_balance",
+        "basis_usd": 1797.05,
+        "ertrag_forensik": 8.78
+      },
+      {
+        "id": 2265877,
+        "name": "Gold Reaper New V2 2",
+        "quelle": "mql5",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 11:21:52",
+        "risk_at": "2026-10-02 11:21:52",
+        "total_at": "2026-10-02 11:24:07",
+        "basis": "f2df0624c9241c6307657a897205ffe987c9055b4d3bd4e0ec26d7e81a779319",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 1615.05,
+        "ertrag_forensik": 14.54
+      },
+      {
+        "id": 2329290,
+        "name": "Precise Pair Trading Pro",
+        "quelle": "mql5",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 11:29:40",
+        "risk_at": "2026-10-02 11:29:40",
+        "total_at": "2026-10-02 11:32:40",
+        "basis": "b5f487154234baf5ee73e4896df6350170c089171c19e06fe66031eb4d573853",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 224.79,
+        "ertrag_forensik": 39.24
+      },
+      {
+        "id": 2332166,
+        "name": "SolarFlare",
+        "quelle": "mql5",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 11:44:09",
+        "risk_at": "2026-10-02 11:44:09",
+        "total_at": "2026-10-02 11:45:38",
+        "basis": "ca7e9bb5cce8eabfdc5697f1021866047fc78728a70c08a46956b24fd44c131b",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 800.0,
+        "ertrag_forensik": 24.71
+      },
+      {
+        "id": 2342895,
+        "name": "KiraCat",
+        "quelle": "mql5",
+        "ampel": "🔴",
+        "trade_at": "2026-10-02 11:11:38",
+        "risk_at": "2026-10-02 11:11:38",
+        "total_at": "2026-10-02 11:14:55",
+        "basis": "3f3da3c3cf598c8a7cac6c24839741bd01347b18721c11045256142377c9713f",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 9535.48,
+        "ertrag_forensik": 21.55
+      },
+      {
+        "id": 2349227,
+        "name": "Gold Spike",
+        "quelle": "mql5",
+        "ampel": "🟢",
+        "trade_at": "2026-10-02 11:25:37",
+        "risk_at": "2026-10-02 11:25:37",
+        "total_at": "2026-10-02 11:28:09",
+        "basis": "7c631c5208c3b4485632443b303878daf5bb92158dda501383af0f2cf939ac91",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 3116.0,
+        "ertrag_forensik": 8.71
+      },
+      {
+        "id": 2362868,
+        "name": "Pure Gold 2000 Vantage",
+        "quelle": "mql5",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 11:33:54",
+        "risk_at": "2026-10-02 11:33:54",
+        "total_at": "2026-10-02 11:35:56",
+        "basis": "7705790ea04c0ad6c7ac5e3e3fab168c984a9e1c86bd9b5b48de4dc6568f0675",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 10000.0,
+        "ertrag_forensik": 42.42
+      },
+      {
+        "id": 2367606,
+        "name": "EUR Trader",
+        "quelle": "mql5",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 11:51:20",
+        "risk_at": "2026-10-02 11:51:20",
+        "total_at": "2026-10-02 11:54:06",
+        "basis": "c66a4908d3196685c543321b12924f641c0841f283c5b4b006f2b472839c522f",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 1000.0,
+        "ertrag_forensik": 19.89
+      },
+      {
+        "id": 2368490,
+        "name": "S7PRO",
+        "quelle": "mql5",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 11:47:34",
+        "risk_at": "2026-10-02 11:47:34",
+        "total_at": "2026-10-02 11:49:51",
+        "basis": "d998308fb4224a88e9dd5953fc90a128301f1f8acfd70a3ea833508d33140afd",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 20000.0,
+        "ertrag_forensik": 58.85
+      },
+      {
+        "id": 2370312,
+        "name": "Sferica Trading Automation",
+        "quelle": "mql5",
+        "ampel": "🟡",
+        "trade_at": "2026-10-02 11:37:51",
+        "risk_at": "2026-10-02 11:37:51",
+        "total_at": "2026-10-02 11:40:24",
+        "basis": "e2dcc32159332f29e1b84297d6c734129d767f7fb815bec3aa9632b7349a8736",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 100000.0,
+        "ertrag_forensik": 12.47
+      },
+      {
+        "id": 2375480,
+        "name": "Gold Spike MT5",
+        "quelle": "mql5",
+        "ampel": "🟢",
+        "trade_at": "2026-10-02 11:18:41",
+        "risk_at": "2026-10-02 11:18:41",
+        "total_at": "2026-10-02 11:20:30",
+        "basis": "337e5ed17468e957a53fde700b2aeb5ce8aec224f6d74d853d2c4241d8e019b8",
+        "basis_source": "csv_einzahlungen",
+        "basis_usd": 1246.0,
+        "ertrag_forensik": 20.85
+      }
+    ],
+    "report_excerpts": [
+      {
+        "signal_id": 2375480,
+        "analysis_id": 1234,
+        "created_at": "2026-10-02 11:20:30",
+        "paragraphs": [
+          "Drei wichtigste Gründe: Erstens die Stress-Exposure von 36,7532 % des Peak-Kontos in Kombination mit dem Grid-Profil (avg_loss > avg_win) ohne nachweisbaren Einzelpositions-Stopp. Zweitens die verschönerte DD-Meldung (5,26 % gemeldet vs. 9,17 % rekonstruiert, Faktor ≈ 1,74). Drittens kurze Historie (19 Wochen, ein dokumentierter Verlustzyklus), fehlende geometrische Metriken und kleine Kapitalbasis. Widerspruchs-Pflicht: Eine spätere Portfolio-Empfehlung darf dieses WATCHLIST nur übernehmen, wenn sie diese Vorbehalte ausdrücklich nennt und mit Bedingungen/Fristen aufhebt. Historische Rendite ist eine Hypothese unter der BedingungFortbestand der Marktregime — keine Prognose."
+        ]
+      },
+      {
+        "signal_id": 2059368,
+        "analysis_id": 1270,
+        "created_at": "2026-10-02 12:09:53",
+        "paragraphs": [
+          "Effizienzkennzahlen: retdd_monat = null, retdd_jahr = null, ertrag_monat_geom_pct = null — geometrische Rendite je Prozent Drawdown wurde nicht berechnet. Näherung über lineare Werte: 1,21 %/Monat (Forensik, maßgeblich) je 11,25 % EQ-DD ≈ 0,11 — unter dem Projektmaß 0,167 und weit unter 0,5 (attraktiv). Bewertung: unattraktiv — Risiko ohne angemessene Bezahlung; bei RetDD-Priorität schlägt die Ineffizienz die formale DD-Unbedenklichkeit. Ertrag 1,21 % < 5,0 %/Monat: kein Kandidat, aber keine harte Engine-Ablehnung (Ampel gelb/Beobachtung)."
+        ]
+      },
+      {
+        "signal_id": 2039057,
+        "analysis_id": 1276,
+        "created_at": "2026-10-02 12:16:48",
+        "paragraphs": [
+          "Effizienz-Kennzahlen: retdd_monat, retdd_jahr und ertrag_monat_geom_pct sind nicht vorhanden (null) — die formale geometrische Effizienz ist nicht berechenbar. Als klar gekennzeichnete Hilfsrechnung (nicht Engine-Zahl): 0.57 %/Monat linear gegen 21.14 % Reko-DD ergibt rund 0.027 Ertrag je Prozent Drawdown und Monat — weit unter 0.167 (Projektmaß) und erst recht unter 0.5. Risiko ohne angemessene Bezahlung."
+        ]
+      }
+    ]
+  }
+}

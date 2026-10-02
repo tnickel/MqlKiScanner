@@ -103,20 +103,41 @@ def test_b2_gruen_braucht_forensik_ertrag():
 
 
 def test_b2_forensik_ertrag_ueber_schwelle_bleibt_gruen():
+    # Nutzer-Regel 02.10.: Grün braucht zusätzlich RetDD >= 1,0 — mit
+    # belegter Mindesteffizienz bleibt der Fall grün.
     res = pipeline.ScanResult(
         id=2349227, name="Gold-Spike-Fall", score=4.1,
         forensik_vorhanden=True, ertrag_monat_pct=24.54,
         ertrag_monat_pct_forensik=8.6, martingale_flag=False,
-        stop_evidence="direct")
+        stop_evidence="direct", retdd_monat=1.44, retdd_jahr=9.6)
     ampel, _ = pipeline.ampel_for(res, {})
     assert ampel == "🟢"
+    # Ohne RetDD-Basis gibt es seit 02.10. KEIN Grün mehr (Risiko VOR Ertrag):
+    res_ohne = pipeline.ScanResult(
+        id=2349228, name="Ohne-Kurve", score=4.1,
+        forensik_vorhanden=True, ertrag_monat_pct=24.54,
+        ertrag_monat_pct_forensik=8.6, martingale_flag=False,
+        stop_evidence="direct", retdd_monat=None)
+    ampel_ohne, urteil_ohne = pipeline.ampel_for(res_ohne, {})
+    assert ampel_ohne == "🟡"
+    assert "RetDD unbelegt" in urteil_ohne
+    # Unter der Mindesteffizienz ebenfalls kein Grün:
+    res_schwach = pipeline.ScanResult(
+        id=2349229, name="Unbezahlt", score=4.1,
+        forensik_vorhanden=True, ertrag_monat_pct=24.54,
+        ertrag_monat_pct_forensik=8.6, martingale_flag=False,
+        stop_evidence="direct", retdd_monat=0.77)
+    ampel_schwach, urteil_schwach = pipeline.ampel_for(res_schwach, {})
+    assert ampel_schwach == "🟡"
+    assert "1,0" in urteil_schwach
 
 
 def test_b2_ohne_forensikwert_gilt_weiterhin_der_plattformwert():
     res = pipeline.ScanResult(
         id=1, name="Vorpruefung", score=4.0, forensik_vorhanden=True,
         ertrag_monat_pct=7.0, ertrag_monat_pct_forensik=None,
-        martingale_flag=False, stop_evidence="none")
+        martingale_flag=False, stop_evidence="none",
+        retdd_monat=1.2)
     ampel, _ = pipeline.ampel_for(res, {})
     assert ampel == "🟢"
 
@@ -471,13 +492,14 @@ def test_retdd_ampelzelle_schwellen():
     tam = importlib.util.module_from_spec(spez)
     spez.loader.exec_module(tam)
     m_eff = lambda r: tam._matrix(r)
-    gruen = tam._result(retdd_monat=0.8, retdd_jahr=9.6)
-    grenze = tam._result(retdd_monat=0.167, retdd_jahr=2.0)
+    # Nutzer-Regel 02.10.: 1,0 = Mindestqualität
+    gruen = tam._result(retdd_monat=1.44, retdd_jahr=9.6)
+    reserve = tam._result(retdd_monat=0.8, retdd_jahr=9.6)
     schlecht = tam._result(retdd_monat=0.05, retdd_jahr=0.6)
     ohne = tam._result(retdd_monat=None, retdd_jahr=None,
                        ertrag_monat_pct_forensik=None)
     assert m_eff(gruen)["retdd"].ampel == "🟢"
-    assert m_eff(grenze)["retdd"].ampel == "🟡"
+    assert m_eff(reserve)["retdd"].ampel == "🟡"
     assert m_eff(schlecht)["retdd"].ampel == "🟠"
     assert m_eff(ohne)["retdd"].ampel == "⚪"
 

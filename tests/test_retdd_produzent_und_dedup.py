@@ -1,0 +1,113 @@
+# -*- coding: utf-8 -*-
+"""B24/B25 (Lauf-Review 02.10.2026): Der RetDD-Produzent und das
+Trade-Dedup.
+
+B24: retdd_monat/retdd_jahr/ertrag_monat_geom_pct/cagr_jahr_pct waren seit
+dem 01.10. deklariert und überall konsumiert (Ampel-Zelle, Prompts,
+Portfolio, Tradeserver-Sync) — aber NIEMALS berechnet (0/97 Signale mit
+Wert). Der Produzent (portfolio_statistik.effizienz_kennzahlen) rechnet auf
+derselben Kurve wie die Forensik-Erträge; Nutzer-Regel 02.10.:
+1,0 = Mindestqualität (Grün-Weg in ampel_for setzt das hart durch).
+
+B25: Datenquellen-Monitore liefern teils exakte Doppelzeilen (The Holy
+Grail: 4.197/15.340 = 27,4 %) — der Parser bereinigt und zählt.
+"""
+from __future__ import annotations
+
+from pathlib import Path
+
+from mqlkiscanner import portfolio_statistik
+from mqlkiscanner.parser import load_export
+
+KOPF = ("Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit")
+
+
+def _csv(tmp_path: Path, zeilen: list[str], name: str = "export.csv") -> str:
+    pfad = tmp_path / name
+    pfad.write_text("\n".join([KOPF] + zeilen) + "\n", encoding="utf-8")
+    return str(pfad)
+
+
+def _trade(monat: str, profit: float, symbol="XAUUSD") -> str:
+    return (f"2026.{monat}.01 10:00:00;Buy;0.10;{symbol};2400.00;0.10;"
+            f"2026.{monat}.02 10:00:00;2410.00;0.00;0.00;{profit:.2f}")
+
+
+# ------------------------------------------------------------------ B24 —
+
+def test_effizienz_kennzahlen_geometrisch_und_calmar(tmp_path):
+    """3 Monate mit +10 % JE Monat auf wachsendem Konto (Gewinne 100, 110,
+    121 auf 1.000 USD Start): geom. Mittel exakt 10 %/M, CAGR 213,8 %,
+    RetDD bei DD-Max 10 % exakt 1,0 (die Nutzer-Mindestqualität)."""
+    pfad = _csv(tmp_path, [
+        _trade("01", 100.0), _trade("02", 110.0), _trade("03", 121.0)])
+    eff = portfolio_statistik.effizienz_kennzahlen(pfad, 1000.0, 10.0)
+    assert eff is not None
+    assert abs(eff["ertrag_monat_geom_pct"] - 10.0) < 0.01
+    assert abs(eff["cagr_jahr_pct"] - (1.1 ** 12 - 1) * 100) < 0.1
+    assert abs(eff["retdd_monat"] - 1.0) < 0.01
+    assert abs(eff["retdd_jahr"] - (1.1 ** 12 - 1) * 100 / 10) < 0.01
+
+
+def test_effizienz_kennzahlen_ohne_basis_bleibt_none(tmp_path):
+    pfad = _csv(tmp_path, [_trade("01", 100.0)])
+    assert portfolio_statistik.effizienz_kennzahlen(pfad, None, 10.0) is None
+    assert portfolio_statistik.effizienz_kennzahlen(pfad, 1000.0, None) is None
+    assert portfolio_statistik.effizienz_kennzahlen(pfad, 0.0, 10.0) is None
+    assert portfolio_statistik.effizienz_kennzahlen(
+        str(tmp_path / "fehlt.csv"), 1000.0, 10.0) is None
+
+
+def test_effizienz_niedrigere_rendite_trotz_kontowachstum():
+    """Zinseszins-Wahrheit: 3× +10 % auf wachsendem Konto ergibt 10 %/M
+    GEOMETRISCH, nicht 10 % vom fixen Start (Fixbasislüge Combo-Profile-
+    Fall 01.10.: 91,8 % linear vs 27,7 % geom)."""
+    kurve = {"2026-01": 10.0, "2026-02": 10.0, "2026-03": 10.0}
+    faktor = 1.0
+    for m in sorted(kurve):
+        faktor *= 1 + kurve[m] / 100
+    assert abs((faktor ** (1 / 3) - 1) * 100 - 10.0) < 1e-9
+
+
+# ------------------------------------------------------------------ B25 —
+
+def test_parser_entfernt_massen_duplikate_erhaelt_einzelzwillinge(tmp_path):
+    """Zwei belegte reale Phänomene (B25/F-16): MASSige Doppellieferungen
+    (THG: 4.197/15.340 = 27,4 %) werden bereinigt — Drawdown war systematisch
+    nach unten verfälscht. ECHTE Zwillings-Grid-Legs im EINZELFALL (Gold-
+    Spike-MT5-Referenz: 2 exakte Duplikate, Multiset-Fall F-16) bleiben
+    zählen. Schwelle: ab 10 Duplikatzeilen UND >= 1 % Anteil."""
+    # Einzelfall: 3 Zeilen, 1 doppelt — bleibt unangetastet (Multiset, F-16)
+    pfad_klein = _csv(tmp_path,
+                      [_trade("01", 100.0), _trade("02", -50.0),
+                       _trade("01", 100.0)], "klein.csv")
+    klein = load_export(str(pfad_klein))
+    assert len(klein.trades) == 3
+    assert klein.duplikate_entfernt == 0
+
+    # Massenfall: 10 eindeutige Monate, alles doppelt = 10 Duplikate (50 %)
+    eindeutige = [_trade(f"{m:02d}", 10.0) for m in range(1, 11)]
+    pfad_masse = _csv(tmp_path, eindeutige + eindeutige, "masse.csv")
+    masse = load_export(str(pfad_masse))
+    assert len(masse.trades) == 10
+    assert masse.duplikate_entfernt == 10
+
+
+def test_parser_ohne_duplikate_zaehlt_null(tmp_path):
+    pfad = _csv(tmp_path, [_trade("01", 100.0), _trade("02", -50.0)])
+    parsed = load_export(pfad)
+    assert len(parsed.trades) == 2
+    assert parsed.duplikate_entfernt == 0
+
+
+def test_dedup_auf_realer_lieferung_thg():
+    """B25-Nachweis an der echten Lieferdatei: 15.340 Zeilen mit 4.197
+    exakten Duplikaten (27,4 %) — nach Dedup bleiben 11.143 Trades."""
+    pfad = (r"D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\SignalKiScanner"
+            r"\data\trade_snapshots\c8c100a09a6b0a34c69f128d8dc29d868e59a187dd32d9d9a1a7e7249efceffe.csv")
+    if not Path(pfad).exists():
+        import pytest
+        pytest.skip("Original-Lieferung nicht mehr im Cache")
+    parsed = load_export(pfad)
+    assert parsed.duplikate_entfernt == 4197
+    assert len(parsed.trades) + 4197 == 15340

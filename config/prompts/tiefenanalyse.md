@@ -85,7 +85,8 @@ Signal nur nach den Maschinendaten.
   sonst bleibt es neutral/offen. Analysiere:
   - Gibt es wiederkehrende Verlustmuster bei bestimmten Pip-Werten?
   - Werden Trades bei konsistenten Verlustniveaus geschlossen?
-  - Falls kein Stop-Loss: Wie werden Verluste begrenzt?
+  - Falls Stop-Schutz nicht direkt dokumentiert ist: Welche Hinweise
+    auf interne Verlustbegrenzung liefern die Schliessungssignaturen?
 - **Drawdown-Verhalten:** Analysiere das kommunizierte Drawdown-Limit und
   dessen praktische Umsetzung:
   - Wie hoch kann der maximale Verlust werden?

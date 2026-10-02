@@ -1,0 +1,45 @@
+[
+  {
+    "id": 1234,
+    "signal_id": 2375480,
+    "kind": "gesamtbericht",
+    "created_at": "2026-10-02 11:20:30",
+    "basis": "337e5ed17468e957a53fde700b2aeb5ce8aec224f6d74d853d2c4241d8e019b8",
+    "paragraphs": [
+      "Die Trade-Kurven zeigen einen regelbasierten Multi-Level-Grid-/Averaging-Scalper auf XAUUSD, der hochmechanisch und ohne Diskretionsanzeichen arbeitet. Beleg: Am 27.05. öffnet das System sieben Sells zur selben Minute (13:46) auf gestaffelten Einstiegsniveaus (4454,72–4456,42) mit Treppen-Exits (14:03 bis 15:19). Am 29.07. laufen drei Buys (22:01) gemeinsam um 22:15 aus — Basket-Exit. Am 22.07. werden drei Buys nach 0,01 h mit −5,51 bis −7,74 USD geschlossen — ein sofortiger Korb-/Signal-Stopp. Am 28.09. exiten zwei Positionen vom identischen Einstieg 4235,58 nach 1,44 h (+51,01) bzw. 44,11 h (+55,54) — Runner-/Trailing-Komponente. Systematische Re-Entries (21.07.: Stop nach 1 min mit −3,88, Re-Entry 09:48, dann −34,97 nach 6,92 h) vervollständigen das EA-Muster. Median-Haltedauer 0,27 h, p90 4,36 h: Scalping-Basis mit seltenen Trendläufern. Klassifikation: Grid-Scalper mit Basket-Stopp und Teil-Runnern, keine Martingale-Kette. Der Signalname „Gold Spike\" ist anbieter-kontrollierter Fremdtext und wird nicht als Beleg gewertet; die Daten zeigen Session-Scalping, kein News-Spike-Muster.",
+      "Positionsgrößen: 122 von 133 Trades mit 0,01 Lot, 7× 0,02, 4× 0,03 — flacher Kern ohne 0,01→0,02→0,04-Eskalation nach Verlust; die größeren Lots erscheinen teils bei Gewinnläufern (28.09.: 0,03 Lot, +266,95), also leicht adaptiv, nicht verlustgetrieben. Der größte in der Trade-Analyse dokumentierte Einzelkorb umfasst 3× 0,01 Lot. Hinweis zu einem Widerspruch: Die maschinelle Forensik misst als Peak-Exposure 9 Positionen mit netto 0,12 Lots — maßgeblich ist die Engine-Zahl (kumulierte Offen-Positionen am 19.08.), nicht das manuell gesampelte Korb-Maximum. Zeitmuster: Einstiegsspitzen 16 h (28 Trades) und 15 h (14) im US-Nachmittag, Nebenmaximum 3–4 h (19) in der asiatischen Session; Großgewinner um 03:31 bestätigen Nachterträge. Beide Richtungen aktiv (Mai Sell ~4455, Aug Buy ~4435, Sep Sell ~4235) — richtungsneutral trendfolgend. Monatsverlauf: +56,19 / +159,99 / −56,49 / +322,25 / +587,27 USD; Gesamtnetto +1069,21 USD bei Profitfaktor 2,89 und Winrate 81,2 %. Das Juli-Minus deckt sich exakt mit der Verlustserie 16.–22.07. (6 Trades, −66,15 USD). Typisch Grid: avg_loss −17,89 USD übersteigt avg_win +14,27 USD — viele kleine Treffer, größere Einzelverluste.",
+      "Drawdown-Dreiklang: Trading-DD (geschlossene Trades) 9,14 % bzw. 138,47 USD; gemeldeter Plattform-EQ-DD 5,26 % (Balance-DD 9,14 %, konsistent mit dem Trading-DD); rekonstruierter Reko-EQ-DD aus Kursdaten inklusive Floating 9,17 %. Das bewertete Maximum beträgt 9,17 % und liegt weit unter der harten Schranke von 30 % (Engine: schranke_verletzt = false). Gesondert zu benennen: Die Rekonstruktion liegt 3,91 Prozentpunkte über dem gemeldeten Equity-DD (Faktor ≈ 1,74) — der Anbieter meldet den Drawdown deutlich schöner, als er war. Die Kernbefund-Schwelle (Faktor ≥ 2) ist nicht erreicht, die Abweichung bleibt aber ein Befund zur Berichtsgenauigkeit. Monitor-EQ-DD liegt nicht vor (Datenquelle ohne Zweitmessung; optional, kein Pflichtteil). Verlustserie: maximal 6 Trades, Summe −66,15 USD (≈ 5,3 % der Kapitalbasis). Peak-Exposure: 9 Positionen, netto 0,12 Lots; Schockszenario 600 USD (shock_pct_peak_usd) auf einem Peak-Kontostand von 1.632,51 USD (shock_pct_peak_account) entspricht 36,7532 % (shock_pct_max — der einzige Prozentwert des Szenarios; Zeitpunkt 2026-08-19 16:12:33). Dies ist ein Stress-Szenario zur Gewichtung, kein gemessener Verlust und allein kein Ablehnungsgrund — es zeigt aber, dass ein Schock die 30-%-Schranke rechnerisch überschreiten könnte. Martingale: Flag false, keine Evidenz. Stop-Loss: kein Nachweis in den Daten — per bindender Regel strikt neutral. Verhaltensschätzung: Die Verlustdistanzen streuen stark (0,02–38,11), ein konsistenter Cut-Off-Cluster fehlt; die kollektiven Sofort-Exits am 21./22.07. sprechen jedoch für eine interne Basket-/Signal-Stopp-Logik. Einschätzung: plausibler teilweiser interner Stopp auf Korb-Ebene, auf Einzelpositions-Ebene offen — neutral, kein Malus. Zweiter Widerspruch, zugunsten der Forensik aufgelöst: Plattform-Ertrag 27,3 %/Monat vs. 20,85 %/Monat auf Forensik-Basis (maßgeblich). Forensik-Batterie: vollständig.",
+      "Drei wichtigste Gründe: Erstens die Stress-Exposure von 36,7532 % des Peak-Kontos in Kombination mit dem Grid-Profil (avg_loss > avg_win) ohne nachweisbaren Einzelpositions-Stopp. Zweitens die verschönerte DD-Meldung (5,26 % gemeldet vs. 9,17 % rekonstruiert, Faktor ≈ 1,74). Drittens kurze Historie (19 Wochen, ein dokumentierter Verlustzyklus), fehlende geometrische Metriken und kleine Kapitalbasis. Widerspruchs-Pflicht: Eine spätere Portfolio-Empfehlung darf dieses WATCHLIST nur übernehmen, wenn sie diese Vorbehalte ausdrücklich nennt und mit Bedingungen/Fristen aufhebt. Historische Rendite ist eine Hypothese unter der BedingungFortbestand der Marktregime — keine Prognose."
+    ]
+  },
+  {
+    "id": 1240,
+    "signal_id": 2349227,
+    "kind": "gesamtbericht",
+    "created_at": "2026-10-02 11:28:09",
+    "basis": "7c631c5208c3b4485632443b303878daf5bb92158dda501383af0f2cf939ac91",
+    "paragraphs": [
+      "Effizienz-Kennzahlen: retdd_monat = null, retdd_jahr = null, ertrag_monat_geom_pct = null — die geometrische Effizienz (Ertrag je Prozent Drawdown; retdd_jahr = Calmar) ist nicht bewertbar; weder ≥ 0,5 (attraktiv) noch ≤ 0,167 (unattraktiv) ist belegbar. Da RetDD Vorrang vor absoluter Rendite hat, ist eine EMPFEHLUNG trotz erfüllter Mindestschwelle (8,71 %/Monat forensisch, linear; Plattformwert 19,81 % nur Zusatzinformation) nicht begründbar. Eine lineare Grobschätzung (8,71 %/Monat zu 8,11 % Max-DD) wäre vielversprechend, bleibt aber Hypothese ohne geometrische Messung; historische Rendite beweist keine künftige Profitabilität — Erwartung nur als konditionale Hypothese."
+    ]
+  },
+  {
+    "id": 1270,
+    "signal_id": 2059368,
+    "kind": "gesamtbericht",
+    "created_at": "2026-10-02 12:09:53",
+    "basis": "d4c3736270c5348c318ba234c81be16bc1e8bbc2997c0885418519ab791c1381",
+    "paragraphs": [
+      "Effizienzkennzahlen: retdd_monat = null, retdd_jahr = null, ertrag_monat_geom_pct = null — geometrische Rendite je Prozent Drawdown wurde nicht berechnet. Näherung über lineare Werte: 1,21 %/Monat (Forensik, maßgeblich) je 11,25 % EQ-DD ≈ 0,11 — unter dem Projektmaß 0,167 und weit unter 0,5 (attraktiv). Bewertung: unattraktiv — Risiko ohne angemessene Bezahlung; bei RetDD-Priorität schlägt die Ineffizienz die formale DD-Unbedenklichkeit. Ertrag 1,21 % < 5,0 %/Monat: kein Kandidat, aber keine harte Engine-Ablehnung (Ampel gelb/Beobachtung)."
+    ]
+  },
+  {
+    "id": 1276,
+    "signal_id": 2039057,
+    "kind": "gesamtbericht",
+    "created_at": "2026-10-02 12:16:48",
+    "basis": "5c0881ecbed8e677cb888a5548c16a0fadf0f157b519e25902102ba0a313cf89",
+    "paragraphs": [
+      "Effizienz-Kennzahlen: retdd_monat, retdd_jahr und ertrag_monat_geom_pct sind nicht vorhanden (null) — die formale geometrische Effizienz ist nicht berechenbar. Als klar gekennzeichnete Hilfsrechnung (nicht Engine-Zahl): 0.57 %/Monat linear gegen 21.14 % Reko-DD ergibt rund 0.027 Ertrag je Prozent Drawdown und Monat — weit unter 0.167 (Projektmaß) und erst recht unter 0.5. Risiko ohne angemessene Bezahlung."
+    ]
+  }
+]

@@ -255,15 +255,17 @@ des Laufs) / wahrscheinlich / nicht prüfbar. Jeder Befund mit Ort, Wirkung,
 Korrekturidee, Verifikationstest. Gegenprüfung: B1–B3, B6, B8, B9, B15 wurden
 vom Hauptagenten unabhängig nachgerechnet bzw. im Code nachgelesen (✓).
 
-### 0) Umsetzungsstand je Befund (Stand HEAD `33c11ac`, 30.09. 23:15)
+### 0) Umsetzungsstand je Befund (Stand HEAD `a01b7a3`, 02.10.2026 — nach Lauf-Prüfung)
 
-> **Bilanz: 21 von 24 Befunden geschlossen.** B1–B16 in `fc4b3b9`,
+> **Bilanz: 21 von 27 Befunden geschlossen.** B1–B16 in `fc4b3b9`,
 > B17 widerlegt, B22 in `9942e7d`, B1–B3 **live verifiziert** in `0e1b2b8`,
 > B20/B21 in `33c11ac`. **Offen: B18** (Pelican `/reports` liefert
-> weiterhin eine leere Liste), die beiden Feld-Klarstellungen #17/#20 und
-> **neu B23** (Return/Drawdown fehlt als Kriterium, Nutzer-Anforderung
-> 01.10.2026 — im Bestand belegt: 6 von 16 🟢/🟡 unter Ret/DD 1,0, und die
-> beste Effizienz sieht schlechter aus als die schlechteste).
+> weiterhin eine leere Liste), die beiden Feld-Klarstellungen #17/#20,
+> **B23** (Return/Drawdown fehlt als Kriterium — **inzwischen implementiert,
+> aber wirkungslos, siehe B24**) sowie **neu B24/B25/B26** aus der Prüfung des
+> laufenden Scans am 02.10.2026: RetDD wird nie berechnet (0 von 97 Signalen),
+> 38 von 97 Signalen enthalten doppelte Trade-Zeilen (Spitze 27,4 %), und zwei
+> Kennzahlen sind ohne `n`/Bezugsgröße nicht prüfbar.
 
 | Befund | Status im Code | Lauf-verifiziert? |
 |---|---|---|
@@ -286,7 +288,10 @@ vom Hauptagenten unabhängig nachgerechnet bzw. im Code nachgelesen (✓).
 | B20 **Juli 2026: 7 Signale gleichzeitig im Minus; Portfolio prüft Korrelation statt gemeinsamer Belastung; Beobachtungstiefe nur 11 Monate** | ✅ **`portfolio_statistik` (0-Fix-Welle)**: Verlustmonat-Cluster + Historie-Tiefe + gemeinsames Fenster als Code-Befund im Portfolio-Prompt | ✅ Live-Abnahme am Bestand: Juli-Cluster n=5 sichtbar, Gesamtfenster nur 2 Monate — die Stichprobenlücke steht jetzt IM Prompt |
 | B21 **Instrument-Overlap als Diversifikationskriterium fehlt (MH4-1/2: 15 Symbole, r = 0,26)** | ✅ **`portfolio_statistik`**: Paar-Overlap (Jaccard ≥ 0.3, ≥ 3 gemeinsame Symbole) im Prompt, Deutungsregel „Overlap = Klumpenrisiko trotz r≈0" | ✅ Live-Abnahme: H4-1×H4-2 entfällt (H4-1 seit B1 🔴), Holy Grail×MetaTrading2 (J=0,33) & Co. erscheinen |
 | B22 **`fc4b3b9` brach einen abhängigen Test still (Fixture-Wert vs. Test-Mutation)** | ✅ **behoben** (Mutation korrigiert + Trefferprüfung als dauerhafte Absicherung) | ✅ **grün** (7/7 `test_review18_ui.py`, 20/20 mit `test_review15_reports.py`) |
-| B23 **Return/Drawdown (Calmar) ist als Kriterium nirgends vorhanden — zwei absolute Schranken ersetzen das Verhältnis nicht** | ❌ **offen** (Nutzer-Anforderung 01.10.2026) | ✅ **Bestandsrechnung:** 6 von 16 🟢/🟡 unter Ret/DD 1,0; Median 1,71; schlechtester 0,40. Zusätzlich Fehlurteil-Richtung belegt: beste Effizienz (8,65) sieht schlechter aus als schlechte (0,83), weil der Score kein Ertragsgewicht hat |
+| B23 **Return/Drawdown (Calmar) ist als Kriterium nirgends vorhanden — zwei absolute Schranken ersetzen das Verhältnis nicht** | ⚠️ **teilweise umgesetzt, wirksam tot** (Nutzer-Anforderung 01.10.2026) → **B24** | ✅ **Bestandsrechnung:** 6 von 16 🟢/🟡 unter Ret/DD 1,0; Median 1,71; schlechtester 0,40. Zusätzlich Fehlurteil-Richtung belegt: beste Effizienz (8,65) sieht schlechter aus als schlechte (0,83), weil der Score kein Ertragsgewicht hat |
+| B24 **B23 wurde implementiert, aber die Werte werden nie berechnet — RetDD ist toter Code** | ❌ **offen** (Nachweis Lauf 02.10.2026) | ✅ **belegt:** 0 von 97 Signalen haben `retdd_monat`/`ertrag_monat_geom_pct`; Ampel-Zelle `retdd` immer ⚪; 3 Prompts verlangen den trotzdem |
+| B25 **Doppelte Trade-Zeilen in 38 von 97 Signalen (The Holy Grail 27,4 %) verzerren Trefferquote, Verlustserie und Drawdown** | ❌ **offen** (Nachweis Lauf 02.10.2026) | ✅ **belegt:** 4.197 überzählige Zeilen; Parser 1:1 zur Datei → Quelle dupliziert; ohne Dedup maxDD 9,46 % → 12,12 % |
+| B26 **Zwei Forensik-Kennzahlen sind nicht interpretierbar, ohne Duplikat-/Bezugsgrößen-Hinweis** | ❌ **offen** (Nachweis Lauf 02.10.2026) | ✅ **belegt:** 95,5 % WR bei 120er-Verlustserie in 10 s; WR und DD ohne n |
 
 
 ### A) Bestätigte Fehler / Regelverstöße gegen das Projekziel
@@ -697,7 +702,161 @@ Schwellen der Nutzer als „lohnend" betrachtet (Vorschlag 1,0 = Mindestqualitä
 2,0 = Ziel) — die Werte oben sind eine **Rechnung aus dem Bestand**, keine
 vom Nutzer gesetzte Schwelle.
 
-### B) Begründete Risiken (im Ziellauf nicht eingetreten)
+**NACHTRAG 02.10.2026:** B23 ist inzwischen **teilweise umgesetzt** (Ampel-Zelle
+`retdd`, ScanResult-Felder, Portfolio-Statistik, Sync-Felder, 3 Prompts) — aber
+**wirksam tot**, siehe **B24**.
+
+---
+
+**B24 [KRITISCH, belegt, OFFEN] — RetDD ist implementiert, wird aber nie
+berechnet: die gesamte Effizienz-Kennzahl ist toter Code.**
+
+Eine Parallelsitzung hat B23 umgesetzt und committed (`a01b7a3`). Alle
+*Verbraucher* existieren; der *Produzent* fehlt.
+
+1. **Deklariert, nie zugewiesen.** `pipeline.py:157-163` deklariert
+   `retdd_monat`, `retdd_jahr`, `ertrag_monat_geom_pct`, `cagr_jahr_pct` — alle
+   mit Default `None`. Eine Suche über **alle** `src/`-Dateien nach den
+   Zuweisungsmustern `retdd_monat\s*=`, `ertrag_monat_geom_pct\s*=`,
+   `cagr_jahr_pct\s*=` findet **genau 1 Treffer, und der ist ein Kommentar**
+   (`pipeline.py:600`) bzw. eine Prompt-Zeile (`llm/prompts.py:212`).
+   **Null Berechnungsstellen.**
+2. **Die naheliegende Stelle tut es nicht.** `pipeline.py:1222-1231` berechnet
+   den linearen Forensik-Ertrag `100*net_total/startkapital/monate` und setzt
+   `ertrag_monat_pct_forensik` — ertrag, Startkapital und `monate` liegen dort
+   b?ndig vor. RetDD/CAGR stehen nicht daneben.
+3. **Produktionsbeweis.** `results_from_db()` (der Pfad, den GUI, REST und
+   Sync nutzen) ?ber alle 97 Signale der Live-DB:
+
+   | Feld | gesetzt |
+   |---|---|
+   | `retdd_monat` | **0 von 97** |
+   | `ertrag_monat_geom_pct` | **0 von 97** |
+   | `retdd` in `kriterien_matrix` | ⚪ „unbekannt" — **0 von 97** |
+   | Urteile mit RetDD-Text | **0 von 97** (obwohl `pipeline.py:474` ihn einbauen soll) |
+
+   Beispiel Gold Spike MT5: `ertrag_monat_pct_forensik = 20,85`,
+   `trading_dd_pct = 9,14`, `equity_dd_pct = 5,26` — **`retdd_monat = None`**
+   (korrekt waere 2,28).
+4. **Symptom im laufenden Scan (02.10.2026).** `data/scan_workflow.log`:
+   *"Gold Spike abgeschlossen. Kurzfassung: Forensik bestanden — Stops bewiesen,
+   kein Martingale, Max-DD 8,11 %; **RetDD-Effizienz nicht berechenbar**,
+   Engine-Score 4,1"*.
+5. **Datenlage ist kein Blocker.** F?r **alle 56** Signale mit Forensik-
+   R?ckgabe existieren Ertrag **und** DD — ein Recompute ergab RetDD-Werte
+   von 0,03 (Deus ex machina) bis 38,12 (Testing Plus). Es fehlt reine
+   Rechenlogik, keine Information.
+6. **Warum die Suite gruen l?uft.** Alle 4 RetDD-Tests
+   (`test_intensivreview_fixes.py:459/474/475/477`, `test_ampel_matrix.py:28`)
+   bauen `ScanResult` **von Hand mit fertigem `retdd_monat=`**. Sie testen
+   Schwellenlogik der Verbraucher — nie den Produzenten.
+   `test_retdd_nutzt_geometrisches_mittel_nicht_fixe_basis` (`:504`) traegt
+   sogar die Kommentarzeile *"pipeline nutzt dieselbe Funktion"*, ohne die
+   Pipeline je aufzurufen. `pytest -k retdd` → 4 passed.
+7. **Fehlwirkung auf die KI.** Drei Prompts
+   (`llm/prompts.py:116-118, 211-213, 284-287`) verlangen, `retdd_monat` und
+   `retdd_jahr` zu nennen und setzen eine Empfehlungssperre bei
+   `retdd_monat < 0,2`. Die KI wird also angewiesen, einen Wert zu
+   beurteilen, der **immer `null`** ist; das JSON traegt `null`. Die
+   Empfehlungssperre kann nie greifen, das Kriterium kann nie gruen werden.
+
+**Ma?nahmen.** (1) In `pipeline.py` nach `:1231` berechnen:
+`retdd_monat = ertrag_forensik / dd_maximum(trading_dd, eq_dd, bal_dd,
+reko_eq_dd, monitor_dd)` mit Wächter gegen `dd <= 0`; `retdd_jahr` = echter
+Calmar (CAGR/DD), nicht `x12`. `dd_maximum` (`scoring.py:62`) ist der
+kanonische Fünfach-Maximum — **zwingend** verwenden, sonst wird RetDD
+überschätzt, weil Reko-/Monitor-DD fehlen. (2) `ertrag_monat_geom_pct` und
+`cagr_jahr_pct` über `portfolio_statistik.monatsrenditen()`
+(`portfolio_statistik.py:29-53`, geometrische Kette ist dort korrekt; gibt `{}`
+zur?ck, wenn `startkapital` falsch ist — das ist der Ruckfall, kein Fehler).
+(3) In `results_from_db()` (`pipeline.py:296-360`) mitlesen, sonst ist der
+Wert nur im Scan sichtbar, nicht in GUI/REST/Sync. (4) Die 4 Tests auf
+Pipeline-Ebene umstellen: ein Test, der durch die echte Pipeline l?uft und
+`retdd_monat` **nicht** `None` erwartet, plus Best?tigung der Formel gegen
+`dd_maximum`. (5) Ein Test, der ein ⚪-Ergebnis als **Fehler** wertet, wenn
+Ertrag **und** DD vorliegen.
+
+**Konsequenz f?r B23:** Die Ma?nahmen (a) und (b) aus §7 Nr. 22/23 gelten
+als **nicht erfuellt**, bis B24 behoben ist; das Kriterium existiert nur auf
+dem Papier.
+
+---
+
+**B25 [HOCH, belegt, OFFEN] — Doppelte Trade-Zeilen verzerren Trefferquote,
+Verlustserie und Drawdown; der Parser übernimmt sie ungepr?ft.**
+
+1. **Befund.** 38 von 97 Signalen enthalten exakte Duplikate (identisch in
+   open/close/direction/volume/symbol/entry/exit/profit). Spitze **The Holy
+   Grail: 4.197 ?berz?hlige Zeilen von 15.340 = 27,4 %** — mehr als jedes
+   andere Signal um eine Gr??enordnung (SolarFlare 14,0 % · Techno Long
+   Term 11,3 % · Lexo 6,4 % · Gold Spike MT5 1,5 %).
+2. **Auswirkung auf die Kennzahlen** (The Holy Grail, mit/ohne Dedup):
+
+   | | n | Trefferquote | max Verlustserie | netto | maxDD(close) |
+   |---|---|---|---|---|---|
+   | wie berechnet | 15.340 | 95,5 % | **120** | 64.537 | 9,46 % |
+   | dedupliziert | 11.143 | 95,0 % | **50** | 47.446 | **12,12 %** |
+
+   Der Drawdown wird **untersch?tzt** (9,46 → 12,12 %), die Verlustserie
+   **doppelt** (120 → 50). Beide Effekte gehen in `ampel_matrix`/`scoring` ein.
+3. **Lokalisation: die Quelle, nicht der Parser.** F?r denselben
+   `trade_files`-Pfad gilt `Rohzeilen in der Datei: 15341` ·
+   `CSV-Datenzeilen: 15340` · `load_export().trades: 15340` — **1:1**. Der
+   SHA-256 der Datei stimmt mit `trade_files.sha256` ?berein
+   (`c8c100a0…`), der Cache ist also nicht das Problem. Die Duplikate sind im
+   gelieferten CSV bereits enthalten.
+4. **Warum es auffaellt:** Die Serie mit 120 Verlusten ist **ein einziges**
+   Grid-Ereignis — Positionen `#14567-14686`, alle `USDJPY`, **Volumen
+   konstant 0,03**, Close-Zeiten **16:53:47 bis 16:53:57 am 28.08.2026** (10
+   Sekunden), Summe −906,35 USD. Median `Lot(i+1)/Lot(i) = 1,000`, also **kein
+   Martingale** — der Scanner flaggt zu Recht nicht. Der Eindruck "120
+   Verluste in Folge" entsteht aber durch Duplikate: innerhalb der Serie liegen
+   **33 Duplikatgruppen**.
+
+**Ma?nahmen.** (1) Dedup in `parser.load_export` bzw. in der Forensik, mit
+Protokollausgabe `trades_total` / `trades_bereinigt` je Signal, damit die
+Bereinigung **sichtbar** ist (AGENTS.md Design-Regel 1: Code rechnet, Befund
+wird geliefert). (2) Der Snapshot-Erzeuger (PelicanMonitor) soll die Duplikate
+m?glichst an der Wurzel entfernen. (3) Re-Scan der 38 betroffenen Signale
+nach dem Fix — die Drawdown-Schanze kann dadurch **von unten** steigen.
+
+---
+
+**B26 [MITTEL, belegt, OFFEN] — Zwei Forensik-Kennzahlen sind ohne
+Kontext nicht interpretierbar.**
+
+1. **95,5 % Trefferquote bei 120er-Verlustserie** (The Holy Grail). Beide Werte
+   stehen unkommentiert nebeneinander in `forensik` und in der KI-Payload. Der
+   Widerspruch ist nur aufloesbar ?ber die Sortierung — und die Sorte ist
+   `close_time`, w?hrend 120 Positionen dieselbe Sekunde tragen (siehe B25).
+2. **91,4 % Trefferquote bei 0,1 % Trading-DD** (PentagonForex). Nachgerechnet
+   aus 2.023 Roh-Trades: netto 5.703,34 USD, maxDD(close) **26,25 USD = 0,46 %**
+   vom Netto. Die 0,1 % sind korrekt gerechnet, aber **ohne `n` und ohne
+   Bezugsgr??e** (vom Netto? vom Equity-Peak?) nicht prüfbar — die Kennzahl
+   ist damit als Schrankenargument unbrauchbar.
+3. In beiden Faellen fehlt `n` in der `forensik`-Nutzlast (im gepr?ften
+   Schema vorhanden: `ampel`, `equity_rekonstruktion`, `fx_kursquelle`,
+   `kapitalbasis`, `kriterien_matrix`, `martingale_evidenz`, `martingale_flag`,
+   `max_verlustserie`, `peak_exposure`, `score`, `stop_evidence`,
+   `stop_nachweis`, `symbole`, `trading_dd`, `verlustserie_usd`, `version`,
+   `vollst?ndig`, `winrate_pct` — **kein `trades`**).
+
+**Ma?nahmen.** `n` (Trade-Anzahl) und bei Quellen-CSV der Dedup-Hinweis in
+die Forensik-Nutzlast; `winrate_pct` nie ohne `n` ausgeben; die Kennzahl
+`trading_dd` mit ihrer Bezugsgr??e beschriften ("vom Netto" o.ae.).
+
+---
+
+**B27 [INFO] — `data/scan_fortschritt.json` war w?hrend eines laufenden Scans
+veraltet.** Die Datei stammte vom 01.10.2026 10:25 (`status=fertig`,
+`station=portfolio`), w?hrend am 02.10. ein Teilscan lief. **Kein Defekt:**
+`scan_fortschritt` wird nur vom `scan_launcher` (agenten) geschrieben
+(`scan_launcher.py:135/280`), die GUI nutzt `puls_aus_db`
+(`agenten.py:61`) als zweite Quelle. Ein per Hand gestarteter GUI-Scan hat
+bewusst keinen Datei-Kanal. **Regel:** die Datei nicht als Lebenszeichen
+verwenden.
+
+### B) Begruendete Risiken (im Ziellauf nicht eingetreten)
 
 - **R1 ID-Kollision mql5↔pelik möglich und würde still überschreiben**
   (`signals`-PK = signal_id allein; ID-Räume überlappen numerisch — im Lauf
@@ -867,9 +1026,17 @@ Ertrag 0,5 %/M real; Lemonal/AccurateCopier/Mr_Profit durch M2 disqualifiziert).
 | 23 | **B23 (b): Score-Dimension `ertrag_effizienz`** ~0,10–0,15, Gewichte auf 1,00 normiert (`scoring.py:19`); **prompts:** Verhältnis als Pflichtangabe statt nur in `tiefenanalyse.md:68` | ein Score, der Qualität *und*Effizienz misst, nicht nur Risiko | mittel |
 | 24 | **B23 (c): Exportauswahl nach Ret/DD statt Abonnenten** (`fix_signale.py:96`) — Zahlengrundlage vor der Forensik aus `stats_json` oder Quick-Messung in `build_candidates` | **der wirksamste Hebel:** der teure Forensik-/KI-Slot geht heute an Marketingstärke (AGENTS.md Regel 4) | **mittel–hoch** |
 
+| 25 | ~~**B24: RetDD wird nie berechnet (toter Code)**~~ — **offen, VORRANGIG.** Berechnung in `pipeline.py:1231` (`retdd_monat = ertrag_forensik / dd_maximum(...)`, `retdd_jahr` = echter Calmar, `ertrag_monat_geom_pct`/`cagr_jahr_pct` via `portfolio_statistik.monatsrenditen`), Mitlesen in `results_from_db():296-360`, 4 Tests auf Pipeline-Ebene umstellen | ohne das bleiben Nr. 22/23 **ohne Wirkung** — die KI wird angewiesen, `null` zu beurteilen | **klein im Code, kritisch in der Wirkung** |
+| 26 | **B25: Trade-Dedup** in `parser.load_export`/Forensik, Befund `trades_total`/`trades_bereinigt`; Ursache im Snapshot-Erzeuger (PelicanMonitor) beheben; Re-Scan der 38 betroffenen Signale | Drawdown ist bei The Holy Grail um 2,7 Punkte **zu niedrig**, Verlustserie 2,4× zu hoch | **mittel** |
+| 27 | **B26: `n` (Trade-Anzahl) + Dedup-Hinweis in die Forensik-Nutzlast**; `winrate_pct` nie ohne `n`; `trading_dd` mit Bezugsgröße beschriften | macht „95,5 % WR" und „0,1 % DD" überhaupt prüfbar | klein |
+| 28 | **B23(c) ist der wirksamste offene Hebel** — bleibt wie Nr. 24, aber **erst nach B24** sinnvoll, weil die Auswahl sonst einen Wert nutzt, den die Pipeline noch nicht liefert | | |
+
 > **B23-Schwellen sind Vorschlag, nicht Festlegung.** Die Ret/DD-Werte in §B23
 > sind aus dem Bestand gerechnet. Vor der Umsetzung muss der Nutzer festlegen,
 > was „lohnend" heißt (1,0 = Mindestqualität, 2,0 = Ziel o. Ä.).
+>
+> **Reihenfolge (Stand 02.10.2026):** B24 vor Nr. 22/23 (die sind implementiert,
+> aber wirkungslos) und vor Nr. 24; B25 vor dem Re-Scan betroffener Signale.
 
 ---
 

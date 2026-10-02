@@ -80,6 +80,11 @@ def compute(parsed: ParsedExport) -> dict:
 
     return {
         "trades": len(trades),
+        # B26 (Lauf-Review 02.10.): Bezugsgrößen MIT liefern — Winrate und
+        # Trading-DD sind ohne n nicht interpretierbar; B25: entfernte
+        # Duplikat-Zeilen sichtbar machen (Quellen liefern teils doppelt).
+        "trades_anzahl": len(trades),
+        "duplikate_entfernt": parsed.duplikate_entfernt,
         "wins": len(wins),
         "losses": len(losses),
         "winrate_pct": round(len(wins) / len(trades) * 100, 1),

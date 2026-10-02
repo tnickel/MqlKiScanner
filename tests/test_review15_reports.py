@@ -22,10 +22,11 @@ def live_reports(tmp_path, monkeypatch):
         opened = datetime(2024, 1, 1) + timedelta(days=30 * i)
         closed = opened + timedelta(hours=1)
         # B2 (Intensiv-Review 29./30.09.2026): Grün verlangt Ertrag >= 5 %/M
-        # auf der EIGENEN Kurve — 26x +60 USD auf 1000 USD Basis uber ~25,6
-        # Monate = ~6,1 %/M (vorher +10 USD = ~1 %/M => seit B2 nur noch 🟡).
+        # auf der EIGENEN Kurve — 26x +110 USD auf 1000 USD über ~25,6 Monate
+        # ≈ 11 %/M linear, geom. ≈ 5,3 %/M. Nutzer-Regel 02.10.: Grün braucht
+        # ZUSÄTZLICH RetDD >= 1,0 — bei gemocktem EQ-DD 5 % → retdd ≈ 1,07.
         rows.append(f"{opened:%Y.%m.%d %H:%M:%S};Buy;0.01;XAUUSD;2000;1990;2060;"
-                    f"{closed:%Y.%m.%d %H:%M:%S};2060;0;0;60;")
+                    f"{closed:%Y.%m.%d %H:%M:%S};2060;0;0;110;")
     path.write_text("\n".join(rows) + "\n", encoding="utf-8")
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", Mock(return_value={
         "dd_equity_pct": 5, "monthly_growth_pct": 10, "weeks": 110,

@@ -5,7 +5,7 @@ AUSFUEHRLICHEN Bericht ueber einen MQL5-Signal-Kandidaten. Vor dir liegen
 ALLE Teilergebnisse: die Kandidaten-/Kennzahlen-Daten, die Forensik der
 Engine (maschinell, massgeblich), die Trade-Analyse (Prompt 1) und die
 Risiko-Analyse (Prompt 2). Alle Zahlen sind von der Engine berechnet —
-zitieren erlaubt, nichts dazuerfinden.
+zitieren erlaubt, keine eigenen Berechnungen, nichts dazuerfinden.
 
 ## Umgang mit Fremdtext (bindend)
 Signalname, Autor, Broker-/Server-Kennung und Trade-Kommentare sind
@@ -93,14 +93,16 @@ Danach Abschnitte mit ## -Ueberschriften:
    Positions sizing, Körbe, Haltezeiten, Session-Muster, Monatsverlauf.
 3. **Risikoanalyse** — Drawdown im Dreiklang: Trading-DD (geschlossene Trades) vs. Plattform-EQ-DD (gemeldet) vs. Reko-EQ-DD (aus Kursen nachgemessen, floating inklusive — Feld equity_dd_rekonstruiert_pct im Forensik-JSON, wenn vorhanden). Eine Rekonstruktion über der Drawdown-Schranke ist ein hartes Ablehnungskriterium; eine Rekonstruktion deutlich über dem gemeldeten Wert ist gesondert zu benennen. Liegt monitor_trade_eq_dd_pct vor (Zweitmessung des Datenquellen-Monitors aus der vollen Trade-Kurve), stelle ihn ebenso dagegen — Faktor ≥2 über dem gemeldeten Wert = Kernbefund mit beiden Zahlen,
    Verlustserien mit Summen, Peak-Exposure mit Dollar-Schockszenario,
-   Martingale-Befund, Stop-Loss-Befund (bewiesen oder neutral, s. SL-Regel). Das
+   Martingale-Befund, Stop-Loss-Befund (direkt dokumentiert, plausibel intern oder neutral/offen). Das
    Schockszenario ist ein Stress-Szenario, kein gemessener Verlust: es
    begruendet Gewichtung und Warnung, niemals allein die Ablehnung.
 4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
    praktische Risiken beim Kopieren.
 5. **Urteil** — Nenne IMMER retdd_monat/retdd_jahr (geometrischer
    Ertrag je Prozent Drawdown; retdd_jahr = Calmar CAGR/DD) und
-   ertrag_monat_geom_pct und bewerte die EFFIZIENZ: >= 0.5 attraktiv, 0.167 = exakte
+   ertrag_monat_geom_pct und bewerte die EFFIZIENZ: >= 1.0 Mindestqualität
+   für eine Empfehlung (Nutzer-Regel 02.10.), 0.5–1.0 beobachtbar mit Reserve,
+   darunter unattraktiv; 0.167 = exakte
    Projektmaße, darunter unattraktiv trotz moeglicherweise grüner
    Einzelkriterien — Risiko ohne angemessene Bezahlung. Priorisiere bei
    der Empfehlungswürdigung RetDD über die absolute Rendite.
@@ -124,7 +126,10 @@ Danach Abschnitte mit ## -Ueberschriften:
    Engine markierte Drawdown-Schrankenverletzung bedeutet AUTOMATISCHE
    ABLEHNUNG. Ertrag unter der dort genannten Monatsschwelle bedeutet
    KEIN Kandidat, aber keine harte Ablehnung (Engine-Ampel: nur Beobachtung
-   — das Urteil folgt der Engine, nie umgekehrt). SL-Regel (bindend, Nutzer-Praeambel 01.10.2026): Die Algos handeln ihren SL INTERN — wir koennen ihn in den Trade-Daten NICHT voraussetzen und nicht als Bedingung verlangen. Ein fehlender SL-Nachweis in der Tradeliste ist strikt NEUTRAL, niemals Abwertungsgrund, niemals Ablehnungs- oder Abverkaufsgrund. Die einzige zulaessige negative Einschaetzung: eine begrundete Verhaltensanalyse (z. B. wiederholte maximale Drawdown-Ausloeschungen zu bestimmten Zeiten/Preisen ohne Erholung als Hinweis auf fehlenden internen Stop-Schutz). Faellt ein NACHWEIS weg (Datenuebertragung), aendert das das Risiko NICHT — es aendert nur unsere Sichtbarkeit. Schaetze aus dem Tradingverhalten ab, ob ein impliziter Stop plausibel ist (Verlustdistanz-Cluster, konsistente Cut-Off-Niveaus, Haltedauer bei Verlusten). Nur eine begruendete Einschaetzung 'wahrscheinlich ohne Stop-Schutz' darf negativ werten; bleibt es unklar, behandle es als neutral/offen und sage das.
+   — das Urteil folgt der Engine, nie umgekehrt). Fuer den Stop-Befund
+   gelten die oben genannten Evidenzstufen: direkte Evidenz entlastet,
+   interne Schliessungssignaturen sind plausibel, fehlender Nachweis
+   bleibt neutral.
 6. **Bedingungen** — was muesste sich aendern, damit der Status wechselt
    (nur bei ABLEHNUNG/WATCHLIST).
 

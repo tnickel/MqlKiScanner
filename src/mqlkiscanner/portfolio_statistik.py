@@ -58,6 +58,50 @@ def _symbole_als_set(symbole: str | None) -> set[str]:
     return {s.strip().upper() for s in (symbole or "").split(",") if s.strip()}
 
 
+def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
+                         dd_max_pct: float | None) -> dict | None:
+    """RetDD-Effizienz JE SIGNAL — der Produzent (B24-Fix, Lauf-Review
+    02.10.: Deklaration und Verbraucher existierten seit 01.10., die
+    Berechnung nie; 0/97 Signale hatten Werte).
+
+    Auf derselben Kurve wie die Forensik-Erträge (monatsrenditen auf der
+    verwendeten Kapitalbasis):
+      - ertrag_monat_geom_pct: GEOMETRISCHES Monatsmittel (zinseszins-wahr,
+        wachsender Kontostand als Nenner; Nutzer-Regel 01.10.)
+      - cagr_jahr_pct: echter Jahres-CAGR ((End/Start)^(1/Jahre) - 1)
+      - retdd_monat = geom %/M ÷ DD-Maximum % (Deutungsschwelle 1,0 =
+        Nutzer-Mindestqualität 02.10.)
+      - retdd_jahr = CAGR ÷ DD-Maximum (echter Calmar)
+    None ohne belastbare Basis (keine Kurve, kein Startkapital, kein DD) —
+    dann bleibt die RetDD-Ampel-Zelle ehrlich ⚪.
+    """
+    if not trades_pfad or not Path(trades_pfad).exists():
+        return None
+    if not startkapital or startkapital <= 0:
+        return None
+    if dd_max_pct is None or dd_max_pct <= 0:
+        return None
+    kurve = monatsrenditen(trades_pfad, startkapital)
+    if not kurve:
+        return None
+    faktor = 1.0
+    for monat in sorted(kurve):
+        faktor *= 1.0 + kurve[monat] / 100.0
+    if faktor <= 0:
+        return None    # Totalverlust: geom. Mittel nicht definiert
+    n = len(kurve)
+    geom_pct = (faktor ** (1.0 / n) - 1.0) * 100.0
+    jahre = n / 12.0
+    cagr_pct = (faktor ** (1.0 / jahre) - 1.0) * 100.0 if jahre > 0 else None
+    return {
+        "ertrag_monat_geom_pct": round(geom_pct, 2),
+        "cagr_jahr_pct": round(cagr_pct, 2) if cagr_pct is not None else None,
+        "retdd_monat": round(geom_pct / float(dd_max_pct), 2),
+        "retdd_jahr": (round(cagr_pct / float(dd_max_pct), 2)
+                       if cagr_pct is not None else None),
+    }
+
+
 def statistik(results: list) -> dict:
     """Code-Befund für den Portfolio-Prompt aus den 🟢/🟡-Ergebnissen.
 
@@ -150,8 +194,9 @@ def statistik(results: list) -> dict:
             "Werkstatt, gleiche Instrumente). "
             "(4) RetDD je Signal (retdd_monat/retdd_jahr) — priorisiere "
             "Effizienz: gleiche Rendite bei halbem Drawdown ist doppelt so "
-            "gut; Signale mit retdd_monat < 0.2 nicht empfehlen, auch wenn "
-            "Einzelkriterien grün sind."),
+            "gut. Mindestqualität ist 1,0 je Prozent DD (Nutzer-Regel "
+            "02.10.: retdd=1 minimum) — Signale mit retdd_monat < 1,0 "
+            "nicht empfehlen, auch wenn Einzelkriterien grün sind."),
         "signale": zeilen,
         "verlustmonate_cluster": cluster,
         "gemeinsames_fenster": fenster,
