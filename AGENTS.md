@@ -718,6 +718,29 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Abschlusslauf plus fünf neue Brokerfälle mit 50 bestehenden gezielten
   Tests grün; vier echte GLM-Regressionen und 60 Monitor-Tests grün.
 
+- ✅ BEWEISBASIERTES TRADE-DEDUP (03.10.2026, Nutzer-Freigabe nach meinem
+  Parallel-KI-Review): Identische CSV-Zeilen werden NUR noch entfernt, wenn
+  die PLATTFORM die Doppellieferung belegt — Signalseiten-Angabe
+  „Trades:" (signal_stats, Feld stats['trades']) == Rohzeilen − Mehrfach-
+  vorkommen. Deckt die Plattform alle Rohzeilen (Night-Scalper-Konstellation:
+  299 = 299 → Zwillinge echt) oder irgendeine andere Zahl, bleibt alles
+  erhalten; der Zähler identische_tradezeilen meldet weiterhin. Damit sind
+  BEIDE reale Fälle richtig behandelt: THG-Massen-Doppellieferung (27,4 %)
+  wird mit Beweis bereinigt, echte Zwillings-Grid-Legs (auch einzeln!)
+  überleben — der Beweis entscheidet, nicht die Masse (Umkehrung der alten
+  B25-Heuristik). Durchreichung: engine.analyze(plattform_positions=...) →
+  parser.load_export; Pipeline analyze_candidate setzt
+  res.plattform_trades = stats.get('trades') (Quellen ohne Positionszahl
+  → None = kein Beweis, ehrlich); persistiert in stats_json
+  (plattform_trades, duplikate_entfernt) und results_from_db zurück; Studie
+  (berechne) nutzt denselben Beweiswert; Forensik-JSON
+  trade_datenqualitaet nennt Behandlung + Beweiszahl. Log unterscheidet
+  „bewiesen entfernt (Plattform-Anzahl belegt…)" von „erhalten (keine
+  Ticket-ID…)". FORENSICS_VERSION **11**. +8 Tests
+  tests/test_beweis_dedup.py (THG-/Night-Scalper-Konstellation, Einzel-
+  zwilling mit/ohne Beweis, keine/nicht-ganzzahlige/falsche Beweiszahl,
+  Engine-Durchreichung).
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

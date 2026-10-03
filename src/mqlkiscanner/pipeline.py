@@ -172,6 +172,10 @@ class ScanResult:
     trading_dd_usd: float | None = None
     winrate_pct: float | None = None
     identische_tradezeilen: int = 0
+    duplikate_entfernt: int = 0
+    # Signalseiten-Angabe "Trades:" — der Plattform-Beweis für/against
+    # doppelte Lieferung identischer Zeilen (beweisbasiertes Parser-Dedup).
+    plattform_trades: float | None = None
     max_verlustserie: int | None = None
     verlustserie_usd: float | None = None
     peak_positionen: int | None = None
@@ -443,6 +447,8 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             trading_dd_usd=trading.get("usd", f.get("trading_dd_usd")),
             winrate_pct=f.get("winrate_pct"),
             identische_tradezeilen=f.get("identische_tradezeilen", 0),
+            duplikate_entfernt=f.get("duplikate_entfernt", 0),
+            plattform_trades=f.get("plattform_trades"),
             # B24-Fix (02.10.): RetDD-Kennzahlen aus dem Forensik-Snapshot
             # mitlesen — sonst wären sie nach DB-Reload/Neustart weg.
             ertrag_monat_geom_pct=f.get("ertrag_monat_geom_pct"),
@@ -752,7 +758,15 @@ def _forensik_json(r: ScanResult) -> str:
         "forensik_vollstaendig": bool(r.forensik_vorhanden and not r.fehler),
         **({"trade_datenqualitaet": {
             "identische_tradezeilen": r.identische_tradezeilen,
-            "behandlung": "alle erhalten; ohne Ticket-ID kein Nachweis einer Doppellieferung"}}
+            "behandlung": (
+                "bewiesen doppelte Lieferung entfernt — die Plattform-Anzahl "
+                "deckt sich nur ohne die Mehrfachzeilen"
+                if r.duplikate_entfernt else
+                "alle erhalten; ohne Ticket-ID kein Nachweis einer Doppellieferung"),
+            **({"duplikate_entfernt": r.duplikate_entfernt}
+               if r.duplikate_entfernt else {}),
+            **({"plattform_trades": r.plattform_trades}
+               if r.plattform_trades is not None else {})}}
            if r.identische_tradezeilen else {}),
         "kapitalbasis_verwendet": (
             {"usd": r.kapitalbasis_verwendet_usd,
@@ -1368,11 +1382,17 @@ class ScanPipeline:
                     kursanbieter = None
                 else:
                     kursanbieter = self._kursanbieter_fuer(log)
+                # Beweiswert für doppelte Lieferungen: Signalseiten-Angabe
+                # "Trades:" (MQL5-Direkt). Quellen-metrics liefern keine
+                # Positionszahl → dort gilt der Beweis als nicht erbracht
+                # und identische Zeilen bleiben erhalten (nur Zähler).
+                res.plattform_trades = stats.get("trades")
                 report = analyze_export(
                     path, broker=res.broker_server,
                     kapitalbasis_usd=kapitalbasis,
                     kapitalbasis_quelle=kapitalbasis_quelle,
-                    kursanbieter=kursanbieter)
+                    kursanbieter=kursanbieter,
+                    plattform_positions=res.plattform_trades)
             except Mql5CredentialsMissingError:
                 log("Trade-Export übersprungen (kein MQL5-Login) — "
                     "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
@@ -1419,15 +1439,17 @@ class ScanPipeline:
                 res.equity_rekon_zeitbasis = reko.get("zeitbasis") or {}
                 res.equity_rekon_gmt_h = reko.get("gmt_offset_h")
                 res.identische_tradezeilen = st.get("identische_tradezeilen", 0)
-                if res.identische_tradezeilen:
+                res.duplikate_entfernt = st.get("duplikate_entfernt", 0)
+                if st.get("duplikate_entfernt"):
+                    # Beweisbasiertes Dedup (03.10.): Entfernt wurde nur, weil
+                    # die Plattform-Anzahl die Doppellieferung belegt.
+                    log(f"✓ {st['duplikate_entfernt']} exakte Duplikat-Zeilen "
+                        "aus der Lieferung entfernt — Plattform-Anzahl "
+                        f"({res.plattform_trades:g} Trades) belegt die "
+                        "Doppellieferung.")
+                elif res.identische_tradezeilen:
                     log(f"Trade-Daten: {res.identische_tradezeilen} identische Zeilen erhalten "
                         "(keine Ticket-ID; können verschiedene echte Positionen sein).")
-                if st.get("duplikate_entfernt"):
-                    # B25 (02.10.): Bereinigung sichtbar machen — die Quellen-
-                    # Lieferung enthielt exakte Doppelzeilen (Forensik rechnet
-                    # sauber, aber der Nutzer soll es sehen).
-                    log(f"✓ {st['duplikate_entfernt']} exakte Duplikat-Zeilen "
-                        "aus der Lieferung entfernt (Quelle lieferte doppelt).")
                 if reko.get("status") == "ok" and reko.get("verlaesslich"):
                     res.equity_dd_rekonstruiert_pct = reko.get(
                         "equity_dd_pct_raw", reko.get("equity_dd_pct"))
@@ -1586,10 +1608,14 @@ class ScanPipeline:
                     # B26 (02.10.): Bezugsgrößen für Winrate/DD — ohne n ist
                     # „95,5 % bei wie vielen Trades?“ nicht auflösbar.
                     "trades_anzahl": st.get("trades_anzahl"),
-                    # B25 (02.10.): entfernte exakte Duplikat-Zeilen (Quellen-
-                    # Monitore liefern teils doppelt; THG-Fall 27,4 %).
+                    # Beweisbasiertes Dedup (03.10.): entfernte exakte Duplikat-
+                    # Zeilen NUR mit Plattform-Beweis (Signalseiten-"Trades:"
+                    # deckt sich erst ohne die Mehrfachzeilen; THG-Fall).
                     "duplikate_entfernt": st.get("duplikate_entfernt", 0),
                     "identische_tradezeilen": res.identische_tradezeilen,
+                    # Plattform-Beweiswert für DB-Reload/Studie (None = kein
+                    # Beweis verfügbar, z. B. Datenquellen ohne Positionszahl).
+                    "plattform_trades": res.plattform_trades,
                     # B24-Fix (02.10.): RetDD-Effizienz — geometrischer Monats-
                     # ertrag, echter Calmar, RetDD je Monat/Jahr (produziert
                     # in analyze_candidate, hier persistiert für DB-Reload).

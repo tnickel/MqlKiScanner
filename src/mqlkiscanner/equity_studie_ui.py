@@ -52,7 +52,11 @@ def berechne(result, progress) -> dict:
             "Die Studie braucht die gelieferte Trade-Liste (Cache des letzten "
             "Scans) — bitte das Signal neu scannen (z. B. Teilscan), danach "
             "steht die Datei wieder bereit.")
-    parsed = parser.load_export(pfad)
+    # Plattform-Beweis (Signalseiten-"Trades:" aus dem letzten Scan) an den
+    # Parser weiterreichen — bewiesene Doppellieferungen werden dann hier
+    # genauso bereinigt wie in der Forensik des Scans.
+    parsed = parser.load_export(
+        pfad, plattform_positions=getattr(result, "plattform_trades", None))
 
     progress(0.08, "Kapitalbasis ermitteln …")
     # Dieselbe Auflösung wie die Forensik: CSV-Einzahlungen gewinnen, sonst

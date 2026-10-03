@@ -17,7 +17,7 @@ from .forensics import baskets, drawdown, equity_rekonstruktion, exposure, marti
 def analyze(path: str, stress_move: float | None = None,
             broker: str | None = None, kapitalbasis_usd: float | None = None,
             kapitalbasis_quelle: str | None = None,
-            kursanbieter=None) -> dict:
+            kursanbieter=None, plattform_positions: float | None = None) -> dict:
     """Vollstaendige Analyse eines Trade-Exports -> Befund-Dictionary.
 
     broker: Broker-/Serverkennung des Signals (z. B. "PepperstoneKE-MT5-Live01").
@@ -30,8 +30,11 @@ def analyze(path: str, stress_move: float | None = None,
     kursanbieter: optional (kursdaten.KursDaten o. ä.). Liefert er H1-Kurse,
     wird die Equity-Kurve samt floating PnL rekonstruiert und der Equity-DD
     nachgemessen (Auto-GMT per Preisabgleich); sonst entfällt der Test still.
+    plattform_positions: Signalseiten-Angabe "Trades:" — der einzige Beweis
+    fuer eine doppelte Lieferung identischer Zeilen (Parser-Deduplizierung
+    nur bei exakter Deckung ohne die Mehrfachzeilen).
     """
-    parsed = parser.load_export(path)
+    parsed = parser.load_export(path, plattform_positions=plattform_positions)
     forensics = {
         "martingale": martingale.run(parsed),
         "exposure": exposure.run(parsed, stress_move=stress_move, broker=broker,

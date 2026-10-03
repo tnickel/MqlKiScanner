@@ -80,8 +80,21 @@ def _is_mt4_summary_row(row: list[str], fmt: str) -> bool:
     return not (row[4].strip() or row[7].strip())
 
 
-def load_export(path: str) -> ParsedExport:
-    """Laedt einen MQL5-Trade-Export (CSV, beide Formate) bzw. ein JSON-Excerpt."""
+def load_export(path: str, plattform_positions: float | None = None) -> ParsedExport:
+    """Laedt einen MQL5-Trade-Export (CSV, beide Formate) bzw. ein JSON-Excerpt.
+
+    plattform_positions: von der Signalseite gemeldete Anzahl Positionen
+    ("Trades:"). Identische CSV-Zeilen allein sind KEIN Duplikatbeweis
+    (mehrere echte Positionen koennen in derselben Sekunde zum selben
+    Preis/Volumen schliessen — Night Scalper: 299 Rohtrades = Plattform-
+    anzahl, eine Mengen-Heuristik loeschte davon 17 echte). Der Beweis
+    kommt nur von der Plattform-Anzahl: Deckt sie sich erst OHNE die
+    Mehrfachzeilen, ist die doppelte Lieferung bewiesen (The Holy Grail:
+    15.340 Zeilen bei deutlich weniger gezaehlten) und jedes erste
+    Vorkommen bleibt. Deckt sie sich MIT allen Rohzeilen, ist alles echt.
+    Jede andere (oder fehlende) Zahl beweist nichts — dann bleiben alle
+    Zeilen erhalten und identische_tradezeilen zaehlt sie als Hinweis.
+    """
     if path.lower().endswith(".json"):
         return _load_json_excerpt(path)
 
@@ -92,10 +105,12 @@ def load_export(path: str) -> ParsedExport:
     # Die Formate enthalten keine Ticket-ID. Identische Zeilen sind keine
     # Identitaetsbeweise: mehrere echte Positionen koennen in derselben
     # Sekunde zum selben Preis/Volumen schliessen. Auch ihre Anzahl erlaubt
-    # keine Unterscheidung von Lieferduplikaten. Alle Datensaetze behalten;
-    # identische Trade-Zeilen lediglich als Datenqualitaets-Hinweis zaehlen.
-    # Belegt durch Night Scalper: 299 Rohtrades = Plattformanzahl, die alte
-    # 10-Zeilen/1%-Heuristik entfernte davon 17 mit 141,32 Netto-PnL.
+    # keine Unterscheidung von Lieferduplikaten. Standard: alle Datensaetze
+    # behalten, identische Trade-Zeilen als Datenqualitaets-Hinweis zaehlen.
+    # Entfernt wird erst mit PLATTFORM-BEWEIS (siehe plattform_positions
+    # und der Beweisblock am Funktionsende). Belegt durch Night Scalper:
+    # 299 Rohtrades = Plattformanzahl, die alte 10-Zeilen/1%-Heuristik
+    # entfernte davon 17 mit 141,32 Netto-PnL.
     header = rows[0]
     if not header or header[0].strip() != "Time":
         raise ValueError(
@@ -110,6 +125,7 @@ def load_export(path: str) -> ParsedExport:
     profit_idx = profit_idx_for(fmt)
     result = ParsedExport(source_path=path, source_format=fmt)
     tradezeilen: set[tuple[str, ...]] = set()
+    schluessel_je_trade: list[tuple[str, ...]] = []
 
     for line, row in enumerate(rows[1:], start=2):
         if not row or not any(cell.strip() for cell in row):
@@ -189,6 +205,7 @@ def load_export(path: str) -> ParsedExport:
             if schluessel in tradezeilen:
                 result.identische_tradezeilen += 1
             tradezeilen.add(schluessel)
+            schluessel_je_trade.append(schluessel)
             result.trades.append(trade)
         elif row_type in ("Balance", "Correction"):
             amount = _row_number(row, profit_idx)
@@ -199,6 +216,34 @@ def load_export(path: str) -> ParsedExport:
                 time=parse_time(row[0]), order_type=row_type,
                 comment=(row[12].strip() if fmt == "mt4_orderbook" and len(row) > 12 else ""),
             ))
+
+    # Beweisbasierte Deduplizierung (Nutzer-Entscheidung 03.10.2026): Nur
+    # wenn die Plattform-Anzahl exakt der Zeilenzahl OHNE die Mehrfach-
+    # vorkommen entspricht, ist die Doppellieferung bewiesen — dann bleibt
+    # jedes erste Vorkommen. Entspricht sie der Rohzahl (Night-Scalper-
+    # Konstellation) oder irgendeiner anderen Zahl, bleibt alles erhalten.
+    if plattform_positions is not None and result.identische_tradezeilen:
+        anzahl = None
+        if isinstance(plattform_positions, (int, float)) \
+                and not isinstance(plattform_positions, bool):
+            try:
+                anzahl = float(plattform_positions)
+            except (TypeError, ValueError):
+                anzahl = None
+        roh = len(result.trades)
+        einmal = roh - result.identische_tradezeilen
+        if (anzahl is not None and math.isfinite(anzahl)
+                and anzahl.is_integer() and anzahl >= 0
+                and anzahl == einmal):
+            behalten = []
+            gesehen_dedup: set[tuple[str, ...]] = set()
+            for trade, schluessel in zip(result.trades, schluessel_je_trade):
+                if schluessel in gesehen_dedup:
+                    continue
+                gesehen_dedup.add(schluessel)
+                behalten.append(trade)
+            result.trades = behalten
+            result.duplikate_entfernt = result.identische_tradezeilen
     return result
 
 
