@@ -305,11 +305,24 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                                     fenster)
         return handler
 
+    def _open_eqdd():
+        # Equity-DD-Studie (Nutzer-Wunsch 03.10.2026): On-Demand-Nachmessung
+        # aus Kursen je Signal — Dialog mit Kurve, offiziellem Betrag und
+        # offener Position. Lazy import: das UI-Modul zieht Kursdaten/Plotly,
+        # das hier nur bei tatsächlichem Klick geladen werden soll.
+        click = st.session_state.get(f"{key}_eqdd")
+        if click is not None and getattr(click, "row", None) is not None:
+            from .equity_studie_ui import equity_studie_dialog
+            equity_studie_dialog(results[click.row])
+
+    df["Equity-DD"] = ["Studie"] * len(results)
+
     column_order = None
     if compact:
         column_order = ((["Stand"] if fresh_ids is not None else [])
                         + (["Fix"] if fix_ids is not None else [])
                         + ["Ampel", "Name", "Quelle", "Stop", "Trading-DD %", "EQ-DD %",
+                           "Equity-DD",
                            "Ertrag/Monat %", "Score", "Urteil", "Bericht vom", "Bericht",
                            "Link", "Abonnenten", "30 Tage", "7 Tage", "Dokumente"])
 
@@ -369,6 +382,14 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             "Bericht": st.column_config.ButtonColumn(
                 "Bericht & PDF", on_click=_open_report, key=f"{key}_bericht",
                 type="primary"),
+            "Equity-DD": st.column_config.ButtonColumn(
+                "Equity-DD", width="small",
+                help="Klick: Equity-Drawdown aus echten Kursen nachmessen — "
+                     "stundenfeine Kurve mit realisiertem Betrag UND offenem "
+                     "Betrag (floating), GMT-Abgleich je Währungspaar. "
+                     "Öffnet ein Fenster mit Chart, Zoom und Risiko-Texten; "
+                     "dauert einige Sekunden (MT5-Terminal + Kurse laden).",
+                on_click=_open_eqdd, key=f"{key}_eqdd"),
             "Link": st.column_config.LinkColumn("MQL5", width="small"),
             "Abonnenten": st.column_config.ButtonColumn(
                 "Abonnenten",
@@ -898,6 +919,19 @@ def render_detail(result) -> None:
         st.metric("Ertrag / Monat",
                   f"{result.ertrag_monat_pct:.1f} %" if result.ertrag_monat_pct is not None else "—",
                   border=True)
+
+    # Equity-DD-Studie (Nutzer-Wunsch 03.10.2026): On-Demand-Nachmessung für
+    # dieses Signal — gleiche Messung wie der Tabellen-Button, hier mit dem
+    # Kontext der Detailansicht.
+    if st.button("Equity-DD-Studie öffnen — aus echten Kursen nachgemessen",
+                 key=f"eqdd_detail_{_result_snapshot_token(result)}",
+                 icon=":material/monitoring:",
+                 help="Misst den Equity-Drawdown stundenfein nach: realisierter "
+                      "Betrag und offener Betrag (floating) je Stunde, Kurse vom "
+                      "MT5-Referenzterminal, GMT-Abgleich je Währungspaar. "
+                      "Dauert einige Sekunden; Fenster mit Chart und Risiko-Texten."):
+        from .equity_studie_ui import equity_studie_dialog
+        equity_studie_dialog(result)
 
     section_header("Positionierung und Belastung", help_key="exposure")
     with st.container(horizontal=True):

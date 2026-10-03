@@ -345,5 +345,16 @@ Der Melder ist deine Benachrichtigungszentrale. Er sorgt dafür, dass du wichtig
   3. *Tages-Digest:* Tägliche Zusammenfassung um 07:10 Uhr im Postfach.
 - **Postfach:** Alle Meldungen werden mit Priorität und Quellenverweisen in der Datenbank gespeichert und im Tab „Postfach“ angezeigt (kein externer Mail- oder Chat-Spam).
 """),
+    "equity_studie": ("📉 Equity-DD-Studie — Drawdown aus echten Kursen", """
+**Kurzfassung:** Der Button in der Ergebnisstabelle (Spalte „Equity-DD“) misst für das jeweilige Signal den Equity-Drawdown stundenfein nach — aus der eigenen Trade-Historie und echten Kursen des MT5-Referenzterminals. Es öffnet sich ein Fenster mit Chart (Zoom, Zeichenwerkzeuge), Kennzahlen und Risiko-Texten; die gleiche Ansicht gibt es als eigene Seite „Equity-Studie“.
+
+**Was gerechnet wird.** Für jede Stunde: Startkapital + realisierte Gewinne (geschlossene Trades) + offener Betrag (floating) aller offenen Positionen, bewertet zum echten Stunden-Schlusskurs je Währungspaar. Der größte Rückfall dieser Kurve ist der nachgemessene Equity-DD — unabhängig von der Broker-Selbstauskunft.
+
+**GMT-Abgleich je Währungspaar.** Trade-Zeiten und Kurszeiten sind verschiedene Serverzeiten. Der Versatz wird je Symbol per Preisabgleich bestimmt (Open/Close gegen die High-Low-Spanne der H1-Bar); Symbole mit zu wenigen Proben bekommen den Median der erkannten Symbole, offengelegt in der Tabelle.
+
+**Fehlende Kurse.** Gerechnet wird nur für Währungspaare mit Kursen und belegter Kontraktgröße; fehlende Symbole werden namentlich gemeldet — der Drawdown kann ohne sie niedriger sein als in Wahrheit. Stundenlücken werden nicht interpoliert.
+
+**Wichtig:** Die Studie bewertet nichts — Ampel, Score und Urteil bleiben verbindlich bei der Engine. Das erste Öffnen dauert einige Sekunden (MT5-Terminal + Kurse); ein Fortschrittsbalken zeigt den Verlauf, danach ist das Ergebnis in der Sitzung gecacht.
+"""),
 }
 

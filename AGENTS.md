@@ -600,6 +600,33 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
     `trades_anzahl` + `duplikate_entfernt` im Forensik-Payload. Bestand
     braucht einen Re-Scan, damit DB-Werte + Dedubel-Forensik wirksam werden.
 
+- ✅ Equity-DD-Studie — interaktive Nachmessung je Signal (03.10.2026,
+  Nutzer-Wunsch): Spalte „Equity-DD" mit Button JE ZEILE der Ergebnis-
+  tabelle (ButtonColumn wie Bericht/Abonnenten) und Button in der
+  Detailansicht öffnen einen Dialog; eigene Seite app_pages/equity_studie.py
+  zeigt dieselbe Ansicht in voller Breite. Messung in `equity_studie.py`
+  (NEU, bewusst SEPARAT von forensics/equity_rekonstruktion — Produktiv-
+  pfad unangetastet): Equity-Kurve je Stunde als MITGEGEBENE Punkte
+  (realisiert / offener Betrag floating / equity; Lückenpunkte statt stiller
+  Zeitsprünge), GMT-Abgleich JE WÄHRUNGSPAAR (Nutzer-Wunsch) mit Median-
+  Fallback für dünne/mehrdeutige Symbole (MIN_EIGENE_PROBEN=5, offengelegt
+  je Symbol), fehlende Kurse = kein Abbruch: gerechnet wird für vorhandene
+  Paare, JE fehlendes Symbol namentlich gemeldet (DD kann unterschätzt
+  sein). Chart: Plotly (requirements ergänzt) mit Zoom/Rangeslider/
+  Zeichenwerkzeugen, Equity+Realisiert+Floating-Linien, Startkapital-Linie,
+  DD-Region, Unterwasser-Subplot; Kennzahlen-Karten (Reko-EQ-DD %/USD,
+  Floating-Tief, Unterwasser-Tage, Abdeckung), Risiko-Bausteine als Code-
+  Text (kein LLM, bewertet nichts — Engine bleibt verbindlich), Symbol-
+  Tabelle mit GMT/Trefferquote/Status. Progress-Balken im Fenster (Terminal-
+  Start + Kurse je Symbol), Sitzungs-Cache je (Signal-ID, Trade-SHA);
+  Terminal-Lifecycle pro Öffnung wie Pipeline-Politik; Sperrung während
+  eines laufenden Scans. Trades aus trade_files-Snapshot der DB (results_
+  from_db.trades_path); Kapitalbasis über drawdown.run wie Forensik.
+  Live-Verifikation: TKG #2054437 (pelik, 2.158 Trades, XAUUSD) — 21 s,
+  GMT +3 h (87 % Treffer), Abdeckung 98,1 %, Reko-EQ-DD 2,97 %.
+  +11 Tests (tests/test_equity_studie.py, inkl. AppTest Ende-zu-Ende der
+  Seite — fing ungültiges Material-Icon).
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:
