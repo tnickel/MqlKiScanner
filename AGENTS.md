@@ -624,6 +624,10 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   from_db.trades_path); Kapitalbasis über drawdown.run wie Forensik.
   Live-Verifikation: TKG #2054437 (pelik, 2.158 Trades, XAUUSD) — 21 s,
   GMT +3 h (87 % Treffer), Abdeckung 98,1 %, Reko-EQ-DD 2,97 %.
+  NUTZER-VALIDIERUNG 03.10. (Akzeptanz): Gold Spike MT5 #2375480 —
+  Studie 9,2 % vs. Plattform „Maximum drawdown" 9,1 % (Differenz 0,1 pp
+  vom Nutzer ausdrücklich als ok eingestuft; erwartbar: H1-Bar-Closes
+  statt Tick-Tiefs, Referenz-Feed Tickmill statt RoboForex-Eigenfeed).
   +11 Tests (tests/test_equity_studie.py, inkl. AppTest Ende-zu-Ende der
   Seite — fing ungültiges Material-Icon).
 
