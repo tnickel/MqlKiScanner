@@ -182,7 +182,13 @@ def _kennzahlen_karten(daten: dict, schranke: float) -> None:
         st.metric(
             "Max-Drawdown (H1, virtuelle Equity)",
             f"{pct:.1f} %" if pct is not None else "—",
-            "ohne Kapitalbasis" if pct is None else None,
+            # Zeitraum des Maximalrückfalls nennen (Nutzer-Fall ATong
+            # 04.10.: 64,9 % stammte aus Aug/Sep 2021 — ohne Datum wirkte
+            # der Wert falsch zugeordnet, weil die letzten Monate ruhig
+            # sind).
+            ("ohne Kapitalbasis" if pct is None else
+             f"{_als_datetime(k.get('dd_von')):%m.%Y}–{_als_datetime(k.get('dd_bis')):%m.%Y}"
+             if k.get("dd_von") and k.get("dd_bis") else None),
             delta_color="off", border=True)
         st.metric("Rückfall (USD)",
                   f"−{k.get('equity_dd_usd', 0.0):,.0f}".replace(",", "."),
