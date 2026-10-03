@@ -788,6 +788,21 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Erbe-Semantik) + neue 3-Proben-/DST-/Vererbungs-Tests. GS MT5
   verifiziert: Woche W40 lokal belegt (92,9 %), Abdeckung 96,1 %, ok.
 
+- ✅ FEHLENDE KURSDATEN SICHTBAR MACHEN (03.10. abends, Nutzer-Wunsch
+  „sollte im Bericht erscheinen, damit ich weiß, wo ich dran arbeiten
+  kann"): (1) Forensik-JSON der KI hat strukturiertes Feld
+  fehlende_kursdaten (ohne_kurse/ohne_kontrakt + Folge + Handlung);
+  ScanResult-Felder equity_rekon_ohne_kurse/-ohne_kontrakt (aus dem
+  Forensik-Snapshot, kein DB-Schema-Change). (2) Prompt-PFLICHT in
+  Risiko-Analyse UND Gesamtbericht: bei vorhandenem Feld Symbole
+  namentlich nennen mit Folge und Handlungsweg (Datei + Default synchron,
+  B12-Test grün). (3) Portfolio-PDF-Anhang: Zeile „Fehlende Kursdaten"
+  in der Kennzahlen-Tabelle. (4) Ergebnisseite: aggregierte
+  ARBEITSLISTE über alle Live-Signale (Symbol → Grund → betroffene
+  Signale; auch der Fall „Forensik komplett am Kontrakt gescheitert"
+  wird aus dem Fehler-Feld geparst — z. B. DE30M/XCUUSDM von #2368681).
+  +5 Tests tests/test_fehlende_kursdaten.py; volle Suite 1324 grün.
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

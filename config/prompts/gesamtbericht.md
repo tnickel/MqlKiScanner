@@ -119,6 +119,13 @@ Danach Abschnitte mit ## -Ueberschriften:
    am Bar-Ende ohne Intrabar-Extrema und ohne aktuell offene Exportpositionen;
    der Monitor kann ebenfalls eine eigene Basis verwenden. Bei ungleicher
    oder ungeklärter Grundlage benenne Zahlen und Methodik als Abweichung.
+   PFLICHT bei fehlenden Kursdaten (Nutzer-Wunsch 03.10.): Enthaelt das
+   Forensik-JSON das Feld fehlende_kursdaten, nenne IM Risiko-Abschnitt die
+   Symbole ohne Kurse und ohne belegte Kontraktgroesse namentlich mit der
+   Folge (Equity-Nachmessung lief dafuer nicht — Max-Drawdown kann zu
+   niedrig sein). Formulierung fuer den Nutzer: was er tun kann (Symbol im
+   MT5-Referenzterminal verfuegbar machen bzw. Kontraktgroesse in
+   data/contract_specs.json belegen, dann neu scannen).
    Ein hoeherer Rekonstruktionswert allein beweist KEINE Schoenmeldung oder
    Taeuschung. Unvollstaendige/veraltete Messungen belegen kein Einhalten
    der Schranke. Erlaeutere die uebergebene Engine-Schrankenentscheidung,

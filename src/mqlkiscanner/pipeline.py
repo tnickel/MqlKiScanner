@@ -208,6 +208,12 @@ class ScanResult:
     equity_rekon_abdeckung_pct: float | None = None
     equity_rekon_methodik: str = ""
     equity_rekon_zeitbasis: dict = field(default_factory=dict)
+    # Fehlende Kurs-/Kontraktsbasis der Equity-Nachmessung (Nutzer-Wunsch
+    # 03.10.: im BERICHT sichtbar machen — "wissen, woran man arbeiten
+    # kann"). Ohne Kurse: Symbol im Referenzterminal nicht verfügbar;
+    # ohne Kontrakt: Kontraktgröße in contract_specs.json nicht belegt.
+    equity_rekon_ohne_kurse: list = field(default_factory=list)
+    equity_rekon_ohne_kontrakt: list = field(default_factory=list)
     # Vom Datenquellen-Monitor (Pelican/Robo/Vantage/Zulu) aus der vollen
     # Trade-Kurve nachgemessener Max-EQ-DD (metrics "TradeEqDrawdownPct") —
     # unabhängige Zweitmessung auf denselben Trades. Geht seit B1
@@ -489,6 +495,10 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             equity_rekon_abdeckung_pct=(f.get("equity_rekonstruktion") or {}).get("abdeckung_pct"),
             equity_rekon_methodik=(f.get("equity_rekonstruktion") or {}).get("methodik") or "",
             equity_rekon_zeitbasis=(f.get("equity_rekonstruktion") or {}).get("zeitbasis") or {},
+            equity_rekon_ohne_kurse=(f.get("equity_rekonstruktion") or {}).get(
+                "symbole_ohne_kurse") or [],
+            equity_rekon_ohne_kontrakt=(f.get("equity_rekonstruktion") or {}).get(
+                "symbole_ohne_kontrakt") or [],
             kapitalbasis_verwendet_usd=(f.get("kapitalbasis") or {}).get("usd")
             if isinstance(f.get("kapitalbasis"), dict) else None,
             kapitalbasis_verwendet_quelle=(f.get("kapitalbasis") or {}).get("quelle") or ""
@@ -805,6 +815,18 @@ def _forensik_json(r: ScanResult) -> str:
         # Nachgemessener Equity-DD aus Kursdaten (floating inklusive) — die KI
         # soll ihn als Messung deuten und gegen den gemeldeten Wert stellen.
         "equity_dd_rekonstruiert_pct": r.equity_dd_rekonstruiert_pct,
+        # Nutzer-Wunsch 03.10.: Fehlende Kurs-/Kontraktsbasis IM BERICHT
+        # nennen — der Nutzer will wissen, woran er arbeiten kann (Symbol
+        # im Referenzterminal verfügbar machen / Kontraktgröße belegen).
+        **({"fehlende_kursdaten": {
+            "ohne_kurse": r.equity_rekon_ohne_kurse,
+            "ohne_kontrakt": r.equity_rekon_ohne_kontrakt,
+            "folge": "Für diese Symbole lief die Equity-Nachmessung nicht — "
+                     "der gemessene Max-Drawdown kann zu NIEDRIG sein.",
+            "handlung": "Kurs-Symbol im MT5-Referenzterminal verfügbar machen "
+                        "bzw. Kontraktgröße in data/contract_specs.json "
+                        "belegen; dann Signal neu scannen."}}
+           if (r.equity_rekon_ohne_kurse or r.equity_rekon_ohne_kontrakt) else {}),
         "equity_rekonstruktion_methodik": {
             "status": "veraltet" if r.forensik_stale else r.equity_rekon_status or (
                 "ok" if r.equity_dd_rekonstruiert_pct is not None else "nicht_verfuegbar"),
@@ -1437,6 +1459,8 @@ class ScanPipeline:
                 res.equity_rekon_abdeckung_pct = reko.get("abdeckung_pct")
                 res.equity_rekon_methodik = reko.get("methodik") or ""
                 res.equity_rekon_zeitbasis = reko.get("zeitbasis") or {}
+                res.equity_rekon_ohne_kurse = reko.get("symbole_ohne_kurse") or []
+                res.equity_rekon_ohne_kontrakt = reko.get("symbole_ohne_kontrakt") or []
                 res.equity_rekon_gmt_h = reko.get("gmt_offset_h")
                 res.identische_tradezeilen = st.get("identische_tradezeilen", 0)
                 res.duplikate_entfernt = st.get("duplikate_entfernt", 0)

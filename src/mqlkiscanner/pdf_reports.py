@@ -269,6 +269,20 @@ def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
             f" ({_f(getattr(r, 'kapitalbasis_verwendet_usd', None), 0, ' USD')}) |",
             f"| Stop-Befund | {r.stop_nachweis or '—'} |",
         ]
+        # Nutzer-Wunsch 03.10.: Fehlende Kursdaten im Bericht sichtbar
+        # machen — der Nutzer will wissen, woran er arbeiten kann.
+        ohne_kurse = getattr(r, "equity_rekon_ohne_kurse", None) or []
+        ohne_kontrakt = getattr(r, "equity_rekon_ohne_kontrakt", None) or []
+        if ohne_kurse or ohne_kontrakt:
+            hinweise = []
+            if ohne_kurse:
+                hinweise.append("kein Kurs im MT5-Referenzterminal: "
+                                + ", ".join(ohne_kurse))
+            if ohne_kontrakt:
+                hinweise.append("Kontraktgröße nicht belegt "
+                                "(contract_specs.json): " + ", ".join(ohne_kontrakt))
+            teile.append("| Fehlende Kursdaten | " + " · ".join(hinweise)
+                         + " — Equity-Nachmessung lief dafür nicht |")
         if (getattr(r, "kurzfassung", "") or "").strip():
             teile += ["", "## Kurzfassung", "",
                       str(r.kurzfassung)]

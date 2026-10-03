@@ -14,7 +14,8 @@ import streamlit as st
 from mqlkiscanner import (config, db, downloader_sync, fix_signale, pipeline, regelwerk,
                           scan_state, scan_worker, tiefen_batch, tradeserver_sync)
 from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, render_detail,
-                                 render_downloader_docs_panel, render_report_panel,
+                                 render_downloader_docs_panel, render_fehlende_kursdaten,
+                                 render_report_panel,
                                  render_portfolio_pdf_viewer,
                                  render_results_table, results_to_dataframe,
                                  render_wechsel_karten, _gelbe_anzeige)
@@ -384,6 +385,11 @@ st.caption(
     f"{len(results)} Signale insgesamt · {sum(1 for r in results if r.id in fresh_ids)} "
     "im letzten Lauf aktualisiert · leere Werte sind keine Entwarnung."
 )
+
+# Arbeitsliste fehlender Kursdaten (Nutzer-Wunsch 03.10.): Welche Symbole
+# sind am Referenzterminal nicht verfügbar bzw. ohne belegte Kontraktgröße
+# — aggregiert über alle Signale, damit klar ist, woran zu arbeiten ist.
+render_fehlende_kursdaten(results)
 
 # Wechsel-Protokoll (Nutzer-Anforderung): Farben werden bei jedem Scan
 # aufgezeichnet; Wechsel speziell protokolliert und per Button einsehbar.

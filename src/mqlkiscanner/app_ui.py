@@ -197,6 +197,55 @@ def _abo_delta_zelle(wert: int | None) -> str:
     return f"⚪ {wert}"
 
 
+# Regex für die Exposure-Fehlermeldung „Unbekannte Instrumente ohne
+# belegte Kontraktgroesse: X, Y" — ganze Forensik gescheitert (kein
+# Forensik-JSON mit symbole_ohne_kontrakt, weil analyze vor dem Schreiben
+# abbrach). Die Arbeitsliste soll diese Fälle trotzdem zeigen.
+_KONTRAKT_FEHLER_RE = re.compile(
+    r"Unbekannte Instrumente ohne belegte Kontraktgroesse:\s*"
+    r"([A-Za-z0-9._+-]+(?:,\s*[A-Za-z0-9._+-]+)*)")
+
+
+def fehlende_kursdaten_arbeitsliste(results) -> list[dict]:
+    """Aggregierte Arbeitsliste fehlender Kurs-/Kontraktsbasis (Nutzer-
+    Wunsch 03.10.: „sollte im Bericht erscheinen, damit ich weiß, wo ich
+    dran arbeiten kann"). Rückgabe je Symbol: {symbol, grund, signale}."""
+    eintraege: dict[tuple[str, str]] = {}
+    for r in results:
+        for symbol in (getattr(r, "equity_rekon_ohne_kurse", None) or []):
+            eintraege.setdefault((str(symbol), "kein Kurs im MT5-Referenzterminal"),
+                                 []).append(getattr(r, "name", "") or f"#{r.id}")
+        for symbol in (getattr(r, "equity_rekon_ohne_kontrakt", None) or []):
+            eintraege.setdefault((str(symbol), "Kontraktgröße nicht belegt (contract_specs.json)"),
+                                 []).append(getattr(r, "name", "") or f"#{r.id}")
+        # Ganze Forensik am Kontrakt gescheitert (Fehler-Feld parsen).
+        treffer = _KONTRAKT_FEHLER_RE.search(getattr(r, "fehler", "") or "")
+        if treffer:
+            for symbol in [s.strip() for s in treffer.group(1).split(",") if s.strip()]:
+                eintraege.setdefault((symbol, "Kontraktgröße nicht belegt (contract_specs.json)"),
+                                     []).append(getattr(r, "name", "") or f"#{r.id}")
+    return [{"symbol": sym, "grund": grund, "signale": sorted(set(namen))}
+            for (sym, grund), namen in sorted(eintraege.items())]
+
+
+def render_fehlende_kursdaten(results) -> None:
+    """Arbeitsliste: welche Symbole fehlen bei welchen Signalen."""
+    eintraege = fehlende_kursdaten_arbeitsliste(results)
+    if not eintraege:
+        return
+    with st.container(border=True):
+        st.markdown(f":material/warning: **Fehlende Kursdaten · Arbeitsliste** — "
+                    f"{len(eintraege)} Symbole schränken die Equity-Nachmessung ein "
+                    "(gemessener Max-Drawdown kann zu niedrig sein). "
+                    "Beheben und dann neu scannen:")
+        for e in eintraege[:12]:
+            namen = ", ".join(e["signale"][:4]) + (" …" if len(e["signale"]) > 4 else "")
+            st.markdown(f"• **{e['symbol']}** — {e['grund']} · {len(e['signale'])} "
+                        f"Signal(e): {namen}")
+        if len(eintraege) > 12:
+            st.caption(f"… und {len(eintraege) - 12} weitere.")
+
+
 @st.dialog("Abonnenten-Verlauf", width="large")
 def _abo_verlauf_dialog(signal_id: int, name: str, fenster: str) -> None:
     """Fenster mit dem gespiegelten Abonnenten-Verlauf (Gesamt / 30 / 7 Tage)."""

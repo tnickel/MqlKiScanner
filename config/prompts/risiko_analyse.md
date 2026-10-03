@@ -121,6 +121,13 @@ Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
    zu behaupten. Aus einem hoeheren Rekonstruktionswert allein darfst du
    KEINE Schoenmeldung oder Taeuschung des Anbieters ableiten. Unvollstaendige
    oder veraltete Messungen belegen kein Einhalten der Drawdown-Schranke.
+   PFLICHT bei fehlenden Kursdaten (Nutzer-Wunsch 03.10.): Enthaelt das
+   Forensik-JSON das Feld fehlende_kursdaten, nenne IM Bericht die Symbole
+   ohne Kurse und ohne belegte Kontraktgroesse namentlich mit der Folge
+   (Equity-Nachmessung lief dafuer nicht — Max-Drawdown kann zu niedrig
+   sein) und dem Handlungsweg fuer den Nutzer (Symbol im MT5-Referenz-
+   terminal verfuegbar machen bzw. Kontraktgroesse in
+   data/contract_specs.json belegen, dann neu scannen).
    Fehlende/nullwertige Messungen sind weder Risiko-Beweis noch Entlastung.
    Erlaeutere das uebergebene Engine-Ergebnis: Die Engine nimmt die verfuegbaren
    belastbaren Werte in ihr Drawdown-Maximum auf. Strikt > konfigurierte
