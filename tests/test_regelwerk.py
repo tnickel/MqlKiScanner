@@ -41,6 +41,11 @@ def test_regelwerk_zeigt_grenzwerte_aus_settings():
                                "min_ertrag_pct_monat": 10.0})
     assert "Schranke 25 % Drawdown" in text
     assert "Mindest-Ertrag 10 %/Monat" in text
+    assert "Drawdown-Maximum ≤ 25 %" in text
+    assert "Monatsrendite ≥ 10 % und RetDD ≥ 1,0" in text
+    assert "eigene geometrische Rendite" in text
+    assert "niemals als RetDD-Nenner" in text
+    assert "Intrabar-Extrema" in text
 
 
 def test_ausgeschlossen_eintrag_liefert_grund_oder_none(monkeypatch):

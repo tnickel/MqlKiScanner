@@ -71,14 +71,14 @@ Die Matrix bewertet **einzelne Testkriterien** getrennt — sie ersetzt nicht da
 
 **ⓘ im Spaltenkopf** erklärt das Kriterium. **Maus über der Ampel-Zelle** zeigt die exakte Berechnung, z. B. „max(Drawdown (Plattform) 3,80 %, Trading-DD (geschlossen) 4,57 %) = 4,57 % hält die Schranke 30 % mit 25,4 Punkten Abstand ein“.
 
-Die Kriterien: Drawdown-Schranke (max aus dem Plattform-Drawdown By Equity/By Balance, dem Trading-DD geschlossener Trades sowie Kurs- und Monitor-Nachmessung der Equity — der höchste Wert zählt; die Kurs-Nachmessung nur bei belastbarer Abdeckung), Martingale-Signatur, Stop-Nachweis (bewiesen = entlastend, fehlend = neutral), Ertrag pro Monat, Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
+Die Kriterien: Drawdown-Schranke (max aus dem Plattform-Drawdown By Equity/By Balance, dem Trading-DD geschlossener Trades sowie Kurs- und Monitor-Nachmessung der Equity — der höchste Wert zählt; die Kurs-Nachmessung nur bei belastbarer Abdeckung), Martingale-Signatur, Stop-Nachweis (bewiesen = entlastend, fehlend = neutral), eigene geometrische Rendite pro Monat, RetDD (diese Rendite je Prozent gemessenem Equity-Drawdown), Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
 
 Beim Scan wird die Matrix mit allen Herleitungen als Snapshot in der Datenbank gespeichert; die Anzeige rechnet sie aus den gespeicherten Werten mit den aktuellen Grenzwerten neu.
 """),
     "risk_status": ("Was die Einstufungen aussagen", """
-**Grün · Kandidat:** Die aktuelle Engine findet Forensikdaten, einen Risiko-Score unter 5 und ausreichenden monatlichen Ertrag. Das ist ein Prüfkandidat, keine Garantie. Prüfe den Stop-Nachweis separat.
+**Grün · Kandidat:** Vollständige aktuelle Forensik, keine harte Risikoverletzung, Risiko-Score unter 5, eigene geometrische Monatsrendite mindestens an der konfigurierten Schwelle und RetDD mindestens 1,0. RetDD braucht eine belastbare Equity-Messung inklusive Floating. Das ist ein Prüfkandidat, keine Garantie. Fehlender Stop-Nachweis bleibt neutral.
 
-**Gelb · Beobachtung:** Forensik ist vorhanden, aber Score oder Ertrag reichen nicht für Grün. **Rot · Risiko-Flag:** Eine Drawdown-Schranke oder Martingale-Signatur ist angeschlagen.
+**Gelb · Beobachtung:** Forensik ist vorhanden, aber Score, geometrische Monatsrendite oder RetDD reichen nicht für Grün; fehlende aktuelle Rendite oder Equity-Messung erlauben ebenfalls keine Empfehlung. **Rot · Risiko-Flag:** Eine Drawdown-Schranke oder Martingale-Signatur ist angeschlagen.
 
 **Ausgeschlossen:** Das Signal steht auf der Ausschlussliste. Die Begründung steht beim Urteil. **Grau · Vorprüfung:** Trade-Forensik fehlt oder konnte nicht erstellt werden. Fehlende Evidenz entlastet nicht.
 
@@ -89,7 +89,9 @@ Die Übersicht zählt die Einstufungen aller Signale des ausgewählten Laufs. Di
 
 **Max-Drawdown (Equity, gemessen):** Maximaler Rückgang der Equity inklusive offener Gewinne und Verluste, aus einer belastbaren Kurs-Nachmessung oder Monitor-Messung. Ohne belastbare Equity-Messung bleibt der Wert leer; H1-Kurse erfassen keine Tiefs innerhalb einer Stunde. **Trading-DD (geschlossen):** Separater Drawdown aus den Nettogewinnen geschlossener Trades; zwischenzeitliche offene Verluste fehlen hier. **Drawdown (Plattform):** Selbstauskunft der Plattform. Die Schranke verwendet den höchsten verfügbaren Wert einschließlich der Plattform-Angaben.
 
-**Ertrag pro Monat:** Historische Kennzahl aus verfügbaren Daten, keine erwartete Auszahlung. Projektvorgabe: maximal 30 % Drawdown und über 5 % Ertrag pro Monat.
+**Gewinn pro Monat:** Maßgeblich ist die eigene geometrische Monatsrendite auf der Forensik-Kapitalbasis: die über den beobachteten Zeitraum äquivalente Rendite mit Zinseszins. Linearer Startbasis-Ertrag und Plattformwert bleiben Zusatzinformation und ersetzen fehlende geometrische Rendite nicht. Die Mindestschwelle ist konfigurierbar; maßgeblich sind die aktuellen Grenzwerte im Regelwerk und den Matrix-Tooltips. Historische Kennzahl, keine erwartete Auszahlung.
+
+**RetDD/Monat:** Eigene geometrische Monatsrendite ÷ gemessenen Max-Drawdown der Equity inklusive Floating (Kurse/Monitor). Plattform-, Balance- und Trading-DD aus geschlossenen Trades werden niemals als Ersatznenner verwendet. Ohne aktuelle geometrische Rendite oder belastbare Equity-Messung bleibt RetDD unbekannt. Mindestens 1,0 ist eine verbindliche Empfehlungsvoraussetzung. **RetDD/Jahr (Calmar)** verwendet CAGR ÷ denselben Equity-DD, nicht den Monatswert mal zwölf. Virtuelle Kapitalbasis, unterschiedliche Zeiträume und Messabdeckung begrenzen die Vergleichbarkeit; H1-Schlusskurse erfassen keine Intrabar-Extrema.
 
 **Profit-Faktor:** Verhältnis summierter Gewinne zum Betrag summierter Verluste. **Winrate:** Anteil gewinnender geschlossener Trades. Bei CSV-Daten verwenden diese Handelsstatistiken den Profit vor Kommission und Swap; der Trading-DD rechnet dagegen mit Nettowerten. Hohe Trefferquoten können mit seltenen, großen Verlusten einhergehen.
 """),
@@ -121,9 +123,9 @@ Die Engine berechnet die Kennzahlen. KI-Texte interpretieren Daten und können t
 **Schließen** blendet den Bericht aus und löscht keine Ergebnisse.
 """),
     "ausschlussliste": ("Regelwerk der Ausschlussliste", """
-Die **Ausschlussliste** (`data/known_signals.json`) wird manuell aus der forensischen Analyse-Reihe gepflegt; jeder Eintrag trägt seinen gemessenen Grund. Ein Signal kommt darauf, wenn mindestens eines dieser Kriterien klar erfüllt ist: **Drawdown-Schranke verletzt**, **Martingale/Grid ohne bewiesenen Stop**, **Ertrag dauerhaft unter der Schwelle**, **schwach belegter Edge (PF/Sharpe/Winrate)**, **grenznahe Risikokombination** (formal unter der Schranke, aber nahe dran plus tiefe Verlustserie) oder **Copy-Fragilität/Kurzlebigkeit**.
+Die **Ausschlussliste** (`data/known_signals.json`) wird manuell aus der forensischen Analyse-Reihe gepflegt; jeder Eintrag trägt seinen gemessenen Grund. Ein Signal kommt darauf, wenn mindestens eines dieser Kriterien klar erfüllt ist: **Drawdown-Schranke verletzt**, **Martingale/Grid-Struktur nachgewiesen**, **Ertrag dauerhaft unter der Schwelle**, **schwach belegter Edge (PF/Sharpe/Winrate)**, **grenznahe Risikokombination** (formal unter der Schranke, aber nahe dran plus tiefe Verlustserie) oder **Copy-Fragilität/Kurzlebigkeit**.
 
-Die harten Regeln (Schranke, Martingale, Stop-Nachweis, Score/Ertrag) urteilt die Engine zusätzlich automatisch bei jedem Lauf. Ein Listen-Eintrag überlebt bessere Neuberechnungen; Wiederaufnahme nur, wenn neue Forensik den Grund entkräftet und der Eintrag entfernt wird.
+Die Engine prüft zusätzlich automatisch Schranke, Martingale und die Empfehlungsvoraussetzungen Score, geometrischen Monatsertrag und RetDD. Fehlender Stop-Nachweis ist neutral. Ein Listen-Eintrag überlebt bessere Neuberechnungen; Wiederaufnahme nur, wenn neue Forensik den Grund entkräftet und der Eintrag entfernt wird.
 
 Das vollständige Regelwerk samt aktueller Ausschlüsse steht auf der **Ergebnisse-Seite** im Abschnitt „Regelwerk · Ausschlussliste“ — bei ausgeschlossenen Signalen auch direkt in der Detailansicht.
 """),
@@ -132,7 +134,7 @@ Der **Portfolio-Vorschlag** ist ein zusätzlicher KI-Bericht, der ALLE geprüfte
 
 Der Bericht steht in der Datenbank und bleibt auch über Sitzungen hinweg erhalten; ein neuer Lauf mit KI ersetzt ihn. Liegen weniger als zwei geprüfte Signale vor, weist der Bericht auf die fehlende Diversifikation hin.
 
-**Wichtig:** Risiko vor Ertrag — Signale ohne Stop-Nachweis, mit Martingale-Flag oder verletzter Drawdown-Schranke dürfen nicht als Ertragsträger aufgenommen werden. Der Vorschlag ist keine Anlageberatung; die Engine-Zahlen sind maßgeblich.
+**Wichtig:** Risiko vor Ertrag. Nur Engine-Kandidaten mit Grün, ausreichender eigener geometrischer Monatsrendite und RetDD mindestens 1,0 dürfen empfohlen und gewichtet werden. Gelb bleibt Beobachtung. Fehlender Stop-Nachweis ist neutral; Martingale-Flag oder verletzte Drawdown-Schranke verhindern die Aufnahme. Der Vorschlag ist keine Anlageberatung; die Engine-Zahlen und aktuellen Grenzwerte sind maßgeblich.
 """),
     "downloader_section": ("MqlDownloader: Abonnenten-Verlauf und Testberichte", """
 Dieser Abschnitt kommt aus dem **MqlDownloader**, einem eigenen Netzwerkdienst im LAN

@@ -172,6 +172,7 @@ def _ergebnis(sid, name, **kw):
     basis = dict(id=sid, name=name, quelle="pelik", platform="pelican",
                  ampel="🟢", score=4.1, ertrag_monat_pct=15.4,
                  ertrag_monat_pct_forensik=3.5, dd_equity_pct=0.78,
+                 ertrag_monat_geom_pct=6.19, retdd_monat=99,
                  dd_balance_pct=None, trading_dd_pct=0.27,
                  equity_dd_rekonstruiert_pct=None, monitor_trade_eq_dd_pct=6.19,
                  abonnenten=1425, wochen=178, kapitalbasis_verwendet_usd=10000,
@@ -197,6 +198,9 @@ def test_anhang_erkennt_nur_die_empfohlenen_strategien():
     assert "Strategie 1: Alpha" in md and "Strategie 2: Beta" in md
     assert "Strategie 3: SafeGold" in md and "Strategie 4" not in md
     assert "EMPFEHLUNG — Alpha passt." in md      # voller Gesamtbericht drin
+    assert "| Gewinn %/Monat (geometrisch) | 6,19 % |" in md
+    assert "| Max-Drawdown (Equity, gemessen) | 6,19 % |" in md
+    assert "| RetDD (Monatsgewinn / Max-Equity-DD) | 1,000 |" in md
     assert "Gamma" not in md.split("Gesamtrisiko")[0] or True
 
 

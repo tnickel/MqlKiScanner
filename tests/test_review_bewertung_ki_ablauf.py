@@ -34,7 +34,8 @@ def test_schranke_verletzt_bleibt_rot_trotz_zusatzfehler():
 
 def test_fehler_ohne_schrankenverletzt_bleibt_weiss():
     ampel, _ = pipeline.ampel_for(
-        _result(fehler="Export abgebrochen", schranke_verletzt=False),
+        _result(fehler="Export abgebrochen", dd_equity_pct=10,
+                schranke_verletzt=False),
         {"schranke_eq_dd_pct": 30})
     assert ampel == "⚪"
 
@@ -72,7 +73,7 @@ def test_gesamtbericht_prompt_nennt_ertrag_beobachtung_nicht_ablehnung():
         from pathlib import Path
         text = Path(__file__).resolve().parents[1].joinpath(
             "config", "prompts", "gesamtbericht.md").read_text(encoding="utf-8")
-    assert "Ertrag unter der dort genannten Monatsschwelle bedeutet" in text
+    assert "Eigene geometrische Rendite unter der dort genannten Monatsschwelle bedeutet" in text
     assert "keine harte Ablehnung" in text
     assert "nur Beobachtung" in text
 

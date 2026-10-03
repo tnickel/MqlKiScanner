@@ -74,15 +74,35 @@ Schockbetrag in USD am Peak. Zitiere Einheiten exakt.
 ## Entscheidungs-Kriterien des Nutzers
 {kriterien}
 
+## Rendite und RetDD (bindend)
+Uebernimm ausschliesslich die berechneten Codewerte. ertrag_monat_geom_pct
+ist die eigene geometrische Monatsrendite; linearer Startbasis-Ertrag und
+Plattformrendite sind nur Zusatzinformationen. retdd_monat verwendet als
+Nenner max_drawdown_equity_pct: den belastbar GEMESSENEN Max-Drawdown der
+Equity inklusive Floating aus Kursen/Monitor, niemals Plattform-, Balance-
+oder Trading-DD geschlossener Trades. retdd_jahr verwendet CAGR auf
+demselben Equity-DD (Calmar), NICHT retdd_monat mal zwoelf.
+Nenne equity_messung_status und die gelieferte Kapitalbasis, Zeitspanne und
+Abdeckung; H1-Schlusskurse erfassen keine Intrabar-Extrema. Eine virtuelle
+Kapitalbasis ist eine Modellannahme, keine Messung des echten Kontoverlaufs.
+Bei fehlenden/veralteten Werten: nicht berechenbar, KEINE eigene Division
+oder Ersatzrechnung. Nur Engine-Gruen und ALLE eingesetzten Nutzer-Kriterien
+erlauben eine Empfehlung: RetDD mindestens 1,0, geometrische Monatsrendite
+mindestens an der AKTUELL konfigurierten Ertragsschwelle, Risiko-Score unter
+5 sowie keine Ausschluss- oder harte Risikoregel. Die aktuelle Drawdown-
+Schranke und Ertragsschwelle stehen oben; keine festen Ersatzwerte verwenden.
+Gelb ist Beobachtung und erlaubt keine Empfehlung oder bedingte Aufwertung.
+Historische Rendite und RetDD sind keine Prognose.
+
 ## Aufgabe
 Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
-0. **RetDD-Effizienz** (Nutzer-Regel 01.10.): Bewerte retdd_monat
-   (GEOMETRISCHER Monats-Ertrag je Prozent DD — Zinseszins-wahr) und
-   retdd_jahr (= echter Calmar CAGR/DD). Nenne auch ertrag_monat_geom_pct. Niedriges
+0. **RetDD-Effizienz**: Bewerte retdd_monat (eigene geometrische
+   Monatsrendite je Prozent gemessenem Max-Equity-DD) und retdd_jahr
+   (= Calmar CAGR/Equity-DD). Nenne auch ertrag_monat_geom_pct. Niedriges
    Risiko allein genügt nicht — ohne angemessenen Gewinn ist ein Signal
    unattraktiv. >= 1.0 = Mindestqualität für eine Empfehlung (Nutzer-Regel
-   02.10.), 0.5–1.0 beobachtbar mit Reserve, darunter ineffizient
-   (nenne beides: Ertrag UND Drawdown; 0.167 = exakte Projektmaße).
+   02.10.), 0.5 bis unter 1.0 beobachtbar, darunter ineffizient.
+   Nenne Ertrag UND gemessenen Equity-Drawdown sowie fehlende Messdaten.
 1. **Risikobefunde**: Martingale/Grid/Exposure/Stop-Befund/Verlustserien —
    mit Zahlen. Fehlender SL-Nachweis ist NEUTRAL (viele Broker uebertragen
    keinen SL); nenne Verlustdistanz-Muster als Hinweis, ohne abzuwerten.
@@ -104,7 +124,7 @@ Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
    Fehlende/nullwertige Messungen sind weder Risiko-Beweis noch Entlastung.
    Erlaeutere das uebergebene Engine-Ergebnis: Die Engine nimmt die verfuegbaren
    belastbaren Werte in ihr Drawdown-Maximum auf. Strikt > konfigurierte
-   Schranke (Standard 30 Prozent) bedeutet Verletzung; der LLM-Bericht
+   Schranke aus den eingesetzten Kriterien bedeutet Verletzung; der LLM-Bericht
    veraendert weder Ampel noch Score.
 2. **Copy-Eignung**: Slippage-/Kontogroessen-Risiken.
 3. **Ein Satz Fazit**: Warnung oder Entlastung — mit Hauptgrund.

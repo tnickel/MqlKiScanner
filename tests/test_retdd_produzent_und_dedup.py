@@ -14,6 +14,7 @@ Grail: 4.197/15.340 = 27,4 %) — der Parser bereinigt und zählt.
 """
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from mqlkiscanner import portfolio_statistik
@@ -36,23 +37,28 @@ def _trade(monat: str, profit: float, symbol="XAUUSD") -> str:
 # ------------------------------------------------------------------ B24 —
 
 def test_effizienz_kennzahlen_geometrisch_und_calmar(tmp_path):
-    """3 Monate mit +10 % JE Monat auf wachsendem Konto (Gewinne 100, 110,
-    121 auf 1.000 USD Start): geom. Mittel exakt 10 %/M, CAGR 213,8 %,
-    RetDD bei DD-Max 10 % exakt 1,0 (die Nutzer-Mindestqualität)."""
+    """Drei Abschluesse +100/+110/+121 in 60 Tagen: Kalenderlabels sind
+    keine drei vollen Laufzeitmonate; Annualisierung nutzt die Zeitspanne."""
     pfad = _csv(tmp_path, [
         _trade("01", 100.0), _trade("02", 110.0), _trade("03", 121.0)])
     eff = portfolio_statistik.effizienz_kennzahlen(pfad, 1000.0, 10.0)
     assert eff is not None
-    assert abs(eff["ertrag_monat_geom_pct"] - 10.0) < 0.01
-    assert abs(eff["cagr_jahr_pct"] - (1.1 ** 12 - 1) * 100) < 0.1
-    assert abs(eff["retdd_monat"] - 1.0) < 0.01
-    assert abs(eff["retdd_jahr"] - (1.1 ** 12 - 1) * 100 / 10) < 0.01
+    jahre = 60.0 / 365.2425
+    geom = math.expm1(math.log(1.331) / (jahre * 12)) * 100
+    cagr = math.expm1(math.log(1.331) / jahre) * 100
+    assert abs(eff["ertrag_monat_geom_pct"] - geom) < 1e-10
+    assert abs(eff["cagr_jahr_pct"] - cagr) < 1e-9
+    assert abs(eff["retdd_monat"] - geom / 10) < 1e-10
+    assert abs(eff["retdd_jahr"] - cagr / 10) < 1e-10
 
 
 def test_effizienz_kennzahlen_ohne_basis_bleibt_none(tmp_path):
     pfad = _csv(tmp_path, [_trade("01", 100.0)])
     assert portfolio_statistik.effizienz_kennzahlen(pfad, None, 10.0) is None
-    assert portfolio_statistik.effizienz_kennzahlen(pfad, 1000.0, None) is None
+    ohne_dd = portfolio_statistik.effizienz_kennzahlen(pfad, 1000.0, None)
+    assert ohne_dd["ertrag_monat_geom_pct"] is not None
+    assert ohne_dd["retdd_monat"] is None
+    assert ohne_dd["effizienz_status"] == "ohne_equity_dd"
     assert portfolio_statistik.effizienz_kennzahlen(pfad, 0.0, 10.0) is None
     assert portfolio_statistik.effizienz_kennzahlen(
         str(tmp_path / "fehlt.csv"), 1000.0, 10.0) is None

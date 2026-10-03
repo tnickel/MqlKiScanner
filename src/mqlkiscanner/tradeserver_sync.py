@@ -67,12 +67,16 @@ def signal_zeilen(results: Iterable, fresh_ids: set[int] | None = None) -> list[
 
     results = list(results)
     fresh_ids = fresh_ids or set()
+    settings = config.load_settings()
     docs_counts = db.downloader_report_counts([r.id for r in results])
     abo = downloader_sync.abo_bilanz(
         [r.id for r in results],
         platformen={r.id: getattr(r, "platform", "") or "" for r in results})
     zeilen: list[dict] = []
     for r in results:
+        refresh = getattr(r, "refresh_efficiency", None)
+        if callable(refresh):
+            refresh()
         docs_eigene = sum(bool(getattr(r, feld, "")) for feld in
                           ("trade_analyse", "risiko_analyse", "gesamtbericht"))
         docs_tiefen = 1 if getattr(r, "tiefenanalyse", "") else 0
@@ -92,20 +96,25 @@ def signal_zeilen(results: Iterable, fresh_ids: set[int] | None = None) -> list[
             "tradingDdPct": _runden(r.trading_dd_pct),
             "ddEquityPct": _runden(r.dd_equity_pct),
             "ddBalancePct": _runden(r.dd_balance_pct),
+            "maxDrawdownEquityPct": getattr(r, "max_drawdown_equity_pct", None),
+            "drawdownLimitPct": settings.get("schranke_eq_dd_pct", 30.0),
+            "minReturnMonthlyPct": settings.get("min_ertrag_pct_monat", 5.0),
+            "minRetddMonthly": 1.0,
             "ertragMonatPct": _runden(r.ertrag_monat_pct),
             # Zinseszins-wahre Ertrags- und Effizienzkennzahlen
             # (Nutzer-Wunsch 01.10.2026, MqlTradeMonitor-Anzeige):
             # ertragMonatForensikPct = linearer Ø auf eigener Basis,
             # ertragMonatGeomPct = geometrisches Monatsmittel (CAGR-Basis),
             # cagrJahrPct = annualisierter CAGR, retddMonat/retddJahr =
-            # Ertrag je Prozent DD (retddJahr = echter Calmar).
+            # Ertrag je Prozent gemessenem Equity-DD. Rohwerte übertragen,
+            # damit RetDD knapp unter 1 nicht bereits im Protokoll aufrundet.
             "ertragMonatForensikPct": _runden(
                 getattr(r, "ertrag_monat_pct_forensik", None)),
-            "ertragMonatGeomPct": _runden(
-                getattr(r, "ertrag_monat_geom_pct", None)),
-            "cagrJahrPct": _runden(getattr(r, "cagr_jahr_pct", None)),
-            "retddMonat": _runden(getattr(r, "retdd_monat", None), 3),
-            "retddJahr": _runden(getattr(r, "retdd_jahr", None), 2),
+            "ertragMonatGeomPct": getattr(r, "ertrag_monat_geom_pct", None),
+            "cagrJahrPct": getattr(r, "cagr_jahr_pct", None),
+            "retddMonat": getattr(r, "retdd_monat", None),
+            "retddJahr": getattr(r, "retdd_jahr", None),
+            "retddBasis": (getattr(r, "effizienz_befund", {}) or {}).get("retdd_basis"),
             "growthPct": _runden(r.growth_pct),
             "pf": _runden(r.pf),
             "winratePct": _runden(r.winrate_pct),

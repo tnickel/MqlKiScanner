@@ -81,6 +81,26 @@ Schockbetrag in USD am Peak. Zitiere Einheiten exakt.
 ## Bindende Kriterien des Nutzers
 {kriterien}
 
+## Rendite und RetDD (bindend)
+Uebernimm ausschliesslich die berechneten Codewerte. ertrag_monat_geom_pct
+ist die eigene geometrische Monatsrendite; linearer Startbasis-Ertrag und
+Plattformrendite sind nur Zusatzinformationen. retdd_monat verwendet als
+Nenner max_drawdown_equity_pct: den belastbar GEMESSENEN Max-Drawdown der
+Equity inklusive Floating aus Kursen/Monitor, niemals Plattform-, Balance-
+oder Trading-DD geschlossener Trades. retdd_jahr verwendet CAGR auf
+demselben Equity-DD (Calmar), NICHT retdd_monat mal zwoelf.
+Nenne equity_messung_status und die gelieferte Kapitalbasis, Zeitspanne und
+Abdeckung; H1-Schlusskurse erfassen keine Intrabar-Extrema. Eine virtuelle
+Kapitalbasis ist eine Modellannahme, keine Messung des echten Kontoverlaufs.
+Bei fehlenden/veralteten Werten: nicht berechenbar, KEINE eigene Division
+oder Ersatzrechnung. Nur Engine-Gruen und ALLE eingesetzten Nutzer-Kriterien
+erlauben eine Empfehlung: RetDD mindestens 1,0, geometrische Monatsrendite
+mindestens an der AKTUELL konfigurierten Ertragsschwelle, Risiko-Score unter
+5 sowie keine Ausschluss- oder harte Risikoregel. Die aktuelle Drawdown-
+Schranke und Ertragsschwelle stehen oben; keine festen Ersatzwerte verwenden.
+Gelb ist Beobachtung und erlaubt keine Empfehlung oder bedingte Aufwertung.
+Historische Rendite und RetDD sind keine Prognose.
+
 ## Aufgabe — schreibe den Bericht (800-1200 Woerter, Deutsch, Markdown):
 
 Beginne mit EXAKT einer Zeile:
@@ -110,15 +130,13 @@ Danach Abschnitte mit ## -Ueberschriften:
 4. **Copy-Eignung** — Kontogroesse, Slippage-Anfaelligkeit, Broker,
    praktische Risiken beim Kopieren.
 5. **Urteil** — Nenne IMMER retdd_monat/retdd_jahr (geometrischer
-   Ertrag je Prozent Drawdown; retdd_jahr = Calmar CAGR/DD) und
+   Ertrag je Prozent gemessenem Max-Equity-DD; retdd_jahr = Calmar CAGR/Equity-DD) und
    ertrag_monat_geom_pct und bewerte die EFFIZIENZ: >= 1.0 Mindestqualität
-   für eine Empfehlung (Nutzer-Regel 02.10.), 0.5–1.0 beobachtbar mit Reserve,
-   darunter unattraktiv; 0.167 = exakte
-   Projektmaße, darunter unattraktiv trotz moeglicherweise grüner
-   Einzelkriterien — Risiko ohne angemessene Bezahlung. Priorisiere bei
+   für eine Empfehlung (Nutzer-Regel 02.10.), 0.5 bis unter 1.0 beobachtbar,
+   darunter unattraktiv — Risiko ohne angemessene Bezahlung. Priorisiere bei
    der Empfehlungswürdigung RetDD über die absolute Rendite.
-Fehlt retdd_monat (null/ohne Kurve): schreibe ausdrücklich
-   „RetDD nicht berechenbar (keine belastbare Monatskurve)" — rechne KEINE
+Fehlt retdd_monat (null/ohne aktuelle Rendite oder Equity-Messung): schreibe ausdrücklich
+   „RetDD nicht berechenbar" und den vom Code gelieferten Grund — rechne KEINE
 eigene Hilfsquote oder Ersatzrechnung (Design-Regel: alle Zahlen liefert
 der Code; das Modell deutet nur).
 Stop-Kurzurteil-Verbot (B11, 02.10.): Formulierungen wie „ohne nachweisbaren
@@ -142,9 +160,10 @@ der Stop-Befund neutral zu nennen und ist KEIN Grund.
    Signatur oder verletzte Drawdown-Schranke, 🟡 = Beobachtung,
    🟢 = Kandidat. ⛔ und 🔴 bedeuten AUTOMATISCHE ABLEHNUNG — auch wenn
    die Einzeldaten besser aussehen; das Urteil darf die Engine-Ampel nie
-   aufwerten (aus ⛔/🔴 wird nie WATCHLIST oder EMPFEHLUNG). Eine von der
+   aufwerten (aus ⛔/🔴 wird nie WATCHLIST oder EMPFEHLUNG; aus 🟡 wird nie
+   EMPFEHLUNG). Eine von der
    Engine markierte Drawdown-Schrankenverletzung bedeutet AUTOMATISCHE
-   ABLEHNUNG. Ertrag unter der dort genannten Monatsschwelle bedeutet
+   ABLEHNUNG. Eigene geometrische Rendite unter der dort genannten Monatsschwelle bedeutet
    KEIN Kandidat, aber keine harte Ablehnung (Engine-Ampel: nur Beobachtung
    — das Urteil folgt der Engine, nie umgekehrt). Fuer den Stop-Befund
    gelten die oben genannten Evidenzstufen: direkte Evidenz entlastet,

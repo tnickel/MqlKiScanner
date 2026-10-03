@@ -96,6 +96,7 @@ def test_b2_gruen_braucht_forensik_ertrag():
     res = pipeline.ScanResult(
         id=2048285, name="SafeGold-Fall", score=4.5, forensik_vorhanden=True,
         ertrag_monat_pct=6.46, ertrag_monat_pct_forensik=0.5,
+        ertrag_monat_geom_pct=0.5, equity_dd_rekonstruiert_pct=1,
         martingale_flag=False, stop_evidence="none")
     ampel, grund = pipeline.ampel_for(res, {})
     assert ampel == "🟡"
@@ -109,6 +110,7 @@ def test_b2_forensik_ertrag_ueber_schwelle_bleibt_gruen():
         id=2349227, name="Gold-Spike-Fall", score=4.1,
         forensik_vorhanden=True, ertrag_monat_pct=24.54,
         ertrag_monat_pct_forensik=8.6, martingale_flag=False,
+        ertrag_monat_geom_pct=8.6, equity_dd_rekonstruiert_pct=6,
         stop_evidence="direct", retdd_monat=1.44, retdd_jahr=9.6)
     ampel, _ = pipeline.ampel_for(res, {})
     assert ampel == "🟢"
@@ -117,6 +119,7 @@ def test_b2_forensik_ertrag_ueber_schwelle_bleibt_gruen():
         id=2349228, name="Ohne-Kurve", score=4.1,
         forensik_vorhanden=True, ertrag_monat_pct=24.54,
         ertrag_monat_pct_forensik=8.6, martingale_flag=False,
+        ertrag_monat_geom_pct=8.6,
         stop_evidence="direct", retdd_monat=None)
     ampel_ohne, urteil_ohne = pipeline.ampel_for(res_ohne, {})
     assert ampel_ohne == "🟡"
@@ -126,20 +129,21 @@ def test_b2_forensik_ertrag_ueber_schwelle_bleibt_gruen():
         id=2349229, name="Unbezahlt", score=4.1,
         forensik_vorhanden=True, ertrag_monat_pct=24.54,
         ertrag_monat_pct_forensik=8.6, martingale_flag=False,
+        ertrag_monat_geom_pct=8.6, equity_dd_rekonstruiert_pct=8.6 / .77,
         stop_evidence="direct", retdd_monat=0.77)
     ampel_schwach, urteil_schwach = pipeline.ampel_for(res_schwach, {})
     assert ampel_schwach == "🟡"
     assert "1,0" in urteil_schwach
 
 
-def test_b2_ohne_forensikwert_gilt_weiterhin_der_plattformwert():
+def test_b2_ohne_eigene_geometrische_rendite_kein_plattform_fallback():
     res = pipeline.ScanResult(
         id=1, name="Vorpruefung", score=4.0, forensik_vorhanden=True,
         ertrag_monat_pct=7.0, ertrag_monat_pct_forensik=None,
         martingale_flag=False, stop_evidence="none",
         retdd_monat=1.2)
     ampel, _ = pipeline.ampel_for(res, {})
-    assert ampel == "🟢"
+    assert ampel == "🟡"
 
 
 # --------------------------------------------------- B3 implizite Kapitalbasis
@@ -477,6 +481,7 @@ def test_retdd_berechnung_und_urteil():
     res = pipeline.ScanResult(
         id=1, name="X", score=4.1, forensik_vorhanden=True,
         ertrag_monat_pct=24.54, ertrag_monat_pct_forensik=8.71,
+        ertrag_monat_geom_pct=8.71, equity_dd_rekonstruiert_pct=8.11,
         retdd_monat=round(8.71 / 8.11, 3), retdd_jahr=round(8.71 / 8.11 * 12, 2),
         martingale_flag=False, stop_evidence="direct",
         schranke_verletzt=False)
@@ -493,11 +498,11 @@ def test_retdd_ampelzelle_schwellen():
     spez.loader.exec_module(tam)
     m_eff = lambda r: tam._matrix(r)
     # Nutzer-Regel 02.10.: 1,0 = Mindestqualität
-    gruen = tam._result(retdd_monat=1.44, retdd_jahr=9.6)
-    reserve = tam._result(retdd_monat=0.8, retdd_jahr=9.6)
-    schlecht = tam._result(retdd_monat=0.05, retdd_jahr=0.6)
+    gruen = tam._result(ertrag_monat_geom_pct=14.4, equity_dd_rekonstruiert_pct=10)
+    reserve = tam._result(ertrag_monat_geom_pct=8.0, equity_dd_rekonstruiert_pct=10)
+    schlecht = tam._result(ertrag_monat_geom_pct=.5, equity_dd_rekonstruiert_pct=10)
     ohne = tam._result(retdd_monat=None, retdd_jahr=None,
-                       ertrag_monat_pct_forensik=None)
+                       ertrag_monat_pct_forensik=None, ertrag_monat_geom_pct=None)
     assert m_eff(gruen)["retdd"].ampel == "🟢"
     assert m_eff(reserve)["retdd"].ampel == "🟡"
     assert m_eff(schlecht)["retdd"].ampel == "🟠"
@@ -508,6 +513,7 @@ def test_retdd_im_forensik_payload_und_portfolio_statistik():
     import json as _json
     r = pipeline.ScanResult(
         id=1, name="X", forensik_vorhanden=True, ertrag_monat_pct_forensik=6.0,
+        ertrag_monat_geom_pct=6.0, cagr_jahr_pct=72.0, equity_dd_rekonstruiert_pct=20.0,
         retdd_monat=0.3, retdd_jahr=3.6, kapitalbasis_verwendet_usd=1000,
         kapitalbasis_verwendet_quelle="csv_einzahlungen", symbole="XAUUSD, EURUSD",
         trades_path="", ertrag_monat_pct=7.0)

@@ -35,7 +35,7 @@ def test_table_opens_pdf_report_and_detail_offers_all_pdfs_for_repeated_ids(monk
 
     def click_second(*args, **kwargs):
         nonlocal click_pending
-        captured["frame"] = args[0]
+        captured["frame"] = args[0].data  # Tabelle verwendet Styler nur für Farben.
         if click_pending:
             column = kwargs["column_config"]["Bericht"]
             app_ui.st.session_state[column.key] = SimpleNamespace(row=1)

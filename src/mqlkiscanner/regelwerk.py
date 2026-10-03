@@ -33,7 +33,7 @@ KATEGORIEN: list[tuple[str, str]] = [
      "STRUKTUR: Ein fehlender Stop-Nachweis für sich ist neutral "
      "(Nutzer-Regel 28.09.2026) und begründet niemals einen Eintrag."),
     ("Ertrag dauerhaft unter der Schwelle",
-     "Monatsertrag unter 5 % oder negativ. Risiko vor Ertrag: Wer im "
+     "Monatsertrag unter der jeweils geltenden Schwelle oder negativ. Risiko vor Ertrag: Wer im "
      "Guten schon kaum verdient, kompensiert keine Risiken."),
     ("Schwache Handelsqualität",
      "Profit-Faktor, Sharpe oder Winrate so schwach, dass die Historie "
@@ -70,13 +70,16 @@ HARTREGELN: list[tuple[str, str]] = [
     ("🔴 Martingale-Signatur nachgewiesen",
      "Lot-Eskalation nach Verlusten (Median > 1,3x) oder Korb-Muster aus "
      "der Trade-Forensik — harte Ablehnung."),
-    ("🟡 Stop-Nachweis offen",
+    ("⚪ Stop-Nachweis offen",
      "Kein bewiesener Stop-Loss (Orderbuch/Cluster) — seit 28.09.2026 "
      "NEUTRAL: kein Malus, keine Ampel-Sperre. Nur die KI-Analyse darf "
      "begründet abwerten; bewiesener SL bleibt Entlastung."),
-    ("🟡 Score oder Ertrag reichen nicht",
-     "Risiko-Score ≥ 5 oder Ertrag unter der Mindestschwelle — nur "
-     "Beobachtung."),
+    ("🟡 Score, Ertrag oder RetDD reichen nicht",
+     "Risiko-Score ≥ 5, eigene geometrische Monatsrendite unter der "
+     "konfigurierten Mindestschwelle oder RetDD < 1,0 — nur Beobachtung, "
+     "keine Empfehlung. Ohne aktuelle geometrische Rendite oder belastbare "
+     "Equity-Messung ebenfalls kein Grün. Linearer Ertrag, Plattform-, "
+     "Balance- und Trading-DD ersetzen diese Nachweise nicht."),
 ]
 
 
@@ -110,9 +113,23 @@ def regelwerk_markdown(settings: dict | None = None) -> str:
     zeilen += [
         "",
         f"Aktuelle Grenzwerte: Schranke {schranke:g} % Drawdown, "
-        f"Mindest-Ertrag {min_ertrag:g} %/Monat, Risiko vor Ertrag. "
+        f"Mindest-Ertrag {min_ertrag:g} %/Monat (eigene geometrische Rendite), "
+        "RetDD mindestens 1,0 und Risiko-Score unter 5. Risiko vor Ertrag. "
         "Bewiesener Stop-Loss (Orderbuch/Cluster) entlastet; fehlender "
         "Nachweis ist neutral (bindende Regel 28.09.2026).",
+        "",
+        "**Empfehlung/Grün:** vollständige aktuelle Forensik, keine "
+        "Ausschluss- oder harte Risikoregel, "
+        f"Drawdown-Maximum ≤ {schranke:g} %, eigene geometrische "
+        f"Monatsrendite ≥ {min_ertrag:g} % und RetDD ≥ 1,0. "
+        "RetDD = geometrische Monatsrendite ÷ gemessenen Max-Drawdown der "
+        "Equity inklusive Floating (belastbare Kurs- oder Monitor-Messung). "
+        "Die konservative Drawdown-Schranke prüft zusätzlich Plattform- "
+        "und geschlossene Drawdowns; diese dienen niemals als RetDD-Nenner. "
+        "Kursmessungen auf H1-Schlusskursen erfassen keine Intrabar-Extrema; "
+        "virtuelle Kapitalbasis, Zeitraum und Datenabdeckung beachten. "
+        "RetDD/Jahr verwendet CAGR auf demselben Equity-DD, nicht den "
+        "Monatswert mal zwölf. Historische Kennzahlen sind keine Prognose.",
         "",
         "## Wann kommt ein Signal auf die Ausschlussliste?",
         "",

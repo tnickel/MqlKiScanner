@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html as _html
+import math
 import re
 from copy import copy
 from pathlib import Path
@@ -236,6 +237,30 @@ def _abo_verlauf_dialog(signal_id: int, name: str, fenster: str) -> None:
                "und ändert keine Bewertung.")
 
 
+def _max_drawdown_farbe(value, limit) -> str:
+    """Farbstatus der gemessenen Equity; fehlende Werte bleiben grau."""
+    try:
+        value, limit = float(value), float(limit)
+    except (TypeError, ValueError):
+        return "gray"
+    if not math.isfinite(value) or value < 0 or not math.isfinite(limit) or limit <= 0:
+        return "gray"
+    if value <= 0.8 * limit:
+        return "green"
+    return "orange" if value <= limit else "red"
+
+
+def _max_drawdown_zellenstil(value, limit) -> str:
+    farben = {
+        "green": ("#dcfce7", "#14532d"),
+        "orange": ("#fef3c7", "#78350f"),
+        "red": ("#fee2e2", "#7f1d1d"),
+        "gray": ("#e5e7eb", "#374151"),
+    }
+    hintergrund, text = farben[_max_drawdown_farbe(value, limit)]
+    return f"background-color: {hintergrund}; color: {text}; font-weight: 600"
+
+
 def results_to_dataframe(results, fresh_ids: set[int] | None = None,
                          fix_ids: set[int] | None = None) -> pd.DataFrame:
     results = tuple(copy(r) for r in results)
@@ -322,13 +347,19 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
         column_order = ((["Stand"] if fresh_ids is not None else [])
                         + (["Fix"] if fix_ids is not None else [])
                         + ["Ampel", "Name", "Quelle", "Stop", "Max-Drawdown %",
+                           "Gewinn %/Monat", "RetDD",
                            "Trading-DD % (geschlossen)", "Equity-Messung",
                            "Drawdown % (Plattform)", "Studie",
                            "Ertrag/Monat %", "Score", "Urteil", "Bericht vom", "Bericht",
                            "Link", "Abonnenten", "30 Tage", "7 Tage", "Dokumente"])
 
+    limit = config.load_settings().get("schranke_eq_dd_pct", 30.0)
+    # Styler färbt nur Zellen. Zahlenformate, ButtonColumns und Auswahl
+    # bleiben bei der nativen Dataframe-Konfiguration.
+    styled = df.style.map(lambda value: _max_drawdown_zellenstil(value, limit),
+                          subset=["Max-Drawdown %"])
     event = st.dataframe(
-        df,
+        styled,
         key=key,
         on_select="rerun",
         selection_mode="single-row",
@@ -360,6 +391,19 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             "Wochen": st.column_config.NumberColumn("Wochen", format="%.0f"),
             "Growth %": st.column_config.NumberColumn("Growth %", format="%.1f"),
             "Ertrag/Monat %": st.column_config.NumberColumn("Ertrag %/Mon.", format="%.1f"),
+            "Gewinn %/Monat": st.column_config.NumberColumn(
+                "Gewinn %/Monat", format="%.2f%%",
+                help="Eigene geometrische Monatsrendite aus den Trade-Daten. "
+                     "Fehlt die Berechnung, bleibt das Feld leer; "
+                     "Plattform-Ertrag wird nicht als Ersatz verwendet."),
+            "RetDD": st.column_config.NumberColumn(
+                "RetDD", format="%.2f",
+                help="Gewinn %/Monat ÷ gemessener Max-Drawdown % (Equity). "
+                     "Dimensionsloses Verhältnis; höher bedeutet mehr "
+                     "historischen Monatsgewinn je Drawdown-Punkt. "
+                     "Ohne Gewinn oder belastbare Equity-Messung sowie "
+                     "bei Max-Drawdown 0 bleibt RetDD leer. "
+                     "Trading-DD und Plattform-DD ersetzen diese Messung nicht."),
             "PF": st.column_config.NumberColumn("PF", format="%.2f"),
             "Drawdown % (Plattform)": st.column_config.NumberColumn(
                 "Drawdown % (Plattform)", format="%.1f",
@@ -377,7 +421,9 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                      "Die Kurs-Nachmessung misst virtuelle Trading-Equity "
                      "ohne spätere Ein-/Auszahlungen; der Monitor hat eine eigene Basis. "
                      "Fehlt die Messung, bleibt das Feld leer. H1-Kurse erfassen "
-                     "keine Tiefs innerhalb einer Stunde."),
+                     "keine Tiefs innerhalb einer Stunde. Farbe: grün bis 80 % "
+                     "der konfigurierten Drawdown-Grenze, gelb bis zur Grenze, "
+                     "rot darüber, grau bei fehlender Messung."),
             "Trading-DD % (geschlossen)": st.column_config.NumberColumn(
                 "Trading-DD % (geschlossen)", format="%.1f",
                 help="Drawdown aus den Nettogewinnen geschlossener Trades. "
@@ -831,6 +877,11 @@ def render_downloader_docs_panel(results) -> None:
 
 def render_detail(result) -> None:
     """Detailansicht eines ScanResults: Kennzahlen, Teilergebnisse, Bericht."""
+    row = result.to_row()
+    gewinn_monat = row.get("Gewinn %/Monat")
+    retdd = row.get("RetDD")
+    settings = config.load_settings()
+    dd_limit = settings.get("schranke_eq_dd_pct", 30.0)
     with st.container(horizontal=True, vertical_alignment="center"):
         st.subheader(f"{result.ampel} {result.name} · #{result.id}")
         if result.url:
@@ -868,18 +919,21 @@ def render_detail(result) -> None:
     with st.container(border=True):
         with st.container(horizontal=True, vertical_alignment="center"):
             st.badge(label, color=color)
-            if result.trading_dd_pct is not None:
-                st.badge(
-                    "Drawdown-Grenze eingehalten"
-                    if result.trading_dd_pct <= 30 else "Drawdown-Grenze überschritten",
-                    color="green" if result.trading_dd_pct <= 30 else "red",
-                )
+            dd_farbe = _max_drawdown_farbe(result.max_drawdown_equity_pct, dd_limit)
+            if result.schranke_verletzt:
+                dd_farbe = "red"
+            st.badge(
+                "Drawdown-Grenze überschritten" if result.schranke_verletzt else
+                "Equity-DD unbelegt" if dd_farbe == "gray" else
+                ("Equity-DD über Grenze" if dd_farbe == "red" else
+                 "Equity-DD nahe Grenze" if dd_farbe == "orange" else
+                 "Equity-DD mit Puffer"), color=dd_farbe)
             st.badge(
                 "Ertragsziel erreicht"
-                if result.ertrag_monat_pct is not None and result.ertrag_monat_pct > 5
+                if gewinn_monat is not None and gewinn_monat >= settings.get("min_ertrag_pct_monat", 5.0)
                 else "Ertragsziel nicht belegt",
                 color="green"
-                if result.ertrag_monat_pct is not None and result.ertrag_monat_pct > 5
+                if gewinn_monat is not None and gewinn_monat >= settings.get("min_ertrag_pct_monat", 5.0)
                 else "gray",
             )
         st.markdown("**Urteil**")
@@ -936,13 +990,22 @@ def render_detail(result) -> None:
         st.metric("Max-Drawdown (Equity, gemessen)",
                   f"{result.max_drawdown_equity_pct:.1f} %" if result.max_drawdown_equity_pct is not None else "—",
                   border=True)
+        st.metric("Gewinn %/Monat",
+                  f"{gewinn_monat:.2f} %" if gewinn_monat is not None else "—",
+                  help="Eigene geometrische Monatsrendite aus den Trade-Daten.",
+                  border=True)
+        st.metric("RetDD",
+                  f"{retdd:.2f}" if retdd is not None else "—",
+                  help="Gewinn %/Monat ÷ gemessener Max-Drawdown % (Equity). "
+                       "Fehlende oder nullprozentige Equity-Messung liefert kein Verhältnis.",
+                  border=True)
         st.metric("Trading-DD (geschlossen)",
                   f"{result.trading_dd_pct:.1f} %" if result.trading_dd_pct is not None else "—",
                   border=True)
         st.metric("Drawdown (Plattform)",
                   f"{result.dd_equity_pct:.1f} %" if result.dd_equity_pct is not None else "—",
                   border=True)
-        st.metric("Ertrag / Monat",
+        st.metric("Ertrag / Monat (Plattform)",
                   f"{result.ertrag_monat_pct:.1f} %" if result.ertrag_monat_pct is not None else "—",
                   border=True)
 

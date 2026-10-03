@@ -23,7 +23,9 @@ def write_history(tmp_path, evidence):
     rows.append(";".join(balance))
     # Positive returns, long history, constant lots and small exposure: a low
     # score is legitimate even when the export contains no stop evidence.
-    profits = [1000] * 26 + ([-20] * 8 if evidence == "cluster" else [])
+    # Auch beim längeren Cluster-Zeitraum bleibt die echte geometrische
+    # Monatsrendite >5%; der Test isoliert Stop-Neutralität, nicht Ertrag.
+    profits = [2000] * 26 + ([-20] * 8 if evidence == "cluster" else [])
     for index, profit in enumerate(profits):
         opened = datetime(2024, 1, 1) + timedelta(days=30 * index)
         closed = opened + timedelta(hours=1)
@@ -56,6 +58,7 @@ def test_real_history_stop_neutralitaet_survives_database_archive_and_llm_payloa
     path = write_history(tmp_path, evidence)
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", Mock(return_value={
         "dd_equity_pct": 1, "monthly_growth_pct": 6, "weeks": 110,
+        "monitor_trade_eq_dd_pct": 1,
     }))
     download = Mock(return_value=(str(path), False))
     monkeypatch.setattr(pipeline.exporter, "export_positions", download)
@@ -92,6 +95,7 @@ def test_free_text_cannot_replace_structured_evidence(evidence, erwarteter_konte
     28.09.2026)."""
     # Nutzer-Regel 02.10.: Grün braucht zusätzlich RetDD >= 1,0
     result = pipeline.ScanResult(id=9000123, score=2, ertrag_monat_pct=6,
+                                 ertrag_monat_geom_pct=6, equity_dd_rekonstruiert_pct=5,
                                  forensik_vorhanden=True, retdd_monat=1.2,
                                  stop_nachweis="BEWIESEN: Schutz vorhanden")
     result.stop_evidence = evidence
@@ -102,7 +106,8 @@ def test_free_text_cannot_replace_structured_evidence(evidence, erwarteter_konte
 
 
 @pytest.mark.parametrize("flags,expected", [
-    ({"schranke_verletzt": True}, "🔴"), ({"martingale_flag": True}, "🔴"),
+    ({"dd_equity_pct": 35, "schranke_verletzt": True}, "🔴"),
+    ({"martingale_flag": True}, "🔴"),
     ({"fehler": "storage failure"}, "⚪"), ({"forensik_vorhanden": False}, "⚪"),
 ])
 def test_stop_gate_preserves_existing_risk_and_failure_priorities(flags, expected):

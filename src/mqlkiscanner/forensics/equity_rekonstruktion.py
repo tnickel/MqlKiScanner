@@ -397,6 +397,9 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         "status": "ok" if verlaesslich else "unvollstaendig",
         "gmt_offset_h": offset // 3600,
         "gmt_trefferquote": gmt["trefferquote"],
+        # Bewertungs-/RetDD-Nenner ohne Anzeige-Rundung: 10,004 % darf
+        # nicht als 10,00 % eine Effizienz von 10,001/10,00 >= 1 erzeugen.
+        "equity_dd_pct_raw": max(dd_pct, dd_pct_max),
         "equity_dd_pct": round(max(dd_pct, dd_pct_max), 2),
         "equity_dd_pct_am_usd_max": round(dd_pct, 2),
         "equity_dd_pct_max_rel": round(dd_pct_max, 2),

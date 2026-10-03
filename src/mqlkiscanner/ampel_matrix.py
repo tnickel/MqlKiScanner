@@ -14,7 +14,9 @@ Farb-Semantik (einheitlich, in Tooltips und Hilfe erklaert):
   rot   = harte Verletzung / nachgewiesen falsch
   ⚪     = keine Daten — entlastet nicht
 
-Die Matrix ist rein (keine Seiteneffekte) und wird zweimal berechnet:
+Die Matrix führt keine Ein-/Ausgabe aus; Rendite/RetDD werden am Result
+mit derselben zentralen Formel aktualisiert wie die Gesamt-Ampel.
+Die Matrix wird zweimal berechnet:
 beim Scan landet sie als Audit-Snapshots im Forensik-JSON der Datenbank,
 die Anzeige rechnet sie aus den gespeicherten Werten mit den aktuellen
 Einstellungen neu (identisch zur Gesamt-Ampel, die ebenfalls aktuell
@@ -88,10 +90,11 @@ KRITERIEN: list[Kriterium] = [
         "Stop plausibel ist."),
     Kriterium(
         "ertrag", "Ertrag/Monat",
-        "Nutzerkriterium: über der Mindestschwelle (Standard 5 %/Monat). "
-        "Maßgeblich ist der Ertrag auf der FORENSIK-Kapitalbasis (eigene "
-        "Trade-Kurve, dieselbe Basis wie DD/Schock); der Plattformwert ist "
-        "Zusatzinformation (Selbstauskunft mit eigener Basis). Historische "
+        "Nutzerkriterium: mindestens die konfigurierte Monatsschwelle. "
+        "Maßgeblich ist die eigene GEOMETRISCHE Monatsrendite auf der "
+        "Forensik-Kapitalbasis (Zinseszins über den beobachteten Zeitraum). "
+        "Linearer Startbasis-Ertrag und Plattformwert sind Zusatzinformation "
+        "und ersetzen fehlende geometrische Rendite nicht. Historische "
         "Kennzahl, keine Prognose. Grün = Schwelle erreicht, gelb = positiv, "
         "aber darunter, orange = negativ, grau = unbekannt. Risiko geht vor: "
         "schöner Ertrag korrigiert keine rote Zelle."),
@@ -117,16 +120,18 @@ KRITERIEN: list[Kriterium] = [
         "ab 20 Verlusten in Folge (Information, keine harte Schranke)."),
     Kriterium(
         "retdd", "RetDD (Ertrag je DD)",
-        "Nutzer-Kriterium 01.10.2026 — Rendite-Risiko-EFFIZIENZ: Niedriges "
+        "Nutzer-Kriterium — Rendite-Risiko-EFFIZIENZ: Niedriges "
         "Risiko allein genügt nicht, der Gewinn muss das eingegangene "
-        "Risiko tragen. RetDD = Forensik-Ertrag/Monat ÷ Drawdown-Maximum "
-        "(gleiche Kapitalbasis; ×12 = annualisiert, Calmar-artig). Grün = "
-        "ab 0,5 (deutlich effizient), gelb = 0,167–0,5, orange = unter "
-        "0,167 — die Kombination 5 %/Monat bei 30 % DD steht exakt auf "
-        "0,167; wer darunter liegt, erfüllt selbst die Projektmaße nur "
-        "ineffizient. Grau = ohne Forensik-Ertrag oder DD nicht messbar. "
-        "Allein keine harte Sperre — aber Grün ohne Punkt hier ist ein "
-        "unattraktives Grün."),
+        "Risiko tragen. RetDD = eigene geometrische Monatsrendite ÷ "
+        "gemessenen Max-Drawdown der Equity inklusive Floating (belastbare "
+        "Kurs- oder Monitor-Messung). Plattform-, Balance- und Trading-DD "
+        "aus geschlossenen Trades dienen niemals als Ersatznenner. Grün = "
+        "ab 1,0; gelb = 0,5 bis unter 1,0; orange = darunter. RetDD ≥ 1,0 "
+        "ist eine verbindliche Empfehlungsvoraussetzung. Grau = ohne eigene "
+        "geometrische Rendite oder belastbare Equity-Messung nicht messbar "
+        "und kein Grün. RetDD/Jahr = CAGR ÷ denselben Equity-DD (Calmar), "
+        "nicht zwölfmal RetDD/Monat. Messzeitraum, Kapitalbasis und H1-"
+        "Grenzen beachten; die Kennzahl ist keine Prognose."),
     Kriterium(
         "liste", "Ausschlussliste",
         "Manuell kuratierte Liste (data/known_signals.json) aus der "
@@ -231,35 +236,33 @@ def _stop_zelle(r) -> Zelle:
 
 
 def _ertrag_zelle(r, settings) -> Zelle:
+    r.refresh_efficiency()
     minimum = float(settings.get("min_ertrag_pct_monat", 5.0))
-    # B2 (Intensiv-Review 29./30.09.2026): Maßgeblich ist der Ertrag auf der
-    # FORENSIK-Kapitalbasis (eigene Kurve, dieselbe Basis wie DD/Schock).
-    # Der Plattformwert ist eine Selbstauskunft mit fremder Basis — er steht
-    # im Detail daneben, entscheidet aber nicht mehr.
-    wert = getattr(r, "ertrag_monat_pct_forensik", None)
+    # Auswahl und RetDD verwenden dieselbe eigene geometrische Rendite.
+    # Linearer Ertrag und Plattformwert ersetzen fehlende Messdaten nicht.
+    wert = getattr(r, "ertrag_monat_geom_pct", None)
     plattform = r.ertrag_monat_pct
-    if wert is None and plattform is None:
+    if wert is None or getattr(r, "forensik_stale", False):
         return Zelle(KEINE_DATEN, "unbekannt",
-                     "Ertrag/Monat nicht erfasst — Schwelle nicht prüfbar.")
+                     "Keine aktuelle eigene geometrische Monatsrendite — "
+                     f"Mindestschwelle {minimum:g} %/Monat nicht prüfbar. "
+                     "Linearer Ertrag und Plattformwert ersetzen sie nicht; "
+                     "ohne diesen Nachweis kein Grün.")
     basis_hinweis = ""
-    if wert is not None and plattform is not None:
-        basis_hinweis = (f" Forensik-Basis {(_num(wert, 1))} %/Monat "
-                         f"(Plattform meldet {_num(plattform, 1)} %/Monat auf "
+    if plattform is not None:
+        basis_hinweis = (f" Plattform meldet {_num(plattform, 1)} %/Monat auf "
                          "eigener Kapitalbasis — Selbstauskunft, nicht "
-                         "maßgeblich).")
-    if wert is None:
-        wert = plattform
-        basis_hinweis = (" Nur der Plattformwert vorhanden (keine eigene "
-                         "Forensik-Kurve) — Selbstauskunft.")
+                         "maßgeblich.")
     if wert >= minimum:
         return Zelle(GRUEN, f"{_num(wert, 1)} %/Monat",
                      f"{_num(wert, 1)} %/Monat ≥ Mindestschwelle "
-                     f"{minimum:g} %/Monat (Forensik-Basis).{basis_hinweis}")
+                     f"{minimum:g} %/Monat (eigene geometrische Rendite)."
+                     f"{basis_hinweis}")
     if wert >= 0:
         return Zelle(GELB, f"{_num(wert, 1)} % < {minimum:g} %",
                      f"{_num(wert, 1)} %/Monat liegt unter der Mindest-"
                      f"schwelle von {minimum:g} %/Monat (positive Werte, "
-                     f"aber zu wenig; Forensik-Basis).{basis_hinweis}")
+                     f"aber zu wenig; eigene geometrische Rendite).{basis_hinweis}")
     return Zelle(ORANGE, f"{_num(wert, 1)} % (negativ)",
                  f"Ertrag {(_num(wert, 1))} %/Monat ist negativ — das "
                  f"Kriterium {minimum:g} %/Monat ist klar verfehlt."
@@ -351,31 +354,44 @@ def _listen_zelle(r) -> Zelle:
 
 
 def _retdd_zelle(r) -> Zelle:
-    """RetDD = geometrischer Forensik-Ertrag/Monat je Prozent DD-Maximum
-    (Nutzer 01.10.: Gewinn muss das Risiko tragen — niedriges Risiko allein
-    bringt es nicht). Nutzer-Regel 02.10.: **1,0 ist die Mindestqualität** —
-    Grün-Empfehlungen brauchen RetDD >= 1,0 (Grün-Weg in ampel_for setzt das
-    hart durch). Schwellen: 1,0 grün / 0,5 gelb / darunter orange."""
+    """Zentral berechnete Effizienz gegen gemessenen Floating-Equity-DD."""
+    r.refresh_efficiency()
     wert = getattr(r, "retdd_monat", None)
     if wert is None:
+        grund = {
+            "veraltet": "Die Forensik ist veraltet.",
+            "rendite_nicht_berechenbar": "Eine aktuelle geometrische Monatsrendite fehlt.",
+            "ohne_equity_dd": "Eine belastbare Equity-Messung fehlt.",
+            "equity_dd_null": "Gemessener Equity-DD = 0; der Quotient ist nicht definiert.",
+        }.get(r.effizienz_befund.get("effizienz_status"), "")
         return Zelle(KEINE_DATEN, "unbekannt",
-                     "RetDD ohne Monatskurve oder DD-Maximum nicht "
-                     "berechenbar (kein Rendite-Risiko-Urteil möglich; "
-                     "ohne diesen Nachweis kein Grün).")
+                     "RetDD nicht berechenbar: aktuelle eigene geometrische "
+                     "Monatsrendite und ein belastbar gemessener positiver "
+                     "Max-Equity-Drawdown sind erforderlich "
+                     "(kein Rendite-Risiko-Urteil möglich; "
+                     "ohne diesen Nachweis kein Grün). Plattform-, Balance- "
+                     "und Trading-DD sind kein Ersatznenner. " + grund)
     jahr = getattr(r, "retdd_jahr", None)
-    jahres_text = f" (annualisiert {jahr:g})" if jahr is not None else ""
+    jahres_text = f" (Calmar/Jahr {jahr:g}, CAGR/Equity-DD)" if jahr is not None else ""
+    herleitung = (
+        f"Eigene geometrische Monatsrendite {_num(r.ertrag_monat_geom_pct)} % "
+        f"÷ gemessener Max-Equity-Drawdown {_num(r.max_drawdown_equity_pct)} % "
+        f"= RetDD {wert:g}{jahres_text}. "
+        f"Messung: {r.equity_messung_status}. "
+        "Kapitalbasis, Zeitraum und Messabdeckung begrenzen die Aussage; "
+        "historische Effizienz ist keine Prognose. ")
     if wert >= 1.0:
         return Zelle(GRUEN, f"{wert:g} / Monat",
-                     f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — der "
-                     "Ertrag trägt das Risiko deutlich (Mindestqualität 1,0, "
+                     herleitung +
+                     "Mindestqualität 1,0 erreicht ("
                      "Nutzer-Regel 02.10.).")
     if wert >= 0.5:
         return Zelle(GELB, f"{wert:g} / Monat",
-                     f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — "
+                     herleitung +
                      "unter der Mindestqualität 1,0: beobachtbar, aber der "
                      "Ertrag trägt das Risiko nur begrenzt.")
     return Zelle(ORANGE, f"{wert:g} / Monat",
-                 f"RetDD {wert:g} je Prozent Drawdown{jahres_text} — das "
+                 herleitung + "Das "
                  "eingegangene Risiko wird nicht angemessen bezahlt "
                  "(Mindestqualität 1,0, Nutzer-Regel 02.10.).")
 
@@ -408,7 +424,8 @@ def matrix_payload(result, settings: dict | None = None) -> dict:
     settings = settings or {}
     return {
         "grenzen": {"schranke_eq_dd_pct": settings.get("schranke_eq_dd_pct", 30.0),
-                    "min_ertrag_pct_monat": settings.get("min_ertrag_pct_monat", 5.0)},
+                    "min_ertrag_pct_monat": settings.get("min_ertrag_pct_monat", 5.0),
+                    "min_retdd_monat": 1.0},
         "kriterien": {key: {"ampel": z.ampel, "kurz": z.kurz, "detail": z.detail}
                       for key, z in kriterien_matrix(result, settings).items()},
     }

@@ -1518,7 +1518,8 @@ def _dialog_forensik() -> None:
                 "Scanner Handelsdaten (Export bzw. Quellen-Artefakte) und "
                 "prüft Martingale, gleichzeitig offene Positionen, Exposure, "
                 "Stop-Signaturen und Drawdown. Der Code berechnet Kennzahlen, "
-                "Ampel und Score. Die Drawdown-Schranke liegt bei 30 %. "
+                f"Ampel und Score. Die Drawdown-Schranke liegt bei "
+                f"{settings.get('schranke_eq_dd_pct', 30):g} %. "
                 "Fehlender Stop-Nachweis ist neutral.")
     results = list(st.session_state.get("scan_results") or [])
     aus_db = False
@@ -1556,6 +1557,8 @@ def _dialog_forensik() -> None:
     for e in eintraege:
         status = str(e.get("status") or "KANDIDAT")
         r = res_map.get(e.get("id"))
+        if r is not None:
+            r.refresh_efficiency()
         geprueft = r is not None and r.forensik_vorhanden
         zeilen.append({
             "Geprüft": "✓ ja" if geprueft else "— nein",
@@ -1567,7 +1570,7 @@ def _dialog_forensik() -> None:
             "Max-Drawdown % (Equity)": (r.max_drawdown_equity_pct if geprueft else None),
             "Trading-DD % (geschlossen)": (r.trading_dd_pct if geprueft else None),
             "Equity-Messung": (r.equity_messung_status if r else "Noch nicht geprüft"),
-            "Ertrag/M": (getattr(r, "ertrag_monat_pct_forensik", None)
+            "Gewinn %/Monat": (getattr(r, "ertrag_monat_geom_pct", None)
                          if geprueft else None),
             "RetDD": (getattr(r, "retdd_monat", None) if geprueft else None),
             "Grund": (e.get("grund") or "")
@@ -1581,13 +1584,14 @@ def _dialog_forensik() -> None:
     for r in results:
         if r.id in bekannte or not r.forensik_vorhanden:
             continue
+        r.refresh_efficiency()
         zeilen.append({
             "Geprüft": "✓ ja", "Signal": r.name, "ID": r.id,
             "Quelle": r.quelle or "mql5", "Ampel": r.ampel, "Score": r.score,
             "Max-Drawdown % (Equity)": r.max_drawdown_equity_pct,
             "Trading-DD % (geschlossen)": r.trading_dd_pct,
             "Equity-Messung": r.equity_messung_status,
-            "Ertrag/M": getattr(r, "ertrag_monat_pct_forensik", None),
+            "Gewinn %/Monat": getattr(r, "ertrag_monat_geom_pct", None),
             "RetDD": getattr(r, "retdd_monat", None),
             "Grund": "Aus dem Datenbank-Stand (kein Eintrag in der gespeicherten "
                      "Auswahl dieses Laufs).",
@@ -1610,9 +1614,9 @@ def _dialog_forensik() -> None:
                "aus belastbaren Kurs- oder Monitor-Messungen; ohne diese "
                "bleibt das Feld leer. Trading-DD berücksichtigt nur "
                "geschlossene Trades. Die Schranke verwendet zusätzlich "
-               "die Plattform-Angaben. Ertrag/M ist der lineare Forensik-Ertrag "
-               "in Prozent; RetDD nutzt den geometrischen Monatsertrag je "
-               "Prozent maximalem Drawdown.")
+               "die Plattform-Angaben. Gewinn %/Monat ist die eigene geometrische "
+               "Monatsrendite; RetDD teilt sie durch den gemessenen maximalen "
+               "Equity-Drawdown. Geschlossener Drawdown dient nicht als Nenner.")
     probleme = [r for r in results if r.fehler]
     if probleme:
         st.warning(f"{len(probleme)} Signal(e) mit Fehler — Details auf der "
@@ -1689,6 +1693,8 @@ def _dialog_portfolio() -> None:
         except Exception:
             basis = []
     if basis:
+        for r in basis:
+            r.refresh_efficiency()
         st.caption("Eingeflossen sind die 🟢/🟡-Signale des Laufs (Datenbasis "
                    "der KI-Zusammenfassung):")
         st.dataframe([{"Signal": r.name, "Quelle": r.quelle or "mql5",

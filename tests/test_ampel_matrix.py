@@ -15,7 +15,7 @@ ROOT = __import__("pathlib").Path(__file__).resolve().parents[1]
 
 
 def _result(**kwargs) -> pipeline.ScanResult:
-    """Vollstaendig grunes Referenzsignal; einzelne Felder ueberschreibbar."""
+    """Referenzsignal; für RetDD muss eine eigene Equity-Messung vorliegen."""
     base = dict(
         id=111111, name="Mustersignal", dd_equity_pct=3.8, trading_dd_pct=4.57,
         martingale_flag=False, martingale_evidenz=[], stop_evidence="direct",
@@ -24,8 +24,8 @@ def _result(**kwargs) -> pipeline.ScanResult:
         max_verlustserie=7, verlustserie_usd=-120.0, forensik_vorhanden=True,
         shock_pct_max=17.5, shock_pct_peak_time="2026-08-19 16:12:32",
         shock_pct_peak_account=1966.84,  # Kontostand in USD am Peak (kein %!)
-        # RetDD (Nutzer 01.10.): Referenz 21,5 %/M bei 8,11 % DD = 2.65/M
-        ertrag_monat_pct_forensik=21.5, retdd_monat=2.65, retdd_jahr=31.8,
+        ertrag_monat_pct_forensik=21.5, ertrag_monat_geom_pct=21.5,
+        cagr_jahr_pct=301.0,
     )
     base.update(kwargs)
     return pipeline.ScanResult(**base)
@@ -38,7 +38,7 @@ def _matrix(result, settings=None):
 # ------------------------------------------------------------ Kriterium fuer Kriterium
 
 def test_referenzsignal_ist_durchweg_gruen():
-    matrix = _matrix(_result())
+    matrix = _matrix(_result(equity_dd_rekonstruiert_pct=8.11))
     assert [matrix[k.key].ampel for k in KRITERIEN] == [GRUEN] * len(KRITERIEN)
 
 
@@ -83,15 +83,12 @@ def test_stop_nachweis_stufen():
 
 
 def test_ertrag_grenzwerte():
-    # Forensik-Wert nullen, damit der variierte Plattformwert greift
-    f = lambda wert: _matrix(_result(ertrag_monat_pct=wert,
-                                     ertrag_monat_pct_forensik=None))["ertrag"].ampel
+    f = lambda wert: _matrix(_result(ertrag_monat_geom_pct=wert))["ertrag"].ampel
     assert f(5.0) == GRUEN      # Schwelle ist inklusiv
     assert f(4.99) == GELB
     assert f(0.0) == GELB
     assert f(-1.2) == ORANGE
-    assert _matrix(_result(ertrag_monat_pct=None,
-                           ertrag_monat_pct_forensik=None))["ertrag"].ampel == KEINE_DATEN
+    assert f(None) == KEINE_DATEN  # gute Plattform-/lineare Werte helfen nicht
 
 
 def test_score_grenzwerte():
@@ -148,7 +145,7 @@ def test_eigene_grenzwerte_aus_settings():
     settings = {"schranke_eq_dd_pct": 20.0, "min_ertrag_pct_monat": 15.0}
     matrix = _matrix(_result(dd_equity_pct=22.0, trading_dd_pct=None,
                              ertrag_monat_pct=12.0,
-                             ertrag_monat_pct_forensik=None), settings)
+                             ertrag_monat_geom_pct=12.0), settings)
     assert matrix["dd_schranke"].ampel == ROT      # 22 > 20
     assert matrix["ertrag"].ampel == GELB          # 12 < 15
     assert "20 %" in matrix["dd_schranke"].detail
@@ -162,6 +159,7 @@ def test_matrix_payload_ist_json_fest_und_traegt_grenzen():
     text = json.dumps(payload, ensure_ascii=False)
     wieder = json.loads(text)
     assert wieder["grenzen"]["schranke_eq_dd_pct"] == 25.0
+    assert wieder["grenzen"]["min_retdd_monat"] == 1.0
     assert set(wieder["kriterien"]) == {k.key for k in KRITERIEN}
     assert wieder["kriterien"]["stop"]["ampel"] == GRUEN
     assert "Orderbuch" in wieder["kriterien"]["stop"]["detail"]
@@ -329,12 +327,13 @@ def test_dd_zelle_ohne_reko_unveraendert():
 
 # ------------- Intensiv-Review 29./30.09.2026: B2 Ertrag auf Forensik-Basis --
 
-def test_ertrag_zelle_massgeblich_ist_forensik_basis():
+def test_ertrag_zelle_massgeblich_ist_geometrische_rendite():
     """B2: Plattform meldet 6,46 %/Monat, die eigene Kurve auf der DD-Basis
     liefert 0,5 %/Monat (Fall SafeGold) — die Zelle muss GELB zeigen und
     beide Werte im Detail nennen."""
     matrix = _matrix(_result(ertrag_monat_pct=6.46,
-                             ertrag_monat_pct_forensik=0.5))
+                             ertrag_monat_pct_forensik=8.0,
+                             ertrag_monat_geom_pct=0.5))
     assert matrix["ertrag"].ampel == GELB
     assert "0,5 % < 5 %" in matrix["ertrag"].kurz
     assert "Plattform meldet 6,5 %/Monat" in matrix["ertrag"].detail
@@ -345,15 +344,66 @@ def test_ertrag_zelle_forensik_ueber_schwelle_bleibt_gruen():
     """Forensik-Basis über der Schwelle bleibt GRÜN (Fall Gold Spike:
     8,6 %/Monat auf eigener Basis)."""
     matrix = _matrix(_result(ertrag_monat_pct=24.54,
-                             ertrag_monat_pct_forensik=8.6))
+                             ertrag_monat_pct_forensik=12.0,
+                             ertrag_monat_geom_pct=8.6))
     assert matrix["ertrag"].ampel == GRUEN
     assert "8,6 %/Monat" in matrix["ertrag"].kurz
 
 
-def test_ertrag_zelle_ohne_forensikwert_fallback_plattform():
-    """Ohne Forensik-Kurve (keine Trades) entscheidet weiterhin der
-    Plattformwert — klar als Selbstauskunft gekennzeichnet."""
+def test_ertrag_zelle_ohne_geometrische_rendite_kein_fallback():
+    """Lineare und gemeldete Rendite ersetzen die Auswahlbasis nicht."""
     matrix = _matrix(_result(ertrag_monat_pct=21.5,
-                             ertrag_monat_pct_forensik=None))
-    assert matrix["ertrag"].ampel == GRUEN
-    assert "Selbstauskunft" in matrix["ertrag"].detail
+                             ertrag_monat_pct_forensik=21.5,
+                             ertrag_monat_geom_pct=None))
+    assert matrix["ertrag"].ampel == KEINE_DATEN
+    assert "ersetzen sie nicht" in matrix["ertrag"].detail
+
+
+@pytest.mark.parametrize("wert,farbe", [
+    (1.0, GRUEN), (0.9995, GELB), (0.5, GELB), (0.4999, ORANGE),
+])
+def test_retdd_grenzen_auf_gemessener_equity_ohne_rundung(wert, farbe):
+    r = _result(ertrag_monat_geom_pct=10 * wert,
+                equity_dd_rekonstruiert_pct=10.0,
+                dd_equity_pct=20.0, dd_balance_pct=18.0,
+                trading_dd_pct=0.1, retdd_monat=999.0)
+    zelle = _matrix(r)["retdd"]
+    assert zelle.ampel == farbe
+    assert r.retdd_monat == pytest.approx(wert)
+    assert "gemessener Max-Equity-Drawdown 10,00 %" in zelle.detail
+    assert "Kurse (H1, virtuelle Trading-Equity)" in zelle.detail
+    assert "Calmar/Jahr" in zelle.detail
+
+
+def test_retdd_ohne_eigene_equity_loescht_alten_quotienten():
+    r = _result(retdd_monat=9.0, retdd_jahr=108.0,
+                dd_equity_pct=1.0, dd_balance_pct=2.0, trading_dd_pct=0.1)
+    zelle = _matrix(r)["retdd"]
+    assert zelle.ampel == KEINE_DATEN
+    assert r.retdd_monat is None and r.retdd_jahr is None
+    assert "kein Ersatznenner" in zelle.detail
+
+
+def test_retdd_waehlt_hoechste_belastbare_floating_messung():
+    r = _result(ertrag_monat_geom_pct=15.0, cagr_jahr_pct=120.0,
+                equity_dd_rekonstruiert_pct=10.0,
+                monitor_trade_eq_dd_pct=20.0, trading_dd_pct=1.0)
+    zelle = _matrix(r)["retdd"]
+    assert zelle.ampel == GELB
+    assert r.retdd_monat == 0.75 and r.retdd_jahr == 6.0
+    assert r.retdd_jahr != r.retdd_monat * 12
+
+
+def test_veraltete_rendite_und_equity_erlauben_keine_gruene_zelle():
+    r = _result(forensik_stale=True, equity_dd_rekonstruiert_pct=1.0,
+                retdd_monat=999.0)
+    matrix = _matrix(r)
+    assert matrix["ertrag"].ampel == KEINE_DATEN
+    assert matrix["retdd"].ampel == KEINE_DATEN
+    assert "veraltet" in matrix["retdd"].detail
+
+
+def test_retdd_null_drawdown_ist_undefiniert_statt_unendlich():
+    zelle = _matrix(_result(equity_dd_rekonstruiert_pct=0.0))["retdd"]
+    assert zelle.ampel == KEINE_DATEN
+    assert "nicht definiert" in zelle.detail

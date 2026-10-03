@@ -106,6 +106,7 @@ def _signal(result_id: int, name: str, **kwargs) -> "object":
         # vorgeschriebene Effizienz: 21,5 %/Monat / 5 % DD = 4,3.
         ertrag_monat_pct_forensik=21.5, ertrag_monat_geom_pct=21.5,
         retdd_monat=4.3,
+        equity_dd_rekonstruiert_pct=5.0,
         dd_equity_pct=4.2, dd_balance_pct=5.0, broker_server="Test-Live",
         symbole="XAUUSD", score=3.9, martingale_flag=False,
         stop_evidence="direct", stop_nachweis="Orderbuch: 383/383 mit SL",
@@ -159,7 +160,7 @@ def test_gesamtbericht_ausschluss_bleibt_ablehnung(glm_client, monkeypatch):
 
 # ------------------------------ Test 2: Gelbes Urteil nie EMPFEHLUNG (01.10.)
 
-def test_gesamtbericht_gelb_nie_empfehlung(glm_client):
+def test_gesamtbericht_gelb_nie_empfehlung(glm_client, tmp_path):
     """Regelstand 01.10.2026: Fehlender Stop-Nachweis ist NEUTRAL (SL-Regel),
     ein Kandidat ohne Stop-Evidenz kann daher 🟢 sein — der alte Test erwartete
     hier noch 🟡 und war seit der SL-Neutralität veraltet. Die unverändert
@@ -176,6 +177,7 @@ def test_gesamtbericht_gelb_nie_empfehlung(glm_client):
     prompt = prompt_fill.build_gesamtbericht_prompt(
         result, pipeline._kriterien_text({}), _STUB_TRADE, _STUB_RISIKO)
     bericht = glm_client.chat(prompt, stufe=2, temperature=0.2, max_tokens=12288)
+    (tmp_path / "gesamtbericht_gelb.md").write_text(bericht, encoding="utf-8")
     assert _urteil(bericht) != "EMPFEHLUNG", \
         f"Gelbes Urteil darf nie EMPFEHLUNG stehen:\n{bericht[:800]}"
 

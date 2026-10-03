@@ -238,6 +238,7 @@ def test_schranke_nimmt_hoechsten_plattform_drawdown():
                                  dd_equity_pct=3.8, dd_balance_pct=8.11,
                                  trading_dd_pct=4.57, forensik_vorhanden=True,
                                  score=3.9, ertrag_monat_pct=15.9,
+                                 ertrag_monat_geom_pct=7, equity_dd_rekonstruiert_pct=5,
                                  stop_evidence="direct",
                                  # Nutzer-Regel 02.10.: Grün braucht RetDD >= 1,0
                                  retdd_monat=1.4, retdd_jahr=8.2)

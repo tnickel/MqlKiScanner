@@ -102,6 +102,7 @@ def test_station_details_read_scan_results_from_current_session(station):
     result = pipeline.ScanResult(
         id=1001, name="Aktuelles Signal", ampel="🟡", forensik_vorhanden=True,
         score=67.0, trading_dd_pct=12.5, ertrag_monat_pct_forensik=8.0,
+        ertrag_monat_geom_pct=6.4, retdd_monat=99,
         equity_dd_rekonstruiert_pct=18.5,
         trade_analyse="Trade-Bericht", risiko_analyse="Risiko-Bericht",
         gesamtbericht="Gesamt-Bericht", kurzfassung="Sitzungsbefund",
@@ -115,7 +116,8 @@ def test_station_details_read_scan_results_from_current_session(station):
     if station == "forensik":
         assert table.loc[0, "Max-Drawdown % (Equity)"] == 18.5
         assert table.loc[0, "Trading-DD % (geschlossen)"] == 12.5
-        assert table.loc[0, "Ertrag/M"] == 8.0
+        assert table.loc[0, "Gewinn %/Monat"] == 6.4
+        assert table.loc[0, "RetDD"] == pytest.approx(6.4 / 18.5)
     else:
         assert table.loc[0, "Trade-Analyse"] == "✓"
         assert table.loc[0, "Risiko-Analyse"] == "✓"

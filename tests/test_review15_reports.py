@@ -30,6 +30,7 @@ def live_reports(tmp_path, monkeypatch):
     path.write_text("\n".join(rows) + "\n", encoding="utf-8")
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", Mock(return_value={
         "dd_equity_pct": 5, "monthly_growth_pct": 10, "weeks": 110,
+        "monitor_trade_eq_dd_pct": 5,
         "profit_factor": 2, "broker_server": "Example",
     }))
     monkeypatch.setattr(pipeline.exporter, "export_positions",

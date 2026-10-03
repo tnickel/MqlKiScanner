@@ -151,16 +151,17 @@ class ScanResult:
     ertrag_monat_pct_forensik: float | None = None
     # Nutzer-Wunsch 01.10.2026: Rendite-Risiko-EFFIZIENZ (RetDD) —
     # niedriges Risiko allein bringt nichts ohne Gewinn. RetDD =
-    # Forensik-Ertrag je Prozent Drawdown-Maximum (monatlich; ×12
-    # annualisiert, Calmar-artig). Wer die Projektkriterien exakt erfüllt
-    # (5 %/M bei 30 % DD), steht bei 0,167 — alles darunter ist ineffizient.
+    # Eigene geometrische Monatsrendite je Prozent GEMESSENEM Equity-DD.
+    # Niemals Trading-/Balance-DD als Ersatz. Mindestqualität ist 1,0;
+    # jährlicher Wert = Jahres-CAGR / gemessener Equity-DD (nicht ×12).
     retdd_monat: float | None = None
     retdd_jahr: float | None = None
-    # Nutzer-Frage 01.10. (Zinseszins): geometrisches Monatsmittel der
-    # Monatsrenditen (wachsender Kontostand als Nenner — NICHT die fixe
-    # Startbasis) und daraus der echte Calmar (CAGR ÷ MaxDD).
+    # Geometrisches Monatsmittel auf der gesamten Export-Zeitspanne;
+    # Jahreswert = virtueller CAGR / gemessener Equity-DD. Bei abweichenden
+    # Kapitalbasen kein belegter kapitalflussneutraler Konto-Calmar.
     ertrag_monat_geom_pct: float | None = None
     cagr_jahr_pct: float | None = None
+    effizienz_befund: dict = field(default_factory=dict)
     pf: float | None = None
     dd_equity_pct: float | None = None     # Plattform "By Equity"
     dd_balance_pct: float | None = None    # Plattform "By Balance"
@@ -246,6 +247,15 @@ class ScanResult:
     persisted_this_run: bool = False  # Mindestens ein Versuch dieses analyze_candidate-Aufrufs gespeichert.
     ampel_wechsel: dict | None = None  # Protokollierter Wechsel gegen den letzten Chronik-Eintrag (ampel_verlauf).
 
+    def _equity_messwerte(self) -> dict[str, float]:
+        """Identische gültige Quellen für den Maximalwert und dessen Status."""
+        kurse = None if self.forensik_stale else self.equity_dd_rekonstruiert_pct
+        quellen = {"Kurse (H1, virtuelle Trading-Equity)": kurse,
+                   "Monitor": self.monitor_trade_eq_dd_pct}
+        return {quelle: float(wert) for quelle, wert in quellen.items()
+                if isinstance(wert, (int, float)) and not isinstance(wert, bool)
+                and math.isfinite(wert) and wert >= 0}
+
     @property
     def max_drawdown_equity_pct(self) -> float | None:
         """Gemessene Equity inklusive Floating; fehlend bleibt unbekannt.
@@ -253,19 +263,58 @@ class ScanResult:
         Plattformangaben und geschlossene Trades ersetzen keine Equity-
         Messung. Der Kurswert ist nur bei verlässlicher Rekonstruktion gesetzt.
         """
-        kurse = None if self.forensik_stale else self.equity_dd_rekonstruiert_pct
-        werte = [w for w in (kurse,
-                             self.monitor_trade_eq_dd_pct) if w is not None]
-        return max(werte) if werte else None
+        return max(self._equity_messwerte().values(), default=None)
+
+    def refresh_efficiency(self) -> None:
+        """Eine RetDD-Formel für Scan, DB, Tabelle, Auswahl und KI.
+
+        Fehlende/veraltete Equity oder Rendite bleibt unbekannt. Gerundet
+        wird erst in der Anzeige, damit 0,999 nicht als >=1 durchgeht.
+        """
+        def endlich(wert):
+            return (isinstance(wert, (int, float)) and not isinstance(wert, bool)
+                    and math.isfinite(wert))
+
+        if self.forensik_stale or not endlich(self.ertrag_monat_geom_pct):
+            self.ertrag_monat_geom_pct = None
+        if self.forensik_stale or not endlich(self.cagr_jahr_pct):
+            self.cagr_jahr_pct = None
+        dd = self.max_drawdown_equity_pct
+        self.retdd_monat = (self.ertrag_monat_geom_pct / dd
+                            if self.ertrag_monat_geom_pct is not None and dd
+                            else None)
+        self.retdd_jahr = (self.cagr_jahr_pct / dd
+                           if self.cagr_jahr_pct is not None and dd else None)
+        for key in ("retdd_monat", "retdd_jahr"):
+            if not endlich(getattr(self, key)):
+                setattr(self, key, None)
+        status = ("veraltet" if self.forensik_stale else
+                  "rendite_nicht_berechenbar" if self.ertrag_monat_geom_pct is None else
+                  "ohne_equity_dd" if dd is None else
+                  "equity_dd_null" if dd == 0 else
+                  "retdd_nicht_berechenbar" if self.retdd_monat is None else "ok")
+        self.effizienz_befund = {
+            **self.effizienz_befund,
+            "effizienz_status": status,
+            "dd_max_equity_pct": dd,
+            "ertrag_monat_geom_pct": self.ertrag_monat_geom_pct,
+            "cagr_jahr_pct": self.cagr_jahr_pct,
+            "retdd_monat": self.retdd_monat,
+            "retdd_jahr": self.retdd_jahr,
+            "retdd_basis": "gemessener_max_equity_drawdown_inkl_floating",
+            "equity_messung": self.equity_messung_status,
+            "formel_monat": "ertrag_monat_geom_pct / dd_max_equity_pct",
+            "formel_jahr": "cagr_jahr_pct / dd_max_equity_pct",
+            "vergleichbarkeit": (
+                "Rendite auf virtueller Trade-Netto-Kurve; Kurs-Equity ebenfalls virtuell. "
+                "Monitor-Basis und Zeitraum können abweichen; keine belegte echte "
+                "Konto-Effizienz bei abweichenden Kapitalflüssen/Zeiträumen."),
+        }
 
     @property
     def equity_messung_status(self) -> str:
-        if self.max_drawdown_equity_pct is not None:
-            quellen = []
-            if self.equity_dd_rekonstruiert_pct is not None and not self.forensik_stale:
-                quellen.append("Kurse (H1, virtuelle Trading-Equity)")
-            if self.monitor_trade_eq_dd_pct is not None:
-                quellen.append("Monitor")
+        quellen = self._equity_messwerte()
+        if quellen:
             return "Gemessen: " + " / ".join(quellen)
         if self.forensik_stale and (self.equity_rekon_status
                                    or self.equity_dd_rekonstruiert_pct is not None):
@@ -276,6 +325,7 @@ class ScanResult:
         return "Keine belastbare Equity-Messung vorhanden"
 
     def to_row(self) -> dict:
+        self.refresh_efficiency()
         return {
             "Ampel": self.ampel, "ID": self.id, "Name": self.name,
             "Platform": self.platform, "Quelle": self.quelle or "mql5",
@@ -288,6 +338,8 @@ class ScanResult:
             "Drawdown % (Plattform)": self.dd_equity_pct,
             "Balance-DD % (Plattform)": self.dd_balance_pct,
             "Max-Drawdown %": self.max_drawdown_equity_pct,
+            "Gewinn %/Monat": self.ertrag_monat_geom_pct,
+            "RetDD": self.retdd_monat,
             "Trading-DD % (geschlossen)": self.trading_dd_pct,
             "Equity-Messung": self.equity_messung_status,
             "Winrate %": self.winrate_pct,
@@ -380,6 +432,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             cagr_jahr_pct=f.get("cagr_jahr_pct"),
             retdd_monat=f.get("retdd_monat"),
             retdd_jahr=f.get("retdd_jahr"),
+            effizienz_befund=f.get("effizienz_befund") or {},
             max_verlustserie=f.get("max_verlustserie"),
             verlustserie_usd=f.get("verlustserie_usd"),
             peak_positionen=peak.get("positionen", f.get("peak_positionen")),
@@ -400,7 +453,8 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             # Tatsächlich verwendete Kapitalbasis aus dem Forensik-Snapshot
             # (führt durch DB-Reload und Prompt-JSON; siehe ScanResult-Felder)
             equity_dd_rekonstruiert_pct=(f.get("equity_rekonstruktion") or {}).get(
-                "equity_dd_pct") if (f.get("equity_rekonstruktion") or {}).get(
+                "equity_dd_pct_raw", (f.get("equity_rekonstruktion") or {}).get(
+                    "equity_dd_pct")) if (f.get("equity_rekonstruktion") or {}).get(
                 "verlaesslich") else None,
             equity_dd_rekonstruiert_usd=(f.get("equity_rekonstruktion") or {}).get(
                 "equity_dd_usd") if (f.get("equity_rekonstruktion") or {}).get(
@@ -475,20 +529,27 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         if (res.equity_dd_rekonstruiert_pct is not None
                 and res.forensik_vorhanden and not res.fehler
                 and "Max-DD (Kurse)" not in (res.urteil or "")):
+            gmt_text = (f"GMT {res.equity_rekon_gmt_h:+d} h"
+                        if res.equity_rekon_gmt_h is not None else "GMT unbelegt")
             res.urteil = (res.urteil or "") + (
                 f" · Max-DD aus Kursen {res.equity_dd_rekonstruiert_pct} % "
-                f"(GMT {res.equity_rekon_gmt_h:+d} h)")
+                f"({gmt_text})")
         results.append(res)
     return results
 
 
 def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
-    """Risiko VOR Ertrag; Grün erfordert Forensik und belastbare Stop-Evidenz.
+    """Risiko VOR Ertrag; Grün erfordert Forensik, Gewinn und Equity-RetDD.
 
     Bewiesene rote Flags (Martingale-Signatur aus dem Trade-Muster) gelten
     auch bei sonst unvollständiger Forensik — Kapitalbasis braucht dafuer
     niemand. Alles andere bleibt ohne vollstaendige Batterie Vorprüfung.
     """
+    result.refresh_efficiency()
+    limit = float(settings.get("schranke_eq_dd_pct", 30.0))
+    result.schranke_verletzt = scoring.dd_maximum(
+            result.dd_equity_pct, result.dd_balance_pct, result.trading_dd_pct,
+            result.equity_dd_rekonstruiert_pct, result.monitor_trade_eq_dd_pct) > limit
     known = config.load_known_signals()
     excluded = {e["id"]: e for e in known.get("ausgeschlossen", [])}
     if result.id in excluded:
@@ -535,9 +596,10 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
             # B2 (Intensiv-Review): Grünt das Ertragskriterium, zählt die
             # EIGENE Kurve auf der Forensik-Kapitalbasis — die Plattformzahl
             # (fremde Basis) steht daneben, entscheidet aber nicht mehr.
-            ertrag_wert = (result.ertrag_monat_pct_forensik
-                           if result.ertrag_monat_pct_forensik is not None
-                           else result.ertrag_monat_pct)
+            ertrag_wert = result.ertrag_monat_geom_pct
+            if ertrag_wert is None:
+                return "🟡", (f"Forensik ok ({stop_kontext}), aber eigene geometrische "
+                              "Monatsrendite unbelegt — ohne Gewinnnachweis kein Kandidat")
             if (ertrag_wert or 0) >= min_return:
                 # Nutzer-Regel 02.10. („retdd=1 minimum — RetDD ist wichtig
                 # und gehört in die Berechnung"): Grün erfordert die
@@ -546,7 +608,7 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
                 # oder unbelegte Effizienz ist keine Empfehlungsgrundlage).
                 if result.retdd_monat is None:
                     return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), "
-                                  "aber RetDD unbelegt (keine Monatskurve) — "
+                                  "aber RetDD unbelegt (keine positive gemessene Equity-DD-Basis) — "
                                   "ohne Effizienznachweis kein Kandidat "
                                   "(Nutzer-Regel 02.10.)")
                 if result.retdd_monat < 1.0:
@@ -577,9 +639,17 @@ def _kriterien_text(settings: dict) -> str:
             "(dessen Kapitalbasis kann von der Scanner-Basis abweichen — "
             "über 100 % überzeichnet absolut)\n"
             f"- Mindest-Ertrag: {settings.get('min_ertrag_pct_monat', 5)} %/Monat — "
-            "maßgeblich ist der Ertrag auf der FORENSIK-Kapitalbasis "
-            "(ertrag_monat_pct_forensik); der Plattformwert ist "
-            "Zusatzinformation\n"
+            "maßgeblich ist die eigene geometrische Monatsrendite "
+            "(ertrag_monat_geom_pct) auf der tatsächlichen Zeitspanne des Exports; "
+            "linearer Startbasis-Ertrag und Plattformwert sind Zusatzinformationen\n"
+            "- Mindest-RetDD: 1,0 pro Monat. RetDD = eigene geometrische Gewinn-%/Monat "
+            "/ gemessener Max-Equity-Drawdown in %. Niemals geschlossenen Trading-DD, "
+            "Balance-DD oder Plattform-DD als Ersatz verwenden. Fehlende positive "
+            "Equity-Messung = RetDD unbekannt, kein Grün. Jahreswert = CAGR / "
+            "gemessener Equity-DD, nicht Monatswert mal zwölf\n"
+            f"- Listen-Vorfilter: mindestens {settings.get('min_wochen', 26)} Wochen "
+            f"und {settings.get('min_abonnenten', 0)} Abonnenten; Fix-IDs umgehen diese "
+            "Vorfilter, aber keine Bewertungsregel. Abonnenten sind kein Qualitätsbeweis\n"
                         "- Risiko VOR Ertrag. Bewiesener Stop-Loss (Orderbuch oder eindeutige "
             "Cluster-Signatur) entlastet; ein FEHLENDER Nachweis ist neutral - "
             "kein Malus, keine Sperre, kein Abwertungsgrund (bindende Nutzer-Regel "
@@ -593,6 +663,7 @@ def _kriterien_text(settings: dict) -> str:
 
 def _kandidat_json(r: ScanResult) -> str:
     """Kandidaten-Kennzahlen als JSON (LLM-Payload, AGENTS.md Design-Regel 1)."""
+    r.refresh_efficiency()
     return json.dumps({
         "id": r.id, "name": r.name, "platform": r.platform,
         "autor": r.autor, "url": r.url,
@@ -603,16 +674,18 @@ def _kandidat_json(r: ScanResult) -> str:
         # K1: Plattformwert = Selbstauskunft auf EIGENER Basis; der
         # Forensikwert ist der comparable Maßstab (s. Definition im
         # Forensik-JSON). Kein Widerspruch, sondern zwei Basen.
-        "ertrag_hinweis": "ertrag_monat_pct_forensik ist maßgeblich "
-                          "(siehe ertrag_forensik_definition im "
-                          "Forensik-JSON)",
-        # RetDD (Nutzer 01.10.): Ertrag je Prozent Drawdown — Effizienz,
-        # nicht nur absolutes Risiko. Projekt-Mindesteffizienz (5 %/M bei
-        # 30 % DD) = 0.167; ab 0.5 gilt ein Signal als effizient.
+        "ertrag_hinweis": "ertrag_monat_geom_pct (eigene geometrische Gewinn-%/Monat) "
+                          "ist maßgeblich; Plattform- und lineare Startbasis-Rendite "
+                          "sind Zusatzinformationen",
+        # Nutzer-Regel 03.10.: Gewinn und Effizienz auf gemessenem Equity-DD.
+        # Mindestqualität 1,0; Zahlen entstehen ausschließlich im Code.
         "retdd_monat": r.retdd_monat,
         "retdd_jahr": r.retdd_jahr,
         "ertrag_monat_geom_pct": r.ertrag_monat_geom_pct,
         "cagr_jahr_pct": r.cagr_jahr_pct,
+        "max_drawdown_equity_pct": r.max_drawdown_equity_pct,
+        "equity_messung_status": r.equity_messung_status,
+        "effizienz_befund": r.effizienz_befund,
         "pf": r.pf, "dd_equity_pct": r.dd_equity_pct,
         "dd_balance_pct": r.dd_balance_pct,
         "broker_server": r.broker_server,
@@ -625,6 +698,7 @@ def _kandidat_json(r: ScanResult) -> str:
 
 def _forensik_json(r: ScanResult) -> str:
     """Engine-Forensik als JSON (LLM-Payload, AGENTS.md Design-Regel 1)."""
+    r.refresh_efficiency()
     return json.dumps({
         "trading_dd": {"pct": r.trading_dd_pct, "usd": r.trading_dd_usd},
         "winrate_pct": r.winrate_pct,
@@ -681,17 +755,19 @@ def _forensik_json(r: ScanResult) -> str:
         # eine andere Basis nutzen.
         "ertrag_forensik_definition": (
             "linearer Durchschnitt: Summe Trade-Netto / Startkapital / Monate "
-            "seit erstem Trade; Basis identisch mit DD-/Schock-Rechnung"),
-        # RetDD (Nutzer 01.10.2026): Rendite-Risiko-EFFIZIENZ — niedriges
-        # Risiko ohne Gewinn reicht nicht. RetDD_monat = Forensik-Ertrag ÷
-        # DD-Maximum (beide in %, gleiche Basis); ×12 = annualisiert
-        # (Calmar-artig). Deutung: >= 0.5 effizient, 0.167 = exakte
-        # Projekt-Mindestkombination (5 %/M bei 30 % DD), darunter
-        # ineffizient trotz moeglicherweise grüner Einzelkriterien.
+            "seit erstem Trade; Zusatzinformation, kein Ertrags-Auswahlkriterium. "
+            "Maßgeblich ist die eigene geometrische Monatsrendite: "
+            "100 * ((Endkapital_virtuell / Startkapital) ** (1 / Dauer_Monate) - 1); "
+            "Dauer vom ersten Open bis letzten Close, Jahr 365,2425 Tage / 12 Monate"),
+        # RetDD = geometrische Monatsrendite / gemessener Equity-DD.
+        # Jahreswert nutzt CAGR; geschlossene Trades ersetzen nie Equity.
         "retdd_monat": r.retdd_monat,
         "retdd_jahr": r.retdd_jahr,
         "ertrag_monat_geom_pct": r.ertrag_monat_geom_pct,
         "cagr_jahr_pct": r.cagr_jahr_pct,
+        "max_drawdown_equity_pct": r.max_drawdown_equity_pct,
+        "equity_messung_status": r.equity_messung_status,
+        "effizienz_befund": r.effizienz_befund,
         # Nachgemessener Equity-DD aus Kursdaten (floating inklusive) — die KI
         # soll ihn als Messung deuten und gegen den gemeldeten Wert stellen.
         "equity_dd_rekonstruiert_pct": r.equity_dd_rekonstruiert_pct,
@@ -1320,7 +1396,8 @@ class ScanPipeline:
                     log(f"✓ {st['duplikate_entfernt']} exakte Duplikat-Zeilen "
                         "aus der Lieferung entfernt (Quelle lieferte doppelt).")
                 if reko.get("status") == "ok" and reko.get("verlaesslich"):
-                    res.equity_dd_rekonstruiert_pct = reko.get("equity_dd_pct")
+                    res.equity_dd_rekonstruiert_pct = reko.get(
+                        "equity_dd_pct_raw", reko.get("equity_dd_pct"))
                     res.equity_dd_rekonstruiert_usd = reko.get("equity_dd_usd")
                     res.equity_rekon_gmt_h = reko.get("gmt_offset_h")
                     log(f"✓ Equity-Rekonstruktion: Reko-EQ-DD {res.equity_dd_rekonstruiert_pct} % "
@@ -1373,14 +1450,13 @@ class ScanPipeline:
                 # B24-Fix (Lauf-Review 02.10.): RetDD-Effizienz WIRKLICH
                 # berechnen — Deklaration/Verbraucher existierten seit dem
                 # 01.10., die Zuweisung nie (0/97 Signale hatten Werte).
-                # Basis: dieselbe Kurve wie der Forensik-Ertrag; DD-Maximum
-                # über die EINE Definition (scoring.dd_maximum, F-12).
-                dd_max = scoring.dd_maximum(
-                    res.dd_equity_pct, res.dd_balance_pct, res.trading_dd_pct,
-                    res.equity_dd_rekonstruiert_pct, res.monitor_trade_eq_dd_pct)
+                # RetDD bekommt ausschließlich den gemessenen Equity-DD.
+                # Die konservative harte Schranke bleibt davon unabhängig.
+                dd_max = res.max_drawdown_equity_pct
                 eff = portfolio_statistik.effizienz_kennzahlen(
                     res.trades_path, startkapital, dd_max)
                 if eff:
+                    res.effizienz_befund = eff
                     res.ertrag_monat_geom_pct = eff["ertrag_monat_geom_pct"]
                     res.cagr_jahr_pct = eff["cagr_jahr_pct"]
                     res.retdd_monat = eff["retdd_monat"]
@@ -1431,6 +1507,7 @@ class ScanPipeline:
                 "cagr_jahr_pct": res.cagr_jahr_pct,
                 "retdd_monat": res.retdd_monat,
                 "retdd_jahr": res.retdd_jahr,
+                "effizienz_befund": res.effizienz_befund,
                 "pf": res.pf, "growth_pct": res.growth_pct,
                 "broker_server": res.broker_server,
                 # Expliziter Vollstaendigkeitsstatus (verhindert Gruen aus alter Forensik).
@@ -1487,6 +1564,7 @@ class ScanPipeline:
                     "cagr_jahr_pct": res.cagr_jahr_pct,
                     "retdd_monat": res.retdd_monat,
                     "retdd_jahr": res.retdd_jahr,
+                    "effizienz_befund": res.effizienz_befund,
                     "max_verlustserie": res.max_verlustserie,
                     "verlustserie_usd": res.verlustserie_usd,
                     "peak_exposure": {"positionen": res.peak_positionen,
@@ -1784,6 +1862,14 @@ class ScanPipeline:
             r.stop_nachweis = _stop_evidence_text(stops)
             r.stop_evidence = stops.get("stop_evidence")
             r.stop_befund = stops
+            r.kapitalbasis_verwendet_usd = fx["drawdown"].get("startkapital")
+            r.kapitalbasis_verwendet_quelle = fx["drawdown"].get("startkapital_quelle") or ""
+            eff = portfolio_statistik.effizienz_kennzahlen(
+                path, r.kapitalbasis_verwendet_usd, r.max_drawdown_equity_pct)
+            if eff:
+                r.ertrag_monat_geom_pct = eff["ertrag_monat_geom_pct"]
+                r.cagr_jahr_pct = eff["cagr_jahr_pct"]
+                r.effizienz_befund = eff
             ev = scoring.evaluate(
                 report, schranke_eq_dd_pct=settings.get("schranke_eq_dd_pct", 30.0))
             r.score = ev["score"]

@@ -455,6 +455,13 @@ with st.container(border=True):
                'einer belastbaren Nachmessung. Trading-DD zählt nur geschlossene '
                'Trades. Eine fehlende Equity-Messung bleibt leer; der Grund '
                'steht in „Equity-Messung“.')
+    settings = config.load_settings()
+    dd_limit = float(settings.get('schranke_eq_dd_pct', 30.0))
+    st.caption(f'Max-DD-Farbe: grün bis {0.8 * dd_limit:g} %, gelb bis '
+               f'{dd_limit:g} %, rot darüber, grau bei fehlender Messung. '
+               'Gewinn %/Monat = eigene geometrische Monatsrendite; '
+               'RetDD = Gewinn %/Monat ÷ gemessener Max-Drawdown %. '
+               'Ohne Gewinn oder positive Equity-DD-Messung bleibt RetDD leer.')
     show_fresh = fresh_ids if selected_run.startswith('Datenbank') or selected_run == 'Aktuelle Sitzung' else None
     if visible:
         signature = sha1((source_signature + repr([

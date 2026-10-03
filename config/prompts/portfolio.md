@@ -62,6 +62,26 @@ Signal nur nach den Maschinendaten.
 ## Entscheidungs-Kriterien des Nutzers
 {kriterien}
 
+## Rendite und RetDD (bindend)
+Uebernimm ausschliesslich die berechneten Codewerte. ertrag_monat_geom_pct
+ist die eigene geometrische Monatsrendite; linearer Startbasis-Ertrag und
+Plattformrendite sind nur Zusatzinformationen. retdd_monat verwendet als
+Nenner max_drawdown_equity_pct: den belastbar GEMESSENEN Max-Drawdown der
+Equity inklusive Floating aus Kursen/Monitor, niemals Plattform-, Balance-
+oder Trading-DD geschlossener Trades. retdd_jahr verwendet CAGR auf
+demselben Equity-DD (Calmar), NICHT retdd_monat mal zwoelf.
+Nenne equity_messung_status und die gelieferte Kapitalbasis, Zeitspanne und
+Abdeckung; H1-Schlusskurse erfassen keine Intrabar-Extrema. Eine virtuelle
+Kapitalbasis ist eine Modellannahme, keine Messung des echten Kontoverlaufs.
+Bei fehlenden/veralteten Werten: nicht berechenbar, KEINE eigene Division
+oder Ersatzrechnung. Nur Engine-Gruen und ALLE eingesetzten Nutzer-Kriterien
+erlauben eine Empfehlung: RetDD mindestens 1,0, geometrische Monatsrendite
+mindestens an der AKTUELL konfigurierten Ertragsschwelle, Risiko-Score unter
+5 sowie keine Ausschluss- oder harte Risikoregel. Die aktuelle Drawdown-
+Schranke und Ertragsschwelle stehen oben; keine festen Ersatzwerte verwenden.
+Gelb ist Beobachtung und erlaubt keine Empfehlung oder bedingte Aufwertung.
+Historische Rendite und RetDD sind keine Prognose.
+
 ## Portfolio-Statistik (Code-Befund — B20/B21, Intensiv-Review)
 {portfolio_statistik}
 
@@ -71,7 +91,9 @@ Bindende Zusatzregeln (K2/K3, Fremd-Review 01.10.):
   ausdruecklich benennen und begruenden, warum sie die Empfehlung nicht
   tragen — sonst darf das Signal nicht empfohlen werden. WATCHLIST-Berichte
   koennen nur mit benannten Bedingungen (z. B. Copy-Test, DD-Schwelle,
-  Frist) in den Mix.
+  Frist) in den Mix, sofern Engine-Gruen und ALLE aktuellen Nutzer-Kriterien
+  bereits erfuellt sind; Bedingungen ersetzen keine fehlende Rendite,
+  Equity-Messung oder Mindesteffizienz.
 - **SL-Kurzurteil-Verbot:** Begruende Ausschluesse NIE mit „0/x SL“ oder
   aehnlichen Nachweis-Nullen — das ist Datenverfuegbarkeit, kein Risiko.
   Nenne stattdessen die Verhaltens-Einschaetzung aus dem Einzelbericht
@@ -81,10 +103,11 @@ Bindende Zusatzregeln (K2/K3, Fremd-Review 01.10.):
   Verlust des Stop-Schutzes laut Verhaltensanalyse oder Schrankenverletzung.
 
 Bindende RetDD-Regel (Nutzer 01.10.2026):
-- Jede empfohlene Position nennt retdd_monat (Ertrag je Prozent
-  Drawdown). Priorisiere EFFIZIENZ über absolute Rendite: 6 %/M bei
-  2 % DD (RetDD 3,0) schlägt 20 %/M bei 25 % DD (RetDD 0,8).
-- Signale mit retdd_monat unter 1,0 werden NICHT empfohlen (Mindest-
+- Jede empfohlene Position nennt ertrag_monat_geom_pct, den gemessenen
+  max_drawdown_equity_pct und retdd_monat (Monatsrendite je Prozent
+  Equity-DD). Priorisiere gelieferte EFFIZIENZ über absolute Rendite;
+  rechne keine eigene Quote oder Ersatzkennzahl aus anderen DD-Werten.
+- Signale mit fehlendem retdd_monat oder einem Wert unter 1,0 werden NICHT empfohlen (Mindest-
   effizienz, Nutzer-Regel 02.10.: retdd=1 minimum) — niedriges Risiko
   ohne Gewinn und hohes Risiko ohne adäquate Bezahlung sind beide
   unattraktiv.
@@ -147,7 +170,9 @@ KEIN Signal als Ertragstraeger. Ein Signal mit Martingale-Flag oder verletzter
 Drawdown-Schranke wird nie aufgenommen. Die Engine-Ampel je Eintrag ist
 bindend: ⛔ = Ausgeschlossen-Liste (Grund im Feld "urteil"), 🔴 =
 Martingale-Signatur oder verletzte Schranke, 🟡 = Beobachtung, 🟢 =
-Kandidat. Signale mit ⛔ oder 🔴 werden NIE aufgenommen — nennt ihr
+Kandidat. Ausschliesslich 🟢-Signale mit ALLEN erfuellten aktuellen
+Nutzer-Kriterien werden aufgenommen und gewichtet; 🟡 und fehlende
+Messnachweise bleiben Beobachtung ohne Zuteilung. Signale mit ⛔ oder 🔴 werden NIE aufgenommen — nennt ihr
 Gesamtbericht ein weicheres Urteil (z. B. Watchlist) oder bessere
 Einzelwerte, aendert das nichts; bei Widerspruch zwischen Engine-Feldern
 (ampel, urteil, schranke_verletzt) und Berichtstext gilt das

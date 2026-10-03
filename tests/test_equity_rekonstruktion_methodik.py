@@ -44,6 +44,19 @@ def test_alle_gleichzeitig_offenen_positionen_werden_summiert():
     assert result["equity_dd_usd"] == 1500.0
 
 
+def test_verlaesslicher_eq_dd_bleibt_als_retdd_nenner_ungerundet():
+    result = er.rekonstruiere(
+        ParsedExport("", "positions", trades=[_trade()]),
+        kursdaten.FakeKursDaten({"XAUUSD": _bars([1998.9996, 2000, 2000])}),
+        startkapital=1000)
+    # 1 Lot Gold: -1,0004 USD Kursbewegung *100 =-100,04 USD.
+    assert result["verlaesslich"] is True
+    assert result["equity_dd_pct_raw"] == pytest.approx(10.004, abs=1e-10)
+    assert result["equity_dd_pct"] == 10.0  # Anzeige unveraendert.
+    assert 10.001 / result["equity_dd_pct_raw"] < 1.0
+    assert 10.001 / result["equity_dd_pct"] > 1.0
+
+
 def test_realisiert_enthält_auch_positionen_ohne_kurse():
     trades = [_trade(minute_close=370, profit=100) for _ in range(4)]
     trades.append(_trade("US100", minute_close=370, profit=-500))

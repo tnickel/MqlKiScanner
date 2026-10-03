@@ -94,6 +94,23 @@ alter Befunde. Review: `../waste/drawdown_2026-10-03/review.md`.
 
 ## Design-Regeln (aus der Reihe gelernt — Ursachen in doc/01)
 
+**Ertrag/RetDD (Nutzer-Regel 03.10.2026):** Tabelle zeigt eigene geometrische
+`Gewinn %/Monat` und `RetDD` neben dem farbigen gemessenen Max-Equity-DD.
+RetDD = geometrische Monatsrendite / gemessener Max-Equity-DD (valide
+H1-/Monitor-Messung, hoechste davon). NIEMALS geschlossene Trades,
+Balance-DD oder Plattform-Selbstauskunft als Ersatznenner. Ohne positive
+Equity-Messung bleibt RetDD unbekannt und kein Gruen. Gewinn bleibt bei
+fehlendem Equity-DD messbar. Monatsrendite aus ungerundetem End/Start und
+echter Zeitspanne erster Open bis letzter Close; Jahr 365,2425 Tage,
+Monat = Jahr/12. Leermonate nicht aus der Laufzeit herauskuerzen; Auswahl
+prueft ungerundete Werte (0,9995 ist NICHT >=1). Ertragskriterium jetzt
+eigene geometrische Rendite >= konfigurierte Monatsschwelle statt linearem
+B2-/Plattformwert; RetDD >=1 bleibt fest. Harte Risiko-Schranke weiterhin
+konservatives Maximum aller fuenf DD-Werte; guter RetDD hebt sie nie auf.
+KI erhaelt Codewerte, Zeit-/Kapitalbasis, Messstatus und aktuelle Kriterien;
+historische Rendite ist keine Prognose. Forensik-Version 9; alte Befunde
+neu scannen. Review im Archiv `../waste/retdd_equity_2026-10-03/`.
+
 1. **Code rechnet ALLE Zahlen; das LLM bekommt nur fertige Befunde als JSON**
    und formuliert/liefert Interpretation. LLM rechnet nie selbst
    (Halluzinationsrisiko bei Arithmetik). **Ausnahme (Nutzer-Wunsch, 20.09.2026):**

@@ -283,6 +283,8 @@ belegt daher keinen tickgenauen maximalen Broker-DD (KiraCat-Pruefung 03.10.).
   verlässlich").
 - **Still ohne Terminal:** Ohne laufendes MT5-Terminal (und ohne
   markt_start_erlauben) entfällt die Prüfung kommentarlos — kein Malus.
+  Seit 03.10. gilt zusätzlich: Ohne andere belastbare Monitor-Equity-Messung
+  bleibt dann RetDD unbekannt; fehlender Effizienznachweis erlaubt kein Grün.
 - Setting: `equity_rekonstruktion` (Default an). Terminal-Lebenszyklus wie
   beim Markt-Beobachter (portabler Selbststart, Beenden nach dem Lauf).
 - Urteil nennt „Reko-EQ-DD X % (aus Kursen, GMT +N h)"; KI-Forensik-JSON
@@ -326,8 +328,9 @@ Drei Regeländerungen aus dem End-to-End-Review des Ziellaufs
 2. **Ertrag/Monat auf der Forensik-Basis (B2).** Neu berechnet:
    `ertrag_monat_pct_forensik` = Σ Trade-Netto / Startkapital / Monate aus
    der EIGENEN Kurve — dieselbe Basis, gegen die DD und Schock gerechnet
-   werden. Dieses Kriterium ist maßgeblich für die Ertrags-Zelle und den
-   Grün-Weg; der Plattformwert (`ertrag_monat_pct`, fremde Kapitalbasis)
+   werden. Seit 03.10. bleibt dieser lineare Wert Zusatzinformation:
+   Ertrags-Zelle und Grün-Weg verwenden die geometrische Monatsrendite
+   (siehe unten); der Plattformwert (`ertrag_monat_pct`, fremde Kapitalbasis)
    bleibt als gekennzeichnete Selbstauskunft daneben.
 3. **Implizite Kapitalbasis vor der virtuellen Annahme (B3).** Ohne echtes
    Initial Deposit ist die erste Wahl jetzt Web-Balance − Σ Trade-Netto
@@ -335,3 +338,34 @@ Drei Regeländerungen aus dem End-to-End-Review des Ziellaufs
    die starre 10.000-USD-Annahme (`virtuelle_annahme`) ist nur noch letzter
    Fallback. Der Cent-Abgleich überspringt die implizite Basis (sie ist per
    Konstruktion aus der Balance abgeleitet — der Abgleich wäre tautologisch).
+
+### Gewinn und RetDD auf gemessener Equity (03.10.2026)
+
+`Gewinn %/Monat` ist die eigene geometrische Rendite der virtuellen
+Trade-Netto-Kurve: `100 * ((Endkapital / Startkapital)^(1 / Monate) - 1)`.
+Die Zeitspanne reicht vom ersten Open bis zum letzten Close; ein Jahr hat
+365,2425 Tage und ein Monat 1/12 davon. Monate ohne Abschlüsse bleiben
+enthalten. Netto und Bewertungswerte werden vor der Auswahl nicht gerundet.
+Spätere Kapitalflüsse sind nicht Teil dieser virtuellen Renditebasis.
+
+`RetDD = Gewinn %/Monat / gemessener Max-Equity-DD %`. Der Nenner ist
+das Maximum der validen eigenen Kursmessung und Monitor-Zweitmessung,
+genau wie in der Max-Drawdown-Spalte. Geschlossene Trading-DDs, Balance-DD
+und Plattform-Selbstauskünfte werden niemals als Ersatz verwendet.
+Fehlender oder nullprozentiger Equity-DD ergibt keinen Quotienten;
+fehlende/veraltete Rendite ebenfalls nicht. Gewinn kann ohne Equity-DD
+trotzdem angezeigt werden. `RetDD/Jahr = CAGR / gemessener Equity-DD`,
+nicht zwölfmal der Monatswert.
+
+Grün erfordert weiterhin die bestandene Forensik, Risiko-Score <5 und
+alle harten Risikoregeln; zusätzlich eigene geometrische Monatsrendite
+>= konfigurierte Ertragsschwelle und RetDD >=1. Unbekannter RetDD bedeutet
+kein Grün. Das konservative Fünffach-Maximum der harten DD-Schranke bleibt
+unverändert: Eine rote Risikoschranke kann nicht durch hohen Gewinn
+kompensiert werden. Die KI bekommt dieselben Werte, Formeln, Messgrenzen
+und konfigurierten Kriterien; sie darf sie nicht neu berechnen/überstimmen.
+
+Bei abweichenden Kapitalbasen oder Zeitfenstern von Monitor-DD und eigener
+Rendite ist der Quotient kein belegter kapitalflussneutraler Konto-Calmar.
+Historische Effizienz ist keine Prognose. Forensik-Version 9 erzwingt
+Neuberechnung alter Befunde.

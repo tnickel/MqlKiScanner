@@ -148,3 +148,23 @@ def test_bericht_parse_urteil_und_abschnitt():
     assert urteil(gemischt) == "ABLEHNUNG"
     ohne_header = "Vorstufe: keine Empfehlung.\nUrteil: Watchlist. Grund X."
     assert urteil(ohne_header) == "WATCHLIST"
+
+
+def test_bericht_parse_ignoriert_verneinte_empfehlung_im_urteil():
+    from bericht_parse import urteil
+    bericht = "## 5. Urteil\n\nKeine EMPFEHLUNG: Ertrag zu niedrig. WATCHLIST."
+    assert urteil(bericht) == "WATCHLIST"
+
+
+def test_bericht_parse_liest_urteil_aus_der_ueberschrift():
+    from bericht_parse import urteil
+    bericht = "## 5. Urteil: WATCHLIST\n\nKeine EMPFEHLUNG: RetDD unter 1."
+    assert urteil(bericht) == "WATCHLIST"
+
+
+def test_bericht_parse_deklariertes_urteil_hat_vorrang_vor_begruendung():
+    from bericht_parse import urteil
+    bericht = ("## Urteil\n\nKein Kandidat, keine harte Ablehnung. "
+               "Aus Gelb wird nie eine Empfehlung.\n\nUrteil: **WATCHLIST**.\n"
+               "## Bedingungen\nErtrag verbessern.")
+    assert urteil(bericht) == "WATCHLIST"

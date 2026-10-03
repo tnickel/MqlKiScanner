@@ -1,0 +1,166 @@
+"""RetDD und Auswahl verwenden gemessene Equity, niemals geschlossenen DD."""
+import json
+from dataclasses import replace
+
+import pytest
+
+from mqlkiscanner import db, pipeline
+from mqlkiscanner.analysis_version import FORENSICS_VERSION
+
+
+def _result(**kwargs):
+    values = dict(id=900009, name="Equity-Muster", forensik_vorhanden=True,
+                  score=2.0, martingale_flag=False, stop_evidence="none",
+                  ertrag_monat_geom_pct=12.0, cagr_jahr_pct=120.0,
+                  equity_dd_rekonstruiert_pct=6.0,
+                  trading_dd_pct=0.1, dd_balance_pct=10.0, dd_equity_pct=8.0,
+                  retdd_monat=999.0)
+    values.update(kwargs)
+    return pipeline.ScanResult(**values)
+
+
+def test_retdd_neuberechnung_fuer_tabelle_prompt_und_auswahl_einheitlich():
+    result = _result()
+    assert result.to_row()["RetDD"] == 2.0
+    assert result.to_row()["Gewinn %/Monat"] == 12.0
+    assert pipeline.ampel_for(result, {})[0] == "🟢"
+    for builder in (pipeline._kandidat_json, pipeline._forensik_json):
+        payload = json.loads(builder(result))
+        assert payload["retdd_monat"] == 2.0
+        assert payload["retdd_jahr"] == 20.0
+        assert payload["max_drawdown_equity_pct"] == 6.0
+        assert payload["equity_messung_status"] == result.equity_messung_status
+        assert payload["effizienz_befund"]["dd_max_equity_pct"] == 6.0
+
+
+@pytest.mark.parametrize("dd", [None, 0, float("nan"), float("inf"), -1])
+def test_kein_geschlossener_oder_plattform_fallback_bei_fehlender_equity(dd):
+    result = _result(equity_dd_rekonstruiert_pct=dd)
+    assert result.to_row()["RetDD"] is None
+    assert result.to_row()["Gewinn %/Monat"] == 12
+    assert pipeline.ampel_for(result, {})[0] != "🟢"
+
+
+def test_monitor_eq_dd_zweitmessung_ist_nennermax():
+    result = _result(monitor_trade_eq_dd_pct=20.0)
+    assert result.to_row()["RetDD"] == .6
+    assert pipeline.ampel_for(result, {})[0] == "🟡"
+
+
+def test_harte_schranke_bleibt_auch_bei_gutem_retdd_wirksam():
+    result = _result(dd_equity_pct=34.95)
+    assert result.to_row()["RetDD"] == 2
+    assert pipeline.ampel_for(result, {})[0] == "🔴"
+
+
+def test_retdd_unter_eins_darf_nicht_zur_empfehlung_gerundet_werden():
+    result = _result(ertrag_monat_geom_pct=5.99994)
+    assert round(result.to_row()["RetDD"], 2) == 1
+    assert pipeline.ampel_for(result, {})[0] == "🟡"
+    exact = replace(result, ertrag_monat_geom_pct=6.0)
+    assert pipeline.ampel_for(exact, {})[0] == "🟢"
+
+
+def test_ertragskriterium_nutzt_geom_und_konfigurierte_schwelle():
+    result = _result(ertrag_monat_geom_pct=6.0, equity_dd_rekonstruiert_pct=3,
+                     ertrag_monat_pct=50, ertrag_monat_pct_forensik=70)
+    assert pipeline.ampel_for(result, {"min_ertrag_pct_monat": 7})[0] == "🟡"
+    assert pipeline.ampel_for(result, {"min_ertrag_pct_monat": 5})[0] == "🟢"
+    result.ertrag_monat_geom_pct = None
+    assert pipeline.ampel_for(result, {})[0] == "🟡"
+
+
+def test_veraltete_rendite_mit_frischem_monitor_ergibt_keinen_retdd():
+    result = _result(forensik_stale=True, monitor_trade_eq_dd_pct=6)
+    assert result.to_row()["Gewinn %/Monat"] is None
+    assert result.to_row()["RetDD"] is None
+    assert result.effizienz_befund["effizienz_status"] == "veraltet"
+
+
+def test_db_reload_ersetzt_alten_quotienten_durch_gemessene_equity_basis():
+    db.init_db()
+    db.store_scan_result(900009, {
+        "name": "Persistenz", "platform": "MT5",
+        "stats": {"forensik_ok": True, "forensik_version": FORENSICS_VERSION}},
+        forensik={"version": FORENSICS_VERSION, "vollstaendig": True,
+                  "score": 2, "trading_dd": {"pct": .1},
+                  "ertrag_monat_geom_pct": 12, "cagr_jahr_pct": 120,
+                  "retdd_monat": 120, "retdd_jahr": 1200,
+                  "peak_exposure": {"shock_pct_max": 10},
+                  "equity_rekonstruktion": {"equity_dd_pct": 6, "verlaesslich": True}})
+    result = pipeline.results_from_db()[0]
+    assert result.to_row()["RetDD"] == 2
+    assert result.ampel == "🟢"
+
+
+def test_kriterien_payload_nennt_settings_und_equity_retdd():
+    text = pipeline._kriterien_text({"min_ertrag_pct_monat": 7,
+                                    "schranke_eq_dd_pct": 22,
+                                    "min_wochen": 40, "min_abonnenten": 12})
+    assert "22 %" in text and "7 %/Monat" in text
+    assert "40 Wochen" in text and "12 Abonnenten" in text
+    assert "Mindest-RetDD: 1,0" in text
+    assert "ertrag_monat_geom_pct" in text and "gemessener Max-Equity" in text
+
+
+@pytest.mark.parametrize("source", ["equity_dd_rekonstruiert_pct", "monitor_trade_eq_dd_pct"])
+def test_geaenderte_schranke_aktualisiert_auch_reine_eigenmessung(source):
+    result = _result(dd_equity_pct=None, dd_balance_pct=None, trading_dd_pct=None,
+                     ertrag_monat_geom_pct=30.0, equity_dd_rekonstruiert_pct=None)
+    setattr(result, source, 25.0)
+    assert pipeline.ampel_for(result, {"schranke_eq_dd_pct": 20})[0] == "🔴"
+    assert pipeline.ampel_for(result, {"schranke_eq_dd_pct": 30})[0] == "🟢"
+    assert not result.schranke_verletzt
+
+
+def test_ungerundeter_equity_dd_bleibt_nenner_beim_db_reload():
+    db.init_db()
+    db.store_scan_result(900009, {
+        "name": "Rundungsgrenze", "platform": "MT5",
+        "stats": {"forensik_ok": True, "forensik_version": FORENSICS_VERSION}},
+        forensik={"version": FORENSICS_VERSION, "vollstaendig": True, "score": 2,
+                  "ertrag_monat_geom_pct": 10.001,
+                  "peak_exposure": {"shock_pct_max": 10},
+                  "equity_rekonstruktion": {"equity_dd_pct": 10.00,
+                                            "equity_dd_pct_raw": 10.004,
+                                            "verlaesslich": True}})
+    result = pipeline.results_from_db()[0]
+    assert result.max_drawdown_equity_pct == 10.004
+    assert result.to_row()["RetDD"] < 1
+    assert result.ampel == "🟡"
+
+
+def test_tradeserver_sync_uebertraegt_retdd_und_gewinn_ungerundet():
+    from mqlkiscanner.tradeserver_sync import signal_zeilen
+    db.init_db()
+    result = _result(ertrag_monat_geom_pct=5.99994)
+    result.ampel, result.urteil = pipeline.ampel_for(result, {})
+    payload = signal_zeilen([result])[0]
+    assert payload["ertragMonatGeomPct"] == 5.99994
+    assert payload["maxDrawdownEquityPct"] == 6
+    assert payload["retddMonat"] == result.to_row()["RetDD"] < 1
+    assert payload["ampel"] == "🟡"
+
+
+def test_tradeserver_sync_liefert_aktuelle_auswahlgrenzen(monkeypatch):
+    from mqlkiscanner import config
+    from mqlkiscanner.tradeserver_sync import signal_zeilen
+    db.init_db()
+    original = config.load_settings()
+    monkeypatch.setattr(config, "load_settings", lambda: {
+        **original, "schranke_eq_dd_pct": 22, "min_ertrag_pct_monat": 7})
+    payload = signal_zeilen([_result()])[0]
+    assert payload["drawdownLimitPct"] == 22
+    assert payload["minReturnMonthlyPct"] == 7
+    assert payload["minRetddMonthly"] == 1
+
+
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), -1, True])
+def test_equity_status_nennt_nur_tatsaechlich_verwendete_gueltige_quellen(invalid):
+    result = _result(equity_dd_rekonstruiert_pct=invalid,
+                     monitor_trade_eq_dd_pct=6)
+    assert result.to_row()["RetDD"] == 2
+    assert result.equity_messung_status == "Gemessen: Monitor"
+    result = _result(monitor_trade_eq_dd_pct=invalid)
+    assert result.to_row()["RetDD"] == 2
+    assert result.equity_messung_status == "Gemessen: Kurse (H1, virtuelle Trading-Equity)"

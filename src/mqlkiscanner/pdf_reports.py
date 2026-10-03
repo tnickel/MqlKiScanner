@@ -244,6 +244,9 @@ def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
         return kopf + ["", str(text)]
 
     for nummer, r in enumerate(empfehlungen, 1):
+        refresh = getattr(r, "refresh_efficiency", None)
+        if callable(refresh):
+            refresh()
         def _f(wert, nachkomma=2, suffix=""):
             return ("—" if wert is None else f"{wert:.{nachkomma}f}".replace(".", ",") + suffix)
         teile += [
@@ -255,7 +258,10 @@ def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
             f"| Quelle / Plattform | {getattr(r, 'quelle', 'mql5')} / {r.platform} |",
             f"| Engine-Ampel | {r.ampel} |",
             f"| Risiko-Score (Engine, 1-10) | {_f(r.score, 1)} |",
-            f"| Ertrag/Monat (Forensik-Basis) | {_f(getattr(r, 'ertrag_monat_pct_forensik', None), 2, ' %')} |",
+            f"| Gewinn %/Monat (geometrisch) | {_f(getattr(r, 'ertrag_monat_geom_pct', None), 2, ' %')} |",
+            f"| Max-Drawdown (Equity, gemessen) | {_f(getattr(r, 'max_drawdown_equity_pct', None), 2, ' %')} |",
+            f"| RetDD (Monatsgewinn / Max-Equity-DD) | {_f(getattr(r, 'retdd_monat', None), 3)} |",
+            f"| Ertrag/Monat (linear, Forensik-Basis) | {_f(getattr(r, 'ertrag_monat_pct_forensik', None), 2, ' %')} |",
             f"| Ertrag/Monat (Plattform meldet) | {_f(r.ertrag_monat_pct, 2, ' %')} |",
             f"| Drawdown-Maximum (Schranke) | {_f(max(filter(None, [r.dd_equity_pct, r.dd_balance_pct, r.trading_dd_pct, getattr(r, 'equity_dd_rekonstruiert_pct', None), getattr(r, 'monitor_trade_eq_dd_pct', None)]), default=0.0), 2, ' %')} |",
             f"| Abonnenten / Wochen | {r.abonnenten if r.abonnenten is not None else '—'} / {r.wochen if r.wochen is not None else '—'} |",

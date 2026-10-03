@@ -63,7 +63,8 @@ def test_preliminary_scan_applies_known_drawdown_before_database_reload(monkeypa
 
 def test_return_verdict_names_the_configured_threshold():
     result = pipeline.ScanResult(id=123, forensik_vorhanden=True, stop_evidence="direct",
-                                 score=2, ertrag_monat_pct=7)
+                                 score=2, ertrag_monat_pct=7, ertrag_monat_geom_pct=7,
+                                 equity_dd_rekonstruiert_pct=5)
     light, verdict = pipeline.ampel_for(result, {"min_ertrag_pct_monat": 8.5})
     assert light == "🟡" and "8.5 %/Monat" in verdict
     assert "< 5 %" not in verdict
