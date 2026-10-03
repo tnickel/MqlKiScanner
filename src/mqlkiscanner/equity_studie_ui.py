@@ -100,13 +100,14 @@ def _als_datetime(epoch_wert: int | None):
 
 
 def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
-    """Equity/Realisiert/Floating oben, Unterwasser-Kurve unten, Rangeslider."""
+    """Oben NUR die Equity-Kurve (Y-Achse passt sich der Kurve an, kein
+    0-Start über die Floating-Spur), unten der Unterwasser-%-Verlauf —
+    der Equity-DD in Prozent (Nutzer 03.10.: „in Euro brauchen wir nicht,
+    in % ist unten gut")."""
     punkte = daten["punkte"]
     k = daten["kennzahlen"]
     x = [_als_datetime(p["t"]) for p in punkte]
     equity = [p["equity"] for p in punkte]
-    realisiert = [p["realisiert"] for p in punkte]
-    floating = [p["floating"] for p in punkte]
 
     # Unterwasser (% unter dem laufenden Hoch) auf Messpunkten.
     hoch = None
@@ -121,24 +122,14 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
 
     fig = make_subplots(
         rows=2, cols=1, shared_xaxes=True,
-        row_heights=[0.74, 0.26], vertical_spacing=0.04,
-        subplot_titles=("Virtuelle Trading-Kurve: realisiert · Equity (inkl. Floating)",
+        row_heights=[0.60, 0.40], vertical_spacing=0.06,
+        subplot_titles=("Virtuelle Trading-Kurve: Equity (inkl. Floating)",
                         "Unterwasser — Abstand zum letzten Höchststand"))
     fig.add_trace(go.Scatter(
         x=x, y=equity, name="Equity (inkl. floating)", mode="lines",
         line={"color": _FARBE_EQUITY, "width": 2.5},
         connectgaps=False,
         hovertemplate="%{x}<br>Equity %{y:,.0f} USD<extra></extra>"), row=1, col=1)
-    fig.add_trace(go.Scatter(
-        x=x, y=realisiert, name="Realisiert (geschlossen)", mode="lines",
-        line={"color": _FARBE_REALISIERT, "width": 1.6, "dash": "dot"},
-        connectgaps=True,
-        hovertemplate="%{x}<br>realisiert %{y:,.0f} USD<extra></extra>"), row=1, col=1)
-    fig.add_trace(go.Scatter(
-        x=x, y=floating, name="Offener Betrag (floating)", mode="lines",
-        line={"color": _FARBE_FLOATING, "width": 1.4},
-        connectgaps=False,
-        hovertemplate="%{x}<br>offen %{y:,.0f} USD<extra></extra>"), row=1, col=1)
     fig.add_trace(go.Scatter(
         x=x, y=unterwasser, name="Unterwasser %", mode="lines",
         line={"color": _FARBE_FLOATING, "width": 1.2},
@@ -163,7 +154,7 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
             annotation_font_color=_FARBE_FLOATING)
 
     fig.update_layout(
-        height=560, margin={"l": 64, "r": 18, "t": 36, "b": 8},
+        height=720, margin={"l": 64, "r": 18, "t": 36, "b": 8},
         hovermode="x unified",
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.02},
         template="plotly_white",
@@ -171,6 +162,12 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
     fig.update_yaxes(title_text="USD", tickformat=",.0f", row=1, col=1,
                      gridcolor="#e8e8e8")
     fig.update_yaxes(title_text="%", row=2, col=1, gridcolor="#e8e8e8")
+    # Trennstrich zwischen den beiden Ebenen (Nutzer 03.10.) — Mitte des
+    # Zwischenraums: row1-Domain [0.436, 1], row2 [0, 0.376] bei
+    # row_heights 0.60/0.40 und vertical_spacing 0.06.
+    fig.add_shape(type="line", xref="paper", yref="paper",
+                  x0=0, x1=1, y0=0.406, y1=0.406,
+                  line={"color": "#3a4356", "width": 2}, layer="above")
     # Kein Rangeslider (Nutzer-Feedback 03.10.): die kleinen Griffe lasen
     # sich wie Begrenzungsbalken und duplizierten die Kurve winzig — Zoom/
     # Pan laufen über Mausrad, Box-Auswahl und das Werkzeug-Menü (siehe
