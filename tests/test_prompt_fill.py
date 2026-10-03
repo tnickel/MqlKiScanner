@@ -115,7 +115,7 @@ def test_builder_uebernimmt_injektionssicher_teilanalysen():
 
 def test_kriterien_text_nennt_beide_drawdown_arten_und_schockregel():
     text = pipeline._kriterien_text({})
-    assert "MAXIMUM" in text and "Trading-DD" in text
+    assert "MAXIMUM" in text and "Max-Drawdown" in text
     assert "kein gemessener Verlust" in text
 
 

@@ -158,7 +158,7 @@ def test_results_from_db_laedt_reko_felder():
     assert neu.equity_rekon_gmt_h == 2
     assert neu.schranke_verletzt is True
     assert neu.ampel == "🔴"
-    assert "Reko-EQ-DD 41.0 %" in neu.urteil
+    assert "Max-DD aus Kursen 41.0 %" in neu.urteil
 
 
 def test_unzuverlaessige_rekonstruktion_fliesst_nicht_in_schranke():

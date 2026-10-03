@@ -56,17 +56,19 @@ def _num(wert: float | None, nachkommastellen: int = 2) -> str:
 KRITERIEN: list[Kriterium] = [
     Kriterium(
         "dd_schranke", "Drawdown-Schranke",
-        "Harte Nutzervorgabe: Das MAXIMUM aus Plattform-By-Equity-DD, "
-        "By-Balance-DD, aus den Trades rekonstruiertem Trading-DD, dem "
-        "aus Kursdaten nachgemessenen Reko-EQ-DD (nur bei belastbarer "
+        "Harte Nutzervorgabe: Das MAXIMUM aus dem Plattform-Drawdown (By "
+        "Equity und By Balance — Selbstauskunft), dem aus den Trades selbst "
+        "berechneten Max-Drawdown, der aus Kursdaten nachgemessenen "
+        "Kursmessung (nur bei belastbarer "
         "Abdeckung) UND der floating-inclusiven Zweitmessung des "
-        "Datenquellen-Monitors (Monitor-EQ-DD) darf die Schranke (Standard "
+        "Datenquellen-Monitors darf die Schranke (Standard "
         "30 %) nicht überschreiten. Grün = mit Puffer ≥ 5 Punkten eingehalten, "
         "gelb = eingehalten, aber Puffer unter 5 Punkte, rot = verletzt. Alle "
         "Werte fehlen → grau (keine Daten). Der höchste Wert entscheidet — "
-        "MQL5's By Equity kann deutlich niedriger als By Balance ausfallen, "
-        "und Reko-/Monitor-EQ-DD machen floating Verluste sichtbar. "
-        "Vorbehalt Monitor-EQ-DD: Der Monitor rechnet gegen seine eigene "
+        "der Plattform-Drawdown (By Equity) kann deutlich niedriger als By "
+        "Balance ausfallen, "
+        "und Kurs-/Monitor-Messung machen floating Verluste sichtbar. "
+        "Vorbehalt Max-DD (Monitor): Der Monitor rechnet gegen seine eigene "
         "(ggf. rückgerechnete) Kapitalbasis — Werte über 100 % überzeichnen "
         "absolut, bleiben aber ein harter Warnmarker."),
     Kriterium(
@@ -145,23 +147,26 @@ def _dd_zelle(r, settings) -> Zelle:
     # Quellen-Signale ohne harte floating-Messung (Lemonal 🟢 bei 46,65 %,
     # AccurateCopier 🟢 bei 241 %). Gold Spike: By Equity 3,8 % vs. By
     # Balance 8,11 %.
-    werte = {"EQ-DD": r.dd_equity_pct, "Bal-DD": r.dd_balance_pct,
-             "Trading-DD": r.trading_dd_pct,
-             "Reko-EQ-DD": getattr(r, "equity_dd_rekonstruiert_pct", None),
-             "Monitor-EQ-DD": getattr(r, "monitor_trade_eq_dd_pct", None)}
+    # Nutzer-Terminologie 03.10.: der aus Trades selbst berechnete Wert
+    # heißt „Max-Drawdown“, die Plattform-Selbstauskunft „Drawdown“.
+    werte = {"Drawdown (Plattform)": r.dd_equity_pct,
+             "Balance-DD (Plattform)": r.dd_balance_pct,
+             "Max-Drawdown (Trades)": r.trading_dd_pct,
+             "Max-DD (Kurse)": getattr(r, "equity_dd_rekonstruiert_pct", None),
+             "Max-DD (Monitor)": getattr(r, "monitor_trade_eq_dd_pct", None)}
     vorhanden = {k: v for k, v in werte.items() if v is not None}
     if not vorhanden:
         return Zelle(KEINE_DATEN, "keine DD-Werte",
-                     "Weder Plattform-By-Equity-DD, By-Balance-DD noch "
-                     "rekonstruierter Trading-DD vorhanden — Schranke "
+                     "Weder Plattform-Drawdown (By Equity/Balance) noch "
+                     "Max-Drawdown aus Trades vorhanden — Schranke "
                      "nicht prüfbar.")
     relevant = max(vorhanden.values())
     herleitung = "max(" + ", ".join(f"{k} {_num(v)} %" for k, v in vorhanden.items()) \
                  + f") = {_num(relevant)} %"
-    vorbehalt = (" Monitor-EQ-DD ist eine Monitor-Zweitmessung auf dessen "
+    vorbehalt = (" Max-DD (Monitor) ist eine Monitor-Zweitmessung auf dessen "
                  "eigener Kapitalbasis — über 100 % überzeichnet sie absolut."
-                 if "Monitor-EQ-DD" in vorhanden
-                 and vorhanden["Monitor-EQ-DD"] > 100 else "")
+                 if "Max-DD (Monitor)" in vorhanden
+                 and vorhanden["Max-DD (Monitor)"] > 100 else "")
     if relevant > limit:
         return Zelle(ROT, f"{_num(relevant)} % > {limit:g} %",
                      f"{herleitung} liegt ÜBER der Schranke von {limit:g} % "

@@ -631,6 +631,29 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   +11 Tests (tests/test_equity_studie.py, inkl. AppTest Ende-zu-Ende der
   Seite — fing ungültiges Material-Icon).
 
+- ✅ DD-BENENNUNG „Max-Drawdown“ vs „Drawdown (Plattform)“ (03.10.2026,
+  Nutzer-Wunsch nach GS-MT5-Validierung): Der selbst berechnete Wert heißt
+  jetzt Max-Drawdown, die Plattform-Selbstauskunft Drawdown. Umgestellt in
+  to_row (Spalten „Max-Drawdown %“ / „Drawdown % (Plattform)“ /
+  „Balance-DD % (Plattform)“; CSV folgt), Ergebnistabelle (Spalte
+  „Studie“ statt „Equity-DD“-Button), Detailansicht, Ampel-Matrix
+  (Schranken-Herleitung nennt „Drawdown (Plattform) / Balance-DD
+  (Plattform) / Max-Drawdown (Trades) / Max-DD (Kurse) / Max-DD
+  (Monitor)“), Urteilstexte („Max-DD aus Kursen …“), Kriterien-Text,
+  Regelwerk, Hilfe-Texte und Scan-Stationstabelle. KI-Prompts bewusst
+  UNVERÄNDERT (Fachbegriffe mit Definition für das LLM; B12-Sync).
+  MT4/MT5-UNTERSCHIED GS (Analyse 03.10., .tmp/vergleich_gs_mt4_mt5.py):
+  Im MT5-DD-Fenster (16.07.–03.08.2026) verlieren beide Konten FAST
+  IDENTISCH −138 USD netto (Algo identisch) — aber MT4s Kurvenstand war
+  ~6.050 USD (Basis 3.116 + 1 Jahr Gewinne, Auszahlungen laufen NICHT in
+  die Trading-Kurve), MT5 nur ~1.515 USD → 2,3 % vs 9,1 %. MT4s
+  Allzeit-Maximum 4,57 % stammt aus DEZ 2025 (157 USD auf kleinem Konto);
+  Lots sind auf beiden ~0,01 fix (keine Kontogrößen-Skalierung) —
+  %-DD ∝ 1/Kontogröße. Webseite „Maximum drawdown 8,1 %“ = By-Balance
+  (reale Balance MIT Auszahlungen 3.640 USD → kleineres echtes Konto →
+  fast doppelter %-Wert), die DD-Graphik zeigt By-Equity (3,8 %) —
+  beide Plattform-Selbstauskünfte, unser Max-Drawdown misst eigenständig.
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

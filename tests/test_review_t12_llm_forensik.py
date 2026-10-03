@@ -29,14 +29,14 @@ def test_regelwerk_und_hilfe_beschreiben_das_aktuelle_system():
     vor-28.09.-Regelung."""
     md = regelwerk.regelwerk_markdown({"schranke_eq_dd_pct": 30,
                                        "min_ertrag_pct_monat": 5})
-    assert "Reko-EQ-DD" in md
+    assert "Max-DD aus Kursen" in md
     assert "muss bewiesen sein" not in md
     assert "Ohne bewiesenen Stop kein Kandidat" not in md
     assert "neutral" in md
 
     from mqlkiscanner import help_content
     hilfe = str(help_content.HELP_CONTENT)  # robust gegen Strukturänderung
-    assert "der höchste der vier zählt" in hilfe
+    assert "der höchste Wert zählt" in hilfe
 
 
 # ------------------------------------------------------- M3: Meta-Feld

@@ -62,9 +62,10 @@ HARTREGELN: list[tuple[str, str]] = [
      "Das Startkapital ist nicht belegbar — Drawdown- und Schockprüfung "
      "sind unmöglich, harte Ablehnung."),
     ("🔴 Drawdown-Schranke verletzt",
-     "max(By-Equity-DD, By-Balance-DD, Trading-DD, Reko-EQ-DD) über der "
-     "Schranke — harte Ablehnung. Der höchste der vier Werte entscheidet "
-     "(Reko-EQ-DD nur bei belastbarer Kursdaten-Abdeckung)."),
+     "max(Plattform-Drawdown By Equity, By Balance, Max-Drawdown aus "
+     "Trades, Max-DD aus Kursen) über der Schranke — harte Ablehnung. "
+     "Der höchste Wert entscheidet (Max-DD aus Kursen nur bei "
+     "belastbarer Kursdaten-Abdeckung)."),
     ("🔴 Martingale-Signatur nachgewiesen",
      "Lot-Eskalation nach Verlusten (Median > 1,3x) oder Korb-Muster aus "
      "der Trade-Forensik — harte Ablehnung."),

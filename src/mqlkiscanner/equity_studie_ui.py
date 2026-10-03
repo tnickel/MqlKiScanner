@@ -177,7 +177,7 @@ def _kennzahlen_karten(daten: dict, schranke: float) -> None:
     pct = k.get("equity_dd_pct")
     with st.container(horizontal=True):
         st.metric(
-            "Reko-EQ-DD max",
+            "Max-Drawdown (aus Kursen)",
             f"{pct:.1f} %" if pct is not None else "—",
             "ohne Kapitalbasis" if pct is None else None,
             delta_color="off", border=True)
@@ -235,8 +235,8 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
         bausteine.append(
             f"Offene Positionen standen zeitweise **{k['floating_min_usd']:,.0f} USD "
             f"im Minus**{wann} — genau dieser unverwirklichte Betrag ist der "
-            "Grund, warum der reine Trading-DD (nur geschlossene Trades) die "
-            "Belastung unterschätzt.")
+            "Grund, warum der Max-Drawdown aus nur geschlossenen Trades die "
+            "wirkliche Belastung unterschätzen kann.")
     if (k.get("unterwasser_tage_max") or 0) > 0:
         bausteine.append(
             f"Längste Phase unter dem letzten Höchststand: "
@@ -258,14 +258,15 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
     monitor = getattr(result, "monitor_trade_eq_dd_pct", None)
     if pct is not None and gemeldet:
         if pct >= 1.5 * float(gemeldet):
-            st.warning(f"**Nachmessung deutlich höher als gemeldet:** "
-                       f"{pct:.1f} % hier vs. {float(gemeldet):.1f} % Plattform "
-                       f"(Faktor {pct / float(gemeldet):.1f}×) — der Drawdown "
-                       "war schöner gemeldet, als er war.",
+            st.warning(f"**Nachmessung deutlich höher als der Plattformwert:** "
+                       f"{pct:.1f} % hier vs. {float(gemeldet):.1f} % Drawdown "
+                       f"(Plattform, Faktor {pct / float(gemeldet):.1f}×) — der "
+                       "Drawdown war schöner gemeldet, als er war.",
                        icon=":material/compare_arrows:")
         else:
-            st.caption(f"Vergleich: Plattform meldet {float(gemeldet):.1f} % "
-                       f"EQ-DD · Nachmessung {pct:.1f} %.")
+            st.caption(f"Vergleich: Drawdown (Plattform) "
+                       f"{float(gemeldet):.1f} % · Max-Drawdown (Kurse) "
+                       f"{pct:.1f} %.")
     if monitor is not None:
         st.caption(f"Monitor-Zweitmessung (volle Trade-Kurve): "
                    f"{float(monitor):.1f} % — unabhängige dritte Messung.")

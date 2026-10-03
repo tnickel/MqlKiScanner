@@ -69,9 +69,9 @@ Die Matrix bewertet **einzelne Testkriterien** getrennt — sie ersetzt nicht da
 
 **Farben:** 🟢 erfüllt/bewiesen · 🟡 teilweise, knapp oder unabgeklärt · 🟠 Warnflag ohne harte Verletzung · 🔴 harte Verletzung/nachgewiesen · ⚪ keine Daten (entlastet nicht).
 
-**ⓘ im Spaltenkopf** erklärt das Kriterium. **Maus über der Ampel-Zelle** zeigt die exakte Berechnung, z. B. „max(EQ-DD 3,80 %, Trading-DD 4,57 %) = 4,57 % hält die Schranke 30 % mit 25,4 Punkten Abstand ein“.
+**ⓘ im Spaltenkopf** erklärt das Kriterium. **Maus über der Ampel-Zelle** zeigt die exakte Berechnung, z. B. „max(Drawdown (Plattform) 3,80 %, Max-Drawdown (Trades) 4,57 %) = 4,57 % hält die Schranke 30 % mit 25,4 Punkten Abstand ein“.
 
-Die Kriterien: Drawdown-Schranke (max aus By-Equity-DD, By-Balance-DD, Trading-DD und Reko-EQ-DD — der höchste der vier zählt; Reko nur bei belastbarer Abdeckung), Martingale-Signatur, Stop-Nachweis (bewiesen = entlastend, fehlend = neutral), Ertrag pro Monat, Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
+Die Kriterien: Drawdown-Schranke (max aus dem Plattform-Drawdown By Equity/By Balance, dem selbst berechneten Max-Drawdown aus Trades und der Kurs-Nachmessung — der höchste Wert zählt; die Kurse-Nachmessung nur bei belastbarer Abdeckung), Martingale-Signatur, Stop-Nachweis (bewiesen = entlastend, fehlend = neutral), Ertrag pro Monat, Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
 
 Beim Scan wird die Matrix mit allen Herleitungen als Snapshot in der Datenbank gespeichert; die Anzeige rechnet sie aus den gespeicherten Werten mit den aktuellen Grenzwerten neu.
 """),
@@ -87,11 +87,11 @@ Die Übersicht zählt die Einstufungen aller Signale des ausgewählten Laufs. Di
     "risk_metrics": ("Drawdown, Risiko-Score und Ertrag", """
 **Risiko-Score (1–10):** Aggregierte Risikobewertung; kleinere Werte bedeuten weniger erkannte Risikofaktoren. Bei lokalen Referenzdaten kann ein hinterlegter Referenz-Score verwendet werden. Kein Wahrscheinlichkeitsmaß und keine Prognose.
 
-**Trading-DD:** Aus geschlossenen Trades rekonstruierter Rückgang des Handelsergebnisses. **Equity-DD:** Plattformwert einschließlich schwankender offener Positionen. Geschlossene Trades können zwischenzeitliche offene Verluste verbergen; die Werte messen unterschiedliche Dinge.
+**Max-Drawdown (unser Messwert):** Aus den geschlossenen Trades selbst berechneter maximaler Rückgang des Handelsergebnisses — unabhängig von der Plattform. **Drawdown (Plattform):** Selbstauskunft der Plattform einschließlich schwankender offener Positionen. Geschlossene Trades können zwischenzeitliche offene Verluste verbergen; die Werte messen Unterschiedliches.
 
 **Ertrag pro Monat:** Historische Kennzahl aus verfügbaren Daten, keine erwartete Auszahlung. Projektvorgabe: maximal 30 % Drawdown und über 5 % Ertrag pro Monat.
 
-**Profit-Faktor:** Verhältnis summierter Gewinne zum Betrag summierter Verluste. **Winrate:** Anteil gewinnender geschlossener Trades. Bei CSV-Daten verwenden diese Handelsstatistiken Profit vor Kommission und Swap; der Trading-DD berücksichtigt dagegen Nettowerte. Hohe Trefferquoten können mit seltenen, großen Verlusten einhergehen.
+**Profit-Faktor:** Verhältnis summierter Gewinne zum Betrag summierter Verluste. **Winrate:** Anteil gewinnender geschlossener Trades. Bei CSV-Daten verwenden diese Handelsstatistiken den Profit vor Kommission und Swap; der Max-Drawdown rechnet dagegen mit Nettowerten. Hohe Trefferquoten können mit seltenen, großen Verlusten einhergehen.
 """),
     "exposure": ("Positionen, Verlustserien und Schockrechnung", """
 **Peak-Positionen** bezeichnet die größte rekonstruierte Anzahl gleichzeitig offener Positionen. **Netto-Lots** zeigt die richtungsabhängige Positionierung beim ersten Erreichen dieses Positionsmaximums, nicht zwingend das maximale Netto-Volumen über die gesamte Laufzeit. Viele kleine, gleichgerichtete Trades können ein großes Risiko bilden.

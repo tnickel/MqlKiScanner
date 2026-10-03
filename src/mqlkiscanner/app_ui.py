@@ -315,14 +315,14 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             from .equity_studie_ui import equity_studie_dialog
             equity_studie_dialog(results[click.row])
 
-    df["Equity-DD"] = ["Studie"] * len(results)
+    df["Studie"] = ["Studie"] * len(results)
 
     column_order = None
     if compact:
         column_order = ((["Stand"] if fresh_ids is not None else [])
                         + (["Fix"] if fix_ids is not None else [])
-                        + ["Ampel", "Name", "Quelle", "Stop", "Trading-DD %", "EQ-DD %",
-                           "Equity-DD",
+                        + ["Ampel", "Name", "Quelle", "Stop", "Max-Drawdown %",
+                           "Drawdown % (Plattform)", "Studie",
                            "Ertrag/Monat %", "Score", "Urteil", "Bericht vom", "Bericht",
                            "Link", "Abonnenten", "30 Tage", "7 Tage", "Dokumente"])
 
@@ -360,9 +360,20 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             "Growth %": st.column_config.NumberColumn("Growth %", format="%.1f"),
             "Ertrag/Monat %": st.column_config.NumberColumn("Ertrag %/Mon.", format="%.1f"),
             "PF": st.column_config.NumberColumn("PF", format="%.2f"),
-            "EQ-DD %": st.column_config.NumberColumn("EQ-DD %", format="%.1f"),
-            "Bal-DD %": st.column_config.NumberColumn("Bal-DD %", format="%.1f"),
-            "Trading-DD %": st.column_config.NumberColumn("Trading-DD %", format="%.1f"),
+            "Drawdown % (Plattform)": st.column_config.NumberColumn(
+                "Drawdown % (Plattform)", format="%.1f",
+                help="Plattform-Selbstauskunft „By Equity“ — vom Broker "
+                     "gemeldet, keine eigene Messung."),
+            "Balance-DD % (Plattform)": st.column_config.NumberColumn(
+                "Balance-DD % (Plattform)", format="%.1f",
+                help="Plattform-Selbstauskunft „By Balance“ — kann bei "
+                     "Auszahlungen deutlich höher ausfallen als der "
+                     "Max-Drawdown aus Trades."),
+            "Max-Drawdown %": st.column_config.NumberColumn(
+                "Max-Drawdown %", format="%.1f",
+                help="Aus geschlossenen Trades selbst rekonstruierter "
+                     "maximaler Drawdown — unser Messwert, unabhängig von "
+                     "der Plattform-Angabe."),
             "Winrate %": st.column_config.NumberColumn("Winrate %", format="%.1f"),
             "Verlustserie": st.column_config.NumberColumn("V-Serie", format="%d"),
             "Peak-Pos": st.column_config.NumberColumn("Peak-Pos", format="%d"),
@@ -382,9 +393,9 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             "Bericht": st.column_config.ButtonColumn(
                 "Bericht & PDF", on_click=_open_report, key=f"{key}_bericht",
                 type="primary"),
-            "Equity-DD": st.column_config.ButtonColumn(
-                "Equity-DD", width="small",
-                help="Klick: Equity-Drawdown aus echten Kursen nachmessen — "
+            "Studie": st.column_config.ButtonColumn(
+                "Studie", width="small",
+                help="Klick: Max-Drawdown aus echten Kursen nachmessen — "
                      "stundenfeine Kurve mit realisiertem Betrag UND offenem "
                      "Betrag (floating), GMT-Abgleich je Währungspaar. "
                      "Öffnet ein Fenster mit Chart, Zoom und Risiko-Texten; "
@@ -910,10 +921,10 @@ def render_detail(result) -> None:
     with st.container(horizontal=True):
         st.metric("Risiko-Score", f"{result.score:.1f}" if result.score is not None else "—",
                   border=True)
-        st.metric("Trading-DD max.",
+        st.metric("Max-Drawdown (gemessen)",
                   f"{result.trading_dd_pct:.1f} %" if result.trading_dd_pct is not None else "—",
                   border=True)
-        st.metric("EQ-DD (Plattform)",
+        st.metric("Drawdown (Plattform)",
                   f"{result.dd_equity_pct:.1f} %" if result.dd_equity_pct is not None else "—",
                   border=True)
         st.metric("Ertrag / Monat",

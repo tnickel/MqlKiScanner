@@ -249,8 +249,12 @@ class ScanResult:
             "Abo $": self.abo_preis_usd,
             "Abos": self.abonnenten, "Wochen": self.wochen,
             "Growth %": self.growth_pct, "Ertrag/Monat %": self.ertrag_monat_pct,
-            "PF": self.pf, "EQ-DD %": self.dd_equity_pct,
-            "Bal-DD %": self.dd_balance_pct, "Trading-DD %": self.trading_dd_pct,
+            "PF": self.pf,
+            # Nutzer-Terminologie 03.10.: unser aus Trades berechneter Wert
+            # = "Max-Drawdown"; die Plattform-Selbstauskunft = "Drawdown".
+            "Drawdown % (Plattform)": self.dd_equity_pct,
+            "Balance-DD % (Plattform)": self.dd_balance_pct,
+            "Max-Drawdown %": self.trading_dd_pct,
             "Winrate %": self.winrate_pct,
             "Verlustserie": self.max_verlustserie,
             "Peak-Pos": self.peak_positionen,
@@ -421,10 +425,10 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         # halten (auch nach App-Neustart); idempotent per Marker-Suche.
         if (res.equity_dd_rekonstruiert_pct is not None
                 and res.forensik_vorhanden and not res.fehler
-                and "Reko-EQ-DD" not in (res.urteil or "")):
+                and "Max-DD (Kurse)" not in (res.urteil or "")):
             res.urteil = (res.urteil or "") + (
-                f" · Reko-EQ-DD {res.equity_dd_rekonstruiert_pct} % "
-                f"(aus Kursen, GMT {res.equity_rekon_gmt_h:+d} h)")
+                f" · Max-DD aus Kursen {res.equity_dd_rekonstruiert_pct} % "
+                f"(GMT {res.equity_rekon_gmt_h:+d} h)")
         results.append(res)
     return results
 
@@ -516,13 +520,13 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
 
 def _kriterien_text(settings: dict) -> str:
     return (f"- Harte Schranke: max. {settings.get('schranke_eq_dd_pct', 30)} % Drawdown — "
-            "gewertet wird das MAXIMUM aus Plattform-By-Equity-DD, Plattform-"
-            "By-Balance-DD, aus den Trades rekonstruiertem Trading-DD, dem "
-            "aus Kursdaten nachgemessenen Reko-EQ-DD (floating inklusive; nur "
-            "bei belastbarer Abdeckung) UND der floating-inclusiven "
-            "Zweitmessung des Datenquellen-Monitors (Monitor-EQ-DD; dessen "
-            "Kapitalbasis kann von der Scanner-Basis abweichen — über 100 % "
-            "überzeichnen absolut)\n"
+            "gewertet wird das MAXIMUM aus dem Plattform-Drawdown (By Equity "
+            "und By Balance — Selbstauskunft), dem aus den Trades selbst "
+            "berechneten Max-Drawdown, der aus Kursdaten nachgemessenen "
+            "Kursmessung (floating inklusive; nur bei belastbarer Abdeckung) UND "
+            "der floating-inclusiven Zweitmessung des Datenquellen-Monitors "
+            "(dessen Kapitalbasis kann von der Scanner-Basis abweichen — "
+            "über 100 % überzeichnet absolut)\n"
             f"- Mindest-Ertrag: {settings.get('min_ertrag_pct_monat', 5)} %/Monat — "
             "maßgeblich ist der Ertrag auf der FORENSIK-Kapitalbasis "
             "(ertrag_monat_pct_forensik); der Plattformwert ist "
@@ -1382,12 +1386,12 @@ class ScanPipeline:
                 stats_payload["export_skipped"] = "no_credentials_or_no_export"
             ampel, grund = ampel_for(res, self.settings)
             res.ampel = ampel
-            detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
+            detail = (f" | Score {res.score}, Max-DD {res.trading_dd_pct} %, "
                       f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
             if res.equity_dd_rekonstruiert_pct is not None:
-                detail += (f" · Reko-EQ-DD {res.equity_dd_rekonstruiert_pct} % "
-                           f"(aus Kursen, GMT {res.equity_rekon_gmt_h:+d} h)")
+                detail += (f" · Max-DD aus Kursen {res.equity_dd_rekonstruiert_pct} % "
+                           f"(GMT {res.equity_rekon_gmt_h:+d} h)")
             res.urteil = grund + detail
             # Kennzeichnung aus der TATSÄCHLICH verwendeten Quelle (Engine-
             # Befund), nicht aus der Lauf-Absicht — echte CSV-Einzahlung
@@ -1486,7 +1490,7 @@ class ScanPipeline:
             log(f"  DB-Fehler bei {res.id}: {exc}")
             ampel, grund = ampel_for(res, self.settings)
             res.ampel = ampel
-            detail = (f" | Score {res.score}, Trading-DD {res.trading_dd_pct} %, "
+            detail = (f" | Score {res.score}, Max-DD {res.trading_dd_pct} %, "
                       f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
             res.urteil = grund + detail

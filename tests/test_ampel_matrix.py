@@ -57,7 +57,7 @@ def test_dd_schranke_grenzwerte():
 def test_dd_detail_nennt_exakte_berechnung():
     matrix = _matrix(_result(dd_equity_pct=3.8, trading_dd_pct=28.16))
     detail = matrix["dd_schranke"].detail
-    assert "max(EQ-DD 3,80 %, Trading-DD 28,16 %) = 28,16 %" in detail
+    assert "max(Drawdown (Plattform) 3,80 %, Max-Drawdown (Trades) 28,16 %) = 28,16 %" in detail
     assert "hält die Schranke 30 % ein" in detail
     assert "1,84 Punkte" in detail  # Puffer
 
@@ -251,7 +251,7 @@ def test_dd_schranke_nimmt_hoechsten_von_eq_bal_trading():
                              trading_dd_pct=4.57))
     zelle = matrix["dd_schranke"]
     assert zelle.ampel == GRUEN
-    assert "max(EQ-DD 3,80 %, Bal-DD 8,11 %, Trading-DD 4,57 %) = 8,11 %" in zelle.detail
+    assert "max(Drawdown (Plattform) 3,80 %, Balance-DD (Plattform) 8,11 %, Max-Drawdown (Trades) 4,57 %) = 8,11 %" in zelle.detail
     assert "21,9 Punkten Abstand" in zelle.detail
 
 
@@ -266,7 +266,7 @@ def test_dd_schranke_ohne_bal_wie_bisher():
     matrix = _matrix(_result(dd_equity_pct=None, dd_balance_pct=None,
                              trading_dd_pct=34.0))
     assert matrix["dd_schranke"].ampel == ROT
-    assert "max(Trading-DD 34,00 %)" in matrix["dd_schranke"].detail
+    assert "max(Max-Drawdown (Trades) 34,00 %)" in matrix["dd_schranke"].detail
 
 
 # ------------------------- Review T1/2 29.09.: Vierfach-Maximum (M1)
@@ -278,12 +278,12 @@ def test_dd_zelle_wertet_reko_eq_dd_als_viertes_maximum():
                              trading_dd_pct=10.0,
                              equity_dd_rekonstruiert_pct=35.0))
     assert matrix["dd_schranke"].ampel == ROT
-    assert "Reko-EQ-DD 35,00 %" in matrix["dd_schranke"].detail
+    assert "Max-DD (Kurse) 35,00 %" in matrix["dd_schranke"].detail
 
     # Der Tooltip beschreibt das Fünffach-Maximum (B1, Intensiv-Review
     # 29./30.09.2026: Monitor-EQ-DD kam als fünfte Komponente dazu):
     tooltip = next(k.beschreibung for k in KRITERIEN if k.key == "dd_schranke")
-    assert "Reko-EQ-DD" in tooltip and "Monitor-EQ-DD" in tooltip
+    assert "Max-Drawdown" in tooltip and "Max-DD (Monitor)" in tooltip
 
 
 # ------------- Intensiv-Review 29./30.09.2026: B1 Monitor-Zweitmessung -------
@@ -297,7 +297,7 @@ def test_dd_zelle_wertet_monitor_eq_dd_als_fuenftes_maximum():
                              equity_dd_rekonstruiert_pct=None,
                              monitor_trade_eq_dd_pct=46.65))
     assert matrix["dd_schranke"].ampel == ROT
-    assert "Monitor-EQ-DD 46,65 %" in matrix["dd_schranke"].detail
+    assert "Max-DD (Monitor) 46,65 %" in matrix["dd_schranke"].detail
     assert "46,65 % > 30 %" in matrix["dd_schranke"].kurz
 
 
@@ -315,7 +315,7 @@ def test_dd_zelle_ohne_monitor_unveraendert():
     matrix = _matrix(_result(dd_equity_pct=3.8, trading_dd_pct=28.16,
                              equity_dd_rekonstruiert_pct=None,
                              monitor_trade_eq_dd_pct=None))
-    assert "max(EQ-DD 3,80 %, Trading-DD 28,16 %) = 28,16 %" \
+    assert "max(Drawdown (Plattform) 3,80 %, Max-Drawdown (Trades) 28,16 %) = 28,16 %" \
         in matrix["dd_schranke"].detail
 
 
@@ -323,7 +323,7 @@ def test_dd_zelle_ohne_reko_unveraendert():
     """Reko nicht vorhanden (None) darf die bestehende Zelle nicht ändern."""
     matrix = _matrix(_result(dd_equity_pct=3.8, trading_dd_pct=28.16,
                              equity_dd_rekonstruiert_pct=None))
-    assert "max(EQ-DD 3,80 %, Trading-DD 28,16 %) = 28,16 %" \
+    assert "max(Drawdown (Plattform) 3,80 %, Max-Drawdown (Trades) 28,16 %) = 28,16 %" \
         in matrix["dd_schranke"].detail
 
 

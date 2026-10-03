@@ -1564,7 +1564,7 @@ def _dialog_forensik() -> None:
             "Quelle": e.get("quelle") or "mql5",
             "Ampel": (r.ampel if r else None),
             "Score": (r.score if geprueft else None),
-            "Trading-DD %": (r.trading_dd_pct if geprueft else None),
+            "Max-Drawdown %": (r.trading_dd_pct if geprueft else None),
             "Ertrag/M": (getattr(r, "ertrag_monat_pct_forensik", None)
                          if geprueft else None),
             "RetDD": (getattr(r, "retdd_monat", None) if geprueft else None),
@@ -1582,7 +1582,7 @@ def _dialog_forensik() -> None:
         zeilen.append({
             "Geprüft": "✓ ja", "Signal": r.name, "ID": r.id,
             "Quelle": r.quelle or "mql5", "Ampel": r.ampel, "Score": r.score,
-            "Trading-DD %": r.trading_dd_pct,
+            "Max-Drawdown %": r.trading_dd_pct,
             "Ertrag/M": getattr(r, "ertrag_monat_pct_forensik", None),
             "RetDD": getattr(r, "retdd_monat", None),
             "Grund": "Aus dem Datenbank-Stand (kein Eintrag in der gespeicherten "
@@ -1602,9 +1602,10 @@ def _dialog_forensik() -> None:
     st.caption(f"Angezeigt: {len(zeilen)} von {n_gesamt} Kandidaten.")
     st.dataframe(_ohne_intern(zeilen), width="stretch", hide_index=True,
                  column_config={"Link": _link_spalte()})
-    st.caption("Trading-DD ist der aus geschlossenen Trades gemessene "
-               "Drawdown; die Schranke berücksichtigt zusätzlich verfügbare "
-               "Equity-Messungen. Ertrag/M ist der lineare Forensik-Ertrag "
+    st.caption("Max-Drawdown ist der aus geschlossenen Trades selbst "
+               "gemessene Drawdown; die Schranke berücksichtigt zusätzlich "
+               "verfügbare Equity-Messungen (Plattform-Angaben, Kurse, "
+               "Monitor). Ertrag/M ist der lineare Forensik-Ertrag "
                "in Prozent; RetDD nutzt den geometrischen Monatsertrag je "
                "Prozent maximalem Drawdown.")
     probleme = [r for r in results if r.fehler]
