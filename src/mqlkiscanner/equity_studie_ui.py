@@ -203,6 +203,36 @@ def _kennzahlen_karten(daten: dict, schranke: float) -> None:
                   f"{k.get('unterwasser_tage_max', 0.0):.0f} Tage",
                   border=True)
         st.metric("Abdeckung", f"{k.get('abdeckung_pct', 0.0):.0f} %", border=True)
+    # Brücke zur MQL5-Website (Nutzer-Fall ATong 04.10.: „Website schwankt
+    # 1-10 %, eure Kurve 1-2 %"): Entnimmt der Anbieter laufend Kapital,
+    # ist das ECHTE Konto kleiner als die virtuelle Trading-Kurve —
+    # dieselben USD-Schwankungen sind dort prozentual größer. Die
+    # kapitalflussneutrale Messung liefert die vergleichbare Prozentzahl.
+    konto = daten.get("konto_studie") or {}
+    kto = konto.get("kennzahlen") or {}
+    konto_pct = kto.get("konto_equity_dd_pct")
+    if konto_pct is None:
+        konto_pct = kto.get("konto_equity_dd_beobachtet_pct")
+    if konto_pct is not None:
+        with st.container(horizontal=True):
+            st.metric(
+                "Konto-DD (kapitalflussneutral)",
+                ("≈ " if not konto.get("verlaesslich") else "")
+                + f"{konto_pct:.1f} %",
+                help="Auf das ECHTE Konto bezogen (Ein-/Auszahlungen neutralisiert) "
+                     "— diese Zahl ist mit der MQL5-Equity-Grafik vergleichbar. "
+                     "Der Max-Drawdown oben misst die virtuelle Trading-Kurve "
+                     "(Startkapital + alle Gewinne, ohne Entnahmen) und ist dadurch "
+                     "prozentual KLEINER bei abstreichenden Anbietern.",
+                border=True)
+    if (k.get("kapitalfluesse_nach_start") or 0) > 0:
+        st.info(
+            f"Der Anbieter hat **{k['kapitalfluesse_nach_start']} Ein-/Auszahlungen "
+            "nach Handelsstart** getätigt — das echte MQL5-Konto ist dadurch kleiner "
+            "als die virtuelle Trading-Kurve dieser Studie. MQL5-Prozente der "
+            "Website beziehen sich auf das echte Konto und fallen deshalb HÖHER "
+            "aus. **Direkt vergleichbar sind die USD-Werte** (Rückfall USD, "
+            "offener Betrag USD).", icon=":material/compare_arrows:")
 
 
 def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:

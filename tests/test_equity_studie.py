@@ -347,6 +347,7 @@ def _fake_studie_daten() -> dict:
             "fx_luecke": False,
             "trades_total": 9,
             "trades_genutzt": 8,
+            "kapitalfluesse_nach_start": 3,
         },
         "median_gmt_h": 3,
         "symbole_ohne_kurse": ["EURUSD"],
@@ -354,6 +355,9 @@ def _fake_studie_daten() -> dict:
         "meta": {"name": "Studien-Fall", "signal_id": 42, "quelle": "mql5",
                  "trades_pfad": "fake.csv",
                  "startkapital_quelle": "csv_einzahlungen"},
+        "konto_studie": {"punkte": [], "verlaesslich": False,
+                         "kennzahlen": {"konto_equity_dd_pct": None,
+                                        "konto_equity_dd_beobachtet_pct": 38.14}},
     }
 
 
@@ -383,11 +387,18 @@ def test_equity_studie_seite_rendert_ende_zu_ende(tmp_path, monkeypatch):
     assert not at.exception, at.exception
     text = "\n".join(str(el.value) for el in at.markdown) + \
         "\n".join(str(el.value) for el in at.caption) + \
-        "\n".join(str(el.value) for el in at.warning)
+        "\n".join(str(el.value) for el in at.warning) + \
+        "\n".join(f"{el.label} {el.value}" for el in at.metric) + \
+        "\n".join(str(el.value) for el in at.info)
     # Kennzahlen, Schranken-Box (18,5 % < 30 % → im Rahmen) und die
     # Meldung des fehlenden Kurses sind sichtbar gerendert.
     assert "18.5" in text or "18,5" in text
     assert "EURUSD" in text
+    # Kapitalfluss-Brücke (Nutzer-Fall ATong 04.10.): Karte + Hinweis
+    # erscheinen bei Entnahmen/Flows und nennen die Website-vergleichbare
+    # Prozentzahl.
+    assert "38.1" in text or "38,1" in text
+    assert "Ein-/Auszahlungen" in text
 
 
 def test_anker_klemmt_an_ersten_messpunkt_bei_kuerzerer_kurshistorie():
