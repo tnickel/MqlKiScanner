@@ -35,7 +35,7 @@ _FARBE_FLOATING = "#d32f2f"
 
 def _cache_key(result) -> str:
     sha = getattr(result, "trades_sha256", "") or ""
-    return f"eqdd_studie_{result.id}_{sha[:12] or 'nosha'}"
+    return f"eqdd_studie_h1_ende_v2_{result.id}_{sha[:12] or 'nosha'}"
 
 
 def berechne(result, progress) -> dict:
@@ -118,7 +118,7 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
     fig = make_subplots(
         rows=2, cols=1, shared_xaxes=True,
         row_heights=[0.74, 0.26], vertical_spacing=0.04,
-        subplot_titles=("Kontostand: realisiert (geschlossen) · Equity (inkl. offener Positionen)",
+        subplot_titles=("Virtuelle Trading-Kurve: realisiert · Equity (inkl. Floating)",
                         "Unterwasser — Abstand zum letzten Höchststand"))
     fig.add_trace(go.Scatter(
         x=x, y=equity, name="Equity (inkl. floating)", mode="lines",
@@ -150,7 +150,7 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
     # Maximaler Rückfall als Region mit Annotation.
     if k.get("dd_von") and k.get("dd_bis") and (k.get("equity_dd_usd") or 0) > 0:
         dd_text = (f"Max-Rückfall −{k['equity_dd_usd']:,.0f} USD"
-                   + (f" ({k['equity_dd_pct']:.1f} %)" if k.get("equity_dd_pct")
+                   + (f" ({k['dd_pct_am_usd_max']:.1f} %)" if k.get("dd_pct_am_usd_max")
                       is not None else ""))
         fig.add_vrect(
             x0=_als_datetime(k["dd_von"]), x1=_als_datetime(k["dd_bis"]),
@@ -177,7 +177,7 @@ def _kennzahlen_karten(daten: dict, schranke: float) -> None:
     pct = k.get("equity_dd_pct")
     with st.container(horizontal=True):
         st.metric(
-            "Max-Drawdown (aus Kursen)",
+            "Max-Drawdown (H1, virtuelle Equity)",
             f"{pct:.1f} %" if pct is not None else "—",
             "ohne Kapitalbasis" if pct is None else None,
             delta_color="off", border=True)
@@ -196,14 +196,89 @@ def _kennzahlen_karten(daten: dict, schranke: float) -> None:
         st.metric("Abdeckung", f"{k.get('abdeckung_pct', 0.0):.0f} %", border=True)
 
 
+def _konto_vergleich(daten: dict, key_prefix: str) -> None:
+    """Tatsaechliches Kontokapital; Auszahlungen sind keine Trading-Verluste."""
+    konto = daten.get("konto_studie") or {}
+    if not konto.get("punkte"):
+        if konto.get("grund"):
+            st.warning("Konto-Diagnose nicht verfügbar: " + konto["grund"],
+                       icon=":material/warning:")
+        return
+    k = konto.get("kennzahlen") or {}
+    pct = k.get("konto_equity_dd_pct")
+    if pct is None:
+        pct = k.get("konto_equity_dd_beobachtet_pct")
+    approximativ = not konto.get("verlaesslich")
+    with st.container(border=True):
+        st.markdown("**Konto-Equity mit tatsächlichen Kapitalflüssen**")
+        st.metric("Konto-DD (H1, kapitalflussneutral)",
+                  (("≈ " if approximativ else "") + f"{pct:.2f} %")
+                  if pct is not None else "—", border=True)
+        st.caption(
+            "Ein- und Auszahlungen verändern das verfügbare Kapital. "
+            "Der Renditeindex neutralisiert diese Buchungen, damit eine "
+            "Auszahlung selbst keinen Handelsverlust erzeugt. Die blaue "
+            "Konto-Kurve zeigt das tatsächliche Kapital einschließlich "
+            "der Buchungen; die Drawdown-Spur misst den bereinigten Index.")
+        if approximativ:
+            st.warning(
+                "Beobachteter H1-Wert, kein vollständiger Broker-Maximum-DD. "
+                + (konto.get("grund") or "Kapital-/Kursbasis unvollständig."),
+                icon=":material/warning:")
+        if k.get("index_gueltig_bis") is not None:
+            bis = _als_datetime(k["index_gueltig_bis"])
+            st.caption(f"Gültige Index-Messpunkte bis {bis:%d.%m.%Y %H:%M} "
+                       "in der Zeitbasis des Trade-Exports.")
+        if k.get("index_abbruch_am") is not None:
+            abbruch = _als_datetime(k["index_abbruch_am"])
+            st.caption(f"Index ab {abbruch:%d.%m.%Y %H:%M:%S} nicht weiter "
+                       "bestimmbar. Der angezeigte beobachtete Rückfall "
+                       "gilt nur für die Messpunkte vor dem Abbruch.")
+        st.caption(
+            "Auch diese Kurve enthält ausschließlich die geschlossenen "
+            "Exportpositionen. Die Gegenüberstellung verändert Ampel und "
+            "Schranke nicht.")
+        with st.expander("Konto-Kurve und kapitalflussneutraler Drawdown",
+                         expanded=bool(k.get("flows_verarbeitet"))):
+            punkte = konto["punkte"]
+            x = [_als_datetime(p["t"]) for p in punkte]
+            fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
+                                row_heights=[0.7, 0.3], vertical_spacing=0.04)
+            for feld, label, farbe in (
+                    ("konto_equity", "Konto-Equity (inkl. Floating)", _FARBE_EQUITY),
+                    ("konto_balance", "Kontobalance", _FARBE_REALISIERT)):
+                fig.add_trace(go.Scatter(
+                    x=x, y=[p[feld] for p in punkte], name=label,
+                    mode="lines", line={"color": farbe}, connectgaps=False),
+                    row=1, col=1)
+            fig.add_trace(go.Scatter(
+                x=x, y=[-p["drawdown_pct"] if p["drawdown_pct"] is not None else None
+                        for p in punkte], name="Drawdown (Kapitalflüsse neutral)",
+                mode="lines", line={"color": _FARBE_FLOATING}, connectgaps=False),
+                row=2, col=1)
+            fig.update_layout(height=460, hovermode="x unified", template="plotly_white",
+                              margin={"l": 64, "r": 18, "t": 30, "b": 8},
+                              legend={"orientation": "h", "y": 1.06})
+            fig.update_yaxes(title_text="USD", row=1, col=1)
+            fig.update_yaxes(title_text="%", row=2, col=1)
+            st.plotly_chart(fig, width="stretch", config=_CHART_CONFIG,
+                            key=f"{key_prefix}_konto_chart")
+
+
 def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
     """Text-Bausteine (Code, kein LLM): wie riskant zeigt sich die Strategie."""
     k = daten["kennzahlen"]
     pct = k.get("equity_dd_pct")
+    vollstaendig = k.get("verlaesslich") is True
     if pct is None:
         st.info("Keine belastbare Kapitalbasis — Prozentwerte entfallen. Die "
-                "USD-Verläufe (realisiert und offener Betrag) sind trotzdem "
-                "exakt gemessen.", icon=":material/info:")
+                "USD-Verläufe zeigen die verfügbaren H1-Messpunkte.", icon=":material/info:")
+    elif not vollstaendig:
+        st.warning(f"**Unvollständige H1-Nachmessung:** {pct:.1f} % in den "
+                   "verfügbaren Messpunkten. Fehlende Kurse oder ungeklärte "
+                   "Zeitversätze verhindern eine belastbare Equity-Messung; "
+                   "dieser Wert belegt kein Einhalten der Drawdown-Schranke.",
+                   icon=":material/warning:")
     elif pct > schranke:
         st.error(f"**Drawdown-Schranke verletzt:** Die Nachmessung aus Kursen "
                  f"ergibt **{pct:.1f} %** maximalen Equity-Rückfall — über der "
@@ -216,8 +291,10 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
                    "Abschnitt kann die Strategie kippen lassen.",
                    icon=":material/warning:")
     else:
-        st.success(f"**Im Rahmen:** {pct:.1f} % maximaler Equity-Rückfall "
-                   f"(Grenze {schranke:.0f} %).", icon=":material/check_circle:")
+        st.info(f"**H1-Messwert unter der Schranke:** {pct:.1f} % "
+                f"(Grenze {schranke:.0f} %). Verluste innerhalb einer Stunde "
+                "und aktuell offene, im Export fehlende Positionen können "
+                "den tatsächlichen Equity-Drawdown erhöhen.", icon=":material/info:")
 
     bausteine: list[str] = []
     dd_von, dd_bis = _als_datetime(k.get("dd_von")), _als_datetime(k.get("dd_bis"))
@@ -227,8 +304,16 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
             spanne = f" zwischen {dd_von:%d.%m.%Y} und {dd_bis:%d.%m.%Y}"
         bausteine.append(
             f"Größter rekonstruierter Rückfall: **−{k['equity_dd_usd']:,.0f} USD**"
-            + (f" ({k['equity_dd_pct']:.1f} % vom damaligen Hoch)"
-               if pct is not None else "") + spanne + ".")
+            + (f" ({k['dd_pct_am_usd_max']:.1f} % vom damaligen Hoch)"
+               if k.get("dd_pct_am_usd_max") is not None else "") + spanne + ".")
+    if k.get("dd_rel_bis") and pct is not None:
+        rel_von = _als_datetime(k.get("dd_rel_von"))
+        rel_bis = _als_datetime(k["dd_rel_bis"])
+        bausteine.append(
+            f"Größter relativer Rückfall: **{pct:.2f} %** "
+            f"(**−{k.get('dd_usd_am_rel_max', 0):,.0f} USD**)"
+            + (f" zwischen {rel_von:%d.%m.%Y} und {rel_bis:%d.%m.%Y}"
+               if rel_von else f" am {rel_bis:%d.%m.%Y}") + ".")
     if (k.get("floating_min_usd") or 0) < 0:
         wann = (f" (tiefstes am {dt.datetime.fromtimestamp(k['floating_min_t'], dt.timezone.utc):%d.%m.%Y})"
                 if k.get("floating_min_t") else "")
@@ -236,7 +321,7 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
             f"Offene Positionen standen zeitweise **{k['floating_min_usd']:,.0f} USD "
             f"im Minus**{wann} — genau dieser unverwirklichte Betrag ist der "
             "Grund, warum der Max-Drawdown aus nur geschlossenen Trades die "
-            "wirkliche Belastung unterschätzen kann.")
+            "Belastung unterschätzen kann.")
     if (k.get("unterwasser_tage_max") or 0) > 0:
         bausteine.append(
             f"Längste Phase unter dem letzten Höchststand: "
@@ -260,8 +345,9 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
         if pct >= 1.5 * float(gemeldet):
             st.warning(f"**Nachmessung deutlich höher als der Plattformwert:** "
                        f"{pct:.1f} % hier vs. {float(gemeldet):.1f} % Drawdown "
-                       f"(Plattform, Faktor {pct / float(gemeldet):.1f}×) — der "
-                       "Drawdown war schöner gemeldet, als er war.",
+                       f"(Plattform, Faktor {pct / float(gemeldet):.1f}×). "
+                       "Abweichende Kapitalflüsse, Zeiträume und Referenzkurse "
+                       "müssen vor einer Aussage über die Meldung abgeglichen werden.",
                        icon=":material/compare_arrows:")
         else:
             st.caption(f"Vergleich: Drawdown (Plattform) "
@@ -299,11 +385,11 @@ def _symbol_diagnose(daten: dict) -> None:
             teile.append("Kontraktgröße unbelegt: " + ", ".join(ohne_kontrakt))
         if k.get("trades_genutzt", 0) < k.get("trades_total", 0):
             teile.append(f"{k['trades_total'] - k.get('trades_genutzt', 0)} von "
-                         f"{k['trades_total']} Trades ausgeschlossen")
-        st.warning("Gerechnet wurde nur mit den Währungspaaren, für die Kurse "
-                   "und Kontraktgröße vorliegen — **der Drawdown kann ohne die "
-                   "fehlenden Symbole NIEDRIGER ausgefallen sein, als er "
-                   "wirklich war.** Fehlt: " + " · ".join(teile),
+                         f"{k['trades_total']} Trades ohne belegte Floating-Messung")
+        st.warning("Realisierte Nettoergebnisse bleiben vollständig enthalten. "
+                   "Fehlen Kurse, Kontraktgröße oder GMT-Versatz einer offenen "
+                   "Position, ist die Equity dort eine Lücke. "
+                   "**Der Drawdown kann dadurch unterschätzt werden.** Fehlt: " + " · ".join(teile),
                    icon=":material/warning:")
     if k.get("fx_luecke"):
         st.caption("EZB-Referenzkurs fehlte an einzelnen Tagen "
@@ -380,14 +466,28 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
         letzter = _als_datetime(daten["punkte"][-1]["t"])
         zeitraum = f"{erster:%d.%m.%Y} – {letzter:%d.%m.%Y}"
     st.caption(
-        f"{k['trades_genutzt']} von {k['trades_total']} Trades · Zeitraum "
+        f"{k.get('trades_realisiert', k['trades_total'])} Trades realisiert, "
+        f"{k['trades_genutzt']} mit Kurs-/Kontrakt-/GMT-Basis · Zeitraum "
         f"{zeitraum} · Kapitalbasis: {basis_text} · {k['rasterpunkte']} "
         f"Stundenpunkte, davon {k['messpunkte']} mit offenen Positionen und "
         f"vollständigen Kursen · Abdeckung {k['abdeckung_pct']:.0f} %")
+    st.caption(
+        "Equity = Startkapital + realisiertes Netto + Summe des offenen PnL "
+        "aller Positionen im Export. Die Kurve behält Gewinne rechnerisch "
+        "im Konto; spätere Ein- und Auszahlungen sind nicht enthalten. "
+        "Damit misst sie virtuelle Trading-Equity. Der tatsächliche "
+        "Konto-Equity-DD hat bei Kontobewegungen eine andere Bezugsbasis.")
+    if k.get("trades_ohne_h1_floating_messpunkt"):
+        st.caption(
+            f"{k['trades_ohne_h1_floating_messpunkt']} Trades haben zwischen "
+            "Öffnung und Schließung keinen H1-Schlusszeitpunkt. Ihr "
+            "realisiertes Netto wird erfasst, ihr zwischenzeitlicher "
+            "offener Verlust ist mit diesem Raster nicht messbar.")
 
     st.plotly_chart(_chart(daten, k.get("startkapital") or 0.0, schranke),
                     width="stretch", config=_CHART_CONFIG,
                     key=f"{key_prefix}_chart")
+    _konto_vergleich(daten, key_prefix)
 
     with st.container(border=True):
         st.markdown("**Wie riskant zeigt sich die Strategie?** "
@@ -396,8 +496,8 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
 
     with st.container(border=True):
         st.markdown("**GMT-Abgleich je Währungspaar** — Trade-Zeiten sind "
-                    "Serverzeit des Signal-Brokers, Kurse Serverzeit des "
-                    "Referenz-Terminals; der Versatz wird je Symbol per "
+                    "naive CSV-Zeiten ohne Zeitzonenbeleg, Kurszeiten "
+                    "UTC-Epochs des Referenz-Terminals; der Versatz wird je Symbol per "
                     "Preisabgleich (Open/Close gegen die High-Low-Spanne der "
                     "H1-Bar) bestimmt.")
         _symbol_diagnose(daten)
@@ -405,9 +505,11 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
     st.caption("Messbasis: H1-Bars des Tickmill-Referenzterminals (Bar-Close), "
                "nicht die Broker-Kurse des Signals selbst. Zwischentick-"
                "Tiefs innerhalb einer Stunde können tiefer liegen als die "
-               "stundenfeine Kurve zeigt. Realisierte Gewinne werden zur "
-               "Schluss-Stunde gebucht; der offene Betrag läuft mit jedem "
-               "Stunden-Close mit.")
+               "stundenfeine Kurve zeigt. Handelsereignisse werden am "
+               "ersten H1-Schluss nach ihrer tatsächlichen Zeit erfasst. "
+               "Aktuell offene Positionen fehlen im Historien-Export. "
+               "Spread sowie historische Gebühren während der Haltedauer "
+               "sind aus H1-Kursen und Positions-CSV nicht vollständig messbar.")
 
 
 @st.dialog("Equity-DD-Studie — aus Kursen nachgemessen", width="large")

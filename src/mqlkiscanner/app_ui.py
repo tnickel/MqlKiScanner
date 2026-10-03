@@ -322,6 +322,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
         column_order = ((["Stand"] if fresh_ids is not None else [])
                         + (["Fix"] if fix_ids is not None else [])
                         + ["Ampel", "Name", "Quelle", "Stop", "Max-Drawdown %",
+                           "Trading-DD % (geschlossen)", "Equity-Messung",
                            "Drawdown % (Plattform)", "Studie",
                            "Ertrag/Monat %", "Score", "Urteil", "Bericht vom", "Bericht",
                            "Link", "Abonnenten", "30 Tage", "7 Tage", "Dokumente"])
@@ -368,12 +369,23 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 "Balance-DD % (Plattform)", format="%.1f",
                 help="Plattform-Selbstauskunft „By Balance“ — kann bei "
                      "Auszahlungen deutlich höher ausfallen als der "
-                     "Max-Drawdown aus Trades."),
+                     "Trading-DD aus geschlossenen Trades."),
             "Max-Drawdown %": st.column_config.NumberColumn(
-                "Max-Drawdown %", format="%.1f",
-                help="Aus geschlossenen Trades selbst rekonstruierter "
-                     "maximaler Drawdown — unser Messwert, unabhängig von "
-                     "der Plattform-Angabe."),
+                "Max-Drawdown % (Equity)", format="%.1f",
+                help="Gemessene Equity inklusive offener Gewinne und Verluste: "
+                     "höchster belastbarer Wert aus Kurs-Nachmessung oder Monitor. "
+                     "Die Kurs-Nachmessung misst virtuelle Trading-Equity "
+                     "ohne spätere Ein-/Auszahlungen; der Monitor hat eine eigene Basis. "
+                     "Fehlt die Messung, bleibt das Feld leer. H1-Kurse erfassen "
+                     "keine Tiefs innerhalb einer Stunde."),
+            "Trading-DD % (geschlossen)": st.column_config.NumberColumn(
+                "Trading-DD % (geschlossen)", format="%.1f",
+                help="Drawdown aus den Nettogewinnen geschlossener Trades. "
+                     "Zwischenzeitliche Verluste offener Positionen fehlen hier."),
+            "Equity-Messung": st.column_config.TextColumn(
+                "Equity-Messung", width="medium",
+                help="Messquelle oder Grund, warum keine belastbare "
+                     "Equity-Nachmessung vorhanden ist."),
             "Winrate %": st.column_config.NumberColumn("Winrate %", format="%.1f"),
             "Verlustserie": st.column_config.NumberColumn("V-Serie", format="%d"),
             "Peak-Pos": st.column_config.NumberColumn("Peak-Pos", format="%d"),
@@ -921,7 +933,10 @@ def render_detail(result) -> None:
     with st.container(horizontal=True):
         st.metric("Risiko-Score", f"{result.score:.1f}" if result.score is not None else "—",
                   border=True)
-        st.metric("Max-Drawdown (gemessen)",
+        st.metric("Max-Drawdown (Equity, gemessen)",
+                  f"{result.max_drawdown_equity_pct:.1f} %" if result.max_drawdown_equity_pct is not None else "—",
+                  border=True)
+        st.metric("Trading-DD (geschlossen)",
                   f"{result.trading_dd_pct:.1f} %" if result.trading_dd_pct is not None else "—",
                   border=True)
         st.metric("Drawdown (Plattform)",
@@ -930,6 +945,14 @@ def render_detail(result) -> None:
         st.metric("Ertrag / Monat",
                   f"{result.ertrag_monat_pct:.1f} %" if result.ertrag_monat_pct is not None else "—",
                   border=True)
+
+    if result.max_drawdown_equity_pct is None:
+        st.warning(result.equity_messung_status + ". Der Trading-DD enthält "
+                   "keine zwischenzeitlichen offenen Gewinne oder Verluste.",
+                   icon=":material/monitoring:")
+    else:
+        st.caption(result.equity_messung_status + " · Die Drawdown-Schranke "
+                   "berücksichtigt zusätzlich beide Plattformwerte und den Trading-DD.")
 
     # Equity-DD-Studie (Nutzer-Wunsch 03.10.2026): On-Demand-Nachmessung für
     # dieses Signal — gleiche Messung wie der Tabellen-Button, hier mit dem

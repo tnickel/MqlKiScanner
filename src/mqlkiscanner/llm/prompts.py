@@ -218,28 +218,25 @@ Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
    mit Zahlen. Fehlender SL-Nachweis ist NEUTRAL (viele Broker uebertragen
    keinen SL); nenne Verlustdistanz-Muster als Hinweis, ohne abzuwerten.
    Kein Befund, keine Aussage.
-1a. **Equity-Drawdown**: Vergleiche IMMER den gemeldeten Drawdown
-   (dd_equity_pct/dd_balance_pct der Plattform) mit dem Trading-DD aus den
-   geschlossenen Trades UND — wenn im Forensik-JSON vorhanden — dem
-   equity_dd_rekonstruiert_pct (aus Kursdaten nachgemessen, INCLUDING
-   floating Verluste offener Positionen, Auto-GMT). Ist die Rekonstruktion
-   GROESSER als der gemeldete Wert, ist das ein Kernbefund: der Anbieter
-   meldet seinen Drawdown schoener, als er war — benenne die Differenz mit
-   beiden Zahlen. Fehlt die Rekonstruktion (kein Feld), sage nichts dazu.
-   Ggf. liegt zusaetzlich monitor_trade_eq_dd_pct vor: der vom Datenquellen-
-   Monitor (Pelican/Robo/Vantage/Zulu) aus der VOLTEN Trade-Kurve nachge-
-   messene Max-EQ-DD (Peak->Tief, Basis aus der Plattformrendite rueckge-
-   rechnet) — eine unabhaengige Zweitmessung auf denselben Trades. Weicht
-   er um Faktor 2 oder mehr vom gemeldeten Wert ab, ist das ebenfalls ein
-   Kernbefund (nenne beide Zahlen und den Faktor); null/fehlend → nichts
-   dazu sagen. monitor_trade_eq_dd_pct fliesst von der Engine als
-   zusaetzlicher Wert in das massgebliche Drawdown-Maximum ein: Er
-   beeinflusst die Drawdown-Risikodimension und die harte Drawdown-Schranke.
-   Uebersteigt das Maximum die konfigurierte Schranke (Standard 30 Prozent,
-   geprueft strikt > Grenzwert), ist die Schranke verletzt. Erlaeutere das
-   uebergebene Engine-Ergebnis; der LLM-Bericht veraendert weder Ampel noch
-   Score. Ein fehlender oder nullwertiger Monitor-Befund ist kein
-   zusaetzlicher Risikonachweis und keine Entlastung.
+1a. **Equity-Drawdown**: Stelle dd_equity_pct/dd_balance_pct der Plattform,
+   Trading-DD (nur geschlossene Trades), equity_dd_rekonstruiert_pct und
+   ggf. monitor_trade_eq_dd_pct mit ihren unterschiedlichen Messgrundlagen
+   gegenueber. Numerische Gleichwertigkeit ist NUR bei gleicher Kapitalbasis,
+   gleichem Zeitraum und belegter Datenabdeckung gegeben. Beachte
+   equity_rekonstruktion_methodik: virtuelle Trading-Equity behaelt Gewinne
+   rechnerisch im Konto, spaetere Ein-/Auszahlungen fehlen; H1-Schlusskurse
+   am Bar-Ende messen keine Intrabar-Extrema, aktuell offene Positionen
+   fehlen im Historien-Export. Auch der Monitor kann eine eigene Basis nutzen.
+   Bei unterschiedlicher oder ungeklärter Grundlage benenne die gelieferten
+   Zahlen und Methodik als Abweichung, ohne direkt vergleichbare Messung
+   zu behaupten. Aus einem hoeheren Rekonstruktionswert allein darfst du
+   KEINE Schoenmeldung oder Taeuschung des Anbieters ableiten. Unvollstaendige
+   oder veraltete Messungen belegen kein Einhalten der Drawdown-Schranke.
+   Fehlende/nullwertige Messungen sind weder Risiko-Beweis noch Entlastung.
+   Erlaeutere das uebergebene Engine-Ergebnis: Die Engine nimmt die verfuegbaren
+   belastbaren Werte in ihr Drawdown-Maximum auf. Strikt > konfigurierte
+   Schranke (Standard 30 Prozent) bedeutet Verletzung; der LLM-Bericht
+   veraendert weder Ampel noch Score.
 2. **Copy-Eignung**: Slippage-/Kontogroessen-Risiken.
 3. **Ein Satz Fazit**: Warnung oder Entlastung — mit Hauptgrund.
 
@@ -341,7 +338,18 @@ Danach Abschnitte mit ## -Ueberschriften:
    Logik, Automatisierungsgrad, belegt aus den Trades.
 2. **Wie handelt das System?** — Verhalten anhand der Beispiel-Trades:
    Positions sizing, Körbe, Haltezeiten, Session-Muster, Monatsverlauf.
-3. **Risikoanalyse** — Drawdown im Dreiklang: Trading-DD (geschlossene Trades) vs. Plattform-EQ-DD (gemeldet) vs. Reko-EQ-DD (aus Kursen nachgemessen, floating inklusive — Feld equity_dd_rekonstruiert_pct im Forensik-JSON, wenn vorhanden). Eine Rekonstruktion über der Drawdown-Schranke ist ein hartes Ablehnungskriterium; eine Rekonstruktion deutlich über dem gemeldeten Wert ist gesondert zu benennen. Liegt monitor_trade_eq_dd_pct vor (Zweitmessung des Datenquellen-Monitors aus der vollen Trade-Kurve), stelle ihn ebenso dagegen — Faktor ≥2 über dem gemeldeten Wert = Kernbefund mit beiden Zahlen,
+3. **Risikoanalyse** — Stelle Trading-DD (geschlossene Trades), Plattform-DD,
+   equity_dd_rekonstruiert_pct und ggf. monitor_trade_eq_dd_pct gegenueber.
+   Direkter Zahlenvergleich NUR bei gleicher Kapitalbasis, gleichem Zeitraum
+   und belegter Datenabdeckung. Beachte equity_rekonstruktion_methodik:
+   virtuelle Trading-Equity ohne spaetere Ein-/Auszahlungen, H1-Schlusskurse
+   am Bar-Ende ohne Intrabar-Extrema und ohne aktuell offene Exportpositionen;
+   der Monitor kann ebenfalls eine eigene Basis verwenden. Bei ungleicher
+   oder ungeklärter Grundlage benenne Zahlen und Methodik als Abweichung.
+   Ein hoeherer Rekonstruktionswert allein beweist KEINE Schoenmeldung oder
+   Taeuschung. Unvollstaendige/veraltete Messungen belegen kein Einhalten
+   der Schranke. Erlaeutere die uebergebene Engine-Schrankenentscheidung,
+   ohne Ampel oder Score selbst zu aendern. Weitere Risikobefunde:
    Verlustserien mit Summen, Peak-Exposure mit Dollar-Schockszenario,
    Martingale-Befund, Stop-Loss-Befund (direkt dokumentiert, plausibel intern oder neutral/offen). Das
    Schockszenario ist ein Stress-Szenario, kein gemessener Verlust: es
@@ -518,6 +526,15 @@ Danach Abschnitte mit ## -Ueberschriften:
 2. **Bewertung je Signal** — Kurzes Urteil je Signal: Rolle im Depot
    (Ertragstraeger, Risikotraeger, ueberfluessig) und Hauptgrund mit
    Zahlen (Trading-DD, Reko-EQ-DD aus Kursen falls vorhanden neben dem gemeldeten EQ-DD, ggf. monitor_trade_eq_dd_pct als Monitor-Zweitmessung, Schockszenario, Stop-Nachweis, Ertrag/Monat).
+   Direkter Drawdown-Zahlenvergleich NUR bei gleicher Kapitalbasis, gleichem
+   Zeitraum und belegter Datenabdeckung. Beachte equity_rekonstruktion_methodik:
+   virtuelle Trading-Equity ohne spaetere Ein-/Auszahlungen, H1-Schlusskurse
+   am Bar-Ende ohne Intrabar-Extrema und ohne aktuell offene Exportpositionen;
+   der Monitor kann eine eigene Basis nutzen. Bei ungleicher oder ungeklärter
+   Grundlage nenne Zahlen und Methodik als Abweichung. Aus einem hoeheren
+   Rekonstruktionswert allein folgt KEINE Schoenmeldung oder Taeuschung.
+   Unvollstaendige/veraltete Nachmessungen sind kein Nachweis fuer das
+   Einhalten der Schranke. Engine-Ampel und -Score bleiben verbindlich.
 3. **Portfolio-Vorschlag** — Welche Kombination empfiehlst du? Je
    gewaehltem Signal: Rolle, ungefaehre Gewichtung in Prozent des
    Kopierbudgets und warum die Kombination diversifiziert ist

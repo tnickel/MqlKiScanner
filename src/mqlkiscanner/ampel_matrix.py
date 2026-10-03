@@ -58,8 +58,8 @@ KRITERIEN: list[Kriterium] = [
         "dd_schranke", "Drawdown-Schranke",
         "Harte Nutzervorgabe: Das MAXIMUM aus dem Plattform-Drawdown (By "
         "Equity und By Balance — Selbstauskunft), dem aus den Trades selbst "
-        "berechneten Max-Drawdown, der aus Kursdaten nachgemessenen "
-        "Kursmessung (nur bei belastbarer "
+        "berechneten Trading-DD (geschlossen), dem Max-Drawdown aus "
+        "Kursmessung (Equity inklusive Floating; nur bei belastbarer "
         "Abdeckung) UND der floating-inclusiven Zweitmessung des "
         "Datenquellen-Monitors darf die Schranke (Standard "
         "30 %) nicht überschreiten. Grün = mit Puffer ≥ 5 Punkten eingehalten, "
@@ -147,18 +147,17 @@ def _dd_zelle(r, settings) -> Zelle:
     # Quellen-Signale ohne harte floating-Messung (Lemonal 🟢 bei 46,65 %,
     # AccurateCopier 🟢 bei 241 %). Gold Spike: By Equity 3,8 % vs. By
     # Balance 8,11 %.
-    # Nutzer-Terminologie 03.10.: der aus Trades selbst berechnete Wert
-    # heißt „Max-Drawdown“, die Plattform-Selbstauskunft „Drawdown“.
+    # Geschlossene Trades und Equity inklusive Floating getrennt benennen.
     werte = {"Drawdown (Plattform)": r.dd_equity_pct,
              "Balance-DD (Plattform)": r.dd_balance_pct,
-             "Max-Drawdown (Trades)": r.trading_dd_pct,
+             "Trading-DD (geschlossen)": r.trading_dd_pct,
              "Max-DD (Kurse)": getattr(r, "equity_dd_rekonstruiert_pct", None),
              "Max-DD (Monitor)": getattr(r, "monitor_trade_eq_dd_pct", None)}
     vorhanden = {k: v for k, v in werte.items() if v is not None}
     if not vorhanden:
         return Zelle(KEINE_DATEN, "keine DD-Werte",
                      "Weder Plattform-Drawdown (By Equity/Balance) noch "
-                     "Max-Drawdown aus Trades vorhanden — Schranke "
+                     "Trading-DD aus geschlossenen Trades vorhanden — Schranke "
                      "nicht prüfbar.")
     relevant = max(vorhanden.values())
     herleitung = "max(" + ", ".join(f"{k} {_num(v)} %" for k, v in vorhanden.items()) \

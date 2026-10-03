@@ -119,6 +119,15 @@ Danach Abschnitte mit ## -Ueberschriften:
 2. **Bewertung je Signal** — Kurzes Urteil je Signal: Rolle im Depot
    (Ertragstraeger, Risikotraeger, ueberfluessig) und Hauptgrund mit
    Zahlen (Trading-DD, Reko-EQ-DD aus Kursen falls vorhanden neben dem gemeldeten EQ-DD, ggf. monitor_trade_eq_dd_pct als Monitor-Zweitmessung, Schockszenario, Stop-Nachweis, Ertrag/Monat).
+   Direkter Drawdown-Zahlenvergleich NUR bei gleicher Kapitalbasis, gleichem
+   Zeitraum und belegter Datenabdeckung. Beachte equity_rekonstruktion_methodik:
+   virtuelle Trading-Equity ohne spaetere Ein-/Auszahlungen, H1-Schlusskurse
+   am Bar-Ende ohne Intrabar-Extrema und ohne aktuell offene Exportpositionen;
+   der Monitor kann eine eigene Basis nutzen. Bei ungleicher oder ungeklärter
+   Grundlage nenne Zahlen und Methodik als Abweichung. Aus einem hoeheren
+   Rekonstruktionswert allein folgt KEINE Schoenmeldung oder Taeuschung.
+   Unvollstaendige/veraltete Nachmessungen sind kein Nachweis fuer das
+   Einhalten der Schranke. Engine-Ampel und -Score bleiben verbindlich.
 3. **Portfolio-Vorschlag** — Welche Kombination empfiehlst du? Je
    gewaehltem Signal: Rolle, ungefaehre Gewichtung in Prozent des
    Kopierbudgets und warum die Kombination diversifiziert ist

@@ -17,7 +17,7 @@ etwas geaendert wird. Ohne konfigurierten GLM-Key werden sie uebersprungen.
 Die 4 Regressionsflaelle:
 1. Gesamtbericht: Ausschlusslisten-Signal (Ampel ⛔) mit ansonsten Top-Zahlen
    muss ABLEHNUNG bleiben — nie WATCHLIST/EMPFEHLUNG (Kenni-Fall).
-2. Gesamtbericht: ohne bewiesenen Stop niemals EMPFEHLUNG (Kernkriterium).
+2. Gesamtbericht: gelbes Engine-Urteil darf nie EMPFEHLUNG werden.
 3. Portfolio: ausgeschlossenes Signal erhaelt NIE eine Gewichtung; das
    gruene Signal wird empfohlen; Kurzfassung und Vorschlag nennen dieselbe
    Auswahl (interne Konsistenz).
@@ -102,6 +102,10 @@ def _signal(result_id: int, name: str, **kwargs) -> "object":
         url=f"https://www.mql5.com/en/signals/{result_id}",
         autor="Testautor", abonnenten=42, abo_preis_usd=30.0, wochen=60,
         growth_pct=300.0, ertrag_monat_pct=21.5, pf=3.0,
+        # Die synthetische Monatskurve belegt auch die seit 02.10.
+        # vorgeschriebene Effizienz: 21,5 %/Monat / 5 % DD = 4,3.
+        ertrag_monat_pct_forensik=21.5, ertrag_monat_geom_pct=21.5,
+        retdd_monat=4.3,
         dd_equity_pct=4.2, dd_balance_pct=5.0, broker_server="Test-Live",
         symbole="XAUUSD", score=3.9, martingale_flag=False,
         stop_evidence="direct", stop_nachweis="Orderbuch: 383/383 mit SL",
@@ -165,7 +169,9 @@ def test_gesamtbericht_gelb_nie_empfehlung(glm_client):
     from mqlkiscanner.llm import prompt_fill
     result = _signal(555002, "Ohne Stop Muster",
                      stop_evidence="none", stop_nachweis="kein Nachweis",
-                     ertrag_monat_pct=3.0)
+                     ertrag_monat_pct=3.0,
+                     ertrag_monat_pct_forensik=3.0,
+                     ertrag_monat_geom_pct=3.0, retdd_monat=0.6)
     assert result.ampel == "🟡"
     prompt = prompt_fill.build_gesamtbericht_prompt(
         result, pipeline._kriterien_text({}), _STUB_TRADE, _STUB_RISIKO)

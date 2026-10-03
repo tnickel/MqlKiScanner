@@ -91,9 +91,10 @@ def test_f5_abdeckung_zaehlt_datenluecken_im_nenner():
 
     bars = [_bar(h, preis(h)) for h in range(-14, 37) if h not in range(1, 6)]
     ergebnis = _reko(trades, {"XAUUSD": bars})
-    # Offene H1-Stunden laut Trade-Zeiten: 0..5 und 20..21 = 8; die 5-stündige
-    # Bar-Lücke ist KEINE Marktpause (< 20 h) -> 3/8 = 37,5 % statt 100 %.
-    assert ergebnis["abdeckung_pct"] == pytest.approx(37.5, abs=0.1)
+    # H1-Close-Messpunkte mit offenem Trade: 1..5 und 21 = 6. Die Punkte
+    # 6/22 enthalten bereits realisiertes Netto. Nur Bars 0/20 liefern
+    # einen Floating-Punkt; die kurze Datenluecke bleibt im Nenner: 2/6.
+    assert ergebnis["abdeckung_pct"] == pytest.approx(33.3, abs=0.1)
     assert ergebnis["verlaesslich"] is False
 
 

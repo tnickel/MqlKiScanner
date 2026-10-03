@@ -1564,7 +1564,9 @@ def _dialog_forensik() -> None:
             "Quelle": e.get("quelle") or "mql5",
             "Ampel": (r.ampel if r else None),
             "Score": (r.score if geprueft else None),
-            "Max-Drawdown %": (r.trading_dd_pct if geprueft else None),
+            "Max-Drawdown % (Equity)": (r.max_drawdown_equity_pct if geprueft else None),
+            "Trading-DD % (geschlossen)": (r.trading_dd_pct if geprueft else None),
+            "Equity-Messung": (r.equity_messung_status if r else "Noch nicht geprüft"),
             "Ertrag/M": (getattr(r, "ertrag_monat_pct_forensik", None)
                          if geprueft else None),
             "RetDD": (getattr(r, "retdd_monat", None) if geprueft else None),
@@ -1582,7 +1584,9 @@ def _dialog_forensik() -> None:
         zeilen.append({
             "Geprüft": "✓ ja", "Signal": r.name, "ID": r.id,
             "Quelle": r.quelle or "mql5", "Ampel": r.ampel, "Score": r.score,
-            "Max-Drawdown %": r.trading_dd_pct,
+            "Max-Drawdown % (Equity)": r.max_drawdown_equity_pct,
+            "Trading-DD % (geschlossen)": r.trading_dd_pct,
+            "Equity-Messung": r.equity_messung_status,
             "Ertrag/M": getattr(r, "ertrag_monat_pct_forensik", None),
             "RetDD": getattr(r, "retdd_monat", None),
             "Grund": "Aus dem Datenbank-Stand (kein Eintrag in der gespeicherten "
@@ -1602,10 +1606,11 @@ def _dialog_forensik() -> None:
     st.caption(f"Angezeigt: {len(zeilen)} von {n_gesamt} Kandidaten.")
     st.dataframe(_ohne_intern(zeilen), width="stretch", hide_index=True,
                  column_config={"Link": _link_spalte()})
-    st.caption("Max-Drawdown ist der aus geschlossenen Trades selbst "
-               "gemessene Drawdown; die Schranke berücksichtigt zusätzlich "
-               "verfügbare Equity-Messungen (Plattform-Angaben, Kurse, "
-               "Monitor). Ertrag/M ist der lineare Forensik-Ertrag "
+    st.caption("Max-Drawdown (Equity) enthält offene Gewinne und Verluste "
+               "aus belastbaren Kurs- oder Monitor-Messungen; ohne diese "
+               "bleibt das Feld leer. Trading-DD berücksichtigt nur "
+               "geschlossene Trades. Die Schranke verwendet zusätzlich "
+               "die Plattform-Angaben. Ertrag/M ist der lineare Forensik-Ertrag "
                "in Prozent; RetDD nutzt den geometrischen Monatsertrag je "
                "Prozent maximalem Drawdown.")
     probleme = [r for r in results if r.fehler]

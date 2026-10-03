@@ -4,6 +4,17 @@ Reihe von 6 Tiefenanalysen + 2 Marktscreenings (37 Signale gesamt),
 Sep. 2026, Workspace Allgemein (Origin-Session
 `sess_ff799a20-8b9b-4b1b-b605-0826e01ceffa`). PDF-Berichte: `doc/reports/`.
 
+**Korrektur 03.10.2026:** Die folgende KiraCat-Empfehlung und die spaetere
+Fussnote „real 7,9 % validiert“ sind historische Urteile, kein aktueller
+Equity-Nachweis. 7,9 % ist der virtuelle Closed-Trade-DD am groessten
+Dollarverlust; das maximale relative Closed-Trade-DD betraegt 8,14 %.
+Aktuell meldet MQL5 34,95 % By Equity; die Scanner-Schranke ist korrekt rot.
+Die alte virtuelle H1-Reko 44,34 % ist wegen anderer Kapitalfluesse nicht
+direkt vergleichbar. Die kapitalflussneutrale Konto-H1-Diagnose liefert
+ca. 20,4 % bis 28.09.; fehlende US100-Kurse und heutige offene Positionen
+verhindern einen vollstaendigen Abgleich. Pruefung und Belege im Archiv
+`../waste/drawdown_2026-10-03/review.md`.
+
 ## Tiefanalysen (volle Forensik)
 
 ### 1. Gold Spike MT4 #2349227 / MT5 #2375480 — Dmitrii Kuropatkin

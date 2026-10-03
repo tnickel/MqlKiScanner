@@ -69,9 +69,9 @@ Die Matrix bewertet **einzelne Testkriterien** getrennt — sie ersetzt nicht da
 
 **Farben:** 🟢 erfüllt/bewiesen · 🟡 teilweise, knapp oder unabgeklärt · 🟠 Warnflag ohne harte Verletzung · 🔴 harte Verletzung/nachgewiesen · ⚪ keine Daten (entlastet nicht).
 
-**ⓘ im Spaltenkopf** erklärt das Kriterium. **Maus über der Ampel-Zelle** zeigt die exakte Berechnung, z. B. „max(Drawdown (Plattform) 3,80 %, Max-Drawdown (Trades) 4,57 %) = 4,57 % hält die Schranke 30 % mit 25,4 Punkten Abstand ein“.
+**ⓘ im Spaltenkopf** erklärt das Kriterium. **Maus über der Ampel-Zelle** zeigt die exakte Berechnung, z. B. „max(Drawdown (Plattform) 3,80 %, Trading-DD (geschlossen) 4,57 %) = 4,57 % hält die Schranke 30 % mit 25,4 Punkten Abstand ein“.
 
-Die Kriterien: Drawdown-Schranke (max aus dem Plattform-Drawdown By Equity/By Balance, dem selbst berechneten Max-Drawdown aus Trades und der Kurs-Nachmessung — der höchste Wert zählt; die Kurse-Nachmessung nur bei belastbarer Abdeckung), Martingale-Signatur, Stop-Nachweis (bewiesen = entlastend, fehlend = neutral), Ertrag pro Monat, Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
+Die Kriterien: Drawdown-Schranke (max aus dem Plattform-Drawdown By Equity/By Balance, dem Trading-DD geschlossener Trades sowie Kurs- und Monitor-Nachmessung der Equity — der höchste Wert zählt; die Kurs-Nachmessung nur bei belastbarer Abdeckung), Martingale-Signatur, Stop-Nachweis (bewiesen = entlastend, fehlend = neutral), Ertrag pro Monat, Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
 
 Beim Scan wird die Matrix mit allen Herleitungen als Snapshot in der Datenbank gespeichert; die Anzeige rechnet sie aus den gespeicherten Werten mit den aktuellen Grenzwerten neu.
 """),
@@ -87,11 +87,11 @@ Die Übersicht zählt die Einstufungen aller Signale des ausgewählten Laufs. Di
     "risk_metrics": ("Drawdown, Risiko-Score und Ertrag", """
 **Risiko-Score (1–10):** Aggregierte Risikobewertung; kleinere Werte bedeuten weniger erkannte Risikofaktoren. Bei lokalen Referenzdaten kann ein hinterlegter Referenz-Score verwendet werden. Kein Wahrscheinlichkeitsmaß und keine Prognose.
 
-**Max-Drawdown (unser Messwert):** Aus den geschlossenen Trades selbst berechneter maximaler Rückgang des Handelsergebnisses — unabhängig von der Plattform. **Drawdown (Plattform):** Selbstauskunft der Plattform einschließlich schwankender offener Positionen. Geschlossene Trades können zwischenzeitliche offene Verluste verbergen; die Werte messen Unterschiedliches.
+**Max-Drawdown (Equity, gemessen):** Maximaler Rückgang der Equity inklusive offener Gewinne und Verluste, aus einer belastbaren Kurs-Nachmessung oder Monitor-Messung. Ohne belastbare Equity-Messung bleibt der Wert leer; H1-Kurse erfassen keine Tiefs innerhalb einer Stunde. **Trading-DD (geschlossen):** Separater Drawdown aus den Nettogewinnen geschlossener Trades; zwischenzeitliche offene Verluste fehlen hier. **Drawdown (Plattform):** Selbstauskunft der Plattform. Die Schranke verwendet den höchsten verfügbaren Wert einschließlich der Plattform-Angaben.
 
 **Ertrag pro Monat:** Historische Kennzahl aus verfügbaren Daten, keine erwartete Auszahlung. Projektvorgabe: maximal 30 % Drawdown und über 5 % Ertrag pro Monat.
 
-**Profit-Faktor:** Verhältnis summierter Gewinne zum Betrag summierter Verluste. **Winrate:** Anteil gewinnender geschlossener Trades. Bei CSV-Daten verwenden diese Handelsstatistiken den Profit vor Kommission und Swap; der Max-Drawdown rechnet dagegen mit Nettowerten. Hohe Trefferquoten können mit seltenen, großen Verlusten einhergehen.
+**Profit-Faktor:** Verhältnis summierter Gewinne zum Betrag summierter Verluste. **Winrate:** Anteil gewinnender geschlossener Trades. Bei CSV-Daten verwenden diese Handelsstatistiken den Profit vor Kommission und Swap; der Trading-DD rechnet dagegen mit Nettowerten. Hohe Trefferquoten können mit seltenen, großen Verlusten einhergehen.
 """),
     "exposure": ("Positionen, Verlustserien und Schockrechnung", """
 **Peak-Positionen** bezeichnet die größte rekonstruierte Anzahl gleichzeitig offener Positionen. **Netto-Lots** zeigt die richtungsabhängige Positionierung beim ersten Erreichen dieses Positionsmaximums, nicht zwingend das maximale Netto-Volumen über die gesamte Laufzeit. Viele kleine, gleichgerichtete Trades können ein großes Risiko bilden.
@@ -348,11 +348,11 @@ Der Melder ist deine Benachrichtigungszentrale. Er sorgt dafür, dass du wichtig
     "equity_studie": ("📉 Equity-DD-Studie — Drawdown aus echten Kursen", """
 **Kurzfassung:** Der Button in der Ergebnisstabelle (Spalte „Equity-DD“) misst für das jeweilige Signal den Equity-Drawdown stundenfein nach — aus der eigenen Trade-Historie und echten Kursen des MT5-Referenzterminals. Es öffnet sich ein Fenster mit Chart (Zoom, Zeichenwerkzeuge), Kennzahlen und Risiko-Texten; die gleiche Ansicht gibt es als eigene Seite „Equity-Studie“.
 
-**Was gerechnet wird.** Für jede Stunde: Startkapital + realisierte Gewinne (geschlossene Trades) + offener Betrag (floating) aller offenen Positionen, bewertet zum echten Stunden-Schlusskurs je Währungspaar. Der größte Rückfall dieser Kurve ist der nachgemessene Equity-DD — unabhängig von der Broker-Selbstauskunft.
+**Was gerechnet wird.** Für jede Stunde: Startkapital + realisierte Gewinne (geschlossene Trades) + offener Betrag (floating) aller damals offenen Exportpositionen, bewertet zum echten H1-Schlusskurs am Bar-Ende. Das ergibt eine virtuelle Trading-Equity ohne spätere Ein- und Auszahlungen. Ihr Drawdown ist nicht direkt mit dem Broker-„By Equity“ vergleichbar. Die zusätzliche Konto-Kurve berücksichtigt Kapitalflüsse; der Renditeindex neutralisiert Ein- und Auszahlungen. Aktuell offene Positionen fehlen im Export, Verluste innerhalb einer Stunde werden nicht gemessen.
 
-**GMT-Abgleich je Währungspaar.** Trade-Zeiten und Kurszeiten sind verschiedene Serverzeiten. Der Versatz wird je Symbol per Preisabgleich bestimmt (Open/Close gegen die High-Low-Spanne der H1-Bar); Symbole mit zu wenigen Proben bekommen den Median der erkannten Symbole, offengelegt in der Tabelle.
+**GMT-Abgleich je Währungspaar.** Die CSV-Trade-Zeiten enthalten keine Zeitzone; MT5-Kurszeiten sind dokumentierte UTC-Bar-Anfänge. Der Versatz wird je Symbol per Preisabgleich bestimmt (Open/Close gegen die High-Low-Spanne der H1-Bar); Symbole mit zu wenigen Proben bekommen den Median der erkannten Symbole, offengelegt in der Tabelle.
 
-**Fehlende Kurse.** Gerechnet wird nur für Währungspaare mit Kursen und belegter Kontraktgröße; fehlende Symbole werden namentlich gemeldet — der Drawdown kann ohne sie niedriger sein als in Wahrheit. Stundenlücken werden nicht interpoliert.
+**Fehlende Kurse.** Das realisierte Netto aller Export-Trades bleibt enthalten. Fehlt für eine aktive Position ein Kurs oder eine belegte Kontraktgröße, bleibt deren Floating-Betrag unbekannt; der Messpunkt wird zur Lücke. Fehlende Symbole werden namentlich gemeldet. Lücken werden nicht interpoliert und verhindern eine vollständige Drawdown-Messung.
 
 **Wichtig:** Die Studie bewertet nichts — Ampel, Score und Urteil bleiben verbindlich bei der Engine. Das erste Öffnen dauert einige Sekunden (MT5-Terminal + Kurse); ein Fortschrittsbalken zeigt den Verlauf, danach ist das Ergebnis in der Sitzung gecacht.
 """),

@@ -17,12 +17,13 @@ Terminal-Politik identisch zur Start-Politik des Markt-Beobachters: ohne
 laufendes Terminal und ohne markt_start_erlauben wird NICHT verbunden —
 die Rekonstruktion entfällt dann still (kein Malus, kein Fehler).
 
-Zeit-Epoch-Trick: MT5-Ratenzeiten sind Sekunden-Epoch der TERMINAL-
-Serverzeit (als wäre sie UTC). Die Trade-CSV-Zeiten sind Serverzeit des
- SIGNAL-Brokers. Die Differenz beider_offsets ermittelt die Auto-GMT-
+Zeitbasis: Laut MetaTrader5-Python-Dokumentation sind MT5-Ratenzeiten
+UTC-Epochs; time bezeichnet den BAR-ANFANG (mt5copyratesrange_py).
+Die Trade-CSV-Zeiten haben keinen Zeitzonenbeleg. Den noetigen Versatz
+vom naiven CSV-Zeitraum zum Kursdaten-Raum ermittelt die Auto-GMT-
 Erkennung (forensics/equity_rekonstruktion.ermittle_gmt_offset) per
-Preisabgleich — sie liefert genau den Shift, der hier für Lookups nötig
-ist. Keine Annahme über die absolute Zeitzone irgendeiner Seite nötig.
+Preisabgleich — sie liefert den Shift, der hier fuer Lookups noetig ist.
+Die Rekonstruktion setzt keine unbelegte CSV-Zeitzone voraus.
 """
 from __future__ import annotations
 

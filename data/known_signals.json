@@ -2,6 +2,7 @@
   "meta": {
     "stand": "2026-09-04",
     "quelle": "Forensische Analyse-Reihe, Workspace Allgemein, Session sess_ff799a20-8b9b-4b1b-b605-0826e01ceffa",
+    "korrektur_2026_10_03": "Historische KiraCat-Empfehlung ueberholt: aktuell Plattform-EQ-DD 34.95% > 30%-Schranke. realer_dd_pct=7.9 ist nur der Closed-Trade-DD am USD-Maximum auf virtueller Basis, kein Konto-Equity-DD. Maximales relatives Closed-Trade-DD=8.14%.",
     "schranke": {"max_drawdown_pct": 30, "prioritaet": "Risiko vor Ertrag", "min_ertrag_pct_monat": 5}
   },
   "empfehlung": [

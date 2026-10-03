@@ -451,6 +451,10 @@ with st.container(border=True):
                and (not query.strip() or query.strip().casefold() in f'{r.name} {r.id}'.casefold())
                and (not apply_fresh or r.id in fresh_ids)]
     st.caption(f'{len(visible)} von {len(results)} Signalen · Tabelle und CSV verwenden dieselben Filter.')
+    st.caption('Max-Drawdown (Equity) umfasst offene Gewinne und Verluste aus '
+               'einer belastbaren Nachmessung. Trading-DD zählt nur geschlossene '
+               'Trades. Eine fehlende Equity-Messung bleibt leer; der Grund '
+               'steht in „Equity-Messung“.')
     show_fresh = fresh_ids if selected_run.startswith('Datenbank') or selected_run == 'Aktuelle Sitzung' else None
     if visible:
         signature = sha1((source_signature + repr([

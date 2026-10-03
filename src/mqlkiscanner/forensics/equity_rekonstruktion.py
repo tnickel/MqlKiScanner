@@ -7,8 +7,8 @@ Auf einem H1-Raster wird die Equity-Kurve = Startkapital + realisierte
 Gewinne + floating PnL der offenen Positionen (zum Bar-Close des jeweiligen
 Symbols) geführt; der maximale Rückfall ist der rekonstruierte Equity-DD.
 
-Auto-GMT (Nutzer-Idee): Trade-Zeiten sind Serverzeit des Signal-Brokers,
-Kurszeiten Serverzeit des Referenz-Terminals. Der nötige Shift wird
+Auto-GMT (Nutzer-Idee): Trade-CSV-Zeiten sind naiv ohne Zeitzonenbeleg,
+Kurszeiten laut MT5-Python-Dokumentation UTC-Bar-Anfangszeiten. Der noetige Shift wird
 ermittelt, indem für Kandidaten-Offsets (±14 h, halbstündig nicht nötig —
 Forex-Server nutzen ganze Stunden) geprüft wird, ob Open- UND Close-Kurse
 der Trades innerhalb der High-Low-Spanne der jeweils getroffenen H1-Bar
@@ -205,29 +205,34 @@ def rekonstruiere(parsed, kurse, startkapital: float,
                          f"(Trefferquote {gmt['trefferquote']:.0%} < "
                          f"{GMT_MIN_TREFFER:.0%}) — Zeitversatz nicht belastbar."}
 
-    # Raster aus dem bereits geladenen Superset-Fenster ableiten (deckt alle
-    # GMT-Shifts ab) — KEIN zusaetzlicher Kursabruf. Normierung auf H1
-    # (Bar-Anfangsstunde).
-    raster: list[int] = sorted({(b["time"] // 3600) * 3600
-                                for bars in bars_je_symbol.values() for b in bars})
+    # MT5 time bezeichnet den BAR-ANFANG. Der Close-Kurs gehoert an das
+    # Ende dieses Intervalls, nicht eine Stunde davor. Trade-Ereignisse
+    # behalten ihre Sekunden: Schluss 10:20 wird erst im Punkt 11:00
+    # realisiert, waehrend der Close der Bar 09:00 im Punkt 10:00 gilt.
+    anfang = min(_epoch(t.open_time) + offset for t in trades)
+    ende = max(_epoch(t.close_time) + offset for t in trades)
+    endpunkt = ((ende + 3599) // 3600) * 3600
+    raster: list[int] = sorted({(b["time"] // 3600 + 1) * 3600
+                                for bars in bars_je_symbol.values() for b in bars
+                                if anfang < (b["time"] // 3600 + 1) * 3600 <= endpunkt})
     if not raster:
         return {"test": "equity_rekonstruktion", "status": "skipped",
                 "grund": "keine H1-Bars im Zeitraum"}
     closes_je_symbol: dict[str, dict[int, float]] = {}
     for s, bars in bars_je_symbol.items():
-        closes_je_symbol[s] = {(b["time"] // 3600) * 3600: b["close"] for b in bars}
+        closes_je_symbol[s] = {(b["time"] // 3600 + 1) * 3600: b["close"] for b in bars}
+    # Das Endkonto braucht keine Kurse: selbst wenn am Schluss eine Bar
+    # fehlt, muss das Netto ALLER abgeschlossenen Positionen enthalten sein.
+    raster = sorted(set(raster) | {endpunkt})
 
     # Realisierte PnL kumulieren (Close-Zeit + Offset im Terminal-Raum).
     schliessungen = sorted(
-        ((  ( (_epoch(t.close_time) + offset) // 3600) * 3600, t.net) for t in nutzbare),
+        ((_epoch(t.close_time) + offset, t.net) for t in trades),
         key=lambda x: x[0])
 
-    # Offene Positionen je Rasterpunkt auswerten.
-    # Vorbereitung: Trades nach Open sortiert für Sliding-Window. Das Ende
-    # wird AUF DIE STUNDE GERUNDET — schliessungen rundet ebenso: Ein Schluss
-    # 10:20 wäre sonst bei Rasterpunkt 10:00 gleichzeitig realisiert UND
-    # floating verbucht (Doppelbuchung, verfälschter Peak; Review 29.09.,
-    # Befund 2).
+    # ALLE Positionen fuer den Aktivstatus verwenden. Fehlende Kurse
+    # verhindern eine Floating-Messung, aber nie die Realisierung ihres
+    # exportierten Nettos. Keine Rundung der Open-/Close-Ereignisse.
     # Key-ONLY-Sortierung (Live-Bug 29.09., MCA100 #2153920): Das Tupel
     # enthaelt das Trade-Objekt — hatten zwei Trades dieselbe Open- UND
     # Close-Stunde (Grid/Scalping), verglich Python die Objekte und warf
@@ -235,8 +240,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # Equity-Reko scheiterte zweimal (auch im Retry) und das Signal bekam
     # keine Kursdaten-Nachmessung.
     offen_sort = sorted(
-        ((( (_epoch(t.open_time) + offset) // 3600) * 3600,
-          ((_epoch(t.close_time) + offset) // 3600) * 3600, t) for t in nutzbare),
+        ((_epoch(t.open_time) + offset,
+          _epoch(t.close_time) + offset, t) for t in trades),
         key=lambda x: (x[0], x[1]))
 
     fx_cache: dict[tuple[str, dt.date], float | None] = {}
@@ -251,11 +256,13 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             fx_cache[key] = kurs["rate"] if kurs else None
         return fx_cache[key]
 
-    curve: list[tuple[int, float, bool]] = []   # (stunde, equity, messpunkt)
+    # Expliziter Anker vor dem ersten Handelsereignis: auch ein erster
+    # Floating-Verlust darf nicht selbst zum Anfangshoch werden.
+    curve: list[tuple[int, float, bool]] = [(anfang, float(startkapital), True)]
     realisiert = 0.0
     schliess_idx = 0
     offen_idx = 0
-    aktiv: list = []           # (end_epoch_stunde_exklusiv, trade)
+    aktiv: list = []           # (close_epoch_exklusiv, trade)
     punkte_mit_kurs = 0
     punkte_ohne_kurs = 0
     # F5 (Fremd-Review 01.10.): Der Abdeckungs-Nenner darf nicht nur aus
@@ -266,7 +273,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # klassisch Wochenende/Feiertag — solche Stunden sind keine Datenlücke).
     aktiv_laut_zeit: set[int] = set()
     for _offen, _ende, _t in offen_sort:
-        aktiv_laut_zeit.update(range((_offen // 3600) * 3600, _ende, 3600))
+        aktiv_laut_zeit.update(range((_offen // 3600 + 1) * 3600, _ende, 3600))
     bar_stunden: set[int] = set(raster)
     pausen: set[int] = set()
     if aktiv_laut_zeit and bar_stunden:
@@ -289,7 +296,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         while schliess_idx < len(schliessungen) and schliessungen[schliess_idx][0] <= punkt:
             realisiert += schliessungen[schliess_idx][1]
             schliess_idx += 1
-        while offen_idx < len(offen_sort) and offen_sort[offen_idx][0] <= punkt:
+        while offen_idx < len(offen_sort) and offen_sort[offen_idx][0] < punkt:
             aktiv.append((offen_sort[offen_idx][1], offen_sort[offen_idx][2]))
             offen_idx += 1
         aktiv = [a for a in aktiv if a[0] > punkt]
@@ -299,7 +306,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         for _ende, t in aktiv:
             s = t.symbol.strip().upper()
             close = closes_je_symbol.get(s, {}).get(punkt)
-            if close is None or not t.entry_price:
+            if close is None or not t.entry_price or s not in aufgeloest:
                 kurs_da = False
                 continue
             res = aufgeloest[s]
@@ -376,9 +383,10 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     if soll_stunden > 0 and soll_stunden > offen_gesamt:
         offen_gesamt = soll_stunden
     abdeckung = punkte_mit_kurs / offen_gesamt if offen_gesamt else 1.0
-    # Verlässlich nur mit vollständiger Basis: Fehlen Trades (Kurse ODER
-    # Kontrakt), fehlt deren PnL in Equity UND realisiert — bis zu 20 %
-    # durften bisher still verschwinden, während die 95-%-Abdeckungsprüfung
+    # Verlaesslich nur mit vollstaendiger Floating-Basis: fehlende Kurse
+    # oder Kontrakte lassen das realisierte Netto zwar erhalten, aber
+    # deren offene Belastung ist nicht belegt. Bis zu 20 % der Trades
+    # durften frueher still verschwinden, waehrend die 95-%-Abdeckungspruefung
     # nur Rasterpunkte offener Positionen zählte (Review 29.09., Befund 7).
     trades_vollstaendig = len(nutzbare) == len(trades)
     verlaesslich = (abdeckung >= SCHRANKE_MIN_ABDECKUNG and not fx_fehlt
@@ -397,6 +405,16 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         "rasterpunkte": len(curve),
         "verlaesslich": verlaesslich,
         "symbole_mit_kursen": sorted(bars_je_symbol),
+        "methodik": "virtuelle_trading_equity_h1_schlusskurse",
+        "raster": "H1-Bar-Schluss (Bar-Ende), keine Intrabar-Extrema",
+        "kapitalfluesse": "Startkapital; spaetere Ein-/Auszahlungen nicht eingerechnet",
+        "positionsbasis": "nur abgeschlossene Positionen des Exports; aktuell offene fehlen",
+        "end_equity_usd": round(curve[-1][1], 2),
+        "trades_total": len(trades),
+        "trades_mit_kurs_und_kontrakt": len(nutzbare),
+        "trades_ohne_h1_floating_messpunkt": sum(
+            (_offen // 3600 + 1) * 3600 >= _schluss
+            for _offen, _schluss, _trade in offen_sort),
     }
     if fehlende_symbole:
         ergebnis["symbole_ohne_kurse"] = fehlende_symbole

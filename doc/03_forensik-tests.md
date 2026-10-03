@@ -254,10 +254,17 @@ MSC 5,6 / FXtrading 5,7 / World PEACE 8,0.
 
 ## 5. Equity-DD-Rekonstruktion aus Kursdaten (28.09.2026, Nutzer-Wunsch)
 
-Der Broker-„By Equity"-DD ist eine Selbstauskunft. Diese Prüfung misst ihn
-NACH: Auf einem H1-Raster wird Equity = Startkapital + realisiert + floating
+Der Broker-„By Equity"-DD ist eine Selbstauskunft. Diese Pruefung misst
+virtuelle Trading-Equity: Auf einem H1-Raster wird Equity = Startkapital + realisiert + floating
 (Bar-Close je Symbol, FX-Kreuze über EZB-Kurse nach USD) geführt; der
-maximale Rückfall ist der Reko-EQ-DD.
+maximale Rückfall ist der Reko-EQ-DD. H1-Close wird am BAR-ENDE ausgewertet;
+Open/Close-Ereignisse behalten ihre Sekunden. Das realisierte Netto umfasst
+ALLE Export-Trades, auch ohne Kurse; ihre fehlende Floating-Basis ergibt
+Luecken. Spaetere Einzahlungen/Entnahmen sind in dieser virtuellen Kurve
+nicht enthalten. Ein Vergleich mit Konto-Equity erfordert dieselbe Basis
+und denselben Zeitraum. H1-Daten erfassen keine Intrabar-Extrema; aktuell
+offene Positionen fehlen im Historien-Export. Datenabdeckung allein
+belegt daher keinen tickgenauen maximalen Broker-DD (KiraCat-Pruefung 03.10.).
 
 - **Auto-GMT:** Trade-Zeiten sind Signal-Broker-Zeit, Kurse Terminal-Zeit.
   Der Shift wird per Preisabgleich ermittelt (Open/Close in High-Low-Spanne
@@ -286,8 +293,10 @@ maximale Rückfall ist der Reko-EQ-DD.
 Alle drei Prompt-Vorlagen (config/prompts/) deuten den Wert gezielt:
 
 - **risiko_analyse.md** (Prompt 2): Punkt 1a — Vergleich gemeldeter DD vs.
-  Trading-DD vs. `equity_dd_rekonstruiert_pct`; Reko > gemeldet = Kernbefund
-  („Anbieter meldet seinen Drawdown schöner, als er war") mit beiden Zahlen.
+  Trading-DD vs. `equity_dd_rekonstruiert_pct`; Vergleiche nur bei gleicher
+  Kapitalbasis, gleichem Zeitraum und belegter Datenabdeckung. Ein hoeherer
+  Reko-Wert allein belegt keine beschoenigte Meldung. Methodik und
+  Abweichung mit beiden Zahlen nennen (Korrektur 03.10.2026).
 - **gesamtbericht.md** (Prompt 3): Drawdown-Dreiklang; Reko über Schranke =
   hartes Ablehnungskriterium.
 - **portfolio.md**: DD-Arten im Portfolioteil genannt.

@@ -43,6 +43,55 @@ def _parsed(trades):
     return SimpleNamespace(trades=trades, balances=[], pendings=[])
 
 
+def test_studie_trennt_usd_maximum_vom_relativmaximum(monkeypatch):
+    from mqlkiscanner import equity_studie as es
+    monkeypatch.setattr(es, "ermittle_gmt_je_symbol", lambda *_:
+                        {"offsets": {"XAUUSD": 0}, "befunde": []})
+    start = dt.datetime(2026, 1, 1)
+    bars = _bars("XAUUSD", start, 8)
+    for bar, close in zip(bars, [1996, 2000, 2010, 1995, 2000, 1995, 1995, 1995]):
+        bar["close"] = close
+    trades = [
+        _trade("XAUUSD", "buy", start + dt.timedelta(minutes=1),
+               start + dt.timedelta(hours=2, minutes=1), 2000, 2010, pnl=1000),
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=3, minutes=1),
+               start + dt.timedelta(hours=5, minutes=1), 2000, 1995, pnl=-500),
+    ]
+    k = studie(_parsed(trades), kursdaten.FakeKursDaten({"XAUUSD": bars}), 1000)["kennzahlen"]
+    assert k["equity_dd_usd"] == 500
+    assert k["dd_pct_am_usd_max"] == 25
+    assert k["equity_dd_pct"] == 40
+    assert k["dd_usd_am_rel_max"] == 400
+    assert k["dd_bis"] != k["dd_rel_bis"]
+    from mqlkiscanner.equity_studie_ui import _chart
+    figur = _chart({"kennzahlen": k, "punkte": [
+        {"t": k["dd_von"], "equity": 2000, "realisiert": 2000,
+         "floating": 0, "messpunkt": True},
+        {"t": k["dd_bis"], "equity": 1500, "realisiert": 2000,
+         "floating": -500, "messpunkt": True}]}, 1000, 30)
+    anker_text = [a.text for a in figur.layout.annotations if "Max-Rückfall" in a.text]
+    assert "25.0 %" in anker_text[0]
+    assert "40.0 %" not in anker_text[0]
+
+
+def test_studie_netto_fehlender_kurse_bleibt_enthalten(monkeypatch):
+    from mqlkiscanner import equity_studie as es
+    monkeypatch.setattr(es, "ermittle_gmt_je_symbol", lambda *_:
+                        {"offsets": {"XAUUSD": 0}, "befunde": []})
+    start = dt.datetime(2026, 1, 1)
+    bars = _bars("XAUUSD", start, 8)
+    trades = [_trade("XAUUSD", "buy", start + dt.timedelta(minutes=1),
+                     start + dt.timedelta(hours=3, minutes=1), 2000, 2001, pnl=100)
+              for _ in range(4)]
+    trades.append(_trade("US100", "buy", start + dt.timedelta(minutes=1),
+                         start + dt.timedelta(hours=3, minutes=1), 2000, 1995, pnl=-500))
+    data = studie(_parsed(trades), kursdaten.FakeKursDaten({"XAUUSD": bars}), 1000)
+    assert data["punkte"][-1]["realisiert"] == 900
+    assert data["kennzahlen"]["trades_realisiert"] == 5
+    assert data["kennzahlen"]["verlaesslich"] is False
+    assert data["konto_studie"]["verlaesslich"] is False
+
+
 def test_studie_trennt_realisiert_und_floating():
     """Kernfall (gleiche Geometrie wie die produktive Reko): realisiert
     konstant (net=0), floating steigt erst, bricht dann ein — die Studie
@@ -211,7 +260,7 @@ def test_kursluecke_ist_kein_messpunkt_realisiert_laeuft_weiter():
                  startkapital=10_000.0)
     assert erg["status"] == "ok", erg
     loch = next(p for p in erg["punkte"]
-                if p["t"] == bars[9]["time"] + STUNDE)
+                if p["t"] == bars[9]["time"] + 2 * STUNDE)
     assert loch["messpunkt"] is False
     assert loch["equity"] is None and loch["floating"] is None
     assert loch["realisiert"] == 10_000.0  # Trade schließt erst Stunde 15
@@ -306,6 +355,20 @@ def _fake_studie_daten() -> dict:
         "meta": {"name": "Studien-Fall", "signal_id": 42, "quelle": "mql5",
                  "trades_pfad": "fake.csv",
                  "startkapital_quelle": "csv_einzahlungen"},
+        "konto_studie": {
+            "verlaesslich": False,
+            "grund": "Kurslücke vor einem Kapitalfluss",
+            "punkte": [{"t": p["t"], "konto_equity": p["equity"],
+                         "konto_balance": p["realisiert"],
+                         "rendite_index": 1.0 if i < 4 else None,
+                         "drawdown_pct": 20.36 if i == 3 else 0 if i < 4 else None}
+                        for i, p in enumerate(punkte)],
+            "kennzahlen": {"konto_equity_dd_pct": None,
+                           "konto_equity_dd_beobachtet_pct": 20.36,
+                           "flows_verarbeitet": 5,
+                           "index_gueltig_bis": punkte[3]["t"],
+                           "index_abbruch_am": punkte[3]["t"] + 10},
+        },
     }
 
 
@@ -340,3 +403,8 @@ def test_equity_studie_seite_rendert_ende_zu_ende(tmp_path, monkeypatch):
     # Meldung des fehlenden Kurses sind sichtbar gerendert.
     assert "18.5" in text or "18,5" in text
     assert "EURUSD" in text
+    assert "Index ab" in text
+    assert "vor dem Abbruch" in text
+    assert not at.success
+    assert any(m.label == "Konto-DD (H1, kapitalflussneutral)" and "20.36" in m.value
+               for m in at.metric)

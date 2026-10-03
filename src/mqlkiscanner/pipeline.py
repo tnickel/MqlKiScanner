@@ -197,6 +197,10 @@ class ScanResult:
     equity_dd_rekonstruiert_pct: float | None = None
     equity_dd_rekonstruiert_usd: float | None = None
     equity_rekon_gmt_h: int | None = None
+    equity_rekon_status: str = ""
+    equity_rekon_grund: str = ""
+    equity_rekon_abdeckung_pct: float | None = None
+    equity_rekon_methodik: str = ""
     # Vom Datenquellen-Monitor (Pelican/Robo/Vantage/Zulu) aus der vollen
     # Trade-Kurve nachgemessener Max-EQ-DD (metrics "TradeEqDrawdownPct") —
     # unabhängige Zweitmessung auf denselben Trades. Geht seit B1
@@ -242,6 +246,35 @@ class ScanResult:
     persisted_this_run: bool = False  # Mindestens ein Versuch dieses analyze_candidate-Aufrufs gespeichert.
     ampel_wechsel: dict | None = None  # Protokollierter Wechsel gegen den letzten Chronik-Eintrag (ampel_verlauf).
 
+    @property
+    def max_drawdown_equity_pct(self) -> float | None:
+        """Gemessene Equity inklusive Floating; fehlend bleibt unbekannt.
+
+        Plattformangaben und geschlossene Trades ersetzen keine Equity-
+        Messung. Der Kurswert ist nur bei verlässlicher Rekonstruktion gesetzt.
+        """
+        kurse = None if self.forensik_stale else self.equity_dd_rekonstruiert_pct
+        werte = [w for w in (kurse,
+                             self.monitor_trade_eq_dd_pct) if w is not None]
+        return max(werte) if werte else None
+
+    @property
+    def equity_messung_status(self) -> str:
+        if self.max_drawdown_equity_pct is not None:
+            quellen = []
+            if self.equity_dd_rekonstruiert_pct is not None and not self.forensik_stale:
+                quellen.append("Kurse (H1, virtuelle Trading-Equity)")
+            if self.monitor_trade_eq_dd_pct is not None:
+                quellen.append("Monitor")
+            return "Gemessen: " + " / ".join(quellen)
+        if self.forensik_stale and (self.equity_rekon_status
+                                   or self.equity_dd_rekonstruiert_pct is not None):
+            return ("Kurs-Nachmessung veraltet — erneute Prüfung erforderlich"
+                    + (" · " + self.equity_rekon_grund if self.equity_rekon_grund else ""))
+        if self.equity_rekon_grund:
+            return "Keine belastbare Equity-Messung: " + self.equity_rekon_grund
+        return "Keine belastbare Equity-Messung vorhanden"
+
     def to_row(self) -> dict:
         return {
             "Ampel": self.ampel, "ID": self.id, "Name": self.name,
@@ -250,11 +283,13 @@ class ScanResult:
             "Abos": self.abonnenten, "Wochen": self.wochen,
             "Growth %": self.growth_pct, "Ertrag/Monat %": self.ertrag_monat_pct,
             "PF": self.pf,
-            # Nutzer-Terminologie 03.10.: unser aus Trades berechneter Wert
-            # = "Max-Drawdown"; die Plattform-Selbstauskunft = "Drawdown".
+            # Max-Drawdown misst Equity inklusive Floating. Die reine
+            # Kurve geschlossener Trades wird separat benannt.
             "Drawdown % (Plattform)": self.dd_equity_pct,
             "Balance-DD % (Plattform)": self.dd_balance_pct,
-            "Max-Drawdown %": self.trading_dd_pct,
+            "Max-Drawdown %": self.max_drawdown_equity_pct,
+            "Trading-DD % (geschlossen)": self.trading_dd_pct,
+            "Equity-Messung": self.equity_messung_status,
             "Winrate %": self.winrate_pct,
             "Verlustserie": self.max_verlustserie,
             "Peak-Pos": self.peak_positionen,
@@ -267,6 +302,15 @@ class ScanResult:
             "Bericht vom": self.gesamtbericht_at or None,
             "Fehler": self.fehler,
         }
+
+
+def _equity_rekon_grund(reko: dict) -> str:
+    """Diagnose inklusive fehlender Symbole aus dem vorhandenen Snapshot."""
+    grund = reko.get("grund") or ""
+    fehlend = reko.get("symbole_ohne_kurse") or []
+    if fehlend:
+        grund += (" · " if grund else "") + "Kurse fehlen: " + ", ".join(fehlend)
+    return grund
 
 
 def results_from_db(settings: dict | None = None) -> list[ScanResult]:
@@ -363,6 +407,10 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
                 "verlaesslich") else None,
             equity_rekon_gmt_h=(f.get("equity_rekonstruktion") or {}).get(
                 "gmt_offset_h"),
+            equity_rekon_status=(f.get("equity_rekonstruktion") or {}).get("status") or "",
+            equity_rekon_grund=_equity_rekon_grund(f.get("equity_rekonstruktion") or {}),
+            equity_rekon_abdeckung_pct=(f.get("equity_rekonstruktion") or {}).get("abdeckung_pct"),
+            equity_rekon_methodik=(f.get("equity_rekonstruktion") or {}).get("methodik") or "",
             kapitalbasis_verwendet_usd=(f.get("kapitalbasis") or {}).get("usd")
             if isinstance(f.get("kapitalbasis"), dict) else None,
             kapitalbasis_verwendet_quelle=(f.get("kapitalbasis") or {}).get("quelle") or ""
@@ -387,8 +435,9 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             fehler=last_fehler or "",
         )
         if forensik_stale and f:
-            res.urteil = (f"Veraltete Forensik nach fehlgeschlagenem Neu-Lauf "
-                          f"({last_fehler})")
+            res.urteil = (f"Veraltete Forensik nach fehlgeschlagenem Neu-Lauf ({last_fehler})"
+                          if last_fehler else
+                          "Forensik-Version veraltet — erneute Prüfung erforderlich.")
         if res.dd_equity_pct is not None or res.trading_dd_pct is not None \
                 or res.dd_balance_pct is not None:
             limit = float(settings.get("schranke_eq_dd_pct", 30.0))
@@ -522,8 +571,8 @@ def _kriterien_text(settings: dict) -> str:
     return (f"- Harte Schranke: max. {settings.get('schranke_eq_dd_pct', 30)} % Drawdown — "
             "gewertet wird das MAXIMUM aus dem Plattform-Drawdown (By Equity "
             "und By Balance — Selbstauskunft), dem aus den Trades selbst "
-            "berechneten Max-Drawdown, der aus Kursdaten nachgemessenen "
-            "Kursmessung (floating inklusive; nur bei belastbarer Abdeckung) UND "
+            "berechneten Trading-DD (geschlossen), dem Max-Drawdown aus "
+            "Kursmessung (Equity inklusive Floating; nur bei belastbarer Abdeckung) UND "
             "der floating-inclusiven Zweitmessung des Datenquellen-Monitors "
             "(dessen Kapitalbasis kann von der Scanner-Basis abweichen — "
             "über 100 % überzeichnet absolut)\n"
@@ -619,10 +668,9 @@ def _forensik_json(r: ScanResult) -> str:
         # null heißt jetzt ausdrücklich "Messung nicht verfügbar/geskippt",
         # nicht "Pflicht fehlt".
         "status_optionaler_messungen": {
-            "reko_eq_dd": ("gemessen" if r.equity_dd_rekonstruiert_pct is not None
-                           else "nicht_verfuegbar (kein Terminal/Abdeckung "
-                                "unter 95 %/Monitor liefert Wert) — OPTIONAL, "
-                                "kein Pflichtteil"),
+            "reko_eq_dd": ("veraltet — erneute Pruefung erforderlich" if r.forensik_stale
+                           else "gemessen" if r.equity_dd_rekonstruiert_pct is not None
+                           else r.equity_messung_status + " — OPTIONAL, kein Pflichtteil"),
             "monitor_eq_dd": ("gemessen" if r.monitor_trade_eq_dd_pct is not None
                               else "nicht_verfuegbar (Datenquelle ohne "
                                    "Zweitmessung) — OPTIONAL, kein Pflichtteil"),
@@ -647,6 +695,17 @@ def _forensik_json(r: ScanResult) -> str:
         # Nachgemessener Equity-DD aus Kursdaten (floating inklusive) — die KI
         # soll ihn als Messung deuten und gegen den gemeldeten Wert stellen.
         "equity_dd_rekonstruiert_pct": r.equity_dd_rekonstruiert_pct,
+        "equity_rekonstruktion_methodik": {
+            "status": "veraltet" if r.forensik_stale else r.equity_rekon_status or (
+                "ok" if r.equity_dd_rekonstruiert_pct is not None else "nicht_verfuegbar"),
+            "grund": r.equity_rekon_grund or None,
+            "abdeckung_pct": r.equity_rekon_abdeckung_pct,
+            "methodik": r.equity_rekon_methodik or "virtuelle_trading_equity_h1_schlusskurse",
+            "kursraster": "H1-Schlusskurse am Bar-Ende; keine Intrabar-Extrema",
+            "kapitalfluesse": "Startkapital + realisiertes Netto + Floating; spaetere Ein-/Auszahlungen fehlen",
+            "positionsbasis": "geschlossene Exportpositionen; aktuell offene Positionen fehlen",
+            "vergleichbarkeit": "nur bei gleicher Kapitalbasis, gleichem Zeitraum und belegter Datenabdeckung",
+        },
         # Unabhängige Zweitmessung des Datenquellen-Monitors (volle Trade-
         # Kurve, floating inklusive) — geht seit B1 (Intensiv-Review
         # 29./30.09.2026) als fünftes Maximum in die Drawdown-Schranke
@@ -1250,6 +1309,10 @@ class ScanPipeline:
                 res.shock_pct_peak_account = expo.get("shock_pct_peak_account")
                 res.shock_pct_peak_usd = expo.get("shock_pct_peak_usd")
                 reko = fx.get("equity_rekonstruktion") or {}
+                res.equity_rekon_status = reko.get("status") or ""
+                res.equity_rekon_grund = _equity_rekon_grund(reko)
+                res.equity_rekon_abdeckung_pct = reko.get("abdeckung_pct")
+                res.equity_rekon_methodik = reko.get("methodik") or ""
                 if st.get("duplikate_entfernt"):
                     # B25 (02.10.): Bereinigung sichtbar machen — die Quellen-
                     # Lieferung enthielt exakte Doppelzeilen (Forensik rechnet
@@ -1265,6 +1328,9 @@ class ScanPipeline:
                         f"{reko.get('abdeckung_pct')} %, floating inklusive)")
                 elif reko.get("status") == "skipped":
                     log(f"Equity-Rekonstruktion übersprungen: {reko.get('grund')}")
+                elif reko:
+                    log("Equity-Rekonstruktion nicht belastbar: "
+                        + res.equity_rekon_grund)
                 res.martingale_flag = fx["martingale"].get("flag")
                 res.martingale_evidenz = fx["martingale"].get("evidence") or []
                 stops = fx["stops"]
@@ -1386,7 +1452,7 @@ class ScanPipeline:
                 stats_payload["export_skipped"] = "no_credentials_or_no_export"
             ampel, grund = ampel_for(res, self.settings)
             res.ampel = ampel
-            detail = (f" | Score {res.score}, Max-DD {res.trading_dd_pct} %, "
+            detail = (f" | Score {res.score}, Trading-DD (geschlossen) {res.trading_dd_pct} %, "
                       f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
             if res.equity_dd_rekonstruiert_pct is not None:
@@ -1490,7 +1556,7 @@ class ScanPipeline:
             log(f"  DB-Fehler bei {res.id}: {exc}")
             ampel, grund = ampel_for(res, self.settings)
             res.ampel = ampel
-            detail = (f" | Score {res.score}, Max-DD {res.trading_dd_pct} %, "
+            detail = (f" | Score {res.score}, Trading-DD (geschlossen) {res.trading_dd_pct} %, "
                       f"Serie {res.max_verlustserie}, Peak {res.peak_positionen} Pos"
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
             res.urteil = grund + detail

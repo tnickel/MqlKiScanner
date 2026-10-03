@@ -17,6 +17,20 @@ Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 
 ## Aktuelles Ergebnis der Analyse-Reihe (Stand 04.09.2026)
 
+**Korrektur KiraCat (03.10.2026):** Die alte Duo-Empfehlung ist fuer KiraCat
+ueberholt: aktuell Plattform-EQ-DD 34,95 % und rote 30-%-Schranke. 7,9/8,14 %
+sind Drawdowns GESCHLOSSENER Trades auf virtueller Trading-Kapitalbasis,
+kein Nachweis fuer niedrigen Konto-Equity-DD. Die historische H1-Reko
+44,34 % ignoriert spaetere Einzahlungen/Entnahmen; mit echten Kapitalfluessen
+und neutralisiertem Renditeindex ergibt dasselbe H1-Fenster ca. 20,4 %.
+Auch das ist kein vollstaendiger aktueller Broker-DD: US100-Kurse fehlen,
+fuenf Flows bei offenen Trades brauchen Preisnaeherungen, Export endet am
+28.09.2026, aktuelle offene Positionen fehlen. Aus verschiedenen DD-Basen
+niemals eine beschoenigte Plattform-Meldung folgern. H1-Close gilt am
+BAR-ENDE; alle exportierten Trades bleiben im realisierten Netto enthalten,
+auch wenn ihre Kursdaten fehlen. Forensik-Version 8 erzwingt Neupruefung
+alter Befunde. Review: `../waste/drawdown_2026-10-03/review.md`.
+
 - **Empfehlung (Duo):** Gold Spike (MT4 #2349227 / MT5 #2375480, Risikoträger)
   + KiraCat (#2342895, Ertragsträger).
 - Gold Reaper (#2265877): solide Strategie, aber nur als EA-Kauf sinnvoll

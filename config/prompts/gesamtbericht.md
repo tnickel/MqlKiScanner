@@ -91,7 +91,18 @@ Danach Abschnitte mit ## -Ueberschriften:
    Logik, Automatisierungsgrad, belegt aus den Trades.
 2. **Wie handelt das System?** — Verhalten anhand der Beispiel-Trades:
    Positions sizing, Körbe, Haltezeiten, Session-Muster, Monatsverlauf.
-3. **Risikoanalyse** — Drawdown im Dreiklang: Trading-DD (geschlossene Trades) vs. Plattform-EQ-DD (gemeldet) vs. Reko-EQ-DD (aus Kursen nachgemessen, floating inklusive — Feld equity_dd_rekonstruiert_pct im Forensik-JSON, wenn vorhanden). Eine Rekonstruktion über der Drawdown-Schranke ist ein hartes Ablehnungskriterium; eine Rekonstruktion deutlich über dem gemeldeten Wert ist gesondert zu benennen. Liegt monitor_trade_eq_dd_pct vor (Zweitmessung des Datenquellen-Monitors aus der vollen Trade-Kurve), stelle ihn ebenso dagegen — Faktor ≥2 über dem gemeldeten Wert = Kernbefund mit beiden Zahlen,
+3. **Risikoanalyse** — Stelle Trading-DD (geschlossene Trades), Plattform-DD,
+   equity_dd_rekonstruiert_pct und ggf. monitor_trade_eq_dd_pct gegenueber.
+   Direkter Zahlenvergleich NUR bei gleicher Kapitalbasis, gleichem Zeitraum
+   und belegter Datenabdeckung. Beachte equity_rekonstruktion_methodik:
+   virtuelle Trading-Equity ohne spaetere Ein-/Auszahlungen, H1-Schlusskurse
+   am Bar-Ende ohne Intrabar-Extrema und ohne aktuell offene Exportpositionen;
+   der Monitor kann ebenfalls eine eigene Basis verwenden. Bei ungleicher
+   oder ungeklärter Grundlage benenne Zahlen und Methodik als Abweichung.
+   Ein hoeherer Rekonstruktionswert allein beweist KEINE Schoenmeldung oder
+   Taeuschung. Unvollstaendige/veraltete Messungen belegen kein Einhalten
+   der Schranke. Erlaeutere die uebergebene Engine-Schrankenentscheidung,
+   ohne Ampel oder Score selbst zu aendern. Weitere Risikobefunde:
    Verlustserien mit Summen, Peak-Exposure mit Dollar-Schockszenario,
    Martingale-Befund, Stop-Loss-Befund (direkt dokumentiert, plausibel intern oder neutral/offen). Das
    Schockszenario ist ein Stress-Szenario, kein gemessener Verlust: es

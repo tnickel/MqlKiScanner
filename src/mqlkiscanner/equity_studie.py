@@ -26,6 +26,7 @@ zeigt; verbindlich bleibt die Engine.
 from __future__ import annotations
 
 import datetime as dt
+import math
 import statistics
 
 from . import fx_rates
@@ -36,6 +37,7 @@ from .forensics.equity_rekonstruktion import (
     ermittle_gmt_offset,
 )
 from .forensics.exposure import _resolve_symbol
+from .forensics.equity_kapitalfluesse import diagnostik as konto_diagnostik
 
 # Ein Symbol braucht mindestens so viele Trade-Proben, um seinen GMT-Versatz
 # SELBST zu belegen; darunter (oder bei Mehrdeutigkeit) greift der Median der
@@ -197,28 +199,33 @@ def studie(parsed, kurse, startkapital: float,
 
     median_offset = int(statistics.median(offsets.values()))
 
-    # Raster: gemeinsame Bar-Stunden aller genutzten Symbole im Trade-Fenster.
-    erste = min(_raster_stunde(_epoch(t.open_time), offsets[t.symbol.strip().upper()])
-                for t in nutzbare)
-    letzte = max(_raster_stunde(_epoch(t.close_time), offsets[t.symbol.strip().upper()])
-                 for t in nutzbare)
-    raster = sorted({(b["time"] // 3600) * 3600
+    # Ein H1-Close gilt am BAR-ENDE. Fehlende Symbole verlieren ihr
+    # exportiertes Netto nicht: ohne eigenen GMT-Beleg gilt fuer die
+    # Ereignisse der offengelegte Broker-Median; Floating bleibt eine Luecke.
+    def _shift(t):
+        return offsets.get(t.symbol.strip().upper(), median_offset)
+
+    erste = min(_epoch(t.open_time) + _shift(t) for t in trades)
+    letzte = max(_epoch(t.close_time) + _shift(t) for t in trades)
+    endpunkt = ((letzte + 3599) // 3600) * 3600
+    raster = sorted({(b["time"] // 3600 + 1) * 3600
                      for bars in bars_je_symbol.values() for b in bars
-                     if erste <= ((b["time"] // 3600) * 3600) <= letzte + 3600})
+                     if erste < ((b["time"] // 3600 + 1) * 3600) <= endpunkt})
     if not raster:
         return {"status": "skipped", "grund": "keine H1-Bars im Trade-Zeitraum",
                 "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {}}
 
-    closes_je_symbol = {s: {(b["time"] // 3600) * 3600: b["close"]
+    raster = sorted(set(raster) | {endpunkt})
+    closes_je_symbol = {s: {(b["time"] // 3600 + 1) * 3600: b["close"]
                             for b in bars} for s, bars in bars_je_symbol.items()}
 
     schliessungen = sorted(
-        ((_raster_stunde(_epoch(t.close_time), offsets[t.symbol.strip().upper()]),
-          t.net) for t in nutzbare), key=lambda x: x[0])
+        ((_epoch(t.close_time) + _shift(t), t.net) for t in trades),
+        key=lambda x: x[0])
     offen_sort = sorted(
-        ((_raster_stunde(_epoch(t.open_time), offsets[t.symbol.strip().upper()]),
-          _raster_stunde(_epoch(t.close_time), offsets[t.symbol.strip().upper()]),
-          t) for t in nutzbare), key=lambda x: (x[0], x[1]))
+        ((_epoch(t.open_time) + _shift(t),
+          _epoch(t.close_time) + _shift(t), t) for t in trades),
+        key=lambda x: (x[0], x[1]))
 
     fx_cache: dict[tuple[str, dt.date], float | None] = {}
     fx_fehlt = False
@@ -233,7 +240,9 @@ def studie(parsed, kurse, startkapital: float,
         return fx_cache[key]
 
     _p(0.78, "Equity-Kurve je Stunde rechnen …")
-    punkte: list[dict] = []
+    basis = float(startkapital or 0.0)
+    punkte: list[dict] = [{"t": erste - median_offset, "equity": basis,
+                          "realisiert": basis, "floating": 0.0, "messpunkt": True}]
     realisiert = 0.0
     schliess_idx = 0
     offen_idx = 0
@@ -243,7 +252,7 @@ def studie(parsed, kurse, startkapital: float,
 
     aktiv_laut_zeit: set[int] = set()
     for _offen, _ende, _t in offen_sort:
-        aktiv_laut_zeit.update(range(_offen, _ende, 3600))
+        aktiv_laut_zeit.update(range((_offen // 3600 + 1) * 3600, _ende, 3600))
     bar_stunden: set[int] = {r for r in raster}
     pausen: set[int] = set()
     if aktiv_laut_zeit and bar_stunden:
@@ -269,12 +278,11 @@ def studie(parsed, kurse, startkapital: float,
     if datenluecken:
         raster = sorted(bar_stunden | set(datenluecken))
 
-    basis = float(startkapital or 0.0)
     for punkt in raster:
         while schliess_idx < len(schliessungen) and schliessungen[schliess_idx][0] <= punkt:
             realisiert += schliessungen[schliess_idx][1]
             schliess_idx += 1
-        while offen_idx < len(offen_sort) and offen_sort[offen_idx][0] <= punkt:
+        while offen_idx < len(offen_sort) and offen_sort[offen_idx][0] < punkt:
             aktiv.append((offen_sort[offen_idx][1], offen_sort[offen_idx][2]))
             offen_idx += 1
         aktiv = [a for a in aktiv if a[0] > punkt]
@@ -286,7 +294,7 @@ def studie(parsed, kurse, startkapital: float,
         for _ende, t in aktiv:
             s = t.symbol.strip().upper()
             close = closes_je_symbol.get(s, {}).get(punkt)
-            if close is None or not t.entry_price:
+            if close is None or not t.entry_price or s not in aufgeloest or s not in offsets:
                 kurs_da = False
                 continue
             res = aufgeloest[s]
@@ -315,11 +323,16 @@ def studie(parsed, kurse, startkapital: float,
             break
 
     _p(0.92, "Kennzahlen ableiten …")
+    if any(p["messpunkt"] and not math.isfinite(p["equity"]) for p in punkte):
+        return {"status": "skipped", "grund": "NaN/Inf in der Equity-Kurve",
+                "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {}}
     hoch = None
     dd_usd = 0.0
     dd_pct_am_usd_max = 0.0
     dd_pct_max_rel = 0.0
     dd_von = dd_bis = None
+    dd_rel_von = dd_rel_bis = None
+    dd_usd_am_rel_max = 0.0
     floating_min = 0.0
     floating_min_t = None
     floating_max = 0.0
@@ -342,6 +355,8 @@ def studie(parsed, kurse, startkapital: float,
             rel = rueckfall / hoch * 100.0
             if rel > dd_pct_max_rel:
                 dd_pct_max_rel = rel
+                dd_usd_am_rel_max = rueckfall
+                dd_rel_von, dd_rel_bis = hoch_t, p["t"]
         # Floating-Extreme nur mit offenen Positionen bewerten (floating=0
         # ohne offene Positionen ist kein Extremwert).
         if p["floating"] is not None:
@@ -375,6 +390,9 @@ def studie(parsed, kurse, startkapital: float,
         "dd_pct_max_rel": round(dd_pct_max_rel, 2) if kapitalbasis_ok else None,
         "dd_von": dd_von,
         "dd_bis": dd_bis,
+        "dd_rel_von": dd_rel_von,
+        "dd_rel_bis": dd_rel_bis,
+        "dd_usd_am_rel_max": round(dd_usd_am_rel_max, 2),
         "floating_min_usd": round(floating_min, 2),
         "floating_min_t": floating_min_t,
         "floating_max_usd": round(floating_max, 2),
@@ -386,6 +404,16 @@ def studie(parsed, kurse, startkapital: float,
         "fx_luecke": fx_fehlt,
         "trades_total": len(trades),
         "trades_genutzt": len(nutzbare),
+        "trades_realisiert": len(trades),
+        "trades_ohne_h1_floating_messpunkt": sum(
+            1 for o, c, _ in offen_sort if (o // 3600 + 1) * 3600 >= c),
+        "verlaesslich": (basis > 0 and abdeckung >= 0.95 and not fx_fehlt
+                         and len(nutzbare) == len(trades)
+                         and len(set(offsets.values())) == 1),
+        "zeitbasis_einheitlich": len(set(offsets.values())) == 1,
+        "kapitalfluesse_nach_start": sum(
+            1 for b in getattr(parsed, "balances", [])
+            if b.time > min(t.open_time for t in trades)),
     }
 
     _p(1.0, "fertig")
@@ -397,4 +425,10 @@ def studie(parsed, kurse, startkapital: float,
         "median_gmt_h": median_offset // 3600,
         "symbole_ohne_kurse": ohne_kurse,
         "symbole_ohne_kontrakt": ohne_kontrakt,
+        "methodik": "virtuelle Trading-Equity: Startkapital + alle realisierten Nettoergebnisse + Floating",
+        "raster": "H1-Schlusskurse am Bar-Ende; keine Intrabar-Extrema",
+        "kapitalfluesse": "spaetere Ein-/Auszahlungen nicht eingerechnet",
+        "positionsbasis": "geschlossene Exportpositionen; aktuell offene fehlen",
+        "konto_studie": konto_diagnostik(
+            parsed, punkte, bars_je_symbol, offsets, basis, broker=broker),
     }

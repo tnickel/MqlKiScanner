@@ -228,10 +228,11 @@ def test_finaler_verlust_landet_in_der_kurve():
     erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}),
                            startkapital=10_000.0)
     assert erg["status"] == "ok", erg
-    # Peak = 10.000 + floating beider offenen Positionen bei Stunde 11
-    # (100·(2077−2006,9) + 100·(2077−2076,9)) = 17.020; Endpunkt = 7.000
-    assert erg["equity_dd_usd"] == 10_020.0, erg
-    assert erg["equity_dd_pct"] == 58.87, erg
+    # Punkt 11:00 verwendet den Close der Bar 10:00 (2070). Die zweite
+    # Position oeffnet erst 11:00 und ist dort noch kein Floating-Messpunkt.
+    # Peak = 10.000 + 100·(2070−2006,9) = 16.310; Endpunkt = 7.000.
+    assert erg["equity_dd_usd"] == 9_310.0, erg
+    assert erg["equity_dd_pct"] == 57.08, erg
 
 
 def test_schluss_mitten_in_der_stunde_wird_nicht_doppelt_verbucht():

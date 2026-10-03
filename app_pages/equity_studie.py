@@ -23,22 +23,25 @@ from mqlkiscanner.ui_design import apply_theme, page_header
 apply_theme()
 page_header('EQUITY-STUDIE', 'Drawdown aus echten Kursen nachgemessen',
             'Der offizielle Equity-DD ist eine Broker-Selbstauskunft. '
-            'Hier wird er aus der Trade-Historie und echten Kursen '
-            'stundenfein rekonstruiert — inklusive der offenen Positionen.')
+            'Die Studie rekonstruiert historische Floating-Verluste aus '
+            'den geschlossenen Export-Trades und echten H1-Kursen. '
+            'Aktuell offene Positionen sind im Export nicht enthalten.')
 
 with st.expander('Wie wird gemessen?', expanded=False, icon=':material/science:'):
     st.markdown(
-        '**Die Idee.** Für jede Stunde der Handelshistorie wird der Kontostand '
+        '**Die Idee.** Für jede Stunde der Export-Historie wird eine virtuelle Trading-Equity '
         'nachgebaut: **Startkapital + realisierte Gewinne (geschlossene '
-        'Trades) + offener Betrag (floating)** aller dann offenen Positionen. '
+        'Trades) + offener Betrag (floating)** aller damals offenen Exportpositionen. '
         'Der offene Betrag wird mit dem echten Stunden-Schlusskurs '
-        '(H1-Bar-Close) je Währungspaar bewertet. Der größte Rückfall dieser '
-        'Kurve ist der nachgemessene Equity-Drawdown — die Zahl, die der '
-        'Broker als „By Equity“ meldet, nur hier aus unabhängigen Kursen '
-        'berechnet.')
+        '(H1-Bar-Close) am Bar-Ende je Symbol bewertet. Spätere Ein- und '
+        'Auszahlungen fehlen in dieser virtuellen Kurve. Deshalb ist ihr '
+        'Drawdown nicht direkt mit „By Equity“ des Brokers vergleichbar. '
+        'Die zusätzliche Konto-Kurve berücksichtigt Kapitalflüsse; ihr '
+        'Renditeindex neutralisiert Ein- und Auszahlungen. Verluste innerhalb '
+        'einer Stunde und aktuell offene Positionen bleiben unbekannt.')
     st.markdown(
-        '**GMT-Abgleich je Währungspaar.** Trade-Zeiten sind Serverzeit des '
-        'Signal-Brokers, Kurse Serverzeit des Referenz-Terminals. Der '
+        '**GMT-Abgleich je Währungspaar.** Die CSV-Trade-Zeiten enthalten '
+        'keine Zeitzone; MT5-Kurszeiten sind dokumentierte UTC-Bar-Anfänge. Der '
         'Versatz wird JE SYMBOL separat bestimmt: Open- und Close-Kurse der '
         'Trades müssen in der High-Low-Spanne der getroffenen H1-Bar liegen — '
         'der Versatz mit der höchsten Trefferquote gewinnt. Symbole mit zu '
@@ -46,10 +49,10 @@ with st.expander('Wie wird gemessen?', expanded=False, icon=':material/science:'
         '(offengelegt in der Tabelle).')
     st.markdown(
         '**Was fehlt, wird gemeldet.** Steht ein Kurs am Referenzterminal '
-        '(Tickmill) nicht zur Verfügung, wird nur für die vorhandenen '
-        'Währungspaare gerechnet — und jedes fehlende Symbol namentlich '
-        'genannt, inklusive des Hinweises, dass der Drawdown ohne diese '
-        'Symbole niedriger ausfallen kann, als er wirklich war. '
+        '(Tickmill) nicht zur Verfügung, bleibt dessen realisiertes '
+        'Trade-Ergebnis enthalten. Unbekannte Floating-Beträge erzeugen '
+        'Messlücken; jedes fehlende Symbol wird namentlich genannt. '
+        'Solche Lücken verhindern eine vollständige Drawdown-Messung. '
         'Stundenlücken in der Equity-Spur werden nicht interpoliert.')
     st.markdown(
         '**Bewertet wird hier nichts.** Die Studie misst und zeigt '
