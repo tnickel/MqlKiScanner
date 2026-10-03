@@ -223,3 +223,49 @@ def test_flow_und_fx_tag_werden_in_gleicher_referenzabbildung_gehalten(monkeypat
     # er darf um 00:30 noch nicht in die Flow-Equity eingehen.
     assert event["kursbasis"][0]["kurs"] == entry
     assert parsed == original  # keine Mutation des Original-Exports
+
+
+def test_knappe_ausreisser_in_starker_woche_werfen_messung_nicht_weg():
+    """Nutzer-Fall GS MT5 03.10.: EIN 4-Sekunden-Scalp mit Nacht-Spread-
+    Ausreisserpreis (knapp ausserhalb der Toleranz) in einer STARKEN Woche
+    (>= 10 Proben, >= 90 % Treffer) darf weder die Woche noch die Messung
+    verwerfen — nur seine eigenen Stunden werden Luecken. Real: Abdeckung
+    96 % -> 66 % nur wegen dieses einen Trades, GS MT5 verlor das Gruen."""
+    parsed, bars = _daten(phasen=(0,), proben=(12,))
+    # Ein zwoelfter Trade in derselben Woche, Preis ~3x Toleranz ausserhalb
+    # der Bar (Spread-Ausreisser), 4 Sekunden offen.
+    by_time = {b["time"]: b for b in bars["XAUUSD"]}
+    offen = START + dt.timedelta(hours=5, minutes=31)
+    bar = by_time[(er._epoch(offen)) // 3600 * 3600]
+    entry = bar["high"] + 3 * (abs(bar["high"]) * er._PREIS_TOLERANZ)
+    parsed.trades.append(Trade(offen, offen + dt.timedelta(seconds=4),
+                               "Buy", .01, "XAUUSD", entry, entry, 0.0))
+    model = er.Zeitbasis(parsed.trades, bars, 0)
+    aktuelle_woche = model.perioden[0]
+    assert aktuelle_woche["status"] == "lokal_preisbelegt"
+    assert aktuelle_woche["belegt"] is True          # 12/13 >= 90 %
+    assert model.verlaesslich is True                # knapp -> KEIN Verwurf
+    assert model.unsichere_trade_ereignisse >= 2      # entry+exit des Scalps
+    assert model.weit_draussen_ereignisse == 0
+    ergebnis = er.rekonstruiere(parsed, kursdaten.FakeKursDaten(bars), 10_000.0)
+    assert ergebnis["status"] == "ok"
+    assert ergebnis["verlaesslich"] is True
+    assert ergebnis["abdeckung_pct"] >= 95.0
+
+
+def test_weit_draussen_bleibt_hart_unzuverlaessig():
+    """Ein Preis um Groessenordnungen daneben (falsche Zeitzone / kaputter
+    Export) widerlegt die Zeitachse weiterhin — der 999999-Gedanke der
+    urspruenglichen Regel bleibt erhalten."""
+    parsed, bars = _daten(phasen=(0,), proben=(12,))
+    by_time = {b["time"]: b for b in bars["XAUUSD"]}
+    offen = START + dt.timedelta(hours=5, minutes=31)
+    bar = by_time[(er._epoch(offen)) // 3600 * 3600]
+    entry = bar["high"] * 5  # Groessenordnung daneben
+    parsed.trades.append(Trade(offen, offen + dt.timedelta(hours=1),
+                               "Buy", .01, "XAUUSD", entry, entry, 0.0))
+    model = er.Zeitbasis(parsed.trades, bars, 0)
+    assert model.weit_draussen_ereignisse >= 1
+    assert model.verlaesslich is False
+    ergebnis = er.rekonstruiere(parsed, kursdaten.FakeKursDaten(bars), 10_000.0)
+    assert ergebnis["verlaesslich"] is False

@@ -741,6 +741,32 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   zwilling mit/ohne Beweis, keine/nicht-ganzzahlige/falsche Beweiszahl,
   Engine-Durchreichung).
 
+- ✅ ZEITBASIS-AUSREISSER-FIX (03.10. abends, Nutzer-Auftrag „GS MT5
+  66 % Abdeckung genau untersuchen — Samstag?"): Diagnose
+  (.tmp/diagnose_gs_mt5_abdeckung.py) entlastete das Wochenende VOLLSTÄNDIG
+  (Bars bis Fr 23:00 UTC vorhanden, aktive Stunden 146/152 = 96,1 % mit
+  Bars; Wochenenden sauber als Marktpausen erkannt). Echte Ursache: Die
+  100-%-Wochenregel der Parallel-KI („ein einziger widersprechender Endpunkt
+  macht die Woche unbelegt") warf die GESAMTE Kalenderwoche 28.09.–03.10.
+  raus, weil EIN 4-Sekunden-Scalp (Mo 03:31, Entry ~8 USD über der Bar =
+  Nacht-Spread) die 0,1-%-Toleranz verfehlte — mit der Woche fielen 46 der
+  152 aktiven Stunden (Grid-Positionen laufen tagelang): Abdeckung 96 →
+  66 %, Messung verworfen, RetDD weg, GS MT5/MT4 🟢→🟡. Um 10:59 war die
+  Woche noch < 10 Proben (Cache ohne Fr-Trades) → strenge Wochenprüfung
+  griff gar nicht (mehr Daten = strengere Prüfung = Verwurf). FIX:
+  (1) Starke Woche (≥ 10 Proben) bleibt ab 90 % Trefferquote BELEGT —
+  einzelne Nichttreffer markieren nur ihren EIGENEN Trade unsicher, dessen
+  Stunden werden Lücken und die 95-%-Abdeckungsregel entscheidet.
+  (2) Ausreißer-Skala _PREIS_AUSREISSER_FAKTOR=10: knapp außerhalb
+  (≤ 10× Toleranz, realer GS-Fall ~1,5×) = Spread/Slippage → Lücke;
+  Größenordnungen daneben (999999-Fall) = Zeitachse hart unzuverlässig.
+  Massenhafte Nichttreffer (< 90 %) machen die Woche weiterhin unbelegt.
+  Live verifiziert: GS MT5 wieder status=ok, verlaesslich=True, Abdeckung
+  96,1 % (W40 belegt bei 92,9 % Quote, nur der Scalp unsicher mit 0 h).
+  +2 Regressionstests (knappe Ausreißer in starker Woche; weit draußen
+  hart). Beim nächsten Scan kommt der Kurs-DD zurück in Schranke/RetDD —
+  GS MT5 kann wieder 🟢 werden.
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

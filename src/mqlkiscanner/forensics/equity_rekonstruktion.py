@@ -47,6 +47,11 @@ MARKTPAUSE_MIN_H = 20
 # dabei nur einmal; Open UND Close werden nach ihrem eigenen Datum geprueft.
 GMT_LOKAL_MIN_PROBEN = 10
 GMT_LOKAL_MIN_TREFFER = 0.9
+# Abstandskala fuer einzelne Preisereignisse (03.10., Nutzer-Fall GS MT5):
+# knapp ausserhalb (<= Faktor x Toleranz) = Spread-/Slippage-Ausreisser —
+# nur seine Stunden werden Luecken; weit ausserhalb (> Faktor) = falsche
+# Zeitzone/kaputter Export — Zeitachse unzuverlaessig.
+_PREIS_AUSREISSER_FAKTOR = 10.0
 
 
 def _preisproben(trades):
@@ -138,9 +143,17 @@ class Zeitbasis:
             elif stark:
                 shift = next(iter(kandidaten))
                 status = "lokal_preisbelegt"
-                # Auch ein einzelner eindeutig widersprechender Endpunkt
-                # darf sich nicht hinter einer 90-%-Wochenquote verstecken.
-                belegt = counts[shift] == len(lokal)
+                # Nutzer-Fall 03.10. (GS MT5): EIN 4-Sekunden-Scalp mit
+                # Nacht-Spread-Ausreisserpreis verfehlte die Toleranz — bei
+                # 100-%-Anforderung fiel die GESAMTE Woche auf unbelegt und
+                # mit ihr 1/3 der aktiven Stunden (Grid-Positionen laufen
+                # tagelang): Abdeckung 96 % -> 66 %, Messung verworfen.
+                # Semantik jetzt: >= GMT_LOKAL_MIN_TREFFER (90 %) belegt die
+                # WOCHE; einzelne Nichttreffer markieren nur ihren EIGENEN
+                # Trade unsicher — dessen Stunden werden Lücken, und die
+                # 95-%-Abdeckungsregel entscheidet, ob die MESSUNG belastbar
+                # bleibt. Massenhafte Nichttreffer (< 90 %) bleiben unbelegt.
+                belegt = True
             elif lokal and self.global_offset_s not in kandidaten:
                 shift = previous if previous in kandidaten else self.global_offset_s
                 status = "abweichung_unbelegt"
@@ -175,6 +188,7 @@ class Zeitbasis:
         self._trade_sicher = {}
         self.offene_wechsel_annahmen = 0
         self.unsichere_innenperioden = 0
+        self.weit_draussen_ereignisse = 0
         for t in trades:
             sicher = True
             for zeit, preis in ((t.open_time, t.entry_price), (t.close_time, t.exit_price)):
@@ -188,10 +202,28 @@ class Zeitbasis:
                     bar = maps.get(symbol, {}).get(
                         self.nach_referenz(e) // 3600 * 3600)
                     tol = abs(preis) * _PREIS_TOLERANZ + 1e-12
-                    if bar is None or not bar["low"] - tol <= preis <= bar["high"] + tol:
+                    if bar is None:
+                        # Keine Bar zu dieser Stunde (Datenlücke): nur der
+                        # Trade wird unsicher, seine Stunden bleiben Lücken.
                         sicher = False
                         self.unsichere_trade_ereignisse += 1
-                        self.gruende.append("Open-/Close-Preis passt nicht zur lokalen Referenzbar")
+                        continue
+                    abstand = max(bar["low"] - preis, preis - bar["high"], 0.0)
+                    if abstand <= tol:
+                        continue
+                    sicher = False
+                    self.unsichere_trade_ereignisse += 1
+                    if abstand > _PREIS_AUSREISSER_FAKTOR * tol:
+                        # Nutzer-Fall GS MT5 vs. Kaputt-Daten: Spread-/
+                        # Slippage-Ausreisser liegen um WENIG ausserhalb
+                        # der Toleranz (realer Fall: ~1,5x) und machen nur
+                        # ihre Stunden zu Luecken; ein Preis um GROESSEN-
+                        # ordnungen daneben (falsche Zeitzone/kaputter
+                        # Export) widerlegt die Zeitachse hart.
+                        self.weit_draussen_ereignisse += 1
+                        self.gruende.append(
+                            "Open-/Close-Preis passt nicht zur lokalen Referenzbar "
+                            "(weit außerhalb — Zeitachse nicht belastbar)")
             if self.nach_referenz(_epoch(t.close_time)) < self.nach_referenz(_epoch(t.open_time)):
                 sicher = False
                 self.gruende.append("Ereignisabbildung ergibt Close vor Open")
@@ -205,11 +237,25 @@ class Zeitbasis:
                 self.unsichere_innenperioden += 1
                 self.gruende.append("Offene Position in lokal unbelegtem Zeitabschnitt")
             self._trade_sicher[id(t)] = sicher
-        self.verlaesslich = (self.hat_basis and all(self._trade_sicher.values()) and self.monoton
+        # Verlaesslich = STRUKTURELL belastbare Zeitachse: eindeutige
+        # Ereignisabbildung, keine offenen Positionen ueber unsichere
+        # Wechselgrenzen, keine aktiven Positionen in unbelegten Innenwochen
+        # und kein Preisereignis um GROESSENordnungen ausserhalb seiner Bar
+        # (Zeitzonen-/Datenmull). EINZELNE knappe Ausreisser (Spread, realer
+        # Fall GS MT5 03.10.: 96 % -> 66 % Abdeckung nur wegen EINES
+        # 4-Sekunden-Scalps) verwerfen die Messung nicht mehr ganz — ihre
+        # Stunden sind Luecken, die 95-%-Abdeckungsregel entscheidet.
+        self.verlaesslich = (self.hat_basis and self.monoton
                             and not self.offene_wechsel_annahmen
-                            and not self.unsichere_innenperioden)
+                            and not self.unsichere_innenperioden
+                            and not self.weit_draussen_ereignisse)
         if not self.verlaesslich:
             self.gruende.append("Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt")
+        if self.unsichere_trade_ereignisse:
+            self.gruende.append(
+                f"{self.unsichere_trade_ereignisse} einzelne Preisereignisse "
+                "knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese "
+                "Stunden bleiben Lücken; die Abdeckungsregel entscheidet")
 
     def periode(self, zeit):
         for p in self.perioden:
