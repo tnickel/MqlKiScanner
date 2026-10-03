@@ -251,14 +251,19 @@ def _max_drawdown_farbe(value, limit) -> str:
 
 
 def _max_drawdown_zellenstil(value, limit) -> str:
-    farben = {
-        "green": ("#dcfce7", "#14532d"),
-        "orange": ("#fef3c7", "#78350f"),
-        "red": ("#fee2e2", "#7f1d1d"),
-        "gray": ("#e5e7eb", "#374151"),
+    """Dezente Hinterlegung im dunklen Theme: schwache Fläche + farbiger
+    Text, KEIN pastellfarbener Block mit fetter Schrift (Nutzer 03.10.).
+    Fehlende Messung bleibt ganz unmarkiert (kein grauer Klotz)."""
+    akzente = {
+        "green": ("rgba(34,197,94,0.10)", "#4ade80"),
+        "orange": ("rgba(249,115,22,0.12)", "#fb923c"),
+        "red": ("rgba(239,68,68,0.16)", "#f87171"),
+        "gray": ("transparent", ""),
     }
-    hintergrund, text = farben[_max_drawdown_farbe(value, limit)]
-    return f"background-color: {hintergrund}; color: {text}; font-weight: 600"
+    hintergrund, text = akzente[_max_drawdown_farbe(value, limit)]
+    if not text:
+        return ""
+    return f"background-color: {hintergrund}; color: {text}"
 
 
 def results_to_dataframe(results, fresh_ids: set[int] | None = None,
@@ -344,13 +349,18 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
 
     column_order = None
     if compact:
+        # Die DREI Drawdown-Werte direkt nebeneinander (Nutzer 03.10.: „dann
+        # sieht man das sofort") — gemessene Equity, geschlossene Trades,
+        # Plattform-Selbstauskunft; der Studie-Button folgt sofort. Die
+        # breite Textspalte Equity-Messung bleibt in der Ansicht
+        # „Alle Kennzahlen" und bremst die Kompaktansicht nicht.
         column_order = ((["Stand"] if fresh_ids is not None else [])
                         + (["Fix"] if fix_ids is not None else [])
                         + ["Ampel", "Name", "Quelle", "Stop", "Max-Drawdown %",
-                           "Gewinn %/Monat", "RetDD",
-                           "Trading-DD % (geschlossen)", "Equity-Messung",
-                           "Drawdown % (Plattform)", "Studie",
-                           "Ertrag/Monat %", "Score", "Urteil", "Bericht vom", "Bericht",
+                           "Trading-DD % (geschlossen)", "Drawdown % (Plattform)",
+                           "Studie",
+                           "Gewinn %/Monat", "RetDD", "Ertrag/Monat %", "Score",
+                           "Urteil", "Bericht vom", "Bericht",
                            "Link", "Abonnenten", "30 Tage", "7 Tage", "Dokumente"])
 
     limit = config.load_settings().get("schranke_eq_dd_pct", 30.0)

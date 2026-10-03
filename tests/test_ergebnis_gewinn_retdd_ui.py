@@ -43,25 +43,43 @@ def test_table_serializes_colors_and_formats_without_losing_values(monkeypatch):
 
     styled, options = captured[-1]
     order = options['column_order']
+    # Nutzer 03.10.: die DREI Drawdown-Werte stehen direkt nebeneinander;
+    # Gewinn/RetDD folgen danach, Equity-Messung nur in „Alle Kennzahlen".
     dd_pos = order.index('Max-Drawdown %')
-    assert order[dd_pos:dd_pos + 3] == ['Max-Drawdown %', 'Gewinn %/Monat', 'RetDD']
+    assert order[dd_pos:dd_pos + 3] == [
+        'Max-Drawdown %', 'Trading-DD % (geschlossen)', 'Drawdown % (Plattform)']
+    assert 'Equity-Messung' not in order
+    assert order.index('Gewinn %/Monat') > order.index('Drawdown % (Plattform)')
     assert options['column_config']['Gewinn %/Monat']['type_config']['format'] == '%.2f%%'
     assert options['column_config']['RetDD']['type_config']['format'] == '%.2f'
     assert options['selection_mode'] == 'single-row'
+    # Dezente Hinterlegung: schwache rgba-Fläche + farbiger Text, fehlende
+    # Messung (None) ganz ohne Stil — kein pastellfarbener Block.
     col = styled.data.columns.get_loc('Max-Drawdown %')
     styles = styled._compute().ctx
-    assert [dict(styles[(i, col)])['background-color'] for i in range(5)] == [
-        '#dcfce7', '#fef3c7', '#fee2e2', '#e5e7eb', '#dcfce7']
+    farben = [dict(styles[(i, col)])['background-color'] if (i, col) in styles
+              else None for i in range(5)]
+    assert farben == ['rgba(34,197,94,0.10)', 'rgba(249,115,22,0.12)',
+                      'rgba(239,68,68,0.16)', None, 'rgba(34,197,94,0.10)']
+    textfarben = [dict(styles[(i, col)])['color'] if (i, col) in styles else None
+                  for i in range(5)]
+    assert textfarben == ['#4ade80', '#fb923c', '#f87171', None, '#4ade80']
+    assert all('font-weight' not in dict(styles[(i, col)])
+               for i in range(5) if (i, col) in styles)
     css = at.dataframe[0].proto.arrow_data.styler.styles
-    assert all(color in css for color in ('#dcfce7', '#fef3c7', '#fee2e2', '#e5e7eb'))
+    assert all(color in css for color in
+               ('rgba(34,197,94,0.10)', 'rgba(249,115,22,0.12)',
+                'rgba(239,68,68,0.16)'))
 
     # A settings change must move the threshold without rebuilding the rows.
     config.save_settings({'schranke_eq_dd_pct': 30.0})
     at.run()
     assert not at.exception
     styled, _ = captured[-1]
-    assert dict(styled._compute().ctx[(1, col)])['background-color'] == '#dcfce7'
-    assert dict(styled._compute().ctx[(3, col)])['background-color'] == '#e5e7eb'
+    assert dict(styled._compute().ctx[(1, col)])['background-color'] == \
+        'rgba(34,197,94,0.10)'
+    # Row 3 (keine Messung) bleibt über jeder Grenze ungestylt.
+    assert (3, col) not in styled._compute().ctx
 
 
 @pytest.mark.parametrize('dd,gain,profit_text,retdd_text', [
