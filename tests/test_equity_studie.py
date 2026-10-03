@@ -89,7 +89,6 @@ def test_studie_netto_fehlender_kurse_bleibt_enthalten(monkeypatch):
     assert data["punkte"][-1]["realisiert"] == 900
     assert data["kennzahlen"]["trades_realisiert"] == 5
     assert data["kennzahlen"]["verlaesslich"] is False
-    assert data["konto_studie"]["verlaesslich"] is False
 
 
 def test_studie_trennt_realisiert_und_floating():
@@ -355,20 +354,6 @@ def _fake_studie_daten() -> dict:
         "meta": {"name": "Studien-Fall", "signal_id": 42, "quelle": "mql5",
                  "trades_pfad": "fake.csv",
                  "startkapital_quelle": "csv_einzahlungen"},
-        "konto_studie": {
-            "verlaesslich": False,
-            "grund": "Kurslücke vor einem Kapitalfluss",
-            "punkte": [{"t": p["t"], "konto_equity": p["equity"],
-                         "konto_balance": p["realisiert"],
-                         "rendite_index": 1.0 if i < 4 else None,
-                         "drawdown_pct": 20.36 if i == 3 else 0 if i < 4 else None}
-                        for i, p in enumerate(punkte)],
-            "kennzahlen": {"konto_equity_dd_pct": None,
-                           "konto_equity_dd_beobachtet_pct": 20.36,
-                           "flows_verarbeitet": 5,
-                           "index_gueltig_bis": punkte[3]["t"],
-                           "index_abbruch_am": punkte[3]["t"] + 10},
-        },
     }
 
 
@@ -403,11 +388,6 @@ def test_equity_studie_seite_rendert_ende_zu_ende(tmp_path, monkeypatch):
     # Meldung des fehlenden Kurses sind sichtbar gerendert.
     assert "18.5" in text or "18,5" in text
     assert "EURUSD" in text
-    assert "Index ab" in text
-    assert "vor dem Abbruch" in text
-    assert not at.success
-    assert any(m.label == "Konto-DD (H1, kapitalflussneutral)" and "20.36" in m.value
-               for m in at.metric)
 
 
 def test_anker_klemmt_an_ersten_messpunkt_bei_kuerzerer_kurshistorie():

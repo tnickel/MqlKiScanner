@@ -202,75 +202,6 @@ def _kennzahlen_karten(daten: dict, schranke: float) -> None:
         st.metric("Abdeckung", f"{k.get('abdeckung_pct', 0.0):.0f} %", border=True)
 
 
-def _konto_vergleich(daten: dict, key_prefix: str) -> None:
-    """Tatsaechliches Kontokapital; Auszahlungen sind keine Trading-Verluste."""
-    konto = daten.get("konto_studie") or {}
-    if not konto.get("punkte"):
-        if konto.get("grund"):
-            st.warning("Konto-Diagnose nicht verfügbar: " + konto["grund"],
-                       icon=":material/warning:")
-        return
-    k = konto.get("kennzahlen") or {}
-    pct = k.get("konto_equity_dd_pct")
-    if pct is None:
-        pct = k.get("konto_equity_dd_beobachtet_pct")
-    approximativ = not konto.get("verlaesslich")
-    with st.container(border=True):
-        st.markdown("**Konto-Equity mit tatsächlichen Kapitalflüssen**")
-        st.metric("Konto-DD (H1, kapitalflussneutral)",
-                  (("≈ " if approximativ else "") + f"{pct:.2f} %")
-                  if pct is not None else "—", border=True)
-        st.caption(
-            "Ein- und Auszahlungen verändern das verfügbare Kapital. "
-            "Der Renditeindex neutralisiert diese Buchungen, damit eine "
-            "Auszahlung selbst keinen Handelsverlust erzeugt. Die blaue "
-            "Konto-Kurve zeigt das tatsächliche Kapital einschließlich "
-            "der Buchungen; die Drawdown-Spur misst den bereinigten Index.")
-        if approximativ:
-            st.warning(
-                "Beobachteter H1-Wert, kein vollständiger Broker-Maximum-DD. "
-                + (konto.get("grund") or "Kapital-/Kursbasis unvollständig."),
-                icon=":material/warning:")
-        if k.get("index_gueltig_bis") is not None:
-            bis = _als_datetime(k["index_gueltig_bis"])
-            st.caption(f"Gültige Index-Messpunkte bis {bis:%d.%m.%Y %H:%M} "
-                       "in der Zeitbasis des Trade-Exports.")
-        if k.get("index_abbruch_am") is not None:
-            abbruch = _als_datetime(k["index_abbruch_am"])
-            st.caption(f"Index ab {abbruch:%d.%m.%Y %H:%M:%S} nicht weiter "
-                       "bestimmbar. Der angezeigte beobachtete Rückfall "
-                       "gilt nur für die Messpunkte vor dem Abbruch.")
-        st.caption(
-            "Auch diese Kurve enthält ausschließlich die geschlossenen "
-            "Exportpositionen. Die Gegenüberstellung verändert Ampel und "
-            "Schranke nicht.")
-        with st.expander("Konto-Kurve und kapitalflussneutraler Drawdown",
-                         expanded=bool(k.get("flows_verarbeitet"))):
-            punkte = konto["punkte"]
-            x = [_als_datetime(p["t"]) for p in punkte]
-            fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
-                                row_heights=[0.7, 0.3], vertical_spacing=0.04)
-            for feld, label, farbe in (
-                    ("konto_equity", "Konto-Equity (inkl. Floating)", _FARBE_EQUITY),
-                    ("konto_balance", "Kontobalance", _FARBE_REALISIERT)):
-                fig.add_trace(go.Scatter(
-                    x=x, y=[p[feld] for p in punkte], name=label,
-                    mode="lines", line={"color": farbe}, connectgaps=False),
-                    row=1, col=1)
-            fig.add_trace(go.Scatter(
-                x=x, y=[-p["drawdown_pct"] if p["drawdown_pct"] is not None else None
-                        for p in punkte], name="Drawdown (Kapitalflüsse neutral)",
-                mode="lines", line={"color": _FARBE_FLOATING}, connectgaps=False),
-                row=2, col=1)
-            fig.update_layout(height=460, hovermode="x unified", template="plotly_white",
-                              margin={"l": 64, "r": 18, "t": 30, "b": 8},
-                              legend={"orientation": "h", "y": 1.06})
-            fig.update_yaxes(title_text="USD", row=1, col=1)
-            fig.update_yaxes(title_text="%", row=2, col=1)
-            st.plotly_chart(fig, width="stretch", config=_CHART_CONFIG,
-                            key=f"{key_prefix}_konto_chart")
-
-
 def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
     """Text-Bausteine (Code, kein LLM): wie riskant zeigt sich die Strategie."""
     k = daten["kennzahlen"]
@@ -549,7 +480,6 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
         "ausgewählten Bereich, **Doppelklick** setzt die Ansicht zurück. "
         "Im Werkzeug-Menü oben rechts: Pan, Linien/Rechtecke zeichnen und "
         "Export als PNG.")
-    _konto_vergleich(daten, key_prefix)
 
     with st.container(border=True):
         st.markdown("**Wie riskant zeigt sich die Strategie?** "
