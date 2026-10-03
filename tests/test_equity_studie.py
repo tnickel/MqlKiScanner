@@ -355,9 +355,16 @@ def _fake_studie_daten() -> dict:
         "meta": {"name": "Studien-Fall", "signal_id": 42, "quelle": "mql5",
                  "trades_pfad": "fake.csv",
                  "startkapital_quelle": "csv_einzahlungen"},
-        "konto_studie": {"punkte": [], "verlaesslich": False,
-                         "kennzahlen": {"konto_equity_dd_pct": None,
-                                        "konto_equity_dd_beobachtet_pct": 38.14}},
+        "konto_studie": {"punkte": [
+                {"t": basis + i * STUNDE,
+                 "konto_equity": 10000 + i * 100, "konto_balance": 10000 + i * 100,
+                 "rendite_index": 1.0 + i * 0.01,
+                 "drawdown_pct": (0.5 if i == 2 else 0.0) if i < 5 else None}
+                for i in range(4)],
+            "verlaesslich": False,
+            "kennzahlen": {"konto_equity_dd_pct": None,
+                           "konto_equity_dd_beobachtet_pct": 38.14,
+                           "index_gueltig_bis": basis + 3 * STUNDE}},
     }
 
 
@@ -399,6 +406,11 @@ def test_equity_studie_seite_rendert_ende_zu_ende(tmp_path, monkeypatch):
     # Prozentzahl.
     assert "38.1" in text or "38,1" in text
     assert "Ein-/Auszahlungen" in text
+    # Kopier-Simulation (Nutzer-Wunsch 04.10.): 10K-Konstantkonto, Karte
+    # nennt den Kopier-DD und den simulierten Rückfall in USD.
+    assert "Max-Drawdown beim Kopieren" in text
+    assert "3.814" in text or "3.814" in text.replace(",", ".") or "3814" in text
+    assert "Kontostand heute (simuliert)" in text
 
 
 def test_anker_klemmt_an_ersten_messpunkt_bei_kuerzerer_kurshistorie():

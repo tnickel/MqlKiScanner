@@ -414,6 +414,87 @@ def _symbol_diagnose(daten: dict) -> None:
                    "gezeigt, nicht interpoliert.")
 
 
+_KOPIER_STARTKAPITAL = 10_000.0
+
+
+def _kopier_simulation(daten: dict, key_prefix: str) -> None:
+    """Was wäre mit DEINEM Konto passiert? (Nutzer-Wunsch 04.10.2026)
+
+    Beim Kopieren übernimmt man die Trades — relativ skaliert auf das
+    eigene Konto —, aber NICHT die Ein-/Auszahlungen des Anbieters. Die
+    kapitalflussneutrale Rendite (rendite_index der Konto-Diagnostik,
+    Entnahmen/Einzahlungen neutralisiert) auf ein konstantes Startkapital
+    angewandt ist genau diese Simulation: konstantes Geld, nur die
+    Trade-Ergebnisse wirken. Deren Maximalrückfall ist der Drawdown, den
+    das eigene Konto erlebt hätte (prozentual unabhängig vom Startbetrag,
+    da die Lot-Skalierung proportional ist wie beim MQL5-Copy-Service).
+    """
+    konto = daten.get("konto_studie") or {}
+    punkte = [p for p in (konto.get("punkte") or [])
+              if p.get("rendite_index") is not None]
+    if len(punkte) < 2:
+        return
+    kto = konto.get("kennzahlen") or {}
+    konto_pct = kto.get("konto_equity_dd_pct")
+    if konto_pct is None:
+        konto_pct = kto.get("konto_equity_dd_beobachtet_pct")
+    if konto_pct is None:
+        return
+    basis = _KOPIER_STARTKAPITAL
+    with st.container(border=True):
+        st.markdown(f"**Kopier-Simulation — was wäre mit deinem Konto passiert?** "
+                    f"(Start {basis:,.0f} USD, konstant — ohne die Ein-/"
+                    "Auszahlungen des Anbieters)")
+        with st.container(horizontal=True):
+            st.metric(
+                "Max-Drawdown beim Kopieren",
+                ("≈ " if not konto.get("verlaesslich") else "")
+                + f"{konto_pct:.1f} %",
+                help="Kapitalflussneutraler Rückfall: genau dieser Drawdown "
+                     "wäre auf deinem kopierten Konto entstanden — unabhängig "
+                     "vom Startbetrag, weil die Lot-Skalierung proportional "
+                     "erfolgt. ≈ = beobachteter Wert über die verfügbaren "
+                     "Messpunkte, kein vollständiger Broker-Maximum-DD.",
+                delta_color="off", border=True)
+            st.metric("Rückfall auf dein Konto",
+                      f"−{basis * konto_pct / 100.0:,.0f}".replace(",", ".")
+                      + " USD", border=True)
+            ende = basis * punkte[-1]["rendite_index"]
+            st.metric("Kontostand heute (simuliert)",
+                      f"{ende:,.0f}".replace(",", ".") + " USD",
+                      f"{ende - basis:+,.0f} USD".replace(",", "."),
+                      delta_color="off", border=True)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=[_als_datetime(p["t"]) for p in punkte],
+            y=[basis * p["rendite_index"] for p in punkte],
+            mode="lines", name=f"Kopie auf {basis:,.0f} USD".replace(",", "."),
+            line={"color": _FARBE_EQUITY, "width": 2.2},
+            connectgaps=False,
+            hovertemplate="%{x}<br>dein Konto %{y:,.0f} USD<extra></extra>"))
+        fig.add_hline(y=basis, line_dash="dashdot", line_color="#9e9e9e",
+                      line_width=1, annotation_text="Start 10.000",
+                      annotation_position="bottom right")
+        fig.update_layout(
+            height=340, margin={"l": 64, "r": 18, "t": 24, "b": 8},
+            hovermode="x unified", template="plotly_white",
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02})
+        fig.update_yaxes(title_text="USD", tickformat=",.0f",
+                         gridcolor="#e8e8e8")
+        st.plotly_chart(fig, width="stretch", config=_CHART_CONFIG,
+                        key=f"{key_prefix}_kopie_chart")
+        ende_text = ""
+        if kto.get("index_gueltig_bis") is not None:
+            ende_text = (f" Index-Messpunkte gültig bis "
+                         f"{_als_datetime(kto['index_gueltig_bis']):%d.%m.%Y %H:%M}.")
+        st.caption(
+            "Annahmen: proportionale Lot-Skalierung wie beim MQL5-Copy-Service "
+            "(kein Fixed-Lot), keine Kopiergebühren, Slippage- und Spread-"
+            "Unterschiede zwischen Anbieter- und eigenem Broker nicht enthalten. "
+            "H1-Schlusskurse; offene Positionen der Anbieter-Historie nur bis "
+            "zum letzten Exportstand." + ende_text)
+
+
 def render_studie(result, *, key_prefix: str = "eqdd") -> None:
     """Komplette Studiensicht: Progress beim Rechnen, danach Chart + Texte.
 
@@ -525,6 +606,8 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
     st.plotly_chart(_chart(daten, k.get("startkapital") or 0.0, schranke),
                     width="stretch", config=_CHART_CONFIG,
                     key=f"{key_prefix}_chart_{chart_version}")
+
+    _kopier_simulation(daten, key_prefix)
 
     with st.container(border=True):
         st.markdown("**Wie riskant zeigt sich die Strategie?** "
