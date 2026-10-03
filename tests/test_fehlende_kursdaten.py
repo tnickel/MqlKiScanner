@@ -70,3 +70,20 @@ def test_pdf_anhang_nennt_fehlende_kursdaten_zeile():
     md = _anhang_markdown([r], portfolio)
     assert "Fehlende Kursdaten" in md
     assert "US100" in md and "XCUUSDM" in md
+
+
+def test_forensik_json_ueberlebt_objekte_ohne_neue_felder():
+    """Deploy-Härtung (realer Fall SFE Impulse 03.10. 22:16): Ergebnis-
+    objekte aus einer älteren Klassendefinition (Server-Neustart mitten
+    im Deploy) dürfen die Berichtsvorbereitung nicht crashen."""
+    from types import SimpleNamespace
+    felder = {f: None for f in pipeline.ScanResult.__dataclass_fields__
+              if f not in ("equity_rekon_ohne_kurse", "equity_rekon_ohne_kontrakt")}
+    felder.update(id=1, forensik_vorhanden=True, equity_messung_status="x",
+                  effizienz_befund={}, equity_rekon_zeitbasis={},
+                  refresh_efficiency=lambda: None,
+                  max_drawdown_equity_pct=None)
+    alt = SimpleNamespace(**felder)
+    assert not hasattr(alt, "equity_rekon_ohne_kurse")
+    payload = json.loads(pipeline._forensik_json(alt))
+    assert "fehlende_kursdaten" not in payload

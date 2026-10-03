@@ -731,6 +731,12 @@ def _kandidat_json(r: ScanResult) -> str:
 def _forensik_json(r: ScanResult) -> str:
     """Engine-Forensik als JSON (LLM-Payload, AGENTS.md Design-Regel 1)."""
     r.refresh_efficiency()
+    # getattr-Härtung: Ergebnisobjekte aus einer älteren Klassendefinition
+    # (Server-Neustart mitten im Deploy — realer Fall SFE Impulse 03.10.
+    # 22:16: 'ScanResult' object has no attribute ...) dürfen den BERICHT
+    # nicht crashen; die Listen sind dann einfach leer.
+    _ohne_kurse = getattr(r, "equity_rekon_ohne_kurse", None) or []
+    _ohne_kontrakt = getattr(r, "equity_rekon_ohne_kontrakt", None) or []
     return json.dumps({
         "trading_dd": {"pct": r.trading_dd_pct, "usd": r.trading_dd_usd},
         "winrate_pct": r.winrate_pct,
@@ -819,14 +825,14 @@ def _forensik_json(r: ScanResult) -> str:
         # nennen — der Nutzer will wissen, woran er arbeiten kann (Symbol
         # im Referenzterminal verfügbar machen / Kontraktgröße belegen).
         **({"fehlende_kursdaten": {
-            "ohne_kurse": r.equity_rekon_ohne_kurse,
-            "ohne_kontrakt": r.equity_rekon_ohne_kontrakt,
+            "ohne_kurse": _ohne_kurse,
+            "ohne_kontrakt": _ohne_kontrakt,
             "folge": "Für diese Symbole lief die Equity-Nachmessung nicht — "
                      "der gemessene Max-Drawdown kann zu NIEDRIG sein.",
             "handlung": "Kurs-Symbol im MT5-Referenzterminal verfügbar machen "
                         "bzw. Kontraktgröße in data/contract_specs.json "
                         "belegen; dann Signal neu scannen."}}
-           if (r.equity_rekon_ohne_kurse or r.equity_rekon_ohne_kontrakt) else {}),
+           if (_ohne_kurse or _ohne_kontrakt) else {}),
         "equity_rekonstruktion_methodik": {
             "status": "veraltet" if r.forensik_stale else r.equity_rekon_status or (
                 "ok" if r.equity_dd_rekonstruiert_pct is not None else "nicht_verfuegbar"),
