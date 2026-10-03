@@ -40,10 +40,12 @@ from .forensics.equity_rekonstruktion import (
 from .forensics.exposure import _resolve_symbol
 from .forensics.equity_kapitalfluesse import diagnostik as konto_diagnostik
 
-# Ein Symbol braucht mindestens so viele Trade-Proben, um seinen GMT-Versatz
-# SELBST zu belegen; darunter (oder bei Mehrdeutigkeit) greift der Median der
-# erkannten Symbole, offengelegt im Befund.
-MIN_EIGENE_PROBEN = 5
+# Ein Symbol braucht so viele Trade-Proben, um seinen GMT-Versatz SELBST zu
+# belegen; darunter (oder bei Mehrdeutigkeit) greift der Median der erkannten
+# Symbole, offengelegt im Befund. Nutzer-Regel 03.10.: DREI stimmende,
+# eindeutige Proben genügen — der Versatz wechselt nur zum Sommer-/Winterzeit-
+# Termin (vorher 5; Konsistenz mit GMT_LOKAL_MIN_PROBEN der Reko).
+MIN_EIGENE_PROBEN = 3
 
 
 def _raster_stunde(epoch_s: int, offset_s: int) -> int:
@@ -75,7 +77,12 @@ def ermittle_gmt_je_symbol(trades, bars_je_symbol: dict[str, list[dict]]) -> dic
     for s in sorted(je_symbol):
         proben = [t for t in je_symbol[s]
                   if t.entry_price and t.exit_price and t.open_time and t.close_time]
-        proben_je[s] = len(proben)
+        # Proben = PREISEREIGNISSE (Open+Close, dedupliziert) — dieselbe
+        # Zählweise wie die Wochenlogik der Reko (_preisproben). Nutzer-Regel
+        # 03.10.: 3 stimmende Ereignisse belegen den Versatz.
+        ereignisse = {(t.open_time, t.entry_price) for t in proben} \
+            | {(t.close_time, t.exit_price) for t in proben}
+        proben_je[s] = len(ereignisse)
         if not bars_je_symbol.get(s):
             ohne_bars.append(s)
             continue

@@ -83,26 +83,27 @@ def test_langer_trade_mappt_open_close_getrennt_und_grenzstunde_bleibt_unklar():
     assert result["konto_studie"]["kennzahlen"]["konto_equity_dd_pct"] is None
 
 
-def test_duenne_abweichende_woche_wird_nicht_global_schoengerechnet():
+def test_duenne_abweichende_woche_erbt_letzten_bekannten_versatz():
+    """Nutzer-Regel 03.10.: Nicht ermittelbar = letzten bekannten GMT
+    nehmen statt verwerfen. Die dünne +1-h-Woche erbt den belegten 0-h-
+    Versatz; ihre Preise fallen aus den geerbten Bars und werden
+    EREIGNIS-Lücken (nicht schöngerechnet) — Messung und Endstand bleiben."""
     parsed, bars = _daten((0, 1, 0), (6, 1, 6))
     result = er.rekonstruiere(parsed, kursdaten.FakeKursDaten(bars), 10000)
-    assert not result["verlaesslich"]
-    assert result["zeitbasis"]["perioden"][1]["belegt"] is False
-    assert result["zeitbasis"]["unsichere_trade_ereignisse"] > 0
+    woche2 = result["zeitbasis"]["perioden"][1]
+    assert woche2["belegt"] is True                      # geerbt, kein Verwurf
+    assert woche2["gmt_h"] == 0                          # letzter bekannter
+    assert result["zeitbasis"]["unsichere_trade_ereignisse"] > 0  # +1h-Preise = Lücken
     assert result["end_equity_usd"] == pytest.approx(10000 + sum(t.net for t in parsed.trades))
 
 
-def test_ein_unpassender_endpunkt_in_duenner_global_kompatibler_woche():
-    parsed, bars = _daten((0, 0), (6, 1))
-    parsed.trades[-1].exit_price = 999999
-    model = er.Zeitbasis(parsed.trades, bars, 0)
-    assert model.perioden[-1]["status"] == "global_kompatibel"
-    assert not model.verlaesslich
-    assert any("Open-/Close-Preis" in g for g in model.gruende)
-
-
 def test_unsichere_innenwoche_eines_langtrades_verhindert_urteil():
-    parsed, bars = _daten((0, 1, 0), (6, 1, 6))
+    """Ein Langtrade über eine STARK belegte DST-Wechselgrenze (0 h → 1 h,
+    beide Wochen selbst bewiesen) bleibt hart unzuverlässig — die Grenze
+    zwischen verschiedenen bewiesenen Versätzen ist ein echtes
+    Mehrdeutigkeitsfenster. (Dünne Abweichungswochen erben dagegen seit
+    Nutzer-Regel 03.10. den letzten bekannten Versatz.)"""
+    parsed, bars = _daten((0, 1, 0), (6, 6, 6))
     opened = START + dt.timedelta(hours=1, minutes=30)
     closed = START + dt.timedelta(days=14, hours=23, minutes=30)
     lookup = {b["time"]: b["close"] for b in bars["XAUUSD"]}
@@ -110,7 +111,8 @@ def test_unsichere_innenwoche_eines_langtrades_verhindert_urteil():
     exit_ = lookup[er._epoch(closed) // 3600 * 3600]
     parsed.trades.append(Trade(opened, closed, "Buy", .01, "XAUUSD", entry, exit_, exit_ - entry))
     model = er.Zeitbasis(parsed.trades, bars, 0)
-    assert model.unsichere_innenperioden >= 1
+    assert [p["offset_s"] for p in model.perioden[:2]] == [0, 3600]  # beide stark
+    assert model.offene_wechsel_annahmen >= 1
     assert not model.verlaesslich
     result = er.rekonstruiere(parsed, kursdaten.FakeKursDaten(bars), 10000)
     assert not result["verlaesslich"]
@@ -269,3 +271,29 @@ def test_weit_draussen_bleibt_hart_unzuverlaessig():
     assert model.verlaesslich is False
     ergebnis = er.rekonstruiere(parsed, kursdaten.FakeKursDaten(bars), 10_000.0)
     assert ergebnis["verlaesslich"] is False
+
+
+def test_drei_stimmende_proben_belegen_dst_wechselwoche():
+    """Nutzer-Regel 03.10.: Der Broker-Versatz wechselt nur zum Sommer-/
+    Winterzeit-Termin — DREI stimmende, eindeutige Proben belegen ihn.
+    Eine DST-Wechselwoche mit nur 2 Trades (4 Proben) auf +1 h wird jetzt
+    lokal belegt statt als Abweichung verworfen."""
+    parsed, bars = _daten(phasen=(0, 1), proben=(6, 2))
+    model = er.Zeitbasis(parsed.trades, bars, 0)
+    wechselwoche = model.perioden[1]
+    assert wechselwoche["status"] == "lokal_preisbelegt"
+    assert wechselwoche["offset_s"] == 3600
+    assert wechselwoche["belegt"] is True
+    assert model.verlaesslich is True
+    ergebnis = er.rekonstruiere(parsed, kursdaten.FakeKursDaten(bars), 10_000.0)
+    assert ergebnis["verlaesslich"] is True
+
+
+def test_zwei_proben_bleiben_duenn_global_geerbt():
+    """Unter 3 Proben bleibt die Woche duenn — sie erbt den globalen
+    Versatz, kein Raten aus Einzelereignissen."""
+    parsed, bars = _daten(phasen=(0, 0), proben=(6, 1))
+    model = er.Zeitbasis(parsed.trades, bars, 0)
+    duenn = model.perioden[1]
+    assert duenn["status"] == "global_kompatibel"
+    assert duenn["belegt"] is True

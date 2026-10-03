@@ -767,6 +767,27 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   hart). Beim nächsten Scan kommt der Kurs-DD zurück in Schranke/RetDD —
   GS MT5 kann wieder 🟢 werden.
 
+- ✅ GMT-REGEL VEREINFACHT (03.10. abends, Nutzer-Entscheidung „3 Proben
+  reichen — GMT wechselt nur 2×/Jahr" + „nicht ermittelbar = LETZTEN
+  BEKANNTEN nehmen, das reicht"): (1) GMT_LOKAL_MIN_PROBEN 10 → 3 und
+  MIN_EIGENE_PROBEN (Studie/Symbol) 5 → 3 — Proben zählen jetzt als
+  PREISEREIGNISSE (Open+Close dedupliziert, konsistent zur Reko; die
+  Studie zählte versehentlich Trades). Schutz bleibt: bester Shift muss
+  EINDEUTIG sein (Plateau = mehrdeutig) UND Quote ≥ 90 % (bei 3 Proben:
+  alle 3). Nutzen: DST-Wechselwochen (oft nur wenige Proben) werden
+  jetzt lokal belegt statt verworfen. (2) Wochen, die ihren Versatz
+  NICHT selbst belegen können (dünn/mehrdeutig/abweichend), ERBEN den
+  letzten bekannten Versatz (previous; Startwoche: global) statt die
+  Messung zu verwerfen — Status „geerbt_letzter_bekannter" nur noch
+  informativ. Echte DST-Wechsel werden erkannt, sobald eine Folgewoche
+  sie selbst belegt (ab 3 Proben); bis dahin laufen die betroffenen
+  Preise als Ereignis-Lücken (nicht schöngerechnet). Hart bleiben:
+  kein überhaupt belegbarer Versatz, nicht-monotone Abbildung, offene
+  Position über eine STARK-belegte Wechselgrenze, Preise um
+  Größenordnungen daneben (999999). Tests angepasst (Verwurfs- auf
+  Erbe-Semantik) + neue 3-Proben-/DST-/Vererbungs-Tests. GS MT5
+  verifiziert: Woche W40 lokal belegt (92,9 %), Abdeckung 96,1 %, ok.
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

@@ -42,10 +42,14 @@ SCHRANKE_MIN_ABDECKUNG = 0.95
 # Datenluecke in den Abdeckungs-Nenner. Kuerzere Luecken sind Datenloecher.
 MARKTPAUSE_MIN_H = 20
 
-# Ein lokaler Kalenderabschnitt darf den globalen Versatz erst mit
-# unabhaengigen Preisproben ueberschreiben. Duplizierte Grid-Opens zaehlen
-# dabei nur einmal; Open UND Close werden nach ihrem eigenen Datum geprueft.
-GMT_LOKAL_MIN_PROBEN = 10
+# Ein lokaler Kalenderabschnitt darf den globalen Versatz mit unabhaengigen
+# Preisproben ueberschreiben. Nutzer-Regel 03.10.: Der Broker-Versatz ist
+# monatelang konstant und wechselt nur zum Sommer-/Winterzeit-Termin —
+# DREI stimmende Proben belegen ihn. Duplizierte Grid-Opens zaehlen nur
+# einmal; Open UND Close werden nach ihrem eigenen Datum geprueft. Die
+# Schutz Checks bleiben: bester Shift EINDEUTIG (Plateau = mehrdeutig)
+# und Trefferquote >= GMT_LOKAL_MIN_TREFFER (bei 3 Proben: alle 3).
+GMT_LOKAL_MIN_PROBEN = 3
 GMT_LOKAL_MIN_TREFFER = 0.9
 # Abstandskala fuer einzelne Preisereignisse (03.10., Nutzer-Fall GS MT5):
 # knapp ausserhalb (<= Faktor x Toleranz) = Spread-/Slippage-Ausreisser —
@@ -152,21 +156,26 @@ class Zeitbasis:
                 # WOCHE; einzelne Nichttreffer markieren nur ihren EIGENEN
                 # Trade unsicher — dessen Stunden werden Lücken, und die
                 # 95-%-Abdeckungsregel entscheidet, ob die MESSUNG belastbar
-                # bleibt. Massenhafte Nichttreffer (< 90 %) bleiben unbelegt.
+                # bleibt. Massenhafte Nichttreffer (< 90 %) erben (siehe
+                # unten) statt zu verwerfen.
                 belegt = True
-            elif lokal and self.global_offset_s not in kandidaten:
-                shift = previous if previous in kandidaten else self.global_offset_s
-                status = "abweichung_unbelegt"
-                belegt = False
-            elif not lokal and previous != self.global_offset_s:
+            elif lokal or previous != self.global_offset_s:
+                # Nutzer-Regel 03.10.: „GMT merken — nicht ermittelbar heißt
+                # LETZTEN BEKANNTEN nehmen, das reicht." Wochen, die ihren
+                # Versatz nicht selbst belegen können (dünn, mehrdeutig oder
+                # mit abweichenden Proben), übernehmen den zuletzt belegten
+                # Versatz (previous; Startwoche: global) statt die Messung zu
+                # verwerfen. Ein echter DST-Wechsel wird erkannt, sobald eine
+                # Folgewoche ihn selbst belegt (ab 3 stimmenden Proben);
+                # bis dahin bleibt die Woche auf dem alten Versatz — die
+                # betroffenen Trade-Preise fallen dann aus der Bar und werden
+                # über den Ereignis-Check zu ehrlichen Lücken. Status
+                # unterscheidet nur noch informativ, ob geerbt wurde.
                 shift = previous
-                status = "nachbar_unbelegt"
-                belegt = False
-            elif previous != self.global_offset_s and lokal:
-                # Die Rueckkehr zum globalen Shift ist plausibel, aber in
-                # einer duennen/mehrdeutigen Grenzwoche noch kein Beweis.
-                status = "rueckkehr_unbelegt"
-                belegt = False
+                status = ("geerbt_letzter_bekannter"
+                          if previous != self.global_offset_s else
+                          "global_kompatibel")
+                belegt = True
             self.perioden.append({"von_t": von, "bis_t": von + 7 * 86400,
                                   "offset_s": shift, "belegt": belegt,
                                   "preisproben": len(lokal), "trefferquote": quote,

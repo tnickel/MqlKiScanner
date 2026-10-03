@@ -186,12 +186,12 @@ def test_einziges_duennes_symbol_noch_erkannt_mit_hinweis():
     komplett abzuwerfen."""
     start = dt.datetime(2026, 1, 1)
     bars = _bars("XAUUSD", start, 24)
+    # EIN Trade = 2 Preisereignisse < MIN_EIGENE_PROBEN (3, Nutzer-Regel
+    # 03.10.) — dünn, aber ohne jeden Partner greift die eigene Erkennung.
     trades = [
-        _trade("XAUUSD", "buy", start + dt.timedelta(hours=i),
-               start + dt.timedelta(hours=i + 1),
-               bars[i]["close"] - 0.1, bars[i + 1]["close"])
-        for i in (5, 9)
-    ]
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=5),
+               start + dt.timedelta(hours=6),
+               bars[5]["close"] - 0.1, bars[6]["close"])]
     gmt = ermittle_gmt_je_symbol(trades, {"XAUUSD": bars})
     b = gmt["befunde"][0]
     assert b["status"] == "erkannt", b
@@ -425,3 +425,30 @@ def test_anker_klemmt_an_ersten_messpunkt_bei_kuerzerer_kurshistorie():
     # Die Kurve bleibt im messbaren Fenster: kein Punkt liegt vor den Bars.
     fruehester = min(p["t"] for p in erg["punkte"])
     assert fruehester >= bars[0]["time"]
+
+
+def test_symbol_mit_drei_stimmenden_proben_eigenstaendig_erkannt():
+    """Nutzer-Regel 03.10.: 3 stimmende, eindeutige Proben belegen den
+    Symbol-Versatz selbst — 2 Trades (4 Proben) reichen, ohne Median-
+    Fallback (vorher Schwelle 5)."""
+    start = dt.datetime(2026, 1, 1)
+    bars_gold = _bars("XAUUSD", start, 48)
+    bars_eur = _bars("EURUSD", start, 48, base=1.10, schritt=0.007, band=0.0008)
+    trades = []
+    for i in range(6, 40, 4):
+        o = start + dt.timedelta(hours=i)
+        trades.append(_trade("XAUUSD", "buy", o - dt.timedelta(hours=2),
+                             o - dt.timedelta(hours=1),
+                             bars_gold[i]["close"] - 0.1,
+                             bars_gold[i + 1]["close"]))
+    # EURUSD: genau 2 Trades (4 Proben) eindeutig auf +2 h.
+    for i in (8, 20):
+        o = start + dt.timedelta(hours=i)
+        trades.append(_trade("EURUSD", "sell", o - dt.timedelta(hours=2),
+                             o - dt.timedelta(hours=1),
+                             bars_eur[i]["close"] - 0.0001,
+                             bars_eur[i + 1]["close"]))
+    gmt = ermittle_gmt_je_symbol(trades, {"XAUUSD": bars_gold, "EURUSD": bars_eur})
+    befunde = {b["symbol"]: b for b in gmt["befunde"]}
+    assert befunde["EURUSD"]["status"] == "erkannt", befunde
+    assert befunde["EURUSD"]["gmt_h"] == 2
