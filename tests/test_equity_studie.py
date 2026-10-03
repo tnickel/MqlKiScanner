@@ -408,3 +408,40 @@ def test_equity_studie_seite_rendert_ende_zu_ende(tmp_path, monkeypatch):
     assert not at.success
     assert any(m.label == "Konto-DD (H1, kapitalflussneutral)" and "20.36" in m.value
                for m in at.metric)
+
+
+def test_anker_klemmt_an_ersten_messpunkt_bei_kuerzerer_kurshistorie():
+    """Trades beginnen Monate vor der ersten verfügbaren Bar (Referenz-
+    terminal hat kürzere Historie als das Signal): der Anker bleibt am
+    ersten messbaren Punkt, damit die Kurve nicht in einen toten
+    Zeitbereich gezogen wird (Nutzer-Feedback 03.10. — Chart zeigte die
+    eigentliche Kurve nur als schmalen Streifen). Das realisierte Netto
+    der Vorzeit geht in den Anker ein."""
+    start = dt.datetime(2026, 1, 1)
+    bars = _bars("XAUUSD", start, 24)
+    frueh = dt.datetime(2025, 9, 1)
+    trades = [
+        # komplett vor allen Bars — realisiert, nie floating-messbar
+        _trade("XAUUSD", "buy", frueh, frueh + dt.timedelta(hours=5),
+               2000.0, 2000.0, pnl=400.0),
+    ]
+    # 6 Trades im Jan-Fenster (12 Preisproben ≥ GMT_LOKAL_MIN_PROBEN),
+    # damit die Zeitbasis über die Jan-Woche belegt ist.
+    for i in (2, 6, 10, 14, 18, 22):
+        trades.append(_trade(
+            "XAUUSD", "buy", start + dt.timedelta(hours=i),
+            start + dt.timedelta(hours=i + 1),
+            bars[i]["close"] - 0.1, bars[i + 1]["close"], pnl=-100.0))
+    erg = studie(_parsed(trades), kursdaten.FakeKursDaten({"XAUUSD": bars}),
+                 startkapital=10_000.0)
+    assert erg["status"] == "ok", erg
+    erster = erg["punkte"][0]
+    # Anker am ersten Bar-Ende (Jan 2026), NICHT beim Trade von Sep 2025.
+    assert erster["t"] == bars[0]["time"] + STUNDE, erster
+    # Realisiert der Vorzeit (+400) ist im Anker enthalten — kein
+    # stiller Verlust der Vorperioden.
+    assert erster["realisiert"] == 10_400.0
+    assert erster["equity"] == 10_400.0
+    # Die Kurve bleibt im messbaren Fenster: kein Punkt liegt vor den Bars.
+    fruehester = min(p["t"] for p in erg["punkte"])
+    assert fruehester >= bars[0]["time"]

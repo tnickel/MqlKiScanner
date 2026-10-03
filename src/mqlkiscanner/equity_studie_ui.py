@@ -171,8 +171,10 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
     fig.update_yaxes(title_text="USD", tickformat=",.0f", row=1, col=1,
                      gridcolor="#e8e8e8")
     fig.update_yaxes(title_text="%", row=2, col=1, gridcolor="#e8e8e8")
-    fig.update_xaxes(rangeslider={"visible": True, "thickness": 0.075},
-                     row=2, col=1)
+    # Kein Rangeslider (Nutzer-Feedback 03.10.): die kleinen Griffe lasen
+    # sich wie Begrenzungsbalken und duplizierten die Kurve winzig — Zoom/
+    # Pan laufen über Mausrad, Box-Auswahl und das Werkzeug-Menü (siehe
+    # Bedienungshinweis unter dem Chart).
     return fig
 
 
@@ -541,6 +543,12 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
     st.plotly_chart(_chart(daten, k.get("startkapital") or 0.0, schranke),
                     width="stretch", config=_CHART_CONFIG,
                     key=f"{key_prefix}_chart")
+    st.caption(
+        "Bedienung: **Mausrad** zoomt (Waagrechtes = Zeit, Senkrechtes = "
+        "USD), **Ziehen bei gehaltener Maustaste** vergröbert einen "
+        "ausgewählten Bereich, **Doppelklick** setzt die Ansicht zurück. "
+        "Im Werkzeug-Menü oben rechts: Pan, Linien/Rechtecke zeichnen und "
+        "Export als PNG.")
     _konto_vergleich(daten, key_prefix)
 
     with st.container(border=True):

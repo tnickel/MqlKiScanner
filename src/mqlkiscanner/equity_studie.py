@@ -278,8 +278,23 @@ def studie(parsed, kurse, startkapital: float,
 
     _p(0.78, "Equity-Kurve je Stunde rechnen …")
     basis = float(startkapital or 0.0)
-    punkte: list[dict] = [{"t": erste - median_offset, "equity": basis,
-                          "realisiert": basis, "floating": 0.0, "messpunkt": True}]
+    # Anker unmittelbar vor dem ersten MESSBAREN Punkt: Hat das Referenz-
+    # Terminal eine kürzere Historie als das Signal (Trades liegen vor der
+    # ersten verfügbaren Bar), zöge ein Anker beim ersten Trade die Kurve
+    # in einen toten Zeitbereich und die eigentliche Kurve auf einen
+    # schmalen Streifen (Nutzer-Feedback 03.10.). Das realisierte Netto der
+    # Vorzeit bleibt erhalten: alle Schließungen bis zum ersten Rasterpunkt
+    # gehen in den Anker ein; nur ihr zwischenzeitliches Floating ist —
+    # ohne Kurse ehrlich — nicht messbar.
+    anker_t = erste
+    anker_stand = basis
+    if raster and raster[0] - erste > 2 * 24 * 3600:
+        anker_t = raster[0]
+        anker_stand = basis + math.fsum(
+            net for zeit, net in schliessungen if zeit <= raster[0])
+    punkte: list[dict] = [{"t": anker_t - median_offset, "equity": anker_stand,
+                          "realisiert": anker_stand, "floating": 0.0,
+                          "messpunkt": True}]
     realisiert = 0.0
     schliess_idx = 0
     offen_idx = 0
@@ -310,10 +325,19 @@ def studie(parsed, kurse, startkapital: float,
     # als LÜCKEN-PUNKTE ins Raster nehmen — die Equity-Spur reißt an der
     # Stelle sichtbar (equity=None), statt still über die Stunde zu
     # springen. Wochenenden sind über die Pausen-Erkennung ausgenommen.
-    datenluecken = sorted(s for s in aktiv_laut_zeit
-                          if s not in bar_stunden and s not in pausen)
-    if datenluecken:
-        raster = sorted(bar_stunden | set(datenluecken))
+    # NUR INNERHALB des kursbelegten Fensters: Stunden VOR der ersten oder
+    # NACH der letzten Bar sind toter Bereich (Referenzterminal hat kürzere
+    # Historie als das Signal) — als Lückenpunkte würden sie die Zeitachse
+    # auseinanderziehen und die Kurve auf einen Streifen quetschen
+    # (Nutzer-Feedback 03.10.). Ihr realisiertes Netto trägt der Anker.
+    if bar_stunden:
+        fenster_anfang, fenster_ende = min(bar_stunden), max(bar_stunden)
+        datenluecken = sorted(
+            s for s in aktiv_laut_zeit
+            if fenster_anfang <= s <= fenster_ende
+            and s not in bar_stunden and s not in pausen)
+        if datenluecken:
+            raster = sorted(bar_stunden | set(datenluecken))
 
     for punkt in raster:
         while schliess_idx < len(schliessungen) and schliessungen[schliess_idx][0] <= punkt:
