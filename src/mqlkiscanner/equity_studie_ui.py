@@ -35,7 +35,7 @@ _FARBE_FLOATING = "#d32f2f"
 
 def _cache_key(result) -> str:
     sha = getattr(result, "trades_sha256", "") or ""
-    return f"eqdd_studie_h1_ende_v2_{result.id}_{sha[:12] or 'nosha'}"
+    return f"eqdd_studie_zeitbasis_v10_{result.id}_{sha[:12] or 'nosha'}"
 
 
 def berechne(result, progress) -> dict:
@@ -346,7 +346,7 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
             st.warning(f"**Nachmessung deutlich höher als der Plattformwert:** "
                        f"{pct:.1f} % hier vs. {float(gemeldet):.1f} % Drawdown "
                        f"(Plattform, Faktor {pct / float(gemeldet):.1f}×). "
-                       "Abweichende Kapitalflüsse, Zeiträume und Referenzkurse "
+                       "Abweichende DD-Definitionen, Kapitalflüsse, Zeiträume und Referenzkurse "
                        "müssen vor einer Aussage über die Meldung abgeglichen werden.",
                        icon=":material/compare_arrows:")
         else:
@@ -360,19 +360,62 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
 
 def _symbol_diagnose(daten: dict) -> None:
     """GMT je Währungspaar, fehlende Kurse und Datenbasis offenlegen."""
+    zeitbasis = daten.get("zeitbasis") or {}
+    if zeitbasis:
+        with st.expander(f"Zeitbasis der Kurve: {zeitbasis.get('modus', 'unbekannt')}"):
+            if zeitbasis.get("angewandt") is False:
+                st.caption("Dieses gemeinsame Zeitmodell wurde nicht auf die Kurve angewandt; "
+                           "die Symbol-Zeitversätze sind uneinheitlich.")
+            if zeitbasis.get("perioden"):
+                st.dataframe(zeitbasis["perioden"], hide_index=True, width="stretch")
+            if zeitbasis.get("annahme"):
+                st.caption(zeitbasis["annahme"])
+            if not zeitbasis.get("verlaesslich", False):
+                st.warning("Zeitzuordnung nicht vollständig belegt: "
+                           + " · ".join(zeitbasis.get("gruende") or ["Preisabgleich unklar"]))
     symbole = daten.get("symbole") or []
     if symbole:
+        def gmt_text(b):
+            modell = b.get("zeitbasis") or zeitbasis
+            if modell.get("modus") == "wochenweise" and modell.get("angewandt") is not False:
+                werte = sorted({p["gmt_h"] for p in modell.get("perioden", [])
+                                if isinstance(p.get("gmt_h"), int)})
+                return "abschnittsweise (" + ", ".join(f"{h:+d} h" for h in werte) + ")"
+            return f"{b['gmt_h']:+d} h" if b.get("gmt_h") is not None else "—"
+
+        def zeit_status(b):
+            modell = b.get("zeitbasis") or zeitbasis
+            if modell.get("angewandt") is False:
+                return "⚠️ uneinheitliche Symbol-Zeitversätze"
+            if modell.get("modus") == "wochenweise":
+                return ("✅ abschnittsweise belegt" if modell.get("verlaesslich")
+                        else "⚠️ Zeitbasis unvollständig")
+            return {"erkannt": "✅ eigenständig erkannt",
+                    "fallback_median": "↳ Fallback Median"}.get(
+                b.get("status"), "⚠️ " + str(b.get("status")))
+
         zeilen = [{
             "Symbol": b["symbol"],
-            "GMT": f"{b['gmt_h']:+d} h" if b.get("gmt_h") is not None else "—",
-            "Preisabgleich": (f"{b['trefferquote']:.0%}"
+            "GMT": gmt_text(b),
+            "Globaler Preisabgleich": (f"{b['trefferquote']:.0%}"
                               if b.get("trefferquote") is not None else "—"),
-            "Status": {"erkannt": "✅ eigenständig erkannt",
-                       "fallback_median": "↳ Fallback Median"}.get(
-                b.get("status"), "⚠️ " + str(b.get("status"))),
+            "Status": zeit_status(b),
             "Hinweis": b.get("hinweis") or "",
         } for b in symbole]
         st.dataframe(zeilen, hide_index=True, width="stretch")
+        for b in symbole:
+            zeitbasis = b.get("zeitbasis") or {}
+            if not zeitbasis:
+                continue
+            with st.expander(f"Zeitbasis {b['symbol']}: {zeitbasis.get('modus', 'unbekannt')}"):
+                perioden = zeitbasis.get("perioden") or []
+                if perioden:
+                    st.dataframe(perioden, hide_index=True, width="stretch")
+                if zeitbasis.get("annahme"):
+                    st.caption(zeitbasis["annahme"])
+                if not zeitbasis.get("verlaesslich", False):
+                    st.warning("Zeitzuordnung nicht vollständig belegt: "
+                               + " · ".join(zeitbasis.get("gruende") or ["Preisabgleich unklar"]))
 
     ohne_kurse = daten.get("symbole_ohne_kurse") or []
     ohne_kontrakt = daten.get("symbole_ohne_kontrakt") or []
@@ -477,6 +520,13 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
         "im Konto; spätere Ein- und Auszahlungen sind nicht enthalten. "
         "Damit misst sie virtuelle Trading-Equity. Der tatsächliche "
         "Konto-Equity-DD hat bei Kontobewegungen eine andere Bezugsbasis.")
+    st.caption(
+        "Max-Drawdown dieser Kurve = Rückgang vom bisherigen Equity-Höchststand. "
+        "Die öffentliche MQL-Drawdown-Grafik zeigt dagegen offenen Verlust / "
+        "zeitgleiche Balance. Bei den drei am 03.10.2026 geprüften Signalen "
+        "entsprach deren Maximum dem Wert ‚By Equity‘; dieser ist kein direkter "
+        "Vergleichswert für den Höchststand-Drawdown. Das Listen-/Radar-Maximum "
+        "nimmt den höheren Plattformwert aus Balance und Equity.")
     if k.get("trades_ohne_h1_floating_messpunkt"):
         st.caption(
             f"{k['trades_ohne_h1_floating_messpunkt']} Trades haben zwischen "
@@ -495,11 +545,12 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
         _risiko_einschaetzung(result, daten, schranke)
 
     with st.container(border=True):
-        st.markdown("**GMT-Abgleich je Währungspaar** — Trade-Zeiten sind "
+        st.markdown("**GMT-Abgleich je Währungspaar und Zeitabschnitt** — Trade-Zeiten sind "
                     "naive CSV-Zeiten ohne Zeitzonenbeleg, Kurszeiten "
-                    "UTC-Epochs des Referenz-Terminals; der Versatz wird je Symbol per "
+                    "Epoch-Zeitstempel des Referenz-Terminals; der relative Versatz wird je Symbol per "
                     "Preisabgleich (Open/Close gegen die High-Low-Spanne der "
-                    "H1-Bar) bestimmt.")
+                    "H1-Bar) bestimmt. Ein wechselnder Versatz wird abschnittsweise "
+                    "geprüft; unklare Abschnitte bleiben als Messgrenze sichtbar.")
         _symbol_diagnose(daten)
 
     st.caption("Messbasis: H1-Bars des Tickmill-Referenzterminals (Bar-Close), "

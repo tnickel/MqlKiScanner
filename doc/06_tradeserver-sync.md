@@ -81,7 +81,30 @@ ertragMonatPct, growthPct, pf, winratePct, aboPreisUsd, abonnenten, wochen,
 aboDelta7, aboDelta30, aboStand, martingale, peakPositionen, peakNettoLots,
 shockUsd, kapitalbasisUsd, brokerServer, symbole, berichtVom, docsBerichte,
 docsTiefenanalyse, docsDownloader, tradesSha256, stand` („NEU“-Markierung).
-Zahlen werden vor der Übertragung gerundet (der Server rechnet nicht).
+Anzeige-Kennzahlen werden teilweise vor der Übertragung gerundet; der
+Server bewertet und berechnet keine neuen Kennzahlen.
+
+**Erweiterung 03.10.2026 — Equity, Gewinn und RetDD:** Die optionalen
+Felder `maxDrawdownEquityPct`, `ertragMonatGeomPct`, `cagrJahrPct`,
+`retddMonat`, `retddJahr` werden als ungerundete Zahlen oder `null`
+übertragen. Rundung erfolgt erst bei der Anzeige. `retddBasis` bezeichnet
+die Berechnungsbasis. `drawdownLimitPct`, `minReturnMonthlyPct` und
+`minRetddMonthly` liefern die aktuellen Scanner-Grenzwerte (RetDD ≥1).
+
+`maxDrawdownEquityPct` ist die gültige eigene Kurs-/Monitor-Messung
+inklusive Floating. `retddMonat` = eigene geometrische Gewinn-%/Monat
+geteilt durch diesen Max-Equity-DD. Geschlossener Trading-DD und
+Plattform-Drawdowns dienen nie als Ersatznenner. Fehlende Messung oder
+DD=0 ergibt keinen RetDD; fehlende/veraltete Rendite ebenso wenig.
+`retddJahr` verwendet Jahres-CAGR, nicht zwölfmal den Monatswert.
+
+Der MqlTradeMonitor speichert die Werte unverändert. Tabelle, Detail und
+Risiko-Ertrag-Diagramm verwenden die eigene Rendite und gemessene Equity;
+Plattform- und geschlossene DDs bleiben getrennt benannte Zusatzwerte.
+Alte Payloads ohne neue Felder werden akzeptiert und zeigen diese Werte
+als unbekannt, nicht als 0 oder als Plattform-/Trading-DD-Fallback.
+DD-Farben folgen der gelieferten Grenze; fehlt sie, bleibt die Farbe
+neutral. Ampel, Score und Urteil bleiben das übertragene Scanner-Ergebnis.
 
 ## 3. Konfiguration
 
@@ -110,7 +133,7 @@ bleibt erhalten. Secrets liegen wie immer nur im secrets_store (nie im Repo).
    Verbunden/Zähler/letzte Synchronisierung (aktualisiert sich alle 30 s);
    Klick öffnet `/kiscanner` mit Tabelle (Ampel, Stop, DD, Ertrag, Score-
    Balken, Urteil, Abonnenten-Deltas, 📄/🟡), Ampel-Donut, Risiko-Ertrag-
-   Scatter (Schranken 30 % DD / 5 % Ertrag) und der PDF-Ansicht je Signal
+   Scatter (übertragene Scanner-Schranken für Equity-DD und Gewinn/Monat) und der PDF-Ansicht je Signal
    (Browser-Viewer, Login-geschützt).
 
 ## 5. Umsetzung im Scanner (dieses Repo)

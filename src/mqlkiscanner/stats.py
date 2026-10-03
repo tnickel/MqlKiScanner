@@ -85,6 +85,7 @@ def compute(parsed: ParsedExport) -> dict:
         # Duplikat-Zeilen sichtbar machen (Quellen liefern teils doppelt).
         "trades_anzahl": len(trades),
         "duplikate_entfernt": parsed.duplikate_entfernt,
+        "identische_tradezeilen": parsed.identische_tradezeilen,
         "wins": len(wins),
         "losses": len(losses),
         "winrate_pct": round(len(wins) / len(trades) * 100, 1),

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import datetime as dt
 import math
+import copy
 
 from .. import fx_rates
 from .exposure import _resolve_symbol
@@ -40,6 +41,248 @@ SCHRANKE_MIN_ABDECKUNG = 0.95
 # gelten als Marktpause (Wochenende/Feiertag) und zaehlen NICHT als
 # Datenluecke in den Abdeckungs-Nenner. Kuerzere Luecken sind Datenloecher.
 MARKTPAUSE_MIN_H = 20
+
+# Ein lokaler Kalenderabschnitt darf den globalen Versatz erst mit
+# unabhaengigen Preisproben ueberschreiben. Duplizierte Grid-Opens zaehlen
+# dabei nur einmal; Open UND Close werden nach ihrem eigenen Datum geprueft.
+GMT_LOKAL_MIN_PROBEN = 10
+GMT_LOKAL_MIN_TREFFER = 0.9
+
+
+def _preisproben(trades):
+    return sorted({(t.symbol.strip().upper(), _epoch(zeit), float(preis))
+                   for t in trades
+                   for zeit, preis in ((t.open_time, t.entry_price),
+                                       (t.close_time, t.exit_price))
+                   if zeit and preis})
+
+
+def _preis_scores(proben, bars_je_symbol, maps=None):
+    """Gleicher Nenner fuer jeden Shift; fehlende Bars sind Nichttreffer."""
+    if maps is None:
+        maps = {s.strip().upper(): {int(b["time"]) // 3600 * 3600: b for b in bars}
+                for s, bars in bars_je_symbol.items()}
+    counts = {}
+    for shift in GMT_KANDIDATEN_S:
+        treffer = 0
+        for symbol, zeit, preis in proben:
+            bar = maps.get(symbol, {}).get((zeit + shift) // 3600 * 3600)
+            tol = abs(preis) * _PREIS_TOLERANZ + 1e-12
+            if bar is not None and bar["low"] - tol <= preis <= bar["high"] + tol:
+                treffer += 1
+        counts[shift] = treffer
+    return counts, maps
+
+
+def _wochenbeginn(zeit):
+    tag = dt.datetime.fromtimestamp(zeit, dt.timezone.utc)
+    monday = (tag - dt.timedelta(days=tag.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0)
+    return int(monday.timestamp())
+
+
+class Zeitbasis:
+    """Preisbelegte Ereignisabbildung; Wochen sind Modell-, keine DST-Grenzen.
+
+    Der globale Shift bleibt fuer kompatible duenne Abschnitte erhalten.
+    Abweichende duenne Abschnitte werden als unsicher markiert. Ein
+    Nachbar-Shift darf dort nur eine offengelegte diagnostische Spur liefern.
+    Nicht eindeutige inverse Zeiten werden niemals als Broker-Tag erfunden.
+    """
+
+    def __init__(self, trades, bars_je_symbol, global_offset_s, manuell=False):
+        self.manuell = manuell
+        proben = _preisproben(trades)
+        maps = _preis_scores([], bars_je_symbol)[1]
+        self.perioden = []
+        self.gruende = []
+        self.unsichere_trade_ereignisse = 0
+        gruppen = {}
+        for p in proben:
+            gruppen.setdefault(_wochenbeginn(p[1]), []).append(p)
+        self.global_belegt = global_offset_s is not None
+        self.hat_basis = self.global_belegt
+        if global_offset_s is None:
+            # Gleich lange Phasen mit verschiedenen Shifts koennen global
+            # ein Plateau/<60% erzeugen, obwohl JE Phase eindeutig belegt ist.
+            starke = {}
+            for lokal in gruppen.values():
+                counts, _ = _preis_scores(lokal, bars_je_symbol, maps)
+                best = max(counts.values())
+                kandidaten = [s for s, n in counts.items() if n == best]
+                if (len(lokal) >= GMT_LOKAL_MIN_PROBEN and len(kandidaten) == 1
+                        and best / len(lokal) >= GMT_LOKAL_MIN_TREFFER):
+                    s = kandidaten[0]
+                    starke[s] = starke.get(s, 0) + len(lokal)
+            self.hat_basis = bool(starke)
+            global_offset_s = (max(starke, key=lambda s: (starke[s], -abs(s), -s))
+                               if starke else 0)
+        self.global_offset_s = int(global_offset_s)
+        erste = _wochenbeginn(min(_epoch(t.open_time) for t in trades))
+        letzte = _wochenbeginn(max(_epoch(t.close_time) for t in trades)) + 7 * 86400
+        previous = self.global_offset_s
+        for von in range(erste, letzte, 7 * 86400):
+            lokal = gruppen.get(von, [])
+            counts, _ = _preis_scores(lokal, bars_je_symbol, maps)
+            best = max(counts.values()) if lokal else 0
+            kandidaten = {s for s, n in counts.items() if n == best} if lokal else set()
+            quote = best / len(lokal) if lokal else None
+            stark = (len(lokal) >= GMT_LOKAL_MIN_PROBEN and len(kandidaten) == 1
+                     and quote >= GMT_LOKAL_MIN_TREFFER)
+            belegt = self.global_belegt
+            shift = self.global_offset_s
+            status = "global_kompatibel"
+            if manuell:
+                status = "manuell"
+                belegt = True
+            elif stark:
+                shift = next(iter(kandidaten))
+                status = "lokal_preisbelegt"
+                # Auch ein einzelner eindeutig widersprechender Endpunkt
+                # darf sich nicht hinter einer 90-%-Wochenquote verstecken.
+                belegt = counts[shift] == len(lokal)
+            elif lokal and self.global_offset_s not in kandidaten:
+                shift = previous if previous in kandidaten else self.global_offset_s
+                status = "abweichung_unbelegt"
+                belegt = False
+            elif not lokal and previous != self.global_offset_s:
+                shift = previous
+                status = "nachbar_unbelegt"
+                belegt = False
+            elif previous != self.global_offset_s and lokal:
+                # Die Rueckkehr zum globalen Shift ist plausibel, aber in
+                # einer duennen/mehrdeutigen Grenzwoche noch kein Beweis.
+                status = "rueckkehr_unbelegt"
+                belegt = False
+            self.perioden.append({"von_t": von, "bis_t": von + 7 * 86400,
+                                  "offset_s": shift, "belegt": belegt,
+                                  "preisproben": len(lokal), "trefferquote": quote,
+                                  "status": status})
+            previous = shift
+        self.variable = len({p["offset_s"] for p in self.perioden}) > 1
+        events = sorted({_epoch(zeit) for t in trades
+                         for zeit in (t.open_time, t.close_time)})
+        mapped = [self.nach_referenz(zeit) for zeit in events]
+        self.monoton = all(a <= b for a, b in zip(mapped, mapped[1:]))
+        if not self.monoton:
+            self.gruende.append("Ereignisabbildung nicht monoton/eindeutig")
+        self.mehrdeutige_intervalle = []
+        for links, rechts in zip(self.perioden, self.perioden[1:]):
+            a = links["bis_t"] + links["offset_s"]
+            b = rechts["von_t"] + rechts["offset_s"]
+            if a != b:
+                self.mehrdeutige_intervalle.append((min(a, b), max(a, b)))
+        self._trade_sicher = {}
+        self.offene_wechsel_annahmen = 0
+        self.unsichere_innenperioden = 0
+        for t in trades:
+            sicher = True
+            for zeit, preis in ((t.open_time, t.entry_price), (t.close_time, t.exit_price)):
+                e = _epoch(zeit)
+                p = self.periode(e)
+                if not p["belegt"]:
+                    sicher = False
+                    self.unsichere_trade_ereignisse += 1
+                if not manuell and preis:
+                    symbol = t.symbol.strip().upper()
+                    bar = maps.get(symbol, {}).get(
+                        self.nach_referenz(e) // 3600 * 3600)
+                    tol = abs(preis) * _PREIS_TOLERANZ + 1e-12
+                    if bar is None or not bar["low"] - tol <= preis <= bar["high"] + tol:
+                        sicher = False
+                        self.unsichere_trade_ereignisse += 1
+                        self.gruende.append("Open-/Close-Preis passt nicht zur lokalen Referenzbar")
+            if self.nach_referenz(_epoch(t.close_time)) < self.nach_referenz(_epoch(t.open_time)):
+                sicher = False
+                self.gruende.append("Ereignisabbildung ergibt Close vor Open")
+            if any(self.nach_referenz(_epoch(t.open_time)) < ende
+                   and self.nach_referenz(_epoch(t.close_time)) > anfang
+                   for anfang, ende in self.mehrdeutige_intervalle):
+                self.offene_wechsel_annahmen += 1
+                self.gruende.append("Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze")
+            if any(not p["belegt"] and _epoch(t.open_time) < p["bis_t"]
+                   and _epoch(t.close_time) > p["von_t"] for p in self.perioden):
+                self.unsichere_innenperioden += 1
+                self.gruende.append("Offene Position in lokal unbelegtem Zeitabschnitt")
+            self._trade_sicher[id(t)] = sicher
+        self.verlaesslich = (self.hat_basis and all(self._trade_sicher.values()) and self.monoton
+                            and not self.offene_wechsel_annahmen
+                            and not self.unsichere_innenperioden)
+        if not self.verlaesslich:
+            self.gruende.append("Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt")
+
+    def periode(self, zeit):
+        for p in self.perioden:
+            if p["von_t"] <= zeit < p["bis_t"]:
+                return p
+        return {"offset_s": self.global_offset_s, "belegt": True,
+                "status": "global_ausserhalb_tradezeitraum"}
+
+    def nach_referenz(self, zeit):
+        return int(zeit) + self.periode(int(zeit))["offset_s"]
+
+    def nach_broker(self, zeit):
+        moegliche = [int(zeit) - p["offset_s"] for p in self.perioden
+                     if p["von_t"] <= int(zeit) - p["offset_s"] < p["bis_t"]]
+        if len(moegliche) == 1:
+            return moegliche[0]
+        if not moegliche:
+            kandidat = int(zeit) - self.global_offset_s
+            if kandidat < self.perioden[0]["von_t"] or kandidat >= self.perioden[-1]["bis_t"]:
+                return kandidat
+        return None
+
+    def referenz_sicher(self, zeit):
+        original = self.nach_broker(zeit)
+        return original is not None and self.periode(original)["belegt"]
+
+    def broker_tag(self, zeit):
+        original = self.nach_broker(zeit)
+        return (dt.datetime.fromtimestamp(original, dt.timezone.utc).date()
+                if original is not None else None)
+
+    def normalisiere(self, parsed):
+        """Nur eine Analyse-Kopie; originales Export/sonstige Forensik unberuehrt."""
+        result = copy.copy(parsed)
+        result.trades = []
+        for t in parsed.trades:
+            neu = copy.copy(t)
+            neu.open_time = dt.datetime.fromtimestamp(
+                self.nach_referenz(_epoch(t.open_time)), dt.timezone.utc).replace(tzinfo=None)
+            neu.close_time = dt.datetime.fromtimestamp(
+                self.nach_referenz(_epoch(t.close_time)), dt.timezone.utc).replace(tzinfo=None)
+            neu._zeitbasis_sicher = self._trade_sicher.get(id(t), False)
+            result.trades.append(neu)
+        result.balances = []
+        for b in getattr(parsed, "balances", []):
+            neu = copy.copy(b)
+            neu.time = dt.datetime.fromtimestamp(
+                self.nach_referenz(_epoch(b.time)), dt.timezone.utc).replace(tzinfo=None)
+            result.balances.append(neu)
+        return result
+
+    def metadata(self):
+        return {
+            "modus": "manuell" if self.manuell else "wochenweise" if self.variable else "konstant",
+            "frame": "referenzkurszeit" if self.variable else "broker",
+            "global_gmt_h": self.global_offset_s // 3600,
+            "global_belegt": self.global_belegt,
+            "verlaesslich": self.verlaesslich,
+            "monoton": self.monoton,
+            "offene_wechsel_annahmen": self.offene_wechsel_annahmen,
+            "unsichere_innenperioden": self.unsichere_innenperioden,
+            "annahme": "Kalenderwochengrenzen sind Modellgrenzen, kein exakter DST-Beleg",
+            "unsichere_trade_ereignisse": self.unsichere_trade_ereignisse,
+            "gruende": list(dict.fromkeys(self.gruende)),
+            "perioden": [{"von_t": p["von_t"], "bis_t": p["bis_t"],
+                           "von": dt.datetime.fromtimestamp(p["von_t"], dt.timezone.utc).isoformat(),
+                           "bis": dt.datetime.fromtimestamp(p["bis_t"], dt.timezone.utc).isoformat(),
+                           "gmt_h": p["offset_s"] // 3600, "belegt": p["belegt"],
+                           "preisproben": p["preisproben"],
+                           "trefferquote": round(p["trefferquote"], 3)
+                               if p["trefferquote"] is not None else None,
+                           "status": p["status"]} for p in self.perioden],
+        }
 
 
 def _epoch(naive: dt.datetime) -> int:
@@ -69,40 +312,10 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
     if not proben:
         return {"offset_s": None, "trefferquote": 0.0, "proben": 0}
 
-    indizes = {s: _bar_index(b) for s, b in bars_je_symbol.items()}
-
-    def _bar_fuer(symbol: str, epoch: int, shift: int) -> dict | None:
-        # L4 (Review-Handoff 29.09.): Der Index ist UPPERCASE (symbole in
-        # rekonstruiere sind .strip().upper()); der Aufruf kam bisher mit
-        # dem ROHEN Symbol -> gemischte Schreibweise lief idx=None, die
-        # Probe wurde still uebersprungen und die Auto-GMT-Erkennung konnte
-        # unter die Mindest-Trefferquote rutschen -> Reko unnoetig skipped.
-        idx = indizes.get(symbol.strip().upper())
-        if idx is None:
-            return None
-        zeiten, mappe = idx
-        stunde = (epoch + shift) // 3600 * 3600
-        # L6: EXAKTER Lookup wie auf der Kurvenseite — bisect-1 lieferte bei
-        # fehlender Stunde (Wochenende/Feiertag) die VORHERIGE Bar und
-        # behandelte deren Close als Kurs dieser Stunde (verzerrte Treffer-
-        # quote und Punkt-Preise).
-        return mappe.get(stunde)
-
-    quotes: dict[int, float] = {}
-    for shift in GMT_KANDIDATEN_S:
-        treffer = 0
-        checks = 0
-        for t in proben:
-            bar_o = _bar_fuer(t.symbol, _epoch(t.open_time), shift)
-            bar_c = _bar_fuer(t.symbol, _epoch(t.close_time), shift)
-            for bar, preis in ((bar_o, t.entry_price), (bar_c, t.exit_price)):
-                if bar is None or not preis:
-                    continue
-                checks += 1
-                tol = abs(preis) * _PREIS_TOLERANZ + 1e-12
-                if bar["low"] - tol <= preis <= bar["high"] + tol:
-                    treffer += 1
-        quotes[shift] = treffer / checks if checks else 0.0
+    events = _preisproben(proben)
+    counts, _maps = _preis_scores(events, bars_je_symbol)
+    quotes = {shift: count / len(events) if events else 0.0
+              for shift, count in counts.items()}
     if not quotes or max(quotes.values()) < GMT_MIN_TREFFER:
         return {"offset_s": None,
                 "trefferquote": round(max(quotes.values()), 3) if quotes else 0.0,
@@ -125,7 +338,7 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
 
 
 def rekonstruiere(parsed, kurse, startkapital: float,
-                  broker: str | None = None) -> dict:
+                  broker: str | None = None, *, gmt_offset_h: int | None = None) -> dict:
     """Equity-Kurve auf H1-Raster + maximaler Equity-Drawdown.
 
     kurse: Anbieter mit hole_h1(symbol, von, bis, gmt_offset_s) (kursdaten.
@@ -191,9 +404,17 @@ def rekonstruiere(parsed, kurse, startkapital: float,
                 "grund": f"Kursdaten fehlen für {fehlend} "
                          f"von {len(trades)} Trades ({' · '.join(detail)})"}
 
-    gmt = ermittle_gmt_offset(nutzbare, bars_je_symbol)
+    if gmt_offset_h is not None and (isinstance(gmt_offset_h, bool)
+                                    or not isinstance(gmt_offset_h, int)
+                                    or gmt_offset_h * 3600 not in GMT_KANDIDATEN_S):
+        raise ValueError("Manueller GMT-Versatz muss eine ganze Stunde zwischen -14 und +14 sein")
+    gmt = (ermittle_gmt_offset(nutzbare, bars_je_symbol)
+           if gmt_offset_h is None else
+           {"offset_s": gmt_offset_h * 3600, "trefferquote": None})
     offset = gmt["offset_s"]
-    if offset is None:
+    zeitbasis = Zeitbasis(trades, bars_je_symbol, offset,
+                         manuell=gmt_offset_h is not None)
+    if offset is None and not zeitbasis.hat_basis:
         if gmt.get("plateau_h"):
             return {"test": "equity_rekonstruktion", "status": "skipped",
                     "grund": f"Auto-GMT mehrdeutig — mehrere Offsets "
@@ -204,6 +425,17 @@ def rekonstruiere(parsed, kurse, startkapital: float,
                 "grund": f"Auto-GMT ohne eindeutiges Ergebnis "
                          f"(Trefferquote {gmt['trefferquote']:.0%} < "
                          f"{GMT_MIN_TREFFER:.0%}) — Zeitversatz nicht belastbar."}
+
+    if not zeitbasis.monoton:
+        return {"test": "equity_rekonstruktion", "status": "skipped",
+                "verlaesslich": False, "grund": "Zeitabbildung nicht monoton/eindeutig",
+                "zeitbasis": zeitbasis.metadata()}
+    original_offset = zeitbasis.global_offset_s
+    offset = original_offset
+    if zeitbasis.variable:
+        parsed = zeitbasis.normalisiere(parsed)
+        trades = [t for t in parsed.trades if t.close_time and t.open_time]
+        offset = 0
 
     # MT5 time bezeichnet den BAR-ANFANG. Der Close-Kurs gehoert an das
     # Ende dieses Intervalls, nicht eine Stunde davor. Trade-Ereignisse
@@ -302,11 +534,16 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         aktiv = [a for a in aktiv if a[0] > punkt]
         floating = 0.0
         kurs_da = True
-        tag = dt.datetime.fromtimestamp(punkt - offset, dt.timezone.utc).date()
+        tag = (zeitbasis.broker_tag(punkt) if zeitbasis.variable else
+               dt.datetime.fromtimestamp(punkt - offset, dt.timezone.utc).date())
+        if aktiv and not (zeitbasis.referenz_sicher(punkt) if zeitbasis.variable else
+                          zeitbasis.periode(punkt - offset)["belegt"]):
+            kurs_da = False
         for _ende, t in aktiv:
             s = t.symbol.strip().upper()
             close = closes_je_symbol.get(s, {}).get(punkt)
-            if close is None or not t.entry_price or s not in aufgeloest:
+            if (close is None or not t.entry_price or s not in aufgeloest
+                    or not getattr(t, "_zeitbasis_sicher", True) or tag is None):
                 kurs_da = False
                 continue
             res = aufgeloest[s]
@@ -390,13 +627,14 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # nur Rasterpunkte offener Positionen zählte (Review 29.09., Befund 7).
     trades_vollstaendig = len(nutzbare) == len(trades)
     verlaesslich = (abdeckung >= SCHRANKE_MIN_ABDECKUNG and not fx_fehlt
-                    and trades_vollstaendig)
+                    and trades_vollstaendig and zeitbasis.verlaesslich)
 
     ergebnis = {
         "test": "equity_rekonstruktion",
         "status": "ok" if verlaesslich else "unvollstaendig",
-        "gmt_offset_h": offset // 3600,
+        "gmt_offset_h": original_offset // 3600,
         "gmt_trefferquote": gmt["trefferquote"],
+        "zeitbasis": zeitbasis.metadata(),
         # Bewertungs-/RetDD-Nenner ohne Anzeige-Rundung: 10,004 % darf
         # nicht als 10,00 % eine Effizienz von 10,001/10,00 >= 1 erzeugen.
         "equity_dd_pct_raw": max(dd_pct, dd_pct_max),
@@ -434,5 +672,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         if not trades_vollstaendig:
             gruende.append(f"Kursdaten fehlen für {len(trades) - len(nutzbare)} "
                            f"von {len(trades)} Trades")
+        if not zeitbasis.verlaesslich:
+            gruende.extend(zeitbasis.metadata()["gruende"])
         ergebnis["grund"] = " · ".join(gruende)
     return ergebnis

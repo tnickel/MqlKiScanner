@@ -369,3 +369,27 @@ Bei abweichenden Kapitalbasen oder Zeitfenstern von Monitor-DD und eigener
 Rendite ist der Quotient kein belegter kapitalflussneutraler Konto-Calmar.
 Historische Effizienz ist keine Prognose. Forensik-Version 9 erzwingt
 Neuberechnung alter Befunde.
+
+### Reale Drei-Signal-Kalibrierung und Version 10 (03.10.2026)
+
+Die Nachprüfung von Gold Spike MT4, Meridian MT5 und Night Scalper MT5
+ist in `doc/22_drawdown-kalibrierung.md` dokumentiert. Der öffentliche
+MQL-Grafikcode und die drei Rohkurven belegen hier Floating-Verlust /
+zeitgleiche Balance; das ist eine andere Definition als unser historischer
+Equity-Peak-DD. Die Listenanzeige verwendet den höheren Plattformwert aus
+Balance und Equity. Zeitfenster und Kapitalbasis sind ebenfalls getrennt.
+
+Zwei Fehler wurden korrigiert: ein globaler Zeitversatz verdeckte lokal
+abweichende Preiszeiten; die mengenbasierte Dublettenheuristik entfernte
+echte bzw. ohne Ticket-ID nicht unterscheidbare Positionen. Alle validierten
+CSV-Zeilen bleiben jetzt erhalten, identische Trades nur als Hinweis.
+Forensik und Studie verwenden denselben lokalen Preisabgleich, getrennte
+Open-/Close-Zuordnung und eine eindeutige inverse Zuordnung für FX-Tage.
+Unbelegte Wechsel oder Lücken verhindern eine zuverlässige Gesamtmessung.
+Perioden, Belegstatus und Ursachen werden bis zur KI geführt.
+
+Forensik-Version **10** und ein neuer Studien-Cache-Schlüssel invalidieren
+alte Befunde. Ein beobachteter DD aus unvollständigen Punkten ist kein
+verlässliches Gesamtmaximum und liefert keinen RetDD-Nenner. Die
+zusätzliche reale M1-Prüfung am jeweiligen Spitzentag verbessert die
+Floating-Nachmessung, ersetzt aber keine vollständige Tick-Historie.

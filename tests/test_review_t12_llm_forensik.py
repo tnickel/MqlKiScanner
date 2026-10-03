@@ -306,8 +306,8 @@ def test_gmt_probe_nimmt_nicht_die_vorherige_bar():
         tzinfo=__import__("datetime").timezone.utc).timestamp())
     bars = [_bar(o, 2390.0, 2410.0)]  # KEINE 15:00-Bar
     ergebnis = eq.ermittle_gmt_offset([t], {"XAUUSD": bars})
-    # Alt (bisect-1): 2430 gegen die geliehene 14:00-Bar -> Miss -> 0.5
-    # -> kein Offset. Exakter Lookup: keine 15:00-Bar -> nicht geprueft
-    # -> Quote 1.0 aus dem legitimen Open-Check, Offset eindeutig 0.
-    assert ergebnis["offset_s"] == 0
-    assert ergebnis["trefferquote"] == 1.0
+    # Exakter Lookup: fehlende 15:00-Bar ist ein Nichttreffer. Der Nenner
+    # bleibt fuer jeden Kandidaten Open UND Close: 1/2 statt scheinbar 1/1.
+    # Ein halber Zeitbeleg darf keinen verlaesslichen Offset liefern.
+    assert ergebnis["offset_s"] is None
+    assert ergebnis["trefferquote"] == 0.5

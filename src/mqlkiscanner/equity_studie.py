@@ -35,6 +35,7 @@ from .forensics.equity_rekonstruktion import (
     MARKTPAUSE_MIN_H,
     _epoch,
     ermittle_gmt_offset,
+    Zeitbasis,
 )
 from .forensics.exposure import _resolve_symbol
 from .forensics.equity_kapitalfluesse import diagnostik as konto_diagnostik
@@ -131,7 +132,8 @@ def ermittle_gmt_je_symbol(trades, bars_je_symbol: dict[str, list[dict]]) -> dic
 
 
 def studie(parsed, kurse, startkapital: float,
-           broker: str | None = None, progress=None) -> dict:
+           broker: str | None = None, progress=None, *,
+           gmt_offset_h: int | None = None) -> dict:
     """Equity-Studie mit Kurven-Punkten für die grafische Darstellung.
 
     kurse: Anbieter mit hole_h1(symbol, von, bis) (kursdaten.KursDaten oder
@@ -179,8 +181,26 @@ def studie(parsed, kurse, startkapital: float,
             ohne_kontrakt.append(s)
 
     _p(0.72, "GMT-Versatz je Währungspaar ermitteln …")
-    gmt = ermittle_gmt_je_symbol(trades, bars_je_symbol)
+    if gmt_offset_h is not None and (isinstance(gmt_offset_h, bool)
+                                    or not isinstance(gmt_offset_h, int)
+                                    or gmt_offset_h * 3600 not in GMT_KANDIDATEN_S):
+        raise ValueError("Manueller GMT-Versatz muss eine ganze Stunde zwischen -14 und +14 sein")
+    gmt = (ermittle_gmt_je_symbol(trades, bars_je_symbol)
+           if gmt_offset_h is None else {
+               "offsets": {s: gmt_offset_h * 3600 for s in bars_je_symbol},
+               "befunde": [{"symbol": s, "gmt_h": gmt_offset_h,
+                            "trefferquote": None, "status": "manuell", "hinweis": ""}
+                           for s in bars_je_symbol]})
     offsets = gmt["offsets"]
+    lokale_basis = None
+    if not offsets:
+        lokale_basis = Zeitbasis(trades, bars_je_symbol, None)
+        if lokale_basis.hat_basis:
+            offsets = {s: lokale_basis.global_offset_s for s in bars_je_symbol}
+            gmt["befunde"] = [{"symbol": s, "gmt_h": lokale_basis.global_offset_s // 3600,
+                               "trefferquote": None, "status": "zeitabschnitte",
+                               "hinweis": "Globale Erkennung unklar; lokale Preisabschnitte"}
+                              for s in bars_je_symbol]
 
     nutzbare = [t for t in trades
                 if t.symbol.strip().upper() in aufgeloest
@@ -198,6 +218,23 @@ def studie(parsed, kurse, startkapital: float,
                 "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {}}
 
     median_offset = int(statistics.median(offsets.values()))
+    original_median = median_offset
+    zeitbasis = (lokale_basis if lokale_basis is not None and lokale_basis.hat_basis else
+                 Zeitbasis(trades, bars_je_symbol, median_offset,
+                           manuell=gmt_offset_h is not None))
+    if not zeitbasis.monoton:
+        return {"status": "skipped", "grund": "Zeitabbildung nicht monoton/eindeutig",
+                "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {},
+                "zeitbasis": zeitbasis.metadata()}
+    gemeinsame_zeitbasis = len(set(offsets.values())) == 1
+    if zeitbasis.variable and gemeinsame_zeitbasis:
+        parsed = zeitbasis.normalisiere(parsed)
+        trades = [t for t in parsed.trades if t.close_time and t.open_time]
+        offsets = {s: 0 for s in offsets}
+        median_offset = 0
+    elif not gemeinsame_zeitbasis:
+        zeitbasis.verlaesslich = False
+        zeitbasis.gruende.append("Uneinheitliche Symbol-Zeitversaetze")
 
     # Ein H1-Close gilt am BAR-ENDE. Fehlende Symbole verlieren ihr
     # exportiertes Netto nicht: ohne eigenen GMT-Beleg gilt fuer die
@@ -290,11 +327,17 @@ def studie(parsed, kurse, startkapital: float,
         floating = 0.0
         kurs_da = True
         # Tag im Broker-Raum (Trade-Zeiten) für den EZB-Referenzkurs.
-        tag = dt.datetime.fromtimestamp(punkt - median_offset, dt.timezone.utc).date()
+        tag = (zeitbasis.broker_tag(punkt) if zeitbasis.variable and gemeinsame_zeitbasis else
+               dt.datetime.fromtimestamp(punkt - median_offset, dt.timezone.utc).date())
+        if aktiv and gemeinsame_zeitbasis and not (
+                zeitbasis.referenz_sicher(punkt) if zeitbasis.variable else
+                zeitbasis.periode(punkt - median_offset)["belegt"]):
+            kurs_da = False
         for _ende, t in aktiv:
             s = t.symbol.strip().upper()
             close = closes_je_symbol.get(s, {}).get(punkt)
-            if close is None or not t.entry_price or s not in aufgeloest or s not in offsets:
+            if (close is None or not t.entry_price or s not in aufgeloest or s not in offsets
+                    or not getattr(t, "_zeitbasis_sicher", True) or tag is None):
                 kurs_da = False
                 continue
             res = aufgeloest[s]
@@ -409,8 +452,8 @@ def studie(parsed, kurse, startkapital: float,
             1 for o, c, _ in offen_sort if (o // 3600 + 1) * 3600 >= c),
         "verlaesslich": (basis > 0 and abdeckung >= 0.95 and not fx_fehlt
                          and len(nutzbare) == len(trades)
-                         and len(set(offsets.values())) == 1),
-        "zeitbasis_einheitlich": len(set(offsets.values())) == 1,
+                         and gemeinsame_zeitbasis and zeitbasis.verlaesslich),
+        "zeitbasis_einheitlich": gemeinsame_zeitbasis,
         "kapitalfluesse_nach_start": sum(
             1 for b in getattr(parsed, "balances", [])
             if b.time > min(t.open_time for t in trades)),
@@ -422,7 +465,10 @@ def studie(parsed, kurse, startkapital: float,
         "punkte": punkte,
         "symbole": gmt["befunde"],
         "kennzahlen": kennzahlen,
-        "median_gmt_h": median_offset // 3600,
+        "median_gmt_h": original_median // 3600,
+        "zeitbasis": dict(zeitbasis.metadata(),
+                          frame="referenzkurszeit" if zeitbasis.variable and gemeinsame_zeitbasis else "broker",
+                          angewandt=gemeinsame_zeitbasis),
         "symbole_ohne_kurse": ohne_kurse,
         "symbole_ohne_kontrakt": ohne_kontrakt,
         "methodik": "virtuelle Trading-Equity: Startkapital + alle realisierten Nettoergebnisse + Floating",
@@ -430,5 +476,6 @@ def studie(parsed, kurse, startkapital: float,
         "kapitalfluesse": "spaetere Ein-/Auszahlungen nicht eingerechnet",
         "positionsbasis": "geschlossene Exportpositionen; aktuell offene fehlen",
         "konto_studie": konto_diagnostik(
-            parsed, punkte, bars_je_symbol, offsets, basis, broker=broker),
+            parsed, punkte, bars_je_symbol, offsets, basis, broker=broker,
+            zeitbasis=zeitbasis),
     }

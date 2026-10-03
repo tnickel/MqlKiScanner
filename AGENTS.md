@@ -685,6 +685,39 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   fast doppelter %-Wert), die DD-Graphik zeigt By-Equity (3,8 %) —
   beide Plattform-Selbstauskünfte, unser Max-Drawdown misst eigenständig.
 
+- ✅ Reale Drei-Signal-DD-Prüfung und Zeitbasis-/Parser-Korrektur
+  (03.10.2026, `doc/22_drawdown-kalibrierung.md`): Gold Spike MT4 #2349227,
+  Meridian MT5 #2385675 und Night Scalper MT5 #2379236 mit echten H1-Kursen
+  und je einem M1-Spitzentag geprüft. Öffentliche MQL-Grafik rechnet
+  Floating-Verlust / zeitgleiche Balance; ihre Rohkurven-Maxima ergeben
+  exakt die drei By-Equity-Werte. Listen-/Radar-Maximum nimmt den höheren
+  Balance-/Equity-Wert. Nähe zu unserem Equity-Peak-DD beweist daher keine
+  gleiche Methodik; die frühere Gold-Spike-Nähe 9,2/9,1 % ist allein kein
+  vollständiger Validierungsnachweis. M1-Nachrechnung gleicher Floating-
+  Definition: Gold 3,60/3,80 %, Meridian 9,74/10,45 %, Night 7,01/6,84 %
+  (zeitlich passender Snapshot; aktuelle 17,26 % entstehen erst nach CSV).
+  Global-GMT-Fehler korrigiert: lokaler Preisabgleich je Zeitabschnitt,
+  Open/Close separat, unklare Wechsel-/FX-Tage verhindern Gesamtfreigabe.
+  Kalendergrenzen sind Modellannahmen, kein exakter DST-Beleg. Relative
+  Referenzkurszeit ist kein alleiniger öffentlicher UTC-Beweis.
+  **B25 revidiert:** Ohne Ticket-ID darf auch massenhafte Zeilengleichheit
+  nicht als Doppellieferung behandelt werden. Night: alle 299 Rohtrades
+  (182 BUY/117 SELL wie MQL) erhalten, zuvor wurden 17 mit 141,32 Netto
+  entfernt. `identische_tradezeilen` als Hinweis in Stats/DB/KI/Detail;
+  `duplikate_entfernt` nur Legacy-Auditfeld. Forensik-Version **10** und
+  neuer Studien-Cache erzwingen Neuberechnung. Unvollständige Gold-/
+  Meridian-Messungen liefern keinen RetDD; vollständiges Night-H1-Modell
+  über die gesamte CSV misst 35,81 % (vor Monitoringbeginn).
+  Tradeserver: ungerundete gemessene EQ-DD, eigene geometrische Gewinn-
+  %/Monat, RetDD, Basis und konfigurierte Grenzen werden übertragen;
+  MqlTradeMonitor zeigt diese Werte, unbekannte/alte Ratios bleiben leer.
+  Review-Rohbelege außerhalb Git in `../waste/drawdown_3signale_2026-10-03/`.
+  Anbieterbroker nun aus Provider-DOM statt Slippage-Liste: Gold
+  RoboForex-ECN, Meridian FusionMarkets-Live, Night Bybit-Live-6; generische
+  Faktoren dieser drei Kurven unverändert. 1.301 Standardtests im vollen
+  Abschlusslauf plus fünf neue Brokerfälle mit 50 bestehenden gezielten
+  Tests grün; vier echte GLM-Regressionen und 60 Monitor-Tests grün.
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

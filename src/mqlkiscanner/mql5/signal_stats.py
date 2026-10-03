@@ -113,7 +113,23 @@ def parse_detail_html(html: str) -> dict:
         values = _text_values(lines)
 
     text_all = "\n".join(lines)
-    broker_m = _BROKER_RE.search(text_all)
+    # Der Slippage-Abschnitt nennt zahlreiche ABONNENTEN-Broker. Ein
+    # globaler Regex fand bei Gold Spike dort FusionMarkets statt des
+    # Provider-Brokers RoboForex-ECN; Bybit-Live-6 passt zudem nicht zur
+    # alten Namensheuristik. Nur das Provider-Feld ist ein Identitaetsbeleg.
+    provider = (soup.select_one(".s-top-info .s-plain-card__broker")
+                or soup.select_one(".s-plain-card__broker"))
+    broker_server = None
+    if provider is not None:
+        field = provider.select_one('input[name="substring_filter"]')
+        link = provider.find("a")
+        broker_server = ((field.get("value") or "").strip() if field else
+                         link.get_text(" ", strip=True) if link else "") or None
+    elif not rows:
+        # Kompatibilitaet fuer alte reine Textausschnitte ohne aktuelle
+        # Statistikstruktur. Moderne Seiten ohne Provider-Feld: unbekannt.
+        broker_m = _BROKER_RE.search(text_all)
+        broker_server = broker_m.group(0) if broker_m else None
     leverage_m = _LEVERAGE_RE.search(text_all)
 
     return {
@@ -154,7 +170,7 @@ def parse_detail_html(html: str) -> dict:
         "dd_max_pct": _number(values.get("Maximal:", "")),
         "dd_balance_pct": _number(values.get("By Balance:", "")),
         "dd_equity_pct": _number(values.get("By Equity:", "")),
-        "broker_server": broker_m.group(0) if broker_m else None,
+        "broker_server": broker_server,
         "leverage": f"1:{leverage_m.group(1)}" if leverage_m else None,
     }
 

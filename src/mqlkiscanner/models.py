@@ -72,10 +72,9 @@ class ParsedExport:
     trades: list[Trade] = field(default_factory=list)
     balances: list[BalanceRow] = field(default_factory=list)
     pendings: list[PendingOrder] = field(default_factory=list)
-    # B25 (Lauf-Review 02.10.): Anzahl entfernter exakter Zeilen-Duplikate —
-    # Datenquellen-Monitore liefern teils doppelt (The Holy Grail: 27,4 %);
-    # der Zähler macht die Bereinigung im Forensik-Befund sichtbar.
+    # Legacy-Auditfeld; ticketlose CSV-Zeilen werden seit 03.10. erhalten.
     duplikate_entfernt: int = 0
+    identische_tradezeilen: int = 0  # Hinweis, kein Identitaets-/Duplikatbeweis
 
     @property
     def has_orderbook(self) -> bool:

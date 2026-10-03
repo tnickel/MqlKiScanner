@@ -171,6 +171,7 @@ class ScanResult:
     trading_dd_pct: float | None = None
     trading_dd_usd: float | None = None
     winrate_pct: float | None = None
+    identische_tradezeilen: int = 0
     max_verlustserie: int | None = None
     verlustserie_usd: float | None = None
     peak_positionen: int | None = None
@@ -202,6 +203,7 @@ class ScanResult:
     equity_rekon_grund: str = ""
     equity_rekon_abdeckung_pct: float | None = None
     equity_rekon_methodik: str = ""
+    equity_rekon_zeitbasis: dict = field(default_factory=dict)
     # Vom Datenquellen-Monitor (Pelican/Robo/Vantage/Zulu) aus der vollen
     # Trade-Kurve nachgemessener Max-EQ-DD (metrics "TradeEqDrawdownPct") —
     # unabhängige Zweitmessung auf denselben Trades. Geht seit B1
@@ -246,6 +248,20 @@ class ScanResult:
     source_kind: str = "live"  # Demo-Ergebnisse nie in den Live-Katalog übernehmen.
     persisted_this_run: bool = False  # Mindestens ein Versuch dieses analyze_candidate-Aufrufs gespeichert.
     ampel_wechsel: dict | None = None  # Protokollierter Wechsel gegen den letzten Chronik-Eintrag (ampel_verlauf).
+
+    @property
+    def equity_rekon_gmt_text(self) -> str:
+        """Zeitabschnitte offenlegen; ein globaler Wert beschreibt sie nicht."""
+        basis = self.equity_rekon_zeitbasis or {}
+        if basis.get("modus") == "wochenweise":
+            shifts = sorted({p["gmt_h"] for p in basis.get("perioden", [])
+                             if isinstance(p.get("gmt_h"), int)
+                             and not isinstance(p.get("gmt_h"), bool)})
+            werte = ", ".join(f"{h:+d} h" for h in shifts)
+            return "GMT abschnittsweise" + (f" ({werte})" if werte else " unbelegt")
+        if self.equity_rekon_gmt_h is not None:
+            return f"GMT {self.equity_rekon_gmt_h:+d} h"
+        return "GMT unbelegt"
 
     def _equity_messwerte(self) -> dict[str, float]:
         """Identische gültige Quellen für den Maximalwert und dessen Status."""
@@ -426,6 +442,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             trading_dd_pct=trading.get("pct", f.get("trading_dd_pct")),
             trading_dd_usd=trading.get("usd", f.get("trading_dd_usd")),
             winrate_pct=f.get("winrate_pct"),
+            identische_tradezeilen=f.get("identische_tradezeilen", 0),
             # B24-Fix (02.10.): RetDD-Kennzahlen aus dem Forensik-Snapshot
             # mitlesen — sonst wären sie nach DB-Reload/Neustart weg.
             ertrag_monat_geom_pct=f.get("ertrag_monat_geom_pct"),
@@ -465,6 +482,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             equity_rekon_grund=_equity_rekon_grund(f.get("equity_rekonstruktion") or {}),
             equity_rekon_abdeckung_pct=(f.get("equity_rekonstruktion") or {}).get("abdeckung_pct"),
             equity_rekon_methodik=(f.get("equity_rekonstruktion") or {}).get("methodik") or "",
+            equity_rekon_zeitbasis=(f.get("equity_rekonstruktion") or {}).get("zeitbasis") or {},
             kapitalbasis_verwendet_usd=(f.get("kapitalbasis") or {}).get("usd")
             if isinstance(f.get("kapitalbasis"), dict) else None,
             kapitalbasis_verwendet_quelle=(f.get("kapitalbasis") or {}).get("quelle") or ""
@@ -529,11 +547,9 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         if (res.equity_dd_rekonstruiert_pct is not None
                 and res.forensik_vorhanden and not res.fehler
                 and "Max-DD (Kurse)" not in (res.urteil or "")):
-            gmt_text = (f"GMT {res.equity_rekon_gmt_h:+d} h"
-                        if res.equity_rekon_gmt_h is not None else "GMT unbelegt")
             res.urteil = (res.urteil or "") + (
                 f" · Max-DD aus Kursen {res.equity_dd_rekonstruiert_pct} % "
-                f"({gmt_text})")
+                f"({res.equity_rekon_gmt_text})")
         results.append(res)
     return results
 
@@ -734,6 +750,10 @@ def _forensik_json(r: ScanResult) -> str:
         # Kapitalbasis IMMER liefern (auch belegt per CSV): null wurde als
         # "fehlende Basis" missdeutet.
         "forensik_vollstaendig": bool(r.forensik_vorhanden and not r.fehler),
+        **({"trade_datenqualitaet": {
+            "identische_tradezeilen": r.identische_tradezeilen,
+            "behandlung": "alle erhalten; ohne Ticket-ID kein Nachweis einer Doppellieferung"}}
+           if r.identische_tradezeilen else {}),
         "kapitalbasis_verwendet": (
             {"usd": r.kapitalbasis_verwendet_usd,
              "quelle": r.kapitalbasis_verwendet_quelle or "csv_einzahlungen"}
@@ -777,10 +797,17 @@ def _forensik_json(r: ScanResult) -> str:
             "grund": r.equity_rekon_grund or None,
             "abdeckung_pct": r.equity_rekon_abdeckung_pct,
             "methodik": r.equity_rekon_methodik or "virtuelle_trading_equity_h1_schlusskurse",
+            "zeitbasis": r.equity_rekon_zeitbasis or None,
             "kursraster": "H1-Schlusskurse am Bar-Ende; keine Intrabar-Extrema",
+            "drawdown_definition": "groesster relativer Rueckgang vom bisherigen Equity-Hoechststand",
             "kapitalfluesse": "Startkapital + realisiertes Netto + Floating; spaetere Ein-/Auszahlungen fehlen",
             "positionsbasis": "geschlossene Exportpositionen; aktuell offene Positionen fehlen",
-            "vergleichbarkeit": "nur bei gleicher Kapitalbasis, gleichem Zeitraum und belegter Datenabdeckung",
+            "vergleichbarkeit": "nur bei gleicher DD-Definition, Kapitalbasis, Zeitraum und belegter Datenabdeckung",
+            "plattform_mql_hinweis": (
+                "Die oeffentliche MQL-Drawdown-Grafik berechnet Floating-Verlust / zeitgleiche Balance; "
+                "bei den drei am 03.10.2026 geprueften Signalen entsprach deren Maximum exakt By Equity. "
+                "Diese Kennzahl ist kein Peak-to-Trough-DD unserer Equity-Kurve. "
+                "Listen-/Radar-Maximum ist das groessere von By Balance und By Equity."),
         },
         # Unabhängige Zweitmessung des Datenquellen-Monitors (volle Trade-
         # Kurve, floating inklusive) — geht seit B1 (Intensiv-Review
@@ -1389,6 +1416,12 @@ class ScanPipeline:
                 res.equity_rekon_grund = _equity_rekon_grund(reko)
                 res.equity_rekon_abdeckung_pct = reko.get("abdeckung_pct")
                 res.equity_rekon_methodik = reko.get("methodik") or ""
+                res.equity_rekon_zeitbasis = reko.get("zeitbasis") or {}
+                res.equity_rekon_gmt_h = reko.get("gmt_offset_h")
+                res.identische_tradezeilen = st.get("identische_tradezeilen", 0)
+                if res.identische_tradezeilen:
+                    log(f"Trade-Daten: {res.identische_tradezeilen} identische Zeilen erhalten "
+                        "(keine Ticket-ID; können verschiedene echte Positionen sein).")
                 if st.get("duplikate_entfernt"):
                     # B25 (02.10.): Bereinigung sichtbar machen — die Quellen-
                     # Lieferung enthielt exakte Doppelzeilen (Forensik rechnet
@@ -1399,9 +1432,8 @@ class ScanPipeline:
                     res.equity_dd_rekonstruiert_pct = reko.get(
                         "equity_dd_pct_raw", reko.get("equity_dd_pct"))
                     res.equity_dd_rekonstruiert_usd = reko.get("equity_dd_usd")
-                    res.equity_rekon_gmt_h = reko.get("gmt_offset_h")
                     log(f"✓ Equity-Rekonstruktion: Reko-EQ-DD {res.equity_dd_rekonstruiert_pct} % "
-                        f"(GMT {res.equity_rekon_gmt_h:+d} h, Abdeckung "
+                        f"({res.equity_rekon_gmt_text}, Abdeckung "
                         f"{reko.get('abdeckung_pct')} %, floating inklusive)")
                 elif reko.get("status") == "skipped":
                     log(f"Equity-Rekonstruktion übersprungen: {reko.get('grund')}")
@@ -1534,7 +1566,7 @@ class ScanPipeline:
                       if res.forensik_vorhanden and res.trading_dd_pct is not None else "")
             if res.equity_dd_rekonstruiert_pct is not None:
                 detail += (f" · Max-DD aus Kursen {res.equity_dd_rekonstruiert_pct} % "
-                           f"(GMT {res.equity_rekon_gmt_h:+d} h)")
+                           f"({res.equity_rekon_gmt_text})")
             res.urteil = grund + detail
             # Kennzeichnung aus der TATSÄCHLICH verwendeten Quelle (Engine-
             # Befund), nicht aus der Lauf-Absicht — echte CSV-Einzahlung
@@ -1557,6 +1589,7 @@ class ScanPipeline:
                     # B25 (02.10.): entfernte exakte Duplikat-Zeilen (Quellen-
                     # Monitore liefern teils doppelt; THG-Fall 27,4 %).
                     "duplikate_entfernt": st.get("duplikate_entfernt", 0),
+                    "identische_tradezeilen": res.identische_tradezeilen,
                     # B24-Fix (02.10.): RetDD-Effizienz — geometrischer Monats-
                     # ertrag, echter Calmar, RetDD je Monat/Jahr (produziert
                     # in analyze_candidate, hier persistiert für DB-Reload).
@@ -1845,6 +1878,7 @@ class ScanPipeline:
                                 or fx["drawdown"]["trading_dd"]["dd_pct"]),
                 trading_dd_usd=fx["drawdown"]["trading_dd"]["dd_usd"],
                 winrate_pct=st.get("winrate_pct"),
+                identische_tradezeilen=st.get("identische_tradezeilen", 0),
                 max_verlustserie=st.get("max_consecutive_losses"),
                 verlustserie_usd=st.get("max_consecutive_losses_sum"),
                 peak_positionen=fx["exposure"].get("peak_open_positions"),

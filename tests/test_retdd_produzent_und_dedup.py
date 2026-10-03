@@ -9,8 +9,8 @@ Wert). Der Produzent (portfolio_statistik.effizienz_kennzahlen) rechnet auf
 derselben Kurve wie die Forensik-Erträge; Nutzer-Regel 02.10.:
 1,0 = Mindestqualität (Grün-Weg in ampel_for setzt das hart durch).
 
-B25: Datenquellen-Monitore liefern teils exakte Doppelzeilen (The Holy
-Grail: 4.197/15.340 = 27,4 %) — der Parser bereinigt und zählt.
+B25-Korrektur 03.10.: Ohne Ticket-ID beweisen identische Zeilen keine
+Doppellieferung. Der Parser zählt sie und erhält sämtliche Positionen.
 """
 from __future__ import annotations
 
@@ -77,12 +77,8 @@ def test_effizienz_niedrigere_rendite_trotz_kontowachstum():
 
 # ------------------------------------------------------------------ B25 —
 
-def test_parser_entfernt_massen_duplikate_erhaelt_einzelzwillinge(tmp_path):
-    """Zwei belegte reale Phänomene (B25/F-16): MASSige Doppellieferungen
-    (THG: 4.197/15.340 = 27,4 %) werden bereinigt — Drawdown war systematisch
-    nach unten verfälscht. ECHTE Zwillings-Grid-Legs im EINZELFALL (Gold-
-    Spike-MT5-Referenz: 2 exakte Duplikate, Multiset-Fall F-16) bleiben
-    zählen. Schwelle: ab 10 Duplikatzeilen UND >= 1 % Anteil."""
+def test_parser_erhaelt_identische_positionen_unabhaengig_von_anzahl(tmp_path):
+    """Auch zehn identische Zeilenpaare können echte Zwillingspositionen sein."""
     # Einzelfall: 3 Zeilen, 1 doppelt — bleibt unangetastet (Multiset, F-16)
     pfad_klein = _csv(tmp_path,
                       [_trade("01", 100.0), _trade("02", -50.0),
@@ -90,13 +86,16 @@ def test_parser_entfernt_massen_duplikate_erhaelt_einzelzwillinge(tmp_path):
     klein = load_export(str(pfad_klein))
     assert len(klein.trades) == 3
     assert klein.duplikate_entfernt == 0
+    assert klein.identische_tradezeilen == 1
 
-    # Massenfall: 10 eindeutige Monate, alles doppelt = 10 Duplikate (50 %)
+    # Zehn Monate mit je zwei Positionen: Menge ist kein Identitätsbeweis.
     eindeutige = [_trade(f"{m:02d}", 10.0) for m in range(1, 11)]
     pfad_masse = _csv(tmp_path, eindeutige + eindeutige, "masse.csv")
     masse = load_export(str(pfad_masse))
-    assert len(masse.trades) == 10
-    assert masse.duplikate_entfernt == 10
+    assert len(masse.trades) == 20
+    assert masse.duplikate_entfernt == 0
+    assert masse.identische_tradezeilen == 10
+    assert sum(t.net for t in masse.trades) == 200.0
 
 
 def test_parser_ohne_duplikate_zaehlt_null(tmp_path):
@@ -104,16 +103,39 @@ def test_parser_ohne_duplikate_zaehlt_null(tmp_path):
     parsed = load_export(pfad)
     assert len(parsed.trades) == 2
     assert parsed.duplikate_entfernt == 0
+    assert parsed.identische_tradezeilen == 0
 
 
-def test_dedup_auf_realer_lieferung_thg():
-    """B25-Nachweis an der echten Lieferdatei: 15.340 Zeilen mit 4.197
-    exakten Duplikaten (27,4 %) — nach Dedup bleiben 11.143 Trades."""
-    pfad = (r"D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\SignalKiScanner"
-            r"\data\trade_snapshots\c8c100a09a6b0a34c69f128d8dc29d868e59a187dd32d9d9a1a7e7249efceffe.csv")
+def test_ticketlose_lieferung_thg_wird_nicht_per_mengenheuristik_gekuerzt():
+    """Ohne Ticketbeleg bleiben auch die 4.197 identischen THG-Zeilen erhalten."""
+    pfad = str(Path(__file__).resolve().parents[1] / "data" / "trade_snapshots" /
+               "c8c100a09a6b0a34c69f128d8dc29d868e59a187dd32d9d9a1a7e7249efceffe.csv")
     if not Path(pfad).exists():
         import pytest
         pytest.skip("Original-Lieferung nicht mehr im Cache")
     parsed = load_export(pfad)
-    assert parsed.duplikate_entfernt == 4197
-    assert len(parsed.trades) + 4197 == 15340
+    assert parsed.duplikate_entfernt == 0
+    assert parsed.identische_tradezeilen == 4197
+    assert len(parsed.trades) == 15340
+
+
+def test_identische_positionen_erhoehen_offenes_risiko_und_realisierte_verluste(tmp_path):
+    from mqlkiscanner.forensics import drawdown, exposure
+    parsed = load_export(_csv(tmp_path, [_trade("01", -10.0)] * 20))
+    dd = drawdown.run(parsed, kapitalbasis_usd=1000.0)
+    risiko = exposure.run(parsed)
+    assert dd["trading_dd"]["dd_pct_max_rel"] == 20.0
+    assert risiko["peak_open_positions"] == 20
+    assert abs(risiko["peak_net_lots"] - 2.0) < 1e-12
+
+
+def test_night_scalper_realer_export_bleibt_299_positionen():
+    pfad = Path(__file__).resolve().parents[1] / "data" / "trade_snapshots" / (
+        "78dc2d20af837e3bf748a7bf08539b44baa02d86982decafe7e75cc1b404db78.csv")
+    if not pfad.exists():
+        import pytest
+        pytest.skip("Realer Night-Scalper-Snapshot nicht vorhanden")
+    parsed = load_export(str(pfad))
+    assert len(parsed.trades) == 299
+    assert parsed.identische_tradezeilen == 17
+    assert abs(math.fsum(t.net for t in parsed.trades) - 2422.0) < 1e-9

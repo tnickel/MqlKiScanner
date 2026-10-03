@@ -1016,6 +1016,10 @@ def render_detail(result) -> None:
     else:
         st.caption(result.equity_messung_status + " · Die Drawdown-Schranke "
                    "berücksichtigt zusätzlich beide Plattformwerte und den Trading-DD.")
+    if result.identische_tradezeilen:
+        st.caption(f"Trade-Daten: {result.identische_tradezeilen} identische Zeilen "
+                   "sind vollständig enthalten. Der Export hat keine Ticket-IDs; "
+                   "gleiche Zeilen können verschiedene echte Positionen darstellen.")
 
     # Equity-DD-Studie (Nutzer-Wunsch 03.10.2026): On-Demand-Nachmessung für
     # dieses Signal — gleiche Messung wie der Tabellen-Button, hier mit dem

@@ -89,35 +89,13 @@ def load_export(path: str) -> ParsedExport:
         rows = list(csv.reader(fh, delimiter=";"))
     if not rows:
         raise ValueError(f"Leere Datei: {path}")
-    # B25 (Lauf-Review 02.10.): Exakte Zeilen-Duplikate bei MASSIERTem
-    # Auftreten entfernen, BEVOR geparst wird. Zwei belegte reale Phänomene:
-    # (a) Liefer-Duplikate ganzer Historienteile aus Datenquellen-Monitoren
-    # (The Holy Grail: 4.197/15.340 = 27,4 % — Drawdown systematisch nach
-    # unten verfälscht); (b) ECHTE Zwillings-Grid-Legs (F-16, Multiset:
-    # Gold-Spike-MT5-Referenz matched 98 NUR mit Zwillingen — dort 2 exakte
-    # Duplikate, echt). Unterscheidbar sind beide nur über die MASSE:
-    # bereinigt wird erst ab MIN_DEDUPLICATE (10+) Zeilen UND >= 1 % Anteil
-    # — echte Einzelfall-Zwillinge bleiben zählen, Massen-Doppellieferungen
-    # werden entfernt. Der Zähler geht in den Forensik-Befund.
-    gesehen: set[tuple[str, ...]] = set()
-    mit_duplikaten: list[list[str]] = [rows[0]]
-    ohne_duplikate: list[list[str]] = [rows[0]]
-    roh_doppelte = 0
-    for zeile in rows[1:]:
-        mit_duplikaten.append(zeile)
-        schluessel = tuple(zelle.strip() for zelle in zeile)
-        if schluessel in gesehen and any(schluessel):
-            roh_doppelte += 1
-            continue
-        gesehen.add(schluessel)
-        ohne_duplikate.append(zeile)
-    datenzeilen = max(len(rows) - 1, 1)
-    if roh_doppelte >= 10 and roh_doppelte / datenzeilen >= 0.01:
-        rows = ohne_duplikate
-        doppelte = roh_doppelte
-    else:
-        rows = mit_duplikaten
-        doppelte = 0
+    # Die Formate enthalten keine Ticket-ID. Identische Zeilen sind keine
+    # Identitaetsbeweise: mehrere echte Positionen koennen in derselben
+    # Sekunde zum selben Preis/Volumen schliessen. Auch ihre Anzahl erlaubt
+    # keine Unterscheidung von Lieferduplikaten. Alle Datensaetze behalten;
+    # identische Trade-Zeilen lediglich als Datenqualitaets-Hinweis zaehlen.
+    # Belegt durch Night Scalper: 299 Rohtrades = Plattformanzahl, die alte
+    # 10-Zeilen/1%-Heuristik entfernte davon 17 mit 141,32 Netto-PnL.
     header = rows[0]
     if not header or header[0].strip() != "Time":
         raise ValueError(
@@ -130,8 +108,8 @@ def load_export(path: str) -> ParsedExport:
         raise ValueError(f"{path}: {exc}") from exc
     expected_columns = 13 if fmt == "mt4_orderbook" else 11
     profit_idx = profit_idx_for(fmt)
-    result = ParsedExport(source_path=path, source_format=fmt,
-                          duplikate_entfernt=doppelte)
+    result = ParsedExport(source_path=path, source_format=fmt)
+    tradezeilen: set[tuple[str, ...]] = set()
 
     for line, row in enumerate(rows[1:], start=2):
         if not row or not any(cell.strip() for cell in row):
@@ -207,6 +185,10 @@ def load_export(path: str) -> ParsedExport:
                 )
             if trade.volume <= 0 or trade.close_time < trade.open_time:
                 raise ValueError(f"{path}: Zeile {line}: ungueltiges Volumen oder Handelszeitraum")
+            schluessel = tuple(zelle.strip() for zelle in row)
+            if schluessel in tradezeilen:
+                result.identische_tradezeilen += 1
+            tradezeilen.add(schluessel)
             result.trades.append(trade)
         elif row_type in ("Balance", "Correction"):
             amount = _row_number(row, profit_idx)

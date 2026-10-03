@@ -21,7 +21,7 @@ from .exposure import _resolve_symbol
 
 def diagnostik(parsed, punkte: list[dict], bars_je_symbol: dict[str, list[dict]],
                offsets: dict[str, int], startkapital: float,
-               broker: str | None = None) -> dict:
+               broker: str | None = None, *, zeitbasis=None) -> dict:
     """Konto-Kurve + kapitalflussneutraler Index (Startwert 1).
 
 ``punkte.t`` ist Epoch im Broker-Raum; ``equity`` ist virtuelle Equity
@@ -84,6 +84,11 @@ beim Flow machen auch eine vollstaendige Rechnung unzuverlaessig.
         floating = []
         kursbasis = []
         fehler = []
+        if zeitbasis is not None:
+            sicher = (zeitbasis.referenz_sicher(zeit) if zeitbasis.variable else
+                      zeitbasis.periode(zeit)["belegt"])
+            if not sicher:
+                fehler.append("Zeitbasis am Kapitalfluss nicht eindeutig/preisbelegt")
         for t in aktive:
             s = t.symbol.strip().upper()
             spec = specs.get(s)
@@ -92,6 +97,9 @@ beim Flow machen auch eine vollstaendige Rechnung unzuverlaessig.
                 continue
             if s not in shifts:
                 fehler.append(f"{s}: Zeitversatz unbekannt")
+                continue
+            if not getattr(t, "_zeitbasis_sicher", True):
+                fehler.append(f"{s}: lokale Open-/Close-Zeitbasis unbelegt")
                 continue
             terminal_zeit = zeit + shifts[s]
             position = bisect.bisect_right(bar_enden.get(s, []), terminal_zeit) - 1
@@ -110,7 +118,12 @@ beim Flow machen auch eine vollstaendige Rechnung unzuverlaessig.
                 fehler.append(f"{s}: Kurs/Einstand unbrauchbar")
                 continue
             quote = spec["quote"]
-            tag = dt.datetime.fromtimestamp(zeit, dt.timezone.utc).date()
+            tag = (zeitbasis.broker_tag(zeit)
+                   if zeitbasis is not None and zeitbasis.variable else
+                   dt.datetime.fromtimestamp(zeit, dt.timezone.utc).date())
+            if tag is None:
+                fehler.append(f"{s}: Broker-Handelstag nicht eindeutig")
+                continue
             key = (quote, tag)
             if key not in fx_cache:
                 kurs = {"rate": 1.0} if quote == "USD" else fx_rates.usd_per(quote, tag)
@@ -206,11 +219,14 @@ beim Flow machen auch eine vollstaendige Rechnung unzuverlaessig.
                             "konto_equity": actual_equity, "konto_balance": account_balance,
                             "rendite_index": index, "drawdown_pct": dd_pct})
 
-    vollstaendig = index_gueltig and not messluecke
+    zeitbasis_belegt = zeitbasis is None or zeitbasis.verlaesslich
+    vollstaendig = index_gueltig and not messluecke and zeitbasis_belegt
     verlaesslich = vollstaendig and flow_preis_annahmen == 0
     gruende = list(sorted(set(probleme)))
     if messluecke:
         gruende.append("Messluecken: kein vollstaendiger Renditeindex-Drawdown bestimmbar")
+    if not zeitbasis_belegt:
+        gruende.append("Lokale Zeitbasis nicht vollstaendig belegt; kein Gesamtzeitraum-DD")
     if flow_preis_annahmen:
         gruende.append(f"{flow_preis_annahmen} Kapitalfluss-Ereignisse bei offenen Positionen: "
                        "Equity vor Flow nur approximativ aus abgeschlossenen H1-Schluessen")
@@ -235,6 +251,7 @@ beim Flow machen auch eine vollstaendige Rechnung unzuverlaessig.
             "index_vollstaendig": vollstaendig,
             "verlaesslich": verlaesslich,
             "messluecke": messluecke,
+            "zeitbasis_verlaesslich": zeitbasis_belegt,
         },
         "probleme": sorted(set(probleme)),
         "methodik": "Kapitalflussneutraler Renditeindex; Flows bei offenen Positionen "
