@@ -803,6 +803,24 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   wird aus dem Fehler-Feld geparst — z. B. DE30M/XCUUSDM von #2368681).
   +5 Tests tests/test_fehlende_kursdaten.py; volle Suite 1324 grün.
 
+- ✅ STUDIE: KAPIALFLUSS-BRÜCKE + KOPIER-SIMULATION (04.10., Nutzer-Dialog
+  ATong „Website schwankt 1-10 %, eure Kurve 1-2 %"): Beweis aus den
+  Balance-Zeilen — ATong hat 42 Einzahlungen (+33.552) / 39 Auszahlungen
+  (−42.174 USD); das ECHTE MQL5-Konto ist klein, die virtuelle Trading-
+  Kurve akkumuliert alles (12.100 USD) → gleiche USD-Schwankungen sind
+  auf der Website prozentual größer. KEINE Kurve ist falsch. Anzeige:
+  (1) Karte „Konto-DD (kapitalflussneutral)" (ATong ≈ 38,1 %) +
+  Hinweis-Box bei Flows nach Handelsstart („direkt vergleichbar sind die
+  USD-Werte"); (2) Max-Drawdown-Karte nennt jetzt den Rückfall-Zeitraum
+  (ATongs 64,9 % = Aug/Sep 2021 — Verwechslungsquelle beseitigt);
+  (3) EIGENER BLOCK „Kopier-Simulation — was wäre mit deinem Konto
+  passiert?": kapitalflussneutrale Rendite auf konstante 10.000 USD
+  (Karte Max-DD beim Kopieren [prozentual startbetrag-unabhängig, da
+  proportionale Lot-Skalierung wie MQL5-Copy], Rückfall USD, simulierter
+  Kontostand heute, eigene Kurve; Annahmen: kein Fixed-Lot, ohne
+  Kopiergebühren/Slippage/Spread-Differenzen, H1-Schlusskurse).
+  Commits 564e38c/8daa9f0/afbcfd9; volle Suite 1325 grün.
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:
