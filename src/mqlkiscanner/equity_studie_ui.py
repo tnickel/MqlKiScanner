@@ -468,15 +468,27 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
             "realisiertes Netto wird erfasst, ihr zwischenzeitlicher "
             "offener Verlust ist mit diesem Raster nicht messbar.")
 
+    # Reset-Knopf (Nutzer-Wunsch 03.10.): verstellte Ansicht (Zoom, Pan,
+    # gezeichnete Linien) zurück auf die Werksdarstellung. Der Klick zählt
+    # eine Chart-Version hoch — der neue Widget-Key erzeugt ein FRISCHES
+    # Plotly-Element, das garantiert ohne browserseitigen Zustand startet.
+    reset_spalte, hinweis_spalte = st.columns([1, 3], gap="small",
+                                              vertical_alignment="center")
+    with reset_spalte:
+        if st.button("Ansicht zurücksetzen", key=f"{key_prefix}_chart_reset",
+                     icon=":material/restart_alt:",
+                     help="Setzt Zoom, Verschiebung und gezeichnete Markierungen "
+                          "des Charts auf die ursprüngliche Ansicht zurück."):
+            st.session_state[f"{key_prefix}_chart_version"] = \
+                st.session_state.get(f"{key_prefix}_chart_version", 0) + 1
+    with hinweis_spalte:
+        st.caption("Mausrad zoomen · Ziehen vergröbert einen Bereich · "
+                   "Doppelklick setzt zurück · Werkzeug-Menü oben rechts: "
+                   "Pan, Linien/Rechtecke zeichnen, PNG-Export.")
+    chart_version = st.session_state.get(f"{key_prefix}_chart_version", 0)
     st.plotly_chart(_chart(daten, k.get("startkapital") or 0.0, schranke),
                     width="stretch", config=_CHART_CONFIG,
-                    key=f"{key_prefix}_chart")
-    st.caption(
-        "Bedienung: **Mausrad** zoomt (Waagrechtes = Zeit, Senkrechtes = "
-        "USD), **Ziehen bei gehaltener Maustaste** vergröbert einen "
-        "ausgewählten Bereich, **Doppelklick** setzt die Ansicht zurück. "
-        "Im Werkzeug-Menü oben rechts: Pan, Linien/Rechtecke zeichnen und "
-        "Export als PNG.")
+                    key=f"{key_prefix}_chart_{chart_version}")
 
     with st.container(border=True):
         st.markdown("**Wie riskant zeigt sich die Strategie?** "
