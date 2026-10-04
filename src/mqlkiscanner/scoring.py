@@ -129,9 +129,10 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     # (eq_dd_caveat bleibt bewusst: Plattform-EQ unbrauchbar => nur real+reko.)
     reko_dd = _platform_float(platform.get("reko_eq_dd_pct"))
     # B1 (Intensiv-Review 29./30.09.2026): Die Monitor-Zweitmessung
-    # (TradeEqDrawdownPct, floating-inclusive aus der vollen Trade-Kurve)
-    # gehoert ebenfalls in Schranke UND Dimension. Vorher galt sie nur dem
-    # LLM-Deutungsauftrag — ein 🟢 bei Zweitmessung 46 %/241 % war die Folge.
+    # (TradeEqDrawdownPct) gehoert ebenfalls in Schranke UND Dimension.
+    # Review 04.10. (Paket D): Sie ist eine CLOSING-Kurve (max. plus
+    # HEUTIGEM Floating-Endpunkt), keine floating-inklusive Historie —
+    # Untergrenzen-Kanal der konservativen Schranke, nie RetDD-Nenner.
     # Vorbehalt: Der Monitor rechnet gegen seine eigene (ggf. rueckgerechnete)
     # Basis — der Wert ueberzeichnet bei >100 % absolut, schuetzt die Schranke
     # aber in die richtige Richtung (Risiko vor Ertrag).

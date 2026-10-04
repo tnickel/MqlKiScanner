@@ -142,3 +142,18 @@ Neue Testdatei: `tests/test_review_2026_10_04.py` (10 Tests: Dedup-Konsistenz Fo
 
 ---
 *Erstellt autonom am 04.10.2026; alle Zeilenangaben gegen den Stand des jeweiligen Arbeitsbaums vom 04.10.2026 ~12:30 verifiziert; Details und Belege in den Paketberichten A–I.*
+
+---
+
+## 8. Nachtrag (gleicher Tag, Nutzer-Entscheidung „zentral + ehrlich")
+
+Der Nutzer entschied nach Besprechung des P0 A1c/D1: Die floating-inklusive Open-DD-Messung bleibt **zentral im SignalKiScanner** (Kurs-Rekonstruktion — läuft seit Fix 4 für alle Signale); der Monitor-Wert wird **nicht** entfernt (er hat reale Rot-Fälle gerettet: Lemonal 46,65 %, AccurateCopier 241,3 %), sondern überall **ehrlich als Closing-DD benannt** und in den Clients dort repariert, wo es „einfach möglich" war:
+
+| Maßnahme | Projekt | Inhalt |
+|---|---|---|
+| F1b behoben | roboforex | Closing-DD-Kurve jetzt aus ROH-Deals — jede Teil-Schließung (OUT/INOUT) zählt zu IHREM Zeitpunkt; vorher flossen Teilgewinne erst zum letzten OUT ein und konnten den DD unterschlagen. `EquityKurve.punkteAusDeals`, `SignalPayloadBuilder.tradeDdAusDeals` (App bevorzugt Deals, Fallback Trades). |
+| F6a behoben | roboforex | Fenster-Konsistenz: `SignalAccount.yieldPeriodMonths` (persistiert, Spalte 18) — Monatsrendite = Fenster-Yield ÷ Fensterlänge (vorher ÷ Lebensalter); Closing-DD-Basis aus dem Yield DESSELBEN Fensters, Kurve auf das Fenster begrenzt (vorher: volle Historie ÷ Fenster-Yield). Metrics ehrlich: `YieldWindowPct` + `YieldWindowMonths` (statt „YieldInceptionPct"), `TradeClosedDdPct` als klarer Alias neben dem historischen `TradeEqDrawdownPct`. |
+| Ehrliche Benennung | alle 4 JavaFX-Monitore + Scanner | UI-Spalten/Labels/Kommentare „Max-EQ-DD" → „Closing-DD" (Robo 7, Pelican 8, Vantage 6 Stellen); Scanner: Ampel-Matrix-Schranken-Herleitung „Closing-DD (Monitor)", Scan-Log „Trade-Closing-DD", Scoring-Kommentar korrigiert („floating-inclusive"-Behauptung entfernt). |
+| Tests | roboforex | +4 (`ClosingDdDealsTest`): Teil-Schließungs-Kurvenpunkte, Gegenprobe aggregierter Trade, Fensterfilter, kein-Yield-keine-Aussage. 133 Tests grün. |
+
+Bewusste Grenze (dokumentiert im Code): Der Closing-DD bleibt eine Kurve realisierter PnLs auf rückgerechneter Yield-Basis — **kein** historisches Floating. Der floating-inklusive Max-Open-DD („der wichtigste Wert überhaupt", Nutzer) wird ausschließlich zentral im Scanner gemessen (Kurs-Reko mit Abdeckungs-/GMT-Regeln) und fließt in Schranke UND RetDD-Nenner.

@@ -896,6 +896,23 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Suite nach Fixes: Scanner 1341 Tests grün (+10 neue), mvn: robo 129,
   zulu 81, MqlDownloader 82, PelicanTrading 63, vantage 25. Bestand
   braucht Re-Scan (Dedup-Konsistenz + Robo-Brutto + RetDD-Basis).
+- ✅ NACHTRAG „ZENTRAL + EHRLICH" (04.10. abends, Nutzer-Entscheidung zur
+  DD-Frage): Die floating-inklusive Open-DD-Messung bleibt ZENTRAL im
+  Scanner (Kurs-Reko, läuft für alle Signale); TradeEqDrawdownPct wird
+  NICHT entfernt (Untergrenzen-Kanal hat reale Rot-Fälle gerettet:
+  Lemonal 46,65 %, AccurateCopier 241,3 %), sondern überall ehrlich als
+  CLOSING-DD benannt. Robo-Reparaturen: F1b — Closing-DD-Kurve aus
+  ROH-Deals (EquityKurve.punkteAusDeals/tradeDdAusDeals; Teil-OUTs zählen
+  zu ihrem Zeitpunkt, vorher erst zum letzten OUT); F6a —
+  SignalAccount.yieldPeriodMonths (persistiert, CSV-Spalte 18):
+  Monatsrendite = Fenster-Yield ÷ Fensterlänge (vorher ÷ Lebensalter),
+  DD-Basis aus dem Yield DESSELBEN Fensters mit fensterbegrenzter Kurve;
+  metrics ehrlich: YieldWindowPct/YieldWindowMonths (statt
+  „YieldInceptionPct") + TradeClosedDdPct-Alias. UI-Korrektur „Max-EQ-DD"
+  → „Closing-DD" in Robo (7)/Pelican (8)/Vantage (6) + Scanner-Texte
+  (Ampel-Matrix „Closing-DD (Monitor)", Log „Trade-Closing-DD",
+  Scoring-Kommentar). Robo 133 Tests grün (+4 ClosingDdDealsTest),
+  Scanner 1341, Pelican 63, Vantage 25. Report-Kapitel 8 im PDF.
 
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

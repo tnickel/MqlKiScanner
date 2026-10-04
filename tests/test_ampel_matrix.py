@@ -281,7 +281,7 @@ def test_dd_zelle_wertet_reko_eq_dd_als_viertes_maximum():
     # Der Tooltip beschreibt das Fünffach-Maximum (B1, Intensiv-Review
     # 29./30.09.2026: Monitor-EQ-DD kam als fünfte Komponente dazu):
     tooltip = next(k.beschreibung for k in KRITERIEN if k.key == "dd_schranke")
-    assert "Max-Drawdown" in tooltip and "Max-DD (Monitor)" in tooltip
+    assert "Max-Drawdown" in tooltip and "Closing-DD (Monitor)" in tooltip
 
 
 # ------------- Intensiv-Review 29./30.09.2026: B1 Monitor-Zweitmessung -------
@@ -295,7 +295,7 @@ def test_dd_zelle_wertet_monitor_eq_dd_als_fuenftes_maximum():
                              equity_dd_rekonstruiert_pct=None,
                              monitor_trade_eq_dd_pct=46.65))
     assert matrix["dd_schranke"].ampel == ROT
-    assert "Max-DD (Monitor) 46,65 %" in matrix["dd_schranke"].detail
+    assert "Closing-DD (Monitor) 46,65 %" in matrix["dd_schranke"].detail
     assert "46,65 % > 30 %" in matrix["dd_schranke"].kurz
 
 

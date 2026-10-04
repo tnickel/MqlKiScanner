@@ -1428,7 +1428,7 @@ class ScanPipeline:
                     # Kursdaten-Rekonstruktion läuft deshalb auch bei Quellen-
                     # Signalen — sie ist der EINZIGE valide RetDD-Nenner; der
                     # Monitor-Wert bleibt zusätzlicher Kanal der harten Schranke.
-                    log(f"Datenquellen-Monitor liefert Trade-EQ-DD "
+                    log(f"Datenquellen-Monitor liefert Trade-Closing-DD "
                         f"{res.monitor_trade_eq_dd_pct} % (Closing-Kurve — "
                         "nur Schranken-Kanal, kein RetDD-Nenner); "
                         "Kurs-Rekonstruktion läuft zusätzlich.")
@@ -1630,7 +1630,7 @@ class ScanPipeline:
                 "balance_usd": stats.get("balance_usd"),
                 # Virtuelle Annahme aus dem Quellen-Monitor (Audit-Snapshot)
                 "kapitalbasis_virtual_usd": stats.get("kapitalbasis_virtual_usd"),
-                # Monitor-Nachmessung Trade-EQ-DD (Audit-Snapshot, KI-Kontext)
+                # Monitor-Closing-DD (Audit-Snapshot, KI-Kontext)
                 "monitor_trade_eq_dd_pct": stats.get("monitor_trade_eq_dd_pct"),
             }
             if res.fehler and not res.forensik_vorhanden:

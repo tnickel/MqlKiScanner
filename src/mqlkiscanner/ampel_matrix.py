@@ -70,7 +70,7 @@ KRITERIEN: list[Kriterium] = [
         "der Plattform-Drawdown (By Equity) kann deutlich niedriger als By "
         "Balance ausfallen, "
         "und Kurs-/Monitor-Messung machen floating Verluste sichtbar. "
-        "Vorbehalt Max-DD (Monitor): Der Monitor rechnet gegen seine eigene "
+        "Vorbehalt Closing-DD (Monitor): Der Monitor rechnet gegen seine eigene "
         "(ggf. rückgerechnete) Kapitalbasis — Werte über 100 % überzeichnen "
         "absolut, bleiben aber ein harter Warnmarker."),
     Kriterium(
@@ -159,7 +159,7 @@ def _dd_zelle(r, settings) -> Zelle:
              "Balance-DD (Plattform)": r.dd_balance_pct,
              "Trading-DD (geschlossen)": r.trading_dd_pct,
              "Max-DD (Kurse)": getattr(r, "equity_dd_rekonstruiert_pct", None),
-             "Max-DD (Monitor)": getattr(r, "monitor_trade_eq_dd_pct", None)}
+             "Closing-DD (Monitor)": getattr(r, "monitor_trade_eq_dd_pct", None)}
     vorhanden = {k: v for k, v in werte.items() if v is not None}
     if not vorhanden:
         return Zelle(KEINE_DATEN, "keine DD-Werte",
@@ -169,10 +169,10 @@ def _dd_zelle(r, settings) -> Zelle:
     relevant = max(vorhanden.values())
     herleitung = "max(" + ", ".join(f"{k} {_num(v)} %" for k, v in vorhanden.items()) \
                  + f") = {_num(relevant)} %"
-    vorbehalt = (" Max-DD (Monitor) ist eine Monitor-Zweitmessung auf dessen "
+    vorbehalt = (" Closing-DD (Monitor) ist eine Monitor-Zweitmessung auf dessen "
                  "eigener Kapitalbasis — über 100 % überzeichnet sie absolut."
-                 if "Max-DD (Monitor)" in vorhanden
-                 and vorhanden["Max-DD (Monitor)"] > 100 else "")
+                 if "Closing-DD (Monitor)" in vorhanden
+                 and vorhanden["Closing-DD (Monitor)"] > 100 else "")
     if relevant > limit:
         return Zelle(ROT, f"{_num(relevant)} % > {limit:g} %",
                      f"{herleitung} liegt ÜBER der Schranke von {limit:g} % "
