@@ -511,7 +511,11 @@ def test_virtuelle_kapitalbasis_ungueltige_werte_verhindern_forensik(monkeypatch
     (inf-Basis) oder stürzt beim Log-Format ab (String). Ungültig = keine
     Basis = unvollständige Forensik = keine positive Bewertung."""
     quelle = _quelle("pelik", "http://pelican:8090")
-    for wert in (float("inf"), float("-inf"), "10000", 0, -5.0, True, None):
+    # '10000' ist seit 04.10. KEIN ungültiger Fall mehr: ingest parst
+    # Quellen-Strings robust (_zahl, realer Fall '9,10' beim EQ-DD) — ein
+    # parsebarer String ist eine gültige Basis; die übrigen Fälle (inf,
+    # 0/negativ, bool, None, unparsebar) bleiben verboten.
+    for wert in (float("inf"), float("-inf"), "abc", "", 0, -5.0, True, None):
         metrics = {"metrics": {"EquityDrawdown": 8.0, "Average3MonthProfit": 5.5,
                                "InitialDepositVirtual": wert}}
         _verdrahte(monkeypatch, {
@@ -527,6 +531,19 @@ def test_virtuelle_kapitalbasis_ungueltige_werte_verhindern_forensik(monkeypatch
         assert result.ampel == "⚪", wert
         assert result.kapitalbasis_verwendet_quelle != pipeline.KAPITALBASIS_QUELLE_VIRTUELL, wert
         assert "Forensik unvollständig" in result.fehler, wert
+
+    # String-Basis wird jetzt robust geparsed (04.10.): '10000' gilt.
+    metrics = {"metrics": {"EquityDrawdown": 8.0, "Average3MonthProfit": 5.5,
+                           "InitialDepositVirtual": "10.000,00"}}
+    _verdrahte(monkeypatch, {
+        "http://pelican:8090": FakeClient(trades=MINI_CSV, metrics=metrics)})
+    kandidat = ingest.kandidaten(quelle, [
+        {"signalId": "4711", "version": "pelican", "signalName": "StringBasis",
+         "subscribers": 1, "weeks": 40}])[0]
+    pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
+    result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
+    assert result.forensik_vorhanden
+    assert result.kapitalbasis_verwendet_usd == 10_000.0
 
 
 def test_virtuelle_kapitalbasis_reicht_bis_ki_prompt_und_reload(monkeypatch):

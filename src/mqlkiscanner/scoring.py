@@ -47,6 +47,24 @@ AVG_WIN_MAP = [(2, 8.0), (4, 6.5), (8, 5.0), (15, 5.0), (40, 4.0), (100, 3.0)]  
 WEEKS_MAP = [(8, 9.0), (26, 7.0), (40, 5.5), (52, 4.5), (78, 3.0), (104, 2.5), (156, 2.0)]
 
 
+def _platform_float(wert, default=0.0) -> float:
+    """Robust: Quellen/Plattform-Werte koennen als Strings mit deutschem
+    Dezimalkomma kommen (realer Fall 04.10.: '9,10' aus dem MqlDownloader
+    warf die Forensik mit ValueError). Unparsebares wird zum Default —
+    harte Werte (Reko/Monitor/Trading-DD) stammen aus eigener Rechnung
+    und bleiben unberuehrt."""
+    if wert is None or isinstance(wert, bool):
+        return default
+    try:
+        return float(wert)
+    except (TypeError, ValueError):
+        try:
+            return float(str(wert).strip().replace("\u2212", "-")
+                         .replace(" ", "").replace(",", "."))
+        except (TypeError, ValueError):
+            return default
+
+
 def _trading_dd_for_risk(trading_dd: dict | None) -> float:
     """Risiko-%: max. relativer DD, Fallback dd_pct. 0.0 ist ein gueltiger Wert."""
     if not trading_dd:
@@ -62,8 +80,10 @@ def _trading_dd_for_risk(trading_dd: dict | None) -> float:
 def dd_maximum(*werte) -> float:
     """Das Drawdown-Vierfach-Maximum (None/0-safe) — EINE Definition statt
     vier duplizierter (F-12, Review 29.09.): Trading-DD, By-Equity-DD,
-    By-Balance-DD und Reko-EQ-DD. None-Werte fallen weg; ohne jeden Wert 0."""
-    return max((float(w) for w in werte if w is not None), default=0.0)
+    By-Balance-DD und Reko-EQ-DD. None-Werte fallen weg; ohne jeden Wert 0.
+    Strings (z. B. '9,10' aus einer Quelle) werden robust geparsed statt
+    die Schranke zu werfen (realer Fall GS MT5 04.10.)."""
+    return max((_platform_float(w) for w in werte if w is not None), default=0.0)
 
 def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, float]:
     """7 Dimensionen (1-10, hoch = riskant) aus Engine-Report + Plattform-Fakten.
@@ -85,13 +105,13 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     #    Balance (Fall Gold Spike 3,8 % vs. 8,11 %).
     trading_dd = f.get("drawdown", {}).get("trading_dd", {}) or {}
     real_dd = _trading_dd_for_risk(trading_dd)
-    eq_dd = float(platform.get("eq_dd_pct") or 0.0)
-    bal_dd = float(platform.get("bal_dd_pct") or 0.0)
+    eq_dd = _platform_float(platform.get("eq_dd_pct"))
+    bal_dd = _platform_float(platform.get("bal_dd_pct"))
     # F-12 (Review 29.09.): Der Reko-EQ-DD gehoert auch in die Score-Dimension
     # — die Schranke wertet das Vierfach-Maximum, die Dimension liess ihn
     # vorher weg und konnte KLEINER sein als das, was die Schranke sieht.
     # (eq_dd_caveat bleibt bewusst: Plattform-EQ unbrauchbar => nur real+reko.)
-    reko_dd = float(platform.get("reko_eq_dd_pct") or 0.0)
+    reko_dd = _platform_float(platform.get("reko_eq_dd_pct"))
     # B1 (Intensiv-Review 29./30.09.2026): Die Monitor-Zweitmessung
     # (TradeEqDrawdownPct, floating-inclusive aus der vollen Trade-Kurve)
     # gehoert ebenfalls in Schranke UND Dimension. Vorher galt sie nur dem
@@ -99,7 +119,7 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
     # Vorbehalt: Der Monitor rechnet gegen seine eigene (ggf. rueckgerechnete)
     # Basis — der Wert ueberzeichnet bei >100 % absolut, schuetzt die Schranke
     # aber in die richtige Richtung (Risiko vor Ertrag).
-    monitor_dd = float(platform.get("monitor_trade_eq_dd_pct") or 0.0)
+    monitor_dd = _platform_float(platform.get("monitor_trade_eq_dd_pct"))
     dd_reference = (dd_maximum(real_dd, reko_dd, monitor_dd)
                     if platform.get("eq_dd_caveat")
                     else dd_maximum(real_dd, eq_dd, bal_dd, reko_dd, monitor_dd))
@@ -143,12 +163,12 @@ def dimension_inputs(report: dict, platform: dict | None = None) -> dict[str, fl
         copy_dim = _clamp(copy_dim + 1.0)
 
     # 5) Track-Record
-    weeks = float(platform.get("weeks") or s.get("span_weeks") or 0)
+    weeks = _platform_float(platform.get("weeks") or s.get("span_weeks"))
     track_dim = _interp(weeks, WEEKS_MAP)
 
     # 6+7) Transparenz und Broker: Plattform-Fakten, Default 5 (offshore-ueblich)
-    transp_dim = _clamp(float(platform.get("transparency_risk", 5.0)))
-    broker_dim = _clamp(float(platform.get("broker_risk", 5.0)))
+    transp_dim = _clamp(_platform_float(platform.get("transparency_risk"), 5.0))
+    broker_dim = _clamp(_platform_float(platform.get("broker_risk"), 5.0))
 
     return {
         "drawdown": round(dd_dim, 2),
@@ -194,18 +214,18 @@ def evaluate(report: dict, platform: dict | None = None,
     dims = dimension_inputs(report, platform)
     trading_dd = (report.get("forensics", {}).get("drawdown", {}) or {}).get("trading_dd") or {}
     real_dd = _trading_dd_for_risk(trading_dd)
-    eq_dd = float(platform.get("eq_dd_pct") or 0.0)
-    bal_dd = float(platform.get("bal_dd_pct") or 0.0)
+    eq_dd = _platform_float(platform.get("eq_dd_pct"))
+    bal_dd = _platform_float(platform.get("bal_dd_pct"))
     # Reko-EQ-DD aus Kursdaten (floating inklusive) — nur bei belastbarer
     # Abdeckung wird er von der Pipeline hierher gereicht; er geht als
     # viertes Maximum in die Schranke ein (Risiko vor Ertrag, 28.09.2026).
-    reko_dd = float(platform.get("reko_eq_dd_pct") or 0.0)
+    reko_dd = _platform_float(platform.get("reko_eq_dd_pct"))
     # Monitor-Zweitmessung als fuenftes Maximum (B1, Intensiv-Review
     # 29./30.09.2026): haette Lemonal (46,65 %) und AccurateCopier (241 %)
     # als 🔴 statt 🟢 gestellt. Basis-Vorbehalt: Der Monitor rechnet gegen
     # seine eigene Basis — bei >100 % ueberzeichnet der Wert absolut, bleibt
     # aber ein hartes Warnsignal in Schranken-Richtung.
-    monitor_dd = float(platform.get("monitor_trade_eq_dd_pct") or 0.0)
+    monitor_dd = _platform_float(platform.get("monitor_trade_eq_dd_pct"))
     if platform.get("eq_dd_caveat"):
         barrier_dd = dd_maximum(real_dd, reko_dd, monitor_dd)
     else:

@@ -264,6 +264,30 @@ def _atomar_schreiben(pfad: Path, daten: bytes) -> None:
         tmp.unlink(missing_ok=True)
 
 
+def _zahl(wert):
+    """Quellen-Wert robust in float|None — Monitore liefern teils Strings
+    mit deutschem Dezimalkomma (realer Fall 04.10.: EquityDrawdown '9,10'
+    aus dem MqlDownloader crashte scoring mit ValueError). Unparsebares
+    bleibt None statt die ganze Forensik zu werfen."""
+    if wert is None or isinstance(wert, bool):
+        return None
+    if isinstance(wert, (int, float)):
+        return float(wert)
+    text = str(wert).strip().replace("\u2212", "-").replace(" ", "")
+    if not text:
+        return None
+    try:
+        # Komma als Dezimaltrenner (deutsches Format), Punkt bleibt Punkt;
+        # Tausenderpunkte vor Komma werden mitgenommen.
+        if "," in text and "." not in text:
+            text = text.replace(",", ".")
+        else:
+            text = text.replace(".", "").replace(",", ".") if "," in text else text
+        return float(text)
+    except ValueError:
+        return None
+
+
 def metrics_zu_stats(antwort: dict | None) -> dict:
     """Metrics-Antwort → Felder der MQL5-Kennzahlenseite (doc/20 §4).
 
@@ -273,27 +297,27 @@ def metrics_zu_stats(antwort: dict | None) -> dict:
     """
     antwort = antwort or {}
     metrics = antwort.get("metrics") if isinstance(antwort.get("metrics"), dict) else {}
-    eq_dd = metrics.get("EquityDrawdown")
+    eq_dd = _zahl(metrics.get("EquityDrawdown"))
     if eq_dd is None:
-        eq_dd = metrics.get("MaxDDGraphic")
+        eq_dd = _zahl(metrics.get("MaxDDGraphic"))
     return {
         "dd_equity_pct": eq_dd,
         "dd_balance_pct": None,
-        "monthly_growth_pct": metrics.get("Average3MonthProfit"),
+        "monthly_growth_pct": _zahl(metrics.get("Average3MonthProfit")),
         "subscribers": metrics.get("Subscribers"),
-        "initial_deposit_usd": metrics.get("InitialDeposit"),
+        "initial_deposit_usd": _zahl(metrics.get("InitialDeposit")),
         # Virtuelle Kapitalbasis (z. B. PelicanMonitor "InitialDepositVirtual"):
         # klar markierte Annahme, KEIN Plattformwert. Dient als Fallback fuer
         # die Forensik (DD-/Schock-Prozente brauchen ein Startkapital), nie
         # als echtes InitialDeposit und nie in den Cent-genauen Abgleich.
-        "kapitalbasis_virtual_usd": metrics.get("InitialDepositVirtual"),
-        "balance_usd": metrics.get("Balance"),
+        "kapitalbasis_virtual_usd": _zahl(metrics.get("InitialDepositVirtual")),
+        "balance_usd": _zahl(metrics.get("Balance")),
         # Vom Datenquellen-Monitor aus der VOLLEN Trade-Kurve nachgemessener
         # Max-EQ-DD (TradeEqDrawdownPct) — unabhängige Zweitmessung neben dem
         # gemeldeten Plattform-DD. Geht seit B1 (Intensiv-Review 29./30.09.)
         # als fünftes Maximum in die Drawdown-Schranke.
         # None = Monitor hat keinen Wert (Trades nie/nicht berechenbar geladen).
-        "monitor_trade_eq_dd_pct": metrics.get("TradeEqDrawdownPct"),
+        "monitor_trade_eq_dd_pct": _zahl(metrics.get("TradeEqDrawdownPct")),
         # Broker-Kennung des Providers (B6, Intensiv-Review): häufigster
         # ServerCode über die Trades (z. B. PelicanMonitor metrics "Broker").
         # Entcheidet cross_broker=false-Specs (USOIL: 1 vs. 100 Barrel/Lot!).
