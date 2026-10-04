@@ -645,7 +645,7 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
         # sichtbare Ampel-Matrix-Zelle und Zahl im Urteil, sperrt aber
         # nicht mehr. Grün entscheiden die harten Regeln (Schranke,
         # Martingale, Ausschlussliste) plus Ertrag und RetDD.
-        min_return = settings.get("min_ertrag_pct_monat", 5.0)
+        min_return = settings.get("min_ertrag_pct_monat", 0.0)
         # B2 (Intensiv-Review): Grünt das Ertragskriterium, zählt die
         # EIGENE Kurve auf der Forensik-Kapitalbasis — die Plattformzahl
         # (fremde Basis) steht daneben, entscheidet aber nicht mehr.
@@ -684,6 +684,12 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
 
 
 def _kriterien_text(settings: dict) -> str:
+    schwelle = float(settings.get("min_ertrag_pct_monat", 0) or 0)
+    ertrag_zeile = (
+        f"- Mindest-Ertrag: {schwelle:g} %/Monat — " if schwelle > 0
+        else "- Mindest-Ertrag: KEINE absolute Schwelle mehr (Nutzer-Regel 04.10.: "
+             "absolute %/Monat sind beim Kopieren über den Lot-Faktor frei wählbar; "
+             "messbarer positiver Ertrag bleibt über RetDD >= 1,0 gefordert) — ")
     return (f"- Harte Schranke: max. {settings.get('schranke_eq_dd_pct', 30)} % Drawdown — "
             "gewertet wird das MAXIMUM aus dem Plattform-Drawdown (By Equity "
             "und By Balance — Selbstauskunft), dem aus den Trades selbst "
@@ -692,8 +698,8 @@ def _kriterien_text(settings: dict) -> str:
             "der floating-inclusiven Zweitmessung des Datenquellen-Monitors "
             "(dessen Kapitalbasis kann von der Scanner-Basis abweichen — "
             "über 100 % überzeichnet absolut)\n"
-            f"- Mindest-Ertrag: {settings.get('min_ertrag_pct_monat', 5)} %/Monat — "
-            "maßgeblich ist die eigene geometrische Monatsrendite "
+            + ertrag_zeile
+            + "maßgeblich ist die eigene geometrische Monatsrendite "
             "(ertrag_monat_geom_pct) auf der tatsächlichen Zeitspanne des Exports; "
             "linearer Startbasis-Ertrag und Plattformwert sind Zusatzinformationen\n"
             "- Mindest-RetDD: 1,0 pro Monat. RetDD = eigene geometrische Gewinn-%/Monat "

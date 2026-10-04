@@ -75,7 +75,11 @@ DEFAULT_SETTINGS: dict = {
     "min_abonnenten": 0,            # Vorfilter Kandidatenliste
     "min_wochen": 26,               # Vorfilter: Track-Record-Laenge
     "schranke_eq_dd_pct": 30.0,     # harte Drawdown-Schranke (AGENTS.md)
-    "min_ertrag_pct_monat": 5.0,    # Ertrag muss ueber 5 %/Monat liegen
+    # Nutzer-Regel 04.10. abends: KEINE absolute Ertragshuerde mehr (0 = aus) -
+    # absolute %/Monat sind beim Kopieren ueber den Lot-Faktor frei waehlbar
+    # (1,4 % x Faktor 10 = 14 %, DD skaliert mit, RetDD bleibt gleich);
+    # messbarer positiver Ertrag bleibt ueber RetDD >= 1,0 gefordert.
+    "min_ertrag_pct_monat": 0.0,
     "rate_min_interval_s": 2.0,     # Rate-Limit: Mindestabstand Requests (doc/02: 1-2 s)
     "rate_pause_zwischen_signalen_s": 5.0,
     "rate_backoff_429_s": 45.0,     # Wartezeit bei HTTP 429/503

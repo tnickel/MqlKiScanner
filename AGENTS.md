@@ -905,6 +905,20 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   **Parallel-Arbeit übernommen** (README ×6 + doc/21 committet; =2076
   gelöscht) und doc/21 auf Review-Stand nachgezogen (RetDD 1,0/0,5,
   H1-Produktivpfad, Monitor=Closing-DD-Untergrenze).
+  **REGELÄNDERUNG (Nutzer 04.10. nachts): ABSOLUTE ERTRAGSHÜRDE ENTFERNT**
+  — min_ertrag_pct_monat Default 5.0 → 0.0 (= aus; produktives Setting
+  ebenfalls 0; Admin-Feld bleibt zum Wieder-Einschalten). Begründung des
+  Nutzers: Beim Kopieren ist der Lot-Faktor frei wählbar (1,4 %/M ×
+  Faktor 10 = 14 %/M, Drawdown skaliert mit, RetDD bleibt gleich) —
+  absolute %/Monat sind damit eine WAHLGRÖSSE, keine Qualitätseigenschaft.
+  Grün entscheiden jetzt NUR: harte Regeln (Schranke 30 % Maximum inkl.
+  Monitor-Kanal, Martingale, Ausschlussliste) plus **RetDD ≥ 1,0 mit
+  BELASTBARER Kursmessung** (Nenner = Max-Drawdown der Equity INKL.
+  Floating/offener Equity — niemals Closing-/Trading-DD; gilt für ALLE
+  Quellen/Broker). Messbarer positiver Ertrag bleibt über RetDD ≥ 1,0
+  implizit gefordert. Bestands-Effekt beim nächsten Scan: Signale mit
+  RetDD ≥ 1 und altem Ertrag-🟡 können grün werden; Signale ohne
+  Kursmessung (RetDD unbekannt) bleiben 🟡.
   Suite nach Fixes: Scanner 1341 Tests grün (+10 neue), mvn: robo 129,
   zulu 81, MqlDownloader 82, PelicanTrading 63, vantage 25. Bestand
   braucht Re-Scan (Dedup-Konsistenz + Robo-Brutto + RetDD-Basis).
