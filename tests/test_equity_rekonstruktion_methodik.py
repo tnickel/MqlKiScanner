@@ -66,8 +66,13 @@ def test_realisiert_enthält_auch_positionen_ohne_kurse():
         startkapital=1000)
     assert result["end_equity_usd"] == 900.0
     assert result["equity_dd_usd"] == 100.0
-    assert result["verlaesslich"] is False
-    assert result["status"] == "unvollstaendig"
+    # Nutzer-Regel 04.10. nachts: Teil-Messung statt Abweisung — das
+    # realisierte Netto ALLER Positionen bleibt enthalten, der DD wird
+    # auf den betrachtbaren Symbolen gemessen, US100 wird gewarnt.
+    assert result["verlaesslich"] is True
+    assert result["status"] == "ok_teilmessung"
+    assert result["teilmessung"] is True
+    assert result["symbole_nicht_betrachtet"] == ["US100"]
     assert result["trades_total"] == 5
     assert result["trades_mit_kurs_und_kontrakt"] == 4
 

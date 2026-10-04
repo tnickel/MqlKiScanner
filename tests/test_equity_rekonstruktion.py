@@ -308,8 +308,10 @@ def test_startkapital_null_skippt_statt_gruenem_null_dd():
 
 
 def test_fehlende_trades_machen_ergebnis_unzuverlaessig():
-    """Review B7: Fehlen 1-20 % der Trades (Kurse/Kontrakt), darf das Ergebnis
-    informativ sein, aber NICHT verlaesslich (deren PnL fehlt komplett)."""
+    """B7-Regel REVIDIERT (Nutzer-Regel 04.10. nachts): Fehlt EIN Symbol
+    komplett (Kurse/Kontrakt), wird das Signal NICHT abgewiesen — der Max-DD
+    wird auf den betrachtbaren Symbolen gemessen (Teil-Messung, verlaesslich
+    als Nenner freigegeben) und das fehlende Symbol namentlich gewarnt."""
     bars = _ein_bars(14)
     start = dt.datetime(2026, 1, 1)
     trades = [
@@ -332,10 +334,38 @@ def test_fehlende_trades_machen_ergebnis_unzuverlaessig():
     parsed = SimpleNamespace(trades=trades, balances=[], pendings=[])
     erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}),
                            startkapital=10_000.0)
+    assert erg["status"] == "ok_teilmessung", erg
+    assert erg["verlaesslich"] is True, erg
+    assert erg["teilmessung"] is True, erg
+    assert erg["symbole_ohne_kurse"] == ["NOSUCH"]
+    assert erg["symbole_nicht_betrachtet"] == ["NOSUCH"]
+    assert "NOSUCH" in erg["teilmessung_hinweis"]
+    assert erg["abdeckung_betrachtete_pct"] >= 95.0, erg
+    # Teil-DD existiert und ist als Nenner nutzbar:
+    assert erg["equity_dd_pct_raw"] >= 0.0
+
+
+def test_datenloch_in_vorhandenem_symbol_bleibt_unvollstaendig():
+    """Grenze der Teil-Messung (Nutzer-Regel 04.10.): Nur KOMPLETT fehlende
+    Symbole fuehren zur Teil-Messung mit Warnung. Ein Datenloch in einem
+    Symbol, das sonst Kurse liefert, bleibt eine Messqualitaets-Luecke —
+    status unvollstaendig, kein Nenner."""
+    bars = _ein_bars(24)
+    loch = [b for b in bars if not (12 <= b["time"] // 3600 % 24 < 18)]
+    if len(loch) >= len(bars) - 2:  # Fixture-Abhaengigkeit abfedern
+        loch = bars[:4] + bars[20:]
+    start = dt.datetime(2026, 1, 1)
+    trades = [
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+               start + dt.timedelta(hours=20), bars[1]["close"] - 0.1,
+               bars[20]["close"], pnl=100.0),
+    ]
+    parsed = SimpleNamespace(trades=trades, balances=[], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": loch}),
+                           startkapital=10_000.0)
     assert erg["status"] == "unvollstaendig", erg
     assert erg["verlaesslich"] is False, erg
-    assert "1 von 5 Trades" in erg["grund"], erg
-    assert erg["symbole_ohne_kurse"] == ["NOSUCH"]
+    assert not erg.get("teilmessung")
 
 
 def test_skip_status_ohne_leerzeichen():

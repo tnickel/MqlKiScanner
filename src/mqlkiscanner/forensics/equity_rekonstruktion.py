@@ -552,6 +552,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     aktiv: list = []           # (close_epoch_exklusiv, trade)
     punkte_mit_kurs = 0
     punkte_ohne_kurs = 0
+    punkte_teil_mit_kurs = 0
+    punkte_teil_ohne_kurs = 0
     # F5 (Fremd-Review 01.10.): Der Abdeckungs-Nenner darf nicht nur aus
     # vorhandenen Bar-Stunden bestehen — sonst verschwinden Datenlöcher
     # still aus der Rechnung (Probe: 8 offene Stunden, 3 mit Bars -> 100 %).
@@ -559,8 +561,12 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # aktiv wäre, MINUS erkannte Marktpausen (globale Bar-Luecken >= 20 h,
     # klassisch Wochenende/Feiertag — solche Stunden sind keine Datenlücke).
     aktiv_laut_zeit: set[int] = set()
+    aktiv_laut_zeit_betrachtet: set[int] = set()
     for _offen, _ende, _t in offen_sort:
-        aktiv_laut_zeit.update(range((_offen // 3600 + 1) * 3600, _ende, 3600))
+        _stunden = set(range((_offen // 3600 + 1) * 3600, _ende, 3600))
+        aktiv_laut_zeit.update(_stunden)
+        if _t.symbol.strip().upper() in closes_je_symbol                 and _t.symbol.strip().upper() in aufgeloest:
+            aktiv_laut_zeit_betrachtet.update(_stunden)
     bar_stunden: set[int] = set(raster)
     pausen: set[int] = set()
     if aktiv_laut_zeit and bar_stunden:
@@ -589,17 +595,32 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         aktiv = [a for a in aktiv if a[0] > punkt]
         floating = 0.0
         kurs_da = True
+        kurs_da_betrachtet = True   # Teil-Messung (Nutzer-Regel 04.10. nachts):
+                                    # Positionen OHNE beschaffbare Kurse (Symbol
+                                    # fehlt komplett) lassen den Punkt fuer die
+                                    # Teil-Abdeckung zaehlen; nur echte Daten-
+                                    # loecher BETRACHTBARER Symbole zaehlen dagegen.
+        unbetrachtbar_aktiv = False
         tag = (zeitbasis.broker_tag(punkt) if zeitbasis.variable else
                dt.datetime.fromtimestamp(punkt - offset, dt.timezone.utc).date())
         if aktiv and not (zeitbasis.referenz_sicher(punkt) if zeitbasis.variable else
                           zeitbasis.periode(punkt - offset)["belegt"]):
             kurs_da = False
+            kurs_da_betrachtet = False
         for _ende, t in aktiv:
             s = t.symbol.strip().upper()
+            hat_bars = s in closes_je_symbol
+            if not hat_bars or s not in aufgeloest:
+                # Symbol ueberhaupt nicht messbar (keine Kurse/kein Kontrakt):
+                # nicht Teil der Messung — namentliche Warnung am Ergebnis.
+                unbetrachtbar_aktiv = True
+                kurs_da = False
+                continue
             close = closes_je_symbol.get(s, {}).get(punkt)
-            if (close is None or not t.entry_price or s not in aufgeloest
+            if (close is None or not t.entry_price
                     or not getattr(t, "_zeitbasis_sicher", True) or tag is None):
                 kurs_da = False
+                kurs_da_betrachtet = False
                 continue
             res = aufgeloest[s]
             richtung = 1.0 if t.direction.lower() == "buy" else -1.0
@@ -615,6 +636,12 @@ def rekonstruiere(parsed, kurse, startkapital: float,
                 punkte_mit_kurs += 1
             else:
                 punkte_ohne_kurs += 1
+            # Teil-Messung: zaehlt Punkte, deren BETRACHTBARE Positionen
+            # vollstaendig gemessen wurden (unbetrachtbare ausgenommen).
+            if kurs_da_betrachtet:
+                punkte_teil_mit_kurs += 1
+            else:
+                punkte_teil_ohne_kurs += 1
         # F2 (Fremd-Review 01.10.): Ein Punkt mit AKTIVER Position, aber
         # unvollstaendigem Floating ist kein Messpunkt — sein fehlendes PnL
         # wuerde sonst einen erfundenen Rueckfall (oder eine verdeckte
@@ -684,9 +711,30 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     verlaesslich = (abdeckung >= SCHRANKE_MIN_ABDECKUNG and not fx_fehlt
                     and trades_vollstaendig and zeitbasis.verlaesslich)
 
+    # Nutzer-Regel 04.10. nachts: Fehlende Kurse EINZELNER Symbole werfen
+    # das Signal nicht mehr aus der Max-Drawdown-Bewertung — gemessen wird
+    # auf den betrachtbaren Symbolen (Teil-Messung), die fehlenden werden
+    # namentlich als Warnung gefuehrt (DD kann unterschaetzt sein). Hart
+    # bleibt: FX-Luecke, Datenluecher betrachtbarer Symbole unter 95 %
+    # Teil-Abdeckung und unzuverlaessige Zeitbasis.
+    offen_teil = punkte_teil_mit_kurs + punkte_teil_ohne_kurs
+    soll_teil = len(aktiv_laut_zeit_betrachtet) - len(pausen & aktiv_laut_zeit_betrachtet)
+    if soll_teil > 0 and soll_teil > offen_teil:
+        offen_teil = soll_teil
+    abdeckung_teil = punkte_teil_mit_kurs / offen_teil if offen_teil else 1.0
+    symbole_nicht_betrachtet = sorted(
+        set(fehlende_symbole or []) | set(symbole_ohne_kontrakt or []))
+    teilmessung = (not verlaesslich and bool(symbole_nicht_betrachtet)
+                   and not fx_fehlt and abdeckung_teil >= SCHRANKE_MIN_ABDECKUNG
+                   and zeitbasis.verlaesslich)
+    if teilmessung:
+        verlaesslich = True  # Nenner-freigabe; Kennzeichnung siehe unten
+
     ergebnis = {
         "test": "equity_rekonstruktion",
-        "status": "ok" if verlaesslich else "unvollstaendig",
+        "status": ("ok" if verlaesslich and trades_vollstaendig
+                   and not teilmessung else
+                   "ok_teilmessung" if teilmessung else "unvollstaendig"),
         "gmt_offset_h": original_offset // 3600,
         "gmt_trefferquote": gmt["trefferquote"],
         "zeitbasis": zeitbasis.metadata(),
@@ -712,6 +760,14 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             (_offen // 3600 + 1) * 3600 >= _schluss
             for _offen, _schluss, _trade in offen_sort),
     }
+    if teilmessung:
+        ergebnis["teilmessung"] = True
+        ergebnis["symbole_nicht_betrachtet"] = symbole_nicht_betrachtet
+        ergebnis["abdeckung_betrachtete_pct"] = round(abdeckung_teil * 100, 1)
+        ergebnis["teilmessung_hinweis"] = (
+            "Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht "
+            "betrachtet: " + ", ".join(symbole_nicht_betrachtet)
+            + " — DD kann unterschätzt sein.")
     if fehlende_symbole:
         ergebnis["symbole_ohne_kurse"] = fehlende_symbole
     if symbole_ohne_kontrakt:

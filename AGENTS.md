@@ -919,6 +919,17 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   implizit gefordert. Bestands-Effekt beim nächsten Scan: Signale mit
   RetDD ≥ 1 und altem Ertrag-🟡 können grün werden; Signale ohne
   Kursmessung (RetDD unbekannt) bleiben 🟡.
+  **REGELÄNDERUNG 2 (Nutzer 04.10. nachts): KURS-TEILMESSUNG statt Abweisung**
+  — Fehlen Kurse/Kontrakt für EINZELNE Symbole komplett, wirft das Signal
+  nicht mehr aus der Max-Drawdown-Bewertung: gemessen wird auf den
+  BETRACHTBAREN Symbolen (status „ok_teilmessung", verlaesslich als
+  RetDD-Nenner freigegeben), die fehlenden Paare werden namentlich als
+  Warnung geführt (Log, Urteil „Max-DD Teilmessung (ohne X, Y — DD kann
+  unterschätzt sein)", forensik-JSON-Feld teilmessung/symbole_nicht_
+  betrachtet/abdeckung_betrachtete_pct). Hart bleiben: FX-Lücke, Daten-
+  löcher in VORHANDENEN Symbolen (Teil-Abdeckung < 95 %) und unzuverlässige
+  Zeitbasis → weiter „unvollständig", kein Nenner. Tests: Teil-Messung,
+  Mehrfach-Symbol-Fall, Datenloch-Grenze.
   Suite nach Fixes: Scanner 1341 Tests grün (+10 neue), mvn: robo 129,
   zulu 81, MqlDownloader 82, PelicanTrading 63, vantage 25. Bestand
   braucht Re-Scan (Dedup-Konsistenz + Robo-Brutto + RetDD-Basis).

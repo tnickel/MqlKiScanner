@@ -1523,13 +1523,22 @@ class ScanPipeline:
                 elif res.identische_tradezeilen:
                     log(f"Trade-Daten: {res.identische_tradezeilen} identische Zeilen erhalten "
                         "(keine Ticket-ID; können verschiedene echte Positionen sein).")
-                if reko.get("status") == "ok" and reko.get("verlaesslich"):
+                if reko.get("status") in ("ok", "ok_teilmessung")                         and reko.get("verlaesslich"):
                     res.equity_dd_rekonstruiert_pct = reko.get(
                         "equity_dd_pct_raw", reko.get("equity_dd_pct"))
                     res.equity_dd_rekonstruiert_usd = reko.get("equity_dd_usd")
                     log(f"✓ Equity-Rekonstruktion: Reko-EQ-DD {res.equity_dd_rekonstruiert_pct} % "
                         f"({res.equity_rekon_gmt_text}, Abdeckung "
                         f"{reko.get('abdeckung_pct')} %, floating inklusive)")
+                    if reko.get("teilmessung"):
+                        # Nutzer-Regel 04.10. nachts: Teil-Messung statt Abweisung
+                        fehlt = ", ".join(reko.get("symbole_nicht_betrachtet") or [])
+                        log(f"⚠ Teil-Messung — nicht betrachtet: {fehlt} "
+                            "(DD kann unterschätzt sein).")
+                        if "Teilmessung" not in (res.urteil or ""):
+                            res.urteil = (res.urteil or "") + (
+                                f" · Max-DD Teilmessung (ohne {fehlt} — "
+                                "DD kann unterschätzt sein)")
                 elif reko.get("status") == "skipped":
                     log(f"Equity-Rekonstruktion übersprungen: {reko.get('grund')}")
                 elif reko:
