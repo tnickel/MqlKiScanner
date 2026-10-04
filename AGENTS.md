@@ -821,6 +821,22 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Kopiergebühren/Slippage/Spread-Differenzen, H1-Schlusskurse).
   Commits 564e38c/8daa9f0/afbcfd9; volle Suite 1325 grün.
 
+- ✅ SCORE-GATE ENTFERNT (04.10., Nutzer-Freigabe nach Pelikan-Analyse
+  „warum sind alle gelb?"): Der Grün-Weg (Ertrag ≥ 5 %/M geom. + RetDD
+  ≥ 1,0) hing versteckt hinter `score < 5,0` — mit den zwei Score-Default-
+  Dimensionen (Broker offshore 5,0, Transparenz 5,0) für Quellen-Signale
+  fast unerreichbar. Realer Fall HRC Algo (pelik): DD 2,0 % · Ertrag
+  10,1 %/M · RetDD ~5,0 — blieb Gelb „Score 5,8 (kein Kandidat)".
+  Nutzer-Entscheidung: Gate raus. Grün entscheiden jetzt ausschließlich
+  die harten Regeln (Schranke, Martingale, Ausschlussliste) plus Ertrag
+  und RetDD; der Risiko-Score bleibt Ampel-Matrix-Zelle und heißt im
+  Grün-Urteil („… RetDD 5.0/M, Risiko-Score 5.8 …"). Pelikan-Bilanz
+  danach (live nachgerechnet): 2 Grün-Kandidaten (HRC Algo, ImpulseNet —
+  ImpulseNet mit Mini-Konto-Vorbehalt aus der KI-Analyse), 8× Gelb wegen
+  Ertrag < 5 %/M, 2× RetDD < 1, 16× 🔴 v. a. Martingale-Nachweis.
+  +2 Tests; volle Suite 1327 grün. Bestand braucht erneuten Scan, damit
+  die Ampeln der Kandidaten auf Grün springen.
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

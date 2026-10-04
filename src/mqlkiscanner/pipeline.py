@@ -623,41 +623,51 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
             "cluster": "Stop per Cluster-Signatur belegt",
             "partial": "Stop teilweise belegt",
         }.get(result.stop_evidence or "", "SL nicht übertragen (neutral — KI schätzt ab)")
-        if result.score is not None and result.score < 5.0:
-            min_return = settings.get("min_ertrag_pct_monat", 5.0)
-            # B2 (Intensiv-Review): Grünt das Ertragskriterium, zählt die
-            # EIGENE Kurve auf der Forensik-Kapitalbasis — die Plattformzahl
-            # (fremde Basis) steht daneben, entscheidet aber nicht mehr.
-            ertrag_wert = result.ertrag_monat_geom_pct
-            if ertrag_wert is None:
-                return "🟡", (f"Forensik ok ({stop_kontext}), aber eigene geometrische "
-                              "Monatsrendite unbelegt — ohne Gewinnnachweis kein Kandidat")
-            if (ertrag_wert or 0) >= min_return:
-                # Nutzer-Regel 02.10. („retdd=1 minimum — RetDD ist wichtig
-                # und gehört in die Berechnung"): Grün erfordert die
-                # Mindest-Effizienz. Ohne belegbare RetDD-Basis gibt es
-                # ebenfalls kein Grün (Risiko VOR Ertrag — eine unbezahlte
-                # oder unbelegte Effizienz ist keine Empfehlungsgrundlage).
-                if result.retdd_monat is None:
-                    return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), "
-                                  "aber RetDD unbelegt (keine positive gemessene Equity-DD-Basis) — "
-                                  "ohne Effizienznachweis kein Kandidat "
-                                  "(Nutzer-Regel 02.10.)")
-                if result.retdd_monat < 1.0:
-                    return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), aber "
-                                  f"RetDD {result.retdd_monat:g} < 1,0 — der "
-                                  "Ertrag trägt das eingegangene Risiko nicht "
-                                  "ausreichend (Mindest-Effizienz, Nutzer-Regel "
-                                  "02.10.)")
-                retdd_text = (f", RetDD {result.retdd_monat:g}/M"
-                              if result.retdd_monat is not None else "")
-                geom_text = (f" (geom. {result.ertrag_monat_geom_pct:g} %/M)"
-                             if result.ertrag_monat_geom_pct is not None else "")
-                return "🟢", (f"Kandidat: Forensik bestanden, Score < 5, "
-                              f"Ertrag ok{geom_text}{retdd_text} · "
-                              f"{stop_kontext}")
-            return "🟡", f"Forensik ok ({stop_kontext}), aber Ertrag < {min_return:g} %/Monat"
-        return "🟡", f"Forensik bestanden ({stop_kontext}), Score {result.score} (kein Kandidat)"
+        # Nutzer-Entscheidung 04.10.: Das versteckte Score-Gate (score < 5,0
+        # als Vorbedingung des Grün-Wegs) ist ENTFERNT. Der Risiko-Score
+        # enthält zwei Default-Dimensionen mit fest 5,0 (Broker offshore,
+        # Transparenz) — für Quellen-Signale fast unerreichbar; das Gate
+        # blockierte damit exakt den messbaren Grün-Weg (Ertrag + RetDD,
+        # Nutzer-Regeln 01./02.10.) — realer Fall HRC Algo: DD 2,0 %,
+        # Ertrag 10,1 %/M, RetDD 5,1, Score 5,8 = Gelb. Der Score bleibt
+        # sichtbare Ampel-Matrix-Zelle und Zahl im Urteil, sperrt aber
+        # nicht mehr. Grün entscheiden die harten Regeln (Schranke,
+        # Martingale, Ausschlussliste) plus Ertrag und RetDD.
+        min_return = settings.get("min_ertrag_pct_monat", 5.0)
+        # B2 (Intensiv-Review): Grünt das Ertragskriterium, zählt die
+        # EIGENE Kurve auf der Forensik-Kapitalbasis — die Plattformzahl
+        # (fremde Basis) steht daneben, entscheidet aber nicht mehr.
+        ertrag_wert = result.ertrag_monat_geom_pct
+        if ertrag_wert is None:
+            return "🟡", (f"Forensik ok ({stop_kontext}), aber eigene geometrische "
+                          "Monatsrendite unbelegt — ohne Gewinnnachweis kein Kandidat")
+        if (ertrag_wert or 0) >= min_return:
+            # Nutzer-Regel 02.10. („retdd=1 minimum — RetDD ist wichtig
+            # und gehört in die Berechnung"): Grün erfordert die
+            # Mindest-Effizienz. Ohne belegbare RetDD-Basis gibt es
+            # ebenfalls kein Grün (Risiko VOR Ertrag — eine unbezahlte
+            # oder unbelegte Effizienz ist keine Empfehlungsgrundlage).
+            if result.retdd_monat is None:
+                return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), "
+                              "aber RetDD unbelegt (keine positive gemessene Equity-DD-Basis) — "
+                              "ohne Effizienznachweis kein Kandidat "
+                              "(Nutzer-Regel 02.10.)")
+            if result.retdd_monat < 1.0:
+                return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), aber "
+                              f"RetDD {result.retdd_monat:g} < 1,0 — der "
+                              "Ertrag trägt das eingegangene Risiko nicht "
+                              "ausreichend (Mindest-Effizienz, Nutzer-Regel "
+                              "02.10.)")
+            retdd_text = (f", RetDD {result.retdd_monat:g}/M"
+                          if result.retdd_monat is not None else "")
+            geom_text = (f" (geom. {ertrag_wert:g} %/M)"
+                         if ertrag_wert is not None else "")
+            score_text = (f", Risiko-Score {result.score:g}"
+                          if result.score is not None else "")
+            return "🟢", (f"Kandidat: Forensik bestanden, Ertrag ok{geom_text}"
+                          f"{retdd_text}{score_text} · {stop_kontext}")
+        return "🟡", (f"Forensik ok ({stop_kontext}), aber Ertrag < {min_return:g} %/Monat "
+                      f"(geom. {ertrag_wert:g})")
     return "⚪", "Vorprüfung (ohne Trade-Export-Forensik)"
 
 

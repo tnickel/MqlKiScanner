@@ -407,3 +407,33 @@ def test_retdd_null_drawdown_ist_undefiniert_statt_unendlich():
     zelle = _matrix(_result(equity_dd_rekonstruiert_pct=0.0))["retdd"]
     assert zelle.ampel == KEINE_DATEN
     assert "nicht definiert" in zelle.detail
+
+
+def test_score_gate_entfernt_hrc_fall_wird_gruen():
+    """Nutzer-Entscheidung 04.10.: Das versteckte Score-Gate (< 5,0) ist
+    entfernt — realer Fall HRC Algo (pelik): DD 2,0 %, Ertrag 10,1 %/M,
+    RetDD 5,1, aber Score 5,8 (Default-Dimensionen Broker/Transparenz 5,0)
+    blieb Gelb. Grün entscheiden Schranke/Martingale/Ausschlussliste plus
+    Ertrag und RetDD; der Score bleibt sichtbare Zahl."""
+    res = pipeline.ScanResult(
+        id=1, name="HRC-Fall", forensik_vorhanden=True, score=5.8,
+        ertrag_monat_geom_pct=10.08, retdd_monat=5.13,
+        trading_dd_pct=2.0, equity_dd_rekonstruiert_pct=2.0,
+        martingale_flag=False, stop_evidence="none")
+    ampel, urteil = pipeline.ampel_for(res, {})
+    assert ampel == "🟢"
+    # RetDD wird live nachgerechnet (10.08 / DD 2.0): ~5.0
+    assert "RetDD 5.0" in urteil and "Risiko-Score 5.8" in urteil
+
+
+def test_score_7_sperriert_gruen_nicht_mehr():
+    res = pipeline.ScanResult(
+        id=2, name="Hoher-Score-Fall", forensik_vorhanden=True, score=7.2,
+        ertrag_monat_geom_pct=6.5, retdd_monat=1.4, martingale_flag=False,
+        equity_dd_rekonstruiert_pct=4.0)
+    assert pipeline.ampel_for(res, {})[0] == "🟢"
+    # Harte Regeln greifen weiterhin VOR dem Grün:
+    res2 = pipeline.ScanResult(
+        id=3, forensik_vorhanden=True, score=1.2, martingale_flag=True,
+        ertrag_monat_geom_pct=9.0, retdd_monat=2.0)
+    assert pipeline.ampel_for(res2, {})[0] == "🔴"
