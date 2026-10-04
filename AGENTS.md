@@ -893,6 +893,12 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Entwicklung, nur Report), B6a (PDF-Materialisierung je DB-Lesung),
   H2a (REST-Bind 0.0.0.0 + Token-Default leer auf allen 5 Monitoren —
   Nutzer-Entscheidung nötig, Heim-LAN-Aufstellung bewusst).
+  **H2a ENTSCHIEDEN (Nutzer 04.10. abends): KEINE REST-Security** —
+  alles läuft nur lokal; 0.0.0.0-Bind + leere Token-Defaults bleiben
+  bewusst so (kein Handlungsbedarf, Punkt geschlossen).
+  **Parallel-Arbeit übernommen** (README ×6 + doc/21 committet; =2076
+  gelöscht) und doc/21 auf Review-Stand nachgezogen (RetDD 1,0/0,5,
+  H1-Produktivpfad, Monitor=Closing-DD-Untergrenze).
   Suite nach Fixes: Scanner 1341 Tests grün (+10 neue), mvn: robo 129,
   zulu 81, MqlDownloader 82, PelicanTrading 63, vantage 25. Bestand
   braucht Re-Scan (Dedup-Konsistenz + Robo-Brutto + RetDD-Basis).
@@ -923,8 +929,11 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
       Melder/Postfach, Phase D/E
 - [x] V1-Attach-Prüfung mit Nutzer — ERLEDIGT 22.09.2026 (Selbststart UND
       Attach E2E verifiziert, Ergebnis in doc/19 §7.4 nachgetragen)
-- [ ] Autostart des Daemon nach Rechner-Neustart (start.bat-Erweiterung
-      oder Aufgabenplanung — offen, Nutzer-Entscheidung)
+- [x] Autostart des Daemon nach Rechner-Neustart — ERLEDIGT 04.10.2026:
+      `start_agenten_daemon.bat` (Scanner-Root) + Startup-Verknüpfung
+      „MqlKiScanner Agenten-Daemon" im persönlichen Startup-Ordner (minimiert;
+      PYTHONPATH=src, .venv-pythonw bevorzugt). Der Daemon respektiert
+      agenten_enabled — ausgeschaltet heißt: er idlet ohne Rollen/Scans.
 - [ ] Multi-Source-Hub Stufe 2–4 (doc/20 §7): Initial Deposit im
       MqlDownloader-/metrics + MT4-S/L-Verifikation am Downloader-Bestand,
       dann Composite-Identität (quelle, signal_id), Betreuer auf Quellen

@@ -92,6 +92,20 @@ def test_statistik_nimmt_plattform_trades_je_ergebnis(tmp_path):
     assert zeile2["schlechtester_wert_pct"] is None
 
 
+# --- V2a-Folge: gekappte Quellen-Historie wird durchgereicht -------------
+
+def test_ingest_reicht_trades_truncated_durch():
+    from mqlkiscanner import ingest
+    stats = ingest.metrics_zu_stats({"metrics": {
+        "TradesTruncated": True, "TradesTotalAvailable": 72825,
+        "TradesStored": 2000}})
+    assert stats["quelle_trades_gekappt"] is True
+    assert stats["quelle_trades_total_available"] == 72825
+    # Fehlend -> None (nichts geraten)
+    leer = ingest.metrics_zu_stats({"metrics": {}})
+    assert leer["quelle_trades_gekappt"] is None
+
+
 # --- A1c/D1: Monitor-Closing-DD ist kein RetDD-Nenner -------------------
 
 def _result(**kwargs):

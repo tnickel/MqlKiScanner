@@ -311,6 +311,11 @@ def metrics_zu_stats(antwort: dict | None) -> dict:
         # die Forensik (DD-/Schock-Prozente brauchen ein Startkapital), nie
         # als echtes InitialDeposit und nie in den Cent-genauen Abgleich.
         "kapitalbasis_virtual_usd": _zahl(metrics.get("InitialDepositVirtual")),
+        # Review 04.10. (V2a-Folge): Vantage kappen Batch-Downloads auf 2.000
+        # Trades — der Monitor legt offen, ob die Historie unvollstaendig ist
+        # (TradesTruncated / TradesTotalAvailable). Nur Hinweis, kein Malus.
+        "quelle_trades_gekappt": metrics.get("TradesTruncated"),
+        "quelle_trades_total_available": metrics.get("TradesTotalAvailable"),
         "balance_usd": _zahl(metrics.get("Balance")),
         # Vom Datenquellen-Monitor aus der VOLLEN Trade-Kurve nachgemessener
         # Max-EQ-DD (TradeEqDrawdownPct) — unabhängige Zweitmessung neben dem

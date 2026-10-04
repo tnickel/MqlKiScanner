@@ -1435,6 +1435,18 @@ class ScanPipeline:
                     kursanbieter = self._kursanbieter_fuer(log)
                 else:
                     kursanbieter = self._kursanbieter_fuer(log)
+                if stats.get("quelle_trades_gekappt"):
+                    # V2a (Review 04.10.): Quellen-Monitor meldet gekappte
+                    # Historie (Vantage Batch: 2.000 Trades) — DD/Ertrag der
+                    # Forensik stehen dann nur auf einem Teil der Historie.
+                    total = stats.get("quelle_trades_total_available")
+                    log("HINWEIS: Trade-Historie beim Anbieter gekappt"
+                        + (f" ({total} Trades insgesamt verfügbar)" if total else "")
+                        + " — Forensik sieht nur den gelieferten Teil.")
+                    if "Historie gekappt" not in (res.urteil or ""):
+                        res.urteil = (res.urteil or "") + (
+                            " · Historie gekappt"
+                            + (f" ({total} verfügbar)" if total else ""))
                 # Beweiswert für doppelte Lieferungen: Signalseiten-Angabe
                 # "Trades:" (MQL5-Direkt). Quellen-metrics liefern keine
                 # Positionszahl → dort gilt der Beweis als nicht erbracht
