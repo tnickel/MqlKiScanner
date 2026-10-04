@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import datetime
+from pathlib import Path
 
 from .. import config, db
 from ..llm import client as llm_client
@@ -267,6 +268,18 @@ def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
         return {"signal": name, "einordnung": "KEINE_NEUEN_TRADES",
                 "zusammenfassung": f"{name}: keine neuen Trades"}
 
+    # Review 04.10.: Gespeicherte Alt-Snapshots koennen fehlen (Pfad-
+    # Migration nach Projektumbenennung, aufgeraeumter Cache) — vorher
+    # stuerzte der Betreuer-Lauf mit FileNotFoundError ab und die Karte
+    # blieb tagelang auf 'fehler'. Ohne Alt-Stand zaehlt das Delta den
+    # kompletten Bestand als neu (dokumentiertes Erst-Delta-Verhalten).
+    if alt_pfad and not Path(alt_pfad).exists():
+        journal.schritt_protokollieren(
+            lauf_id, "betreuer", "alt_snapshot", status="ok",
+            detail={"signal": name, "hinweis":
+                    "Alt-Snapshot fehlt am gespeicherten Pfad — "
+                    "Delta zählt den kompletten Bestand (Erst-Delta)."})
+        alt_pfad = None
     neue = delta.neue_trades(alt_pfad, pfad)
     if delta_ts:
         # F-2: Nur Trades nach der letzten Pruefung zaehlen — sonst
