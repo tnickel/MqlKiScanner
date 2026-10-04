@@ -84,14 +84,20 @@ Autostart + Toolbar-Button „REST-API an/aus“.
   – unveränderte Daten werden ohne CPU- oder Token-Verschwendung übersprungen.
 - **RetDD (Rendite-Risiko-Effizienz)**: Durchgängige Bewertung nach geometrischem
   Monatsmittel (`ertrag_monat_geom_pct`) und echtem Calmar-Faktor (`cagr_jahr_pct ÷ MaxDD`).
-  Feste 9. Zelle in der Ampel-Matrix (grün ≥ 0,5 · gelb 0,167–0,5 · orange < 0,167).
+  Feste 9. Zelle in der Ampel-Matrix (grün ≥ 1,0 · gelb 0,5–1,0 · orange < 0,5, ⚪ ohne
+  Messung). Nutzer-Regeln 02./03.10.2026: RetDD ≥ 1,0 ist Mindestqualität für Grün;
+  Nenner ist ausschließlich die valide EIGENE Kurs-Messung (H1-Rekonstruktion) —
+  NIEMALS Closing-/Balance-/Trading-DD oder Plattform-Selbstauskunft. Der Monitor-Wert
+  (`TradeEqDrawdownPct`) ist eine Closing-Kurve und bleibt nur Untergrenzen-Kanal der
+  harten 5-Kanal-Schranke (Review 04.10., Nutzer-Entscheidung „zentral + ehrlich").
 - **Kopier-Simulation in der KI-Studie**: Berechnet auf Basis eines fixen
   10.000-USD-Modellkontos den realen Verlauf und beantwortet dem Anleger:
   „Was wäre mit deinem Konto passiert?“.
 - **Kapitalfluss-Brücke**: Erkennt historische Einlagen und Entnahmen auf MQL5,
   um künstlich verzerrte Broker-Drawdown-Angaben zu entlarven.
 - **Forensik-Batterie**: Martingale-Erkennung, Peak-Exposure (Anzahl- und Schock-Peak),
-  SL-Evidenz (Orderbuch vs. Verhaltensmuster), M1/M5-Equity-Rekonstruktion mit Auto-GMT,
+  SL-Evidenz (Orderbuch vs. Verhaltensmuster), H1-Equity-Rekonstruktion mit Auto-GMT
+  (produktiver Pfad; M1 nur als Spitzentage-Referenz in der DD-Kalibrierung doc/22),
   harte 30-%-Drawdown-Schranke, GLM-5.3 Multi-Agenten-Audits.
 - **Append-only Audit Trail**: Wechsel-Protokoll dokumentiert jeden Ampelwechsel mit
   Alt- und Neuwerten aller Einzelkriterien.
@@ -126,7 +132,7 @@ Autostart + Toolbar-Button „REST-API an/aus“.
 
 | Projekt | Automatisierte Tests | Suite-Umfang & Details |
 |---|---|---|
-| **SignalKiScanner** | **1.331** gesammelt | 100 Pytest-Dateien (18.822 LOC Testcode; Forensik, RetDD, Hub-Ingest, Agenten, TradeServer-Sync) |
+| **SignalKiScanner** | **1.341** gesammelt | 100 Pytest-Dateien (18.822 LOC Testcode; Forensik, RetDD, Hub-Ingest, Agenten, TradeServer-Sync) |
 | **PelicanWinnerLooser** | **156** grün | 21 Testdateien (3.600 LOC Testcode; Resume, Fake-HTTP, Kurvenstatistik, Quantile, DPAPI) |
 | **roboforex** (RoboMonitor) | **129** grün | 15 Testdateien (2.640 LOC Testcode; DealStore, SubscriberDb, MT5-Paarung, UiPrefs) |
 | **zulumonitor** (ZuluMonitor) | **81** grün | 13 Testdateien (1.816 LOC Testcode; TradeListenStore, SubscriberDb, REST-Server) |
