@@ -893,6 +893,12 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Entwicklung, nur Report), B6a (PDF-Materialisierung je DB-Lesung),
   H2a (REST-Bind 0.0.0.0 + Token-Default leer auf allen 5 Monitoren —
   Nutzer-Entscheidung nötig, Heim-LAN-Aufstellung bewusst).
+  **startall.bat REALTEST OK (04.10. 17:08):** Alle 7 Clients starten
+  (Scanner-App + MqlDownloader :8089 + 4 JavaFX-Monitore + JETZT AUCH
+  PelicanWinnerLooser); Bereitschaftsschleife 3 min (MqlDownloader
+  kompiliert vor dem Start — 2 min waren zu knapp und zeigten „FEHLT");
+  Port-Status je Endpunkt am Schluss. Ein parallel laufender CLI-Scan
+  bleibt von startall unberuehrt (killt nur Port-Besitzer der Suite).
   **H2a ENTSCHIEDEN (Nutzer 04.10. abends): KEINE REST-Security** —
   alles läuft nur lokal; 0.0.0.0-Bind + leere Token-Defaults bleiben
   bewusst so (kein Handlungsbedarf, Punkt geschlossen).
