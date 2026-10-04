@@ -64,9 +64,15 @@ def _monatsserie(parsed, basis: float) -> dict[str, float]:
     return renditen
 
 
-def monatsrenditen(trades_pfad: str, startkapital: float | None
-                    ) -> dict[str, float]:
+def monatsrenditen(trades_pfad: str, startkapital: float | None,
+                   plattform_positions: float | None = None
+                   ) -> dict[str, float]:
     """Monatsrenditen in Prozent aus dem Trade-Export (virtuelle Kurve).
+
+    plattform_positions: derselbe Beweiswert wie in der Forensik
+    (Signalseiten-„Trades:"), damit Rendite-Kurve und Forensik auf dem
+    IDENTISCHEN Trade-Bestand rechnen (Review 04.10., Paket A A2a: ohne
+    Beweis wäre RetDD/Portfolio roh, während die Forensik deduped).
 
     Rückgabe {„2026-07": -1.82, …}; bei Lesefehlern oder ohne positives
     Startkapital eine leere Map (das Signal bleibt in der Statistik als
@@ -75,7 +81,7 @@ def monatsrenditen(trades_pfad: str, startkapital: float | None
     bleiben mit 0 % enthalten. Die Renditen werden nicht vorgerundet.
     """
     try:
-        parsed = load_export(trades_pfad)
+        parsed = load_export(trades_pfad, plattform_positions=plattform_positions)
     except Exception:
         return {}
     basis = _positiv_endlich(startkapital)
@@ -92,7 +98,8 @@ def _symbole_als_set(symbole: str | None) -> set[str]:
 
 
 def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
-                         dd_max_pct: float | None) -> dict | None:
+                         dd_max_pct: float | None,
+                         plattform_positions: float | None = None) -> dict | None:
     """RetDD-Effizienz JE SIGNAL — der Produzent (B24-Fix, Lauf-Review
     02.10.: Deklaration und Verbraucher existierten seit 01.10., die
     Berechnung nie; 0/97 Signale hatten Werte).
@@ -119,7 +126,7 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
     if basis is None:
         return None
     try:
-        parsed = load_export(trades_pfad)
+        parsed = load_export(trades_pfad, plattform_positions=plattform_positions)
     except Exception:
         return None
     if not parsed.trades:
@@ -201,7 +208,9 @@ def statistik(results: list) -> dict:
         pfad = getattr(r, "trades_path", None)
         basis = getattr(r, "kapitalbasis_verwendet_usd", None)
         if pfad and Path(pfad).exists():
-            kurve = monatsrenditen(pfad, basis)
+            kurve = monatsrenditen(
+                pfad, basis,
+                plattform_positions=getattr(r, "plattform_trades", None))
         kurven[r.id] = kurve
         symbole[r.id] = _symbole_als_set(getattr(r, "symbole", None))
         negativ = sorted(m for m, v in kurve.items() if v < 0)

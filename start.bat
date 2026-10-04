@@ -20,17 +20,20 @@ rem  SCHRITT 0: Alte Instanzen beenden (sonst "Port not available")
 rem -----------------------------------------------------------
 echo Pruefe auf laufende Alt-Instanzen ...
 
-rem a) Jeden Prozess beenden, der auf dem App-Port hoert
-rem    (Get-NetTCPConnection: sprachunabhaengig, kein LISTENING/ABHOEREN-Matching)
-powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort %PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -Unique OwningProcess | ForEach-Object { $pn = (Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).ProcessName; Write-Host ('  Beende PID ' + $_.OwningProcess + ' (' + $pn + ') - belegt Port %PORT%'); Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
+rem a) Port-Besitzer beenden — NUR wenn er zu DIESEM Projekt gehoert
+rem    (Review 04.10., Paket H H1a/E27: vorher wurde JEDER Besitzer von 8504
+rem     blind gekillt; ein fremder Prozess bleibt jetzt unangetastet+gemeldet)
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort %PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -Unique OwningProcess | ForEach-Object { $proc = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $_.OwningProcess) -ErrorAction SilentlyContinue; $cl = [string]$proc.CommandLine; if ($cl -match 'SignalKiScanner|signalkiscanner|streamlit_app\.py') { Write-Host ('  Beende PID ' + $_.OwningProcess + ' (' + $proc.Name + ') - alte Scanner-Instanz auf Port %PORT%'); Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } else { Write-Host ('  WARNUNG: Port %PORT% gehoert FREMDEM Prozess PID ' + $_.OwningProcess + ' (' + $proc.Name + ') - wird NICHT beendet.') } }"
 
-rem b) Streamlit-Wrapper (pip-Shim) beenden
-taskkill /F /IM streamlit.exe >nul 2>&1
+rem b) Globaler 'taskkill /IM streamlit.exe' ENTFERNT (Review 04.10., H1a):
+rem    er traf ALLE Streamlit-Apps des Nutzers. Suite-eigene Instanzen
+rem    erfassen (a) und (c) identitaetsgeprueft.
 
-rem c) Python-Prozesse mit "streamlit ... run" in der Kommandozeile beenden
-rem    (erwischt auch `python -m streamlit run` aus vergessenen Fenstern;
-rem     eigene PID ausgenommen)
-powershell -NoProfile -Command "$me = $PID; Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $me -and $_.CommandLine -match 'streamlit' -and $_.CommandLine -match 'run' } | ForEach-Object { Write-Host ('  Beende PID ' + $_.ProcessId + ' (alte Streamlit-Instanz)'); Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
+rem c) Python-Prozesse mit "streamlit ... run" UND Projektbezug beenden
+rem    (Review 04.10., H1a: '+ SignalKiScanner' im Muster — erwischt auch
+rem     `python -m streamlit run` aus vergessenen Fenstern DIESES Projekts,
+rem     laesst fremde Streamlit-Apps in Ruhe; eigene PID ausgenommen)
+powershell -NoProfile -Command "$me = $PID; Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $me -and $_.CommandLine -match 'streamlit' -and $_.CommandLine -match 'run' -and ($_.CommandLine -match 'SignalKiScanner' -or $_.CommandLine -match 'streamlit_app\.py') } | ForEach-Object { Write-Host ('  Beende PID ' + $_.ProcessId + ' (alte Streamlit-Instanz dieses Projekts)'); Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
 
 rem Kurz warten, bis Windows den Port wirklich freigibt (bis zu ~15 s),
 rem PATH-sicher per PowerShell (kein Kollision mit GNU-timeout in manchen PATHs)

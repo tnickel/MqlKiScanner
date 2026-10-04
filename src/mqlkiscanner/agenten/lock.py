@@ -158,7 +158,14 @@ def lauf_lock(basis: Path, name: str = "agenten_lauff"):
             fd = os.open(str(datei), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except FileExistsError:
             alt = _lese(datei)
-            alter = time.time() - float(alt.get("ts", 0) or 0)
+            try:
+                alter = time.time() - float(alt.get("ts", 0) or 0)
+            except (TypeError, ValueError):
+                # Korrupte ts (z. B. Text statt Zahl) darf den Daemon nicht
+                # werfen (Review 04.10., Paket B B3a): "seit Anbeginn" alt
+                # ansetzen — _lock_blockiert entscheidet dann allein am
+                # lebenden PID-Besitzer, sonst gilt der Lock als überholbar.
+                alter = float(time.time())
             alter_s = int(alter)
             blockiert, lebend = _lock_blockiert(alt, alter)
             if blockiert:

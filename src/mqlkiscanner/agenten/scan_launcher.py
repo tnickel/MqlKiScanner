@@ -39,6 +39,32 @@ def _scan_vermerken(modus: str) -> None:
     journal.steuerung_setzen(f"scan_{modus}_letzter", date.today().isoformat())
 
 
+def scan_versuche_heute(modus: str, tag: str | None = None) -> int:
+    """Autonome STARTVERSUCHE des Modus an diesem Tag (inkl. Fehler/Abbruch).
+
+    Review 04.10. (Paket B B2a): skipped/geprueft==0 setzen KEINE Erfolgs-
+    merker (F4/B8 bleibt absichtlich so) — ohne Deckel hätte ein
+    Dauerfehler (Login/Quellen offline) JEDEM Daemon-Takt einen vollen
+    Listen-Crawl + P2-Meldung ausgelöst. Der Scheduler begrenzt darüber.
+    Speicherformat "YYYY-MM-DD|n" (Steuerungswerte sind Strings)."""
+    roh = journal.steuerung_lesen().get(f"scan_{modus}_versuche") or ""
+    datum, _, n = roh.partition("|")
+    if datum != (tag or date.today().isoformat()):
+        return 0
+    try:
+        return int(n)
+    except ValueError:
+        return 0
+
+
+def _scan_versuch_zaehlen(modus: str) -> None:
+    """Einen autonomen Startversuch vermerken (nur im gehaltenen Lock —
+    Lock-Kollisionen mit GUI-/Daemon-Läufen verbrauchen keinen Versuch)."""
+    tag = date.today().isoformat()
+    journal.steuerung_setzen(f"scan_{modus}_versuche",
+                             f"{tag}|{scan_versuche_heute(modus, tag=tag) + 1}")
+
+
 def scan_monat_gestartet(modus: str, monat: str | None = None) -> bool:
     """Lief der Modus in diesem Monat bereits? (Full-Scan, einmal je Monat)"""
     return journal.steuerung_lesen().get(f"scan_{modus}_monat") == \
@@ -66,6 +92,7 @@ def starte_scan(modus: str, quelle: str = "daemon", log=print) -> dict:
     modus_name = "Teilscan (Gelb/Grün)" if modus in ("gelbgruen", "gelb_gruen") else "Full-Scan (Gesamtkatalog)"
     try:
         with lock.lauf_lock(config.DATA_DIR):
+            _scan_versuch_zaehlen(modus)
             ergebnis = _scan_innerhalb(modus, settings, lauf_id, log)
         resultat = ergebnis.get("resultat") or ergebnis["zusammenfassung"]
         # F4 (Fremd-Review 01.10.): Ein Login-Abbruch/leerer Scope ist KEIN
@@ -269,6 +296,24 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
     jobs = [r for r in ergebnisse
             if r.forensik_vorhanden and not r.fehler
             and getattr(r, "source_kind", "live") == "live"]
+    # Review 04.10. (Paket B B1a): Beim FULL-Scan zuerst basis-aktuelle
+    # Berichte aus der DB restaurieren (exakt wie die GUI, scan.py) —
+    # vorher rief der Launcher run_llm mit ALLEN Live-Ergebnissen und
+    # erzeugte 3 LLM-Berichte je Signal (bis ~200k Token/Lauf). Der
+    # Teilscan bleibt bewusst „alle Stufen neu" (Modus-Vertrag).
+    if modus == "full" and jobs:
+        restauriert = 0
+        for r in list(jobs):
+            try:
+                if pipeline.restore_current_reports(r, settings):
+                    jobs.remove(r)
+                    restauriert += 1
+            except Exception as exc:
+                log(f"  [ki] Bericht-Restore für #{r.id} fehlgeschlagen "
+                    f"({type(exc).__name__}) — wird neu erstellt.")
+        if restauriert:
+            log(f"  [ki] {restauriert} Signale mit basis-aktuellem Bericht "
+                "aus der DB restauriert (wie die GUI) — kein LLM-Aufruf.")
     berichte = 0
     if pipe.llm.has_key and jobs:
         journal.schritt_protokollieren(

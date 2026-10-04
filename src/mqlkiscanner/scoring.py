@@ -16,6 +16,8 @@ Regeln (AGENTS.md):
 """
 from __future__ import annotations
 
+import math
+
 DEFAULT_WEIGHTS: dict[str, float] = {
     "drawdown": 0.25,       # Drawdown-Historie (real + Plattform-EQ)
     "structure": 0.25,      # Strukturrisiko: SL? Grid? Martingale?
@@ -50,19 +52,33 @@ WEEKS_MAP = [(8, 9.0), (26, 7.0), (40, 5.5), (52, 4.5), (78, 3.0), (104, 2.5), (
 def _platform_float(wert, default=0.0) -> float:
     """Robust: Quellen/Plattform-Werte koennen als Strings mit deutschem
     Dezimalkomma kommen (realer Fall 04.10.: '9,10' aus dem MqlDownloader
-    warf die Forensik mit ValueError). Unparsebares wird zum Default —
-    harte Werte (Reko/Monitor/Trading-DD) stammen aus eigener Rechnung
-    und bleiben unberuehrt."""
+    warf die Forensik mit ValueError). Mit Punkt UND Komma entscheidet das
+    LETZTE Trennerzeichen den Dezimalpunkt ('1.403,03' und '1,403.03'
+    -> 1403.03; Review 04.10. A-P3). NaN/Infinity (Zahl ODER String)
+    werden zum Default — sie sind keine messbaren Werte und duerfen die
+    Schranke nicht vergiften (Orakel M27: max() mit NaN ist in Python
+    positionsabhaengig, Infinity sperrt immer). Unparsebares wird zum
+    Default — harte Werte (Reko/Monitor/Trading-DD) stammen aus eigener
+    Rechnung und bleiben unberuehrt."""
     if wert is None or isinstance(wert, bool):
         return default
     try:
-        return float(wert)
+        zahl = float(wert)
+        if math.isfinite(zahl):
+            return zahl
     except (TypeError, ValueError):
-        try:
-            return float(str(wert).strip().replace("\u2212", "-")
-                         .replace(" ", "").replace(",", "."))
-        except (TypeError, ValueError):
-            return default
+        pass
+    text = (str(wert).strip().replace("\u2212", "-")
+            .replace(" ", "").replace("\u00a0", ""))
+    try:
+        if "," in text and "." in text:
+            letzte = max(text.rfind(","), text.rfind("."))
+            text = (text[:letzte].replace(",", "").replace(".", "")
+                    + "." + text[letzte + 1:])
+        zahl = float(text.replace(",", "."))
+        return zahl if math.isfinite(zahl) else default
+    except (TypeError, ValueError):
+        return default
 
 
 def _trading_dd_for_risk(trading_dd: dict | None) -> float:

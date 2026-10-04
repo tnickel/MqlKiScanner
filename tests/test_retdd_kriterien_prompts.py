@@ -15,7 +15,8 @@ def test_retdd_prompt_und_default_gleiche_messbasis_und_harte_auswahl(kind):
     assert text.strip() == prompts.DEFAULTS[kind].strip()
     assert "{kriterien}" in text
     assert "ertrag_monat_geom_pct" in text and "max_drawdown_equity_pct" in text
-    assert "inklusive Floating aus Kursen/Monitor" in text
+    assert "inklusive Floating aus der eigenen Kurs-Rekonstruktion" in text
+    assert "Closing-Kurve" in text and "KEIN Nenner" in text
     assert "niemals Plattform-, Balance-" in text
     assert "oder Trading-DD geschlossener Trades" in text
     assert "NICHT retdd_monat mal zwoelf" in text

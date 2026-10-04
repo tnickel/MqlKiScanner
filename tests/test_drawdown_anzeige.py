@@ -11,9 +11,12 @@ from mqlkiscanner import db, pipeline
 from mqlkiscanner.analysis_version import FORENSICS_VERSION
 
 
+# Review 04.10. (Paket D): Der Monitor-Wert (TradeEqDrawdownPct) ist eine
+# Closing-Kurve — er bleibt Schranken-Kanal, taucht aber NICHT mehr als
+# "Max-Drawdown (gemessen)" auf; ohne Kurs-Messung bleibt die Spalte unbekannt.
 @pytest.mark.parametrize("kurse,monitor,erwartet", [
-    (None, None, None), (44.34, None, 44.34), (None, 46.65, 46.65),
-    (20.0, 35.0, 35.0), (0.0, None, 0.0),
+    (None, None, None), (44.34, None, 44.34), (None, 46.65, None),
+    (20.0, 35.0, 20.0), (0.0, None, 0.0),
 ])
 def test_equity_spalte_ersetzt_geschlossene_trades_nicht(kurse, monitor, erwartet):
     r = pipeline.ScanResult(

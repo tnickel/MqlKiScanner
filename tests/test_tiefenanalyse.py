@@ -75,7 +75,8 @@ def test_lauf_ruft_stufe2_mit_trades_und_speichert(monkeypatch):
             erstellt.append(self)
 
     monkeypatch.setattr(llm_runner.llm_client, "GlmClient", _Client)
-    monkeypatch.setattr(llm_runner, "load_export", lambda path: object())
+    monkeypatch.setattr(llm_runner, "load_export",
+                         lambda path, plattform_positions=None: object())
     monkeypatch.setattr(llm_runner, "build_trade_payload",
                         lambda parsed: {"meta": {"trades": 7}})
     r = pipeline.ScanResult(id=2385035, name="Macro Overlay FX", platform="MT5",

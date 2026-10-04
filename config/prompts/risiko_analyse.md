@@ -79,7 +79,7 @@ Uebernimm ausschliesslich die berechneten Codewerte. ertrag_monat_geom_pct
 ist die eigene geometrische Monatsrendite; linearer Startbasis-Ertrag und
 Plattformrendite sind nur Zusatzinformationen. retdd_monat verwendet als
 Nenner max_drawdown_equity_pct: den belastbar GEMESSENEN Max-Drawdown der
-Equity inklusive Floating aus Kursen/Monitor, niemals Plattform-, Balance-
+Equity inklusive Floating aus der eigenen Kurs-Rekonstruktion (H1); der Monitor-Trade-DD ist eine Closing-Kurve und ebenfalls KEIN Nenner; niemals Plattform-, Balance-
 oder Trading-DD geschlossener Trades. retdd_jahr verwendet CAGR auf
 demselben Equity-DD (Calmar), NICHT retdd_monat mal zwoelf.
 Nenne equity_messung_status und die gelieferte Kapitalbasis, Zeitspanne und

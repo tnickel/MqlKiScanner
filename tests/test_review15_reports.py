@@ -68,7 +68,9 @@ def test_real_scan_report_roundtrip_reuses_identical_facts(live_reports):
 def test_changed_csv_separates_old_recommendation_from_current_result_and_portfolio(live_reports):
     pipe, path, scan = live_reports
     first = scan()
-    assert first.stop_evidence == "direct" and first.ampel == "🟢"
+    # Review 04.10.: nur Monitor-Closing-DD als Equity-"Messung" -> kein
+    # RetDD -> kein Grün; SL-Neutralität: beide Scans dieselbe Ampel.
+    assert first.stop_evidence == "direct" and first.ampel == "🟡"
     pipe.run_llm([first], lambda _: None)
     old_text = first.gesamtbericht
     path.write_text(path.read_text(encoding="utf-8").replace(";1990;2060;", ";;2060;"),
@@ -76,7 +78,7 @@ def test_changed_csv_separates_old_recommendation_from_current_result_and_portfo
     changed = scan()
     # Nutzer-Regel 28.09.2026: fehlender SL ist neutral — Kandidat bleibt
     # möglich (Score/Ertrag entscheiden), auch ohne Orderbuch-SL.
-    assert changed.stop_evidence == "none" and changed.ampel == "🟢"
+    assert changed.stop_evidence == "none" and changed.ampel == "🟡"
     assert first.trades_sha256 != changed.trades_sha256
     assert not pipeline.restore_current_reports(changed, pipe.settings)
     assert not changed.gesamtbericht and not changed.kurzfassung

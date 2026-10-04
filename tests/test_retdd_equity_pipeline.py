@@ -41,10 +41,15 @@ def test_kein_geschlossener_oder_plattform_fallback_bei_fehlender_equity(dd):
     assert pipeline.ampel_for(result, {})[0] != "🟢"
 
 
-def test_monitor_eq_dd_zweitmessung_ist_nennermax():
+def test_monitor_eq_dd_ist_nur_schrankenkanal_nicht_nenner():
+    # Review 04.10.: Monitor-Closing-DD ist kein RetDD-Nenner (s. Paket D);
+    # Nenner bleibt die Kurs-Rekonstruktion (6 %) -> 12/6 = 2.0.
     result = _result(monitor_trade_eq_dd_pct=20.0)
-    assert result.to_row()["RetDD"] == .6
-    assert pipeline.ampel_for(result, {})[0] == "🟡"
+    assert result.to_row()["RetDD"] == 2.0
+    assert pipeline.ampel_for(result, {})[0] == "🟢"
+    # Die harte Schranke sieht den Monitor weiterhin als 5. Kanal:
+    result = _result(monitor_trade_eq_dd_pct=35.0)
+    assert pipeline.ampel_for(result, {})[0] == "🔴"
 
 
 def test_harte_schranke_bleibt_auch_bei_gutem_retdd_wirksam():
@@ -103,13 +108,16 @@ def test_kriterien_payload_nennt_settings_und_equity_retdd():
     assert "ertrag_monat_geom_pct" in text and "gemessener Max-Equity" in text
 
 
-@pytest.mark.parametrize("source", ["equity_dd_rekonstruiert_pct", "monitor_trade_eq_dd_pct"])
-def test_geaenderte_schranke_aktualisiert_auch_reine_eigenmessung(source):
+@pytest.mark.parametrize("source,erwartet30", [
+    ("equity_dd_rekonstruiert_pct", "🟢"),   # Kurse-Reko ist RetDD-Nenner
+    ("monitor_trade_eq_dd_pct", "🟡"),       # Review 04.10.: Monitor nur Schranke,
+])                                                  # ohne Kurse-Messung kein RetDD/Gruen
+def test_geaenderte_schranke_aktualisiert_auch_reine_eigenmessung(source, erwartet30):
     result = _result(dd_equity_pct=None, dd_balance_pct=None, trading_dd_pct=None,
                      ertrag_monat_geom_pct=30.0, equity_dd_rekonstruiert_pct=None)
     setattr(result, source, 25.0)
     assert pipeline.ampel_for(result, {"schranke_eq_dd_pct": 20})[0] == "🔴"
-    assert pipeline.ampel_for(result, {"schranke_eq_dd_pct": 30})[0] == "🟢"
+    assert pipeline.ampel_for(result, {"schranke_eq_dd_pct": 30})[0] == erwartet30
     assert not result.schranke_verletzt
 
 
@@ -159,8 +167,10 @@ def test_tradeserver_sync_liefert_aktuelle_auswahlgrenzen(monkeypatch):
 def test_equity_status_nennt_nur_tatsaechlich_verwendete_gueltige_quellen(invalid):
     result = _result(equity_dd_rekonstruiert_pct=invalid,
                      monitor_trade_eq_dd_pct=6)
-    assert result.to_row()["RetDD"] == 2
-    assert result.equity_messung_status == "Gemessen: Monitor"
+    # Review 04.10.: Ungueltige Kursmessung + Monitor-Closing-DD -> RetDD
+    # bleibt unbekannt; der Monitor taucht nie als Messquelle auf.
+    assert result.to_row()["RetDD"] is None
+    assert "Monitor" not in result.equity_messung_status
     result = _result(monitor_trade_eq_dd_pct=invalid)
     assert result.to_row()["RetDD"] == 2
     assert result.equity_messung_status == "Gemessen: Kurse (H1, virtuelle Trading-Equity)"

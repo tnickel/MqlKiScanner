@@ -384,13 +384,17 @@ def test_retdd_ohne_eigene_equity_loescht_alten_quotienten():
     assert "kein Ersatznenner" in zelle.detail
 
 
-def test_retdd_waehlt_hoechste_belastbare_floating_messung():
+def test_retdd_monitor_closing_dd_ist_kein_nenner():
+    # Review 04.10. (Paket D/F/G): TradeEqDrawdownPct ist bei allen
+    # JavaFX-Monitoren eine Closing-Kurve (hoechstens plus HEUTIGEM
+    # Floating-Endpunkt), keine historisch floating-inklusive Equity-
+    # Messung — Nenner bleibt ausschliesslich die Kurs-Rekonstruktion.
     r = _result(ertrag_monat_geom_pct=15.0, cagr_jahr_pct=120.0,
                 equity_dd_rekonstruiert_pct=10.0,
                 monitor_trade_eq_dd_pct=20.0, trading_dd_pct=1.0)
     zelle = _matrix(r)["retdd"]
-    assert zelle.ampel == GELB
-    assert r.retdd_monat == 0.75 and r.retdd_jahr == 6.0
+    assert zelle.ampel == GRUEN  # 15/10 = 1.5 >= 1.0 (Nenner Kurse 10 %)
+    assert r.retdd_monat == 1.5 and r.retdd_jahr == 12.0
     assert r.retdd_jahr != r.retdd_monat * 12
 
 

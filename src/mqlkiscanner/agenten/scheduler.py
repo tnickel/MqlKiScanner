@@ -155,7 +155,14 @@ def faellige_scans(jetzt: datetime, settings: dict) -> list[str]:
     """Autonome Scan-Anstöße (Phase E): Teilscan am konfigurierten Wochentag
     (Default Sonntag ab 12:00), Full-Scan am ersten Werktag des Monats
     (Tag fest, Uhrzeit konfigurierbar) — je einmal, mit Monats-/Tages-Merker
-    gegen Wiederholung."""
+    gegen Wiederholung.
+
+    Review 04.10. (Paket B B2a): Zusätzlich Versuchs-Deckel — fehlge-
+    schlagene/skipped Läufe setzen bewusst KEINE Erfolgs-Merker (F4/B8),
+    damit ein behobener Login am selben Tag nochmal laufen kann; ohne
+    Deckel hätte ein Dauerfehler aber JEDEM Takt einen vollen Listen-
+    Crawl + Postfach-Meldung abverlangt. Nach SCAN_VERSUCHE_PRO_TAG
+    Versuchen ist für diesen Modus heute Schluss."""
     from . import scan_launcher
     start = _start_minute(settings)
     minute = jetzt.hour * 60 + jetzt.minute
@@ -164,11 +171,15 @@ def faellige_scans(jetzt: datetime, settings: dict) -> list[str]:
     modi: list[str] = []
     teil_modus, teil_termin = job_termin(settings, "teilscan")
     if (_tag_passt(jetzt, teil_modus) and minute >= teil_termin
-            and not scan_launcher.scan_heute_gestartet("gelbgruen", tag=tag)):
+            and not scan_launcher.scan_heute_gestartet("gelbgruen", tag=tag)
+            and scan_launcher.scan_versuche_heute("gelbgruen", tag=tag)
+            < SCAN_VERSUCHE_PRO_TAG):
         modi.append("gelbgruen")
     _, full_termin = job_termin(settings, "fullscan")
     if (jetzt.day <= 7 and jetzt.weekday() < 5 and minute >= full_termin
-            and not scan_launcher.scan_monat_gestartet("full", monat=monat)):
+            and not scan_launcher.scan_monat_gestartet("full", monat=monat)
+            and scan_launcher.scan_versuche_heute("full", tag=tag)
+            < SCAN_VERSUCHE_PRO_TAG):
         modi.append("full")
     return modi
 
@@ -227,6 +238,8 @@ def tick(jetzt: datetime | None = None, log=print) -> dict:
 # und Guard („läuft noch“) gegeneinander entscheiden.
 _GUARD_MAX_S = {"betreuer": 2 * 3600}
 _GUARD_DEFAULT_MAX_S = 4 * 3600
+# Review 04.10. (B2a): Max. autonome Startversuche je Scan-Modus und Tag.
+SCAN_VERSUCHE_PRO_TAG = 3
 # M5/Qwen: Eine Skip-Meldung nur EINMAL je blockierendem Lauf bzw. Holder
 # (der Daemon tickt alle 30 s — sonst Postfach-/Log-Spam).
 _guard_skip_vermerkt: dict[str, str] = {}

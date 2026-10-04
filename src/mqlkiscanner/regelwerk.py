@@ -74,10 +74,10 @@ HARTREGELN: list[tuple[str, str]] = [
      "Kein bewiesener Stop-Loss (Orderbuch/Cluster) — seit 28.09.2026 "
      "NEUTRAL: kein Malus, keine Ampel-Sperre. Nur die KI-Analyse darf "
      "begründet abwerten; bewiesener SL bleibt Entlastung."),
-    ("🟡 Score, Ertrag oder RetDD reichen nicht",
-     "Risiko-Score ≥ 5, eigene geometrische Monatsrendite unter der "
-     "konfigurierten Mindestschwelle oder RetDD < 1,0 — nur Beobachtung, "
-     "keine Empfehlung. Ohne aktuelle geometrische Rendite oder belastbare "
+    ("🟡 Ertrag oder RetDD reichen nicht",
+     "Eigene geometrische Monatsrendite unter der konfigurierten "
+     "Mindestschwelle oder RetDD < 1,0 — nur Beobachtung, keine "
+     "Empfehlung. Ohne aktuelle geometrische Rendite oder belastbare "
      "Equity-Messung ebenfalls kein Grün. Linearer Ertrag, Plattform-, "
      "Balance- und Trading-DD ersetzen diese Nachweise nicht."),
 ]
@@ -113,8 +113,9 @@ def regelwerk_markdown(settings: dict | None = None) -> str:
     zeilen += [
         "",
         f"Aktuelle Grenzwerte: Schranke {schranke:g} % Drawdown, "
-        f"Mindest-Ertrag {min_ertrag:g} %/Monat (eigene geometrische Rendite), "
-        "RetDD mindestens 1,0 und Risiko-Score unter 5. Risiko vor Ertrag. "
+        f"Mindest-Ertrag {min_ertrag:g} %/Monat (eigene geometrische Rendite) "
+        "und RetDD mindestens 1,0. Risiko vor Ertrag. Der Risiko-Score ist "
+        "seit 04.10.2026 Information ohne Ampel-Sperre. "
         "Bewiesener Stop-Loss (Orderbuch/Cluster) entlastet; fehlender "
         "Nachweis ist neutral (bindende Regel 28.09.2026).",
         "",

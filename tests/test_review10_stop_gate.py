@@ -48,10 +48,14 @@ def write_history(tmp_path, evidence):
 # Nutzer-Regel 28.09.2026: Fehlender SL-Nachweis ist NEUTRAL — kein Stopp-
 # Gate mehr. Kandidat entscheidet Score/Ertrag/Schranke; das Urteil nennt
 # den Evidenz-Kontext (bewiesen/teilweise/neutral) nur noch informativ.
+# Review 04.10. (Paket D): Ohne valide Equity-Messung (hier nur Monitor-
+# Closing-DD) bleibt RetDD unbekannt → einheitlich GELB, kein Grün. Die
+# SL-Neutralität zeigt sich daran, dass ALLE Evidenz-Stufen dieselbe
+# Ampel liefern — genau das ist die Regel 28.09.2026.
 @pytest.mark.parametrize("evidence,expected,stichwort", [
-    ("none_orderbook", "🟢", "neutral"), ("none", "🟢", "neutral"),
-    ("partial", "🟢", "teilweise"),
-    ("direct", "🟢", "bewiesen"), ("cluster", "🟢", "belegt"),
+    ("none_orderbook", "🟡", "neutral"), ("none", "🟡", "neutral"),
+    ("partial", "🟡", "teilweise"),
+    ("direct", "🟡", "bewiesen"), ("cluster", "🟡", "belegt"),
 ])
 def test_real_history_stop_neutralitaet_survives_database_archive_and_llm_payload(
         tmp_path, monkeypatch, evidence, expected, stichwort):

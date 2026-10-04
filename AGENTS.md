@@ -837,6 +837,66 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   +2 Tests; volle Suite 1327 grün. Bestand braucht erneuten Scan, damit
   die Ampeln der Kandidaten auf Grün springen.
 
+- ✅ GESAMT-WORKSPACE-REVIEW (04.10. nachts, Nutzer-Auftrag „alle Phasen
+  ohne Stop, Fehler beheben, PDF-Endreport"; Bericht + Pakete A–I:
+  `doc/reviews/codereview_2026-10-04/`, PDF `report.pdf`): Alle 7 Projekte
+  geprüft (8 Pakete parallel + Gegenprüfung I + 22/22 Rechenorakel
+  M01–M27). **WICHTIGSTE BEFUNDE + BEHOBEN:**
+  (1) **Monitor-DD ist eine Closing-Kurve** — BEWEIS aus PelicanTrading
+  EquityKurve.java/ReportService.tradeDdAusTrades (Kurve nur aus
+  geschlossenen PnLs + GENAU EINEM heutigen Floating-Endpunkt; Robo ohne
+  jedes historische Floating, Yield-Fenster-Basis; Vantage/Zulu Closing-DD
+  auf rückgerechneter Basis). KONSEQUENZ UMGESETZT: `monitor_trade_eq_dd_pct`
+  bleibt 5. Kanal der harten Schranke (B1 unverändert, konservativ), ist
+  aber KEIN RetDD-Nenner und keine „Max-Drawdown"-Messquelle mehr
+  (pipeline._equity_messwerte/max_drawdown_equity_pct). Der Skip der
+  Kurs-Reko bei vorhandenem Monitor-Wert (29.09., „keine Doppelarbeit")
+  ist ENTFERNT — er beruhte auf der widerlegten Annahme, der Monitor messe
+  dieselbe Equity wie die H1-Reko. Quellen-Signale bekommen damit wieder
+  Kurs-Rekonstruktion; OHNE belastbare Kurs-Messung bleibt RetDD unbekannt
+  → kein Grün (HRC Algo/ImpulseNet kippen evtl. auf 🟡, bis ein Re-Scan mit
+  Terminal die Kurs-Messung liefert — regelkonform: „valide H1-/Monitor-
+  Messung", niemals Closing/Balance/Plattform als Nenner).
+  (2) **Dedup-Beweis überall**: portfolio_statistik (monatsrenditen/
+  effizienz_kennzahlen/statistik), llm_runner (beide load_export) und
+  _implizite_kapitalbasis reichen plattform_positions durch — vorher
+  rechneten RetDD/Portfolio/KI-Payload auf ROHEM Bestand, während die
+  Forensik deduped rechnete (THG-Fall: 27 % Duplikate).
+  (3) **Robo trades.csv-Vertragsbruch**: Profit-Spalte enthielt NETTO
+  zusätzlich zu echten Commission/Swap-Spalten → Scanner (net =
+  profit+commission+swap) zog Gebühren DOPPELT ab (real: −24.709 statt
+  −9.337 USD). Robo schreibt jetzt BRUTTO; Bestands-Re-Scan nötig (SHA
+  ändert sich erst nach Robo-Neustart/Neulieferung).
+  (4) **MqlDownloader-Löschfilter**: MPDD-/ExtraktionsFEHLER löschen keine
+  Originaldaten mehr (NaN-Sentinel statt 0.0-wie-schlecht; 7 delete-
+  Aufrufe aus DataExtractor-Fehlerpfaden entfernt) — Zeitbombe bei
+  DOM-Änderungen entschärft (C2b). C2a (Monats-Extraktion matcht DOM
+  nicht mehr, >50 % Signale Ertrag 0) bleibt OFFEN — braucht Live-Seite.
+  (5) **Autonomer Full-Scan**: restauriert basis-aktuelle KI-Berichte wie
+  die GUI (vorher 3 LLM-Calls je Signal, bis ~200k Token/Lauf; nur
+  modus=full, Teilscan bleibt „alle Stufen neu") + Scheduler-Versuchs-
+  deckel (3 autonome Startversuche je Modus/Tag gegen Endlos-Retry bei
+  Dauerfehler, F4/B8-Semantik erhalten).
+  (6) Kleinere Fixes: Zulu LLM-Systemtext (war LEER, Injektionsfläche;
+  Robo-Muster), Vantage 10402-Gebündelthinweis + TradesTotalAvailable/
+  Truncated in metrics (2000er-Kappung sichtbar), PelicanTrading trade_dd
+  null→Cache-Verwurf + „Berechnet"-Spalte, startall.bat/Scanner-start.bat
+  identitätsgeprüfte Prozessbeendigung (fremde Ports/Streamlit-Prozesse
+  werden NICHT mehr gekillt) + MqlDownloader-Start + REST-Ketten-
+  Bereitschaft je Port, Scan-Seite Portfolio-Anhang-Key (results→
+  scan_results), Lock-ts-robust, _platform_float Mischformate
+  („1.403,03"/„1,403.03") + NaN/Infinity→Default (Orakel M27), Score-
+  Gate-Resttexte entfernt, ertrag_monat_pct_forensik 365,2425/12.
+  (7) OFFEN (mit Lösungsweg im Report): C2a-DOM-Regex, Robo F6a (Yield-
+  Fenster ÷ Lebensalter) + F1b (Teil-Outs erst zum letzten OUT in der
+  Equity-Kurve), PWL E2a (running-Job-Endlosschleife — aktive Parallel-
+  Entwicklung, nur Report), B6a (PDF-Materialisierung je DB-Lesung),
+  H2a (REST-Bind 0.0.0.0 + Token-Default leer auf allen 5 Monitoren —
+  Nutzer-Entscheidung nötig, Heim-LAN-Aufstellung bewusst).
+  Suite nach Fixes: Scanner 1341 Tests grün (+10 neue), mvn: robo 129,
+  zulu 81, MqlDownloader 82, PelicanTrading 63, vantage 25. Bestand
+  braucht Re-Scan (Dedup-Konsistenz + Robo-Brutto + RetDD-Basis).
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

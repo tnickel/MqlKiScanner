@@ -174,7 +174,9 @@ def _ergebnis(sid, name, **kw):
                  ertrag_monat_pct_forensik=3.5, dd_equity_pct=0.78,
                  ertrag_monat_geom_pct=6.19, retdd_monat=99,
                  dd_balance_pct=None, trading_dd_pct=0.27,
-                 equity_dd_rekonstruiert_pct=None, monitor_trade_eq_dd_pct=6.19,
+                 # Review 04.10.: Monitor-Closing-DD ist kein Messwert mehr —
+                 # derselbe Wert als Kurs-Reko gesetzt, PDF-Zeile bleibt geprüft.
+                 equity_dd_rekonstruiert_pct=6.19, monitor_trade_eq_dd_pct=6.19,
                  abonnenten=1425, wochen=178, kapitalbasis_verwendet_usd=10000,
                  kapitalbasis_verwendet_quelle="implizit_aus_balance",
                  stop_nachweis="SL nicht übertragen — neutral",

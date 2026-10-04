@@ -102,9 +102,9 @@ KRITERIEN: list[Kriterium] = [
         "score", "Risiko-Score",
         "Aggregierte Engine-Bewertung 1–10 aus der Forensik-Batterie "
         "(kleiner = weniger erkannte Risiken, keine Wahrscheinlichkeit). "
-        "Gesamt-Ampel Grün verlangt Score < 5. Grün = < 5, gelb = 5 bis "
-        "unter 7, orange = ≥ 7, grau = ohne vollständige Forensik nicht "
-        "berechnet."),
+        "Informative Zelle — seit 04.10.2026 sperrt der Score den Grün-Weg "
+        "nicht mehr. Grün = < 5, gelb = 5 bis unter 7, orange = ≥ 7, "
+        "grau = ohne vollständige Forensik nicht berechnet."),
     Kriterium(
         "schock", "Schock vs. Konto",
         "Stress-Szenario, KEIN gemessener Verlust: Peak-Netto-Exposure im "
@@ -124,7 +124,9 @@ KRITERIEN: list[Kriterium] = [
         "Risiko allein genügt nicht, der Gewinn muss das eingegangene "
         "Risiko tragen. RetDD = eigene geometrische Monatsrendite ÷ "
         "gemessenen Max-Drawdown der Equity inklusive Floating (belastbare "
-        "Kurs- oder Monitor-Messung). Plattform-, Balance- und Trading-DD "
+        "Kurs-Messung, H1-Rekonstruktion — der Monitor-Trade-DD ist "
+        "bewiesen eine Closing-Kurve, Review 04.10.). Plattform-, Balance- "
+        "und Trading-DD "
         "aus geschlossenen Trades dienen niemals als Ersatznenner. Grün = "
         "ab 1,0; gelb = 0,5 bis unter 1,0; orange = darunter. RetDD ≥ 1,0 "
         "ist eine verbindliche Empfehlungsvoraussetzung. Grau = ohne eigene "
@@ -281,7 +283,8 @@ def _score_zelle(r) -> Zelle:
     if r.score < 7.0:
         return Zelle(GELB, f"Score {_num(r.score, 1)}",
                      f"Engine-Risiko-Score {_num(r.score, 1)} von 10 — "
-                     "Kandidaten-Schwelle 5 überschritten (kein Kandidat).")
+                     "über Beobachtungsniveau 5 (informativ, seit 04.10.2026 "
+                     "kein Ampel-Gate mehr).")
     return Zelle(ORANGE, f"Score {_num(r.score, 1)}",
                  f"Engine-Risiko-Score {_num(r.score, 1)} von 10 — "
                  "erheblich erhöhtes Risikoprofil.")

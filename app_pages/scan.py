@@ -1813,7 +1813,7 @@ if st.session_state.get("portfolio_bericht"):
         # die 🟢-Ergebnisse des Laufs liefern die vollständigen Berichte.
         render_portfolio_pdf_viewer(
             portfolio_result, key="scan_portfolio_pdf",
-            ergebnisse=[r for r in (st.session_state.get("results") or [])
+            ergebnisse=[r for r in (st.session_state.get("scan_results") or [])
                         if getattr(r, "ampel", "") == "🟢"
                         and getattr(r, "gesamtbericht", "")])
         st.markdown(urteile_farbig(st.session_state.portfolio_bericht),

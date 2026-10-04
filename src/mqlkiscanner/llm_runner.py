@@ -90,7 +90,9 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             n_trades = 0
             if result.trades_path:
                 try:
-                    payload = build_trade_payload(load_export(result.trades_path))
+                    payload = build_trade_payload(load_export(
+                        result.trades_path,
+                        plattform_positions=getattr(result, 'plattform_trades', None)))
                 except (OSError, ValueError, csv.Error) as exc:
                     raise llm_client.LlmError(
                         f"Trade-Export nicht lesbar: {type(exc).__name__}: {exc}") from exc
@@ -240,7 +242,9 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
             "Kein GLM-Key gesetzt (Admin-Bereich → Zugänge). "
             "Die Erweiterte KI-Analyse ist optional.")
     try:
-        payload = build_trade_payload(load_export(result.trades_path))
+        payload = build_trade_payload(load_export(
+                        result.trades_path,
+                        plattform_positions=getattr(result, 'plattform_trades', None)))
     except (OSError, ValueError, csv.Error) as exc:
         raise llm_client.LlmError(
             f"Trade-Export nicht lesbar: {type(exc).__name__}: {exc}") from exc

@@ -283,9 +283,12 @@ def test_monitor_trade_eq_dd_wird_durchgereicht_und_gelandet(monkeypatch):
     import json as _json
     forensik_json = _json.loads(pipeline._forensik_json(res))
     assert forensik_json["monitor_trade_eq_dd_pct"] == 6.46
-    # Monitor liefert den EQ-DD → keine Kursdaten-Rekonstruktion für dieses
-    # Signal (keine Doppelarbeit am selben Signal; Nutzer-Wunsch 29.09.)
-    assert kursanbieter_angefragt == []
+    # Review 04.10. (Paket D): TradeEqDrawdownPct ist eine Closing-Kurve
+    # (plus max. heutigem Floating) — der Skip der Kurs-Rekonstruktion vom
+    # 29.09. beruhte auf der widerlegten Annahme gleicher Messung. Die
+    # Kurs-Reko läuft jetzt ZUSÄTZLICH (einziger valider RetDD-Nenner);
+    # der Monitor bleibt Kanal der harten Schranke.
+    assert kursanbieter_angefragt == [1]
     # Unabhängige Kontrolle: Der Wert darf die Schranke NICHT kippen —
     # allein die eigenen Messungen (EQ-DD 8 %, Trading-DD aus MINI_CSV)
     # zählen (Engine-Bindung).

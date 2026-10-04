@@ -58,7 +58,9 @@ KAPITALBASIS_QUELLE_IMPLIZIT = "implizit_aus_balance"
 
 
 def _implizite_kapitalbasis(balance, trade_pfad: str,
-                            log: LogCb | None = None) -> float | None:
+                            log: LogCb | None = None,
+                            plattform_positions: float | None = None
+                            ) -> float | None:
     """Startkapital = Web-Balance − Σ Trade-Netto (nur positive Ergebnisse).
 
     Keine Messung, aber eine belegte Ableitung aus zwei Plattformwerten —
@@ -73,7 +75,8 @@ def _implizite_kapitalbasis(balance, trade_pfad: str,
         return None
     try:
         from .parser import load_export
-        parsed = load_export(trade_pfad)
+        parsed = load_export(trade_pfad,
+                             plattform_positions=plattform_positions)
         netto = sum(t.net for t in parsed.trades)
     except Exception as exc:  # grobe Schaetzung darf den Lauf nie brechen
         if log:
@@ -274,11 +277,17 @@ class ScanResult:
         return "GMT unbelegt"
 
     def _equity_messwerte(self) -> dict[str, float]:
-        """Identische gültige Quellen für den Maximalwert und dessen Status."""
+        """Identische gültige Quellen für den Maximalwert und dessen Status.
+
+        Review 04.10. (Paket D/F/G): Der Monitor-Wert (TradeEqDrawdownPct)
+        ist bei ALLEN vier JavaFX-Monitoren eine Closing-Kurve (max. plus
+        aktueller Floating-Endpunkt), KEINE historisch floating-inklusive
+        Equity-Messung — er bleibt Kanal der harten Schranke (B1), darf
+        aber Nenner von RetDD/„Max-Drawdown" nicht mehr sein.
+        """
         kurse = None if self.forensik_stale else self.equity_dd_rekonstruiert_pct
-        quellen = {"Kurse (H1, virtuelle Trading-Equity)": kurse,
-                   "Monitor": self.monitor_trade_eq_dd_pct}
-        return {quelle: float(wert) for quelle, wert in quellen.items()
+        quellen = {"Kurse (H1, virtuelle Trading-Equity)": kurse}
+        return {quelle: wert for quelle, wert in quellen.items()
                 if isinstance(wert, (int, float)) and not isinstance(wert, bool)
                 and math.isfinite(wert) and wert >= 0}
 
@@ -286,8 +295,11 @@ class ScanResult:
     def max_drawdown_equity_pct(self) -> float | None:
         """Gemessene Equity inklusive Floating; fehlend bleibt unbekannt.
 
-        Plattformangaben und geschlossene Trades ersetzen keine Equity-
-        Messung. Der Kurswert ist nur bei verlässlicher Rekonstruktion gesetzt.
+        Einzig gültige Quelle ist die eigene Kurs-Rekonstruktion (H1,
+        verlässlich). Plattformangaben, geschlossene Trades und die
+        Monitor-Closing-Kurve ersetzen keine Equity-Messung (Regel 03.10.:
+        NIEMALS geschlossene Trades, Balance-DD oder Plattform-Selbstauskunft
+        als RetDD-Nenner; Monitor seit Review 04.10. ebenso).
         """
         return max(self._equity_messwerte().values(), default=None)
 
@@ -1399,7 +1411,8 @@ class ScanPipeline:
                 kapitalbasis_quelle = "signalseite_initial_deposit"
                 if kapitalbasis is None:
                     implizit = _implizite_kapitalbasis(
-                        stats.get("balance_usd"), path, log)
+                        stats.get("balance_usd"), path, log,
+                        plattform_positions=stats.get("trades"))
                     if implizit is not None:
                         kapitalbasis = implizit
                         kapitalbasis_quelle = KAPITALBASIS_QUELLE_IMPLIZIT
@@ -1409,15 +1422,17 @@ class ScanPipeline:
                         kapitalbasis = virtuell
                         kapitalbasis_quelle = KAPITALBASIS_QUELLE_VIRTUELL
                 if res.monitor_trade_eq_dd_pct is not None:
-                    # Datenquellen-Monitor hat den EQ-DD bereits aus der
-                    # vollen Trade-Kurve gemessen — die Kursdaten-Rekonstruktion
-                    # (Terminal, H1-Bars, Auto-GMT) wäre Doppelarbeit am selben
-                    # Signal. Der Lazy-Anbieter-Start bleibt für MQL5-Signale
-                    # dieses Laufs unangetastet.
-                    log(f"Equity-Rekonstruktion übersprungen: Datenquellen-"
-                        f"Monitor liefert Trade-EQ-DD "
-                        f"{res.monitor_trade_eq_dd_pct} %.")
-                    kursanbieter = None
+                    # Review 04.10. (Paket D): TradeEqDrawdownPct ist eine
+                    # Closing-Kurve (plus höchstens HEUTIGEM Floating-Endpunkt),
+                    # keine historisch floating-inklusive Equity-Messung. Die
+                    # Kursdaten-Rekonstruktion läuft deshalb auch bei Quellen-
+                    # Signalen — sie ist der EINZIGE valide RetDD-Nenner; der
+                    # Monitor-Wert bleibt zusätzlicher Kanal der harten Schranke.
+                    log(f"Datenquellen-Monitor liefert Trade-EQ-DD "
+                        f"{res.monitor_trade_eq_dd_pct} % (Closing-Kurve — "
+                        "nur Schranken-Kanal, kein RetDD-Nenner); "
+                        "Kurs-Rekonstruktion läuft zusätzlich.")
+                    kursanbieter = self._kursanbieter_fuer(log)
                 else:
                     kursanbieter = self._kursanbieter_fuer(log)
                 # Beweiswert für doppelte Lieferungen: Signalseiten-Angabe
@@ -1537,7 +1552,9 @@ class ScanPipeline:
                 span_wochen = float(st.get("span_weeks") or 0)
                 if (netto_gesamt is not None and startkapital
                         and startkapital > 0 and span_wochen > 0):
-                    monate = span_wochen * 7.0 / 30.44
+                    # Gleiche Monatsdefinition wie effizienz_kennzahlen
+                    # (365,2425/12 statt gerundet 30,44 — Review 04.10. A3).
+                    monate = span_wochen * 7.0 / portfolio_statistik.MONAT_TAGE
                     res.ertrag_monat_pct_forensik = round(
                         100.0 * float(netto_gesamt) / float(startkapital)
                         / monate, 2)
@@ -1548,7 +1565,8 @@ class ScanPipeline:
                 # Die konservative harte Schranke bleibt davon unabhängig.
                 dd_max = res.max_drawdown_equity_pct
                 eff = portfolio_statistik.effizienz_kennzahlen(
-                    res.trades_path, startkapital, dd_max)
+                    res.trades_path, startkapital, dd_max,
+                    plattform_positions=res.plattform_trades)
                 if eff:
                     res.effizienz_befund = eff
                     res.ertrag_monat_geom_pct = eff["ertrag_monat_geom_pct"]
@@ -1965,7 +1983,8 @@ class ScanPipeline:
             r.kapitalbasis_verwendet_usd = fx["drawdown"].get("startkapital")
             r.kapitalbasis_verwendet_quelle = fx["drawdown"].get("startkapital_quelle") or ""
             eff = portfolio_statistik.effizienz_kennzahlen(
-                path, r.kapitalbasis_verwendet_usd, r.max_drawdown_equity_pct)
+                path, r.kapitalbasis_verwendet_usd, r.max_drawdown_equity_pct,
+                plattform_positions=st.get("trades"))
             if eff:
                 r.ertrag_monat_geom_pct = eff["ertrag_monat_geom_pct"]
                 r.cagr_jahr_pct = eff["cagr_jahr_pct"]

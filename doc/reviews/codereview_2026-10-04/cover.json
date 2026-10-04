@@ -1,0 +1,6 @@
+{
+  "kicker": "SIGNALDOWNLOADER - CODEREVIEW 04.10.2026",
+  "hero": "Endreport",
+  "summary": "Autonomes Vollreview aller sieben Projekte: 8 Pruefpaletten, unabhaengige Gegenpruefung, 22 Rechenorakel. 4 P0- und 13 P1-Befunde, alle P0 und 9 P1 behoben und getestet.",
+  "meta": "04. Oktober 2026 - Bericht: doc/reviews/codereview_2026-10-04/ - Suite: 1341 pytest gruen, mvn 6/6"
+}
