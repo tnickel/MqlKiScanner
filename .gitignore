@@ -60,3 +60,4 @@ data/scan_fortschritt.json
 data/*.lock
 data/auswahl_begruendung.json
 tmp/
+doc/reviews/**/_seiten/
