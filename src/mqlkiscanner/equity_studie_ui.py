@@ -180,7 +180,7 @@ def _kennzahlen_karten(daten: dict, schranke: float) -> None:
     pct = k.get("equity_dd_pct")
     with st.container(horizontal=True):
         st.metric(
-            "Max-Drawdown (H1, virtuelle Equity)",
+            "Max-Drawdown (H1, reale Kontokurve)",
             f"{pct:.1f} %" if pct is not None else "—",
             # Zeitraum des Maximalrückfalls nennen (Nutzer-Fall ATong
             # 04.10.: 64,9 % stammte aus Aug/Sep 2021 — ohne Datum wirkte
@@ -643,7 +643,8 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
         "Equity = Startkapital + realisiertes Netto + Summe des offenen PnL "
         "aller Positionen im Export. Die Kurve behält Gewinne rechnerisch "
         "im Konto; spätere Ein- und Auszahlungen sind nicht enthalten. "
-        "Damit misst sie virtuelle Trading-Equity. Der tatsächliche "
+        "Damit misst sie die reale Kontokurve inkl. Ein-/Auszahlungen "
+        "(Auszahlungen erzeugen keinen Drawdown). Der tatsächliche "
         "Konto-Equity-DD hat bei Kontobewegungen eine andere Bezugsbasis.")
     st.caption(
         "Max-Drawdown dieser Kurve = Rückgang vom bisherigen Equity-Höchststand. "

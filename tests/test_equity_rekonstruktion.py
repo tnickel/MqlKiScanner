@@ -395,3 +395,57 @@ def test_gleiche_stunde_trades_crashen_die_reko_nicht():
     erg = er.rekonstruiere(parsed, fake, startkapital=10_000.0)
     assert erg["status"] == "ok", erg
     assert erg["verlaesslich"] is True
+
+
+# ----------------- Reale Kontokurve: Flows in der Kurs-DD (Nutzer 05.10.) --
+
+def _flache_bars(start, stunden, basis=2000.0, dip_stunde=None, dip=1990.0):
+    bars = []
+    for i in range(stunden):
+        t = start + dt.timedelta(hours=i)
+        epoch = int(t.replace(tzinfo=dt.timezone.utc).timestamp()) // 3600 * 3600
+        close = dip if (dip_stunde is not None and i == dip_stunde) else basis
+        bars.append({"time": epoch, "open": close, "high": close + 0.4,
+                     "low": close - 0.4, "close": close})
+    return bars
+
+
+def test_einzahlung_hebt_kurve_dd_zaehlt_gegen_gestiegenes_konto():
+    """Einzahlung +50k zur Mitte, floating -990 im Dip: Der DD zaehlt gegen
+    das GESTIEGENE Konto (1,65 % statt 9,9 % — Basis 60k, nicht 10k). Der
+    Betreiber vergroessert nach Einzahlung seine Lots; genau dieses
+    Risiko soll die Messung zeigen (Nutzer-Regel 05.10.)."""
+    start = dt.datetime(2026, 1, 1)
+    bars = _flache_bars(start, 24, dip_stunde=10)
+    trades = [_trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+                     start + dt.timedelta(hours=22), 1999.9, 2000.0,
+                     lots=1.0, pnl=0.0)]
+    einzahlung = SimpleNamespace(time=start + dt.timedelta(hours=5),
+                                 amount=50_000.0)
+    parsed = SimpleNamespace(trades=trades, balances=[einzahlung], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}),
+                           startkapital=10_000.0, gmt_offset_h=0)
+    assert erg["status"] == "ok", erg
+    assert erg["end_equity_usd"] == 60_000.0     # Flow gebucht
+    assert erg["equity_dd_pct"] == 1.67          # 1000 / 60.010 (nicht 9,9 % auf 10k)
+    assert "reale Kontokurve" in erg["kapitalfluesse"]
+
+
+def test_auszahlung_erzeugt_keinen_drawdown_in_der_kurs_dd():
+    """Auszahlung -8k nach +2k Gewinn: Peak wird mitgesenkt — kein Schein-
+    Drawdown aus Geld, das das Konto verlaesst (12k -> 4k ohne Anpassung
+    waeren 66 %!)."""
+    start = dt.datetime(2026, 1, 1)
+    bars = _flache_bars(start, 24)
+    trades = [_trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+                     start + dt.timedelta(hours=6), 1999.9, 2000.0,
+                     lots=1.0, pnl=2_000.0)]
+    auszahlung = SimpleNamespace(time=start + dt.timedelta(hours=8),
+                                 amount=-8_000.0)
+    parsed = SimpleNamespace(trades=trades, balances=[auszahlung], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}),
+                           startkapital=10_000.0, gmt_offset_h=0)
+    assert erg["status"] == "ok", erg
+    assert erg["end_equity_usd"] == 4_000.0       # 10k + 2k Gewinn - 8k Auszahlung
+    assert erg["equity_dd_pct"] == 0.0           # Peak-Anpassung greift
+    assert "Auszahlungen erzeugen keinen Drawdown" in erg["kapitalfluesse"]

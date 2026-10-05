@@ -1128,6 +1128,33 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Bestands-Re-Scan fällig; die 30-%-Schranke greift für LadyTrader1
   vermutlich erstmals richtig.**
 
+- ✅ MAX-DD AUF DER REALEN KONTO KURVE — Flows bleiben DRIN (Nutzer-Regel
+  05.10.2026, ersetzt die kapitalflussneutrale DD-Hauptmessung und B3):
+  „Wenn er mehr Geld einzahlt, geht die Lotsize hoch und auf meinem
+  kopierten Account werden die Trades größer, also auch der Drawdown
+  höher — wir dürfen die Ein-/Auszahlungen nicht rausrechnen."
+  UMSETZUNG: (1) drawdown.run: trading_dd ist jetzt die REALE Kontokurve
+  (Trades + Balance-Zeilen, chronologisch) — Einzahlungen heben Kurve und
+  Peak, AUSZAHLUNGEN erzeugen KEINEN Drawdown (Peak wird um den Betrag
+  gesenkt, nie unter den Stand; Hochwassermark-Methode). Alte Kurve als
+  trading_dd_virtuell (Diagnostik); Feld kurve: real_mit_flows |
+  virtuell_ohne_flows (ohne Balance-Zeilen identisch zu früher — kein
+  Verhaltensbruch für MT5-/Quellen-Exporte). (2) equity_rekonstruktion +
+  equity_studie: Kurs-Kurve reitet auf realer Kontokurve (Flows bis t im
+  Punktwert; Auszahlungs-Peak-Anpassung in der DD-Schleife; Rest-Flows
+  NACH letztem Trade als finaler Punkt gebucht). (3) KAPITALBASIS-KASKADE
+  neu: CSV-Einzahlungen → Signalseite Initial Deposit → 10.000 USD
+  virtuell (markiert). IMPLIZITE Basis (Web-Balance − Netto, B3) ENTFERNT
+  — zählte Flows als Startkapital (LadyTrader1: 41.577 statt 9.000,
+  Faktor 4,6). exposure.py buchte Flows bereits. (4) FORENSICS_VERSION 12
+  → Bestand neu scannen. (5) Prompts (Datei+Default, B12-Sync),
+  Ampel-/UI-/Hilfe-Texte, verify_engine-Anker neu kalibriert (SpikeMT4
+  Trading-DD % 4,6 → 8,1 — deckt sich jetzt mit Web „By Balance" 8,11 %!;
+  KiraCat 7,9 → 7,08). BEWEIS LadyTrader1 (Ende-zu-Ende, simulierte neue
+  Robo-CSV): Kurs-Studie auf realer Kurve = 43,69 % vs. Website 43 % —
+  Plattform-Deckung. Volle Suite 1372 Tests grün (+8 neue Flow-Tests;
+  B3-Tests durch Regel-Dokumentation ersetzt).
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

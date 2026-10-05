@@ -101,4 +101,4 @@ def test_intrabar_tief_ist_kein_belegter_h1_maximaldrawdown():
     assert result["trades_ohne_h1_floating_messpunkt"] == 1
     assert "keine Intrabar-Extrema" in result["raster"]
     assert "aktuell offene fehlen" in result["positionsbasis"]
-    assert "spaetere Ein-/Auszahlungen nicht eingerechnet" in result["kapitalfluesse"]
+    assert "keine Kontobewegungen im Export" in result["kapitalfluesse"]

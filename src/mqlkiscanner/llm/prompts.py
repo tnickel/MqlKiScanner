@@ -243,8 +243,11 @@ Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
    ggf. monitor_trade_eq_dd_pct mit ihren unterschiedlichen Messgrundlagen
    gegenueber. Numerische Gleichwertigkeit ist NUR bei gleicher Kapitalbasis,
    gleichem Zeitraum und belegter Datenabdeckung gegeben. Beachte
-   equity_rekonstruktion_methodik: virtuelle Trading-Equity behaelt Gewinne
-   rechnerisch im Konto, spaetere Ein-/Auszahlungen fehlen; H1-Schlusskurse
+   equity_rekonstruktion_methodik: Die Kurs-Kurve reitet auf der REALEN
+   Kontokurve — Ein-/Auszahlungen bleiben eingerechnet (Einzahlung heisst:
+   Betreiber vergroessert Lots, Drawdown waechst), Auszahlungen erzeugen
+   KEINEN Drawdown (Peak wird mitgesenkt). Ohne Kontobewegungs-Zeilen im
+   Export bleibt es eine virtuelle Kurve (markiert). H1-Schlusskurse
    am Bar-Ende messen keine Intrabar-Extrema, aktuell offene Positionen
    fehlen im Historien-Export. Auch der Monitor kann eine eigene Basis nutzen.
    Bei unterschiedlicher oder ungeklärter Grundlage benenne die gelieferten
@@ -389,7 +392,7 @@ Danach Abschnitte mit ## -Ueberschriften:
    equity_dd_rekonstruiert_pct und ggf. monitor_trade_eq_dd_pct gegenueber.
    Direkter Zahlenvergleich NUR bei gleicher Kapitalbasis, gleichem Zeitraum
    und belegter Datenabdeckung. Beachte equity_rekonstruktion_methodik:
-   virtuelle Trading-Equity ohne spaetere Ein-/Auszahlungen, H1-Schlusskurse
+   reale Kontokurve inkl. Ein-/Auszahlungen (Auszahlungen kein Drawdown), H1-Schlusskurse
    am Bar-Ende ohne Intrabar-Extrema und ohne aktuell offene Exportpositionen;
    der Monitor kann ebenfalls eine eigene Basis verwenden. Bei ungleicher
    oder ungeklärter Grundlage benenne Zahlen und Methodik als Abweichung.
@@ -604,7 +607,7 @@ Danach Abschnitte mit ## -Ueberschriften:
    Zahlen (Trading-DD, Reko-EQ-DD aus Kursen falls vorhanden neben dem gemeldeten EQ-DD, ggf. monitor_trade_eq_dd_pct als Monitor-Zweitmessung, Schockszenario, Stop-Nachweis, Ertrag/Monat).
    Direkter Drawdown-Zahlenvergleich NUR bei gleicher Kapitalbasis, gleichem
    Zeitraum und belegter Datenabdeckung. Beachte equity_rekonstruktion_methodik:
-   virtuelle Trading-Equity ohne spaetere Ein-/Auszahlungen, H1-Schlusskurse
+   reale Kontokurve inkl. Ein-/Auszahlungen (Auszahlungen kein Drawdown), H1-Schlusskurse
    am Bar-Ende ohne Intrabar-Extrema und ohne aktuell offene Exportpositionen;
    der Monitor kann eine eigene Basis nutzen. Bei ungleicher oder ungeklärter
    Grundlage nenne Zahlen und Methodik als Abweichung. Aus einem hoeheren

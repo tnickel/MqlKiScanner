@@ -370,6 +370,17 @@ def studie(parsed, kurse, startkapital: float,
     schliessungen = sorted(
         ((_epoch(t.close_time) + _shift(t), t.net) for t in trades),
         key=lambda x: x[0])
+    # Nutzer-Regel 05.10.2026: reale Kontokurve — Kontobewegungen NACH dem
+    # ersten Trade bleiben in der Kurve (Einzahlung => Lots wachsen => DD
+    # wächst). Auszahlungen senken den Peak (kein Drawdown). Flows vor dem
+    # ersten Trade stecken im Startkapital (drawdown.run). Konto-Ereignisse
+    # haben kein Symbol — Median-Versatz genügt (Stundengenauigkeit).
+    erste_open_epoch = min(_epoch(t.open_time) + _shift(t) for t in trades)
+    flows_sort = sorted(
+        ((_epoch(b.time) + median_offset, float(b.amount))
+         for b in getattr(parsed, "balances", [])
+         if _epoch(b.time) + median_offset > erste_open_epoch),
+        key=lambda f: f[0])
     offen_sort = sorted(
         ((_epoch(t.open_time) + _shift(t),
           _epoch(t.close_time) + _shift(t), t) for t in trades),
@@ -409,6 +420,8 @@ def studie(parsed, kurse, startkapital: float,
     realisiert = 0.0
     schliess_idx = 0
     offen_idx = 0
+    flow_idx = 0
+    flow_delta_sum = 0.0
     aktiv: list = []
     punkte_mit_kurs = 0
     punkte_ohne_kurs = 0
@@ -454,6 +467,11 @@ def studie(parsed, kurse, startkapital: float,
         while schliess_idx < len(schliessungen) and schliessungen[schliess_idx][0] <= punkt:
             realisiert += schliessungen[schliess_idx][1]
             schliess_idx += 1
+        flow_delta = 0.0
+        while flow_idx < len(flows_sort) and flows_sort[flow_idx][0] <= punkt:
+            flow_delta += flows_sort[flow_idx][1]
+            flow_idx += 1
+        flow_delta_sum += flow_delta
         while offen_idx < len(offen_sort) and offen_sort[offen_idx][0] < punkt:
             aktiv.append((offen_sort[offen_idx][1], offen_sort[offen_idx][2]))
             offen_idx += 1
@@ -491,14 +509,32 @@ def studie(parsed, kurse, startkapital: float,
                 punkte_ohne_kurs += 1
         punkte.append({
             "t": punkt - median_offset,          # Anzeige im Broker-Raum der Trades
-            "equity": basis + realisiert + floating if kurs_da else None,
-            "realisiert": basis + realisiert,    # braucht keine Kurse — immer da
+            "equity": basis + realisiert + flow_delta_sum + floating if kurs_da else None,
+            "realisiert": basis + realisiert + flow_delta_sum,    # braucht keine Kurse — immer da
             "floating": floating if kurs_da else None,
             "messpunkt": kurs_da,
+            "flow_delta": flow_delta,
         })
         if not aktiv and schliess_idx >= len(schliessungen) \
                 and offen_idx >= len(offen_sort):
             break
+
+    # Kontobewegungen NACH dem letzten Trade-Ende liegen außerhalb des
+    # Rasters — als finalen Punkt buchen (Nutzer-Regel 05.10.: reale
+    # Kontokurve komplett, auch hinter dem letzten Trade).
+    if flow_idx < len(flows_sort):
+        rest_flows = math.fsum(b for _t, b in flows_sort[flow_idx:])
+        letzter = punkte[-1]
+        punkte.append({
+            "t": flows_sort[-1][0] - median_offset,
+            "equity": letzter["realisiert"] + rest_flows,
+            "realisiert": letzter["realisiert"] + rest_flows,
+            "floating": 0.0,
+            "messpunkt": True,
+            "flow_delta": rest_flows,
+        })
+        flow_delta_sum += rest_flows
+        flow_idx = len(flows_sort)
 
     _p(0.92, "Kennzahlen ableiten …")
     if any(p["messpunkt"] and not math.isfinite(p["equity"]) for p in punkte):
@@ -521,6 +557,11 @@ def studie(parsed, kurse, startkapital: float,
         if not p["messpunkt"]:
             continue
         wert = p["equity"]
+        # Nutzer-Regel 05.10.2026: Auszahlungen sind keine Verluste — Peak
+        # um den Auszahlungsbetrag senken (nie unter den Stand), bevor der
+        # Rueckfall gezaehlt wird. Einzahlungen heben Kurve und Peak.
+        if p.get("flow_delta", 0.0) < 0:
+            hoch = max(wert, hoch + p["flow_delta"]) if hoch is not None else wert
         if hoch is None or wert > hoch:
             hoch = wert
             hoch_t = p["t"]
@@ -607,9 +648,15 @@ def studie(parsed, kurse, startkapital: float,
         "symbole_ohne_kurse": ohne_kurse,
         "symbole_ohne_kontrakt": ohne_kontrakt,
         "ueberdeckung": ueberdeckung_je_symbol(trades, bars_je_symbol, offsets),
-        "methodik": "virtuelle Trading-Equity: Startkapital + alle realisierten Nettoergebnisse + Floating",
+        "methodik": ("reale Kontokurve: Startkapital + realisierte Nettoergebnisse "
+                     "+ Ein-/Auszahlungen + Floating (H1-Schlusskurse)"
+                     if flows_sort else
+                     "virtuelle Trading-Equity: Startkapital + alle realisierten Nettoergebnisse + Floating"),
         "raster": "H1-Schlusskurse am Bar-Ende; keine Intrabar-Extrema",
-        "kapitalfluesse": "spaetere Ein-/Auszahlungen nicht eingerechnet",
+        "kapitalfluesse": ("Einzahlungen heben die Kurve (Betreiber erhöht Lots), "
+                           "Auszahlungen erzeugen KEINEN Drawdown (Peak-Anpassung)"
+                           if flows_sort else
+                           "spaetere Ein-/Auszahlungen nicht eingerechnet"),
         "positionsbasis": "geschlossene Exportpositionen; aktuell offene fehlen",
         "konto_studie": konto_diagnostik(
             parsed, punkte, bars_je_symbol, offsets, basis, broker=broker,

@@ -115,7 +115,7 @@ Danach Abschnitte mit ## -Ueberschriften:
    equity_dd_rekonstruiert_pct und ggf. monitor_trade_eq_dd_pct gegenueber.
    Direkter Zahlenvergleich NUR bei gleicher Kapitalbasis, gleichem Zeitraum
    und belegter Datenabdeckung. Beachte equity_rekonstruktion_methodik:
-   virtuelle Trading-Equity ohne spaetere Ein-/Auszahlungen, H1-Schlusskurse
+   reale Kontokurve inkl. Ein-/Auszahlungen (Auszahlungen kein Drawdown), H1-Schlusskurse
    am Bar-Ende ohne Intrabar-Extrema und ohne aktuell offene Exportpositionen;
    der Monitor kann ebenfalls eine eigene Basis verwenden. Bei ungleicher
    oder ungeklärter Grundlage benenne Zahlen und Methodik als Abweichung.

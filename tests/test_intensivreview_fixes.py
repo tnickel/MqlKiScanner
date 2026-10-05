@@ -146,48 +146,37 @@ def test_b2_ohne_eigene_geometrische_rendite_kein_plattform_fallback():
     assert ampel == "🟡"
 
 
-# --------------------------------------------------- B3 implizite Kapitalbasis
+# ------------------------------------- B3 ENTFALLEN (Nutzer-Regel 05.10.2026)
+# Die implizite Kapitalbasis (Web-Balance − Σ Trade-Netto) ist seit der
+# Flow-inklusive-Kontokurve mathematisch falsch: Sie zählt Ein-/Auszahlungen
+# als Startkapital (LadyTrader1: 41.577 statt echter 9.000 USD, Faktor 4,6).
+# Kaskade jetzt: CSV-Einzahlungen → Signalseite Initial Deposit → 10.000 USD
+# virtuell (markiert). Diese Tests dokumentierten das ENTFERNTE Verhalten.
 
-def test_b3_implizite_basis_bevorzugt_vor_virtual(tmp_path, monkeypatch):
-    """Web-Balance 998 USD, Trade-Netto +568 USD → implizite Basis 430 USD
-    statt starrer 10.000 (Fall SafeGold; DD-% danach ~10× höher)."""
+def test_b3_nachfolger_nur_balance_ergibt_keine_implizite_basis(tmp_path):
+    """Web-Balance allein ist KEINE Startkapital-Angabe mehr (Regel 05.10.):
+    die Kaskade fällt durch auf die virtuelle Annahme."""
     csv_pfad = tmp_path / "trades.csv"
     csv_pfad.write_text(
         "Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n"
         "2026.01.05 10:00:00;Buy;0.10;XAUUSD;4000.00;0.10;2026.01.05 12:00:00;"
-        "4050.00;0;0;500.00\n"
-        "2026.02.05 10:00:00;Buy;0.10;XAUUSD;4010.00;0.10;2026.02.05 12:00:00;"
-        "4078.00;0;0;68.00\n",
+        "4050.00;0;0;500.00\n",
         encoding="utf-8")
-    wert = pipeline._implizite_kapitalbasis(998.0, str(csv_pfad))
-    assert wert == pytest.approx(430.0)
+    from mqlkiscanner import signal_statistik
+    basis, quelle = signal_statistik.kapitalbasis_kaskade(
+        str(csv_pfad), {"balance_usd": 998.0, "kapitalbasis_virtual_usd": 10_000.0})
+    assert (basis, quelle) == (10_000.0, "virtuelle_annahme")
+    assert not hasattr(pipeline, "_implizite_kapitalbasis")
+    assert not hasattr(pipeline, "KAPITALBASIS_QUELLE_IMPLIZIT")
 
 
-def test_b3_implizite_basis_nicht_positive_ergibt_none(tmp_path):
-    csv_pfad = tmp_path / "trades.csv"
-    csv_pfad.write_text(
-        "Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n"
-        "2026.01.05 10:00:00;Buy;0.10;XAUUSD;4000.00;0.10;2026.01.05 12:00:00;"
-        "4200.00;0;0;2000.00\n",
-        encoding="utf-8")
-    # Balance 1000 − Netto 2000 = −1000 → kein positiver Start → None
-    assert pipeline._implizite_kapitalbasis(1000.0, str(csv_pfad)) is None
-
-
-def test_b3_implizite_basis_ohne_balance_ergibt_none(tmp_path):
-    csv_pfad = tmp_path / "trades.csv"
-    csv_pfad.write_text("Time;Type\n", encoding="utf-8")
-    assert pipeline._implizite_kapitalbasis(None, str(csv_pfad)) is None
-    assert pipeline._implizite_kapitalbasis(0.0, str(csv_pfad)) is None
-
-
-def test_b3_urteil_kennzeichnet_implizite_basis():
+def test_b3_nachfolger_virtuelle_basis_bleibt_markiert():
     res = pipeline.ScanResult(
         id=1, name="X", forensik_vorhanden=True, score=4.0,
-        kapitalbasis_verwendet_quelle=pipeline.KAPITALBASIS_QUELLE_IMPLIZIT,
+        kapitalbasis_verwendet_quelle=pipeline.KAPITALBASIS_QUELLE_VIRTUELL,
         ertrag_monat_pct=6.0, martingale_flag=False, stop_evidence="none")
     pipeline.refresh_report_verdict(res, {})
-    assert "Kapitalbasis implizit" in res.urteil
+    assert "Kapitalbasis virtuell" in res.urteil
 
 
 # ------------------------------------------------------------------ B4 Betreuer

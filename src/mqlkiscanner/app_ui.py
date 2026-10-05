@@ -492,7 +492,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 "Max-Drawdown % (Equity)", format="%.1f",
                 help="Gemessene Equity inklusive offener Gewinne und Verluste: "
                      "höchster belastbarer Wert aus Kurs-Nachmessung oder Monitor. "
-                     "Die Kurs-Nachmessung misst virtuelle Trading-Equity "
+                     "Die Kurs-Nachmessung reitet auf der realen Kontokurve "
                      "ohne spätere Ein-/Auszahlungen; der Monitor hat eine eigene Basis. "
                      "Fehlt die Messung, bleibt das Feld leer. H1-Kurse erfassen "
                      "keine Tiefs innerhalb einer Stunde. Farbe: grün bis 80 % "

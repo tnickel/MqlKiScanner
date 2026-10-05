@@ -80,8 +80,10 @@ check("SpikeMT4", "schlechtester Einzeltrade", -40.97, s["worst_trade"], 0.5,
 check("SpikeMT4", "Winrate %", 76.3, s["winrate_pct"], 0.1, "Referenzskript")
 check("SpikeMT4", "Trading-DD USD (Cent-Anker)", 157.20, dd["trading_dd"]["dd_usd"], 0.005,
       "doc/03: 157,20 USD exakt")
-check("SpikeMT4", "Trading-DD %", 4.6, dd["trading_dd"]["dd_pct"], 0.1,
-      "doc/01: realer DD 4,6 %")
+check("SpikeMT4", "Trading-DD %", 8.1, dd["trading_dd"]["dd_pct"], 0.05,
+      "Nutzer-Regel 05.10. (reale Kontokurve): 157,20 USD Verlust gegen das "
+      "UM ENTNAHMEN GESENKTE Konto — deckt sich mit Web 'By Balance' 8,11 % "
+      "(alte virtuelle Sicht: 4,6 %; Diagnostik-Wert trading_dd_virtuell)")
 check("SpikeMT4", "Startkapital", 3116.00, dd["start_capital"], 0.0, "doc/01: 3.116 USD Start")
 check("SpikeMT4", "Entnahmen USD", -3400.03, dd["withdrawals_total"], 0.5,
       "doc/01: 3.400 USD entnommen")
@@ -112,8 +114,9 @@ check("KiraCat", "NZDCAD-Netto USD", 3267.02, nzd["net"], 0.5)
 check("KiraCat", "Winrate %", 89.3, s["winrate_pct"], 0.1)
 check("KiraCat", "Trading-DD USD (Cent-Anker)", 2117.70, dd["trading_dd"]["dd_usd"], 0.005,
       "doc/03: 2.117,70 USD exakt")
-check("KiraCat", "Trading-DD % (real)", 7.9, dd["trading_dd"]["dd_pct"], 0.1,
-      "doc/01: realer Trading-DD 7,9 % validiert")
+check("KiraCat", "Trading-DD % (real)", 7.08, dd["trading_dd"]["dd_pct"], 0.05,
+      "Nutzer-Regel 05.10. (reale Kontokurve): 2.117,70 USD gegen den "
+      "EINZAHLUNGS-basierten Peak (alte virtuelle Sicht: 7,9 %)")
 check("KiraCat", "schlechtester Trade (03.03. 5-Lot-Short)", -2150.90, s["worst_trade"], 0.01,
       "doc/01: -2.150,90 USD, ~7 % des Kontos")
 check("KiraCat", "groeszter NZDCAD-Korb", 11, bk["max_basket_per_symbol"].get("NZDCAD"), 0,

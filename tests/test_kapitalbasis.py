@@ -272,3 +272,60 @@ def test_scoring_schranke_mit_bal_dd():
     ev = scoring.evaluate(report, platform=platform, schranke_eq_dd_pct=30.0)
     assert ev["schranke_eq_dd_verletzt"] is False
     assert ev["schranke_dd_pct"] == 4.57
+
+
+# --------------- Reale Kontokurve: Flows im Trading-DD (Nutzer 05.10.2026) --
+from mqlkiscanner.models import BalanceRow, ParsedExport, Trade
+
+
+def _flow_trade(tag, netto):
+    from datetime import datetime
+    t = datetime(2026, 1, tag, 10, 0)
+    return Trade(open_time=t, close_time=datetime(2026, 1, tag, 11, 0),
+                 direction="Buy", volume=0.1, symbol="EURUSD",
+                 entry_price=1.1, exit_price=1.1, profit=netto)
+
+
+def _flow_row(tag, betrag):
+    from datetime import datetime
+    return BalanceRow(time=datetime(2026, 1, tag, 8, 0), amount=betrag)
+
+
+def test_einzahlung_hebt_peak_folgeverlust_zaehlt_voll():
+    """9k Start, +2k Trading, +50k Einzahlung, -10k Verlust: Der Verlust
+    zaehlt gegen das Konto MIT Einzahlung (16,1 % statt 83 %) — der
+    Betreiber vergroessert nach Einzahlung seine Lots (Kopierer-Perspektive)."""
+    parsed = ParsedExport(
+        source_path="t", source_format="positions",
+        trades=[_flow_trade(1, 2000.0), _flow_trade(3, 500.0),
+                _flow_trade(5, 500.0), _flow_trade(8, -10000.0)],
+        balances=[_flow_row(1, 9000.0), _flow_row(4, 50000.0)])
+    r = drawdown.run(parsed)
+    assert r["kurve"] == "real_mit_flows"
+    assert r["trading_dd"]["dd_usd"] == 10000.0
+    assert r["trading_dd"]["dd_pct_max_rel"] == 16.13   # 10k / 62k Peak
+    # Alte virtuelle Kurve bleibt als Diagnostik erhalten.
+    assert r["trading_dd_virtuell"]["dd_usd"] == 10000.0
+
+
+def test_auszahlung_erzeugt_keinen_schein_drawdown():
+    """LadyTrader-Fall: -50k Auszahlung nach Gewinnen ist KEIN Verlust —
+    der Peak wird mitgesenkt (DD 0), statt 80 % Schein-Drawdown."""
+    parsed = ParsedExport(
+        source_path="t", source_format="positions",
+        trades=[_flow_trade(1, 2000.0), _flow_trade(3, 1000.0)],
+        balances=[_flow_row(1, 9000.0), _flow_row(4, -50000.0)])
+    r = drawdown.run(parsed)
+    assert r["kurve"] == "real_mit_flows"
+    assert r["trading_dd"]["dd_usd"] == 0.0
+    assert r["trading_dd"]["dd_pct_max_rel"] == 0.0
+
+
+def test_ohne_flows_kurvenmarkierung_und_identitaet():
+    parsed = ParsedExport(
+        source_path="t", source_format="positions",
+        trades=[_flow_trade(1, 500.0), _flow_trade(2, -300.0)],
+        balances=[])
+    r = drawdown.run(parsed)
+    assert r["kurve"] == "virtuell_ohne_flows"
+    assert r["trading_dd"] == r["trading_dd_virtuell"]

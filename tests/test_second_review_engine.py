@@ -40,11 +40,18 @@ def test_withdrawal_before_trading_cannot_bypass_drawdown_barrier():
     assert scoring.evaluate(r)["schranke_eq_dd_verletzt"] is True
 
 
-def test_later_withdrawals_stay_outside_virtual_trading_drawdown():
+def test_later_withdrawal_adjusts_peak_in_real_curve_dd():
+    """Nutzer-Regel 05.10.2026: 10k Start, -9k Auszahlung (Tag 2), dann -400
+    Verlust. REAL: Der Verlust trifft das verbliebene 1k-Konto -> 40 % DD
+    des operativen Kapitals (Kopierer-Perspektive). VIRTUELL (Diagnostik):
+    unverändert die alte 4-%-Sicht auf 10k Startkapital."""
     p = parsed([trade(day=1, close_day=4, profit=-400)], ((0, 10000), (2, -9000)))
     r = drawdown.run(p)
-    assert r["trading_dd"]["dd_pct_max_rel"] == 4
+    assert r["kurve"] == "real_mit_flows"
+    assert r["trading_dd"]["dd_pct_max_rel"] == 40
     assert r["trading_dd"]["dd_usd"] == 400
+    assert r["trading_dd_virtuell"]["dd_pct_max_rel"] == 4
+    assert r["trading_dd_virtuell"]["dd_usd"] == 400
     assert r["end_balance_estimated"] == 600
 
 

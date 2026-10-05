@@ -13,10 +13,11 @@ bleibt exklusiv bei der Equity-Studie). Der Drawdown dieser Vorstufe heißt
 gekennzeichnete VORBWERTUNG, kein RetDD (dessen Nenner darf nur die
 floating-inklusive Kursmessung sein).
 
-Kapitalbasis-Kaskade identisch zur Pipeline (analyze_candidate): Signalseite
-„Initial Deposit“ → implizite Basis (Web-Balance − Σ Trade-Netto, B3) →
-virtuelle Annahme aus dem Quellen-Monitor. CSV-Einzahlungen im Export
-schlagen jede Injektion — die FINALE Basis legt drawdown.run fest.
+Kapitalbasis-Kaskade (Nutzer-Regel 05.10.2026): Signalseite
+„Initial Deposit“ → virtuelle Annahme aus dem Quellen-Monitor; CSV-
+Einzahlungen im Export schlagen jede Injektion (drawdown.run entscheidet).
+Die Kurve ist die REALE Kontokurve inkl. Ein-/Auszahlungen (Auszahlungen
+erzeugen keinen Drawdown — Peak-Anpassung).
 """
 from __future__ import annotations
 
@@ -27,9 +28,7 @@ from . import stats as stats_mod
 from .forensics import drawdown, martingale
 from .parser import load_export
 from .pipeline import (
-    KAPITALBASIS_QUELLE_IMPLIZIT,
     KAPITALBASIS_QUELLE_VIRTUELL,
-    _implizite_kapitalbasis,
     _virtuelle_kapitalbasis,
 )
 from .portfolio_statistik import _monatsserie, effizienz_kennzahlen
@@ -40,19 +39,13 @@ def kapitalbasis_kaskade(trades_pfad: str, stats: dict,
                          ) -> tuple[float | None, str]:
     """Externe Kapitalbasis-Kandidatin wie im Scan — OHNE CSV-Entscheidung.
 
-    Reihenfolge exakt wie pipeline.analyze_candidate: Signalseite
-    „Initial Deposit“, dann implizite Basis (Web-Balance − Σ Trade-Netto),
-    dann virtuelle Annahme. Rückgabe (basis, quelle); basis kann None
-    sein. Ob am Ende CSV-Einzahlungen gewinnen, entscheidet drawdown.run.
+    Nutzer-Regel 05.10.2026: Signalseite „Initial Deposit“ → virtuelle
+    Annahme (10.000 USD, markiert). Die implizite Basis ist entfallen.
+    Rückgabe (basis, quelle); basis kann None sein. Ob am Ende CSV-
+    Einzahlungen gewinnen, entscheidet drawdown.run.
     """
     basis = stats.get("initial_deposit_usd")
     quelle = "signalseite_initial_deposit"
-    if basis is None:
-        implizit = _implizite_kapitalbasis(
-            stats.get("balance_usd"), trades_pfad,
-            plattform_positions=plattform_positions)
-        if implizit is not None:
-            return implizit, KAPITALBASIS_QUELLE_IMPLIZIT
     if basis is None:
         virtuell = _virtuelle_kapitalbasis(stats.get("kapitalbasis_virtual_usd"))
         if virtuell is not None:
@@ -168,12 +161,20 @@ def tradeliste(trades_pfad: str, stats: dict | None) -> list[dict]:
 
 
 def _kurve(parsed, startkapital: float) -> list[list]:
-    """Virtuelle Trading-Kurve [(ISO-Zeit, Stand USD)] nach Close-Zeit."""
+    """REALE Kontokurve [(ISO-Zeit, Stand USD)] — Trades UND Kontobewegungen
+    chronologisch (Nutzer-Regel 05.10.2026: Einzahlungen heben die Kurve,
+    Auszahlungen senken sie; im Chart als Sprünge sichtbar). Flows vor dem
+    ersten Trade stecken bereits im Startkapital — nicht doppeln."""
+    erste_open = min((t.open_time for t in parsed.trades), default=None)
+    ereignisse = [(t.close_time, t.net) for t in parsed.trades]
+    if erste_open is not None:
+        ereignisse += [(b.time, b.amount) for b in getattr(parsed, "balances", [])
+                       if b.time > erste_open]
     stand = float(startkapital)
     kurve: list[list] = []
-    for trade in sorted(parsed.trades, key=lambda t: t.close_time):
-        stand += trade.net
-        kurve.append([trade.close_time.isoformat(sep=" "), round(stand, 2)])
+    for zeit, delta in sorted(ereignisse, key=lambda e: e[0]):
+        stand += delta
+        kurve.append([zeit.isoformat(sep=" "), round(stand, 2)])
     return kurve
 
 

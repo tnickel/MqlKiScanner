@@ -47,54 +47,12 @@ LogCb = Callable[[str], None]
 # belegtes Initial Deposit: kein Cent-Abgleich gegen die Web-Balance, keine
 # rote Kapitalbasis-Regel, transparent im Urteil.
 KAPITALBASIS_QUELLE_VIRTUELL = "virtuelle_annahme"
-# B3 (Intensiv-Review 29./30.09.2026): Bei Quellen-Signalen ohne echtes
-# Initial Deposit ist die beste belegbare Basis die IMPLIZITE: Web-Balance
-# minus Summe der Trade-Nettoergebnisse (= Startkapital, das die heutige
-# Balance zusammen mit der Handelsleistung erklärt). Die starre 10.000-USD-
-# Annahme (InitialDepositVirtual) verzerrte DD-/Schock-Prozente um Faktor
-# 2–20 (SafeGold: real 998 USD, MicroJump 530 USD) — die implizite Basis
-# kommt vor den Virtual-Fallback und bleibt im Forensik-JSON gekennzeichnet.
-KAPITALBASIS_QUELLE_IMPLIZIT = "implizit_aus_balance"
-
-
-def _implizite_kapitalbasis(balance, trade_pfad: str,
-                            log: LogCb | None = None,
-                            plattform_positions: float | None = None
-                            ) -> float | None:
-    """Startkapital = Web-Balance − Σ Trade-Netto (nur positive Ergebnisse).
-
-    Keine Messung, aber eine belegte Ableitung aus zwei Plattformwerten —
-    deutlich näher an der Realbalance als die starre Virtual-Annahme.
-    Parse-Fehler oder nicht-positive Ergebnisse liefern None (dann greift
-    der Virtual-Fallback bzw. bleibt die Forensik ohne Basis).
-    """
-    if isinstance(balance, bool) or not isinstance(balance, (int, float)):
-        return None
-    balance = float(balance)
-    if not math.isfinite(balance) or balance <= 0:
-        return None
-    try:
-        from .parser import load_export
-        parsed = load_export(trade_pfad,
-                             plattform_positions=plattform_positions)
-        netto = sum(t.net for t in parsed.trades)
-    except Exception as exc:  # grobe Schaetzung darf den Lauf nie brechen
-        if log:
-            log(f"Kapitalbasis: implizite Basis nicht berechenbar ({exc}) — "
-                "nächste Stufe (virtuelle Annahme).")
-        return None
-    implizit = balance - netto
-    if implizit <= 0:
-        if log:
-            log(f"Kapitalbasis: implizite Basis {implizit:,.0f} USD nicht "
-                "positiv (Gewinne übersteigen die Balance — Ein-/Auszahlungen "
-                "unbekannt) — nächste Stufe (virtuelle Annahme).")
-        return None
-    if log:
-        log(f"Kapitalbasis: implizite Annahme {implizit:,.0f} USD "
-            f"(Web-Balance {balance:,.0f} − Trade-Netto {netto:,.0f}) — "
-            "DD-/Schock-Prozente damit gerechnet.")
-    return implizit
+# Nutzer-Regel 05.10.2026 (ersetzt B3): Die IMPLIZITE Basis (Web-Balance −
+# Σ Trade-Netto) ist seit Flows-in-der-Kurve mathematisch falsch — sie
+# zählt Ein-/Auszahlungen als Startkapital (LadyTrader1: 41.577 statt der
+# echten 9.000 USD). Kaskade jetzt: CSV-Einzahlungen (gewinnen in
+# drawdown.run) → Signalseite „Initial Deposit" → virtuelle Annahme
+# (10.000 USD aus dem Quellen-Monitor), deutlich im Urteil markiert.
 
 
 def _virtuelle_kapitalbasis(wert, log: LogCb | None = None) -> float | None:
@@ -970,13 +928,11 @@ def _kapitalbasis_abgleich(drawdown_befund: dict, stats: dict) -> tuple[bool, st
     Returns (ok, fehlermeldung). Bei Kapitalbasis aus CSV-Einzahlungen ent-
     faellt der Check — ein aelterer Cache-Export darf real abweichen, ohne
     die Bewertung umzuwerfen. Dasselbe gilt fuer die VIRTUELLE Annahme aus
-    einem Quellen-Monitor (kein Plattformwert) und die IMPLIZITE Basis
-    (B3, Intensiv-Review): Sie ist per Konstruktion aus der Web-Balance
-    abgeleitet — der Abgleich wäre tautologisch.
+    einem Quellen-Monitor (kein Plattformwert). Die implizite Basis ist seit
+    der Nutzer-Regel 05.10.2026 ersatzlos entfallen.
     """
     quelle = drawdown_befund.get("startkapital_quelle", "csv_einzahlungen")
-    if quelle in ("csv_einzahlungen", KAPITALBASIS_QUELLE_VIRTUELL,
-                  KAPITALBASIS_QUELLE_IMPLIZIT):
+    if quelle in ("csv_einzahlungen", KAPITALBASIS_QUELLE_VIRTUELL):
         return True, ""
     web_kontostand = stats.get("balance_usd")
     real = drawdown_befund.get("end_balance_real")
@@ -1061,18 +1017,12 @@ def _kennezeichne_virtuelle_kapitalbasis(result: ScanResult) -> None:
     bauen das Urteil neu — ohne diese Zentrierung wuerde der Hinweis
     vor dem Prompt verschwinden).
     """
+    # Text bewusst UNVERÄNDERT (idempotent gegenüber Alt-Urteilen im Bestand).
     hinweis = "Kapitalbasis virtuell (Annahme der Datenquelle)"
     if (result.kapitalbasis_verwendet_quelle == KAPITALBASIS_QUELLE_VIRTUELL
             and result.forensik_vorhanden and not result.fehler
             and hinweis not in (result.urteil or "")):
         result.urteil = (result.urteil or "") + " · " + hinweis
-    # B3 (Intensiv-Review): auch die implizite Basis ist eine Ableitung,
-    # keine belegte Einzahlung — sie muss im Urteil sichtbar bleiben.
-    hinweis_implizit = "Kapitalbasis implizit (Web-Balance − Trade-Netto)"
-    if (result.kapitalbasis_verwendet_quelle == KAPITALBASIS_QUELLE_IMPLIZIT
-            and result.forensik_vorhanden and not result.fehler
-            and hinweis_implizit not in (result.urteil or "")):
-        result.urteil = (result.urteil or "") + " · " + hinweis_implizit
 
 
 def refresh_report_verdict(result: ScanResult, settings: dict) -> None:
@@ -1458,21 +1408,15 @@ class ScanPipeline:
                     else "nicht verfuegbar (offline?) — FX-Kreuze bleiben ohne USD-Schock"))
                 # Broker mitgeben: cross_broker=false-Kontraktspecs (z. B. Oel)
                 # gelten nur fuer den gelisteten Broker des Signals.
-                # Kapitalbasis: 1) Signalseite "Initial Deposit" (belegt,
-                # Cent-Abgleich), 2) implizite Basis Web-Balance − Σ Trade-
-                # Netto (B3, Intensiv-Review), 3) virtuelle Annahme aus dem
-                # Quellen-Monitor ("InitialDepositVirtual") — greift nur, wenn
-                # der Export keine Einzahlung vor dem ersten Trade enthaelt
-                # (Quellen-CSVs haben keine Kontobewegungszeilen).
+                # Kapitalbasis (Nutzer-Regel 05.10.2026): 1) CSV-Einzahlungen
+                # im Export (entscheiden in drawdown.run — Robo/MT4-Orderbuch
+                # liefern sie), 2) Signalseite "Initial Deposit" (belegt,
+                # Cent-Abgleich), 3) virtuelle Annahme 10.000 USD aus dem
+                # Quellen-Monitor — deutlich im Urteil markiert. Die implizite
+                # Basis (Web-Balance − Netto) ist ENTFALLEN: Sie zählt Flows
+                # als Startkapital und war 4,6× daneben (LadyTrader1).
                 kapitalbasis = stats.get("initial_deposit_usd")
                 kapitalbasis_quelle = "signalseite_initial_deposit"
-                if kapitalbasis is None:
-                    implizit = _implizite_kapitalbasis(
-                        stats.get("balance_usd"), path, log,
-                        plattform_positions=stats.get("trades"))
-                    if implizit is not None:
-                        kapitalbasis = implizit
-                        kapitalbasis_quelle = KAPITALBASIS_QUELLE_IMPLIZIT
                 if kapitalbasis is None:
                     virtuell = _virtuelle_kapitalbasis(stats.get("kapitalbasis_virtual_usd"), log)
                     if virtuell is not None:

@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
 """Forensik-Test 4: Drawdown-Rekonstruktion + Konsistenz (doc/03).
 
-Zwei Kurven (Spec doc/03_forensik-tests.md):
-- Trading-Kurve ("virtuell"): Startkapital = Netto-Kontobewegungen vor dem ersten
-  Trade, KEINE weiteren Kontobewegungen — zeigt die Handelsleistung
-  getrennt von der Kapitalentnahme. ANKER: an diesem DD haengt der
-  Plattform-Abgleich auf den Cent (Reihe: MSC 76,83 / Reaper 319,49 /
-  Gold Spike 157,20 / KiraCat 2.117,70 USD — exakt).
-- Balance-Kurve: alle Balance-Zeilen an ihren Zeitpunkten eingerechnet.
-  Auszahlungen erzeugen hier Schein-Drawdowns — nur Diagnostik.
+Kurven (Regel 05.10.2026 — Nutzer-Entscheid „Einzahlungen drin lassen"):
+- KONTO-Kurve ("trading_dd", HAUPTWERT): reale Kontokurve inkl. aller
+  Ein-/Auszahlungen. Einzahlungen heben Kurve und Peak — der Betreiber
+  erhöht danach seine Lots, also wachsen spätere Drawdowns in USD und %,
+  genau wie es ein Kopierer erlebt. AUSZAHLUNGEN erzeugen KEINEN
+  Drawdown: der laufende Peak wird um den Auszahlungsbetrag gesenkt
+  (nie unter den aktuellen Stand; Hochwassermark-Methode mit
+  Flow-Anpassung) — Geld, das das Konto verlässt, ist kein Verlust.
+  Ohne Balance-Zeilen im Export bleibt zwangsläufig die virtuelle Kurve
+  (klar markiert im Feld „kurve"), dann gilt: nichts erfinden.
+- Virtuelle Kurve ("trading_dd_virtuell", Diagnostik): Startkapital +
+  Netto der Trades OHNE spätere Kontobewegungen — alte Hauptkurve,
+  bleibt für den kapitalflussneutralen Vergleich.
 
-Pro Trade zaehlt das NETTO (Profit + Kommission + Swap). Achtung: die
-Referenzskripte addierten teils nur `profit` — mit Netto decken sich
-alle vier Ankerwerte der Reihe auf den Cent (siehe scripts/verify_engine.py).
+Pro Trade zaehlt das NETTO (Profit + Kommission + Swap).
 """
 from __future__ import annotations
 
@@ -99,13 +102,24 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
     withdrawals_total = sum(b.amount for b in balances if b.amount < 0)
 
     trading_points = [(t.close_time, t.net) for t in sorted(trades, key=lambda t: t.close_time)]
-    trading = _max_drawdown(trading_points, startkapital)
+    trading_virtuell = _max_drawdown(trading_points, startkapital)
 
     # Balance-Kurve: CSV-Buchungen buchen sich selbst; die injizierte Basis
     # ist keine Zeile und geht deshalb als Startwert ein.
     balance_points = [(b.time, b.amount) for b in balances] + trading_points
     balance_points.sort(key=lambda p: p[0])
     balance = _max_drawdown(balance_points, injected)
+
+    # KONTO-Kurve (HAUPTWERT, Nutzer-Regel 05.10.2026): Trades PLUS Flows
+    # nach Handelsbeginn. Einzahlungen heben den Peak, Auszahlungen senken
+    # ihn um ihren Betrag — Auszahlungen erzeugen keinen Drawdown.
+    flows_nach_start = [(b.time, b.amount) for b in balances if b.time > first_open]
+    if flows_nach_start:
+        trading = _max_drawdown_konto(trading_points, flows_nach_start, startkapital)
+        kurve = "real_mit_flows"
+    else:
+        trading = trading_virtuell
+        kurve = "virtuell_ohne_flows"
 
     flows_total = deposits_total + withdrawals_total
     net_total = sum(t.net for t in trades)
@@ -123,7 +137,66 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
         # Tatsaechlicher Kontostand am CSV-Ende inkl. injizierter Basis —
         # Anker fuer den Abgleich mit dem Webseiten-Kontostand.
         "end_balance_real": round(flows_total + net_total + injected, 2),
-        "trading_dd": trading,      # ANKER fuer Plattform-Abgleich
+        "kurve": kurve,
+        "trading_dd": trading,      # HAUPTWERT: reale Kontokurve (Nutzer-Regel 05.10.)
+        "trading_dd_virtuell": trading_virtuell,  # Diagnostik: ohne Flows (alt)
         "balance_dd": balance,      # Diagnostik (Auszahlungs-Artefakte moeglich)
+    }
+
+
+def _max_drawdown_konto(trade_points: list[tuple], flow_points: list[tuple],
+                        start: float) -> dict:
+    """Drawdown auf der REALEN Kontokurve inkl. Ein-/Auszahlungen.
+
+    trade_points: (close_time, netto) der Trades; flow_points: (zeit,
+    betrag) der Kontobewegungen NACH Handelsbeginn. Beide werden
+    chronologisch gebucht; Zeitstempel-Gleicheit bucht gemeinsam (wie
+    _max_drawdown). Auszahlungen (negativer Flow) senken den bisherigen
+    Peak um ihren Betrag — nie unter den aktuellen Stand — damit Geld,
+    das das Konto verlaesst, keinen Drawdown erzeugt (Nutzer-Regel
+    05.10.2026: „wenn er mehr einzahlt, geht die Lotsize hoch und der
+    Drawdown wächst; Auszahlungen sind keine Verluste").
+    """
+    from collections import defaultdict
+    je_zeitpunkt: dict = defaultdict(lambda: [0.0, 0.0])  # zeit -> [trade, flow]
+    for zeit, delta in trade_points:
+        je_zeitpunkt[zeit][0] += delta
+    for zeit, betrag in flow_points:
+        je_zeitpunkt[zeit][1] += betrag
+
+    bal = peak = float(start)
+    max_dd = max_dd_pct = 0.0
+    max_rel = 0.0
+    when = when_rel = None
+    for zeit in sorted(je_zeitpunkt):
+        trade_delta, flow_delta = je_zeitpunkt[zeit]
+        bal += trade_delta + flow_delta
+        # Auszahlung: Peak mitigieren, BEVOR der Rueckgang gezaehlt wird.
+        if flow_delta < 0:
+            peak = max(bal, peak + flow_delta)
+        if bal > peak:
+            peak = bal
+        dd = peak - bal
+        if peak > 0:
+            rel = dd / peak * 100
+        elif dd > 0:
+            rel = 100.0
+        else:
+            rel = 0.0
+        if dd > max_dd:
+            max_dd = dd
+            max_dd_pct = rel
+            when = zeit
+        if rel > max_rel:
+            max_rel = rel
+            when_rel = zeit
+    return {
+        "dd_usd": round(max_dd, 2),
+        "dd_pct": round(max_dd_pct, 2),
+        "dd_pct_max_rel": round(max_rel, 2),
+        "dd_date": when.date().isoformat() if when else None,
+        "dd_date_max_rel": when_rel.date().isoformat() if when_rel else None,
+        "end_balance": round(bal, 2),
+        "peak_balance": round(peak, 2),
     }
 

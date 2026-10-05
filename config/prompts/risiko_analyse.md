@@ -112,8 +112,11 @@ Schreibe ein kompaktes deutsches Risikoprofil (max. 200 Woerter):
    ggf. monitor_trade_eq_dd_pct mit ihren unterschiedlichen Messgrundlagen
    gegenueber. Numerische Gleichwertigkeit ist NUR bei gleicher Kapitalbasis,
    gleichem Zeitraum und belegter Datenabdeckung gegeben. Beachte
-   equity_rekonstruktion_methodik: virtuelle Trading-Equity behaelt Gewinne
-   rechnerisch im Konto, spaetere Ein-/Auszahlungen fehlen; H1-Schlusskurse
+   equity_rekonstruktion_methodik: Die Kurs-Kurve reitet auf der REALEN
+   Kontokurve — Ein-/Auszahlungen bleiben eingerechnet (Einzahlung heisst:
+   Betreiber vergroessert Lots, Drawdown waechst), Auszahlungen erzeugen
+   KEINEN Drawdown (Peak wird mitgesenkt). Ohne Kontobewegungs-Zeilen im
+   Export bleibt es eine virtuelle Kurve (markiert). H1-Schlusskurse
    am Bar-Ende messen keine Intrabar-Extrema, aktuell offene Positionen
    fehlen im Historien-Export. Auch der Monitor kann eine eigene Basis nutzen.
    Bei unterschiedlicher oder ungeklärter Grundlage benenne die gelieferten

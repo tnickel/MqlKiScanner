@@ -564,11 +564,24 @@ def rekonstruiere(parsed, kurse, startkapital: float,
 
     # Expliziter Anker vor dem ersten Handelsereignis: auch ein erster
     # Floating-Verlust darf nicht selbst zum Anfangshoch werden.
-    curve: list[tuple[int, float, bool]] = [(anfang, float(startkapital), True)]
+    curve: list[tuple[int, float, bool, float]] = [(anfang, float(startkapital), True, 0.0)]
     realisiert = 0.0
     schliess_idx = 0
     offen_idx = 0
     aktiv: list = []           # (close_epoch_exklusiv, trade)
+    # Nutzer-Regel 05.10.2026: Die Kurs-Kurve reitet auf der REALEN Konto-
+    # kurve — Ein-/Auszahlungen NACH Handelsbeginn bleiben drin (Einzahlung
+    # => Betreiber erhöht Lots => Drawdowns wachsen). Auszahlungen senken
+    # den Peak um ihren Betrag und erzeugen so KEINEN Drawdown. Flows vor
+    # dem ersten Trade stecken bereits im Startkapital (drawdown.run).
+    erste_open_epoch = min(_epoch(t.open_time) for t in trades) + offset
+    flows_sort = sorted(
+        ((_epoch(b.time) + offset, float(b.amount))
+         for b in getattr(parsed, "balances", [])
+         if _epoch(b.time) + offset > erste_open_epoch),
+        key=lambda f: f[0])
+    flows_kumulativ = 0.0
+    flow_idx = 0
     punkte_mit_kurs = 0
     punkte_ohne_kurs = 0
     punkte_teil_mit_kurs = 0
@@ -608,6 +621,11 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         while schliess_idx < len(schliessungen) and schliessungen[schliess_idx][0] <= punkt:
             realisiert += schliessungen[schliess_idx][1]
             schliess_idx += 1
+        flow_delta = 0.0
+        while flow_idx < len(flows_sort) and flows_sort[flow_idx][0] <= punkt:
+            flow_delta += flows_sort[flow_idx][1]
+            flows_kumulativ += flows_sort[flow_idx][1]
+            flow_idx += 1
         while offen_idx < len(offen_sort) and offen_sort[offen_idx][0] < punkt:
             aktiv.append((offen_sort[offen_idx][1], offen_sort[offen_idx][2]))
             offen_idx += 1
@@ -669,7 +687,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         # Schlussverlust, B1-Fix 29.09., muss messbar bleiben).
         # Realisiert laeuft kumulativ weiter, spaeter vollstaendige Punkte
         # bleiben korrekt; die DD-Messung ueberspringt die Luecke.
-        curve.append((punkt, startkapital + realisiert + floating, kurs_da))
+        curve.append((punkt, startkapital + realisiert + flows_kumulativ + floating,
+                      kurs_da, flow_delta))
         # Abbruch ERST NACH dem Anhängen: Der letzte Punkt (alles realisiert,
         # nichts mehr offen) trägt den Endkontostand — exakt dort entsteht der
         # finale Verlust. Der frühere break davor ließ echte Schlussverluste
@@ -677,6 +696,15 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         if not aktiv and schliess_idx >= len(schliessungen) \
                 and offen_idx >= len(offen_sort):
             break
+
+    # Kontobewegungen NACH dem letzten Trade-Ende liegen außerhalb des
+    # Rasters — als finalen Kurvenpunkt buchen, sonst fehlen sie in Kurve
+    # und Endkontostand (Nutzer-Regel 05.10.: reale Kontokurve komplett).
+    if flow_idx < len(flows_sort):
+        rest_flows = math.fsum(b for _t, b in flows_sort[flow_idx:])
+        curve.append((flows_sort[-1][0], curve[-1][1] + rest_flows, True, rest_flows))
+        flows_kumulativ += rest_flows
+        flow_idx = len(flows_sort)
 
     if len(curve) < 2:
         return {"test": "equity_rekonstruktion", "status": "skipped",
@@ -686,7 +714,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # Fehler) wuerde den Rueckfallvergleich still falsch machen und am Ende
     # "0 % DD" melden — ohne dass verlaesslich es abfingt. Nicht endliche
     # Werte = Reko unbrauchbar -> ehrlich skippen statt Schoenrechnen.
-    if not all(math.isfinite(wert) for _t, wert, _m in curve):
+    if not all(math.isfinite(wert) for _t, wert, _m, _f in curve):
         return {"test": "equity_rekonstruktion", "status": "skipped",
                 "grund": "NaN/Inf in der Equity-Kurve (Kursdaten unbrauchbar)"}
 
@@ -699,9 +727,15 @@ def rekonstruiere(parsed, kurse, startkapital: float,
                       # gewachsenem Konto einen frueheren groesseren
                       # PROZENTVerlust (1000->600->2000->1500 meldete 25 %
                       # statt 40 %) — genau die Zahl, die in die Schranke geht.
-    for _t, wert, messpunkt in curve:
+    for _t, wert, messpunkt, flow_delta in curve:
         if not messpunkt:
             continue   # F2: unvollstaendige Punkte sind keine Messpunkte
+        # Nutzer-Regel 05.10.2026: Auszahlungen sind keine Verluste — der
+        # Peak wird um den Auszahlungsbetrag gesenkt (nie unter den Stand),
+        # BEVOR der Rueckfall gezaehlt wird. Einzahlungen heben die Kurve
+        # und damit den Peak ganz natuerlich.
+        if flow_delta < 0:
+            hoch = max(wert, hoch + flow_delta)
         if wert > hoch:
             hoch = wert
         rueckfall = hoch - wert
@@ -770,7 +804,11 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         "symbole_mit_kursen": sorted(bars_je_symbol),
         "methodik": "virtuelle_trading_equity_h1_schlusskurse",
         "raster": "H1-Bar-Schluss (Bar-Ende), keine Intrabar-Extrema",
-        "kapitalfluesse": "Startkapital; spaetere Ein-/Auszahlungen nicht eingerechnet",
+        "kapitalfluesse": ("reale Kontokurve: Ein-/Auszahlungen eingerechnet "
+                           "(Auszahlungen erzeugen keinen Drawdown — Peak-Anpassung)"
+                           if flows_sort else
+                           "Startkapital; keine Kontobewegungen im Export "
+                           "(virtuelle Kurve, klar markiert)"),
         "positionsbasis": "nur abgeschlossene Positionen des Exports; aktuell offene fehlen",
         "end_equity_usd": round(curve[-1][1], 2),
         "trades_total": len(trades),

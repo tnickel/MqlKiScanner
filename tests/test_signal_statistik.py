@@ -42,11 +42,11 @@ def test_monate_geom_pf_winrate_konsistent(tmp_path):
         _trade("2026.02.10 10:00", 10, "EURUSD", 1.1000, 1.0990, -60.0),
         _trade("2026.03.15 10:00", 10, "EURUSD", 1.1000, 1.1012, 120.0),
     ])
-    erg = signal_statistik.berechne(pfad, {"balance_usd": 10_000.0})
+    erg = signal_statistik.berechne(pfad, {"kapitalbasis_virtual_usd": 10_000.0})
     assert erg["fehler"] is None
-    # Implizite Basis: Web-Balance − Netto = 10.000 − 210
-    assert erg["kapitalbasis_usd"] == pytest.approx(9_790.0)
-    assert erg["kapitalbasis_quelle"] == "implizit_aus_balance"
+    # Nutzer-Regel 05.10.: keine implizite Basis mehr — 10k virtuell, markiert
+    assert erg["kapitalbasis_usd"] == pytest.approx(10_000.0)
+    assert erg["kapitalbasis_quelle"] == "virtuelle_annahme"
     # Kanonische Produzenten liefern dieselben Werte (keine Zweitrechnung).
     monate = portfolio_statistik.monatsrenditen(pfad, erg["kapitalbasis_usd"])
     assert erg["monate_pct"] == pytest.approx(monate)
@@ -59,7 +59,7 @@ def test_monate_geom_pf_winrate_konsistent(tmp_path):
     assert erg["winrate_pct"] == 75.0
     assert erg["profit_faktor"] == pytest.approx(270.0 / 60.0, abs=0.01)
     assert erg["monate_usd"]["2026-02"] == pytest.approx(-60.0)
-    assert erg["kurve"][-1][1] == pytest.approx(10_000.0)  # Basis + 210 Netto
+    assert erg["kurve"][-1][1] == pytest.approx(10_210.0)  # Basis + 210 Netto
 
 
 def test_trading_dd_aus_geschlossenen_trades(tmp_path):
@@ -69,8 +69,8 @@ def test_trading_dd_aus_geschlossenen_trades(tmp_path):
         _trade("2026.02.05 10:00", 10, "XAUUSD", 2000.0, 1997.5, -250.0),
         _trade("2026.03.05 10:00", 10, "XAUUSD", 2000.0, 2000.5, 50.0),
     ])
-    erg = signal_statistik.berechne(pfad, {"balance_usd": 10_000.0})
-    basis = erg["kapitalbasis_usd"]  # 10.000 − 100 = 9.900
+    erg = signal_statistik.berechne(pfad, {"kapitalbasis_virtual_usd": 10_000.0})
+    basis = erg["kapitalbasis_usd"]  # virtuell 10.000 (Nutzer-Regel 05.10.)
     assert erg["trading_dd_usd"] == pytest.approx(250.0)
     # Prozent auf den Peak (Basis + 300), nicht auf die Basis
     # (drawdown rundet auf 2 Nachkommastellen).
@@ -79,18 +79,20 @@ def test_trading_dd_aus_geschlossenen_trades(tmp_path):
 
 
 # ---------------------------------------------------------- Kapitalbasisfall
-def test_kapitalbasis_kaskade_seite_vor_implizit_vor_virtuell(tmp_path):
+def test_kapitalbasis_kaskade_seite_vor_virtuell(tmp_path):
+    """Nutzer-Regel 05.10.: echte Basis oder 10k virtuell — keine implizite
+    Ableitung mehr (zählte Flows als Startkapital, LadyTrader1-Faktor 4,6)."""
     pfad = _csv(tmp_path / "t.csv", [_trade("2026.01.05 10:00", 10, "EURUSD", 1.1, 1.11, 50.0)])
-    # 1) Signalseite schlägt implizit UND virtuell.
+    # 1) Signalseite schlägt virtuell — auch wenn eine Web-Balance vorliegt
+    #    (Balance ist KEINE Startkapital-Angabe mehr!).
     basis, quelle = signal_statistik.kapitalbasis_kaskade(
         pfad, {"initial_deposit_usd": 500.0, "balance_usd": 9950.0,
                "kapitalbasis_virtual_usd": 10_000.0})
     assert (basis, quelle) == (500.0, "signalseite_initial_deposit")
-    # 2) Implizit schlägt virtuell.
+    # 2) Nur Web-Balance (früher implizit): fällt DURCH auf virtuell.
     basis, quelle = signal_statistik.kapitalbasis_kaskade(
         pfad, {"balance_usd": 9950.0, "kapitalbasis_virtual_usd": 10_000.0})
-    assert basis == pytest.approx(9_900.0)
-    assert quelle == "implizit_aus_balance"
+    assert (basis, quelle) == (10_000.0, "virtuelle_annahme")
     # 3) Virtuell als letzte Stufe (Quellen-Annahme).
     basis, quelle = signal_statistik.kapitalbasis_kaskade(
         pfad, {"kapitalbasis_virtual_usd": 10_000.0})
@@ -125,7 +127,7 @@ def test_ertrag_je_close_dd_ist_vorbewertung_nicht_retdd(tmp_path):
         _trade("2026.01.05 10:00", 10, "EURUSD", 1.1, 1.11, 200.0),
         _trade("2026.02.05 10:00", 10, "EURUSD", 1.1, 1.10, -100.0),
     ])
-    erg = signal_statistik.berechne(pfad, {"balance_usd": 10_000.0})
+    erg = signal_statistik.berechne(pfad, {"kapitalbasis_virtual_usd": 10_000.0})
     erwartet = erg["ertrag_monat_geom_pct"] / erg["trading_dd_pct"]
     assert erg["ertrag_je_close_dd"] == pytest.approx(erwartet)
     assert math.isfinite(erg["ertrag_je_close_dd"])
@@ -137,7 +139,7 @@ def test_martingale_flag_durchgereicht(tmp_path):
         _trade("2026.01.05 10:00", 10, "EURUSD", 1.1000, 1.0990, -10.0, lots=0.01),
         _trade("2026.01.05 11:00", 10, "EURUSD", 1.0995, 1.1015, 30.0, lots=0.03),
     ])
-    erg = signal_statistik.berechne(pfad, {"balance_usd": 1_000.0})
+    erg = signal_statistik.berechne(pfad, {"kapitalbasis_virtual_usd": 10_000.0})
     assert erg["martingale_flag"] is True
     assert "Martingale" in (erg["martingale_text"] or "")
 
