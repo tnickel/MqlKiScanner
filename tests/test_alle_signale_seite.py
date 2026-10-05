@@ -113,9 +113,12 @@ def test_kurve_unterwasser_chart_rechnet_rueckgang():
                            ["2026-03-01 10:00:00", 900.0]]}
     fig = kurve_unterwasser_chart(statistik)
     unterwasser = list(fig.data[1].y)
+    # Unterwasser-Konvention der Equity-Studie: NEGATIVE Werte, Kurve hängt
+    # unter der Nulllinie — je tiefer, desto größer der Rückgang.
     assert unterwasser[0] == 0.0
-    assert unterwasser[1] == pytest.approx(20.0)   # 200 Rückgang auf 1000 Peak
-    assert unterwasser[2] == pytest.approx(10.0)   # 100 auf 1000 Peak
+    assert unterwasser[1] == pytest.approx(-20.0)   # 200 Rückgang auf 1000 Peak
+    assert unterwasser[2] == pytest.approx(-10.0)   # 100 auf 1000 Peak
+    assert max(unterwasser) <= 0.0
 
 
 def test_tabellen_zeile_ohne_statistik_zeigt_striche():

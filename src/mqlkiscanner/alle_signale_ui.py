@@ -105,7 +105,12 @@ def monats_balken_chart(statistik: dict) -> go.Figure:
 
 
 def kurve_unterwasser_chart(statistik: dict) -> go.Figure:
-    """Virtuelle Trading-Kurve oben, Unterwasser-Rückgang in Prozent unten."""
+    """Virtuelle Trading-Kurve oben, Unterwasser-Verlauf unten.
+
+    Unterwasser-Konvention wie die Equity-Studie: NEGATIVE Werte, die Kurve
+    hängt unter der Nulllinie nach unten — je tiefer, desto größer der
+    Rückgang unter den letzten Höchststand ((Stand/Hoch − 1) × 100).
+    """
     kurve = statistik.get("kurve") or []
     x = [p[0] for p in kurve]
     y = [p[1] for p in kurve]
@@ -113,11 +118,11 @@ def kurve_unterwasser_chart(statistik: dict) -> go.Figure:
     spitze = float("-inf")
     for stand in y:
         spitze = max(spitze, stand)
-        unterwasser.append((spitze - stand) / spitze * 100.0 if spitze > 0 else 0.0)
+        unterwasser.append((stand / spitze - 1.0) * 100.0 if spitze > 0 else 0.0)
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
                         row_heights=[0.62, 0.38], vertical_spacing=0.08,
                         subplot_titles=("Virtuelles Konto (geschlossene Trades)",
-                                        "Unterwasser (% unter letztem Höchststand)"))
+                                        "Unterwasser — Abstand zum letzten Höchststand"))
     fig.add_trace(go.Scatter(
         x=x, y=y, mode="lines", name="Kontostand",
         line={"color": _FARBE_KURVE, "width": 2},
@@ -126,13 +131,13 @@ def kurve_unterwasser_chart(statistik: dict) -> go.Figure:
         x=x, y=unterwasser, mode="lines", name="Unterwasser",
         line={"color": _FARBE_NEGATIV, "width": 1.5}, fill="tozeroy",
         fillcolor="rgba(211,47,47,0.18)",
-        hovertemplate="%{x}<br>−%{y:.2f} %<extra></extra>"), row=2, col=1)
+        hovertemplate="%{x}<br>%{y:.2f} %<extra></extra>"), row=2, col=1)
     fig.update_layout(
         height=440, template="plotly_white", margin={"l": 56, "r": 14, "t": 8, "b": 8},
         hovermode="x unified", showlegend=False,
     )
     fig.update_yaxes(title_text="USD", tickformat=",.0f", row=1, col=1)
-    fig.update_yaxes(title_text="%", row=2, col=1)
+    fig.update_yaxes(title_text="%", row=2, col=1, ticksuffix=" %")
     return fig
 
 
