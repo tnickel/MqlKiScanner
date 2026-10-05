@@ -1070,6 +1070,39 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   bleibt Vorbewertung der Vorstufe. +4 Tests (Vorbehalt-Rechnung,
   Reset bei belastbarer Messung, ohne rohem Wert, DB-Rundtrip).
 
+- ✅ HALTZEIT-STATISTIK + TRADELISTE („Scalper abschätzen") +
+  PELICAN-LÜCKEN-FIX (05.10.2026, Nutzer-Wunsch + HRC-Algo-Fall):
+  **Scanner:** Button „📋 Tradeliste + Haltezeit-Statistik" in der
+  Alle-Signale-Detailansicht — horizontaler Balken der Haltezeiten
+  (0 Sek / <1 Min / 1–5 Min / 5–15 Min / 15–60 Min / 1–4 Std / 4–24 Std /
+  1–3 Tage / >3 Tage), die GEFÄHRLICHEN Buckets ROT (Nutzer: „ganz
+  wichtig — <1 Minute, da man diese Trades möglicherweise nicht traden
+  kann"; 0-Sek-Fills ebenfalls). Gefahren-Warnung mit Anzahl/Anteil,
+  Median/Max-Haltezeit, komplette Tradeliste (neueste zuerst, mit
+  Dauer-Spalte) + CSV-Download, alles über st.cache_data je
+  (Pfad, SHA). signal_statistik.dauer_statistik/tradeliste/dauer_text.
+  LIVE-BEWEIS HRC Algo #2053240: 46,5 % der Trades unter 1 Minute
+  (47/101) — der Signalanbieter ist ein Sub-Minuten-Scalper, Kopier-
+  Reproduzierbarkeit damit fundamental fraglich. +2 Tests.
+  **PelicanMonitor (SIGNALDOWNLOADER/PelicanTrading):** HRC zeigte
+  „Max-DD 1,2 % (H1)" vs. Plattform 15,49 % — Ursache: Pelican meldet
+  ein Inception-Datum NACH dem echten Historienbeginn (Return History
+  ab Okt 2025, Trades erst ab 24.11. geladen; genau die fehlenden
+  Wochen enthielten den schlimmsten Drawdown −20 %-Dip). ZWEI Fixes:
+  (1) ladeStart() = ÄLTESTES von Inception und frühestem Tages-Historie-
+  Datum (ladeStats.history) minus 3 Tage Puffer — beide Aufrufstellen
+  (Einzel-/Batch-Laden); Batch lädt Stats jetzt IMMER (braucht die
+  Tageshistorie). (2) SignalStore.mergeClosed(): neuer Bestand wird per
+  TradeId ZUSAMMENGEFÜHRT (frisch gewinnt), statt die Datei zu über-
+  schreiben — ein still-leeres API-Fenster löscht nie wieder Trades
+  (beobachtet: HRC-Snapshot verlor 11.11.–24.11. beim Nachladen).
+  Dialogtext „Alle neu laden (volle Historie)". 4 Java-Tests
+  (SignalStoreMergeTest), Suite 67/67 grün. NACH DEM NEUSTART des
+  Monitors: „Tradelisten laden" → „Alle neu laden" (Merge ergänzt die
+  frühen Wochen), dann Scanner-Teilscan — HRC/Pentagon misst dann die
+  echte Historie inkl. Drawdown-Phase; implizite Kapitalbasis korrigiert
+  sich selbst (fehlende Verluste landen im Trade-Netto).
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

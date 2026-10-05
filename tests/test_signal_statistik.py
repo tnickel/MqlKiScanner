@@ -140,3 +140,43 @@ def test_martingale_flag_durchgereicht(tmp_path):
     erg = signal_statistik.berechne(pfad, {"balance_usd": 1_000.0})
     assert erg["martingale_flag"] is True
     assert "Martingale" in (erg["martingale_text"] or "")
+
+
+# ------------------------------------------------- Haltezeiten (05.10.)
+def test_dauer_statistik_buckets_und_gefaehrlich(tmp_path):
+    """0-Sek- und <1-Min-Trades sind die gefährlichen Kopier-Kandidaten."""
+    pfad = _csv(tmp_path / "d.csv", [
+        _trade("2026.01.05 10:00", 0, "XAUUSD", 2000.0, 2001.0, -2.0),   # 0 Sek
+        _trade("2026.01.05 11:00", 0.5, "XAUUSD", 2000.0, 2001.0, 3.0),  # 30 s = <1 Min
+        _trade("2026.01.05 12:00", 3, "XAUUSD", 2000.0, 2001.0, 5.0),    # 1–5 Min
+        _trade("2026.01.05 13:00", 120, "XAUUSD", 2000.0, 2001.0, 7.0),  # 1–4 Std
+        _trade("2026.01.05 14:00", 7200, "XAUUSD", 2000.0, 2001.0, 9.0),  # >3 T
+    ])
+    erg = signal_statistik.berechne(pfad, {"balance_usd": 10_000.0})
+    ds = erg["dauer_statistik"]
+    je = {b["bucket"]: b for b in ds["buckets"]}
+    assert je["0 Sek"]["anzahl"] == 1 and je["0 Sek"]["gefaehrlich"] is True
+    assert je["0 Sek"]["netto_usd"] == pytest.approx(-2.0)
+    assert je["<1 Min"]["anzahl"] == 1 and je["<1 Min"]["gefaehrlich"] is True
+    assert je["1–5 Min"]["anzahl"] == 1 and je["1–5 Min"]["gefaehrlich"] is False
+    assert je["1–4 Std"]["anzahl"] == 1
+    assert je[">3 Tage"]["anzahl"] == 1
+    assert ds["gefaehrlich_anzahl"] == 2
+    assert ds["gefaehrlich_anteil_pct"] == pytest.approx(40.0)
+    assert ds["null_sek"] == 1 and ds["unter_1min"] == 1
+    # 7200 Min = 5 Tage
+    assert ds["dauer_max_s"] == pytest.approx(7200.0 * 60)
+
+
+def test_tradeliste_neueste_zuerst_mit_dauer(tmp_path):
+    pfad = _csv(tmp_path / "t.csv", [
+        _trade("2026.01.05 10:00", 1, "EURUSD", 1.1, 1.11, 50.0),
+        _trade("2026.01.06 10:00", 0, "EURUSD", 1.1, 1.11, 25.0),
+    ])
+    zeilen = signal_statistik.tradeliste(pfad, {"balance_usd": 10_000.0})
+    assert len(zeilen) == 2
+    assert zeilen[0]["Eröffnet"].startswith("2026-01-06")   # neueste zuerst
+    assert zeilen[0]["Dauer"] == "0 s"
+    assert zeilen[0]["Netto USD"] == pytest.approx(25.0)
+    assert zeilen[1]["Dauer"] == "60 s" or zeilen[1]["Dauer"] == "1.0 Min"
+    assert signal_statistik.tradeliste(str(tmp_path / "fehlt.csv"), {}) == []

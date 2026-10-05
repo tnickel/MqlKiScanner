@@ -9,14 +9,27 @@ Max-Drawdown bleibt dort exklusiv.
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
+
+from . import signal_statistik
 
 # Farbwelt wie Equity-Studie (dunkles Theme verträgt diese Töne am besten).
 _FARBE_POSITIV = "#2e7d32"
 _FARBE_NEGATIV = "#d32f2f"
 _FARBE_KURVE = "#1f6feb"
+
+
+@st.cache_data(show_spinner=False)
+def _tradeliste_cached(trades_pfad: str, sha: str) -> list[dict]:
+    """Tradeliste je (Pfad, SHA) cachen — 15k-Zeilen-Listen nicht je Rerun
+    neu parsen; der SHA verhindert veraltete Caches nach Neu-Lieferung."""
+    return signal_statistik.tradeliste(trades_pfad, {})
 
 # Kapitalbasis-Kürzel für die Tabellenspalte „Basis“.
 BASIS_KUERZEL = {
@@ -140,6 +153,30 @@ def kurve_unterwasser_chart(statistik: dict) -> go.Figure:
     )
     fig.update_yaxes(title_text="USD", tickformat=",.0f", row=1, col=1)
     fig.update_yaxes(title_text="%", row=2, col=1, ticksuffix=" %")
+    return fig
+
+
+def dauer_balken_chart(dauer_statistik: dict) -> go.Figure:
+    """Haltezeit-Verteilung als horizontale Balken (Nutzer 05.10.: Scalper
+    abschätzen). Die GEFAEHRLICHEN Buckets (0 Sek, <1 Min) rot markiert —
+    beim Kopieren möglicherweise nicht erreichbar (Latenz/Slippage)."""
+    buckets = list(reversed(dauer_statistik.get("buckets") or []))
+    namen = [b["bucket"] for b in buckets]
+    anzahl = [b["anzahl"] for b in buckets]
+    farben = ["#d32f2f" if b.get("gefaehrlich") else "#1f6feb" for b in buckets]
+    custom = [(b["anteil_pct"], b["netto_usd"]) for b in buckets]
+    fig = go.Figure(go.Bar(
+        y=namen, x=anzahl, orientation="h", marker_color=farben,
+        customdata=custom,
+        hovertemplate="%{y}<br>%{x} Trades (%{customdata[0]:.1f} %)"
+                      "<br>Netto %{customdata[1]:,.2f} USD<extra></extra>",
+    ))
+    fig.update_layout(
+        height=380, template="plotly_white", margin={"l": 90, "r": 14, "t": 8, "b": 8},
+        hovermode="y unified", showlegend=False,
+        xaxis={"title": "Trades", "tickformat": ",.0f"},
+        yaxis={"title": None},
+    )
     return fig
 
 
@@ -290,6 +327,47 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
             } for sym, werte in sorted(per_symbol.items(),
                                        key=lambda kv: -kv[1].get("trades", 0))],
                 hide_index=True, width="stretch")
+
+    # ── Tradeliste + Haltezeit-Statistik (Nutzer-Wunsch 05.10.) ────────────
+    st.divider()
+    schalter_tl = f"{key_prefix}_tradeliste_offen"
+    ds = statistik.get("dauer_statistik") or {}
+    if st.button("📋 Tradeliste + Haltezeit-Statistik",
+                 key=f"{key_prefix}_tradeliste_button", icon=":material/receipt_long:",
+                 help="Verteilung der Haltezeiten (Scalper-Erkennung) und die "
+                      "komplette Tradeliste aus dem Cache. Haltezeiten unter "
+                      "einer Minute sind beim Kopieren gefährlich: Die eigene "
+                      "Kopie erreicht solche Fills wegen Latenz/Slippage "
+                      "möglicherweise gar nicht."):
+        st.session_state[schalter_tl] = not st.session_state.get(schalter_tl, False)
+    if st.session_state.get(schalter_tl) and ds:
+        if ds.get("gefaehrlich_anzahl"):
+            st.warning(
+                f"**⚠ {ds['gefaehrlich_anzahl']} Trades "
+                f"({ds.get('gefaehrlich_anteil_pct', 0.0):.1f} %) dauerten "
+                "0 Sekunden oder unter einer Minute.** Beim Kopieren solcher "
+                "Signale sind diese Trades mit eigener Latenz und Slippage "
+                "möglicherweise NICHT erreichbar — die eigene Kopie kann die "
+                "Ergebnisse dann nicht reproduzieren. Für Scalper gilt: "
+                "je höher dieser Anteil, desto kritischer.",
+                icon=":material/timer:")
+        st.caption(
+            f"Median-Haltezeit {signal_statistik.dauer_text(ds.get('dauer_median_s') or 0.0)} · "
+            f"längste {signal_statistik.dauer_text(ds.get('dauer_max_s') or 0.0)} · "
+            f"{ds.get('null_sek', 0)}× 0 Sekunden · {ds.get('unter_1min', 0)}× unter 1 Minute")
+        st.plotly_chart(dauer_balken_chart(ds), width="stretch",
+                        key=f"{key_prefix}_dauer")
+        pfad = getattr(auswahl, "trades_path", "") or ""
+        if pfad and Path(pfad).exists():
+            zeilen = _tradeliste_cached(
+                pfad, getattr(auswahl, "trades_sha256", "") or "kein-sha")
+            st.dataframe(zeilen, hide_index=True, height=420,
+                         width="stretch", key=f"{key_prefix}_tradeliste")
+            csv = pd.DataFrame(zeilen).to_csv(index=False, sep=';').encode('utf-8-sig')
+            st.download_button("Tradeliste als CSV", csv,
+                               f"tradeliste_{getattr(auswahl, 'id', 'x')}.csv",
+                               'text/csv', key=f"{key_prefix}_tradeliste_csv",
+                               icon=":material/download:")
 
     # ── Max-DD aus Kursen: die Equity-Studie unverändert einbinden ─────────
     st.divider()

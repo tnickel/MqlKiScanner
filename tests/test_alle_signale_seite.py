@@ -15,6 +15,7 @@ from streamlit.testing.v1 import AppTest
 
 from mqlkiscanner import db, pipeline
 from mqlkiscanner.alle_signale_ui import (
+    dauer_balken_chart,
     kurve_unterwasser_chart,
     monats_balken_chart,
     tabellen_zeile,
@@ -138,3 +139,59 @@ def test_tabellen_zeile_ohne_statistik_zeigt_striche():
     assert zeile["Gewinn %/M (geom.)"] is None
     assert zeile["Basis"] == "—"
     assert zeile["Ampel"] == "⚪"
+
+
+# ------------------------------------------------ Haltezeiten (05.10.)
+def test_dauer_balken_chart_markiert_gefaehrliche_rot():
+    ds = {"buckets": [
+        {"bucket": "<1 Min", "anzahl": 30, "anteil_pct": 15.0, "netto_usd": 90.0,
+         "gefaehrlich": True},
+        {"bucket": "1–4 Std", "anzahl": 50, "anteil_pct": 25.0, "netto_usd": 300.0,
+         "gefaehrlich": False},
+    ]}
+    fig = dauer_balken_chart(ds)
+    # Reihenfolge umgedreht (horizontal): oberster Bucket = letzter der Liste
+    assert list(fig.data[0].y) == ["1–4 Std", "<1 Min"]
+    assert tuple(fig.data[0].marker.color) == ("#1f6feb", "#d32f2f")
+
+
+def test_render_detail_tradeliste_und_vorbehalt(tmp_path):
+    """render_detail direkt (AppTest.from_string-Muster): Tradeliste-Button
+    klappt Haltezeit-Balken + Warnung auf; RetDD-Vorbehalt erscheint orange."""
+    csv_pfad = _csv(tmp_path / "t42.csv")
+    ds = ("{'buckets': ["
+          "{'bucket': '0 Sek', 'anzahl': 2, 'anteil_pct': 2.0, 'netto_usd': -4.0, 'gefaehrlich': True},"
+          "{'bucket': '<1 Min', 'anzahl': 1, 'anteil_pct': 1.0, 'netto_usd': 3.0, 'gefaehrlich': True},"
+          "{'bucket': '1–4 Std', 'anzahl': 97, 'anteil_pct': 97.0, 'netto_usd': 900.0, 'gefaehrlich': False}],"
+          "'null_sek': 2, 'unter_1min': 1, 'gefaehrlich_anzahl': 3, "
+          "'gefaehrlich_anteil_pct': 3.0, 'dauer_median_s': 45.0, 'dauer_max_s': 72000.0}")
+    code = f"""
+import sys
+sys.path.insert(0, r"{ROOT / 'src'}")
+import streamlit as st
+from mqlkiscanner.alle_signale_ui import render_detail
+from mqlkiscanner.pipeline import ScanResult
+auswahl = ScanResult(id=42, name="Vorbehalt Detail", ampel="🟡", quelle="pelik",
+                     trades_path=r"{csv_pfad}", trades_sha256="abc123")
+auswahl.retdd_monat_vorbehalt = 0.1032
+auswahl.retdd_vorbehalt_grund = "Offene Position über Wechselgrenze"
+auswahl.equity_dd_rekon_roh_pct = 13.83
+render_detail(auswahl, {{"dauer_statistik": {ds}, "monate_pct": {{}},
+                         "monate_usd": {{}}, "kurve": [], "trades": 100,
+                         "kapitalbasis_ok": True,
+                         "kapitalbasis_usd": 1713.0,
+                         "kapitalbasis_quelle": "implizit_aus_balance"}},
+              key_prefix="x")
+"""
+    at = AppTest.from_string(code, default_timeout=60)
+    at.run()
+    assert not at.exception, at.exception
+    at.button(key="x_tradeliste_button").click()
+    at.run()
+    assert not at.exception, at.exception
+    warn_text = " ".join(w.value for w in at.warning)
+    assert "0 Sekunden oder unter einer Minute" in warn_text
+    text = " ".join(x.value for x in at.markdown)
+    assert "RetDD (Vorbehalt) ≈ 0,10" in text
+    assert "Wechselgrenze" in text
+    assert any("Median-Haltezeit" in c.value for c in at.caption)
