@@ -293,6 +293,19 @@ class ScanResult:
         return (self.retdd_jahr if self.retdd_jahr is not None
                 else self.retdd_jahr_vorbehalt)
 
+    @property
+    def true_max_drawdown_pct(self) -> float | None:
+        """Anzeigewert der True-Drawdown-Spalte (Nutzer-Wunsch 06.10.): der
+        ECHTE Max-Drawdown (Equity inkl. schwebender Verluste, aus Kursen)
+        — der Nenner von TrueRetDD/Calmar. Belastbar gemessen wenn vorhanden,
+        sonst der ROHE Kurs-DD (vorbehaltlich, in der UI orange)."""
+        belastbar = self.max_drawdown_equity_pct
+        if belastbar is not None:
+            return belastbar
+        if self.forensik_stale:
+            return None
+        return self.equity_dd_rekon_roh_pct
+
     def refresh_efficiency(self) -> None:
         """Eine RetDD-Formel für Scan, DB, Tabelle, Auswahl und KI.
 

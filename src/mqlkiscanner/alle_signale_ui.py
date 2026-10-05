@@ -81,10 +81,17 @@ def tabellen_zeile(result, statistik: dict | None) -> dict:
         "Trading-DD % (Trades)": statistik.get("trading_dd_pct"),
         # TrueRetDD (Nutzer 05.10.) = JAHRES-Calmar seit der Gate-Umstellung:
         # belastbare Kursmessung normal, vorbehaltliche orange (Marker in
-        # der Vorbehalt-Spalte); der Monatswert steht daneben.
+        # der Vorbehalt-Spalte); der Monatswert steht daneben. True-Drawdown
+        # (Nutzer 06.10.) = derselbe Nenner als eigene Spalte (echter
+        # Max-DD aus Kursen, vorbehaltlich orange).
+        "True-Drawdown %": getattr(result, "true_max_drawdown_pct", None),
+        "True-Drawdown (Vorbehalt)": (
+            getattr(result, "equity_dd_rekon_roh_pct", None)
+            if getattr(result, "max_drawdown_equity_pct", None) is None
+            else None),
         "TrueRetDD": getattr(result, "true_retdd_jahr", None),
         "TrueRetDD (Vorbehalt)": getattr(result, "retdd_jahr_vorbehalt", None),
-        "RetDD/Monat": getattr(result, "retdd_monat", None),
+        "RetDD/Monat": getattr(result, "true_retdd_monat", None),
         "Profitfaktor": statistik.get("profit_faktor"),
         "Winrate %": statistik.get("winrate_pct"),
         "Trades": statistik.get("trades"),
@@ -344,6 +351,26 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
         _kpi(st.container(), "Winrate %", _de(statistik.get("winrate_pct"), 1))
         _kpi(st.container(), "Trades", _de(statistik.get("trades"), 0))
     with st.container(horizontal=True):
+        # True-Drawdown (Nutzer 06.10.): der Nenner von TrueRetDD/Calmar als
+        # eigene Karte — belastbar gemessen normal, roh mit ≈ (vorbehaltlich).
+        dd_belastbar = getattr(auswahl, "max_drawdown_equity_pct", None)
+        dd_roh = getattr(auswahl, "equity_dd_rekon_roh_pct", None)
+        if dd_belastbar is not None:
+            _kpi(st.container(), "True-Drawdown %", _de(dd_belastbar, 1),
+                 "Echt gemessener Max-Drawdown: Equity inkl. schwebender "
+                 "Verluste (offene Positionen), stundenfein aus H1-Kursen — "
+                 "der Nenner von TrueRetDD/Calmar. Nicht der Trading-DD "
+                 "geschlossener Trades")
+        elif dd_roh is not None:
+            _kpi(st.container(), "True-Drawdown %", "≈ " + _de(dd_roh, 1),
+                 "ORANGE/VORBEHALT: roher Kurs-Max-DD (Equity inkl. "
+                 "schwebender Verluste), dessen Zeitbasis/Kursabdeckung die "
+                 "Verlässlichkeitsprüfung NICHT bestanden hat — Nenner des "
+                 "vorbehaltlichen TrueRetDD")
+        else:
+            _kpi(st.container(), "True-Drawdown %", "—",
+                 "Kein gemessener Kurs-Max-Drawdown — über die Equity-DD-"
+                 "Studie (Button unten) aus echten Kursen nachmessen")
         _kpi(st.container(), "Trading-DD % (Trades)",
              _de(statistik.get("trading_dd_pct")),
              "Größter Rückgang der Kurve GESCHLOSSENER Trades — ohne Floating")

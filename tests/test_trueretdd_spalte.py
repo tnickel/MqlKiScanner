@@ -24,6 +24,25 @@ def test_trueretdd_belastbar_steht_normal_ohne_marker():
     assert row["TrueRetDD (Vorbehalt)"] is None
 
 
+def test_true_drawdown_spalten_in_alle_signale_zeile():
+    """Nutzer-Wunsch 06.10.: True-Drawdown als eigene Spalte der Alle-
+    Signale-Tabelle — der Nenner von TrueRetDD/Calmar, belastbar normal,
+    roh vorbehaltlich (Marker steuert das Orange)."""
+    from mqlkiscanner.alle_signale_ui import tabellen_zeile
+    belastbar = _result(equity_dd_rekonstruiert_pct=6.0,
+                        equity_dd_rekon_roh_pct=13.83)
+    zeile = tabellen_zeile(belastbar, None)
+    assert zeile["True-Drawdown %"] == 6.0
+    assert zeile["True-Drawdown (Vorbehalt)"] is None
+    vorbehalt = _result(equity_dd_rekon_roh_pct=13.83,
+                        equity_rekon_grund="Wechselgrenze")
+    zeile2 = tabellen_zeile(vorbehalt, None)
+    # Ohne belastbare Messung zeigt die Spalte den ROHEN Kurs-DD (orange) —
+    # genau der Nenner des vorbehaltlichen Calmars.
+    assert zeile2["True-Drawdown %"] == 13.83
+    assert zeile2["True-Drawdown (Vorbehalt)"] == 13.83
+
+
 def test_trueretdd_vorbehalt_fuellt_die_spalte_mit_marker():
     r = _result(equity_dd_rekon_roh_pct=13.83,
                 equity_rekon_grund="Offene Position über Wechselgrenze")
@@ -64,6 +83,7 @@ def test_zentrale_property_true_retdd_monat():
     leer = _result(equity_rekon_grund="keine Kurse")
     leer.refresh_efficiency()
     assert leer.true_retdd_jahr is None
+    assert leer.true_max_drawdown_pct is None
 
 
 def test_alle_signale_zeile_verwendet_dieselbe_zusammenfuehrung():

@@ -100,17 +100,18 @@ def _prozent(titel: str):
     return st.column_config.NumberColumn(titel, format='%.2f')
 df = pd.DataFrame([tabellen_zeile(r, s) for r, s in paare])
 _gestylt = df.style
-if {'TrueRetDD', 'TrueRetDD (Vorbehalt)'} <= set(df.columns):
-    # TrueRetDD (Nutzer 05.10.): belastbar gemessen normal, vorbehaltlich
-    # orange (Marker in der Vorbehalt-Spalte; pandas-apply übergibt mit
-    # subset NUR die genannten Spalten, deshalb beide und Rückgabe je Zelle) —
-    # gleiche dezente Konvention wie in der Ergebnistabelle.
-    def _trueretdd_stil(zeile):
-        if pd.isna(zeile['TrueRetDD (Vorbehalt)']):
-            return ['', '']
-        return ['background-color: rgba(249,115,22,0.12); color: #fb923c', '']
-    _gestylt = _gestylt.apply(_trueretdd_stil, axis=1,
-                              subset=['TrueRetDD', 'TrueRetDD (Vorbehalt)'])
+for _paar in (('True-Drawdown %', 'True-Drawdown (Vorbehalt)'),
+              ('TrueRetDD', 'TrueRetDD (Vorbehalt)')):
+    # Belastbar gemessen normal, vorbehaltlich orange (Marker in der
+    # Vorbehalt-Spalte; pandas-apply übergibt mit subset NUR die genannten
+    # Spalten, deshalb beide und Rückgabe je Zelle) — gleiche dezente
+    # Konvention wie in der Ergebnistabelle.
+    if {_paar[0], _paar[1]} <= set(df.columns):
+        def _vorbehalt_stil(zeile, marker=_paar[1]):
+            if pd.isna(zeile[marker]):
+                return ['', '']
+            return ['background-color: rgba(249,115,22,0.12); color: #fb923c', '']
+        _gestylt = _gestylt.apply(_vorbehalt_stil, axis=1, subset=list(_paar))
 st.dataframe(
     _gestylt,
     key='alle_signale_tabelle',
@@ -134,20 +135,40 @@ st.dataframe(
         'Ertrag %/M (Plattform)': _prozent('Ertrag %/M (Plattform)'),
         'Gewinn %/M (geom.)': _prozent('Gewinn %/M (geom.)'),
         'Trading-DD % (Trades)': _prozent('Trading-DD % (Trades)'),
+        'True-Drawdown %': st.column_config.NumberColumn(
+            'True-Drawdown %', format='%.1f',
+            help='ECHTER Max-Drawdown: Equity inkl. schwebender Verluste '
+                 '(offene Positionen), aus der Kursmessung des letzten '
+                 'Scans — der Nenner von TrueRetDD/Calmar. Normal = '
+                 'belastbar gemessen; ORANGE ≈ = nur roh gemessen '
+                 '(Kursmessung nicht bestanden). Fehlt er ganz: Equity-DD-'
+                 'Studie im Detail öffnen'),
+        'True-Drawdown (Vorbehalt)': st.column_config.NumberColumn(
+            'True-Drawdown (Vorbehalt)', format='%.1f',
+            help='Technischer Marker: steht der Wert hier, ist die '
+                 'True-Drawdown-Zahl vorbehaltlich (orange) — der rohe '
+                 'Kurs-Max-DD statt der belastbaren Messung'),
         'TrueRetDD': st.column_config.NumberColumn('TrueRetDD', format='%.2f',
-                                    help='Ertrag ÷ ECHTER Max-Drawdown: geom. '
-                                         'Ertrag ÷ gemessenem Max-Drawdown der '
-                                         'Equity INKL. schwebender Verluste '
-                                         '(aus Kursen). Normal = belastbar; '
-                                         'ORANGE ≈ = vorbehaltlich (Kursmessung '
-                                         'nicht bestanden) — dann nur '
-                                         'orientierend, kein Grün'),
+                                    help='ECHTER Jahres-Calmar: CAGR ÷ '
+                                         'gemessenem Max-Drawdown der Equity '
+                                         'INKL. schwebender Verluste (aus '
+                                         'Kursen, nie Close-DD) — entscheidet '
+                                         'das Grün-Gate (ab 3,0). Normal = '
+                                         'belastbar; ORANGE ≈ = vorbehaltlich '
+                                         '(Kursmessung nicht bestanden)'),
         'TrueRetDD (Vorbehalt)': st.column_config.NumberColumn('TrueRetDD (Vorbehalt)',
                                     format='%.2f',
                                     help='Technischer Marker: steht der Wert hier, '
                                          'ist die angezeigte TrueRetDD-Zahl '
-                                         'vorbehaltlich (orange) — gerechnet mit '
+                                         'vorbehaltlich (orange) — Calmar mit '
                                          'dem rohen Kurs-Max-DD'),
+        'RetDD/Monat': st.column_config.NumberColumn('RetDD/Monat',
+                                    format='%.2f',
+                                    help='Monats-Variante: geometrische '
+                                         'Monatsrendite ÷ Max-Drawdown % '
+                                         '(Equity inkl. Floating) — '
+                                         'Anzeigewert, entscheidet nicht '
+                                         'mehr (Calmar-Gate seit 05.10.)'),
         'Profitfaktor': _prozent('Profitfaktor'),
         'Winrate %': st.column_config.NumberColumn('Winrate %', format='%.1f'),
         'Trades': st.column_config.NumberColumn('Trades', format='%.0f'),
