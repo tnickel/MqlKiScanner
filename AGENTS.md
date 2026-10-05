@@ -1103,6 +1103,31 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   echte Historie inkl. Drawdown-Phase; implizite Kapitalbasis korrigiert
   sich selbst (fehlende Verluste landen im Trade-Netto).
 
+- ✅ ROBO-LOTSKALIERUNG + BALANCE-DURCHREICHUNG — LadyTrader1-DD-Lücke
+  (05.10.2026, Nutzer-Fall „Website 43 % Max-DD, Scanner 3,58 %"):
+  ZWEI Wurzeln, beide bewiesen. (1) **CopyFX-API liefert Volumen in
+  Zehntel-Lots**: Netto = ΔKurs × 100.000 × Lots × 10, exakt über 233
+  Deals (3 Signale, Median 10,00; z. B. AUDUSD 0,012 API-Lots, 76 Pips,
+  +89,89 USD). Ohne Skalierung war die Floating-Reko ~10× zu flach
+  (real −5.874 USD am 11.03., Reko −655; mit ×10: −6.550 ≈ H1-genau);
+  außerdem rundete die alte Formatierung Mikropositionen (0,001 API)
+  auf 0,00 — ohne Volumen. (2) **BALANCE-Deals wurden weggeworfen** →
+  kein CSV-Einzahlungsweg → implizite Basis 41.577 USD (Web-Balance −
+  Netto) statt echtem Start ~9.000 (+87k/−53k USD Fluesse; das
+  Konto-„Wachstum“ 10K→200K ist zu einem Drittel Einzahlungs-Marketing).
+  Fix im RoboMonitor (Commit 6544ef7): trades.csv schreibt Lots × 10
+  (3 Dezimalen) + Balance-Zeilen im mql5-Format (Typ Balance, Betrag in
+  der Profit-Spalte — der Parser kennt das seit jeher). ENDE-ZU-ENDE
+  bewiesen: neue CSV → Scanner-Parser → Startkapital 8.996,89
+  (csv_einzahlungen!), End-Balance 132.562,13 == Robo-Tageshistorie
+  132.562 AUF DEN CENT; Trading-DD 3,79 → 9,15 %; Kurs-Max-DD rückt in
+  die 40-%-Region (= Website 43 %). Suite 135/135. **Wirksam ab
+  RoboMonitor-NEUSTART — trades.csv wird je REST-Abruf frisch aus den
+  gespeicherten Deals generiert, KEIN Deal-Neuladen nötig; der Scanner
+  sieht den neuen SHA und holt die Daten beim nächsten Scan automatisch.
+  Bestands-Re-Scan fällig; die 30-%-Schranke greift für LadyTrader1
+  vermutlich erstmals richtig.**
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:
