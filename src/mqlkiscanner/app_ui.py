@@ -408,7 +408,8 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                         + ["Ampel", "Name", "Quelle", "Stop", "Max-Drawdown %",
                            "Trading-DD % (geschlossen)", "Drawdown % (Plattform)",
                            "Studie",
-                           "Gewinn %/Monat", "RetDD", "Ertrag/Monat %", "Score",
+                           "Gewinn %/Monat", "RetDD", "RetDD (Vorbehalt)",
+                           "Ertrag/Monat %", "Score",
                            "Urteil", "Bericht vom", "Bericht",
                            "Link", "Abonnenten", "30 Tage", "7 Tage", "Dokumente"])
 
@@ -417,6 +418,13 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
     # bleiben bei der nativen Dataframe-Konfiguration.
     styled = df.style.map(lambda value: _max_drawdown_zellenstil(value, limit),
                           subset=["Max-Drawdown %"])
+    if "RetDD (Vorbehalt)" in df.columns:
+        # Vorbehaltlicher RetDD (Kursmessung unzuverlässig) immer orange —
+        # gleiche dezente Konvention wie die Max-DD-Zellen (Nutzer 03.10.).
+        styled = styled.map(
+            lambda value: (f"background-color: rgba(249,115,22,0.12); "
+                           f"color: #fb923c") if pd.notna(value) else "",
+            subset=["RetDD (Vorbehalt)"])
     event = st.dataframe(
         styled,
         key=key,
@@ -463,6 +471,13 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                      "Ohne Gewinn oder belastbare Equity-Messung sowie "
                      "bei Max-Drawdown 0 bleibt RetDD leer. "
                      "Trading-DD und Plattform-DD ersetzen diese Messung nicht."),
+            "RetDD (Vorbehalt)": st.column_config.NumberColumn(
+                "RetDD (Vorbehalt)", format="%.2f",
+                help="ORANGE = VORBEHALT: Gewinn %/Monat ÷ roher Kurs-Max-DD, "
+                     "dessen Zeitbasis/Kursabdeckung die Verlässlichkeitsprüfung "
+                     "NICHT bestanden hat (z. B. Grid-Positionen über "
+                     "Zeitwechsel-Grenzen). Nur orientierend — der belastbare "
+                     "RetDD bleibt unbekannt, ohne ihn gibt es kein Grün."),
             "PF": st.column_config.NumberColumn("PF", format="%.2f"),
             "Drawdown % (Plattform)": st.column_config.NumberColumn(
                 "Drawdown % (Plattform)", format="%.1f",
@@ -1058,6 +1073,16 @@ def render_detail(result) -> None:
                   help="Gewinn %/Monat ÷ gemessener Max-Drawdown % (Equity). "
                        "Fehlende oder nullprozentige Equity-Messung liefert kein Verhältnis.",
                   border=True)
+        vorbehalt = row.get("RetDD (Vorbehalt)")
+        if retdd is None and vorbehalt is not None:
+            st.metric("RetDD (Vorbehalt)",
+                      f"≈ {vorbehalt:.2f}",
+                      help="ORANGE/VORBEHALT: Gewinn %/Monat ÷ roher Kurs-Max-DD, "
+                           "dessen Zeitbasis/Kursabdeckung die Verlässlichkeitsprüfung "
+                           "NICHT bestanden hat (z. B. offene Positionen über "
+                           "Zeitwechsel-Grenzen). Nur orientierend — ohne belastbare "
+                           "Messung gibt es kein Grün.",
+                      border=True)
         st.metric("Trading-DD (geschlossen)",
                   f"{result.trading_dd_pct:.1f} %" if result.trading_dd_pct is not None else "—",
                   border=True)
@@ -1072,6 +1097,14 @@ def render_detail(result) -> None:
         st.warning(result.equity_messung_status + ". Der Trading-DD enthält "
                    "keine zwischenzeitlichen offenen Gewinne oder Verluste.",
                    icon=":material/monitoring:")
+        if result.retdd_monat_vorbehalt is not None:
+            st.markdown(
+                f":orange[**RetDD (Vorbehalt) ≈ {result.retdd_monat_vorbehalt:.2f}:**] "
+                f"gerechnet mit dem ROHEN Kurs-Max-DD "
+                f"{result.equity_dd_rekon_roh_pct:.1f} %, dessen Messung die "
+                f"Verlässlichkeitsprüfung nicht bestanden hat — "
+                f"{result.retdd_vorbehalt_grund}. Der Wert ist nur eine "
+                "Orientierung; ohne belastbare Messung gibt es kein Grün.")
     else:
         st.caption(result.equity_messung_status + " · Die Drawdown-Schranke "
                    "berücksichtigt zusätzlich beide Plattformwerte und den Trading-DD.")

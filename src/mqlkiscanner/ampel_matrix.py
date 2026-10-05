@@ -361,6 +361,27 @@ def _retdd_zelle(r) -> Zelle:
     r.refresh_efficiency()
     wert = getattr(r, "retdd_monat", None)
     if wert is None:
+        # Vorbehaltlicher Wert (Nutzer 05.10. „besser als nix"): die Kurs-
+        # Messung existiert, hat die Verlässlichkeitsprüfung aber nicht
+        # bestanden. ORANGE — orientierend, nie ein Grün-Beleg.
+        vorbehalt = getattr(r, "retdd_monat_vorbehalt", None)
+        if vorbehalt is not None:
+            vorbehalt_jahr = getattr(r, "retdd_jahr_vorbehalt", None)
+            jahr_text = (f" (Calmar/Jahr ≈ {vorbehalt_jahr:g})"
+                         if vorbehalt_jahr is not None else "")
+            grund = getattr(r, "retdd_vorbehalt_grund", "") or \
+                "Zeitbasis/Kursabdeckung unzuverlässig"
+            return Zelle(
+                ORANGE, f"≈ {vorbehalt:.2f} / Monat",
+                f"VORBEHALT: Der Wert rechnet die eigene geometrische "
+                f"Monatsrendite {_num(r.ertrag_monat_geom_pct)} % ÷ rohen "
+                f"Kurs-Max-DD {_num(r.equity_dd_rekon_roh_pct)} % ≈ "
+                f"{vorbehalt:.2f}{jahr_text}. Die Kursmessung gilt als "
+                f"NICHT verlässlich ({grund}) — der Wert ist nur "
+                "orientierend und als Vorbehalt zu lesen; ein belastbarer "
+                "RetDD bleibt unbekannt und ohne ihn gibt es kein Grün "
+                "(kein Rendite-Risiko-Urteil auf unzuverlässiger Basis). "
+                "Plattform-, Balance- und Trading-DD sind kein Ersatznenner.")
         grund = {
             "veraltet": "Die Forensik ist veraltet.",
             "rendite_nicht_berechenbar": "Eine aktuelle geometrische Monatsrendite fehlt.",

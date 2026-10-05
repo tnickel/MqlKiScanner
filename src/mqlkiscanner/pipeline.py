@@ -159,6 +159,14 @@ class ScanResult:
     # jährlicher Wert = Jahres-CAGR / gemessener Equity-DD (nicht ×12).
     retdd_monat: float | None = None
     retdd_jahr: float | None = None
+    # Nutzer-Wunsch 05.10.2026: RetDD auch bei NUR vorbehaltlich belastbarer
+    # Kursmessung zeigen („besser als nix") — orange gekennzeichnet, nie
+    # Grün-Beleg. Nenner ist der rohe Kurs-Max-DD, dessen Zeitbasis/Abdeckung
+    # die Verlässlichkeitsprüfung NICHT bestanden hat; der belastbare Wert
+    # (retdd_monat) bleibt dann unbekannt und sperrt Grün weiter zu.
+    retdd_monat_vorbehalt: float | None = None
+    retdd_jahr_vorbehalt: float | None = None
+    retdd_vorbehalt_grund: str = ""
     # Geometrisches Monatsmittel auf der gesamten Export-Zeitspanne;
     # Jahreswert = virtueller CAGR / gemessener Equity-DD. Bei abweichenden
     # Kapitalbasen kein belegter kapitalflussneutraler Konto-Calmar.
@@ -205,6 +213,10 @@ class ScanResult:
     # gesetzt; geht dann als viertes Maximum in die Drawdown-Schranke ein)
     equity_dd_rekonstruiert_pct: float | None = None
     equity_dd_rekonstruiert_usd: float | None = None
+    # Roher Kurs-Max-DD OHNE Verlässlichkeits-Gate (Nutzer-Wunsch 05.10.):
+    # Nenner für den vorbehaltlichen RetDD, wenn die Messung existiert, aber
+    # Zeitbasis/Abdeckung die Prüfung nicht bestanden haben.
+    equity_dd_rekon_roh_pct: float | None = None
     equity_rekon_gmt_h: int | None = None
     equity_rekon_status: str = ""
     equity_rekon_grund: str = ""
@@ -326,6 +338,26 @@ class ScanResult:
         for key in ("retdd_monat", "retdd_jahr"):
             if not endlich(getattr(self, key)):
                 setattr(self, key, None)
+        # Vorbehaltlicher RetDD (Nutzer 05.10. „besser als nix"): nur wenn
+        # der BELASTBARE Wert fehlt, aber eine KURS-Messung existiert, die
+        # die Verlässlichkeitsprüfung nicht bestanden hat. Der rohe DD ist
+        # dann der Nenner; der Wert ist orange zu zeigen und sperrt Grün.
+        roh = self.equity_dd_rekon_roh_pct
+        if (self.retdd_monat is None and not self.forensik_stale
+                and endlich(roh) and roh > 0
+                and endlich(self.ertrag_monat_geom_pct)):
+            self.retdd_monat_vorbehalt = self.ertrag_monat_geom_pct / roh
+            self.retdd_jahr_vorbehalt = (self.cagr_jahr_pct / roh
+                                         if endlich(self.cagr_jahr_pct) else None)
+            for key in ("retdd_monat_vorbehalt", "retdd_jahr_vorbehalt"):
+                if not endlich(getattr(self, key)):
+                    setattr(self, key, None)
+            self.retdd_vorbehalt_grund = (self.equity_rekon_grund
+                                          or "Kurs-Rekonstruktion unzuverlässig")
+        else:
+            self.retdd_monat_vorbehalt = None
+            self.retdd_jahr_vorbehalt = None
+            self.retdd_vorbehalt_grund = ""
         status = ("veraltet" if self.forensik_stale else
                   "rendite_nicht_berechenbar" if self.ertrag_monat_geom_pct is None else
                   "ohne_equity_dd" if dd is None else
@@ -339,6 +371,11 @@ class ScanResult:
             "cagr_jahr_pct": self.cagr_jahr_pct,
             "retdd_monat": self.retdd_monat,
             "retdd_jahr": self.retdd_jahr,
+            "retdd_monat_vorbehalt": self.retdd_monat_vorbehalt,
+            "retdd_jahr_vorbehalt": self.retdd_jahr_vorbehalt,
+            "retdd_vorbehalt_grund": self.retdd_vorbehalt_grund or None,
+            "retdd_vorbehalt_nenner": self.equity_dd_rekon_roh_pct
+            if self.retdd_monat_vorbehalt is not None else None,
             "retdd_basis": "gemessener_max_equity_drawdown_inkl_floating",
             "equity_messung": self.equity_messung_status,
             "formel_monat": "ertrag_monat_geom_pct / dd_max_equity_pct",
@@ -378,6 +415,7 @@ class ScanResult:
             "Max-Drawdown %": self.max_drawdown_equity_pct,
             "Gewinn %/Monat": self.ertrag_monat_geom_pct,
             "RetDD": self.retdd_monat,
+            "RetDD (Vorbehalt)": self.retdd_monat_vorbehalt,
             "Trading-DD % (geschlossen)": self.trading_dd_pct,
             "Equity-Messung": self.equity_messung_status,
             "Winrate %": self.winrate_pct,
@@ -500,6 +538,10 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             equity_dd_rekonstruiert_usd=(f.get("equity_rekonstruktion") or {}).get(
                 "equity_dd_usd") if (f.get("equity_rekonstruktion") or {}).get(
                 "verlaesslich") else None,
+            # Roh-Wert OHNE Gate: Nenner für den vorbehaltlichen RetDD
+            equity_dd_rekon_roh_pct=(f.get("equity_rekonstruktion") or {}).get(
+                "equity_dd_pct_raw", (f.get("equity_rekonstruktion") or {}).get(
+                    "equity_dd_pct")),
             equity_rekon_gmt_h=(f.get("equity_rekonstruktion") or {}).get(
                 "gmt_offset_h"),
             equity_rekon_status=(f.get("equity_rekonstruktion") or {}).get("status") or "",
@@ -578,6 +620,15 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             res.urteil = (res.urteil or "") + (
                 f" · Max-DD aus Kursen {res.equity_dd_rekonstruiert_pct} % "
                 f"({res.equity_rekon_gmt_text})")
+        # Vorbehaltlicher RetDD sichtbar halten (Nutzer 05.10. „besser als
+        # nix"): idempotenter Anhang; die Erklärung steht in der Matrix-Zelle
+        # und den Detailansichten. Sperrt Grün NICHT auf (retdd_monat bleibt
+        # unbekannt).
+        if (res.retdd_monat is None and res.retdd_monat_vorbehalt is not None
+                and "RetDD ≈" not in (res.urteil or "")):
+            res.urteil = (res.urteil or "") + (
+                f" · RetDD ≈ {res.retdd_monat_vorbehalt:.2f}/M "
+                "(Vorbehalt: Kursmessung unzuverlässig)")
         results.append(res)
     return results
 

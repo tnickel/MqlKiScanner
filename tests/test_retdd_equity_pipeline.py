@@ -174,3 +174,67 @@ def test_equity_status_nennt_nur_tatsaechlich_verwendete_gueltige_quellen(invali
     result = _result(monitor_trade_eq_dd_pct=invalid)
     assert result.to_row()["RetDD"] == 2
     assert result.equity_messung_status == "Gemessen: Kurse (H1, virtuelle Trading-Equity)"
+
+
+# ------------------- Vorbehaltlicher RetDD (Nutzer-Wunsch 05.10.2026) ----
+def test_vorbehalt_retdd_bei_unzuverlaessiger_kursmessung():
+    """„Besser als nix": Kurs-Messung existiert (roh), besteht die
+    Verlässlichkeitsprüfung aber nicht -> vorbehaltlicher Wert rechnet,
+    belastbarer RetDD bleibt None und sperrt Grün weiter zu."""
+    result = _result(equity_dd_rekonstruiert_pct=None,
+                     equity_dd_rekon_roh_pct=13.83,
+                     equity_rekon_grund="Offene Position über Wechselgrenze",
+                     ertrag_monat_geom_pct=1.4269, cagr_jahr_pct=18.2)
+    row = result.to_row()
+    assert row["RetDD"] is None
+    assert row["RetDD (Vorbehalt)"] == pytest.approx(1.4269 / 13.83)
+    # Grün bleibt gesperrt (Nutzer-Regel: RetDD nur mit belastbarer Messung).
+    ampel, urteil = pipeline.ampel_for(result, {})
+    assert ampel != "🟢"
+    # Matrix-Zelle: ORANGE mit Vorbehalt-Erklärung.
+    from mqlkiscanner.ampel_matrix import _retdd_zelle
+    zelle = _retdd_zelle(result)
+    assert zelle.ampel == "🟠"
+    assert "VORBEHALT" in zelle.detail
+    assert "Wechselgrenze" in zelle.detail
+
+
+def test_vorbehalt_retdd_leer_wenn_belastbare_messung_vorliegt():
+    result = _result(equity_dd_rekonstruiert_pct=6.0,
+                     equity_dd_rekon_roh_pct=13.83)
+    assert result.to_row()["RetDD"] == 2.0
+    assert result.to_row()["RetDD (Vorbehalt)"] is None
+
+
+def test_vorbehalt_retdd_ohne_rohe_messung_leer():
+    result = _result(equity_dd_rekonstruiert_pct=None,
+                     equity_dd_rekon_roh_pct=None,
+                     equity_rekon_grund="keine Kurse")
+    assert result.to_row()["RetDD (Vorbehalt)"] is None
+
+
+def test_vorbehalt_retdd_db_rundtrip_ohne_rescan():
+    """Der rohe DD liegt bereits in alten Forensik-Snapshots — der
+    vorbehaltliche RetDD entsteht beim DB-Laden, ganz ohne Neu-Scan."""
+    db.init_db()
+    db.store_scan_result(
+        900123,
+        {"name": "Vorbehalt Muster", "stats": {
+            "forensik_ok": True, "forensik_version": FORENSICS_VERSION}},
+        forensik={
+            "version": FORENSICS_VERSION, "vollstaendig": True,
+            "ertrag_monat_geom_pct": 1.4269, "cagr_jahr_pct": 18.2,
+            "kapitalbasis": {"usd": 18560.36, "quelle": "implizit_aus_balance"},
+            "peak_exposure": {"shock_pct_max": 12.0},
+            "equity_rekonstruktion": {
+                "status": "unvollstaendig", "verlaesslich": False,
+                "equity_dd_pct": 13.83,
+                "gruende": ["Offene Position über Wechselgrenze"]},
+        })
+    treffer = [r for r in pipeline.results_from_db() if r.id == 900123]
+    assert treffer, "Signal muss im Bestand liegen"
+    r = treffer[0]
+    assert r.retdd_monat is None
+    assert r.retdd_monat_vorbehalt == pytest.approx(1.4269 / 13.83)
+    assert "RetDD ≈ 0.10/M" in (r.urteil or "")
+    assert "Vorbehalt" in (r.urteil or "")

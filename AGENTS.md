@@ -1049,6 +1049,27 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   gekennzeichnet, kein RetDD; Ampel nur Anzeige. +13 Tests
   (test_signal_statistik + test_alle_signale_seite inkl. AppTest).
 
+- ✅ RETDD AUCH BEI UNZUVERLÄSSIGER KURSMESSUNG — „besser als nix“
+  (05.10.2026, Nutzer-Wunsch nach der Lexo-Frage): Die Kurs-Reko rechnet
+  den Max-DD auch dann aus, wenn die Verlässlichkeitsprüfung scheitert
+  (Lexo: 13,83 %, DST-Blocker „Offene Position über Wechselgrenze“,
+  Grid hält Positionen bis 20,6 Tage) — bisher wurde der Wert dann als
+  Nenner komplett verworfen. NEU: `retdd_monat_vorbehalt`/`_jahr_vorbehalt`
+  + `retdd_vorbehalt_grund` (ScanResult) rechnet in refresh_efficiency
+  EINE Formel für alle Wege, wenn der BELASTBARE Wert fehlt, aber ein
+  roher Kurs-Max-DD existiert (ScanResult.equity_dd_rekon_roh_pct ohne
+  Gate aus dem Forensik-Snapshot; DB-Rundtrip OHNE Re-Scan, alte
+  Snapshots wirken sofort). Bestand: 26 belastbar, 43 vorbehaltlich.
+  Anzeige: Ergebnistabelle-Spalte „RetDD (Vorbehalt)“ (immer orange,
+  dezente rgba-Konvention), Ampel-Matrix-Zelle „≈ X / Monat“ ORANGE
+  mit VORBEHALT-Erklärung (Grund + „kein Grün-Beleg“), Urteil-Anhang
+  „RetDD ≈ 0.10/M (Vorbehalt: Kursmessung unzuverlässig)“ (idempotent),
+  Detail-Karte + orange Erklär-Markdown, Alle-Signale-Tabelle/Detail
+  gleich. REGEL UNVERÄNDERT: Grün bleibt an belastbaren RetDD gebunden
+  (retdd_monat), der Vorbehalt sperrt Grün NICHT auf; ertrag je Close-DD
+  bleibt Vorbewertung der Vorstufe. +4 Tests (Vorbehalt-Rechnung,
+  Reset bei belastbarer Messung, ohne rohem Wert, DB-Rundtrip).
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

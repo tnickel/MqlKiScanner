@@ -99,8 +99,15 @@ with st.spinner('Statistiken aus dem Trade-Cache rechnen (einmalig — danach ge
 def _prozent(titel: str):
     return st.column_config.NumberColumn(titel, format='%.2f')
 df = pd.DataFrame([tabellen_zeile(r, s) for r, s in paare])
+_gestylt = df.style
+if 'RetDD (Vorbehalt)' in df.columns:
+    # Vorbehaltlicher RetDD (Kursmessung unzuverlässig) immer orange —
+    # gleiche dezente Konvention wie in der Ergebnistabelle.
+    _gestylt = _gestylt.map(
+        lambda v: 'background-color: rgba(249,115,22,0.12); color: #fb923c'
+        if pd.notna(v) else '', subset=['RetDD (Vorbehalt)'])
 st.dataframe(
-    df,
+    _gestylt,
     key='alle_signale_tabelle',
     on_select='rerun',
     selection_mode='single-row',
@@ -122,6 +129,18 @@ st.dataframe(
         'Ertrag %/M (Plattform)': _prozent('Ertrag %/M (Plattform)'),
         'Gewinn %/M (geom.)': _prozent('Gewinn %/M (geom.)'),
         'Trading-DD % (Trades)': _prozent('Trading-DD % (Trades)'),
+        'RetDD': st.column_config.NumberColumn('RetDD', format='%.2f',
+                                    help='Gewinn %/Monat ÷ belastbar gemessener '
+                                         'Max-Drawdown % (Equity inkl. Floating) — '
+                                         'Mindestqualität 1,0'),
+        'RetDD (Vorbehalt)': st.column_config.NumberColumn('RetDD (Vorbehalt)',
+                                    format='%.2f',
+                                    help='ORANGE = VORBEHALT: Gewinn %/Monat ÷ roher '
+                                         'Kurs-Max-DD, dessen Zeitbasis/Kursabdeckung '
+                                         'die Verlässlichkeitsprüfung NICHT bestanden '
+                                         'hat (z. B. Grid-Positionen über '
+                                         'Zeitwechsel-Grenzen). Nur orientierend — '
+                                         'ohne belastbare Messung kein Grün'),
         'Profitfaktor': _prozent('Profitfaktor'),
         'Winrate %': st.column_config.NumberColumn('Winrate %', format='%.1f'),
         'Trades': st.column_config.NumberColumn('Trades', format='%.0f'),

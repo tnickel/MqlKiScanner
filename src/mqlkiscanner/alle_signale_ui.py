@@ -64,6 +64,8 @@ def tabellen_zeile(result, statistik: dict | None) -> dict:
         "Ertrag %/M (Plattform)": getattr(result, "ertrag_monat_pct", None),
         "Gewinn %/M (geom.)": statistik.get("ertrag_monat_geom_pct"),
         "Trading-DD % (Trades)": statistik.get("trading_dd_pct"),
+        "RetDD": getattr(result, "retdd_monat", None),
+        "RetDD (Vorbehalt)": getattr(result, "retdd_monat_vorbehalt", None),
         "Profitfaktor": statistik.get("profit_faktor"),
         "Winrate %": statistik.get("winrate_pct"),
         "Trades": statistik.get("trades"),
@@ -201,10 +203,34 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
         _kpi(st.container(), "Netto gesamt USD", _de(statistik.get("netto_gesamt_usd")))
         _kpi(st.container(), "Endstand virtuell USD",
              _de(statistik.get("endstand_virtuell_usd")))
-        _kpi(st.container(), "Ertrag je Close-DD ⚠",
-             _de(statistik.get("ertrag_je_close_dd")),
-             "VORBEWERTUNG: geom. Ertrag ÷ Trading-DD. Kein RetDD — dessen "
-             "Nenner darf nur der floating-inklusive Max-Drawdown sein")
+        retdd_ok = getattr(auswahl, "retdd_monat", None)
+        retdd_vorbehalt = getattr(auswahl, "retdd_monat_vorbehalt", None)
+        if retdd_ok is not None:
+            _kpi(st.container(), "RetDD", _de(retdd_ok),
+                 "Gewinn %/Monat ÷ belastbar gemessener Max-Drawdown % "
+                 "(Equity inkl. Floating) — Mindestqualität 1,0")
+        elif retdd_vorbehalt is not None:
+            _kpi(st.container(), "RetDD (Vorbehalt)",
+                 "≈ " + _de(retdd_vorbehalt),
+                 "ORANGE/VORBEHALT: Gewinn %/Monat ÷ roher Kurs-Max-DD, dessen "
+                 "Zeitbasis/Kursabdeckung die Verlässlichkeitsprüfung NICHT "
+                 "bestanden hat. Nur orientierend — ohne belastbare Messung "
+                 "gibt es kein Grün")
+        else:
+            _kpi(st.container(), "Ertrag je Close-DD ⚠",
+                 _de(statistik.get("ertrag_je_close_dd")),
+                 "VORBEWERTUNG: geom. Ertrag ÷ Trading-DD. Kein RetDD — dessen "
+                 "Nenner darf nur der floating-inklusive Max-Drawdown sein")
+
+    if (retdd_ok is None and retdd_vorbehalt is not None
+            and getattr(auswahl, "equity_dd_rekon_roh_pct", None) is not None):
+        st.markdown(
+            f":orange[**RetDD (Vorbehalt) ≈ {_de(retdd_vorbehalt)}:**] gerechnet "
+            f"mit dem ROHEN Kurs-Max-DD {_de(auswahl.equity_dd_rekon_roh_pct, 1)} %, "
+            "dessen Messung die Verlässlichkeitsprüfung nicht bestanden hat — "
+            f"{getattr(auswahl, 'retdd_vorbehalt_grund', '') or 'Zeitbasis/Kursabdeckung unzuverlässig'}. "
+            "Der Wert ist nur eine Orientierung (orange); ohne belastbare "
+            "Kursmessung gibt es kein Grün.")
 
     if statistik.get("martingale_flag"):
         st.warning(f"Martingale-Signatur: {statistik.get('martingale_text')}",
