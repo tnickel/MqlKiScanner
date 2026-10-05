@@ -43,7 +43,8 @@ BASIS_KUERZEL = {
 BASIS_LANGTEXT = {
     "CSV": "CSV-Einzahlungen im Export",
     "Seite": "Signalseite „Initial Deposit“",
-    "implizit": "implizit: Web-Balance − Trade-Netto",
+    "implizit": "implizit: Web-Balance − Trade-Netto (alt, Regel bis 05.10. —"
+                 " nur noch bei Alt-Bestand vor dem Re-Scan)",
     "virtuell": "virtuelle Annahme aus dem Quellen-Monitor (10.000 USD)",
     "extern": "extern übergeben",
 }
@@ -136,7 +137,7 @@ def kurve_unterwasser_chart(statistik: dict) -> go.Figure:
         unterwasser.append((stand / spitze - 1.0) * 100.0 if spitze > 0 else 0.0)
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
                         row_heights=[0.62, 0.38], vertical_spacing=0.08,
-                        subplot_titles=("Virtuelles Konto (geschlossene Trades)",
+                        subplot_titles=("Kontokurve (Trades + Ein-/Auszahlungen)",
                                         "Unterwasser — Abstand zum letzten Höchststand"))
     fig.add_trace(go.Scatter(
         x=x, y=y, mode="lines", name="Kontostand",

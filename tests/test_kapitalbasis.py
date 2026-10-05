@@ -275,6 +275,8 @@ def test_scoring_schranke_mit_bal_dd():
 
 
 # --------------- Reale Kontokurve: Flows im Trading-DD (Nutzer 05.10.2026) --
+import pytest
+
 from mqlkiscanner.models import BalanceRow, ParsedExport, Trade
 
 
@@ -329,3 +331,54 @@ def test_ohne_flows_kurvenmarkierung_und_identitaet():
     r = drawdown.run(parsed)
     assert r["kurve"] == "virtuell_ohne_flows"
     assert r["trading_dd"] == r["trading_dd_virtuell"]
+
+
+def test_auszahlung_groesser_als_gewinne_klemmt_peak_am_stand():
+    """Grenzfall Peak-Anpassung: Auszahlung −10k nach +2k Gewinn auf 12k —
+    Peak wird auf den Rest (2k) herabgeklemmt (nie unter den Stand), kein
+    negativer DD, kein Crash; der FOLGEVERLUST zaehlt gegen die 2k."""
+    parsed = ParsedExport(
+        source_path="t", source_format="positions",
+        trades=[_flow_trade(1, 2000.0), _flow_trade(6, -500.0)],
+        balances=[_flow_row(1, 10000.0), _flow_row(4, -10000.0)])
+    r = drawdown.run(parsed)
+    assert r["kurve"] == "real_mit_flows"
+    # Nach Auszahlung: Stand 2k, Peak 2k -> DD 0; Folgeverlust -500 = 25 %.
+    assert r["trading_dd"]["dd_pct_max_rel"] == 25.0
+    assert r["trading_dd"]["dd_usd"] == 500.0
+    assert r["trading_dd"]["peak_balance"] == 2000.0
+
+
+def test_retdd_ist_basisinvariant_lot_faktor_argument():
+    """Nutzer-Argument 04.10. als Test: Ertrag UND DD stehen auf derselben
+    Basis — Lot-Faktor/Basis-Choice ändert RetDD NICHT (10k- vs 20k-Start
+    liefern denselben Quotienten). Das ist der Kern der Regel „% sind
+    Wahlgöße, RetDD ist Qualität"."""
+    from datetime import datetime
+    from mqlkiscanner import signal_statistik
+    from pathlib import Path
+    pfad = Path(__file__).parent / "_retdd_invarianz_fixture.csv"
+    kopf = "Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit"
+    zeilen = [kopf]
+    for tag, profit in ((5, 200.0), (9, -120.0), (15, 150.0)):
+        von = datetime(2026, 1, tag, 10, 0)
+        bis = datetime(2026, 1, tag, 11, 0)
+        zeilen.append(f"{von:%Y.%m.%d %H:%M:%S};Buy;0.10;EURUSD;1.1000;0.10;"
+                      f"{bis:%Y.%m.%d %H:%M:%S};1.1010;0;;{profit:.2f}")
+    pfad.write_text("\n".join(zeilen) + "\n", encoding="utf-8-sig")
+    try:
+        klein = signal_statistik.berechne(str(pfad), {"initial_deposit_usd": 10_000.0})
+        gross = signal_statistik.berechne(str(pfad), {"initial_deposit_usd": 20_000.0})
+        # DD skaliert exakt linear (Verlust/Peakkapital), der GEOMETRISCHE
+        # Ertrag nur bis Zweite Ordnung (Zinseszins: expm1(log1p(x)/m) ist
+        # nicht exakt halbiert bei verdoppelter Basis) — deshalb Toleranz.
+        assert gross["trading_dd_pct"] == pytest.approx(
+            klein["trading_dd_pct"] / 2, rel=1e-9)
+        assert gross["ertrag_monat_geom_pct"] == pytest.approx(
+            klein["ertrag_monat_geom_pct"] / 2, rel=0.02)
+        # Der Quotient (Ertrag je Close-DD) bleibt damit nahezu invariant —
+        # Basis/Lot-Faktor ist eine Wahlgroesse, RetDD eine Qualitaet.
+        assert gross["ertrag_je_close_dd"] == pytest.approx(
+            klein["ertrag_je_close_dd"], rel=0.02)
+    finally:
+        pfad.unlink(missing_ok=True)

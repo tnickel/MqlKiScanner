@@ -37,7 +37,7 @@ HELP_CONTENT = {
     "alle_signale": ("Alle Signale: unabhängige Statistik vor dem Workflow", """
 **Kurzfassung:** Liste ALLER gemeldeten Signale aller Quellen — mit Kennzahlen, die der Scanner rein aus dem gespeicherten Trade-Export rechnet. Kein KI-Aufwand, keine Bewertung: erst selbst ein Bild machen, dann entscheidet der Workflow.
 
-**Was gerechnet wird.** Monatliche Gewinnprozente (Balkengrafik), geometrischer Ertrag je Monat (zinseszins-wahr), CAGR, Profitfaktor, Winrate, Trading-DD aus GESCHLOSSENEN Trades, Martingale-Schnellflag (Lot-Erhöhung nach Verlust). Kapitalbasis-Kaskade wie im Scan: CSV-Einzahlungen → Signalseite „Initial Deposit“ → implizit (Web-Balance − Trade-Netto) → virtuelle 10.000-USD-Annahme.
+**Was gerechnet wird.** Monatliche Gewinnprozente (Balkengrafik), geometrischer Ertrag je Monat (zinseszins-wahr), CAGR, Profitfaktor, Winrate, Trading-DD aus GESCHLOSSENEN Trades, Martingale-Schnellflag (Lot-Erhöhung nach Verlust). Kapitalbasis-Kaskade wie im Scan: CSV-Einzahlungen → Signalseite „Initial Deposit“ → virtuelle 10.000-USD-Annahme (markiert). Die Kurve ist die reale Kontokurve inkl. Ein-/Auszahlungen; Auszahlungen erzeugen keinen Drawdown.
 
 **Wichtige Grenze — Drawdown-Benennung.** Der Trading-DD hier kennt nur geschlossene Trades: **offenes Floating fehlt**, der echte Max-Drawdown kann deutlich höher liegen. Den floating-getreuen **Max-Drawdown aus Kursen** liefert der Button in der Detailansicht — dieselbe Equity-Studie wie überall (H1-Kurse, GMT-Abgleich, Fortschrittsanzeige). „Drawdown (Plattform)“ ist die Selbstauskunft des Anbieters.
 

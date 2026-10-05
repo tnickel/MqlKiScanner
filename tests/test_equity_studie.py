@@ -523,3 +523,60 @@ def test_ueberdeckung_klassifiziert_luecken_nach_lage_und_art():
         {"XAUUSD": bars2}, {"XAUUSD": 0})
     abschnitt = [l for l in erg2[0]["luecken"] if l["art"] == "abschnitt"]
     assert abschnitt and abschnitt[0]["h"] >= 5
+
+
+# --------- Reale Kontokurve in der Studie: Flows + Rest-Flows (Nutzer 05.10.)
+def test_studie_bucht_flows_und_rest_nach_letztem_trade(monkeypatch):
+    """Einzahlung zur Handelszeit hebt Kurve/Peak; Auszahlung NACH dem
+    letzten Trade (außerhalb des Rasters!) muss als finaler Punkt
+    gebucht werden — sonst fehlt sie in Endwert und DD."""
+    from mqlkiscanner import equity_studie as es
+    monkeypatch.setattr(es, "ermittle_gmt_je_symbol", lambda *_:
+                        {"offsets": {"XAUUSD": 0}, "befunde": []})
+    start = dt.datetime(2026, 1, 1)
+    bars = _bars("XAUUSD", start, 8)
+    for bar, close in zip(bars, [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000]):
+        bar["close"] = close
+    trades = [
+        _trade("XAUUSD", "buy", start + dt.timedelta(minutes=1),
+               start + dt.timedelta(hours=2, minutes=1), 2000, 2000, pnl=2000.0),
+    ]
+    parsed = SimpleNamespace(
+        trades=trades,
+        balances=[SimpleNamespace(time=start + dt.timedelta(hours=1),
+                                  amount=50_000.0),
+                  SimpleNamespace(time=start + dt.timedelta(hours=6),
+                                  amount=-30_000.0)],
+        pendings=[])
+    erg = studie(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}), 10_000.0)
+    k = erg["kennzahlen"]
+    # Endwert: 10k Start + 2k Gewinn + 50k Einzahlung - 30k Auszahlung = 32k
+    assert erg["punkte"][-1]["equity"] == 32_000.0
+    assert k["equity_dd_pct"] == 0.0        # keine Verluste, Auszahlung mitigiert
+    assert "reale Kontokurve" in erg["methodik"]
+
+
+def test_studie_einzahlung_vergroessert_den_ddd_naechster_verlust_zaehlt(monkeypatch):
+    """Einzahlung hebt den Peak — der NACHFOLGENDE floating-Verlust zaehlt
+    gegen das gewachsene Konto (Kopierer-Perspektive, Nutzer-Regel)."""
+    from mqlkiscanner import equity_studie as es
+    monkeypatch.setattr(es, "ermittle_gmt_je_symbol", lambda *_:
+                        {"offsets": {"XAUUSD": 0}, "befunde": []})
+    start = dt.datetime(2026, 1, 1)
+    bars = _bars("XAUUSD", start, 8)
+    for bar, close in zip(bars, [2000, 2000, 2000, 2000, 1950, 2000, 2000, 2000]):
+        bar["close"] = close
+    trades = [
+        _trade("XAUUSD", "buy", start + dt.timedelta(minutes=1),
+               start + dt.timedelta(hours=6, minutes=1), 2000, 2000, pnl=0.0),
+    ]
+    parsed = SimpleNamespace(
+        trades=trades,
+        balances=[SimpleNamespace(time=start + dt.timedelta(hours=1),
+                                  amount=40_000.0)],
+        pendings=[])
+    erg = studie(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}), 10_000.0)
+    k = erg["kennzahlen"]
+    # Peak ~50k (10k + 40k), floating-Tief Stunde 4: 1 Lot x 100 x 50 = -5k
+    # DD = 5.000/50.000 = 10 % — OHNE Einzahlung waeren es 5.000/10.000 = 50 %.
+    assert k["equity_dd_pct"] == 10.0
