@@ -75,13 +75,14 @@ def test_monatsserie_bucht_flow_als_nenner_nicht_als_gewinn(tmp_path):
 
 def test_ohne_flows_bleibt_die_bisherige_rendite_exakt(tmp_path):
     """Kein Verhaltenbruch für die Mehrheit: ohne Balance-Rows rechnet der
-    Zähler weiter wie bisher (virtuell == real)."""
+    Zähler weiter wie bisher (virtuell == real). Spanne über 5 Monate —
+    unter 3 Monaten gilt seit 05.10. historie_zu_kurz (kein RetDD)."""
     zeilen = [_balance("01", 1000.0), _trade("01", 100.0), _trade("02", 110.0),
-              _trade("03", 121.0)]
+              _trade("03", 121.0), _trade("04", 133.1), _trade("05", 146.41)]
     pfad = _csv_pfad(tmp_path, zeilen)
     eff = effizienz_kennzahlen(pfad, 1000.0, dd_max_pct=10.0)
     assert eff["rendite_basis"] == "virtuelle_trade_netto_kurve"
-    netto = 100.0 + 110.0 + 121.0
+    netto = 100.0 + 110.0 + 121.0 + 133.1 + 146.41
     erwartet = ((1 + netto / 1000.0) ** (1 / eff["dauer_monate"]) - 1) * 100.0
     assert eff["ertrag_monat_geom_pct"] == pytest.approx(erwartet, rel=1e-6)
     assert eff["retdd_monat"] == pytest.approx(erwartet / 10.0, rel=1e-6)
@@ -93,3 +94,49 @@ def test_monatsrenditen_und_vorstufe_nutzen_dieselbe_serie(tmp_path):
     pfad = _csv_pfad(tmp_path, zeilen)
     parsed = load_export(pfad)
     assert monatsrenditen(pfad, 1000.0) == _monatsserie(parsed, 1000.0)
+
+
+# ---------------- Mindesthistorie (Nutzer-Regel 05.10., Übergabe) --------
+def test_zehn_tage_historie_kein_retdd_kein_gruen(tmp_path):
+    """Übergabe-Rechenbeispiel: 10 k Start, +400 USD in 10 Tagen, DD 2 % —
+    vorher geom. ~12,7 %/M -> RetDD 6,3 -> GRÜN. Jetzt: historie_zu_kurz,
+    Ertrag bleibt sichtbar, aber kein Gate-Wert."""
+    zeilen = ["2026.01.05 10:00:00;Buy;0.10;XAUUSD;4000.00;0.10;"
+              "2026.01.15 12:00:00;4050.00;0;0;400.00\n"]
+    pfad = _csv_pfad(tmp_path, zeilen)
+    eff = effizienz_kennzahlen(pfad, 10_000.0, dd_max_pct=2.0)
+    assert eff["effizienz_status"] == "historie_zu_kurz"
+    assert eff["ertrag_monat_geom_pct"] is not None   # Anzeige bleibt
+    assert eff["retdd_monat"] is None and eff["retdd_jahr"] is None
+
+
+def test_exakt_drei_monate_sind_berechenbar(tmp_path):
+    """Grenze: ab 3 Monaten Trade-Spanne gibt es wieder einen Calmar."""
+    zeilen = ["2026.01.05 10:00:00;Buy;0.10;XAUUSD;4000.00;0.10;"
+              "2026.01.05 12:00:00;4050.00;0;0;100.00\n",
+              "2026.04.07 10:00:00;Buy;0.10;XAUUSD;4000.00;0.10;"
+              "2026.04.07 12:00:00;4050.00;0;0;100.00\n"]
+    pfad = _csv_pfad(tmp_path, zeilen)
+    eff = effizienz_kennzahlen(pfad, 1000.0, dd_max_pct=10.0)
+    assert eff["effizienz_status"] != "historie_zu_kurz"
+    assert eff["retdd_jahr"] is not None
+
+
+def test_kurze_historie_sperrt_auch_den_vorbehalt():
+    """Übergabe: kein retdd_*_vorbehalt bei historie_zu_kurz — auch nach
+    DB-artigem Reload über refresh_efficiency nicht."""
+    from mqlkiscanner import pipeline as pl
+    r = pl.ScanResult(id=1, name="Kurz", forensik_vorhanden=True,
+                      ertrag_monat_geom_pct=12.7, cagr_jahr_pct=800.0,
+                      equity_dd_rekonstruiert_pct=None,
+                      equity_dd_rekon_roh_pct=2.0,
+                      equity_rekon_grund="duenne Daten",
+                      effizienz_befund={"effizienz_status": "historie_zu_kurz"})
+    row = r.to_row()
+    assert row["TrueRetDD"] is None
+    assert row["TrueRetDD (Vorbehalt)"] is None
+    ampel, urteil = pl.ampel_for(r, {})
+    assert ampel == "🟡"
+    assert "unter 3 Monaten" in urteil
+
+

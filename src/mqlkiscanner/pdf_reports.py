@@ -253,14 +253,17 @@ def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
         # vorbehaltliche Wert (Review 05.10. abends, Befund 3: vorher stand
         # bei unzuverlässiger Kursmessung nur „—", obwohl die UI einen
         # orientierenden Wert zeigt).
-        _true = getattr(r, "true_retdd_monat", None)
+        _true = getattr(r, "true_retdd_jahr", None)
+        _monat = getattr(r, "retdd_monat", None)
         if _true is None:
             _true_text = "—"
-        elif getattr(r, "retdd_monat_vorbehalt", None) is not None:
-            _true_text = (f"≈ {_true:.3f}".replace(".", ",")
+        elif getattr(r, "retdd_jahr_vorbehalt", None) is not None:
+            _true_text = (f"≈ {_true:.2f}".replace(".", ",")
                           + " (Vorbehalt: Kursmessung unzuverlässig)")
         else:
-            _true_text = f"{_true:.3f}".replace(".", ",")
+            _true_text = f"{_true:.2f}".replace(".", ",")
+        if _monat is not None:
+            _true_text += f" / Monat {_monat:.2f}".replace(".", ",")
         teile += [
             "\\pagebreak",
             f"# Strategie {nummer}: {r.name} (#{r.id})",
@@ -272,7 +275,7 @@ def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
             f"| Risiko-Score (Engine, 1-10) | {_f(r.score, 1)} |",
             f"| Gewinn %/Monat (geometrisch) | {_f(getattr(r, 'ertrag_monat_geom_pct', None), 2, ' %')} |",
             f"| Max-Drawdown (Equity, gemessen) | {_f(getattr(r, 'max_drawdown_equity_pct', None), 2, ' %')} |",
-            f"| TrueRetDD (Monatsgewinn / Max-Equity-DD inkl. Floating) | {_true_text} |",
+            f"| TrueRetDD (Jahres-Calmar = CAGR / Max-Equity-DD inkl. Floating) | {_true_text} |",
             f"| Ertrag/Monat (linear, Forensik-Basis) | {_f(getattr(r, 'ertrag_monat_pct_forensik', None), 2, ' %')} |",
             f"| Ertrag/Monat (Plattform meldet) | {_f(r.ertrag_monat_pct, 2, ' %')} |",
             f"| Drawdown-Maximum (Schranke) | {_f(max(filter(None, [r.dd_equity_pct, r.dd_balance_pct, r.trading_dd_pct, getattr(r, 'equity_dd_rekonstruiert_pct', None), getattr(r, 'monitor_trade_eq_dd_pct', None)]), default=0.0), 2, ' %')} |",

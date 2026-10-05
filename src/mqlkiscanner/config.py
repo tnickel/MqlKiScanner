@@ -78,8 +78,13 @@ DEFAULT_SETTINGS: dict = {
     # Nutzer-Regel 04.10. abends: KEINE absolute Ertragshuerde mehr (0 = aus) -
     # absolute %/Monat sind beim Kopieren ueber den Lot-Faktor frei waehlbar
     # (1,4 % x Faktor 10 = 14 %, DD skaliert mit, RetDD bleibt gleich);
-    # messbarer positiver Ertrag bleibt ueber RetDD >= 1,0 gefordert.
+    # messbarer positiver Ertrag bleibt ueber Calmar >= min_calmar_jahr gefordert.
     "min_ertrag_pct_monat": 0.0,
+    # Nutzer-Entscheid 05.10.: Gruen-Gate = JAHRES-Calmar (CAGR ÷ gemessener
+    # Max-Equity-DD inkl. Floating). Die fruehere Monats-Schwelle 1,0 war
+    # aufgezinst Calmar 14-40 je nach DD — nicht risikoneutral. 3,0 gilt
+    # branchenueblich als "sehr gut".
+    "min_calmar_jahr": 3.0,
     "rate_min_interval_s": 2.0,     # Rate-Limit: Mindestabstand Requests (doc/02: 1-2 s)
     "rate_pause_zwischen_signalen_s": 5.0,
     "rate_backoff_429_s": 45.0,     # Wartezeit bei HTTP 429/503

@@ -704,10 +704,26 @@ with scan_tab:
                                  value=max(0.1, min(30.0, old_dd)), step=1.0, key="admin_max_dd")
         min_return = st.number_input("Ertragsschwelle pro Monat (%)", min_value=5.0,
                                      value=max(5.0, old_return), step=0.1, key="admin_min_return")
-        st.caption("Projektvorgabe: höchstens 30 % Drawdown und mehr als 5 % pro Monat.")
+        # Nutzer-Entscheid 05.10.: Grün-Gate = Jahres-Calmar (CAGR ÷
+        # gemessener Max-Equity-DD), Default 3,0 — frei anhebbar.
+        old_calmar = float(settings.get("min_calmar_jahr", 3.0))
+        min_calmar = st.number_input("Mindest-Calmar pro Jahr (Grün-Gate)",
+                                     min_value=1.0, max_value=20.0,
+                                     value=max(1.0, min(20.0, old_calmar)),
+                                     step=0.5, key="admin_min_calmar",
+                                     help="Calmar = echter Jahres-CAGR ÷ "
+                                          "gemessener Max-Equity-DD inkl. "
+                                          "schwebender Verluste. 3,0 gilt als "
+                                          "sehr gut; unter 3 Monaten "
+                                          "Trade-Historie bleibt Grün gesperrt.")
+        st.caption("Projektvorgabe: höchstens 30 % Drawdown; Grün-Gate = "
+                   "Jahres-Calmar ab 3,0 (05.10.), absolute Ertragsschwelle "
+                   "standardmäßig aus (0).")
         st.info("Die Engine akzeptiert aktuell Ertrag ≥ eingestellter Schwelle. "
                 "Bei 5,0 % gilt daher auch exakt 5,0 % als ausreichend.", icon=":material/info:")
-        risk_values = {"schranke_eq_dd_pct": float(max_dd), "min_ertrag_pct_monat": float(min_return)}
+        risk_values = {"schranke_eq_dd_pct": float(max_dd),
+                       "min_ertrag_pct_monat": float(min_return),
+                       "min_calmar_jahr": float(min_calmar)}
         _draft_status(_changed(risk_values, settings))
         if action_button("Risikokriterien speichern", key="admin_risk_save", type="primary",
                          help_key="settings_risk", icon=":material/save:"):

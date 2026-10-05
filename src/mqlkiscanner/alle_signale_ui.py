@@ -78,10 +78,12 @@ def tabellen_zeile(result, statistik: dict | None) -> dict:
         "Ertrag %/M (Plattform)": getattr(result, "ertrag_monat_pct", None),
         "Gewinn %/M (geom.)": statistik.get("ertrag_monat_geom_pct"),
         "Trading-DD % (Trades)": statistik.get("trading_dd_pct"),
-        # TrueRetDD (Nutzer 05.10.): EINE Spalte — belastbare Kursmessung
-        # normal, vorbehaltliche orange (Marker in der Vorbehalt-Spalte).
-        "TrueRetDD": getattr(result, "true_retdd_monat", None),
-        "TrueRetDD (Vorbehalt)": getattr(result, "retdd_monat_vorbehalt", None),
+        # TrueRetDD (Nutzer 05.10.) = JAHRES-Calmar seit der Gate-Umstellung:
+        # belastbare Kursmessung normal, vorbehaltliche orange (Marker in
+        # der Vorbehalt-Spalte); der Monatswert steht daneben.
+        "TrueRetDD": getattr(result, "true_retdd_jahr", None),
+        "TrueRetDD (Vorbehalt)": getattr(result, "retdd_jahr_vorbehalt", None),
+        "RetDD/Monat": getattr(result, "retdd_monat", None),
         "Profitfaktor": statistik.get("profit_faktor"),
         "Winrate %": statistik.get("winrate_pct"),
         "Trades": statistik.get("trades"),
@@ -259,38 +261,45 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
         st.caption("Keine belegbare Kapitalbasis (kein Initial Deposit, keine "
                    "Web-Balance) — Prozentwerte entfallen, USD-Werte bleiben.")
 
-    retdd_ok = getattr(auswahl, "retdd_monat", None)
-    retdd_vorbehalt = getattr(auswahl, "retdd_monat_vorbehalt", None)
+    retdd_ok = getattr(auswahl, "retdd_jahr", None)
+    retdd_vorbehalt = getattr(auswahl, "retdd_jahr_vorbehalt", None)
 
     def _oeffne_formel() -> None:
         """Dialog zur RetDD-Familie: Formel, ausgerechnete Werte, Erklärung."""
         ertrag = statistik.get("ertrag_monat_geom_pct")
+        cagr = statistik.get("cagr_jahr_pct")
         if retdd_ok is not None:
             nenner = getattr(auswahl, "max_drawdown_equity_pct", None)
             _formel_dialog(
-                "TrueRetDD — Ertrag je ECHTEM Max-Drawdown",
-                "TrueRetDD = Gewinn %/Monat (geom.) ÷ Max-Drawdown % "
-                "(Equity inkl. schwebender Verluste, aus Kursen)",
-                [f"{_de(ertrag)} % ÷ {_de(nenner)} % = **{_de(retdd_ok)}**"],
-                "**Zähler:** eigene geometrische Monatsrendite aus der "
-                "Trade-Kurve (zinseszins-wahr).\n\n"
+                "TrueRetDD (Calmar/Jahr) — Jahresertrag je ECHTEM Max-Drawdown",
+                "TrueRetDD = CAGR %/Jahr ÷ Max-Drawdown % "
+                "(Equity inkl. schwebender Verluste, aus Kursen — NIE Close-DD)",
+                [f"{_de(cagr)} % ÷ {_de(nenner)} % = **{_de(retdd_ok)}**"
+                 + (f" · Monatswert: {ertrag:g} %/M ÷ {_de(nenner)} % = "
+                    "RetDD/Monat" if ertrag is not None else "")],
+                "**Zähler:** echter Jahres-CAGR (zinseszins-wahr aus der "
+                "Trade-Kurve; bei Kapitalflüssen TWR-Verkettung der realen "
+                "Kurve).\n\n"
                 "**Nenner:** der größte Rückfall der EQUITY-Kurve inklusive "
                 "SCHWEBENDER Verluste offener Positionen — stundenfein aus "
                 "H1-Kursen nachgemessen (Equity-Studie). Nicht der Trading-DD "
-                "geschlossener Trades und keine Plattform-Angabe.\n\n"
-                "**Lesen:** ab 1,0 Mindestqualität (Projektmaß: 5 % Ertrag "
-                "bei 30 % Drawdown); höher = mehr Ertrag je erlittenem "
-                "Drawdown. **Belastbar** = Kursabdeckung geprüft und "
-                "Zeitbasis bestanden — nur so zählt der Wert für Grün.")
+                "geschlossener Trades, nicht der Close-DD und keine "
+                "Plattform-Angabe (Nutzer-Bestätigung 05.10.).\n\n"
+                "**Lesen:** ab 3,0 Grün-Gate (Nutzer-Entscheid 05.10.; Calmar "
+                "3,0 gilt branchenüblich als sehr gut). Die frühere Monats-"
+                "Schwelle 1,0 verlangte aufgezinst Calmar 14-40 je nach DD — "
+                "nicht risikoneutral. **Belastbar** = Kursabdeckung geprüft "
+                "und Zeitbasis bestanden — nur so zählt der Wert für Grün; "
+                "unter 3 Monaten Historie bleibt er unbekannt.")
         elif retdd_vorbehalt is not None:
             roh = getattr(auswahl, "equity_dd_rekon_roh_pct", None)
             grund = (getattr(auswahl, "retdd_vorbehalt_grund", "")
                      or "Zeitbasis/Kursabdeckung unzuverlässig")
             _formel_dialog(
-                "TrueRetDD (Vorbehalt) — Ertrag je ROHEM Kurs-Max-DD",
-                "TrueRetDD = Gewinn %/Monat (geom.) ÷ ROHER Max-Drawdown % "
+                "TrueRetDD (Vorbehalt) — Calmar je ROHEM Kurs-Max-DD",
+                "TrueRetDD = CAGR %/Jahr ÷ ROHER Max-Drawdown % "
                 "(Equity inkl. schwebender Verluste, aus Kursen)",
-                [f"{_de(ertrag)} % ÷ {_de(roh)} % = **≈ {_de(retdd_vorbehalt)}**"],
+                [f"{_de(cagr)} % ÷ {_de(roh)} % = **≈ {_de(retdd_vorbehalt)}**"],
                 "**Warum orange?** Die Kursmessung existiert, hat aber die "
                 "Verlässlichkeitsprüfung NICHT bestanden — "
                 f"{grund}. Typische Gründe sind Grid-Positionen, die über "
@@ -343,15 +352,15 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
         _kpi(st.container(), "Endstand virtuell USD",
              _de(statistik.get("endstand_virtuell_usd")))
         if retdd_ok is not None:
-            _kpi(st.container(), "TrueRetDD", _de(retdd_ok),
-                 "Ertrag ÷ ECHTER Max-Drawdown: geom. Ertrag ÷ belastbar "
-                 "gemessenem Max-Drawdown der Equity inkl. schwebender "
-                 "Verluste — Mindestqualität 1,0",
+            _kpi(st.container(), "TrueRetDD (Calmar/Jahr)", _de(retdd_ok),
+                 "ECHTER Jahres-Calmar: CAGR ÷ belastbar gemessenem "
+                 "Max-Drawdown der Equity inkl. schwebender Verluste — "
+                 "Grün-Gate ab 3,0 (Nutzer-Entscheid 05.10.)",
                  aufklappen=_oeffne_formel, kpi_key=f"{key_prefix}_trueretdd")
         elif retdd_vorbehalt is not None:
-            _kpi(st.container(), "TrueRetDD",
+            _kpi(st.container(), "TrueRetDD (Calmar/Jahr)",
                  "≈ " + _de(retdd_vorbehalt),
-                 "ORANGE/VORBEHALT: Ertrag ÷ roher Kurs-Max-DD (ebenfalls "
+                 "ORANGE/VORBEHALT: Calmar ÷ roher Kurs-Max-DD (ebenfalls "
                  "inkl. schwebender Verluste), dessen Zeitbasis/Kursabdeckung "
                  "die Verlässlichkeitsprüfung NICHT bestanden hat. Nur "
                  "orientierend — ohne belastbare Messung gibt es kein Grün",

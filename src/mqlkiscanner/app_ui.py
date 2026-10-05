@@ -471,18 +471,16 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                      "Fehlt die Berechnung, bleibt das Feld leer; "
                      "Plattform-Ertrag wird nicht als Ersatz verwendet."),
             "TrueRetDD": st.column_config.NumberColumn(
-                "TrueRetDD", format="%.2f",
-                help="Ertrag ÷ ECHTER Max-Drawdown: eigene geometrische "
-                     "Monatsrendite ÷ gemessenem Max-Drawdown der Equity "
-                     "INKLUSIVE schwebender Verluste (offene Positionen, "
-                     "aus Kursen). Das ist der Drawdown, der beim Kopieren "
-                     "wirklich erlebt wird. Normal = belastbar gemessen; "
-                     "ORANGE ≈ = die Kursmessung hat die "
-                     "Verlässlichkeitsprüfung nicht bestanden (z. B. Grid-"
-                     "Positionen über Zeitwechsel-Grenzen) — dann nur "
-                     "orientierend, ohne belastbare Messung gibt es kein "
-                     "Grün. Trading-DD und Plattform-DD ersetzen diese "
-                     "Messung nie."),
+                "TrueRetDD (Calmar/Jahr)", format="%.2f",
+                help="ECHTER Jahres-Calmar: CAGR ÷ gemessenem Max-Drawdown "
+                     "der Equity INKLUSIVE schwebender Verluste (offene "
+                     "Positionen, aus Kursen — NIE der Close-DD). Entscheidet "
+                     "seit 05.10. das Grün-Gate (min_calmar_jahr, Default "
+                     "3,0); der Monatswert steht in der Spalte RetDD/Monat. "
+                     "Normal = belastbar gemessen; ORANGE ≈ = die Kursmessung "
+                     "hat die Verlässlichkeitsprüfung nicht bestanden — dann "
+                     "nur orientierend, ohne belastbare Messung oder unter "
+                     "3 Monaten Historie gibt es kein Grün."),
             "TrueRetDD (Vorbehalt)": st.column_config.NumberColumn(
                 "TrueRetDD (Vorbehalt)", format="%.2f",
                 help="Technischer Marker: steht der Wert hier, ist die "
@@ -1079,17 +1077,18 @@ def render_detail(result) -> None:
                   help="Eigene geometrische Monatsrendite aus den Trade-Daten.",
                   border=True)
         vorbehalt = row.get("TrueRetDD (Vorbehalt)")
-        st.metric("TrueRetDD",
+        st.metric("TrueRetDD (Calmar/Jahr)",
                   (f"≈ {trueretdd:.2f}" if vorbehalt is not None
                    else f"{trueretdd:.2f}") if trueretdd is not None else "—",
-                  help="Ertrag ÷ ECHTER Max-Drawdown: eigene geometrische "
-                       "Monatsrendite ÷ gemessenem Max-Drawdown der Equity "
-                       "INKLUSIVE schwebender Verluste (offene Positionen, "
-                       "aus Kursen). Normal = belastbar gemessen; „≈“ = "
-                       "VORBEHALT — die Kursmessung hat die "
-                       "Verlässlichkeitsprüfung nicht bestanden (z. B. "
-                       "Grid-Positionen über Zeitwechsel-Grenzen), der Wert "
-                       "ist nur orientierend und gibt kein Grün.",
+                  help="ECHTER Jahres-Calmar: CAGR ÷ gemessenem "
+                       "Max-Drawdown der Equity INKLUSIVE schwebender "
+                       "Verluste (offene Positionen, aus Kursen — NIE der "
+                       "Close-DD). Grün-Gate seit 05.10. (ab 3,0). "
+                       "Normal = belastbar gemessen; „≈“ = VORBEHALT — die "
+                       "Kursmessung hat die Verlässlichkeitsprüfung nicht "
+                       "bestanden (z. B. Grid-Positionen über "
+                       "Zeitwechsel-Grenzen), der Wert ist nur orientierend "
+                       "und gibt kein Grün.",
                   border=True)
         st.metric("Trading-DD (geschlossen)",
                   f"{result.trading_dd_pct:.1f} %" if result.trading_dd_pct is not None else "—",
@@ -1105,9 +1104,9 @@ def render_detail(result) -> None:
         st.warning(result.equity_messung_status + ". Der Trading-DD enthält "
                    "keine zwischenzeitlichen offenen Gewinne oder Verluste.",
                    icon=":material/monitoring:")
-        if result.retdd_monat_vorbehalt is not None:
+        if result.retdd_jahr_vorbehalt is not None:
             st.markdown(
-                f":orange[**TrueRetDD (Vorbehalt) ≈ {result.retdd_monat_vorbehalt:.2f}:**] "
+                f":orange[**TrueRetDD (Calmar, Vorbehalt) ≈ {result.retdd_jahr_vorbehalt:.2f}:**] "
                 f"gerechnet mit dem ROHEN Kurs-Max-DD "
                 f"{result.equity_dd_rekon_roh_pct:.1f} %, dessen Messung die "
                 f"Verlässlichkeitsprüfung nicht bestanden hat — "

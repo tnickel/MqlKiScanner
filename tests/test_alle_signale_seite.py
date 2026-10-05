@@ -174,6 +174,7 @@ from mqlkiscanner.pipeline import ScanResult
 auswahl = ScanResult(id=42, name="Vorbehalt Detail", ampel="🟡", quelle="pelik",
                      trades_path=r"{csv_pfad}", trades_sha256="abc123")
 auswahl.retdd_monat_vorbehalt = 0.1032
+auswahl.retdd_jahr_vorbehalt = 1.32
 auswahl.retdd_vorbehalt_grund = "Offene Position über Wechselgrenze"
 auswahl.equity_dd_rekon_roh_pct = 13.83
 render_detail(auswahl, {{"dauer_statistik": {ds}, "monate_pct": {{}},
@@ -192,7 +193,7 @@ render_detail(auswahl, {{"dauer_statistik": {ds}, "monate_pct": {{}},
     warn_text = " ".join(w.value for w in at.warning)
     assert "0 Sekunden oder unter einer Minute" in warn_text
     text = " ".join(x.value for x in at.markdown)
-    assert "TrueRetDD (Vorbehalt) ≈ 0,10" in text
+    assert "TrueRetDD (Vorbehalt) ≈ 1,32" in text
     assert "Wechselgrenze" in text
     assert any("Median-Haltezeit" in c.value for c in at.caption)
 
@@ -210,6 +211,7 @@ from mqlkiscanner.pipeline import ScanResult
 auswahl = ScanResult(id=43, name="Formel Detail", ampel="🟡", quelle="pelik",
                      trades_path=r"{csv_pfad}", trades_sha256="abc123")
 auswahl.retdd_monat_vorbehalt = 0.1032
+auswahl.retdd_jahr_vorbehalt = 1.32
 auswahl.retdd_vorbehalt_grund = "Offene Position über Wechselgrenze"
 auswahl.equity_dd_rekon_roh_pct = 13.83
 render_detail(auswahl, {{"monate_pct": {{}}, "monate_usd": {{}}, "kurve": [],

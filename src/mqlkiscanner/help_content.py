@@ -41,7 +41,7 @@ HELP_CONTENT = {
 
 **Wichtige Grenze — Drawdown-Benennung.** Der Trading-DD hier kennt nur geschlossene Trades: **offenes Floating fehlt**, der echte Max-Drawdown kann deutlich höher liegen. Den floating-getreuen **Max-Drawdown aus Kursen** liefert der Button in der Detailansicht — dieselbe Equity-Studie wie überall (H1-Kurse, GMT-Abgleich, Fortschrittsanzeige). „Drawdown (Plattform)“ ist die Selbstauskunft des Anbieters.
 
-**Keine Bewertung.** Ampel-Spalte zeigt das OFFIZIELLE Engine-Ergebnis an (falls vorhanden), wird hier aber nie neu berechnet. **TrueRetDD** ist der Ertrag ÷ ECHTER Max-Drawdown (floating-inklusive Kursmessung): belastbar gemessen normal, orange „≈" bei nur vorbehaltlicher Kursmessung. Das **?** an der Karte öffnet Formel, ausgerechnete Rechnung und Erklärung. „Ertrag je Close-DD" ist eine gekennzeichnete Vorbewertung, kein TrueRetDD — dessen Nenner darf nur die floating-inklusive Kursmessung sein.
+**Keine Bewertung.** Ampel-Spalte zeigt das OFFIZIELLE Engine-Ergebnis an (falls vorhanden), wird hier aber nie neu berechnet. **TrueRetDD (Calmar/Jahr)** ist der echte Jahres-CAGR ÷ ECHTER Max-Drawdown (floating-inklusive Kursmessung): belastbar gemessen normal, orange „≈" bei nur vorbehaltlicher Kursmessung. Das **?** an der Karte öffnet Formel, ausgerechnete Rechnung und Erklärung. „Ertrag je Close-DD" ist eine gekennzeichnete Vorbewertung, kein TrueRetDD — dessen Nenner darf nur die floating-inklusive Kursmessung sein.
 
 **Ohne Trade-Cache.** Signale, die noch nie durch die Export-Auswahl (top 30 je Quelle), Fix-IDs oder einen Scan gelaufen sind, zeigen nur Katalogwerte. Der Cache füllt sich mit dem ersten Scan.
 """),
@@ -82,14 +82,14 @@ Die Matrix bewertet **einzelne Testkriterien** getrennt — sie ersetzt nicht da
 
 **ⓘ im Spaltenkopf** erklärt das Kriterium. **Maus über der Ampel-Zelle** zeigt die exakte Berechnung, z. B. „max(Drawdown (Plattform) 3,80 %, Trading-DD (geschlossen) 4,57 %) = 4,57 % hält die Schranke 30 % mit 25,4 Punkten Abstand ein“.
 
-Die Kriterien: Drawdown-Schranke (max aus dem Plattform-Drawdown By Equity/By Balance, dem Trading-DD geschlossener Trades sowie Kurs- und Monitor-Nachmessung der Equity — der höchste Wert zählt; die Kurs-Nachmessung nur bei belastbarer Abdeckung), Martingale-Signatur, Stop-Nachweis (bewiesen = entlastend, fehlend = neutral), eigene geometrische Rendite pro Monat, RetDD (diese Rendite je Prozent gemessenem Equity-Drawdown), Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
+Die Kriterien: Drawdown-Schranke (max aus dem Plattform-Drawdown By Equity/By Balance, dem Trading-DD geschlossener Trades sowie Kurs- und Monitor-Nachmessung der Equity — der höchste Wert zählt; die Kurs-Nachmessung nur bei belastbarer Abdeckung), Martingale-Signatur, Stop-Nachweis (bewiesen = entlastend, fehlend = neutral), eigene geometrische Rendite pro Monat, Calmar (Jahres-CAGR je Prozent gemessenem Equity-Drawdown inkl. Floating), Risiko-Score, Schock vs. Konto (Stress-Szenario, nie allein ein Ausschlussgrund), längste Verlustserie und die kuratierte Ausschlussliste.
 
 Beim Scan wird die Matrix mit allen Herleitungen als Snapshot in der Datenbank gespeichert; die Anzeige rechnet sie aus den gespeicherten Werten mit den aktuellen Grenzwerten neu.
 """),
     "risk_status": ("Was die Einstufungen aussagen", """
-**Grün · Kandidat:** Vollständige aktuelle Forensik, keine harte Risikoverletzung, Risiko-Score unter 5, eigene geometrische Monatsrendite mindestens an der konfigurierten Schwelle und RetDD mindestens 1,0. RetDD braucht eine belastbare Equity-Messung inklusive Floating. Das ist ein Prüfkandidat, keine Garantie. Fehlender Stop-Nachweis bleibt neutral.
+**Grün · Kandidat:** Vollständige aktuelle Forensik, keine harte Risikoverletzung, eigene geometrische Monatsrendite mindestens an der konfigurierten Schwelle und Jahres-Calmar (retdd_jahr) mindestens min_calmar_jahr (Default 3,0). Der Calmar braucht eine belastbare Equity-Messung inklusive Floating und mindestens 3 Monate Trade-Historie. Das ist ein Prüfkandidat, keine Garantie. Fehlender Stop-Nachweis bleibt neutral.
 
-**Gelb · Beobachtung:** Forensik ist vorhanden, aber Score, geometrische Monatsrendite oder RetDD reichen nicht für Grün; fehlende aktuelle Rendite oder Equity-Messung erlauben ebenfalls keine Empfehlung. **Rot · Risiko-Flag:** Eine Drawdown-Schranke oder Martingale-Signatur ist angeschlagen.
+**Gelb · Beobachtung:** Forensik ist vorhanden, aber Score, geometrische Monatsrendite oder Calmar reichen nicht für Grün; fehlende aktuelle Rendite oder Equity-Messung erlauben ebenfalls keine Empfehlung. **Rot · Risiko-Flag:** Eine Drawdown-Schranke oder Martingale-Signatur ist angeschlagen.
 
 **Ausgeschlossen:** Das Signal steht auf der Ausschlussliste. Die Begründung steht beim Urteil. **Grau · Vorprüfung:** Trade-Forensik fehlt oder konnte nicht erstellt werden. Fehlende Evidenz entlastet nicht.
 
@@ -102,7 +102,7 @@ Die Übersicht zählt die Einstufungen aller Signale des ausgewählten Laufs. Di
 
 **Gewinn pro Monat:** Maßgeblich ist die eigene geometrische Monatsrendite auf der Forensik-Kapitalbasis: die über den beobachteten Zeitraum äquivalente Rendite mit Zinseszins. Linearer Startbasis-Ertrag und Plattformwert bleiben Zusatzinformation und ersetzen fehlende geometrische Rendite nicht. Die Mindestschwelle ist konfigurierbar; maßgeblich sind die aktuellen Grenzwerte im Regelwerk und den Matrix-Tooltips. Historische Kennzahl, keine erwartete Auszahlung.
 
-**RetDD/Monat:** Eigene geometrische Monatsrendite ÷ gemessenen Max-Drawdown der Equity inklusive Floating (Kurse/Monitor). Plattform-, Balance- und Trading-DD aus geschlossenen Trades werden niemals als Ersatznenner verwendet. Ohne aktuelle geometrische Rendite oder belastbare Equity-Messung bleibt RetDD unbekannt. Mindestens 1,0 ist eine verbindliche Empfehlungsvoraussetzung. **RetDD/Jahr (Calmar)** verwendet CAGR ÷ denselben Equity-DD, nicht den Monatswert mal zwölf. Virtuelle Kapitalbasis, unterschiedliche Zeiträume und Messabdeckung begrenzen die Vergleichbarkeit; H1-Schlusskurse erfassen keine Intrabar-Extrema.
+**TrueRetDD (Calmar/Jahr):** Echter Jahres-CAGR ÷ gemessenen Max-Drawdown der Equity inklusive Floating (Kurse, H1-Rekonstruktion; Nutzer-Bestätigung 05.10.: Nenner ist der echte Max-Drawdown, NIE der Close-DD). Plattform-, Balance-, Monitor- und Trading-DD aus geschlossenen Trades werden niemals als Ersatznenner verwendet. Ohne aktuelle Rendite, belastbare Equity-Messung oder mit weniger als 3 Monaten Trade-Historie bleibt der Calmar unbekannt — kein Grün. Verbindliche Empfehlungsvoraussetzung: Calmar mindestens min_calmar_jahr (Default 3,0; Nutzer-Entscheid 05.10. — die frühere Monats-Schwelle RetDD 1,0 war aufgezinst Calmar 14-40 und nicht risikoneutral). retdd_monat bleibt sichtbare Zahl. Virtuelle Kapitalbasis, unterschiedliche Zeiträume und Messabdeckung begrenzen die Vergleichbarkeit; H1-Schlusskurse erfassen keine Intrabar-Extrema.
 
 **Profit-Faktor:** Verhältnis summierter Gewinne zum Betrag summierter Verluste. **Winrate:** Anteil gewinnender geschlossener Trades. Bei CSV-Daten verwenden diese Handelsstatistiken den Profit vor Kommission und Swap; der Trading-DD rechnet dagegen mit Nettowerten. Hohe Trefferquoten können mit seltenen, großen Verlusten einhergehen.
 """),
@@ -145,7 +145,7 @@ Der **Portfolio-Vorschlag** ist ein zusätzlicher KI-Bericht, der ALLE geprüfte
 
 Der Bericht steht in der Datenbank und bleibt auch über Sitzungen hinweg erhalten; ein neuer Lauf mit KI ersetzt ihn. Liegen weniger als zwei geprüfte Signale vor, weist der Bericht auf die fehlende Diversifikation hin.
 
-**Wichtig:** Risiko vor Ertrag. Nur Engine-Kandidaten mit Grün, ausreichender eigener geometrischer Monatsrendite und RetDD mindestens 1,0 dürfen empfohlen und gewichtet werden. Gelb bleibt Beobachtung. Fehlender Stop-Nachweis ist neutral; Martingale-Flag oder verletzte Drawdown-Schranke verhindern die Aufnahme. Der Vorschlag ist keine Anlageberatung; die Engine-Zahlen und aktuellen Grenzwerte sind maßgeblich.
+**Wichtig:** Risiko vor Ertrag. Nur Engine-Kandidaten mit Grün, ausreichender eigener geometrischer Monatsrendite und Calmar mindestens min_calmar_jahr (Default 3,0) dürfen empfohlen und gewichtet werden. Gelb bleibt Beobachtung. Fehlender Stop-Nachweis ist neutral; Martingale-Flag oder verletzte Drawdown-Schranke verhindern die Aufnahme. Der Vorschlag ist keine Anlageberatung; die Engine-Zahlen und aktuellen Grenzwerte sind maßgeblich.
 """),
     "downloader_section": ("MqlDownloader: Abonnenten-Verlauf und Testberichte", """
 Dieser Abschnitt kommt aus dem **MqlDownloader**, einem eigenen Netzwerkdienst im LAN

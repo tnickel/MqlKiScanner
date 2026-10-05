@@ -241,7 +241,15 @@ def berechne(trades_pfad: str | None, stats: dict | None) -> dict | None:
         "zeit_von": (eff or {}).get("zeit_von"),
         "zeit_bis": (eff or {}).get("zeit_bis"),
         "kapitalfluesse_nach_start": (eff or {}).get("kapitalfluesse_nach_start"),
-        "ertrag_je_close_dd": (eff or {}).get("retdd_monat"),
+        # Close-DD-Vorbewertung (reine ANZEIGE, kein Gate): direkt aus
+        # Ertrag ÷ Trading-DD — der Produzent sperrt retdd seit der
+        # Mindesthistorie-Regel (05.10.), die Vorbewertung soll bei kurzer
+        # Historie trotzdem sichtbar bleiben (mit ⚠ gekennzeichnet).
+        "ertrag_je_close_dd": (
+            (eff or {}).get("ertrag_monat_geom_pct")
+            / trading_dd.get("dd_pct_max_rel")
+            if (eff or {}).get("ertrag_monat_geom_pct") is not None
+            and (trading_dd.get("dd_pct_max_rel") or 0) > 0 else None),
         "monate_pct": monate_pct,
         "monate_usd": _monats_usd(parsed),
         "kurve": kurve,

@@ -14,6 +14,7 @@ def _result(signal_id, dd, *, gain=6.0, name=None, schranke=False):
         equity_dd_rekonstruiert_pct=dd, ertrag_monat_geom_pct=gain,
         ertrag_monat_pct=99.0, trading_dd_pct=1.0, dd_equity_pct=35.0,
         retdd_monat=99.0, forensik_vorhanden=True,
+        cagr_jahr_pct=(100.0 if gain is not None else None),
         schranke_verletzt=schranke)
 
 
@@ -38,7 +39,7 @@ def test_table_serializes_colors_and_formats_without_losing_values(monkeypatch):
     assert not at.exception
     frame = at.dataframe[0].value
     assert list(frame['Gewinn %/Monat']) == [6.0] * 5
-    assert frame.loc[1, 'TrueRetDD'] == pytest.approx(0.3)
+    assert frame.loc[1, 'TrueRetDD'] == pytest.approx(5.0)
     assert frame['TrueRetDD'].isna().tolist() == [False, False, False, True, True]
 
     styled, options = captured[-1]
@@ -83,7 +84,7 @@ def test_table_serializes_colors_and_formats_without_losing_values(monkeypatch):
 
 
 @pytest.mark.parametrize('dd,gain,profit_text,retdd_text', [
-    (20.0, 6.0, '6.00 %', '0.30'),
+    (20.0, 6.0, '6.00 %', '5.00'),
     (None, 6.0, '6.00 %', '—'),
     (0.0, 6.0, '6.00 %', '—'),
     (20.0, None, '—', '—'),
@@ -98,7 +99,7 @@ def test_detail_uses_same_fields_without_platform_or_trading_fallback(dd, gain, 
     assert not at.exception
     metrics = {m.label: m.value for m in at.metric}
     assert metrics['Gewinn %/Monat'] == profit_text
-    assert metrics['TrueRetDD'] == retdd_text
+    assert metrics['TrueRetDD (Calmar/Jahr)'] == retdd_text
     assert metrics['Ertrag / Monat (Plattform)'] == '99.0 %'
     if dd is None:
         assert any('Equity-DD unbelegt' in m.value for m in at.markdown)
@@ -147,8 +148,8 @@ def test_results_page_filters_profit_and_retdd_with_the_same_rows():
     frame = at.dataframe[0].value
     assert list(frame['Name']) == ['Alpha']
     assert list(frame['Gewinn %/Monat']) == [6.0]
-    assert list(frame['TrueRetDD']) == pytest.approx([0.3])
-    assert any('Ertrag ÷ ECHTER Max-Drawdown' in c.value for c in at.caption)
+    assert list(frame['TrueRetDD']) == pytest.approx([5.0])
+    assert any('ECHTER Jahres-Calmar' in c.value for c in at.caption)
 
 
 def test_kompaktansicht_faerbt_vorbehaltliches_trueretdd_orange():
@@ -169,6 +170,6 @@ def test_kompaktansicht_faerbt_vorbehaltliches_trueretdd_orange():
     at.run()
     assert not at.exception
     frame = at.dataframe[0].value
-    assert frame.loc[0, 'TrueRetDD'] == pytest.approx(1.4269 / 13.83)
+    assert frame.loc[0, 'TrueRetDD'] == pytest.approx(18.2 / 13.83)
     css = at.dataframe[0].proto.arrow_data.styler.styles
     assert 'rgba(249,115,22,0.12)' in css and '#fb923c' in css

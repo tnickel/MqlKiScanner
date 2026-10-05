@@ -94,7 +94,7 @@ Abdeckung; H1-Schlusskurse erfassen keine Intrabar-Extrema. Eine virtuelle
 Kapitalbasis ist eine Modellannahme, keine Messung des echten Kontoverlaufs.
 Bei fehlenden/veralteten Werten: nicht berechenbar, KEINE eigene Division
 oder Ersatzrechnung. Nur Engine-Gruen und ALLE eingesetzten Nutzer-Kriterien
-erlauben eine Empfehlung: RetDD mindestens 1,0, geometrische Monatsrendite
+erlauben eine Empfehlung: Calmar (retdd_jahr = CAGR / gemessener Max-Equity-DD) mindestens an der konfigurierten min_calmar_jahr-Schwelle (Default 3,0 — Nutzer-Entscheid 05.10.; unter 3 Monaten Trade-Historie gilt Calmar als nicht bestimmbar), geometrische Monatsrendite
 mindestens an der AKTUELL konfigurierten Ertragsschwelle, Risiko-Score unter
 5 sowie keine Ausschluss- oder harte Risikoregel. Die aktuelle Drawdown-
 Schranke und Ertragsschwelle stehen oben; keine festen Ersatzwerte verwenden.
@@ -138,8 +138,9 @@ Danach Abschnitte mit ## -Ueberschriften:
    praktische Risiken beim Kopieren.
 5. **Urteil** — Nenne IMMER retdd_monat/retdd_jahr (geometrischer
    Ertrag je Prozent gemessenem Max-Equity-DD; retdd_jahr = Calmar CAGR/Equity-DD) und
-   ertrag_monat_geom_pct und bewerte die EFFIZIENZ: >= 1.0 Mindestqualität
-   für eine Empfehlung (Nutzer-Regel 02.10.), 0.5 bis unter 1.0 beobachtbar,
+   ertrag_monat_geom_pct und bewerte die EFFIZIENZ: retdd_jahr (Calmar)
+   >= min_calmar_jahr (Default 3.0) Mindestqualität für eine Empfehlung
+   (Nutzer-Regel 05.10.), die Hälfte bis darunter beobachtbar,
    darunter unattraktiv — Risiko ohne angemessene Bezahlung. Priorisiere bei
    der Empfehlungswürdigung RetDD über die absolute Rendite.
 Fehlt retdd_monat (null/ohne aktuelle Rendite oder Equity-Messung): schreibe ausdrücklich

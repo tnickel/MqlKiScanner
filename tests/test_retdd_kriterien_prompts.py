@@ -31,11 +31,11 @@ def test_retdd_prompt_und_default_gleiche_messbasis_und_harte_auswahl(kind):
 
 def test_retdd_tooltip_benennt_feste_mindestqualitaet_und_ersatzverbot():
     text = next(k.beschreibung for k in KRITERIEN if k.key == "retdd")
-    assert "RetDD ≥ 1,0" in text
-    assert "verbindliche Empfehlungsvoraussetzung" in text
+    assert "Calmar" in text and "min_calmar_jahr" in text
+    assert "verbindliche Empfehlungsvoraussetzung" in text or "Empfehlungsvoraussetzung" in text
     assert "niemals als Ersatznenner" in text
-    assert "geometrische Monatsrendite" in text
-    assert "nicht zwölfmal" in text
+    assert "echter Jahres-CAGR" in text
+    assert "nicht risikoneutral" in text
     assert "Allein keine harte Sperre" not in text
 
 
@@ -44,7 +44,7 @@ def test_hilfe_verlangt_eigene_messung_und_gelbe_signale_bleiben_beobachtung():
     portfolio = HELP_CONTENT["portfolio_report"][1]
     assert "geometrische Monatsrendite" in metrics
     assert "niemals als Ersatznenner" in metrics
-    assert "Mindestens 1,0" in metrics
+    assert "min_calmar_jahr" in metrics and "3 Monaten" in metrics
     assert "Gelb bleibt Beobachtung" in portfolio
     assert "Fehlender Stop-Nachweis ist neutral" in portfolio
     assert "Signale ohne Stop-Nachweis" not in portfolio

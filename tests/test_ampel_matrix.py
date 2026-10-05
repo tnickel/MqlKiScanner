@@ -159,7 +159,7 @@ def test_matrix_payload_ist_json_fest_und_traegt_grenzen():
     text = json.dumps(payload, ensure_ascii=False)
     wieder = json.loads(text)
     assert wieder["grenzen"]["schranke_eq_dd_pct"] == 25.0
-    assert wieder["grenzen"]["min_retdd_monat"] == 1.0
+    assert wieder["grenzen"]["min_calmar_jahr"] == 3.0
     assert set(wieder["kriterien"]) == {k.key for k in KRITERIEN}
     assert wieder["kriterien"]["stop"]["ampel"] == GRUEN
     assert "Orderbuch" in wieder["kriterien"]["stop"]["detail"]
@@ -360,19 +360,22 @@ def test_ertrag_zelle_ohne_geometrische_rendite_kein_fallback():
 
 
 @pytest.mark.parametrize("wert,farbe", [
-    (1.0, GRUEN), (0.9995, GELB), (0.5, GELB), (0.4999, ORANGE),
+    (3.0, GRUEN), (2.9995, GELB), (1.5, GELB), (1.4999, ORANGE),
 ])
 def test_retdd_grenzen_auf_gemessener_equity_ohne_rundung(wert, farbe):
-    r = _result(ertrag_monat_geom_pct=10 * wert,
+    # Calmar-Stufen seit 05.10. (Nutzer-Entscheid): Grün ab min_calmar_jahr
+    # (3,0), Gelb ab der Hälfte (1,5), Orange darunter — Nenner bleibt der
+    # gemessene Max-Equity-DD (10 %), Zähler der echte Jahres-CAGR.
+    r = _result(cagr_jahr_pct=10 * wert, ertrag_monat_geom_pct=1.2,
                 equity_dd_rekonstruiert_pct=10.0,
                 dd_equity_pct=20.0, dd_balance_pct=18.0,
                 trading_dd_pct=0.1, retdd_monat=999.0)
     zelle = _matrix(r)["retdd"]
     assert zelle.ampel == farbe
-    assert r.retdd_monat == pytest.approx(wert)
+    assert r.retdd_jahr == pytest.approx(wert)
     assert "gemessener Max-Equity-Drawdown 10,00 %" in zelle.detail
     assert "Kurse (H1, virtuelle Trading-Equity)" in zelle.detail
-    assert "Calmar/Jahr" in zelle.detail
+    assert "RetDD" in zelle.detail   # Monatswert als Zusatz genannt
 
 
 def test_retdd_ohne_eigene_equity_loescht_alten_quotienten():
@@ -421,20 +424,20 @@ def test_score_gate_entfernt_hrc_fall_wird_gruen():
     Ertrag und RetDD; der Score bleibt sichtbare Zahl."""
     res = pipeline.ScanResult(
         id=1, name="HRC-Fall", forensik_vorhanden=True, score=5.8,
-        ertrag_monat_geom_pct=10.08, retdd_monat=5.13,
+        ertrag_monat_geom_pct=10.08, retdd_monat=5.13, cagr_jahr_pct=219.9,
         trading_dd_pct=2.0, equity_dd_rekonstruiert_pct=2.0,
         martingale_flag=False, stop_evidence="none")
     ampel, urteil = pipeline.ampel_for(res, {})
     assert ampel == "🟢"
-    # RetDD wird live nachgerechnet (10.08 / DD 2.0): ~5.0
-    assert "RetDD 5.0" in urteil and "Risiko-Score 5.8" in urteil
+    # Calmar wird live nachgerechnet (CAGR 219.9 / DD 2.0): ~110
+    assert "Calmar 109.95" in urteil and "Risiko-Score 5.8" in urteil
 
 
 def test_score_7_sperriert_gruen_nicht_mehr():
     res = pipeline.ScanResult(
         id=2, name="Hoher-Score-Fall", forensik_vorhanden=True, score=7.2,
-        ertrag_monat_geom_pct=6.5, retdd_monat=1.4, martingale_flag=False,
-        equity_dd_rekonstruiert_pct=4.0)
+        ertrag_monat_geom_pct=6.5, retdd_monat=1.4, cagr_jahr_pct=112.0,
+        martingale_flag=False, equity_dd_rekonstruiert_pct=4.0)
     assert pipeline.ampel_for(res, {})[0] == "🟢"
     # Harte Regeln greifen weiterhin VOR dem Grün:
     res2 = pipeline.ScanResult(

@@ -275,14 +275,23 @@ class ScanResult:
 
     @property
     def true_retdd_monat(self) -> float | None:
-        """Anzeigewert der TrueRetDD-Spalte (Nutzer 05.10.2026): EINE Zahl
-        für die Effizienz gegen den ECHTEN Max-Drawdown — belastbar gemessen
-        wenn vorhanden, sonst der vorbehaltliche Wert. Ob die Zahl orange zu
-        zeigen ist, entscheidet retdd_monat_vorbehalt (not None = Vorbehalt).
-        Zentral hier, damit Tabelle, Stationen und PDF dieselbe Logik nutzen
-        (Review 05.10. abends, Befund 4: vorher 5 identische Kopien)."""
+        """Anzeigewert der TrueRetDD-Familie (Nutzer 05.10.2026), Monats-
+        variante: belastbar wenn vorhanden, sonst der vorbehaltliche Wert.
+        Ob die Zahl orange zu zeigen ist, entscheidet retdd_monat_vorbehalt
+        (not None = Vorbehalt). Zentral hier, damit Tabelle, Stationen und
+        PDF dieselbe Logik nutzen (Review 05.10. abends, Befund 4)."""
         return (self.retdd_monat if self.retdd_monat is not None
                 else self.retdd_monat_vorbehalt)
+
+    @property
+    def true_retdd_jahr(self) -> float | None:
+        """Anzeigewert der TrueRetDD-Spalte seit der Calmar-Umstellung
+        (Nutzer-Entscheidung 05.10.): der JAHRES-Calmar (CAGR ÷ gemessener
+        Max-Equity-DD inkl. Floating — NIE Close-DD) entscheidet das
+        Grün-Gate, deshalb zeigt die Spalte ihn. Belastbar wenn vorhanden,
+        sonst vorbehaltlich (Marker: retdd_jahr_vorbehalt)."""
+        return (self.retdd_jahr if self.retdd_jahr is not None
+                else self.retdd_jahr_vorbehalt)
 
     def refresh_efficiency(self) -> None:
         """Eine RetDD-Formel für Scan, DB, Tabelle, Auswahl und KI.
@@ -298,12 +307,20 @@ class ScanResult:
             self.ertrag_monat_geom_pct = None
         if self.forensik_stale or not endlich(self.cagr_jahr_pct):
             self.cagr_jahr_pct = None
+        # Nutzer-Regel 05.10. (Mindesthistorie): Unter 3 Monaten Trade-Spanne
+        # ist kein belastbarer RetDD/Calmar — der Produzent (effizienz_
+        # kennzahlen) meldet "historie_zu_kurz"; Ertragswerte bleiben als
+        # Anzeige stehen, aber kein Gate-Wert (auch kein Vorbehalt).
+        historie_zu_kurz = (self.effizienz_befund.get("effizienz_status")
+                            == "historie_zu_kurz")
         dd = self.max_drawdown_equity_pct
         self.retdd_monat = (self.ertrag_monat_geom_pct / dd
                             if self.ertrag_monat_geom_pct is not None and dd
+                            and not historie_zu_kurz
                             else None)
         self.retdd_jahr = (self.cagr_jahr_pct / dd
-                           if self.cagr_jahr_pct is not None and dd else None)
+                           if self.cagr_jahr_pct is not None and dd
+                           and not historie_zu_kurz else None)
         for key in ("retdd_monat", "retdd_jahr"):
             if not endlich(getattr(self, key)):
                 setattr(self, key, None)
@@ -311,8 +328,11 @@ class ScanResult:
         # der BELASTBARE Wert fehlt, aber eine KURS-Messung existiert, die
         # die Verlässlichkeitsprüfung nicht bestanden hat. Der rohe DD ist
         # dann der Nenner; der Wert ist orange zu zeigen und sperrt Grün.
+        # Bei zu kurzer Historie bleibt auch der Vorbehalt gesperrt —
+        # „sonst kann man nix bestimmen" (Nutzer).
         roh = self.equity_dd_rekon_roh_pct
         if (self.retdd_monat is None and not self.forensik_stale
+                and not historie_zu_kurz
                 and endlich(roh) and roh > 0
                 and endlich(self.ertrag_monat_geom_pct)):
             self.retdd_monat_vorbehalt = self.ertrag_monat_geom_pct / roh
@@ -328,10 +348,11 @@ class ScanResult:
             self.retdd_jahr_vorbehalt = None
             self.retdd_vorbehalt_grund = ""
         status = ("veraltet" if self.forensik_stale else
+                  "historie_zu_kurz" if historie_zu_kurz else
                   "rendite_nicht_berechenbar" if self.ertrag_monat_geom_pct is None else
                   "ohne_equity_dd" if dd is None else
                   "equity_dd_null" if dd == 0 else
-                  "retdd_nicht_berechenbar" if self.retdd_monat is None else "ok")
+                  "retdd_nicht_berechenbar" if self.retdd_jahr is None else "ok")
         self.effizienz_befund = {
             **self.effizienz_befund,
             "effizienz_status": status,
@@ -383,14 +404,15 @@ class ScanResult:
             "Balance-DD % (Plattform)": self.dd_balance_pct,
             "Max-Drawdown %": self.max_drawdown_equity_pct,
             "Gewinn %/Monat": self.ertrag_monat_geom_pct,
-            # Nutzer-Wunsch 05.10.2026 (TrueRetDD): EINE Spalte für die
-            # Effizienz gegen den ECHTEN Max-Drawdown (Equity inkl. Floating,
-            # aus Kursen). Belastbar gemessen steht sie normal, nur
-            # vorbehaltlich (Zeitbasis/Kursabdeckung nicht bestanden) wird
-            # sie orange gezeigt; die Vorbehalt-Spalte ist der Marker dafür
-            # (und bleibt in der CSV nachvollziehbar).
-            "TrueRetDD": self.true_retdd_monat,
-            "TrueRetDD (Vorbehalt)": self.retdd_monat_vorbehalt,
+            # Nutzer-Wunsch 05.10.2026 (TrueRetDD) + Calmar-Umstellung: EINE
+            # Spalte für die Effizienz gegen den ECHTEN Max-Drawdown (Equity
+            # inkl. Floating, aus Kursen) — seit dem Calmar-Gate zeigt sie
+            # den JAHRESwert (er entscheidet Grün); der Monatswert steht
+            # als eigene Spalte daneben. Vorbehaltlich = orange, Marker in
+            # der Vorbehalt-Spalte (und bleibt in der CSV nachvollziehbar).
+            "TrueRetDD": self.true_retdd_jahr,
+            "TrueRetDD (Vorbehalt)": self.retdd_jahr_vorbehalt,
+            "RetDD/Monat": self.retdd_monat,
             "Trading-DD % (geschlossen)": self.trading_dd_pct,
             "Equity-Messung": self.equity_messung_status,
             "Winrate %": self.winrate_pct,
@@ -595,14 +617,16 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             res.urteil = (res.urteil or "") + (
                 f" · Max-DD aus Kursen {res.equity_dd_rekonstruiert_pct} % "
                 f"({res.equity_rekon_gmt_text})")
-        # Vorbehaltlicher RetDD sichtbar halten (Nutzer 05.10. „besser als
+        # Vorbehaltlicher Calmar sichtbar halten (Nutzer 05.10. „besser als
         # nix"): idempotenter Anhang; die Erklärung steht in der Matrix-Zelle
-        # und den Detailansichten. Sperrt Grün NICHT auf (retdd_monat bleibt
+        # und den Detailansichten. Sperrt Grün NICHT auf (retdd_jahr bleibt
         # unbekannt).
-        if (res.retdd_monat is None and res.retdd_monat_vorbehalt is not None
-                and "RetDD ≈" not in (res.urteil or "")):
+        if (res.retdd_jahr is None and res.retdd_jahr_vorbehalt is not None
+                and "Calmar ≈" not in (res.urteil or "")):
+            monat = (f", RetDD ≈ {res.retdd_monat_vorbehalt:.2f}/M"
+                     if res.retdd_monat_vorbehalt is not None else "")
             res.urteil = (res.urteil or "") + (
-                f" · RetDD ≈ {res.retdd_monat_vorbehalt:.2f}/M "
+                f" · Calmar ≈ {res.retdd_jahr_vorbehalt:.2f}{monat} "
                 "(Vorbehalt: Kursmessung unzuverlässig)")
         results.append(res)
     return results
@@ -680,30 +704,42 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
             return "🟡", (f"Forensik ok ({stop_kontext}), aber eigene geometrische "
                           "Monatsrendite unbelegt — ohne Gewinnnachweis kein Kandidat")
         if (ertrag_wert or 0) >= min_return:
-            # Nutzer-Regel 02.10. („retdd=1 minimum — RetDD ist wichtig
-            # und gehört in die Berechnung"): Grün erfordert die
-            # Mindest-Effizienz. Ohne belegbare RetDD-Basis gibt es
-            # ebenfalls kein Grün (Risiko VOR Ertrag — eine unbezahlte
-            # oder unbelegte Effizienz ist keine Empfehlungsgrundlage).
-            if result.retdd_monat is None:
-                return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), "
-                              "aber RetDD unbelegt (keine positive gemessene Equity-DD-Basis) — "
-                              "ohne Effizienznachweis kein Kandidat "
-                              "(Nutzer-Regel 02.10.)")
-            if result.retdd_monat < 1.0:
+            # Nutzer-Entscheidung 05.10. (Übergabe Calmar-Umstellung): Das
+            # Grün-Gate prüft den JAHRES-Calmar (retdd_jahr = CAGR ÷
+            # gemessener Max-Equity-DD inkl. Floating — NIE Close-DD).
+            # Die frühere Monats-Schwelle 1,0 war nicht risikoneutral:
+            # aufgezinst verlangte sie je nach DD Calmar 14-40 und
+            # bevorzugte genau die Signale mit kleinem DD, wo die
+            # H1-Kursmessung am ungenauesten ist. min_calmar_jahr ist
+            # ein Setting (Default 3,0 — branchenüblich "sehr gut").
+            min_calmar = float(settings.get("min_calmar_jahr", 3.0))
+            if result.effizienz_befund.get("effizienz_status") == "historie_zu_kurz":
                 return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), aber "
-                              f"RetDD {result.retdd_monat:g} < 1,0 — der "
-                              "Ertrag trägt das eingegangene Risiko nicht "
+                              "Trade-Historie unter 3 Monaten — Calmar nicht "
+                              "bestimmbar, keine belastbare Effizienzaussage "
+                              "(Nutzer-Regel 05.10.)")
+            if result.retdd_jahr is None:
+                return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), "
+                              "aber Calmar unbelegt (keine positive gemessene Equity-DD-Basis) — "
+                              "ohne Effizienznachweis kein Kandidat "
+                              "(Nutzer-Regel 02.10./05.10.)")
+            if result.retdd_jahr < min_calmar:
+                return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), aber "
+                              f"Calmar {result.retdd_jahr:g} < {min_calmar:g} "
+                              "(CAGR ÷ gemessener Max-Equity-DD) — der "
+                              "Jahresertrag trägt das eingegangene Risiko nicht "
                               "ausreichend (Mindest-Effizienz, Nutzer-Regel "
-                              "02.10.)")
-            retdd_text = (f", RetDD {result.retdd_monat:g}/M"
+                              "05.10.)")
+            calmar_text = (f", Calmar {result.retdd_jahr:g}"
+                           if result.retdd_jahr is not None else "")
+            monat_text = (f", RetDD {result.retdd_monat:g}/M"
                           if result.retdd_monat is not None else "")
             geom_text = (f" (geom. {ertrag_wert:g} %/M)"
                          if ertrag_wert is not None else "")
             score_text = (f", Risiko-Score {result.score:g}"
                           if result.score is not None else "")
             return "🟢", (f"Kandidat: Forensik bestanden, Ertrag ok{geom_text}"
-                          f"{retdd_text}{score_text} · {stop_kontext}")
+                          f"{calmar_text}{monat_text}{score_text} · {stop_kontext}")
         return "🟡", (f"Forensik ok ({stop_kontext}), aber Ertrag < {min_return:g} %/Monat "
                       f"(geom. {ertrag_wert:g})")
     return "⚪", "Vorprüfung (ohne Trade-Export-Forensik)"
@@ -711,11 +747,12 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
 
 def _kriterien_text(settings: dict) -> str:
     schwelle = float(settings.get("min_ertrag_pct_monat", 0) or 0)
+    min_calmar = float(settings.get("min_calmar_jahr", 3.0) or 3.0)
     ertrag_zeile = (
         f"- Mindest-Ertrag: {schwelle:g} %/Monat — " if schwelle > 0
         else "- Mindest-Ertrag: KEINE absolute Schwelle mehr (Nutzer-Regel 04.10.: "
              "absolute %/Monat sind beim Kopieren über den Lot-Faktor frei wählbar; "
-             "messbarer positiver Ertrag bleibt über RetDD >= 1,0 gefordert) — ")
+             f"messbarer positiver Ertrag bleibt über Calmar >= {min_calmar:g} gefordert) — ")
     return (f"- Harte Schranke: max. {settings.get('schranke_eq_dd_pct', 30)} % Drawdown — "
             "gewertet wird das MAXIMUM aus dem Plattform-Drawdown (By Equity "
             "und By Balance — Selbstauskunft), dem aus den Trades selbst "
@@ -728,11 +765,16 @@ def _kriterien_text(settings: dict) -> str:
             + "maßgeblich ist die eigene geometrische Monatsrendite "
             "(ertrag_monat_geom_pct) auf der tatsächlichen Zeitspanne des Exports; "
             "linearer Startbasis-Ertrag und Plattformwert sind Zusatzinformationen\n"
-            "- Mindest-RetDD: 1,0 pro Monat. RetDD = eigene geometrische Gewinn-%/Monat "
-            "/ gemessener Max-Equity-Drawdown in %. Niemals geschlossenen Trading-DD, "
-            "Balance-DD oder Plattform-DD als Ersatz verwenden. Fehlende positive "
-            "Equity-Messung = RetDD unbekannt, kein Grün. Jahreswert = CAGR / "
-            "gemessener Equity-DD, nicht Monatswert mal zwölf\n"
+            f"- Mindest-Calmar (Grün-Gate): {min_calmar:g} pro Jahr. Calmar = "
+            "echter Jahres-CAGR / gemessener Max-Equity-Drawdown in % "
+            "(floating-inklusive Kursmessung — NIE geschlossener Trading-DD, "
+            "Balance-DD, Plattform-DD oder Monitor-Closing-DD als Ersatz). "
+            "Nutzer-Entscheidung 05.10.: Die frühere Monats-Schwelle "
+            "RetDD >= 1,0 war nicht risikoneutral (aufgezinst Calmar 14-40 "
+            "je nach DD, bevorzugt kleine DDs mit ungenauester Messung). "
+            "retdd_monat (Monatswert) bleibt sichtbare Zahl, entscheidet "
+            "aber nicht mehr. Fehlende positive Equity-Messung oder "
+            "Trade-Historie unter 3 Monaten = Calmar unbekannt, kein Grün\n"
             f"- Listen-Vorfilter: mindestens {settings.get('min_wochen', 26)} Wochen "
             f"und {settings.get('min_abonnenten', 0)} Abonnenten; Fix-IDs umgehen diese "
             "Vorfilter, aber keine Bewertungsregel. Abonnenten sind kein Qualitätsbeweis\n"

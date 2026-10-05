@@ -19,7 +19,8 @@ def _result(**kwargs):
 def test_trueretdd_belastbar_steht_normal_ohne_marker():
     r = _result(equity_dd_rekonstruiert_pct=6.0, equity_dd_rekon_roh_pct=13.83)
     row = r.to_row()
-    assert row["TrueRetDD"] == pytest.approx(1.4269 / 6.0)
+    assert row["TrueRetDD"] == pytest.approx(18.2 / 6.0)      # Calmar
+    assert row["RetDD/Monat"] == pytest.approx(1.4269 / 6.0)
     assert row["TrueRetDD (Vorbehalt)"] is None
 
 
@@ -29,8 +30,8 @@ def test_trueretdd_vorbehalt_fuellt_die_spalte_mit_marker():
     row = r.to_row()
     # Die sichtbare Spalte zeigt den Vorbehaltswert (orange in der UI), der
     # Marker sagt der Zeilenfärbung, dass es vorbehaltlich ist.
-    assert row["TrueRetDD"] == pytest.approx(1.4269 / 13.83)
-    assert row["TrueRetDD (Vorbehalt)"] == pytest.approx(1.4269 / 13.83)
+    assert row["TrueRetDD"] == pytest.approx(18.2 / 13.83)
+    assert row["TrueRetDD (Vorbehalt)"] == pytest.approx(18.2 / 13.83)
 
 
 def test_trueretdd_ohne_kursmessung_leer():
@@ -55,13 +56,14 @@ def test_zentrale_property_true_retdd_monat():
     vorbehalt = _result(equity_dd_rekon_roh_pct=13.83,
                         equity_rekon_grund="Wechselgrenze")
     vorbehalt.refresh_efficiency()
+    assert vorbehalt.true_retdd_jahr == pytest.approx(18.2 / 13.83)
     assert vorbehalt.true_retdd_monat == pytest.approx(1.4269 / 13.83)
     belastbar = _result(equity_dd_rekonstruiert_pct=6.0)
     belastbar.refresh_efficiency()
-    assert belastbar.true_retdd_monat == pytest.approx(1.4269 / 6.0)
+    assert belastbar.true_retdd_jahr == pytest.approx(18.2 / 6.0)
     leer = _result(equity_rekon_grund="keine Kurse")
     leer.refresh_efficiency()
-    assert leer.true_retdd_monat is None
+    assert leer.true_retdd_jahr is None
 
 
 def test_alle_signale_zeile_verwendet_dieselbe_zusammenfuehrung():
@@ -69,11 +71,11 @@ def test_alle_signale_zeile_verwendet_dieselbe_zusammenfuehrung():
                         equity_rekon_grund="Wechselgrenze")
     vorbehalt.refresh_efficiency()
     zeile = tabellen_zeile(vorbehalt, None)
-    assert zeile["TrueRetDD"] == pytest.approx(1.4269 / 13.83)
-    assert zeile["TrueRetDD (Vorbehalt)"] == pytest.approx(1.4269 / 13.83)
+    assert zeile["TrueRetDD"] == pytest.approx(18.2 / 13.83)
+    assert zeile["TrueRetDD (Vorbehalt)"] == pytest.approx(18.2 / 13.83)
     belastbar = _result(equity_dd_rekonstruiert_pct=6.0,
                         equity_dd_rekon_roh_pct=13.83)
     belastbar.refresh_efficiency()
     zeile2 = tabellen_zeile(belastbar, None)
-    assert zeile2["TrueRetDD"] == pytest.approx(1.4269 / 6.0)
+    assert zeile2["TrueRetDD"] == pytest.approx(18.2 / 6.0)
     assert zeile2["TrueRetDD (Vorbehalt)"] is None

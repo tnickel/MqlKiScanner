@@ -1631,8 +1631,10 @@ def _dialog_forensik() -> None:
                "bleibt das Feld leer. Trading-DD berücksichtigt nur "
                "geschlossene Trades. Die Schranke verwendet zusätzlich "
                "die Plattform-Angaben. Gewinn %/Monat ist die eigene geometrische "
-               "Monatsrendite; TrueRetDD teilt sie durch den gemessenen maximalen "
-               "Equity-Drawdown. Geschlossener Drawdown dient nicht als Nenner.")
+               "Monatsrendite; TrueRetDD ist der Jahres-Calmar (CAGR ÷ "
+               "gemessener maximaler Equity-Drawdown inkl. Floating; "
+               "Grün-Gate ab 3,0). Geschlossener Drawdown dient nie als "
+               "Nenner.")
     probleme = [r for r in results if r.fehler]
     if probleme:
         st.warning(f"{len(probleme)} Signal(e) mit Fehler — Details auf der "

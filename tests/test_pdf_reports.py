@@ -172,7 +172,7 @@ def _ergebnis(sid, name, **kw):
     basis = dict(id=sid, name=name, quelle="pelik", platform="pelican",
                  ampel="🟢", score=4.1, ertrag_monat_pct=15.4,
                  ertrag_monat_pct_forensik=3.5, dd_equity_pct=0.78,
-                 ertrag_monat_geom_pct=6.19, retdd_monat=99,
+                 ertrag_monat_geom_pct=6.19, cagr_jahr_pct=6.19, retdd_monat=99,
                  dd_balance_pct=None, trading_dd_pct=0.27,
                  # Review 04.10.: Monitor-Closing-DD ist kein Messwert mehr —
                  # derselbe Wert als Kurs-Reko gesetzt, PDF-Zeile bleibt geprüft.
@@ -202,7 +202,7 @@ def test_anhang_erkennt_nur_die_empfohlenen_strategien():
     assert "EMPFEHLUNG — Alpha passt." in md      # voller Gesamtbericht drin
     assert "| Gewinn %/Monat (geometrisch) | 6,19 % |" in md
     assert "| Max-Drawdown (Equity, gemessen) | 6,19 % |" in md
-    assert "| TrueRetDD (Monatsgewinn / Max-Equity-DD inkl. Floating) | 1,000 |" in md
+    assert "| TrueRetDD (Jahres-Calmar = CAGR / Max-Equity-DD inkl. Floating) | 1,00 / Monat 1,00 |" in md
     assert "Gamma" not in md.split("Gesamtrisiko")[0] or True
 
 
@@ -216,8 +216,10 @@ def test_anhang_zeigt_vorbehaltlichen_trueretdd_markiert():
     r.equity_rekon_grund = "Offene Position über Wechselgrenze"
     md = _anhang_markdown([r], "## Portfolio-Vorschlag\n\n"
                                 "- Vorbehalt-PDF — 100 % — Test\n\n## X")
-    assert ("| TrueRetDD (Monatsgewinn / Max-Equity-DD inkl. Floating) | "
-            "≈ 0,448 (Vorbehalt: Kursmessung unzuverlässig) |") in md
+    # Calmar (05.10.): 6,19/13,83 = 0,4476 -> 0,45 vorbehaltlich; ohne
+    # belastbare Messung bleibt auch der Monatszusatz weg.
+    assert ("| TrueRetDD (Jahres-Calmar = CAGR / Max-Equity-DD inkl. Floating) | "
+            "≈ 0,45 (Vorbehalt: Kursmessung unzuverlässig) |") in md
 
 
 def test_portfolio_pdf_mit_anhang_rendert_und_ohne_bleibt_klassisch():

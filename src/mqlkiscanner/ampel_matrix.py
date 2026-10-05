@@ -119,21 +119,25 @@ KRITERIEN: list[Kriterium] = [
         "schlechten Marktregime. Grün = unter 10, gelb = 10–19, orange = "
         "ab 20 Verlusten in Folge (Information, keine harte Schranke)."),
     Kriterium(
-        "retdd", "RetDD (Ertrag je DD)",
+        "retdd", "Calmar (CAGR je DD)",
         "Nutzer-Kriterium — Rendite-Risiko-EFFIZIENZ: Niedriges "
-        "Risiko allein genügt nicht, der Gewinn muss das eingegangene "
-        "Risiko tragen. RetDD = eigene geometrische Monatsrendite ÷ "
-        "gemessenen Max-Drawdown der Equity inklusive Floating (belastbare "
+        "Risiko allein genügt nicht, der Jahresertrag muss das eingegangene "
+        "Risiko tragen. Calmar = echter Jahres-CAGR ÷ gemessenen "
+        "Max-Drawdown der Equity inklusive Floating (belastbare "
         "Kurs-Messung, H1-Rekonstruktion — der Monitor-Trade-DD ist "
-        "bewiesen eine Closing-Kurve, Review 04.10.). Plattform-, Balance- "
-        "und Trading-DD "
-        "aus geschlossenen Trades dienen niemals als Ersatznenner. Grün = "
-        "ab 1,0; gelb = 0,5 bis unter 1,0; orange = darunter. RetDD ≥ 1,0 "
-        "ist eine verbindliche Empfehlungsvoraussetzung. Grau = ohne eigene "
-        "geometrische Rendite oder belastbare Equity-Messung nicht messbar "
-        "und kein Grün. RetDD/Jahr = CAGR ÷ denselben Equity-DD (Calmar), "
-        "nicht zwölfmal RetDD/Monat. Messzeitraum, Kapitalbasis und H1-"
-        "Grenzen beachten; die Kennzahl ist keine Prognose."),
+        "bewiesen eine Closing-Kurve, Review 04.10.; Nutzer-Bestätigung "
+        "05.10.: Nenner ist der echte Max-Drawdown, NIE der Close-DD). "
+        "Plattform-, Balance- und Trading-DD aus geschlossenen Trades "
+        "dienen niemals als Ersatznenner. Grün = ab min_calmar_jahr "
+        "(Default 3,0); gelb = ab der Hälfte; orange = darunter. Die "
+        "frühere Monats-Schwelle RetDD ≥ 1,0 war aufgezinst Calmar 14-40 "
+        "je nach DD — nicht risikoneutral (Nutzer-Entscheid 05.10.). "
+        "retdd_monat bleibt sichtbare Zahl, entscheidet aber nicht; Calmar "
+        "mindestens min_calmar_jahr ist die verbindliche "
+        "Empfehlungsvoraussetzung. "
+        "Unter 3 Monaten Trade-Historie oder ohne belastbare "
+        "Equity-Messung nicht messbar und kein Grün. Messzeitraum, "
+        "Kapitalbasis und H1-Grenzen beachten; keine Prognose."),
     Kriterium(
         "liste", "Ausschlussliste",
         "Manuell kuratierte Liste (data/known_signals.json) aus der "
@@ -356,68 +360,78 @@ def _listen_zelle(r) -> Zelle:
                  "Watchlist (known_signals.json).")
 
 
-def _retdd_zelle(r) -> Zelle:
-    """Zentral berechnete Effizienz gegen gemessenen Floating-Equity-DD."""
+def _retdd_zelle(r, settings: dict | None = None) -> Zelle:
+    """Calmar (CAGR ÷ gemessener Floating-Equity-DD) — Grün-Gate seit 05.10.
+
+    Nutzer-Entscheidung 05.10.: Stufen auf den JAHRES-Calmar, weil die
+    Monats-Schwelle 1,0 aufgezinst Calmar 14-40 je nach DD verlangte —
+    nicht risikoneutral und bevorzugt kleine DDs mit ungenauester
+    H1-Messung. Nenner bleibt der echte Max-Equity-DD inkl. Floating
+    (Nutzer-Bestätigung 05.10.: „beim Calmar nutzen wir den realDrawdown,
+    also den max drawdown nicht den mit dem close drawdown")."""
     r.refresh_efficiency()
-    wert = getattr(r, "retdd_monat", None)
+    min_calmar = float((settings or {}).get("min_calmar_jahr", 3.0) or 3.0)
+    wert = getattr(r, "retdd_jahr", None)
     if wert is None:
-        # Vorbehaltlicher Wert (Nutzer 05.10. „besser als nix"): die Kurs-
+        # Vorbehaltlicher Calmar (Nutzer 05.10. „besser als nix"): die Kurs-
         # Messung existiert, hat die Verlässlichkeitsprüfung aber nicht
         # bestanden. ORANGE — orientierend, nie ein Grün-Beleg.
-        vorbehalt = getattr(r, "retdd_monat_vorbehalt", None)
+        vorbehalt = getattr(r, "retdd_jahr_vorbehalt", None)
         if vorbehalt is not None:
-            vorbehalt_jahr = getattr(r, "retdd_jahr_vorbehalt", None)
-            jahr_text = (f" (Calmar/Jahr ≈ {vorbehalt_jahr:g})"
-                         if vorbehalt_jahr is not None else "")
+            monat = getattr(r, "retdd_monat_vorbehalt", None)
+            monat_text = (f" (≈ {monat:.2f} / Monat)"
+                          if monat is not None else "")
             grund = getattr(r, "retdd_vorbehalt_grund", "") or \
                 "Zeitbasis/Kursabdeckung unzuverlässig"
             return Zelle(
-                ORANGE, f"≈ {vorbehalt:.2f} / Monat",
-                f"VORBEHALT: Der Wert rechnet die eigene geometrische "
-                f"Monatsrendite {_num(r.ertrag_monat_geom_pct)} % ÷ rohen "
-                f"Kurs-Max-DD {_num(r.equity_dd_rekon_roh_pct)} % ≈ "
-                f"{vorbehalt:.2f}{jahr_text}. Die Kursmessung gilt als "
-                f"NICHT verlässlich ({grund}) — der Wert ist nur "
-                "orientierend und als Vorbehalt zu lesen; ein belastbarer "
-                "RetDD bleibt unbekannt und ohne ihn gibt es kein Grün "
-                "(kein Rendite-Risiko-Urteil auf unzuverlässiger Basis). "
+                ORANGE, f"≈ {vorbehalt:.2f} / Jahr",
+                f"VORBEHALT: Der Wert rechnet den CAGR "
+                f"{_num(r.cagr_jahr_pct)} % ÷ rohen Kurs-Max-DD "
+                f"{_num(r.equity_dd_rekon_roh_pct)} % ≈ {vorbehalt:.2f}"
+                f"{monat_text}. Die Kursmessung gilt als NICHT verlässlich "
+                f"({grund}) — der Wert ist nur orientierend und als "
+                "Vorbehalt zu lesen; ein belastbarer Calmar bleibt "
+                "unbekannt und ohne ihn gibt es kein Grün (kein "
+                "Rendite-Risiko-Urteil auf unzuverlässiger Basis). "
                 "Plattform-, Balance- und Trading-DD sind kein Ersatznenner.")
         grund = {
             "veraltet": "Die Forensik ist veraltet.",
-            "rendite_nicht_berechenbar": "Eine aktuelle geometrische Monatsrendite fehlt.",
+            "historie_zu_kurz": "Trade-Historie unter 3 Monaten — "
+                                "keine Effizienzaussage möglich.",
+            "rendite_nicht_berechenbar": "Eine aktuelle Rendite fehlt.",
             "ohne_equity_dd": "Eine belastbare Equity-Messung fehlt.",
             "equity_dd_null": "Gemessener Equity-DD = 0; der Quotient ist nicht definiert.",
         }.get(r.effizienz_befund.get("effizienz_status"), "")
         return Zelle(KEINE_DATEN, "unbekannt",
-                     "RetDD nicht berechenbar: aktuelle eigene geometrische "
-                     "Monatsrendite und ein belastbar gemessener positiver "
-                     "Max-Equity-Drawdown sind erforderlich "
+                     "Calmar nicht berechenbar: aktuelle Rendite, mindestens "
+                     "3 Monate Trade-Historie und ein belastbar gemessener "
+                     "positiver Max-Equity-Drawdown sind erforderlich "
                      "(kein Rendite-Risiko-Urteil möglich; "
                      "ohne diesen Nachweis kein Grün). Plattform-, Balance- "
                      "und Trading-DD sind kein Ersatznenner. " + grund)
-    jahr = getattr(r, "retdd_jahr", None)
-    jahres_text = f" (Calmar/Jahr {jahr:g}, CAGR/Equity-DD)" if jahr is not None else ""
+    monat = getattr(r, "retdd_monat", None)
+    monat_text = (f" (RetDD {monat:g} / Monat)" if monat is not None else "")
     herleitung = (
-        f"Eigene geometrische Monatsrendite {_num(r.ertrag_monat_geom_pct)} % "
+        f"Echter Jahres-CAGR {_num(r.cagr_jahr_pct)} % "
         f"÷ gemessener Max-Equity-Drawdown {_num(r.max_drawdown_equity_pct)} % "
-        f"= RetDD {wert:g}{jahres_text}. "
+        f"= Calmar {wert:g}{monat_text}. "
         f"Messung: {r.equity_messung_status}. "
         "Kapitalbasis, Zeitraum und Messabdeckung begrenzen die Aussage; "
         "historische Effizienz ist keine Prognose. ")
-    if wert >= 1.0:
-        return Zelle(GRUEN, f"{wert:g} / Monat",
+    if wert >= min_calmar:
+        return Zelle(GRUEN, f"{wert:g} / Jahr",
                      herleitung +
-                     "Mindestqualität 1,0 erreicht ("
-                     "Nutzer-Regel 02.10.).")
-    if wert >= 0.5:
-        return Zelle(GELB, f"{wert:g} / Monat",
+                     f"Mindest-Calmar {min_calmar:g} erreicht "
+                     "(Nutzer-Regel 05.10.).")
+    if wert >= min_calmar / 2:
+        return Zelle(GELB, f"{wert:g} / Jahr",
                      herleitung +
-                     "unter der Mindestqualität 1,0: beobachtbar, aber der "
-                     "Ertrag trägt das Risiko nur begrenzt.")
-    return Zelle(ORANGE, f"{wert:g} / Monat",
+                     f"unter dem Mindest-Calmar {min_calmar:g}: beobachtbar, "
+                     "aber der Jahresertrag trägt das Risiko nur begrenzt.")
+    return Zelle(ORANGE, f"{wert:g} / Jahr",
                  herleitung + "Das "
                  "eingegangene Risiko wird nicht angemessen bezahlt "
-                 "(Mindestqualität 1,0, Nutzer-Regel 02.10.).")
+                 f"(Mindest-Calmar {min_calmar:g}, Nutzer-Regel 05.10.).")
 
 
 _BERECHNER = {
@@ -425,7 +439,7 @@ _BERECHNER = {
     "martingale": lambda r, s: _martingale_zelle(r),
     "stop": lambda r, s: _stop_zelle(r),
     "ertrag": lambda r, s: _ertrag_zelle(r, s),
-    "retdd": lambda r, s: _retdd_zelle(r),
+    "retdd": lambda r, s: _retdd_zelle(r, s),
     "score": lambda r, s: _score_zelle(r),
     "schock": lambda r, s: _schock_zelle(r),
     "serie": lambda r, s: _serie_zelle(r),
@@ -449,7 +463,7 @@ def matrix_payload(result, settings: dict | None = None) -> dict:
     return {
         "grenzen": {"schranke_eq_dd_pct": settings.get("schranke_eq_dd_pct", 30.0),
                     "min_ertrag_pct_monat": settings.get("min_ertrag_pct_monat", 5.0),
-                    "min_retdd_monat": 1.0},
+                    "min_calmar_jahr": settings.get("min_calmar_jahr", 3.0)},
         "kriterien": {key: {"ampel": z.ampel, "kurz": z.kurz, "detail": z.detail}
                       for key, z in kriterien_matrix(result, settings).items()},
     }

@@ -21,7 +21,7 @@ def _result(**kwargs):
 
 def test_retdd_neuberechnung_fuer_tabelle_prompt_und_auswahl_einheitlich():
     result = _result()
-    assert result.to_row()["TrueRetDD"] == 2.0
+    assert result.to_row()["TrueRetDD"] == 20.0
     assert result.to_row()["Gewinn %/Monat"] == 12.0
     assert pipeline.ampel_for(result, {})[0] == "🟢"
     for builder in (pipeline._kandidat_json, pipeline._forensik_json):
@@ -45,7 +45,7 @@ def test_monitor_eq_dd_ist_nur_schrankenkanal_nicht_nenner():
     # Review 04.10.: Monitor-Closing-DD ist kein RetDD-Nenner (s. Paket D);
     # Nenner bleibt die Kurs-Rekonstruktion (6 %) -> 12/6 = 2.0.
     result = _result(monitor_trade_eq_dd_pct=20.0)
-    assert result.to_row()["TrueRetDD"] == 2.0
+    assert result.to_row()["TrueRetDD"] == 20.0
     assert pipeline.ampel_for(result, {})[0] == "🟢"
     # Die harte Schranke sieht den Monitor weiterhin als 5. Kanal:
     result = _result(monitor_trade_eq_dd_pct=35.0)
@@ -54,15 +54,18 @@ def test_monitor_eq_dd_ist_nur_schrankenkanal_nicht_nenner():
 
 def test_harte_schranke_bleibt_auch_bei_gutem_retdd_wirksam():
     result = _result(dd_equity_pct=34.95)
-    assert result.to_row()["TrueRetDD"] == 2
+    assert result.to_row()["TrueRetDD"] == 20
     assert pipeline.ampel_for(result, {})[0] == "🔴"
 
 
 def test_retdd_unter_eins_darf_nicht_zur_empfehlung_gerundet_werden():
-    result = _result(ertrag_monat_geom_pct=5.99994)
-    assert round(result.to_row()["TrueRetDD"], 2) == 1
+    # Calmar-Gate (05.10.): 17.99994/6 = 2.99999 — darf nicht als 3,0
+    # durchgehen. Vorher war der Fall Monats-seitig (5.99994/6 ~ 1,0).
+    result = _result(ertrag_monat_geom_pct=5.99994, cagr_jahr_pct=17.99994)
+    assert round(result.to_row()["TrueRetDD"], 2) == 3
+    assert result.to_row()["TrueRetDD"] < 3
     assert pipeline.ampel_for(result, {})[0] == "🟡"
-    exact = replace(result, ertrag_monat_geom_pct=6.0)
+    exact = replace(result, ertrag_monat_geom_pct=6.0, cagr_jahr_pct=18.0)
     assert pipeline.ampel_for(exact, {})[0] == "🟢"
 
 
@@ -94,7 +97,7 @@ def test_db_reload_ersetzt_alten_quotienten_durch_gemessene_equity_basis():
                   "peak_exposure": {"shock_pct_max": 10},
                   "equity_rekonstruktion": {"equity_dd_pct": 6, "verlaesslich": True}})
     result = pipeline.results_from_db()[0]
-    assert result.to_row()["TrueRetDD"] == 2
+    assert result.to_row()["TrueRetDD"] == 20
     assert result.ampel == "🟢"
 
 
@@ -104,7 +107,7 @@ def test_kriterien_payload_nennt_settings_und_equity_retdd():
                                     "min_wochen": 40, "min_abonnenten": 12})
     assert "22 %" in text and "7 %/Monat" in text
     assert "40 Wochen" in text and "12 Abonnenten" in text
-    assert "Mindest-RetDD: 1,0" in text
+    assert "Mindest-Calmar (Grün-Gate): 3" in text
     assert "ertrag_monat_geom_pct" in text and "gemessener Max-Equity" in text
 
 
@@ -127,26 +130,30 @@ def test_ungerundeter_equity_dd_bleibt_nenner_beim_db_reload():
         "name": "Rundungsgrenze", "platform": "MT5",
         "stats": {"forensik_ok": True, "forensik_version": FORENSICS_VERSION}},
         forensik={"version": FORENSICS_VERSION, "vollstaendig": True, "score": 2,
-                  "ertrag_monat_geom_pct": 10.001,
+                  "ertrag_monat_geom_pct": 10.001, "cagr_jahr_pct": 30.0119,
                   "peak_exposure": {"shock_pct_max": 10},
                   "equity_rekonstruktion": {"equity_dd_pct": 10.00,
                                             "equity_dd_pct_raw": 10.004,
                                             "verlaesslich": True}})
     result = pipeline.results_from_db()[0]
     assert result.max_drawdown_equity_pct == 10.004
-    assert result.to_row()["TrueRetDD"] < 1
+    # Calmar-Gate (05.10.): 30.0119/10.004 = 2.99988 < 3.0 -> kein Grün,
+    # obwohl der gerundete Blick (30.0/10.0 = 3.0) grün aussieht.
+    assert result.to_row()["TrueRetDD"] == pytest.approx(30.0119 / 10.004)
+    assert result.to_row()["TrueRetDD"] < 3.0
     assert result.ampel == "🟡"
 
 
 def test_tradeserver_sync_uebertraegt_retdd_und_gewinn_ungerundet():
     from mqlkiscanner.tradeserver_sync import signal_zeilen
     db.init_db()
-    result = _result(ertrag_monat_geom_pct=5.99994)
+    result = _result(ertrag_monat_geom_pct=5.99994, cagr_jahr_pct=17.99994)
     result.ampel, result.urteil = pipeline.ampel_for(result, {})
     payload = signal_zeilen([result])[0]
     assert payload["ertragMonatGeomPct"] == 5.99994
     assert payload["maxDrawdownEquityPct"] == 6
-    assert payload["retddMonat"] == result.to_row()["TrueRetDD"] < 1
+    assert payload["retddJahr"] == result.to_row()["TrueRetDD"] < 3
+    assert payload["minCalmarJahr"] == 3.0
     assert payload["ampel"] == "🟡"
 
 
@@ -172,7 +179,7 @@ def test_equity_status_nennt_nur_tatsaechlich_verwendete_gueltige_quellen(invali
     assert result.to_row()["TrueRetDD"] is None
     assert "Monitor" not in result.equity_messung_status
     result = _result(monitor_trade_eq_dd_pct=invalid)
-    assert result.to_row()["TrueRetDD"] == 2
+    assert result.to_row()["TrueRetDD"] == 20
     assert result.equity_messung_status == "Gemessen: Kurse (H1, virtuelle Trading-Equity)"
 
 
@@ -186,10 +193,11 @@ def test_vorbehalt_retdd_bei_unzuverlaessiger_kursmessung():
                      equity_rekon_grund="Offene Position über Wechselgrenze",
                      ertrag_monat_geom_pct=1.4269, cagr_jahr_pct=18.2)
     row = result.to_row()
-    # TrueRetDD (Nutzer 05.10.): EINE Spalte — der Vorbehaltswert fuellt sie,
+    # TrueRetDD = Calmar (05.10.): der Vorbehaltswert fuellt die Spalte,
     # der Marker steht in der Vorbehalt-Spalte.
-    assert row["TrueRetDD"] == pytest.approx(1.4269 / 13.83)
-    assert row["TrueRetDD (Vorbehalt)"] == pytest.approx(1.4269 / 13.83)
+    assert row["TrueRetDD"] == pytest.approx(18.2 / 13.83)
+    assert row["TrueRetDD (Vorbehalt)"] == pytest.approx(18.2 / 13.83)
+    assert row["RetDD/Monat"] is None
     # Grün bleibt gesperrt (Nutzer-Regel: RetDD nur mit belastbarer Messung).
     ampel, urteil = pipeline.ampel_for(result, {})
     assert ampel != "🟢"
@@ -204,7 +212,7 @@ def test_vorbehalt_retdd_bei_unzuverlaessiger_kursmessung():
 def test_vorbehalt_retdd_leer_wenn_belastbare_messung_vorliegt():
     result = _result(equity_dd_rekonstruiert_pct=6.0,
                      equity_dd_rekon_roh_pct=13.83)
-    assert result.to_row()["TrueRetDD"] == 2.0
+    assert result.to_row()["TrueRetDD"] == 20.0
     assert result.to_row()["TrueRetDD (Vorbehalt)"] is None
 
 
@@ -237,6 +245,27 @@ def test_vorbehalt_retdd_db_rundtrip_ohne_rescan():
     assert treffer, "Signal muss im Bestand liegen"
     r = treffer[0]
     assert r.retdd_monat is None
+    assert r.retdd_jahr_vorbehalt == pytest.approx(18.2 / 13.83)
     assert r.retdd_monat_vorbehalt == pytest.approx(1.4269 / 13.83)
-    assert "RetDD ≈ 0.10/M" in (r.urteil or "")
+    assert "Calmar ≈ 1.32" in (r.urteil or "")
     assert "Vorbehalt" in (r.urteil or "")
+
+
+# ---------------- Calmar-Gate (Nutzer-Entscheid 05.10., Übergabe) --------
+@pytest.mark.parametrize("cagr,erwartet", [(17.4, "🟡"), (18.0, "🟢"),
+                                           (18.06, "🟢"), (17.9999, "🟡")])
+def test_calmar_gate_grenze_3_0(cagr, erwartet):
+    """2,9 -> Gelb, 3,0 -> Grün: Das Gate ist der JAHRES-Calmar auf dem
+    echten Max-Equity-DD (NIE Close-DD); Grenzwerte ungerundet geprüft."""
+    result = _result(cagr_jahr_pct=cagr)   # dd = 6 -> Calmar = cagr/6
+    ampel, urteil = pipeline.ampel_for(result, {})
+    assert ampel == erwartet
+    if erwartet == "🟡" and cagr < 18:
+        assert "Calmar" in urteil and "< 3" in urteil
+
+
+def test_calmar_setting_anhebbar():
+    """min_calmar_jahr ist konfigurierbar — höhere Schwelle dreht Grün."""
+    result = _result(cagr_jahr_pct=18.0)   # Calmar 3,0
+    assert pipeline.ampel_for(result, {})[0] == "🟢"
+    assert pipeline.ampel_for(result, {"min_calmar_jahr": 5.0})[0] == "🟡"

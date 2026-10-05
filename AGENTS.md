@@ -614,6 +614,29 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
     Ausdrücke. Das **?** an der TrueRetDD/Close-DD-Karte im Alle-Signale-
     Detail öffnet einen Dialog mit Formel, ausgerechneter Rechnung und
     Erklärung (Nutzer-Wunsch 05.10.).
+  - **CALMAR-GATE + MINDESTHISTORIE (Nutzer-Entscheidungen 05.10. spät,
+    Übergabe einer Parallel-KI):** Das Grün-Gate prüft seit 05.10. den
+    JAHRES-Calmar `retdd_jahr` (= echter CAGR ÷ gemessener Max-Equity-DD
+    inkl. Floating — Nutzer-Bestätigung: „beim Calmar nutzen wir den
+    realDrawdown, also den max drawdown nicht den mit dem close drawdown")
+    gegen das Setting `min_calmar_jahr` (Default 3,0, Admin editierbar;
+    branchenüblich gilt Calmar 3 als sehr gut). Begründung: Die frühere
+    Monats-Schwelle `retdd_monat >= 1,0` war NICHT risikoneutral —
+    aufgezinst verlangte sie Calmar 14-40 je nach DD und bevorzugte
+    kleine DDs, wo die H1-Kursmessung am ungenauesten ist.
+    `retdd_monat` bleibt sichtbare Zahl (Spalte RetDD/Monat, Payloads,
+    Prompts), entscheidet aber nicht mehr. Ampel-Matrix-Zelle „Calmar
+    (CAGR je DD)": grün ab min_calmar_jahr, gelb ab der Hälfte, orange
+    darunter; Vorbehaltszweig zeigt retdd_jahr_vorbehalt, bleibt ORANGE.
+    TrueRetDD-Spalten/Karten/Formel-Dialog/PDF zeigen den Calmar.
+    **Mindesthistorie 3 Monate:** `portfolio_statistik.MIN_HISTORIE_MONATE`
+    — unter 3 Monaten Trade-Spanne liefert der Produzent Status
+    `historie_zu_kurz`, retdd_monat/retdd_jahr = None (Ertragswerte
+    bleiben Anzeige); pipeline.refresh_efficiency sperrt über den
+    Befund-Status auch Vorbehaltswerte und Grün (Urteil: „Trade-Historie
+    unter 3 Monaten — Calmar nicht bestimmbar"). Fix-IDs scannen weiter
+    ohne Vorfilter — das Gate greift erst im Calmar. Tradeserver erhält
+    `minCalmarJahr` (minRetddMonthly bleibt als Alt-Feld geliefert).
   - **TWR-ZÄHLER BEI KAPITALFLÜSSEN (Copilot-Review 05.10. abends,
     Befund Hoch 1 — REAL und behoben):** Seit der Flow-Kurven-Umstellung
     (828f350) standen Zähler und Nenner auf verschiedenen Kurven: Der

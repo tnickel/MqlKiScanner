@@ -28,6 +28,11 @@ from .parser import load_export
 
 JAHR_TAGE = 365.2425
 MONAT_TAGE = JAHR_TAGE / 12.0
+# Nutzer-Regel 05.10. (Mindesthistorie): Unter 3 Monaten Trade-Spanne gibt
+# es keine belastbare Effizienz — annualisieren bläht Kurzläufer auf
+# (10-Tage-Fall: +400 USD → 12,7 %/M → RetDD 6,3 → falsches Grün; nach
+# 12 realistischen Monaten läge dasselbe Signal bei 0,33).
+MIN_HISTORIE_MONATE = 3.0
 
 
 def _positiv_endlich(wert) -> float | None:
@@ -128,9 +133,11 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
       - ertrag_monat_geom_pct: GEOMETRISCHES Monatsmittel (zinseszins-wahr,
         wachsender Kontostand als Nenner; Nutzer-Regel 01.10.)
       - cagr_jahr_pct: echter Jahres-CAGR ((End/Start)^(1/Jahre) - 1)
-      - retdd_monat = geom %/M ÷ uebergebenen Max-EQUITY-DD % (Schwelle 1,0 =
-        Nutzer-Mindestqualität 02.10.)
-      - retdd_jahr = virtueller CAGR ÷ Max-EQUITY-DD
+      - retdd_jahr = CAGR ÷ Max-EQUITY-DD = CALMAR — entscheidet seit
+        05.10. das Grün-Gate (Setting min_calmar_jahr, Default 3,0; die
+        frühere Monats-Schwelle 1,0 war aufgezinst Calmar 14-40 und
+        nicht risikoneutral)
+      - retdd_monat = geom %/M ÷ Max-EQUITY-DD (Anzeigewert, kein Gate)
     Ohne Equity-DD bleibt nur RetDD unbekannt, die Gewinnmessung erhalten.
     Alle Ergebniswerte bleiben ungerundet, damit 0,999... nicht die
     RetDD-Mindestschwelle 1,0 passiert. Ohne Kapitalfluesse nach Start ist
@@ -222,13 +229,23 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
         retdd_monat = None
     if retdd_jahr is not None and not math.isfinite(retdd_jahr):
         retdd_jahr = None
-    status = ("ohne_equity_dd" if dd is None else "ok"
-              if retdd_monat is not None and retdd_jahr is not None
-              else "retdd_nicht_berechenbar")
+    # Nutzer-Regel 05.10. (Mindesthistorie): Unter 3 Monaten Trade-Spanne
+    # KEIN RetDD/Calmar (Ertragswerte bleiben als Anzeige gefüllt — sie
+    # sind kein Gate-Wert mehr; pipeline.refresh_efficiency sperrt über
+    # den Status "historie_zu_kurz" auch den Vorbehaltswert).
+    if monate < MIN_HISTORIE_MONATE:
+        retdd_monat = None
+        retdd_jahr = None
+        status = "historie_zu_kurz"
+    else:
+        status = ("ohne_equity_dd" if dd is None else "ok"
+                  if retdd_monat is not None and retdd_jahr is not None
+                  else "retdd_nicht_berechenbar")
     ergebnis.update({
         "ertrag_monat_geom_pct": geom_pct, "cagr_jahr_pct": cagr_pct,
         "retdd_monat": retdd_monat, "retdd_jahr": retdd_jahr,
         "effizienz_status": status,
+        "min_historie_monate": MIN_HISTORIE_MONATE,
     })
     return ergebnis
 

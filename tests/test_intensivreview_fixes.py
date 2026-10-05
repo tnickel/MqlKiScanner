@@ -111,7 +111,8 @@ def test_b2_forensik_ertrag_ueber_schwelle_bleibt_gruen():
         forensik_vorhanden=True, ertrag_monat_pct=24.54,
         ertrag_monat_pct_forensik=8.6, martingale_flag=False,
         ertrag_monat_geom_pct=8.6, equity_dd_rekonstruiert_pct=6,
-        stop_evidence="direct", retdd_monat=1.44, retdd_jahr=9.6)
+        cagr_jahr_pct=51.6, stop_evidence="direct",
+        retdd_monat=1.44, retdd_jahr=8.6)
     ampel, _ = pipeline.ampel_for(res, {})
     assert ampel == "🟢"
     # Ohne RetDD-Basis gibt es seit 02.10. KEIN Grün mehr (Risiko VOR Ertrag):
@@ -120,20 +121,20 @@ def test_b2_forensik_ertrag_ueber_schwelle_bleibt_gruen():
         forensik_vorhanden=True, ertrag_monat_pct=24.54,
         ertrag_monat_pct_forensik=8.6, martingale_flag=False,
         ertrag_monat_geom_pct=8.6,
-        stop_evidence="direct", retdd_monat=None)
+        stop_evidence="direct", retdd_monat=None, retdd_jahr=None)
     ampel_ohne, urteil_ohne = pipeline.ampel_for(res_ohne, {})
     assert ampel_ohne == "🟡"
-    assert "RetDD unbelegt" in urteil_ohne
+    assert "Calmar unbelegt" in urteil_ohne
     # Unter der Mindesteffizienz ebenfalls kein Grün:
     res_schwach = pipeline.ScanResult(
         id=2349229, name="Unbezahlt", score=4.1,
         forensik_vorhanden=True, ertrag_monat_pct=24.54,
         ertrag_monat_pct_forensik=8.6, martingale_flag=False,
         ertrag_monat_geom_pct=8.6, equity_dd_rekonstruiert_pct=8.6 / .77,
-        stop_evidence="direct", retdd_monat=0.77)
+        cagr_jahr_pct=8.6 / .77 * 2.9, stop_evidence="direct", retdd_monat=0.77)
     ampel_schwach, urteil_schwach = pipeline.ampel_for(res_schwach, {})
     assert ampel_schwach == "🟡"
-    assert "1,0" in urteil_schwach
+    assert "< 3" in urteil_schwach
 
 
 def test_b2_ohne_eigene_geometrische_rendite_kein_plattform_fallback():
@@ -471,12 +472,13 @@ def test_retdd_berechnung_und_urteil():
         id=1, name="X", score=4.1, forensik_vorhanden=True,
         ertrag_monat_pct=24.54, ertrag_monat_pct_forensik=8.71,
         ertrag_monat_geom_pct=8.71, equity_dd_rekonstruiert_pct=8.11,
-        retdd_monat=round(8.71 / 8.11, 3), retdd_jahr=round(8.71 / 8.11 * 12, 2),
+        cagr_jahr_pct=8.71 * 12,
+        retdd_monat=round(8.71 / 8.11, 3), retdd_jahr=round(8.71 * 12 / 8.11, 2),
         martingale_flag=False, stop_evidence="direct",
         schranke_verletzt=False)
     ampel, grund = pipeline.ampel_for(res, {})
     assert ampel == "🟢"
-    assert "RetDD 1" in grund
+    assert "Calmar 12" in grund and "RetDD 1" in grund
 
 
 def test_retdd_ampelzelle_schwellen():
@@ -486,10 +488,10 @@ def test_retdd_ampelzelle_schwellen():
     tam = importlib.util.module_from_spec(spez)
     spez.loader.exec_module(tam)
     m_eff = lambda r: tam._matrix(r)
-    # Nutzer-Regel 02.10.: 1,0 = Mindestqualität
-    gruen = tam._result(ertrag_monat_geom_pct=14.4, equity_dd_rekonstruiert_pct=10)
-    reserve = tam._result(ertrag_monat_geom_pct=8.0, equity_dd_rekonstruiert_pct=10)
-    schlecht = tam._result(ertrag_monat_geom_pct=.5, equity_dd_rekonstruiert_pct=10)
+    # Nutzer-Regel 05.10.: Calmar-Stufen 3,0 / 1,5 (Zähler = CAGR)
+    gruen = tam._result(cagr_jahr_pct=45.0, equity_dd_rekonstruiert_pct=10)
+    reserve = tam._result(cagr_jahr_pct=20.0, equity_dd_rekonstruiert_pct=10)
+    schlecht = tam._result(cagr_jahr_pct=10.0, equity_dd_rekonstruiert_pct=10)
     ohne = tam._result(retdd_monat=None, retdd_jahr=None,
                        ertrag_monat_pct_forensik=None, ertrag_monat_geom_pct=None)
     assert m_eff(gruen)["retdd"].ampel == "🟢"

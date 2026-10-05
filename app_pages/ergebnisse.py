@@ -466,10 +466,11 @@ with st.container(border=True):
     st.caption(f'Max-DD-Farbe: grün bis {0.8 * dd_limit:g} %, gelb bis '
                f'{dd_limit:g} %, rot darüber, grau bei fehlender Messung. '
                'Gewinn %/Monat = eigene geometrische Monatsrendite; '
-               'TrueRetDD = Ertrag ÷ ECHTER Max-Drawdown (Equity inkl. '
-               'schwebender Verluste, aus Kursen) — orange ≈ nur '
-               'vorbehaltlich gemessen. '
-               'Ohne Gewinn oder Kursmessung bleibt TrueRetDD leer.')
+               'TrueRetDD = ECHTER Jahres-Calmar (CAGR ÷ Max-Drawdown '
+               'inkl. schwebender Verluste, aus Kursen — nie Close-DD) — '
+               'entscheidet das Grün-Gate (ab 3,0); orange ≈ nur '
+               'vorbehaltlich gemessen. Unter 3 Monaten Historie oder ohne '
+               'Kursmessung bleibt TrueRetDD leer.')
     show_fresh = fresh_ids if selected_run.startswith('Datenbank') or selected_run == 'Aktuelle Sitzung' else None
     if visible:
         signature = sha1((source_signature + repr([

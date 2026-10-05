@@ -239,8 +239,8 @@ def test_schranke_nimmt_hoechsten_plattform_drawdown():
                                  trading_dd_pct=4.57, forensik_vorhanden=True,
                                  score=3.9, ertrag_monat_pct=15.9,
                                  ertrag_monat_geom_pct=7, equity_dd_rekonstruiert_pct=5,
-                                 stop_evidence="direct",
-                                 # Nutzer-Regel 02.10.: Grün braucht RetDD >= 1,0
+                                 stop_evidence="direct", cagr_jahr_pct=41.0,
+                                 # Grün-Gate seit 05.10.: Calmar (CAGR/DD) >= 3
                                  retdd_monat=1.4, retdd_jahr=8.2)
     pipeline.refresh_report_verdict(result, {})
     assert result.schranke_verletzt is False
