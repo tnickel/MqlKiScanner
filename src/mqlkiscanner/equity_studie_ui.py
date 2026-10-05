@@ -332,7 +332,15 @@ def _symbol_diagnose(daten: dict) -> None:
     """GMT je Währungspaar, fehlende Kurse und Datenbasis offenlegen."""
     zeitbasis = daten.get("zeitbasis") or {}
     if zeitbasis:
-        with st.expander(f"Zeitbasis der Kurve: {zeitbasis.get('modus', 'unbekannt')}"):
+        with st.expander(f"Uhrzeit-Abgleich Kurszuordnung ({zeitbasis.get('modus', 'unbekannt')}) — Details"):
+            st.caption(
+                "Technische Randnotiz, keine Kennzahl: Die Trade-Zeiten der CSV "
+                "stehen in der Uhrzeit des Broker-Servers, die H1-Kurse in UTC. "
+                "Damit jeder Trade dem RICHTIGEN Kurs-Stundenbalken zugeordnet "
+                "wird, ermittelt die Studie den Versatz (z. B. +2/+3 Stunden) "
+                "und berücksichtigt Sommer-/Winterzeit-Wechsel "
+                "(„wochenweise“ = je Kalenderwoche geprüft). Das sagt nichts "
+                "über Haltedauern oder Handelsstil aus.")
             if zeitbasis.get("angewandt") is False:
                 st.caption("Dieses gemeinsame Zeitmodell wurde nicht auf die Kurve angewandt; "
                            "die Symbol-Zeitversätze sind uneinheitlich.")
