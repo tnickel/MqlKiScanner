@@ -1022,6 +1022,33 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   RetDD unbekannt wegen DST-Blockern (Kurs-Reko unvollständig), Monitor-DD
   seit Review kein Nenner mehr. +1 Test tests/test_contract_specs.py.
 
+- ✅ SEKTION „ALLE SIGNALE“ — unabhängige Statistik vor dem Workflow
+  (05.10.2026, Nutzer-Wunsch „selbst ein Bild machen, bevor die KI den
+  ganzen Workflow durchläuft“): Neuer Nav-Punkt UNTER Agenten
+  (app_pages/alle_signale.py + src/signal_statistik.py +
+  alle_signale_ui.py + Hilfe-Thema alle_signale). Liste ALLER Katalog-
+  Signale aller Quellen mit rein gerechneten Vorstufen-Kennzahlen aus
+  dem Trade-Cache: Gewinn %/M geometrisch, CAGR, Profitfaktor, Winrate,
+  Trading-DD (geschlossene Trades), Martingale-Schnellflag, Kapitalbasis-
+  Kürzel; Filter (Suche/Quelle/nur-mit-Trades), Spaltensortierung,
+  CSV-Export. Zeile anklicken → Detail darunter: Kennzahlen-Karten,
+  Balkengrafik der monatlichen Gewinnprozente + Konto-Kurve mit Unter-
+  wasser-DD (Plotly, Konventionen der Equity-Studie), Monats-/Symbol-
+  tabellen, Ehrlichkeits-Banner (Floating fehlt, keine Bewertung).
+  Button „🔬 Max-DD aus Kursen berechnen“ bindet die UNVERÄNDERTE
+  Equity-Studie ein (render_studie) — die Kapitalbasis-Lücke nie
+  gescannter Quellen-Signale schließt die eigene Kaskade (Signalseite →
+  implizit → virtuell, exakt wie pipeline.analyze_candidate; CSV-
+  Einzahlungen schlagen Injektion via drawdown.run). Wiederverwendung
+  statt Zweitrechnung: monatsrenditen/effizienz_kennzahlen/stats.compute/
+  drawdown.run/martingale.run — Cross-Check-Test gegen die kanonischen
+  Produzenten sichert gleiche Werte (Lexo live: 1,427 %/M wie Scan-DB).
+  Laufzeit ~0,1 s/Signal (153 Caches ≈ 10 s einmalig, dann Festplatten-
+  Cache via st.cache_data persist). Benennungsregeln eingehalten:
+  Trading-DD nie „Max-Drawdown“; „Ertrag je Close-DD“ als VORBWERTUNG
+  gekennzeichnet, kein RetDD; Ampel nur Anzeige. +13 Tests
+  (test_signal_statistik + test_alle_signale_seite inkl. AppTest).
+
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 
 - [x] Re-Scan als Kommandozeilenaufruf — erledigt über Phase E:

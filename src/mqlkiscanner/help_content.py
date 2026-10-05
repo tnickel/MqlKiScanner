@@ -34,6 +34,17 @@ HELP_CONTENT = {
 
 **Zusammenspiel mit Knöpfen.** Der Komplettlauf-Button auf der Agenten-Seite führt die Tageskette auf Klick aus — unabhängig von diesem Zeitplan. Scans kannst du jederzeit auch von Hand starten (Scan-Seite); der Daemon stößt zusätzlich die automatischen Scans an.
 """),
+    "alle_signale": ("Alle Signale: unabhängige Statistik vor dem Workflow", """
+**Kurzfassung:** Liste ALLER gemeldeten Signale aller Quellen — mit Kennzahlen, die der Scanner rein aus dem gespeicherten Trade-Export rechnet. Kein KI-Aufwand, keine Bewertung: erst selbst ein Bild machen, dann entscheidet der Workflow.
+
+**Was gerechnet wird.** Monatliche Gewinnprozente (Balkengrafik), geometrischer Ertrag je Monat (zinseszins-wahr), CAGR, Profitfaktor, Winrate, Trading-DD aus GESCHLOSSENEN Trades, Martingale-Schnellflag (Lot-Erhöhung nach Verlust). Kapitalbasis-Kaskade wie im Scan: CSV-Einzahlungen → Signalseite „Initial Deposit“ → implizit (Web-Balance − Trade-Netto) → virtuelle 10.000-USD-Annahme.
+
+**Wichtige Grenze — Drawdown-Benennung.** Der Trading-DD hier kennt nur geschlossene Trades: **offenes Floating fehlt**, der echte Max-Drawdown kann deutlich höher liegen. Den floating-getreuen **Max-Drawdown aus Kursen** liefert der Button in der Detailansicht — dieselbe Equity-Studie wie überall (H1-Kurse, GMT-Abgleich, Fortschrittsanzeige). „Drawdown (Plattform)“ ist die Selbstauskunft des Anbieters.
+
+**Keine Bewertung.** Ampel-Spalte zeigt das OFFIZIELLE Engine-Ergebnis an (falls vorhanden), wird hier aber nie neu berechnet. „Ertrag je Close-DD“ ist eine gekennzeichnete Vorbewertung, kein RetDD — dessen Nenner darf nur die floating-inklusive Kursmessung sein.
+
+**Ohne Trade-Cache.** Signale, die noch nie durch die Export-Auswahl (top 30 je Quelle), Fix-IDs oder einen Scan gelaufen sind, zeigen nur Katalogwerte. Der Cache füllt sich mit dem ersten Scan.
+"""),
     "connections": ("Zugänge und Bereitschaft", """
 **MQL5** benötigt Benutzername und Passwort für authentifizierte Trade-Exporte. Sind beide hinterlegt, ist der Zugang konfiguriert, aber noch nicht als gültig getestet. Ein abgelaufener Login kann beim Export weiterhin scheitern.
 
