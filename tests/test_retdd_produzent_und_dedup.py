@@ -37,13 +37,14 @@ def _trade(monat: str, profit: float, symbol="XAUUSD") -> str:
 # ------------------------------------------------------------------ B24 —
 
 def test_effizienz_kennzahlen_geometrisch_und_calmar(tmp_path):
-    """Drei Abschluesse +100/+110/+121 in 60 Tagen: Kalenderlabels sind
-    keine drei vollen Laufzeitmonate; Annualisierung nutzt die Zeitspanne."""
+    """Drei Abschluesse +100/+110/+121 in 121 Tagen: Kalenderlabels sind
+    keine Laufzeitmonate; Annualisierung nutzt die Zeitspanne (≥ 3 Monate
+    Mindesthistorie, Nutzer-Regel 05.10.)."""
     pfad = _csv(tmp_path, [
-        _trade("01", 100.0), _trade("02", 110.0), _trade("03", 121.0)])
+        _trade("01", 100.0), _trade("02", 110.0), _trade("05", 121.0)])
     eff = portfolio_statistik.effizienz_kennzahlen(pfad, 1000.0, 10.0)
     assert eff is not None
-    jahre = 60.0 / 365.2425
+    jahre = 121.0 / 365.2425
     geom = math.expm1(math.log(1.331) / (jahre * 12)) * 100
     cagr = math.expm1(math.log(1.331) / jahre) * 100
     assert abs(eff["ertrag_monat_geom_pct"] - geom) < 1e-10
@@ -53,7 +54,7 @@ def test_effizienz_kennzahlen_geometrisch_und_calmar(tmp_path):
 
 
 def test_effizienz_kennzahlen_ohne_basis_bleibt_none(tmp_path):
-    pfad = _csv(tmp_path, [_trade("01", 100.0)])
+    pfad = _csv(tmp_path, [_trade("01", 100.0), _trade("05", 0.0)])
     assert portfolio_statistik.effizienz_kennzahlen(pfad, None, 10.0) is None
     ohne_dd = portfolio_statistik.effizienz_kennzahlen(pfad, 1000.0, None)
     assert ohne_dd["ertrag_monat_geom_pct"] is not None

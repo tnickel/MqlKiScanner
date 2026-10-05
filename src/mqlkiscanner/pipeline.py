@@ -712,7 +712,7 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
             # bevorzugte genau die Signale mit kleinem DD, wo die
             # H1-Kursmessung am ungenauesten ist. min_calmar_jahr ist
             # ein Setting (Default 3,0 — branchenüblich "sehr gut").
-            min_calmar = float(settings.get("min_calmar_jahr", 3.0))
+            min_calmar = config.min_calmar_jahr(settings)
             if result.effizienz_befund.get("effizienz_status") == "historie_zu_kurz":
                 return "🟡", (f"Forensik + Ertrag ok ({stop_kontext}), aber "
                               "Trade-Historie unter 3 Monaten — Calmar nicht "
@@ -747,7 +747,7 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
 
 def _kriterien_text(settings: dict) -> str:
     schwelle = float(settings.get("min_ertrag_pct_monat", 0) or 0)
-    min_calmar = float(settings.get("min_calmar_jahr", 3.0) or 3.0)
+    min_calmar = config.min_calmar_jahr(settings)
     ertrag_zeile = (
         f"- Mindest-Ertrag: {schwelle:g} %/Monat — " if schwelle > 0
         else "- Mindest-Ertrag: KEINE absolute Schwelle mehr (Nutzer-Regel 04.10.: "

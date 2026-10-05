@@ -144,6 +144,25 @@ def llm_aktiv(settings: dict) -> bool:
     return bool(settings.get("llm_stufe1") or settings.get("llm_stufe2"))
 
 
+def min_calmar_jahr(settings: dict | None) -> float:
+    """Grün-Gate-Schwelle Calmar/Jahr — EINE Lesart für Ampel, Matrix,
+    Kriterientext und Sync (Copilot-Review 05.10. spaet, Mittel 4: vorher
+    machte `or 3.0` an zwei Stellen aus einer eingestellten 0 wieder 3,0,
+    während ampel_for die 0 nutzte). Default nur bei fehlendem/ungültigem
+    Wert; negative Werte werden auf 0 begrenzt."""
+    default = float(DEFAULT_SETTINGS["min_calmar_jahr"])
+    wert = (settings or {}).get("min_calmar_jahr")
+    if wert is None or isinstance(wert, bool):
+        return default
+    try:
+        zahl = float(wert)
+    except (TypeError, ValueError, OverflowError):
+        return default
+    if zahl != zahl or zahl in (float("inf"), float("-inf")):
+        return default
+    return max(0.0, zahl)
+
+
 def load_settings() -> dict:
     settings = dict(DEFAULT_SETTINGS)
     if SETTINGS_FILE.exists():

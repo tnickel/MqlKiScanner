@@ -370,7 +370,7 @@ def _retdd_zelle(r, settings: dict | None = None) -> Zelle:
     (Nutzer-Bestätigung 05.10.: „beim Calmar nutzen wir den realDrawdown,
     also den max drawdown nicht den mit dem close drawdown")."""
     r.refresh_efficiency()
-    min_calmar = float((settings or {}).get("min_calmar_jahr", 3.0) or 3.0)
+    min_calmar = config.min_calmar_jahr(settings)
     wert = getattr(r, "retdd_jahr", None)
     if wert is None:
         # Vorbehaltlicher Calmar (Nutzer 05.10. „besser als nix"): die Kurs-
@@ -463,7 +463,7 @@ def matrix_payload(result, settings: dict | None = None) -> dict:
     return {
         "grenzen": {"schranke_eq_dd_pct": settings.get("schranke_eq_dd_pct", 30.0),
                     "min_ertrag_pct_monat": settings.get("min_ertrag_pct_monat", 5.0),
-                    "min_calmar_jahr": settings.get("min_calmar_jahr", 3.0)},
+                    "min_calmar_jahr": config.min_calmar_jahr(settings)},
         "kriterien": {key: {"ampel": z.ampel, "kurz": z.kurz, "detail": z.detail}
                       for key, z in kriterien_matrix(result, settings).items()},
     }

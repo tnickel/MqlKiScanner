@@ -43,46 +43,86 @@ def _positiv_endlich(wert) -> float | None:
     return zahl if math.isfinite(zahl) and zahl > 0 else None
 
 
+def _teilfaktor(start: float, pnl: list[float]) -> float | None:
+    """Wachstumsfaktor einer Unterperiode zwischen zwei Kapitalflüssen."""
+    gewinn = math.fsum(pnl)
+    if start > 0:
+        return (start + gewinn) / start
+    # Leeres Konto (z. B. nach Vollauszahlung): nur ohne PnL definiert.
+    return 1.0 if gewinn == 0 else None
+
+
 def _monatsserie(parsed, basis: float) -> dict[str, float]:
     """Lueckenloses Kalenderfenster ab erstem Open.
 
     Kapitalfluesse nach dem ersten Open (Copilot-Review 05.10. abends,
     Befund Hoch 1 — vorher: Zähler netto÷Startbasis OHNE Flows, Nenner
-    Max-DD auf der REALEN Kurve MIT Flows): Monatsrendite = Trade-PnL ÷
-    Kontostand am Monatsanfang der realen Kurve (inkl. Flows). Eine
-    Einzahlung zaehlt damit NICHT als Rendite, sondern vergroessert den
-    Nenner ab ihrem Kalendermonat (TWR; MQL5-Copy-Sicht — der Kopierer
-    erlebt Einzahlungen des Anbieters als proportional neutral). Fluesse
-    wirken zum MONATSANFANG; der Tag innerhalb des Monats ist nicht
-    modelliert (Monatsgranularitaet)."""
+    Max-DD auf der REALEN Kurve MIT Flows): Die Monatsrendite rechnet auf
+    der realen Kurve (inkl. Flows). Eine Einzahlung zaehlt damit NICHT als
+    Rendite, sondern vergroessert den Nenner ab ihrem Zeitpunkt (TWR;
+    MQL5-Copy-Sicht — der Kopierer erlebt Einzahlungen des Anbieters als
+    proportional neutral).
+
+    Zeitgenau (Copilot-Review 05.10. spaet, Befund Hoch 2 — vorher wirkten
+    Fluesse zum MONATSANFANG: 900 USD Gewinnauszahlung am Monatsende auf
+    1.000 Basis ergaben 1100 %/M statt ~100 %): Jeder Fluss schliesst eine
+    Unterperiode (Faktor = Stand vor Fluss ÷ Stand bei Periodenbeginn),
+    danach wird er gebucht. Die Monatsrendite ist das Produkt der
+    Unterperioden-Faktoren des Monats − 1. Ohne Fluesse ist das exakt
+    Monats-PnL ÷ Stand am Monatsanfang (bisheriges Verhalten)."""
     erste = min(t.open_time for t in parsed.trades)
     letzte = max(t.close_time for t in parsed.trades)
     von = erste.year * 12 + erste.month - 1
     bis = letzte.year * 12 + letzte.month - 1
-    je_monat: dict[int, list[float]] = {}
-    for trade in parsed.trades:
-        zeit = trade.close_time
-        monat = zeit.year * 12 + zeit.month - 1
-        je_monat.setdefault(monat, []).append(trade.net)
-    flows_je_monat: dict[int, list[float]] = {}
+    # (zeit, art, betrag); art 0 = Trade-Close, 1 = Kapitalfluss — bei
+    # gleichem Zeitstempel zaehlt der Trade noch zur alten Unterperiode.
+    ereignisse: list[tuple] = [(t.close_time, 0, float(t.net)) for t in parsed.trades]
     for b in getattr(parsed, "balances", []):
         if b.time <= erste:
             continue  # vor dem ersten Open: bereits Teil der Startbasis
-        monat = b.time.year * 12 + b.time.month - 1
-        flows_je_monat.setdefault(monat, []).append(float(b.amount))
+        ereignisse.append((b.time, 1, float(b.amount)))
+    ereignisse.sort(key=lambda e: (e[0], e[1]))
+    je_monat: dict[int, list[tuple[int, float]]] = {}
+    for zeit, art, betrag in ereignisse:
+        je_monat.setdefault(zeit.year * 12 + zeit.month - 1, []).append((art, betrag))
+
     renditen = {}
     stand = basis
     for monat in range(von, bis + 1):
-        stand += math.fsum(flows_je_monat.get(monat, []))
-        if not math.isfinite(stand) or stand <= 0:
-            return {}  # Keine Rendite mit unbekanntem/nicht positivem Nenner.
-        pnl = math.fsum(je_monat.get(monat, []))
+        faktor = 1.0
+        start = stand
+        if not math.isfinite(start) or start < 0:
+            return {}  # Negativer Kontostand: keine Rendite definierbar.
+        pnl: list[float] = []
+        mit_fluss = False
+        for art, betrag in je_monat.get(monat, []):
+            if art == 0:
+                pnl.append(betrag)
+                continue
+            mit_fluss = True
+            teil = _teilfaktor(start, pnl)
+            if teil is None:
+                return {}  # PnL ohne positiven Nenner: Rendite undefiniert.
+            faktor *= teil
+            stand = start + math.fsum(pnl) + betrag
+            if not math.isfinite(stand) or stand < 0:
+                return {}  # Auszahlung über den Kontostand: Daten widersprüchlich.
+            start, pnl = stand, []
+        teil = _teilfaktor(start, pnl)
+        if teil is None:
+            return {}
+        faktor *= teil
+        gewinn = math.fsum(pnl)
+        stand = start + gewinn
         jahr, index = divmod(monat, 12)
-        rendite = pnl / stand * 100.0
+        if mit_fluss:
+            rendite = (faktor - 1.0) * 100.0
+        else:
+            # Ohne Fluss direkt PnL ÷ Stand (kein Rundungsrest aus (1+r)−1).
+            rendite = gewinn / start * 100.0 if start > 0 else 0.0
         if not math.isfinite(rendite):
             return {}
         renditen[f"{jahr:04d}-{index + 1:02d}"] = rendite
-        stand += pnl
     return renditen
 
 
@@ -199,17 +239,20 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
             faktor = 1.0
             for rendite in serie.values():
                 faktor *= 1.0 + rendite / 100.0
-            monate_twr = len(serie)
-            if faktor > 0 and monate_twr > 0:
+            # Copilot-Review 05.10. spaet, Mittel 3: dieselbe EXAKTE
+            # Zeitspanne wie der Zweig ohne Fluesse und die Mindesthistorie
+            # — nicht die Zahl angebrochener Kalendermonate (die den CAGR
+            # nur bei Signalen mit Fluessen gedrueckt hat).
+            if serie and faktor > 0:
                 log_faktor = math.log(faktor)
-                geom_pct = math.expm1(log_faktor / monate_twr) * 100.0
-                cagr_pct = math.expm1(log_faktor / (monate_twr / 12.0)) * 100.0
+                geom_pct = math.expm1(log_faktor / monate) * 100.0
+                cagr_pct = math.expm1(log_faktor / jahre) * 100.0
                 ergebnis["rendite_basis"] = "twr_reale_kurve_monatsverkettung"
                 ergebnis["basis_hinweis"] = (
                     "TWR auf der realen Kontokurve (Einzahlungen erhoehen den "
-                    "Nenner der Folgemonate, zaehlen nicht als Rendite) — "
+                    "Nenner ab ihrem Zeitpunkt, zaehlen nicht als Rendite) — "
                     "konsistent zum Max-Equity-DD auf derselben Kurve; "
-                    "Monatsgranularitaet, Fluesse wirken zum Monatsanfang")
+                    "zeitgenaue Unterperioden je Kapitalfluss")
             else:
                 return ergebnis
         else:

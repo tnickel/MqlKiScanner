@@ -646,11 +646,11 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
     das kleine Startkapital und konnten TrueRetDD über 1,0 heben
     (falsches Grün; Reviewer-Beispiel: 2,05 statt 0,50). Fix:
     `portfolio_statistik._monatsserie` bucht Flows nach dem ersten Open
-    als NENNER-Erhöhung ihres Kalendermonats (Monatsgranularität, zum
-    Monatsanfang), und `effizienz_kennzahlen` verkettet bei
+    als NENNER-Erhöhung ab ihrem Zeitpunkt (zeitgenaue Unterperioden je
+    Fluss — siehe Nachtrag unten), und `effizienz_kennzahlen` verkettet bei
     kapitalfluesse_nach_start>0 die TWR-Monatsrenditen der realen Kurve
     (rendite_basis „twr_reale_kurve_monatsverkettung") — Einzahlung ist
-    damit KEIN Gewinn, sondern wächst in den Nenner der Folgemonate
+    damit KEIN Gewinn, sondern wächst in den Nenner ab ihrem Zeitpunkt
     (MQL5-Copy-Sicht: proportional skalierter Kopierer erlebt Anbieter-
     Einzahlungen neutral). Ohne Flows: unverändert (virtuell == real).
     Testbeweis tests/test_twr_ertrag.py (12-Monats-Reviewer-Fall →
@@ -669,6 +669,20 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
     Calmar-16–21-Diskussion (Niedrig 1): retdd_monat ≥ 1,0 ist
     Nutzer-Maß 02.10. (5 %/M bei 30 % DD); Mindesthistorie ist eine
     offene Gestaltungsfrage, keine Änderung ohne Nutzer.
+  - ✅ **NACHREVIEW TWR/CALMAR (Copilot-Review 05.10. spät, behoben):**
+    (Hoch 1) FORENSICS_VERSION 13 — Bestand vor a59114d/f273287 trug
+    keinen Status historie_zu_kurz und keinen TWR-Zähler und galt als
+    aktuell (10-Tage-Altdatensatz → Grün mit Calmar 79); jetzt „veraltet"
+    bis Neu-Scan. (Hoch 2) `_monatsserie` rechnet zeitgenau: jeder Fluss
+    schließt eine Unterperiode, die Monatsrendite ist das Produkt der
+    Teilfaktoren — vorher wirkten Flüsse zum Monatsanfang (900 USD
+    Gewinnauszahlung am Monatsende auf 1.000 Basis = 1100 %/M; Voll-
+    auszahlung = leere Serie, Rendite verloren; Einzahlung am 29. wie am
+    1.). (Mittel 3) TWR-Zweig nutzt die exakte Spanne wie der Zweig ohne
+    Flüsse und die Mindesthistorie (vorher angebrochene Kalendermonate).
+    (Mittel 4) `config.min_calmar_jahr(settings)` ist die EINE Lesart der
+    Schwelle für Ampel, Matrix, Kriterientext, Admin und Sync (vorher
+    machte `or 3.0` eine eingestellte 0 an zwei Stellen zu 3,0).
   - 🚨 **BEFUND B24 (02.10.2026, Lauf-Prüfung) — RetDD ist TOter Code.**
     Der vorige Eintrag beschreibt die *Verdrahtung* (Ampel-Zelle, Payloads,
     Prompts, Sync) korrekt — aber **die Werte werden nirgends berechnet**.

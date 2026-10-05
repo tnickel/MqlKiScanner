@@ -103,7 +103,7 @@ def signal_zeilen(results: Iterable, fresh_ids: set[int] | None = None) -> list[
             # JAHRES-Calmar, nicht mehr RetDD/Monat >= 1,0. minRetddMonthly
             # bleibt als veraltetes Feld für ältere MqlTradeMonitor-Builds.
             "minRetddMonthly": 1.0,
-            "minCalmarJahr": settings.get("min_calmar_jahr", 3.0),
+            "minCalmarJahr": config.min_calmar_jahr(settings),
             "ertragMonatPct": _runden(r.ertrag_monat_pct),
             # Zinseszins-wahre Ertrags- und Effizienzkennzahlen
             # (Nutzer-Wunsch 01.10.2026, MqlTradeMonitor-Anzeige):

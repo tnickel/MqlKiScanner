@@ -706,7 +706,7 @@ with scan_tab:
                                      value=max(5.0, old_return), step=0.1, key="admin_min_return")
         # Nutzer-Entscheid 05.10.: Grün-Gate = Jahres-Calmar (CAGR ÷
         # gemessener Max-Equity-DD), Default 3,0 — frei anhebbar.
-        old_calmar = float(settings.get("min_calmar_jahr", 3.0))
+        old_calmar = config.min_calmar_jahr(settings)
         min_calmar = st.number_input("Mindest-Calmar pro Jahr (Grün-Gate)",
                                      min_value=1.0, max_value=20.0,
                                      value=max(1.0, min(20.0, old_calmar)),

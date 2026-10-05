@@ -8,4 +8,10 @@ Bei Änderungen an Pflichtprüfungen oder Bewertungsregeln erhöhen: Live-Befund
 # Ein-/Auszahlungen bleiben in Kurve und Peak (Auszahlungen erzeugen keinen
 # Drawdown, Peak-Anpassung); implizite Kapitalbasis (Web-Balance − Netto)
 # entfällt, Fallback 10k virtuell markiert. Alter Bestand: neu scannen.
-FORENSICS_VERSION = 12
+# 13 (05.10.2026 spaet, Copilot-Review): Zeitgenauer TWR-Zaehler bei
+# Kapitalfluessen (vorher Monatsanfang: Gewinnauszahlung blaehte die Rendite
+# auf), exakte Zeitspanne im TWR-Zweig, Mindesthistorie 3 Monate +
+# Calmar-Gate (f273287). Bestand ohne Status historie_zu_kurz/TWR waere
+# sonst als aktuell durchgegangen (10-Tage-Altdatensatz -> Gruen).
+# Alter Bestand: neu scannen.
+FORENSICS_VERSION = 13
