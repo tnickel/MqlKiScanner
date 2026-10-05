@@ -625,8 +625,36 @@ def test_chart_unterwasser_senkt_peak_bei_auszahlung():
         {"t": 10800, "equity": 3_000.0, "messpunkt": True, "flow_delta": 0.0},
     ]
     fig = _chart({"kennzahlen": {}, "punkte": punkte}, 10_000.0, 30)
-    unterwasser = list(fig.data[1].y)
+    unterwasser = list(fig.data[2].y)
+    assert fig.data[2].visible == "legendonly"
     assert unterwasser[0] == 0.0
     assert unterwasser[1] is None
     assert unterwasser[2] == 0.0
     assert unterwasser[3] == pytest.approx(-25.0)
+
+
+def test_chart_equity_dd_wie_mql5_offener_verlust_durch_balance():
+    """Nutzer-Wunsch KiraCat 05.10.: unten wie die MQL5-Signalseite —
+    (Equity − Balance) / Balance, ohne offene Position 0 %. Realisierte
+    Verluste und Auszahlungen erzeugen dort keinen Drawdown."""
+    from mqlkiscanner.equity_studie_ui import _chart
+    punkte = [
+        {"t": 0, "equity": 10_000.0, "realisiert": 10_000.0, "floating": 0.0,
+         "messpunkt": True},
+        {"t": 3600, "equity": 8_000.0, "realisiert": 10_000.0, "floating": -2_000.0,
+         "messpunkt": True},
+        {"t": 7200, "equity": None, "realisiert": 10_000.0, "floating": None,
+         "messpunkt": False},
+        {"t": 10800, "equity": 7_000.0, "realisiert": 7_000.0, "floating": 0.0,
+         "messpunkt": True},
+        {"t": 14400, "equity": 1_200.0, "realisiert": 1_500.0, "floating": -300.0,
+         "messpunkt": True, "flow_delta": -5_000.0},
+    ]
+    fig = _chart({"kennzahlen": {}, "punkte": punkte}, 10_000.0, 30)
+    dd = list(fig.data[1].y)
+    assert dd[0] == 0.0
+    assert dd[1] == pytest.approx(-20.0)
+    assert dd[2] is None
+    assert dd[3] == 0.0                       # realisierter Verlust: 0 wie MQL5
+    assert dd[4] == pytest.approx(-20.0)      # 300 offen auf 1.500 Balance
+    assert "max 20,0 %" in fig.layout.annotations[1].text

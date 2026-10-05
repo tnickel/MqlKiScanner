@@ -101,17 +101,21 @@ def _als_datetime(epoch_wert: int | None):
 
 def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
     """Oben NUR die Equity-Kurve (Y-Achse passt sich der Kurve an, kein
-    0-Start über die Floating-Spur), unten der Unterwasser-%-Verlauf —
-    der Equity-DD in Prozent (Nutzer 03.10.: „in Euro brauchen wir nicht,
-    in % ist unten gut")."""
+    0-Start über die Floating-Spur), unten der Equity-DD in Prozent wie auf
+    der MQL5-Signalseite (offener Verlust ÷ Balance; Nutzer 03.10.: „in Euro
+    brauchen wir nicht, in % ist unten gut")."""
     punkte = daten["punkte"]
     k = daten["kennzahlen"]
     x = [_als_datetime(p["t"]) for p in punkte]
     equity = [p["equity"] for p in punkte]
 
-    # Unterwasser (% unter dem laufenden Hoch) auf Messpunkten — dieselbe
-    # Peak-Regel wie die Engine: Auszahlungen senken den Peak (Nutzer-Fall
-    # KiraCat 05.10.: ohne Anpassung zeigten 48k Auszahlungen −97 %).
+    # Unten wie die MQL5-Signalseite (Nutzer-Wunsch KiraCat 05.10.):
+    # offener Verlust ÷ Balance — ohne offene Position 0 %. Die Peak-Sicht
+    # der DD-Kennzahl bleibt über die Legende zuschaltbar.
+    mql5_dd = drawdown.floating_dd_verlauf(
+        [p.get("realisiert") for p in punkte],
+        [p.get("floating") if p.get("messpunkt") else None for p in punkte])
+    mql5_max = -min((w for w in mql5_dd if w is not None), default=0.0)
     unterwasser = drawdown.unterwasser_verlauf(
         [p["equity"] if p.get("messpunkt") else None for p in punkte],
         [p.get("flow_delta", 0.0) for p in punkte])
@@ -120,17 +124,23 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
         rows=2, cols=1, shared_xaxes=True,
         row_heights=[0.60, 0.40], vertical_spacing=0.06,
         subplot_titles=("Virtuelle Trading-Kurve: Equity (inkl. Floating)",
-                        "Unterwasser — Abstand zum letzten Höchststand"))
+                        f"Equity-Drawdown wie MQL5 — offener Verlust ÷ Balance "
+                        f"(max {mql5_max:.1f} %)".replace(".", ",")))
     fig.add_trace(go.Scatter(
         x=x, y=equity, name="Equity (inkl. floating)", mode="lines",
         line={"color": _FARBE_EQUITY, "width": 2.5},
         connectgaps=False,
         hovertemplate="%{x}<br>Equity %{y:,.0f} USD<extra></extra>"), row=1, col=1)
     fig.add_trace(go.Scatter(
-        x=x, y=unterwasser, name="Unterwasser %", mode="lines",
+        x=x, y=mql5_dd, name="Equity-DD % (wie MQL5)", mode="lines",
         line={"color": _FARBE_FLOATING, "width": 1.2},
         fill="tozeroy", fillcolor="rgba(211,47,47,0.18)",
         connectgaps=False,
+        hovertemplate="%{x}<br>%{y:.1f} % offener Verlust<extra></extra>"), row=2, col=1)
+    fig.add_trace(go.Scatter(
+        x=x, y=unterwasser, name="Abstand zum Höchststand %", mode="lines",
+        line={"color": "#9e9e9e", "width": 1, "dash": "dot"},
+        connectgaps=False, visible="legendonly",
         hovertemplate="%{x}<br>%{y:.1f} % unter Hoch<extra></extra>"), row=2, col=1)
 
     if startkapital and startkapital > 0:

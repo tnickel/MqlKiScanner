@@ -51,6 +51,26 @@ def unterwasser_verlauf(staende: list, fluesse: list) -> list:
     return verlauf
 
 
+def floating_dd_verlauf(balancen: list, floatings: list) -> list:
+    """Equity-Drawdown wie die MQL5-Signalseite (≤ 0 %): offener Verlust im
+    Verhältnis zur aktuellen Balance, (Equity − Balance) / Balance.
+
+    Nutzer-Fall KiraCat 05.10.2026: Die MQL5-Grafik fällt ohne offene
+    Position immer auf 0 (282 Nullwerte bei 310 flachen Zeitpunkten) —
+    realisierte Verluste und Auszahlungen gehen dort nicht ein. floating
+    None = kein Messpunkt (bleibt None).
+    """
+    verlauf: list = []
+    for balance, floating in zip(balancen, floatings):
+        if floating is None or balance is None:
+            verlauf.append(None)
+        elif floating >= 0 or balance <= 0:
+            verlauf.append(0.0)
+        else:
+            verlauf.append(floating / balance * 100.0)
+    return verlauf
+
+
 def _max_drawdown(points: list[tuple], start: float) -> dict:
     """points: chronologische (zeitpunkt, delta)-Ereignisse.
 

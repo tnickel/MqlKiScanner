@@ -697,6 +697,12 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
     Nicht-Messpunkten (aktive Position ohne Kurs) — eine Auszahlung in
     einer Kurslücke zählte als DD (Test 12k→4k = 66,67 %). Jetzt wird
     der Fluss bis zum nächsten Messpunkt mitgeführt. Nach Update: Full-Scan.
+    **Nachtrag (Nutzer-Wunsch, gleicher Abend):** Die untere Grafik der
+    Equity-Studie zeigt jetzt den Equity-DD WIE MQL5 (`drawdown.
+    floating_dd_verlauf`: offener Verlust ÷ Balance, ohne Position 0 %).
+    Belegt an der MQL5-Reihe von KiraCat: 1.192 Punkte ≈ 1.152 Deals,
+    282 Nullwerte ≈ 310 flache Zeitpunkte. Die Peak-Sicht ist per Legende
+    zuschaltbar; Kennzahlen (TrueDD, Calmar) bleiben unverändert.
   - 🚨 **BEFUND B24 (02.10.2026, Lauf-Prüfung) — RetDD ist TOter Code.**
     Der vorige Eintrag beschreibt die *Verdrahtung* (Ampel-Zelle, Payloads,
     Prompts, Sync) korrekt — aber **die Werte werden nirgends berechnet**.
