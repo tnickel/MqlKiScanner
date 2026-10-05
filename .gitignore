@@ -61,3 +61,5 @@ data/*.lock
 data/auswahl_begruendung.json
 tmp/
 doc/reviews/**/_seiten/
+.zcode/
+output/
