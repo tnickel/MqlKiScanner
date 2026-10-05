@@ -150,6 +150,24 @@ def _stylesheet() -> str:
         font-size: 0.78rem !important;
     }}
 
+    /* KPI-Karte mit klickbarem Formel-? (Alle-Signale-Detail): gleiche
+       Typografie wie st.metric, damit Karten mit und ohne ? gleich wirken */
+    .mks-kpi-label {{
+        color: #94A3B8 !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        font-size: 0.78rem !important;
+    }}
+    .mks-kpi-value {{
+        font-variant-numeric: tabular-nums;
+        font-weight: 750 !important;
+        letter-spacing: -0.02em;
+        color: #F8FAFC !important;
+        font-size: 1.75rem !important;
+        line-height: 1.3;
+    }}
+
     /* Lauf-Zentrale: Statusleiste (Aktivität + Uhr) */
     .mks-strip {{
         display: flex;

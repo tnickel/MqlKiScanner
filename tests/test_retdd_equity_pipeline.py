@@ -21,7 +21,7 @@ def _result(**kwargs):
 
 def test_retdd_neuberechnung_fuer_tabelle_prompt_und_auswahl_einheitlich():
     result = _result()
-    assert result.to_row()["RetDD"] == 2.0
+    assert result.to_row()["TrueRetDD"] == 2.0
     assert result.to_row()["Gewinn %/Monat"] == 12.0
     assert pipeline.ampel_for(result, {})[0] == "🟢"
     for builder in (pipeline._kandidat_json, pipeline._forensik_json):
@@ -36,7 +36,7 @@ def test_retdd_neuberechnung_fuer_tabelle_prompt_und_auswahl_einheitlich():
 @pytest.mark.parametrize("dd", [None, 0, float("nan"), float("inf"), -1])
 def test_kein_geschlossener_oder_plattform_fallback_bei_fehlender_equity(dd):
     result = _result(equity_dd_rekonstruiert_pct=dd)
-    assert result.to_row()["RetDD"] is None
+    assert result.to_row()["TrueRetDD"] is None
     assert result.to_row()["Gewinn %/Monat"] == 12
     assert pipeline.ampel_for(result, {})[0] != "🟢"
 
@@ -45,7 +45,7 @@ def test_monitor_eq_dd_ist_nur_schrankenkanal_nicht_nenner():
     # Review 04.10.: Monitor-Closing-DD ist kein RetDD-Nenner (s. Paket D);
     # Nenner bleibt die Kurs-Rekonstruktion (6 %) -> 12/6 = 2.0.
     result = _result(monitor_trade_eq_dd_pct=20.0)
-    assert result.to_row()["RetDD"] == 2.0
+    assert result.to_row()["TrueRetDD"] == 2.0
     assert pipeline.ampel_for(result, {})[0] == "🟢"
     # Die harte Schranke sieht den Monitor weiterhin als 5. Kanal:
     result = _result(monitor_trade_eq_dd_pct=35.0)
@@ -54,13 +54,13 @@ def test_monitor_eq_dd_ist_nur_schrankenkanal_nicht_nenner():
 
 def test_harte_schranke_bleibt_auch_bei_gutem_retdd_wirksam():
     result = _result(dd_equity_pct=34.95)
-    assert result.to_row()["RetDD"] == 2
+    assert result.to_row()["TrueRetDD"] == 2
     assert pipeline.ampel_for(result, {})[0] == "🔴"
 
 
 def test_retdd_unter_eins_darf_nicht_zur_empfehlung_gerundet_werden():
     result = _result(ertrag_monat_geom_pct=5.99994)
-    assert round(result.to_row()["RetDD"], 2) == 1
+    assert round(result.to_row()["TrueRetDD"], 2) == 1
     assert pipeline.ampel_for(result, {})[0] == "🟡"
     exact = replace(result, ertrag_monat_geom_pct=6.0)
     assert pipeline.ampel_for(exact, {})[0] == "🟢"
@@ -78,7 +78,7 @@ def test_ertragskriterium_nutzt_geom_und_konfigurierte_schwelle():
 def test_veraltete_rendite_mit_frischem_monitor_ergibt_keinen_retdd():
     result = _result(forensik_stale=True, monitor_trade_eq_dd_pct=6)
     assert result.to_row()["Gewinn %/Monat"] is None
-    assert result.to_row()["RetDD"] is None
+    assert result.to_row()["TrueRetDD"] is None
     assert result.effizienz_befund["effizienz_status"] == "veraltet"
 
 
@@ -94,7 +94,7 @@ def test_db_reload_ersetzt_alten_quotienten_durch_gemessene_equity_basis():
                   "peak_exposure": {"shock_pct_max": 10},
                   "equity_rekonstruktion": {"equity_dd_pct": 6, "verlaesslich": True}})
     result = pipeline.results_from_db()[0]
-    assert result.to_row()["RetDD"] == 2
+    assert result.to_row()["TrueRetDD"] == 2
     assert result.ampel == "🟢"
 
 
@@ -134,7 +134,7 @@ def test_ungerundeter_equity_dd_bleibt_nenner_beim_db_reload():
                                             "verlaesslich": True}})
     result = pipeline.results_from_db()[0]
     assert result.max_drawdown_equity_pct == 10.004
-    assert result.to_row()["RetDD"] < 1
+    assert result.to_row()["TrueRetDD"] < 1
     assert result.ampel == "🟡"
 
 
@@ -146,7 +146,7 @@ def test_tradeserver_sync_uebertraegt_retdd_und_gewinn_ungerundet():
     payload = signal_zeilen([result])[0]
     assert payload["ertragMonatGeomPct"] == 5.99994
     assert payload["maxDrawdownEquityPct"] == 6
-    assert payload["retddMonat"] == result.to_row()["RetDD"] < 1
+    assert payload["retddMonat"] == result.to_row()["TrueRetDD"] < 1
     assert payload["ampel"] == "🟡"
 
 
@@ -169,10 +169,10 @@ def test_equity_status_nennt_nur_tatsaechlich_verwendete_gueltige_quellen(invali
                      monitor_trade_eq_dd_pct=6)
     # Review 04.10.: Ungueltige Kursmessung + Monitor-Closing-DD -> RetDD
     # bleibt unbekannt; der Monitor taucht nie als Messquelle auf.
-    assert result.to_row()["RetDD"] is None
+    assert result.to_row()["TrueRetDD"] is None
     assert "Monitor" not in result.equity_messung_status
     result = _result(monitor_trade_eq_dd_pct=invalid)
-    assert result.to_row()["RetDD"] == 2
+    assert result.to_row()["TrueRetDD"] == 2
     assert result.equity_messung_status == "Gemessen: Kurse (H1, virtuelle Trading-Equity)"
 
 
@@ -186,8 +186,10 @@ def test_vorbehalt_retdd_bei_unzuverlaessiger_kursmessung():
                      equity_rekon_grund="Offene Position über Wechselgrenze",
                      ertrag_monat_geom_pct=1.4269, cagr_jahr_pct=18.2)
     row = result.to_row()
-    assert row["RetDD"] is None
-    assert row["RetDD (Vorbehalt)"] == pytest.approx(1.4269 / 13.83)
+    # TrueRetDD (Nutzer 05.10.): EINE Spalte — der Vorbehaltswert fuellt sie,
+    # der Marker steht in der Vorbehalt-Spalte.
+    assert row["TrueRetDD"] == pytest.approx(1.4269 / 13.83)
+    assert row["TrueRetDD (Vorbehalt)"] == pytest.approx(1.4269 / 13.83)
     # Grün bleibt gesperrt (Nutzer-Regel: RetDD nur mit belastbarer Messung).
     ampel, urteil = pipeline.ampel_for(result, {})
     assert ampel != "🟢"
@@ -202,15 +204,15 @@ def test_vorbehalt_retdd_bei_unzuverlaessiger_kursmessung():
 def test_vorbehalt_retdd_leer_wenn_belastbare_messung_vorliegt():
     result = _result(equity_dd_rekonstruiert_pct=6.0,
                      equity_dd_rekon_roh_pct=13.83)
-    assert result.to_row()["RetDD"] == 2.0
-    assert result.to_row()["RetDD (Vorbehalt)"] is None
+    assert result.to_row()["TrueRetDD"] == 2.0
+    assert result.to_row()["TrueRetDD (Vorbehalt)"] is None
 
 
 def test_vorbehalt_retdd_ohne_rohe_messung_leer():
     result = _result(equity_dd_rekonstruiert_pct=None,
                      equity_dd_rekon_roh_pct=None,
                      equity_rekon_grund="keine Kurse")
-    assert result.to_row()["RetDD (Vorbehalt)"] is None
+    assert result.to_row()["TrueRetDD (Vorbehalt)"] is None
 
 
 def test_vorbehalt_retdd_db_rundtrip_ohne_rescan():

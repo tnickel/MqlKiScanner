@@ -39,7 +39,17 @@ def _positiv_endlich(wert) -> float | None:
 
 
 def _monatsserie(parsed, basis: float) -> dict[str, float]:
-    """Lueckenloses Kalenderfenster ab erstem Open, ohne Geldbewegungen."""
+    """Lueckenloses Kalenderfenster ab erstem Open.
+
+    Kapitalfluesse nach dem ersten Open (Copilot-Review 05.10. abends,
+    Befund Hoch 1 — vorher: Zähler netto÷Startbasis OHNE Flows, Nenner
+    Max-DD auf der REALEN Kurve MIT Flows): Monatsrendite = Trade-PnL ÷
+    Kontostand am Monatsanfang der realen Kurve (inkl. Flows). Eine
+    Einzahlung zaehlt damit NICHT als Rendite, sondern vergroessert den
+    Nenner ab ihrem Kalendermonat (TWR; MQL5-Copy-Sicht — der Kopierer
+    erlebt Einzahlungen des Anbieters als proportional neutral). Fluesse
+    wirken zum MONATSANFANG; der Tag innerhalb des Monats ist nicht
+    modelliert (Monatsgranularitaet)."""
     erste = min(t.open_time for t in parsed.trades)
     letzte = max(t.close_time for t in parsed.trades)
     von = erste.year * 12 + erste.month - 1
@@ -49,9 +59,16 @@ def _monatsserie(parsed, basis: float) -> dict[str, float]:
         zeit = trade.close_time
         monat = zeit.year * 12 + zeit.month - 1
         je_monat.setdefault(monat, []).append(trade.net)
+    flows_je_monat: dict[int, list[float]] = {}
+    for b in getattr(parsed, "balances", []):
+        if b.time <= erste:
+            continue  # vor dem ersten Open: bereits Teil der Startbasis
+        monat = b.time.year * 12 + b.time.month - 1
+        flows_je_monat.setdefault(monat, []).append(float(b.amount))
     renditen = {}
     stand = basis
     for monat in range(von, bis + 1):
+        stand += math.fsum(flows_je_monat.get(monat, []))
         if not math.isfinite(stand) or stand <= 0:
             return {}  # Keine Rendite mit unbekanntem/nicht positivem Nenner.
         pnl = math.fsum(je_monat.get(monat, []))
@@ -116,9 +133,10 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
       - retdd_jahr = virtueller CAGR ÷ Max-EQUITY-DD
     Ohne Equity-DD bleibt nur RetDD unbekannt, die Gewinnmessung erhalten.
     Alle Ergebniswerte bleiben ungerundet, damit 0,999... nicht die
-    RetDD-Mindestschwelle 1,0 passiert. Bei spaeteren Kapitalfluessen haben
-    virtuelle Rendite und Konto-Equity-DD unterschiedliche Kapitalbasen;
-    diese Kennzahl ist dann kein kapitalflussneutraler Originalkonto-Calmar.
+    RetDD-Mindestschwelle 1,0 passiert. Ohne Kapitalfluesse nach Start ist
+    die Kurve identisch real/virtuell; MIT Flows verkettet der Zaehler die
+    TWR-Monatsrenditen der realen Kurve — derselbe Kurventyp wie der
+    Max-Equity-DD (Copilot-Review 05.10. abends, Hoch 1).
     """
     if not trades_pfad or not Path(trades_pfad).exists():
         return None
@@ -149,8 +167,9 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
         "kalender_monate": (letzte.year - erste.year) * 12 + letzte.month - erste.month + 1,
         "netto_gesamt_usd": None, "endkapital_virtuell_usd": None,
         "kapitalfluesse_nach_start": sum(b.time > erste for b in parsed.balances),
-        "basis_hinweis": "Virtuelle Trade-Netto-Rendite ohne spaetere Kapitalfluesse; "
-                          "Equity-DD hat bei Kontobewegungen eine andere Bezugsbasis",
+        "basis_hinweis": "Geometrische Trade-Netto-Rendite auf der Kurve "
+                         "ohne Kapitalfluesse; bei Fluessen nach Start wird "
+                         "stattdessen TWR auf der realen Kurve gerechnet",
     }
     try:
         netto = math.fsum(t.net for t in parsed.trades)
@@ -160,12 +179,39 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
         if (monate <= 0 or not math.isfinite(monate)
                 or endkapital <= 0 or not math.isfinite(endkapital)):
             return ergebnis
-        relativer_gewinn = netto / basis
-        log_faktor = (math.log1p(relativer_gewinn)
-                      if math.isfinite(relativer_gewinn) and relativer_gewinn > -1
-                      else math.log(endkapital) - math.log(basis))
-        geom_pct = math.expm1(log_faktor / monate) * 100.0
-        cagr_pct = math.expm1(log_faktor / jahre) * 100.0
+        kapitalfluesse = ergebnis["kapitalfluesse_nach_start"]
+        if kapitalfluesse:
+            # Copilot-Review 05.10. abends, Befund Hoch 1: Bei Flows nach
+            # Start war der Zaehler netto/basis (virtuelle Kurve), der
+            # Nenner Max-DD aber reale Kurve — Gewinne auf EINGEZAHLTEM
+            # Geld zaehlten als Rendite auf das kleine Startkapital und
+            # konnten TrueRetDD ueber 1,0 heben (falsches Gruen). Der
+            # Zaehler verkettet deshalb die TWR-Monatsrenditen der realen
+            # Kurve (Einzahlung = Nenner-Erhoehung, kein Gewinn).
+            serie = _monatsserie(parsed, basis)
+            faktor = 1.0
+            for rendite in serie.values():
+                faktor *= 1.0 + rendite / 100.0
+            monate_twr = len(serie)
+            if faktor > 0 and monate_twr > 0:
+                log_faktor = math.log(faktor)
+                geom_pct = math.expm1(log_faktor / monate_twr) * 100.0
+                cagr_pct = math.expm1(log_faktor / (monate_twr / 12.0)) * 100.0
+                ergebnis["rendite_basis"] = "twr_reale_kurve_monatsverkettung"
+                ergebnis["basis_hinweis"] = (
+                    "TWR auf der realen Kontokurve (Einzahlungen erhoehen den "
+                    "Nenner der Folgemonate, zaehlen nicht als Rendite) — "
+                    "konsistent zum Max-Equity-DD auf derselben Kurve; "
+                    "Monatsgranularitaet, Fluesse wirken zum Monatsanfang")
+            else:
+                return ergebnis
+        else:
+            relativer_gewinn = netto / basis
+            log_faktor = (math.log1p(relativer_gewinn)
+                          if math.isfinite(relativer_gewinn) and relativer_gewinn > -1
+                          else math.log(endkapital) - math.log(basis))
+            geom_pct = math.expm1(log_faktor / monate) * 100.0
+            cagr_pct = math.expm1(log_faktor / jahre) * 100.0
         if not math.isfinite(geom_pct) or not math.isfinite(cagr_pct):
             return ergebnis
     except (OverflowError, ValueError):

@@ -129,7 +129,7 @@ def test_monitor_allein_liest_retdd_unbekannt():
     result = _result(equity_dd_rekonstruiert_pct=None,
                      monitor_trade_eq_dd_pct=6.0)
     assert result.max_drawdown_equity_pct is None
-    assert result.to_row()["RetDD"] is None
+    assert result.to_row()["TrueRetDD"] is None
     assert pipeline.ampel_for(result, {})[0] == "🟡"
 
 

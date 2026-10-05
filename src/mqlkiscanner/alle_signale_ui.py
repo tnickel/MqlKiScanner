@@ -78,8 +78,10 @@ def tabellen_zeile(result, statistik: dict | None) -> dict:
         "Ertrag %/M (Plattform)": getattr(result, "ertrag_monat_pct", None),
         "Gewinn %/M (geom.)": statistik.get("ertrag_monat_geom_pct"),
         "Trading-DD % (Trades)": statistik.get("trading_dd_pct"),
-        "RetDD": getattr(result, "retdd_monat", None),
-        "RetDD (Vorbehalt)": getattr(result, "retdd_monat_vorbehalt", None),
+        # TrueRetDD (Nutzer 05.10.): EINE Spalte — belastbare Kursmessung
+        # normal, vorbehaltliche orange (Marker in der Vorbehalt-Spalte).
+        "TrueRetDD": getattr(result, "true_retdd_monat", None),
+        "TrueRetDD (Vorbehalt)": getattr(result, "retdd_monat_vorbehalt", None),
         "Profitfaktor": statistik.get("profit_faktor"),
         "Winrate %": statistik.get("winrate_pct"),
         "Trades": statistik.get("trades"),
@@ -181,12 +183,44 @@ def dauer_balken_chart(dauer_statistik: dict) -> go.Figure:
     return fig
 
 
-def _kpi(behälter, label: str, wert, hilfe: str | None = None) -> None:
+def _kpi(behälter, label: str, wert, hilfe: str | None = None,
+         aufklappen=None, kpi_key: str = "") -> None:
+    """KPI-Karte. Mit `aufklappen` bekommt die Karte ein klickbares ? neben
+    dem Label (Nutzer-Wunsch 05.10.2026): das öffnet ein Fenster mit Formel,
+    ausgerechneter Rechnung und Erklärung — der Hover-Hilfetext allein
+    reichte dem Nutzer nicht."""
     with behälter:
-        if hilfe:
-            st.metric(label, wert, border=True, help=hilfe)
-        else:
-            st.metric(label, wert, border=True)
+        if aufklappen is None:
+            if hilfe:
+                st.metric(label, wert, border=True, help=hilfe)
+            else:
+                st.metric(label, wert, border=True)
+            return
+        with st.container(border=True):
+            kopf = st.columns([0.88, 0.12], vertical_alignment="center")
+            kopf[0].markdown(f'<div class="mks-kpi-label">{label}</div>',
+                             unsafe_allow_html=True)
+            if kopf[1].button("?", key=f"{kpi_key}_formel_btn",
+                              help="Formel, Rechnung und Erklärung anzeigen",
+                              type="tertiary"):
+                aufklappen()
+            st.markdown(f'<div class="mks-kpi-value">{wert}</div>',
+                        unsafe_allow_html=True)
+
+
+@st.dialog("Formel, Rechnung und Erklärung", width="large")
+def _formel_dialog(titel: str, formel: str, rechnung: list[str],
+                   erklaerung: str, vorbehalt: str | None = None) -> None:
+    st.markdown(f"**{titel}**")
+    st.caption("Formel")
+    st.code(formel, language="text")
+    st.caption("Ausgerechnet")
+    for zeile in rechnung:
+        st.markdown(zeile)
+    if vorbehalt:
+        st.warning(vorbehalt, icon=":material/warning:")
+    st.caption("Erklärung")
+    st.markdown(erklaerung)
 
 
 def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail") -> None:
@@ -225,6 +259,73 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
         st.caption("Keine belegbare Kapitalbasis (kein Initial Deposit, keine "
                    "Web-Balance) — Prozentwerte entfallen, USD-Werte bleiben.")
 
+    retdd_ok = getattr(auswahl, "retdd_monat", None)
+    retdd_vorbehalt = getattr(auswahl, "retdd_monat_vorbehalt", None)
+
+    def _oeffne_formel() -> None:
+        """Dialog zur RetDD-Familie: Formel, ausgerechnete Werte, Erklärung."""
+        ertrag = statistik.get("ertrag_monat_geom_pct")
+        if retdd_ok is not None:
+            nenner = getattr(auswahl, "max_drawdown_equity_pct", None)
+            _formel_dialog(
+                "TrueRetDD — Ertrag je ECHTEM Max-Drawdown",
+                "TrueRetDD = Gewinn %/Monat (geom.) ÷ Max-Drawdown % "
+                "(Equity inkl. schwebender Verluste, aus Kursen)",
+                [f"{_de(ertrag)} % ÷ {_de(nenner)} % = **{_de(retdd_ok)}**"],
+                "**Zähler:** eigene geometrische Monatsrendite aus der "
+                "Trade-Kurve (zinseszins-wahr).\n\n"
+                "**Nenner:** der größte Rückfall der EQUITY-Kurve inklusive "
+                "SCHWEBENDER Verluste offener Positionen — stundenfein aus "
+                "H1-Kursen nachgemessen (Equity-Studie). Nicht der Trading-DD "
+                "geschlossener Trades und keine Plattform-Angabe.\n\n"
+                "**Lesen:** ab 1,0 Mindestqualität (Projektmaß: 5 % Ertrag "
+                "bei 30 % Drawdown); höher = mehr Ertrag je erlittenem "
+                "Drawdown. **Belastbar** = Kursabdeckung geprüft und "
+                "Zeitbasis bestanden — nur so zählt der Wert für Grün.")
+        elif retdd_vorbehalt is not None:
+            roh = getattr(auswahl, "equity_dd_rekon_roh_pct", None)
+            grund = (getattr(auswahl, "retdd_vorbehalt_grund", "")
+                     or "Zeitbasis/Kursabdeckung unzuverlässig")
+            _formel_dialog(
+                "TrueRetDD (Vorbehalt) — Ertrag je ROHEM Kurs-Max-DD",
+                "TrueRetDD = Gewinn %/Monat (geom.) ÷ ROHER Max-Drawdown % "
+                "(Equity inkl. schwebender Verluste, aus Kursen)",
+                [f"{_de(ertrag)} % ÷ {_de(roh)} % = **≈ {_de(retdd_vorbehalt)}**"],
+                "**Warum orange?** Die Kursmessung existiert, hat aber die "
+                "Verlässlichkeitsprüfung NICHT bestanden — "
+                f"{grund}. Typische Gründe sind Grid-Positionen, die über "
+                "Zeitwechsel-Grenzen (Sommer-/Winterzeit) laufen, oder "
+                "einzelne Kurse knapp außerhalb der Referenzbar.\n\n"
+                "**Konsequenz:** Der Wert ist nur eine Orientierung "
+                "(„besser als nix“) — ohne belastbare Messung gibt es kein "
+                "Grün. Der equity_messung-Status und der Zeitbasis-Block der "
+                "Equity-Studie zeigen die genauen Gründe.",
+                vorbehalt=f"VORBEHALT-Messung: {grund}")
+        else:
+            vergleich = ""
+            roh = getattr(auswahl, "equity_dd_rekon_roh_pct", None)
+            vorbehalt_wert = statistik.get("ertrag_je_close_dd")
+            if roh and ertrag is not None:
+                vergleich = (
+                    f"\n\n**Zum Vergleich:** der rohe Kurs-Max-DD liegt bei "
+                    f"{_de(roh, 1)} % — daraus würde ≈ "
+                    f"**{_de(ertrag / roh)}** TrueRetDD (Vorbehalt).")
+            _formel_dialog(
+                "Ertrag je Close-DD — gekennzeichnete VORBEWERTUNG",
+                "Ertrag je Close-DD = Gewinn %/Monat (geom.) ÷ Trading-DD % "
+                "(nur GESCHLOSSENE Trades)",
+                [f"{_de(ertrag)} % ÷ {_de(statistik.get('trading_dd_pct'))} % "
+                 f"= **{_de(vorbehalt_wert)}**"],
+                "**Warum ist das KEIN TrueRetDD?** Der Trading-DD kennt nur "
+                "geschlossene Trades: offene Verluste (schwebendes Floating) "
+                "fehlen in seinem Nenner KOMPLETT — die Zahl fällt deshalb "
+                "deutlich zu schön aus. Der Nenner, der zählt, ist der "
+                "floating-inklusive Max-Drawdown aus Kursen."
+                + vergleich
+                + "\n\n**Was tun?** Equity-DD-Studie öffnen (Button weiter "
+                "unten) — sie misst den echten Max-Drawdown und macht den "
+                "Wert zum TrueRetDD.")
+
     with st.container(horizontal=True):
         _kpi(st.container(), "Gewinn %/Monat (geom.)",
              _de(statistik.get("ertrag_monat_geom_pct")),
@@ -241,29 +342,32 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
         _kpi(st.container(), "Netto gesamt USD", _de(statistik.get("netto_gesamt_usd")))
         _kpi(st.container(), "Endstand virtuell USD",
              _de(statistik.get("endstand_virtuell_usd")))
-        retdd_ok = getattr(auswahl, "retdd_monat", None)
-        retdd_vorbehalt = getattr(auswahl, "retdd_monat_vorbehalt", None)
         if retdd_ok is not None:
-            _kpi(st.container(), "RetDD", _de(retdd_ok),
-                 "Gewinn %/Monat ÷ belastbar gemessener Max-Drawdown % "
-                 "(Equity inkl. Floating) — Mindestqualität 1,0")
+            _kpi(st.container(), "TrueRetDD", _de(retdd_ok),
+                 "Ertrag ÷ ECHTER Max-Drawdown: geom. Ertrag ÷ belastbar "
+                 "gemessenem Max-Drawdown der Equity inkl. schwebender "
+                 "Verluste — Mindestqualität 1,0",
+                 aufklappen=_oeffne_formel, kpi_key=f"{key_prefix}_trueretdd")
         elif retdd_vorbehalt is not None:
-            _kpi(st.container(), "RetDD (Vorbehalt)",
+            _kpi(st.container(), "TrueRetDD",
                  "≈ " + _de(retdd_vorbehalt),
-                 "ORANGE/VORBEHALT: Gewinn %/Monat ÷ roher Kurs-Max-DD, dessen "
-                 "Zeitbasis/Kursabdeckung die Verlässlichkeitsprüfung NICHT "
-                 "bestanden hat. Nur orientierend — ohne belastbare Messung "
-                 "gibt es kein Grün")
+                 "ORANGE/VORBEHALT: Ertrag ÷ roher Kurs-Max-DD (ebenfalls "
+                 "inkl. schwebender Verluste), dessen Zeitbasis/Kursabdeckung "
+                 "die Verlässlichkeitsprüfung NICHT bestanden hat. Nur "
+                 "orientierend — ohne belastbare Messung gibt es kein Grün",
+                 aufklappen=_oeffne_formel, kpi_key=f"{key_prefix}_trueretdd")
         else:
             _kpi(st.container(), "Ertrag je Close-DD ⚠",
                  _de(statistik.get("ertrag_je_close_dd")),
-                 "VORBEWERTUNG: geom. Ertrag ÷ Trading-DD. Kein RetDD — dessen "
-                 "Nenner darf nur der floating-inklusive Max-Drawdown sein")
+                 "VORBEWERTUNG: geom. Ertrag ÷ Trading-DD. Kein TrueRetDD — "
+                 "dessen Nenner darf nur der floating-inklusive Max-Drawdown "
+                 "sein",
+                 aufklappen=_oeffne_formel, kpi_key=f"{key_prefix}_close_dd")
 
     if (retdd_ok is None and retdd_vorbehalt is not None
             and getattr(auswahl, "equity_dd_rekon_roh_pct", None) is not None):
         st.markdown(
-            f":orange[**RetDD (Vorbehalt) ≈ {_de(retdd_vorbehalt)}:**] gerechnet "
+            f":orange[**TrueRetDD (Vorbehalt) ≈ {_de(retdd_vorbehalt)}:**] gerechnet "
             f"mit dem ROHEN Kurs-Max-DD {_de(auswahl.equity_dd_rekon_roh_pct, 1)} %, "
             "dessen Messung die Verlässlichkeitsprüfung nicht bestanden hat — "
             f"{getattr(auswahl, 'retdd_vorbehalt_grund', '') or 'Zeitbasis/Kursabdeckung unzuverlässig'}. "

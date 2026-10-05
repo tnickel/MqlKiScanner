@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -117,12 +118,34 @@ def test_station_details_read_scan_results_from_current_session(station):
         assert table.loc[0, "Max-Drawdown % (Equity)"] == 18.5
         assert table.loc[0, "Trading-DD % (geschlossen)"] == 12.5
         assert table.loc[0, "Gewinn %/Monat"] == 6.4
-        assert table.loc[0, "RetDD"] == pytest.approx(6.4 / 18.5)
+        assert table.loc[0, "TrueRetDD"] == pytest.approx(6.4 / 18.5)
+        # Review 05.10. abends, Befund 2: Der Dialog trägt dieselbe Vorbehalt-
+        # Markierung wie die Ergebnistabelle — Spalte + (per Stil) Orange.
+        assert "TrueRetDD (Vorbehalt)" in table.columns
+        assert pd.isna(table.loc[0, "TrueRetDD (Vorbehalt)"])
     else:
         assert table.loc[0, "Trade-Analyse"] == "✓"
         assert table.loc[0, "Risiko-Analyse"] == "✓"
         assert table.loc[0, "Gesamtbericht"] == "✓"
         assert table.loc[0, "Kurzfassung"] == "Sitzungsbefund"
+
+
+def test_station_forensik_markiert_vorbehaltliches_trueretdd():
+    """Vorbehaltlicher TrueRetDD erscheint im Stations-Dialog MIT Marker-
+    Spalte (Review 05.10. abends, Befund 2 — vorher nackiger Wert)."""
+    result = pipeline.ScanResult(
+        id=1002, name="Vorbehalt Station", ampel="🟡", forensik_vorhanden=True,
+        score=50.0, ertrag_monat_geom_pct=1.4269, cagr_jahr_pct=18.2,
+        equity_dd_rekonstruiert_pct=None, equity_dd_rekon_roh_pct=13.83,
+        equity_rekon_grund="Offene Position über Wechselgrenze",
+    )
+    at = _app("forensik")
+    at.session_state["scan_results"] = [result]
+    at.run()
+    dialog = _dialog(at)
+    table = dialog.get("dataframe")[0].value
+    assert table.loc[0, "TrueRetDD"] == pytest.approx(1.4269 / 13.83)
+    assert table.loc[0, "TrueRetDD (Vorbehalt)"] == pytest.approx(1.4269 / 13.83)
 
 
 def test_portfolio_station_reads_saved_session_text_fallback():

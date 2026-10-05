@@ -41,7 +41,7 @@ HELP_CONTENT = {
 
 **Wichtige Grenze — Drawdown-Benennung.** Der Trading-DD hier kennt nur geschlossene Trades: **offenes Floating fehlt**, der echte Max-Drawdown kann deutlich höher liegen. Den floating-getreuen **Max-Drawdown aus Kursen** liefert der Button in der Detailansicht — dieselbe Equity-Studie wie überall (H1-Kurse, GMT-Abgleich, Fortschrittsanzeige). „Drawdown (Plattform)“ ist die Selbstauskunft des Anbieters.
 
-**Keine Bewertung.** Ampel-Spalte zeigt das OFFIZIELLE Engine-Ergebnis an (falls vorhanden), wird hier aber nie neu berechnet. „Ertrag je Close-DD“ ist eine gekennzeichnete Vorbewertung, kein RetDD — dessen Nenner darf nur die floating-inklusive Kursmessung sein.
+**Keine Bewertung.** Ampel-Spalte zeigt das OFFIZIELLE Engine-Ergebnis an (falls vorhanden), wird hier aber nie neu berechnet. **TrueRetDD** ist der Ertrag ÷ ECHTER Max-Drawdown (floating-inklusive Kursmessung): belastbar gemessen normal, orange „≈" bei nur vorbehaltlicher Kursmessung. Das **?** an der Karte öffnet Formel, ausgerechnete Rechnung und Erklärung. „Ertrag je Close-DD" ist eine gekennzeichnete Vorbewertung, kein TrueRetDD — dessen Nenner darf nur die floating-inklusive Kursmessung sein.
 
 **Ohne Trade-Cache.** Signale, die noch nie durch die Export-Auswahl (top 30 je Quelle), Fix-IDs oder einen Scan gelaufen sind, zeigen nur Katalogwerte. Der Cache füllt sich mit dem ersten Scan.
 """),

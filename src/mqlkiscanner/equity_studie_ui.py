@@ -640,12 +640,13 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
         f"Stundenpunkte, davon {k['messpunkte']} mit offenen Positionen und "
         f"vollständigen Kursen · Abdeckung {k['abdeckung_pct']:.0f} %")
     st.caption(
-        "Equity = Startkapital + realisiertes Netto + Summe des offenen PnL "
-        "aller Positionen im Export. Die Kurve behält Gewinne rechnerisch "
-        "im Konto; spätere Ein- und Auszahlungen sind nicht enthalten. "
-        "Damit misst sie die reale Kontokurve inkl. Ein-/Auszahlungen "
-        "(Auszahlungen erzeugen keinen Drawdown). Der tatsächliche "
-        "Konto-Equity-DD hat bei Kontobewegungen eine andere Bezugsbasis.")
+        "Equity = Startkapital + realisiertes Netto + Ein-/Auszahlungen + "
+        "Summe des offenen PnL aller Positionen im Export — die reale "
+        "Kontokurve des Betreibers (Nutzer-Regel 05.10.: Auszahlungen "
+        "erzeugen keinen Drawdown, Einzahlungen heben Kurve und Peak, weil "
+        "der Betreiber danach größer handelt). Der Kopierer mit "
+        "proportionaler Lot-Skalierung erlebt Einzahlungen als neutral — "
+        "dafür gibt es unten die kapitalflussneutrale Kopier-Simulation.")
     st.caption(
         "Max-Drawdown dieser Kurve = Rückgang vom bisherigen Equity-Höchststand. "
         "Die öffentliche MQL-Drawdown-Grafik zeigt dagegen offenen Verlust / "

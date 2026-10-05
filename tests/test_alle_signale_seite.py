@@ -192,6 +192,46 @@ render_detail(auswahl, {{"dauer_statistik": {ds}, "monate_pct": {{}},
     warn_text = " ".join(w.value for w in at.warning)
     assert "0 Sekunden oder unter einer Minute" in warn_text
     text = " ".join(x.value for x in at.markdown)
-    assert "RetDD (Vorbehalt) ≈ 0,10" in text
+    assert "TrueRetDD (Vorbehalt) ≈ 0,10" in text
     assert "Wechselgrenze" in text
     assert any("Median-Haltezeit" in c.value for c in at.caption)
+
+
+def test_formel_dialog_oeffnet_mit_formel_rechnung_erklaerung(tmp_path):
+    """Nutzer-Wunsch 05.10.: Klick auf das ? der TrueRetDD-Karte öffnet ein
+    Fenster mit Formel, ausgerechneter Rechnung und Erklärung."""
+    csv_pfad = _csv(tmp_path / "t43.csv")
+    code = f"""
+import sys
+sys.path.insert(0, r"{ROOT / 'src'}")
+import streamlit as st
+from mqlkiscanner.alle_signale_ui import render_detail
+from mqlkiscanner.pipeline import ScanResult
+auswahl = ScanResult(id=43, name="Formel Detail", ampel="🟡", quelle="pelik",
+                     trades_path=r"{csv_pfad}", trades_sha256="abc123")
+auswahl.retdd_monat_vorbehalt = 0.1032
+auswahl.retdd_vorbehalt_grund = "Offene Position über Wechselgrenze"
+auswahl.equity_dd_rekon_roh_pct = 13.83
+render_detail(auswahl, {{"monate_pct": {{}}, "monate_usd": {{}}, "kurve": [],
+                         "trades": 100, "kapitalbasis_ok": True,
+                         "kapitalbasis_usd": 1713.0,
+                         "kapitalbasis_quelle": "virtuell",
+                         "ertrag_monat_geom_pct": 1.43,
+                         "trading_dd_pct": 0.15,
+                         "ertrag_je_close_dd": 9.51}},
+              key_prefix="f")
+"""
+    at = AppTest.from_string(code, default_timeout=60)
+    at.run()
+    assert not at.exception, at.exception
+    at.button(key="f_trueretdd_formel_btn").click()
+    at.run()
+    assert not at.exception, at.exception
+    text = " ".join(x.value for x in at.markdown)
+    assert "TrueRetDD" in text
+    assert "÷" in text
+    assert "Wechselgrenze" in text
+    code_texts = " ".join(c.value for c in at.code)
+    assert "Max-Drawdown" in code_texts
+    assert any("Formel" in c.value for c in at.caption)
+

@@ -38,8 +38,8 @@ def test_table_serializes_colors_and_formats_without_losing_values(monkeypatch):
     assert not at.exception
     frame = at.dataframe[0].value
     assert list(frame['Gewinn %/Monat']) == [6.0] * 5
-    assert frame.loc[1, 'RetDD'] == pytest.approx(0.3)
-    assert frame['RetDD'].isna().tolist() == [False, False, False, True, True]
+    assert frame.loc[1, 'TrueRetDD'] == pytest.approx(0.3)
+    assert frame['TrueRetDD'].isna().tolist() == [False, False, False, True, True]
 
     styled, options = captured[-1]
     order = options['column_order']
@@ -51,7 +51,7 @@ def test_table_serializes_colors_and_formats_without_losing_values(monkeypatch):
     assert 'Equity-Messung' not in order
     assert order.index('Gewinn %/Monat') > order.index('Drawdown % (Plattform)')
     assert options['column_config']['Gewinn %/Monat']['type_config']['format'] == '%.2f%%'
-    assert options['column_config']['RetDD']['type_config']['format'] == '%.2f'
+    assert options['column_config']['TrueRetDD']['type_config']['format'] == '%.2f'
     assert options['selection_mode'] == 'single-row'
     # Dezente Hinterlegung: schwache rgba-Fläche + farbiger Text, fehlende
     # Messung (None) ganz ohne Stil — kein pastellfarbener Block.
@@ -98,7 +98,7 @@ def test_detail_uses_same_fields_without_platform_or_trading_fallback(dd, gain, 
     assert not at.exception
     metrics = {m.label: m.value for m in at.metric}
     assert metrics['Gewinn %/Monat'] == profit_text
-    assert metrics['RetDD'] == retdd_text
+    assert metrics['TrueRetDD'] == retdd_text
     assert metrics['Ertrag / Monat (Plattform)'] == '99.0 %'
     if dd is None:
         assert any('Equity-DD unbelegt' in m.value for m in at.markdown)
@@ -147,5 +147,28 @@ def test_results_page_filters_profit_and_retdd_with_the_same_rows():
     frame = at.dataframe[0].value
     assert list(frame['Name']) == ['Alpha']
     assert list(frame['Gewinn %/Monat']) == [6.0]
-    assert list(frame['RetDD']) == pytest.approx([0.3])
-    assert any('RetDD = Gewinn %/Monat ÷ gemessener Max-Drawdown %' in c.value for c in at.caption)
+    assert list(frame['TrueRetDD']) == pytest.approx([0.3])
+    assert any('Ertrag ÷ ECHTER Max-Drawdown' in c.value for c in at.caption)
+
+
+def test_kompaktansicht_faerbt_vorbehaltliches_trueretdd_orange():
+    """Gegenbeweis zum Fremd-Review 05.10. (Befund 1): Die Markerspalte ist
+    in der Kompaktansicht per column_order VERSTECKT, aber das Orange der
+    TrueRetDD-Zelle kommt aus dem Styler — es bleibt sichtbar. Nur bei
+    einer Stil-Regression (apply-Subset falsch) würde diese Prüfung kippen."""
+    rows = [pipeline.ScanResult(
+        id=1, name='Vorbehalt', forensik_vorhanden=True,
+        ertrag_monat_geom_pct=1.4269, cagr_jahr_pct=18.2,
+        equity_dd_rekonstruiert_pct=None, equity_dd_rekon_roh_pct=13.83,
+        equity_rekon_grund='Wechselgrenze')]
+    at = AppTest.from_string(
+        'import streamlit as st\n'
+        'from mqlkiscanner.app_ui import render_results_table\n'
+        'render_results_table(st.session_state.rows)', default_timeout=30)
+    at.session_state['rows'] = rows
+    at.run()
+    assert not at.exception
+    frame = at.dataframe[0].value
+    assert frame.loc[0, 'TrueRetDD'] == pytest.approx(1.4269 / 13.83)
+    css = at.dataframe[0].proto.arrow_data.styler.styles
+    assert 'rgba(249,115,22,0.12)' in css and '#fb923c' in css

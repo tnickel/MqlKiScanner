@@ -104,7 +104,11 @@ def test_netto_inkl_gebuehren_kapitalfluesse_als_basisgrenze(tmp_path):
     assert eff["netto_gesamt_usd"] == 95
     assert eff["endkapital_virtuell_usd"] == 1095
     assert eff["kapitalfluesse_nach_start"] == 1
-    assert "andere Bezugsbasis" in eff["basis_hinweis"]
+    # TWR seit Copilot-Review 05.10. abends (Hoch 1): Der Zaehler rechnet
+    # auf der realen Kurve — Fluss ist Nenner, kein Gewinn (kein "andere
+    # Bezugsbasis"-Vorbehalt mehr, Zaehler und Nenner sind konsistent).
+    assert "TWR auf der realen Kontokurve" in eff["basis_hinweis"]
+    assert eff["rendite_basis"] == "twr_reale_kurve_monatsverkettung"
 
 
 @pytest.mark.parametrize("profit", [-1000, -1100])

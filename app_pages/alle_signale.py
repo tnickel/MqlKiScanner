@@ -100,12 +100,17 @@ def _prozent(titel: str):
     return st.column_config.NumberColumn(titel, format='%.2f')
 df = pd.DataFrame([tabellen_zeile(r, s) for r, s in paare])
 _gestylt = df.style
-if 'RetDD (Vorbehalt)' in df.columns:
-    # Vorbehaltlicher RetDD (Kursmessung unzuverlässig) immer orange —
+if {'TrueRetDD', 'TrueRetDD (Vorbehalt)'} <= set(df.columns):
+    # TrueRetDD (Nutzer 05.10.): belastbar gemessen normal, vorbehaltlich
+    # orange (Marker in der Vorbehalt-Spalte; pandas-apply übergibt mit
+    # subset NUR die genannten Spalten, deshalb beide und Rückgabe je Zelle) —
     # gleiche dezente Konvention wie in der Ergebnistabelle.
-    _gestylt = _gestylt.map(
-        lambda v: 'background-color: rgba(249,115,22,0.12); color: #fb923c'
-        if pd.notna(v) else '', subset=['RetDD (Vorbehalt)'])
+    def _trueretdd_stil(zeile):
+        if pd.isna(zeile['TrueRetDD (Vorbehalt)']):
+            return ['', '']
+        return ['background-color: rgba(249,115,22,0.12); color: #fb923c', '']
+    _gestylt = _gestylt.apply(_trueretdd_stil, axis=1,
+                              subset=['TrueRetDD', 'TrueRetDD (Vorbehalt)'])
 st.dataframe(
     _gestylt,
     key='alle_signale_tabelle',
@@ -129,18 +134,20 @@ st.dataframe(
         'Ertrag %/M (Plattform)': _prozent('Ertrag %/M (Plattform)'),
         'Gewinn %/M (geom.)': _prozent('Gewinn %/M (geom.)'),
         'Trading-DD % (Trades)': _prozent('Trading-DD % (Trades)'),
-        'RetDD': st.column_config.NumberColumn('RetDD', format='%.2f',
-                                    help='Gewinn %/Monat ÷ belastbar gemessener '
-                                         'Max-Drawdown % (Equity inkl. Floating) — '
-                                         'Mindestqualität 1,0'),
-        'RetDD (Vorbehalt)': st.column_config.NumberColumn('RetDD (Vorbehalt)',
+        'TrueRetDD': st.column_config.NumberColumn('TrueRetDD', format='%.2f',
+                                    help='Ertrag ÷ ECHTER Max-Drawdown: geom. '
+                                         'Ertrag ÷ gemessenem Max-Drawdown der '
+                                         'Equity INKL. schwebender Verluste '
+                                         '(aus Kursen). Normal = belastbar; '
+                                         'ORANGE ≈ = vorbehaltlich (Kursmessung '
+                                         'nicht bestanden) — dann nur '
+                                         'orientierend, kein Grün'),
+        'TrueRetDD (Vorbehalt)': st.column_config.NumberColumn('TrueRetDD (Vorbehalt)',
                                     format='%.2f',
-                                    help='ORANGE = VORBEHALT: Gewinn %/Monat ÷ roher '
-                                         'Kurs-Max-DD, dessen Zeitbasis/Kursabdeckung '
-                                         'die Verlässlichkeitsprüfung NICHT bestanden '
-                                         'hat (z. B. Grid-Positionen über '
-                                         'Zeitwechsel-Grenzen). Nur orientierend — '
-                                         'ohne belastbare Messung kein Grün'),
+                                    help='Technischer Marker: steht der Wert hier, '
+                                         'ist die angezeigte TrueRetDD-Zahl '
+                                         'vorbehaltlich (orange) — gerechnet mit '
+                                         'dem rohen Kurs-Max-DD'),
         'Profitfaktor': _prozent('Profitfaktor'),
         'Winrate %': st.column_config.NumberColumn('Winrate %', format='%.1f'),
         'Trades': st.column_config.NumberColumn('Trades', format='%.0f'),

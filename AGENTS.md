@@ -593,6 +593,59 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Definition dokumentiert. Bestands-Ranking (geom., 🟢/🟡): ImpulseNet
   5,15 · Gold Spike MT5 1,44 · Combo Profile 1,43 · S7PRO 1,09 ·
   MicroJump 1,07 · Pure Gold 1,04 … Gold Spike MT4 0,77.
+  - **TrueRetDD (Nutzer-Benennung 05.10.2026):** Die Effizienz gegen den
+    ECHTEN Max-Drawdown (Equity inkl. schwebender Verluste, aus Kursen)
+    heißt in ALLEN Tabellen/Details „TrueRetDD" — EINE Spalte statt
+    „RetDD"/„RetDD (Vorbehalt)": belastbar gemessen normal, nur
+    vorbehaltlich orange (Marker-Spalte „TrueRetDD (Vorbehalt)" steuert die
+    Zeilenfärbung und bleibt in der CSV). Ohne Kursmessung leer — der
+    „Ertrag je Close-DD"-Fallback bleibt als gekennzeichnete Vorbewertung.
+    Ampel-Zelle, Urteile, DB-Felder und KI-Prompts behalten den Fachbegriff
+    RetDD bewusst (Muster der Max-Drawdown-Umbenennung 03.10.).
+    **Fremd-Review 05.10. abends — geprüft und 3 Fixes:** B1 (Orange
+    verschwinde in der Kompaktansicht, weil column_order die Markerspalte
+    versteckt) WIDERLEGT — empirisch: der Zell-Stil kommt aus dem Styler
+    und bleibt sichtbar; Regressionstest sichert das. Umgesetzt: B2 —
+    Station-5-Forensik- und Portfolio-Basis-Tabellen (scan.py) tragen
+    Marker-Spalte + dieselbe Orange-Färbung; B3 — Portfolio-PDF-Anhang
+    zeigt vorbehaltliche Werte als „≈ X (Vorbehalt: Kursmessung
+    unzuverlässig)" statt „—"; B4 — zentrale Property
+    `ScanResult.true_retdd_monat` ersetzt die 5 identischen Fallback-
+    Ausdrücke. Das **?** an der TrueRetDD/Close-DD-Karte im Alle-Signale-
+    Detail öffnet einen Dialog mit Formel, ausgerechneter Rechnung und
+    Erklärung (Nutzer-Wunsch 05.10.).
+  - **TWR-ZÄHLER BEI KAPITALFLÜSSEN (Copilot-Review 05.10. abends,
+    Befund Hoch 1 — REAL und behoben):** Seit der Flow-Kurven-Umstellung
+    (828f350) standen Zähler und Nenner auf verschiedenen Kurven: Der
+    Max-DD-Nenner rechnet auf der REALEN Kontokurve (inkl. Ein-/Aus-
+    zahlungen), der Ertrags-Zähler aber als (Start+Σnetto)/Start auf der
+    VIRTUELLEN — Gewinne auf EINGEZAHLTEM Geld zählten als Rendite auf
+    das kleine Startkapital und konnten TrueRetDD über 1,0 heben
+    (falsches Grün; Reviewer-Beispiel: 2,05 statt 0,50). Fix:
+    `portfolio_statistik._monatsserie` bucht Flows nach dem ersten Open
+    als NENNER-Erhöhung ihres Kalendermonats (Monatsgranularität, zum
+    Monatsanfang), und `effizienz_kennzahlen` verkettet bei
+    kapitalfluesse_nach_start>0 die TWR-Monatsrenditen der realen Kurve
+    (rendite_basis „twr_reale_kurve_monatsverkettung") — Einzahlung ist
+    damit KEIN Gewinn, sondern wächst in den Nenner der Folgemonate
+    (MQL5-Copy-Sicht: proportional skalierter Kopierer erlebt Anbieter-
+    Einzahlungen neutral). Ohne Flows: unverändert (virtuell == real).
+    Testbeweis tests/test_twr_ertrag.py (12-Monats-Reviewer-Fall →
+    RetDD < 1). **Mittel 2 desselben Reviews ebenfalls behoben:** Der
+    Live-Scan-Pfad setzt equity_dd_rekon_roh_pct jetzt im nicht-
+    belastbaren Zweig (wie results_from_db) — TrueRetDD zeigt den
+    orangen Vorbehaltswert sofort nach dem Scan statt erst nach DB-Reload.
+    **Bewusst NICHT geändert (Nutzer-Regeln, widerlegt/begründet):**
+    DD-Semantik Einzahlung-hebt-Peak (Hoch 2) = Nutzer-Entscheid 05.10.
+    „nimm den Betrag, den der Betreiber verwendet", validiert an
+    LadyTrader1 (Studie 43,69 % vs. Website 43 %) und Gold Spike MT4
+    (8,1 % vs. Web By-Balance 8,11 %); die KOMPIERER-Sicht (neutral)
+    bleibt über die kapitalflussneutrale Kopier-Simulation abgedeckt.
+    Teilmessung als RetDD-Nenner (Mittel 1) = Nutzer-Regel 04.10. nachts
+    (ok_teilmessung freigegeben, fehlende Symbole namentlich im Urteil).
+    Calmar-16–21-Diskussion (Niedrig 1): retdd_monat ≥ 1,0 ist
+    Nutzer-Maß 02.10. (5 %/M bei 30 % DD); Mindesthistorie ist eine
+    offene Gestaltungsfrage, keine Änderung ohne Nutzer.
   - 🚨 **BEFUND B24 (02.10.2026, Lauf-Prüfung) — RetDD ist TOter Code.**
     Der vorige Eintrag beschreibt die *Verdrahtung* (Ampel-Zelle, Payloads,
     Prompts, Sync) korrekt — aber **die Werte werden nirgends berechnet**.

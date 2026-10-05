@@ -408,7 +408,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                         + ["Ampel", "Name", "Quelle", "Stop", "Max-Drawdown %",
                            "Trading-DD % (geschlossen)", "Drawdown % (Plattform)",
                            "Studie",
-                           "Gewinn %/Monat", "RetDD", "RetDD (Vorbehalt)",
+                           "Gewinn %/Monat", "TrueRetDD",
                            "Ertrag/Monat %", "Score",
                            "Urteil", "Bericht vom", "Bericht",
                            "Link", "Abonnenten", "30 Tage", "7 Tage", "Dokumente"])
@@ -418,13 +418,20 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
     # bleiben bei der nativen Dataframe-Konfiguration.
     styled = df.style.map(lambda value: _max_drawdown_zellenstil(value, limit),
                           subset=["Max-Drawdown %"])
-    if "RetDD (Vorbehalt)" in df.columns:
-        # Vorbehaltlicher RetDD (Kursmessung unzuverlässig) immer orange —
-        # gleiche dezente Konvention wie die Max-DD-Zellen (Nutzer 03.10.).
-        styled = styled.map(
-            lambda value: (f"background-color: rgba(249,115,22,0.12); "
-                           f"color: #fb923c") if pd.notna(value) else "",
-            subset=["RetDD (Vorbehalt)"])
+    if {"TrueRetDD", "TrueRetDD (Vorbehalt)"} <= set(df.columns):
+        # TrueRetDD (Nutzer 05.10.): EINE Spalte — belastbar gemessen normal,
+        # nur vorbehaltlich (Kursmessung nicht bestanden) orange. Der Marker
+        # steckt in der Vorbehalt-Spalte; pandas-apply übergibt mit subset
+        # NUR die genannten Spalten, deshalb beide und Rückgabe je Zelle.
+        # Gleiche dezente Konvention wie die Max-DD-Zellen (Nutzer 03.10.).
+        def _trueretdd_stil(zeile):
+            if pd.isna(zeile["TrueRetDD (Vorbehalt)"]):
+                return ["", ""]
+            return ["background-color: rgba(249,115,22,0.12); color: #fb923c",
+                    ""]
+
+        styled = styled.apply(
+            _trueretdd_stil, axis=1, subset=["TrueRetDD", "TrueRetDD (Vorbehalt)"])
     event = st.dataframe(
         styled,
         key=key,
@@ -463,21 +470,24 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                 help="Eigene geometrische Monatsrendite aus den Trade-Daten. "
                      "Fehlt die Berechnung, bleibt das Feld leer; "
                      "Plattform-Ertrag wird nicht als Ersatz verwendet."),
-            "RetDD": st.column_config.NumberColumn(
-                "RetDD", format="%.2f",
-                help="Gewinn %/Monat ÷ gemessener Max-Drawdown % (Equity). "
-                     "Dimensionsloses Verhältnis; höher bedeutet mehr "
-                     "historischen Monatsgewinn je Drawdown-Punkt. "
-                     "Ohne Gewinn oder belastbare Equity-Messung sowie "
-                     "bei Max-Drawdown 0 bleibt RetDD leer. "
-                     "Trading-DD und Plattform-DD ersetzen diese Messung nicht."),
-            "RetDD (Vorbehalt)": st.column_config.NumberColumn(
-                "RetDD (Vorbehalt)", format="%.2f",
-                help="ORANGE = VORBEHALT: Gewinn %/Monat ÷ roher Kurs-Max-DD, "
-                     "dessen Zeitbasis/Kursabdeckung die Verlässlichkeitsprüfung "
-                     "NICHT bestanden hat (z. B. Grid-Positionen über "
-                     "Zeitwechsel-Grenzen). Nur orientierend — der belastbare "
-                     "RetDD bleibt unbekannt, ohne ihn gibt es kein Grün."),
+            "TrueRetDD": st.column_config.NumberColumn(
+                "TrueRetDD", format="%.2f",
+                help="Ertrag ÷ ECHTER Max-Drawdown: eigene geometrische "
+                     "Monatsrendite ÷ gemessenem Max-Drawdown der Equity "
+                     "INKLUSIVE schwebender Verluste (offene Positionen, "
+                     "aus Kursen). Das ist der Drawdown, der beim Kopieren "
+                     "wirklich erlebt wird. Normal = belastbar gemessen; "
+                     "ORANGE ≈ = die Kursmessung hat die "
+                     "Verlässlichkeitsprüfung nicht bestanden (z. B. Grid-"
+                     "Positionen über Zeitwechsel-Grenzen) — dann nur "
+                     "orientierend, ohne belastbare Messung gibt es kein "
+                     "Grün. Trading-DD und Plattform-DD ersetzen diese "
+                     "Messung nie."),
+            "TrueRetDD (Vorbehalt)": st.column_config.NumberColumn(
+                "TrueRetDD (Vorbehalt)", format="%.2f",
+                help="Technischer Marker: steht der Wert hier, ist die "
+                     "angezeigte TrueRetDD-Zahl vorbehaltlich (orange) — "
+                     "gerechnet mit dem rohen Kurs-Max-DD."),
             "PF": st.column_config.NumberColumn("PF", format="%.2f"),
             "Drawdown % (Plattform)": st.column_config.NumberColumn(
                 "Drawdown % (Plattform)", format="%.1f",
@@ -953,7 +963,7 @@ def render_detail(result) -> None:
     """Detailansicht eines ScanResults: Kennzahlen, Teilergebnisse, Bericht."""
     row = result.to_row()
     gewinn_monat = row.get("Gewinn %/Monat")
-    retdd = row.get("RetDD")
+    trueretdd = row.get("TrueRetDD")
     settings = config.load_settings()
     dd_limit = settings.get("schranke_eq_dd_pct", 30.0)
     with st.container(horizontal=True, vertical_alignment="center"):
@@ -1068,21 +1078,19 @@ def render_detail(result) -> None:
                   f"{gewinn_monat:.2f} %" if gewinn_monat is not None else "—",
                   help="Eigene geometrische Monatsrendite aus den Trade-Daten.",
                   border=True)
-        st.metric("RetDD",
-                  f"{retdd:.2f}" if retdd is not None else "—",
-                  help="Gewinn %/Monat ÷ gemessener Max-Drawdown % (Equity). "
-                       "Fehlende oder nullprozentige Equity-Messung liefert kein Verhältnis.",
+        vorbehalt = row.get("TrueRetDD (Vorbehalt)")
+        st.metric("TrueRetDD",
+                  (f"≈ {trueretdd:.2f}" if vorbehalt is not None
+                   else f"{trueretdd:.2f}") if trueretdd is not None else "—",
+                  help="Ertrag ÷ ECHTER Max-Drawdown: eigene geometrische "
+                       "Monatsrendite ÷ gemessenem Max-Drawdown der Equity "
+                       "INKLUSIVE schwebender Verluste (offene Positionen, "
+                       "aus Kursen). Normal = belastbar gemessen; „≈“ = "
+                       "VORBEHALT — die Kursmessung hat die "
+                       "Verlässlichkeitsprüfung nicht bestanden (z. B. "
+                       "Grid-Positionen über Zeitwechsel-Grenzen), der Wert "
+                       "ist nur orientierend und gibt kein Grün.",
                   border=True)
-        vorbehalt = row.get("RetDD (Vorbehalt)")
-        if retdd is None and vorbehalt is not None:
-            st.metric("RetDD (Vorbehalt)",
-                      f"≈ {vorbehalt:.2f}",
-                      help="ORANGE/VORBEHALT: Gewinn %/Monat ÷ roher Kurs-Max-DD, "
-                           "dessen Zeitbasis/Kursabdeckung die Verlässlichkeitsprüfung "
-                           "NICHT bestanden hat (z. B. offene Positionen über "
-                           "Zeitwechsel-Grenzen). Nur orientierend — ohne belastbare "
-                           "Messung gibt es kein Grün.",
-                      border=True)
         st.metric("Trading-DD (geschlossen)",
                   f"{result.trading_dd_pct:.1f} %" if result.trading_dd_pct is not None else "—",
                   border=True)
@@ -1099,7 +1107,7 @@ def render_detail(result) -> None:
                    icon=":material/monitoring:")
         if result.retdd_monat_vorbehalt is not None:
             st.markdown(
-                f":orange[**RetDD (Vorbehalt) ≈ {result.retdd_monat_vorbehalt:.2f}:**] "
+                f":orange[**TrueRetDD (Vorbehalt) ≈ {result.retdd_monat_vorbehalt:.2f}:**] "
                 f"gerechnet mit dem ROHEN Kurs-Max-DD "
                 f"{result.equity_dd_rekon_roh_pct:.1f} %, dessen Messung die "
                 f"Verlässlichkeitsprüfung nicht bestanden hat — "

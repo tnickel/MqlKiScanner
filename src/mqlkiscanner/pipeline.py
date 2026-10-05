@@ -273,6 +273,17 @@ class ScanResult:
         """
         return max(self._equity_messwerte().values(), default=None)
 
+    @property
+    def true_retdd_monat(self) -> float | None:
+        """Anzeigewert der TrueRetDD-Spalte (Nutzer 05.10.2026): EINE Zahl
+        für die Effizienz gegen den ECHTEN Max-Drawdown — belastbar gemessen
+        wenn vorhanden, sonst der vorbehaltliche Wert. Ob die Zahl orange zu
+        zeigen ist, entscheidet retdd_monat_vorbehalt (not None = Vorbehalt).
+        Zentral hier, damit Tabelle, Stationen und PDF dieselbe Logik nutzen
+        (Review 05.10. abends, Befund 4: vorher 5 identische Kopien)."""
+        return (self.retdd_monat if self.retdd_monat is not None
+                else self.retdd_monat_vorbehalt)
+
     def refresh_efficiency(self) -> None:
         """Eine RetDD-Formel für Scan, DB, Tabelle, Auswahl und KI.
 
@@ -372,8 +383,14 @@ class ScanResult:
             "Balance-DD % (Plattform)": self.dd_balance_pct,
             "Max-Drawdown %": self.max_drawdown_equity_pct,
             "Gewinn %/Monat": self.ertrag_monat_geom_pct,
-            "RetDD": self.retdd_monat,
-            "RetDD (Vorbehalt)": self.retdd_monat_vorbehalt,
+            # Nutzer-Wunsch 05.10.2026 (TrueRetDD): EINE Spalte für die
+            # Effizienz gegen den ECHTEN Max-Drawdown (Equity inkl. Floating,
+            # aus Kursen). Belastbar gemessen steht sie normal, nur
+            # vorbehaltlich (Zeitbasis/Kursabdeckung nicht bestanden) wird
+            # sie orange gezeigt; die Vorbehalt-Spalte ist der Marker dafür
+            # (und bleibt in der CSV nachvollziehbar).
+            "TrueRetDD": self.true_retdd_monat,
+            "TrueRetDD (Vorbehalt)": self.retdd_monat_vorbehalt,
             "Trading-DD % (geschlossen)": self.trading_dd_pct,
             "Equity-Messung": self.equity_messung_status,
             "Winrate %": self.winrate_pct,
@@ -1539,6 +1556,13 @@ class ScanPipeline:
                 elif reko:
                     log("Equity-Rekonstruktion nicht belastbar: "
                         + res.equity_rekon_grund)
+                    # Copilot-Review 05.10. abends (Mittel 2): Der rohe
+                    # Kurs-DD gehört auch in den LIVE-Scan — sonst bliebe
+                    # TrueRetDD direkt nach dem Scan leer statt des orangen
+                    # Vorbehaltwerts (bis die Ergebnisse neu aus der DB
+                    # geladen werden, wo results_from_db das Feld setzt).
+                    res.equity_dd_rekon_roh_pct = reko.get(
+                        "equity_dd_pct_raw", reko.get("equity_dd_pct"))
                 res.martingale_flag = fx["martingale"].get("flag")
                 res.martingale_evidenz = fx["martingale"].get("evidence") or []
                 stops = fx["stops"]

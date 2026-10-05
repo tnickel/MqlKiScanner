@@ -202,8 +202,22 @@ def test_anhang_erkennt_nur_die_empfohlenen_strategien():
     assert "EMPFEHLUNG — Alpha passt." in md      # voller Gesamtbericht drin
     assert "| Gewinn %/Monat (geometrisch) | 6,19 % |" in md
     assert "| Max-Drawdown (Equity, gemessen) | 6,19 % |" in md
-    assert "| RetDD (Monatsgewinn / Max-Equity-DD) | 1,000 |" in md
+    assert "| TrueRetDD (Monatsgewinn / Max-Equity-DD inkl. Floating) | 1,000 |" in md
     assert "Gamma" not in md.split("Gesamtrisiko")[0] or True
+
+
+def test_anhang_zeigt_vorbehaltlichen_trueretdd_markiert():
+    """Review 05.10. abends, Befund 3: Ohne belastbare Kursmessung steht im
+    PDF die Näherung mit Vorbehalt-Kennzeichnung statt einem nackten „—"."""
+    from mqlkiscanner.pdf_reports import _anhang_markdown
+    r = _ergebnis(7, "Vorbehalt-PDF")
+    r.equity_dd_rekonstruiert_pct = None
+    r.equity_dd_rekon_roh_pct = 13.83
+    r.equity_rekon_grund = "Offene Position über Wechselgrenze"
+    md = _anhang_markdown([r], "## Portfolio-Vorschlag\n\n"
+                                "- Vorbehalt-PDF — 100 % — Test\n\n## X")
+    assert ("| TrueRetDD (Monatsgewinn / Max-Equity-DD inkl. Floating) | "
+            "≈ 0,448 (Vorbehalt: Kursmessung unzuverlässig) |") in md
 
 
 def test_portfolio_pdf_mit_anhang_rendert_und_ohne_bleibt_klassisch():

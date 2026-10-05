@@ -1514,6 +1514,7 @@ def _dialog_auswahl() -> None:
 def _dialog_forensik() -> None:
     """Kombinierte Sicht: alle Kandidaten des Laufs — wer geprüft wurde
     (mit Ergebnis) und wer nicht (mit Grund), Filterleiste oben."""
+    import pandas as pd
     st.markdown("**Was passiert hier?** Für die ausgewählten Signale lädt der "
                 "Scanner Handelsdaten (Export bzw. Quellen-Artefakte) und "
                 "prüft Martingale, gleichzeitig offene Positionen, Exposure, "
@@ -1572,7 +1573,9 @@ def _dialog_forensik() -> None:
             "Equity-Messung": (r.equity_messung_status if r else "Noch nicht geprüft"),
             "Gewinn %/Monat": (getattr(r, "ertrag_monat_geom_pct", None)
                          if geprueft else None),
-            "RetDD": (getattr(r, "retdd_monat", None) if geprueft else None),
+            "TrueRetDD": (r.true_retdd_monat if geprueft else None),
+            "TrueRetDD (Vorbehalt)": (getattr(r, "retdd_monat_vorbehalt", None)
+                                      if geprueft else None),
             "Grund": (e.get("grund") or "")
                      + ((" · ⚠ " + (r.fehler or "")[:90]) if r and r.fehler else ""),
             "Link": _signal_link(e),
@@ -1592,7 +1595,8 @@ def _dialog_forensik() -> None:
             "Trading-DD % (geschlossen)": r.trading_dd_pct,
             "Equity-Messung": r.equity_messung_status,
             "Gewinn %/Monat": getattr(r, "ertrag_monat_geom_pct", None),
-            "RetDD": getattr(r, "retdd_monat", None),
+            "TrueRetDD": r.true_retdd_monat,
+            "TrueRetDD (Vorbehalt)": getattr(r, "retdd_monat_vorbehalt", None),
             "Grund": "Aus dem Datenbank-Stand (kein Eintrag in der gespeicherten "
                      "Auswahl dieses Laufs).",
             "Link": _signal_link({"url": r.url, "id": r.id,
@@ -1608,14 +1612,26 @@ def _dialog_forensik() -> None:
                            label_gewaehlt="Nur geprüft",
                            label_raus="Nur nicht geprüft")
     st.caption(f"Angezeigt: {len(zeilen)} von {n_gesamt} Kandidaten.")
-    st.dataframe(_ohne_intern(zeilen), width="stretch", hide_index=True,
+    # TrueRetDD mit Vorbehalt-Markierung wie die Ergebnistabelle: belastbar
+    # normal, vorbehaltlich orange (Review 05.10. abends, Befund 2 — vorher
+    # stand der Wert hier nackig ohne Kennzeichnung da).
+    forensik_df = pd.DataFrame(_ohne_intern(zeilen))
+    forensik_styled = forensik_df.style
+    if {"TrueRetDD", "TrueRetDD (Vorbehalt)"} <= set(forensik_df.columns):
+        def _trueretdd_stil(z):
+            if pd.isna(z["TrueRetDD (Vorbehalt)"]):
+                return ["", ""]
+            return ["background-color: rgba(249,115,22,0.12); color: #fb923c", ""]
+        forensik_styled = forensik_styled.apply(
+            _trueretdd_stil, axis=1, subset=["TrueRetDD", "TrueRetDD (Vorbehalt)"])
+    st.dataframe(forensik_styled, width="stretch", hide_index=True,
                  column_config={"Link": _link_spalte()})
     st.caption("Max-Drawdown (Equity) enthält offene Gewinne und Verluste "
                "aus belastbaren Kurs- oder Monitor-Messungen; ohne diese "
                "bleibt das Feld leer. Trading-DD berücksichtigt nur "
                "geschlossene Trades. Die Schranke verwendet zusätzlich "
                "die Plattform-Angaben. Gewinn %/Monat ist die eigene geometrische "
-               "Monatsrendite; RetDD teilt sie durch den gemessenen maximalen "
+               "Monatsrendite; TrueRetDD teilt sie durch den gemessenen maximalen "
                "Equity-Drawdown. Geschlossener Drawdown dient nicht als Nenner.")
     probleme = [r for r in results if r.fehler]
     if probleme:
@@ -1697,13 +1713,29 @@ def _dialog_portfolio() -> None:
             r.refresh_efficiency()
         st.caption("Eingeflossen sind die 🟢/🟡-Signale des Laufs (Datenbasis "
                    "der KI-Zusammenfassung):")
-        st.dataframe([{"Signal": r.name, "Quelle": r.quelle or "mql5",
-                       "Ampel": r.ampel, "Ertrag/M (geom.)":
-                       getattr(r, "ertrag_monat_geom_pct", None),
-                       "RetDD": getattr(r, "retdd_monat", None),
-                       "Link": _signal_link({"url": r.url, "id": r.id,
-                                             "quelle": r.quelle or "mql5"})}
-                      for r in basis], width="stretch", hide_index=True,
+        # TrueRetDD mit Vorbehalt-Markierung wie die Ergebnistabelle
+        # (Review 05.10. abends, Befund 2).
+        import pandas as pd
+        basis_df = pd.DataFrame([{
+            "Signal": r.name, "Quelle": r.quelle or "mql5",
+            "Ampel": r.ampel, "Ertrag/M (geom.)":
+            getattr(r, "ertrag_monat_geom_pct", None),
+            "TrueRetDD": r.true_retdd_monat,
+            "TrueRetDD (Vorbehalt)": getattr(r, "retdd_monat_vorbehalt", None),
+            "Link": _signal_link({"url": r.url, "id": r.id,
+                                  "quelle": r.quelle or "mql5"})}
+            for r in basis])
+        basis_styled = basis_df.style
+        if {"TrueRetDD", "TrueRetDD (Vorbehalt)"} <= set(basis_df.columns):
+            def _trueretdd_stil_basis(z):
+                if pd.isna(z["TrueRetDD (Vorbehalt)"]):
+                    return ["", ""]
+                return ["background-color: rgba(249,115,22,0.12); "
+                        "color: #fb923c", ""]
+            basis_styled = basis_styled.apply(
+                _trueretdd_stil_basis, axis=1,
+                subset=["TrueRetDD", "TrueRetDD (Vorbehalt)"])
+        st.dataframe(basis_styled, width="stretch", hide_index=True,
                      column_config={"Link": _link_spalte()})
 
 
