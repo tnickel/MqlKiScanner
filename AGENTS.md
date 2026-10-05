@@ -66,7 +66,9 @@ alter Befunde. Review: `../waste/drawdown_2026-10-03/review.md`.
    der Reihe einmal falsch angesetzt und führte zu einer Fehleinschätzung.)
    Weitere Instrumente (Krypto, Silber, Öl, DE40/USTEC/CHINA50, XAUEUR) seit
    09/2026 belegt in `data/contract_specs.json` (Quelle je Eintrag, Stand:
-   Tickmill; Öl `cross_broker=false` — Tickmill 1 Barrel/Lot, andere 100!).
+   Tickmill; Öl `cross_broker=false` — Tickmill 1 Barrel/Lot, andere 100!;
+   AxiTrader2 seit 05.10. per Trade-Rückrechnung freigegeben: USOIL-FUTURE
+   1000 Barrel, US500-FUTURE 50 USD/Punkt — broker-scoped, s. Umsetzungsstand).
    Fremdwährungs-Quotes (FX-Kreuze, EUR-Gold, DE40) werden mit EZB-
    Referenzkursen je Handelstag nach USD umgerechnet (`src/mqlkiscanner/
    fx_rates.py`, Cache `data/fx_rates/`, Details doc/02 Abschnitt 5a/5b).
@@ -993,6 +995,32 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   (Ampel-Matrix „Closing-DD (Monitor)", Log „Trade-Closing-DD",
   Scoring-Kommentar). Robo 133 Tests grün (+4 ClosingDdDealsTest),
   Scanner 1341, Pelican 63, Vantage 25. Report-Kapitel 8 im PDF.
+
+- ✅ AIT-FX REAKTIVIERT + KONTRAKT-BEWEIS AUS TRADES + SETTINGS-ORTUNG
+  (05.10.2026, Nutzer-Fall „abonnierte Pelican-Signale aus der Bewertung
+  geflogen"): AIT FX #2019435 (pelik) war ⚪, weil USOIL cross_broker=false
+  und der Broker des Signals (AxiTrader2) nicht freigegeben war. BEWEIS aus
+  Pelican-Roh-Trades (closed_2019435.csv — dort steht der Schlusskurs, den
+  der Scanner-Snapshot bei FUTURE-Trades nicht liefert): USOIL-FUTURE =
+  exakt 1000 Barrel/Lot (1 Trade: 62.99→62.85, 0.01 Lots, +1.40 USD),
+  US500-FUTURE = exakt 50 USD/Punkt/Lot (3 Trades, exakt) — CME-Futures-
+  Größen, keine CFD-Konvention. Zwei broker-scoped Einträge nach
+  USOUSD_VTMARKETS-Muster: USOIL_AXITRADER2 (1000) und US500_AXITRADER2
+  (50); Vorbehalt im note-Feld: die Kontrakt-Auflösung strippt „-FUTURE",
+  am Axi-Server greifen die Einträge daher auch für Spot (Öl dann 10×
+  überschätzt = konservativ). NEBENBEFUND: US500 hatte GAR keine Spec und
+  lief still über die US-Index-Klassenkonvention 1 USD/Punkt — für Futures
+  50× zu klein (gilt weiter für andere Broker). Fix-ID 2019435 gesetzt —
+  config/app_settings.json jetzt [2342895, 2375480, 2019435] — Teilscan
+  fasst ⚪ sonst nicht erneut an. SCHWERER FUND DABEI: min_ertrag_pct_monat
+  stand in der produktiven config/app_settings.json noch auf 5.0 — die
+  Regelnacht-Änderung (7a1561e) schrieb data/app_settings.json (FALSCHER
+  Pfad, nie wirksam; Datenleiche gelöscht); produktiv jetzt 0.0 wie
+  beschlossen. **Settings-Regel: produktiv ist NUR config/app_settings.json
+  (.gitignore-Zeile 52); „data/app_settings.json" ist eine Falle.**
+  Lexo/PentagonForex (die anderen beiden abonnierten) sind NICHT raus — 🟡,
+  RetDD unbekannt wegen DST-Blockern (Kurs-Reko unvollständig), Monitor-DD
+  seit Review kein Nenner mehr. +1 Test tests/test_contract_specs.py.
 
   Noch offen (Betrieb — Agentenbetrieb Phasen A–E sind KOMPLETT):
 

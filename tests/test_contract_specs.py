@@ -98,6 +98,43 @@ def test_same_oil_alias_selects_matching_broker_variant(tmp_path):
         "contract_specs.json"
 
 
+def test_axitrader_variants_oel_und_index_future(tmp_path):
+    """AxiTrader2 per Trade-Rueckrechnung (closed_2019435, 05.10.2026):
+    USOIL-FUTURE = 1000 Barrel/Lot, US500-FUTURE = 50 USD/Punkt/Lot —
+    CME-Futures-Groessen statt CFD-Konvention. '-FUTURE' wird bei der
+    Kontrakt-Aufloesung gestrippt, der Broker entscheidet die Variante."""
+    schreibe_specs(tmp_path, {
+        "XTIUSD": {
+            "contract_size": 1.0, "quote_currency": "USD", "stress_move": 10.0,
+            "cross_broker": False, "brokers": ["tickmill"], "aliases": ["USOIL"],
+        },
+        "USOIL_AXITRADER2": {
+            "contract_size": 1000.0, "quote_currency": "USD", "stress_move": 10.0,
+            "cross_broker": False, "brokers": ["axitrader2"], "aliases": ["USOIL"],
+        },
+        "US500_AXITRADER2": {
+            "contract_size": 50.0, "quote_currency": "USD", "stress_move": 50.0,
+            "cross_broker": False, "brokers": ["axitrader2"], "aliases": ["US500"],
+        },
+    })
+    # Oel-Future am Axi-Server: 0.01 Lot x 10 USD Stress x 1000 Barrel.
+    result = exposure.run(export_mit("USOIL-FUTURE", lots=0.01),
+                          broker="AxiTrader2")
+    assert result["shock_usd"] == pytest.approx(0.01 * 10.0 * 1000.0)
+    assert result["per_symbol_scenarios"]["USOIL"]["contract_source"] == \
+        "contract_specs.json"
+    # Index-Future am Axi-Server: 0.01 Lot x 50 Punkte x 50 USD/Punkt.
+    result = exposure.run(export_mit("US500-FUTURE", lots=0.01),
+                          broker="AxiTrader2")
+    assert result["shock_usd"] == pytest.approx(0.01 * 50.0 * 50.0)
+    # Tickmill bleibt bei 1 Barrel — der Axi-Eintrag greift nur fuer Axi.
+    tick = exposure.run(export_mit("USOIL", lots=3.0), broker="Tickmill-EU-Live1")
+    assert tick["shock_usd"] == pytest.approx(3.0 * 10.0 * 1.0)
+    # Unbekannter Broker bleibt gesperrt (Faktor-100/1000-Falle).
+    with pytest.raises(ValueError, match="cross_broker=false"):
+        exposure.run(export_mit("USOIL"), broker="ICMarketsSC-Live23")
+
+
 def test_non_usd_quote_stays_soft_refused(tmp_path):
     schreibe_specs(tmp_path, {"XAUEUR": {"contract_size": 100.0,
                                          "quote_currency": "EUR",

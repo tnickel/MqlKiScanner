@@ -87,7 +87,8 @@
       "note": "ACHTUNG, brokerabhaengig: Tickmill definiert 1 Lot = 1 Barrel (Mindestvolumen 1 Lot). Viele andere Broker (z. B. TMGM, laut FXNX-Referenz die Retail-Mehrheit) nutzen 100 Barrel je Lot — Faktor 100 Unterschied. Deshalb gilt diese Spec NUR bei Tickmill-Konten; fuer andere Broker hier eine broker-spezifische Ergaenzung eintragen.",
       "broker_variants": {
         "tickmill": 1.0,
-        "uebrige_retail_broker_ueblich": 100.0
+        "uebrige_retail_broker_ueblich": 100.0,
+        "axitrader2_future": 1000.0
       }
     },
     "USOUSD_VTMARKETS": {
@@ -106,6 +107,40 @@
       "source": "https://get.vtmarkets.help/hc/en-us/articles/56126804545561-How-does-dynamic-leverage-affect-my-trading",
       "retrieved": "2026-09-19",
       "note": "VT Markets rechnet im offiziellen USOUSD-Beispiel 1 Lot mit 1.000 Contract Units. USOUSD ist WTI Crude Oil Cash und wird im Beispiel in USD bepreist. Die öffentliche Quelle nennt die Einheit nicht ausdrücklich Barrel; im Zweifel im MT5-Dialog 'Specification' auf dem konkreten VTMarkets-Live-Server gegenprüfen."
+    },
+    "USOIL_AXITRADER2": {
+      "contract_size": 1000.0,
+      "quote_currency": "USD",
+      "class": "ENERGY",
+      "stress_move": 10.0,
+      "unit_label": "USD Kursbewegung",
+      "cross_broker": false,
+      "brokers": [
+        "axitrader2"
+      ],
+      "aliases": [
+        "USOIL"
+      ],
+      "source": "Trade-Rueckrechnung PelicanMonitor data/signals/closed/closed_2019435.csv (Server AxiTrader2): USOIL-FUTURE Sell 0.01 Lots, 62.99 -> 62.85, PnL +1.40 USD => 1000 USD je 1 USD Bewegung je Lot",
+      "retrieved": "2026-10-05",
+      "note": "CME-WTI-Futures-Vollgroesse (1000 Barrel/Lot) am AxiTrader2-Server. ACHTUNG: Die Kontrakt-Aufloesung strippt '-FUTURE' — dieser Eintrag greift am Axi-Server daher auch fuer SPOT-USOIL (bei anderen Brokern ueblich 100 Barrel), dessen Risiko waere dann 10x ueberschaetzt (konservativ). Bewiesen nur fuer USOIL-FUTURE; bei einem Spot-USOIL-Signal am Axi-Server im MT5-Dialog 'Specification' gegenpruefen."
+    },
+    "US500_AXITRADER2": {
+      "contract_size": 50.0,
+      "quote_currency": "USD",
+      "class": "INDEX",
+      "stress_move": 50.0,
+      "unit_label": "USD je Indexpunkt",
+      "cross_broker": false,
+      "brokers": [
+        "axitrader2"
+      ],
+      "aliases": [
+        "US500"
+      ],
+      "source": "Trade-Rueckrechnung PelicanMonitor data/signals/closed/closed_2019435.csv (Server AxiTrader2): 3x US500-FUTURE 0.01 Lots, exakt 50 USD je Indexpunkt je Lot (z. B. 5989.43 -> 5985.80 = +1.82 USD)",
+      "retrieved": "2026-10-05",
+      "note": "E-mini-S&P-Futures-Konvention ($50 x Index) am AxiTrader2-Server. Ohne diesen Eintrag galt die US-Index-Klassenkonvention 1 USD/Punkt — fuer Futures 50x zu klein. '-FUTURE' wird gestrippt, Eintrag gilt am Axi-Server daher auch fuer spot US500 (dort ist $50/Punkt unueblich — bei Spot-Signalen gegenpruefen)."
     },
     "DE40": {
       "contract_size": 1.0,
