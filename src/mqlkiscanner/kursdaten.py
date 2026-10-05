@@ -29,6 +29,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import time
+
 from .agenten.marktdata import broker_symbol, terminal_beenden, terminal_laueft
 from .symbols import normalize_symbol
 
@@ -142,6 +144,27 @@ class KursDaten:
         von = _dt.datetime.fromtimestamp(von_epoch + gmt_offset_s, tz=_dt.timezone.utc)
         bis = _dt.datetime.fromtimestamp(bis_epoch + gmt_offset_s, tz=_dt.timezone.utc)
         rates = mt5.copy_rates_range(gewaehlt, mt5.TIMEFRAME_H1, von, bis)
+        # MT5 laedt Historie ON DEMAND vom Server: der ERSTE Abruf kann nur
+        # den bereits lokalen Teil liefern und den Download anstossen (real
+        # 05.10.: GBPJPY endete mitten im Fenster, der zweite Abruf brachte
+        # alles — trotz Max Bars = Unlimited). Erneut abfragen, solange das
+        # Ergebnis WAECHST und das angefragte Fenster (mit Wochenend-
+        # Toleranz) noch nicht erreicht ist; ein Teilergebnis vergiftet
+        # sonst den Lauf-Cache der ganzen Pipeline.
+        ziel_bis = int(bis.timestamp())
+        ziel_von = int(von.timestamp())
+        for _versuch in range(3):
+            if rates is None or len(rates) == 0:
+                break
+            fertig = (int(rates[-1]["time"]) + 3600 >= ziel_bis - 3 * 86400
+                      and int(rates[0]["time"]) <= ziel_von + 3 * 86400)
+            if fertig:
+                break
+            time.sleep(2.0)
+            weitere = mt5.copy_rates_range(gewaehlt, mt5.TIMEFRAME_H1, von, bis)
+            if weitere is None or len(weitere) <= len(rates):
+                break
+            rates = weitere
         if rates is None or len(rates) == 0:
             self._cache[key] = None
             return None

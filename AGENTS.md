@@ -944,6 +944,16 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Ende-Abschnitt (THG GBPJPY/USDJPY, GTS BTCUSD — Max-Bars-Limit; Nutzer
   stellt Terminal auf Unlimited). Alte Studien-Cache-Einträge brauchen
   „Neu berechnen" für das neue Feld.
+  **MT5-Historien-Nachladen behoben (05.10. nachts):** kursdaten.hole_h1
+  fragte copy_rates_range GENAU EINMAL ab — MT5 liefert beim ersten Abruf
+  oft nur die lokale Historie und stößt den Server-Download an (Beweis:
+  GBPJPY endete mitten im Fenster, zweiter Abruf lieferte alles; Max Bars
+  war Unlimited, also nicht das Limit). Teilergebnisse vergifteten den
+  Lauf-Cache → die „Abdeckung <95 %"-Fälle (THG GBPJPY/USDJPY-Ende, GTS
+  BTCUSD). Fix: Retry bis zu 3× (2 s Pause), solange das Ergebnis WÄCHST
+  und das Fenster (±3 Tage Wochenend-Toleranz) nicht erreicht ist;
+  Stillstand → Best-Effort-Teilergebnis. +3 Tests
+  (test_kursdaten_nachladen.py: teil→voll, Stillstand, fertig ohne Retry).
   Suite nach Fixes: Scanner 1341 Tests grün (+10 neue), mvn: robo 129,
   zulu 81, MqlDownloader 82, PelicanTrading 63, vantage 25. Bestand
   braucht Re-Scan (Dedup-Konsistenz + Robo-Brutto + RetDD-Basis).
