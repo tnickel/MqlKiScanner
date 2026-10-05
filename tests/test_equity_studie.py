@@ -475,3 +475,51 @@ def test_symbol_mit_drei_stimmenden_proben_eigenstaendig_erkannt():
     befunde = {b["symbol"]: b for b in gmt["befunde"]}
     assert befunde["EURUSD"]["status"] == "erkannt", befunde
     assert befunde["EURUSD"]["gmt_h"] == 2
+
+
+def test_ueberdeckung_klassifiziert_luecken_nach_lage_und_art():
+    """Nutzer-Wunsch 05.10.: Kursueberdeckung je Symbol visualisierbar —
+    die Datenfunktion klassifiziert Einzel-Wartungsstunden (<= 3 h) gegen
+    fehlende Abschnitte (> 3 h) und die Lage (anfang/mitte/ende)."""
+    import datetime as dt
+    start = dt.datetime(2026, 1, 5)
+    # 100 Bars durchgehend, dann 1h-Luecke (Wartung), dann 40 Bars,
+    # dann 30h-Luecke (Abschnitt = Wochenende -> Zaehlt nicht!), danach nix.
+    bars = _bars("XAUUSD", start, 100)
+    bars += _bars("XAUUSD", start + dt.timedelta(hours=101), 40,
+                  base=bars[-1]["close"])
+    # Trades: laufen IN die 30h-Pause hoechstens 1 h rein und enden
+    # 3 h nach der letzten Bar (Ende-Luecke).
+    letzte_bar_ende = start + dt.timedelta(hours=141)
+    trades = [
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=2),
+               start + dt.timedelta(hours=50), 2000.0, 2050.0),
+        # laeuft quer durch die 1-h-Luecke zwischen den Bar-Bloecken (Mitte)
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=100),
+               start + dt.timedelta(hours=103), 2600.0, 2605.0),
+        # endet 3 h nach der letzten Bar -> Ende-Luecke
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=130),
+               letzte_bar_ende + dt.timedelta(hours=3), 2850.0, 2855.0),
+    ]
+    from mqlkiscanner import equity_studie as es
+    erg = es.ueberdeckung_je_symbol(trades,
+                                    {"XAUUSD": bars}, {"XAUUSD": 0})
+    assert len(erg) == 1
+    e = erg[0]
+    assert e["symbol"] == "XAUUSD"
+    # 1 h Mitte-Wartung + 2 h Ende
+    assert e["fehlend_h"] == 3, e
+    arten = sorted(l["art"] for l in e["luecken"])
+    lagen = sorted(l["lage"] for l in e["luecken"])
+    assert arten == ["wartung", "wartung"], e["luecken"]   # beide <= 3 h
+    assert lagen == ["ende", "mitte"], e["luecken"]
+    assert e["abdeckung_pct"] is not None and e["abdeckung_pct"] < 100.0
+    # Abschnitts-Fall (> 3 h) separat: 5-h-Luecke in den Bars
+    bars2 = _bars("XAUUSD", start, 60) + _bars(
+        "XAUUSD", start + dt.timedelta(hours=66), 20, base=3000.0)
+    erg2 = es.ueberdeckung_je_symbol(
+        [_trade("XAUUSD", "buy", start + dt.timedelta(hours=2),
+                start + dt.timedelta(hours=80), 2000.0, 2100.0)],
+        {"XAUUSD": bars2}, {"XAUUSD": 0})
+    abschnitt = [l for l in erg2[0]["luecken"] if l["art"] == "abschnitt"]
+    assert abschnitt and abschnitt[0]["h"] >= 5

@@ -930,6 +930,20 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   löcher in VORHANDENEN Symbolen (Teil-Abdeckung < 95 %) und unzuverlässige
   Zeitbasis → weiter „unvollständig", kein Nenner. Tests: Teil-Messung,
   Mehrfach-Symbol-Fall, Datenloch-Grenze.
+  **Kursüberdeckung visualisiert (Nutzer-Wunsch 05.10. nachts):** Equity-
+  Studie hat neuen Expander „Kursüberdeckung je Symbol — wo fehlen Bars?"
+  mit Plotly-Zeitstrahl: grün = verfügbare H1-Bars-Segmente, orange =
+  einzelne Wartungsstunden (≤3 h, nächtliche Feed-Wartung Tickmill), rot =
+  fehlende Abschnitte (>3 h, z. B. Terminal-Bars-Limit); Hover nennt Lage
+  (anfang/mitte/ende) und Dauer; Kennzahlen-Karten (Abdeckung aktiv,
+  Wartungsstunden, Anzahl Abschnitte). Datenfunktion
+  equity_studie.ueberdeckung_je_symbol (reine Rechnung, im Studien-
+  Ergebnisfeld „ueberdeckung"); Wochenende/Feithertage zählen nicht als
+  Lücke. Kurs-Lücken-Diagnose (05.10.): Lücken liegen praktisch alle in
+  der MITTE als Einzel-Wartungsstunden 01–05 Uhr + einige Symbole ohne
+  Ende-Abschnitt (THG GBPJPY/USDJPY, GTS BTCUSD — Max-Bars-Limit; Nutzer
+  stellt Terminal auf Unlimited). Alte Studien-Cache-Einträge brauchen
+  „Neu berechnen" für das neue Feld.
   Suite nach Fixes: Scanner 1341 Tests grün (+10 neue), mvn: robo 129,
   zulu 81, MqlDownloader 82, PelicanTrading 63, vantage 25. Bestand
   braucht Re-Scan (Dedup-Konsistenz + Robo-Brutto + RetDD-Basis).

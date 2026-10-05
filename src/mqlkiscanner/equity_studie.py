@@ -138,6 +138,95 @@ def ermittle_gmt_je_symbol(trades, bars_je_symbol: dict[str, list[dict]]) -> dic
     return {"offsets": offsets, "befunde": befunde}
 
 
+def ueberdeckung_je_symbol(trades, bars_je_symbol: dict[str, list[dict]],
+                            offsets: dict[str, int]) -> list[dict]:
+    """Kursueberdeckung je Symbol (Nutzer-Wunsch 05.10.): Wo genau fehlen
+    Bars — Anfang, Mitte (einzelne Wartungsstunden) oder Ende?
+
+    Reine Rechnung ohne UI; Raster/Stundenlogik wie die Messung selbst:
+    aktiv = volle Stunden laut Trade-Zeiten (+ je-Symbol-GMT-Offset, also
+    in Referenzkurszeit), versorgt = Bar zu dieser Stunde. Globale
+    Marktpausen (>= MARKTPAUSE_MIN_H ohne Bar) zaehlen nicht als Luecke.
+    Luecken <= 3 h werden als 'wartung' klassifiziert (naechtliche
+    Server-Wartung des Referenz-Feeds), laengere als 'abschnitt'; die Lage
+    relativ zur ersten/letzten verfuegbaren Bar als anfang/mitte/ende.
+    """
+    je_symbol_trades: dict[str, list] = {}
+    for tr in trades:
+        if tr.close_time and tr.open_time:
+            je_symbol_trades.setdefault(
+                tr.symbol.strip().upper(), []).append(tr)
+    resultat = []
+    for symbol, sym_trades in sorted(je_symbol_trades.items()):
+        offset = offsets.get(symbol, 0)
+        aktiv: set[int] = set()
+        for tr in sym_trades:
+            o = _epoch(tr.open_time) + offset
+            c = _epoch(tr.close_time) + offset
+            aktiv.update(range((o // 3600 + 1) * 3600, c, 3600))
+        bars = bars_je_symbol.get(symbol) or []
+        stunden = sorted({(b["time"] // 3600 + 1) * 3600 for b in bars})
+        if not stunden or not aktiv:
+            resultat.append({
+                "symbol": symbol, "aktiv_h": len(aktiv),
+                "verfuegbar_h": len(stunden), "fehlend_h": 0,
+                "abdeckung_pct": 100.0 if aktiv else None,
+                "erste_bar": stunden[0] if stunden else None,
+                "letzte_bar": stunden[-1] if stunden else None,
+                "luecken": [], "segmente": [],
+            })
+            continue
+        bar_set = set(stunden)
+        erste_bar, letzte_bar = stunden[0], stunden[-1]
+        # Marktpausen: globale Bar-Luecken >= MARKTPAUSE_MIN_H
+        pausen: set[int] = set()
+        luecke: list[int] = []
+        for s in range(erste_bar, letzte_bar + 1, 3600):
+            if s in bar_set:
+                if len(luecke) >= MARKTPAUSE_MIN_H:
+                    pausen.update(luecke)
+                luecke = []
+            else:
+                luecke.append(s)
+        if len(luecke) >= MARKTPAUSE_MIN_H:
+            pausen.update(luecke)
+        fehlend = sorted(s for s in aktiv
+                         if s not in bar_set and s not in pausen)
+        # Luecken zu Bereichen zusammenfassen und klassifizieren
+        bereiche = []
+        for s in fehlend:
+            if bereiche and s - bereiche[-1][1] <= 3600:
+                bereiche[-1][1] = s
+            else:
+                bereiche.append([s, s])
+        luecken_liste = []
+        for a, b in bereiche:
+            dauer_h = (b - a) // 3600 + 1
+            lage = ("anfang" if b < erste_bar
+                    else "ende" if a > letzte_bar else "mitte")
+            art = "wartung" if dauer_h <= 3 else "abschnitt"
+            luecken_liste.append({
+                "von": a - 3600, "bis": b, "h": dauer_h, "lage": lage, "art": art})
+        # verfuegbare Segmente (durch Pausen getrennt)
+        segmente = []
+        start = stunden[0]
+        for s_alt, s_neu in zip(stunden, stunden[1:]):
+            if s_neu - s_alt > 3600:
+                segmente.append([start, s_alt])
+                start = s_neu
+        segmente.append([start, stunden[-1]])
+        abgedeckt = sum(1 for s in aktiv if s in bar_set)
+        resultat.append({
+            "symbol": symbol, "aktiv_h": len(aktiv),
+            "verfuegbar_h": len(stunden), "fehlend_h": len(fehlend),
+            "abdeckung_pct": round(abgedeckt / len(aktiv) * 100.0, 1),
+            "erste_bar": erste_bar, "letzte_bar": letzte_bar,
+            "luecken": luecken_liste,
+            "segmente": [[a, b] for a, b in segmente],
+        })
+    return resultat
+
+
 def studie(parsed, kurse, startkapital: float,
            broker: str | None = None, progress=None, *,
            gmt_offset_h: int | None = None) -> dict:
@@ -502,6 +591,7 @@ def studie(parsed, kurse, startkapital: float,
                           angewandt=gemeinsame_zeitbasis),
         "symbole_ohne_kurse": ohne_kurse,
         "symbole_ohne_kontrakt": ohne_kontrakt,
+        "ueberdeckung": ueberdeckung_je_symbol(trades, bars_je_symbol, offsets),
         "methodik": "virtuelle Trading-Equity: Startkapital + alle realisierten Nettoergebnisse + Floating",
         "raster": "H1-Schlusskurse am Bar-Ende; keine Intrabar-Extrema",
         "kapitalfluesse": "spaetere Ein-/Auszahlungen nicht eingerechnet",

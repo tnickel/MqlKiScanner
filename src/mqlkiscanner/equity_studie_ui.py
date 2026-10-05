@@ -417,6 +417,72 @@ def _symbol_diagnose(daten: dict) -> None:
 _KOPIER_STARTKAPITAL = 10_000.0
 
 
+def _ueberdeckung_chart(daten: dict, key_prefix: str) -> None:
+    """Kursueberdeckung je Symbol als Zeitstrahl (Nutzer-Wunsch 05.10.):
+    gruen = verfuegbare H1-Bars, orange = einzelne Wartungsstunden (<= 3 h),
+    rot = fehlende Abschnitte (> 3 h) — nur innerhalb aktiver Handelsstunden."""
+    eintraege = [e for e in (daten.get("ueberdeckung") or []) if e.get("aktiv_h")]
+    if not eintraege:
+        return
+    fig = go.Figure()
+    farbe = {"wartung": "#d97706", "abschnitt": "#dc2626"}
+    for e in reversed(eintraege):  # erstes Symbol oben
+        y = e["symbol"]
+        for a, b in e.get("segmente") or []:
+            fig.add_trace(go.Scatter(
+                x=[_als_datetime(a), _als_datetime(b)], y=[y, y],
+                mode="lines", line=dict(width=14, color="#16a34a"),
+                hovertemplate=f"{y}: Bars verfügbar<br>%{{x|%Y-%m-%d}}<extra></extra>",
+                showlegend=False))
+        for luecke in e.get("luecken") or []:
+            art = luecke["art"]
+            fig.add_trace(go.Scatter(
+                x=[_als_datetime(luecke["von"]), _als_datetime(luecke["bis"])],
+                y=[y, y], mode="lines",
+                line=dict(width=14, color=farbe.get(art, "#dc2626")),
+                hovertemplate=(f"{y}: {art} ({luecke['lage']}, {luecke['h']} h)"
+                               f"<br>%{{x|%Y-%m-%d %H:%M}}<extra></extra>"),
+                showlegend=False))
+    fig.update_layout(
+        height=max(150, 60 + 34 * len(eintraege)),
+        margin=dict(l=10, r=10, t=10, b=10),
+        xaxis=dict(title=None, gridcolor="#e5e7eb"),
+        yaxis=dict(title=None, gridcolor="#e5e7eb"),
+        plot_bgcolor="white", dragmode="zoom")
+    st.plotly_chart(fig, use_container_width=True,
+                    key=f"{key_prefix}_ueberdeckung",
+                    config={"displaylogo": False})
+
+
+def _ueberdeckung_abschnitt(daten: dict, key_prefix: str) -> None:
+    eintraege = daten.get("ueberdeckung") or []
+    if not eintraege:
+        return
+    aktiv = sum(e.get("aktiv_h") or 0 for e in eintraege)
+    fehlend = sum(e.get("fehlend_h") or 0 for e in eintraege)
+    wartung = sum(l["h"] for e in eintraege for l in e.get("luecken") or []
+                  if l["art"] == "wartung")
+    abschnitte = sum(1 for e in eintraege for l in e.get("luecken") or []
+                     if l["art"] == "abschnitt")
+    with st.expander("Kursüberdeckung je Symbol — wo fehlen Bars?",
+                     expanded=False, icon=":material/grid_on:"):
+        deck = (aktiv - fehlend) / aktiv * 100 if aktiv else 100
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Abdeckung (aktiv)", f"{deck:.1f} %")
+        c2.metric("Wartungsstunden", f"{wartung} h",
+                  help="Einzelne Nachtstunden ohne H1-Bar — nächtliche "
+                       "Server-Wartung des Referenz-Feeds (Tickmill).")
+        c3.metric("Fehlende Abschnitte", f"{abschnitte}",
+                  help="Lücken > 3 h: Symbol-Historie liefert den Zeitraum "
+                       "nicht (Anfang/Ende/Mitte) — z. B. Terminal-Bars-Limit "
+                       "oder Feed-Lücke.")
+        _ueberdeckung_chart(daten, key_prefix)
+        st.caption("Grün = verfügbare H1-Bars · Orange = einzelne "
+                   "Wartungsstunden (≤ 3 h) · Rot = fehlende Abschnitte "
+                   "(> 3 h) — nur innerhalb aktiver Handelsstunden; "
+                   "Wochenende/Feiertage zählen nicht als Lücke.")
+
+
 def _kopier_simulation(daten: dict, key_prefix: str) -> None:
     """Was wäre mit DEINEM Konto passiert? (Nutzer-Wunsch 04.10.2026)
 
@@ -622,6 +688,7 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
                     "H1-Bar) bestimmt. Ein wechselnder Versatz wird abschnittsweise "
                     "geprüft; unklare Abschnitte bleiben als Messgrenze sichtbar.")
         _symbol_diagnose(daten)
+        _ueberdeckung_abschnitt(daten, key_prefix)
 
     st.caption("Messbasis: H1-Bars des Tickmill-Referenzterminals (Bar-Close), "
                "nicht die Broker-Kurse des Signals selbst. Zwischentick-"
