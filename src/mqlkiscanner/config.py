@@ -103,6 +103,14 @@ DEFAULT_SETTINGS: dict = {
     "agenten_dirigent_llm": True,   # Dirigent darf LLM-Randentscheidungen treffen
     # ── Marktdaten / MetaTrader (Phase C, doc/19 §7) ─────────────────
     "markt_terminal_pfad": r"C:\Forex\Mt5\TickmillLifeMql5\terminal64.exe",
+    # Nutzer-Wunsch 05.10.: MEHRERE Kursdatenquellen (MetaTrader) für die
+    # Equity-Rekonstruktion — Priorität in Reihenfolge; Fallback nur für
+    # Symbole, die die vorderen Quellen nicht liefern (GMT je Feed
+    # unterschiedlich — Auto-GMT-Preisabgleich je Symbol behandelt das).
+    "kursdaten_terminals": [
+        r"C:\Forex\Mt5\TickmillLifeMql5\terminal64.exe",
+        r"C:\Forex\Mt5\ActiveTrades003\terminal64.exe",
+    ],
     "markt_start_erlauben": False,  # Standard: Terminal NIE selbst starten
     "markt_symbole_manuell": "",    # zusätzliche Symbole, Komma/Leerzeichen
     "markt_lookback_tage": 30,      # Kurs-Historie je Symbol (H1+D1)

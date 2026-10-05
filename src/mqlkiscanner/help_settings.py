@@ -379,4 +379,11 @@ Speichert Terminal-Pfad, Start-Politik, zusätzliche Symbole und die
 Kurs-Historie-Länge in app_settings.json. Der Daemon liest die Werte beim
 nächsten Lauf — ohne Neustart.
 """),
+    "settings_kursdaten": ("Kursdatenquellen: mehrere MetaTrader", """
+Mehrere MetaTrader-Terminals als Kursquellen für die Equity-DD-
+Rekonstruktion. Priorität in Reihenfolge: Symbole, die die erste
+Quelle nicht liefert (z. B. Aktien nur bei ActiveTrades), werden
+bei der nächsten versucht. GMT wird je Symbol per Preisabgleich
+erkannt und ist damit feed-unabhängig korrekt.
+"""),
 }

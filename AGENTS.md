@@ -954,6 +954,17 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   und das Fenster (±3 Tage Wochenend-Toleranz) nicht erreicht ist;
   Stillstand → Best-Effort-Teilergebnis. +3 Tests
   (test_kursdaten_nachladen.py: teil→voll, Stillstand, fertig ohne Retry).
+  **ZWEITE KURSDATENQUELLE (Nutzer-Wunsch 05.10. nachts):** Multi-Terminal-
+  Support — `kursdaten_terminals` (Liste, Priorität in Reihenfolge): erst
+  Tickmill, dann ActiveTrades003 (C:\Forex\Mt5\ActiveTrades003 — hat auch
+  Aktien!). MT5-Python ist pro Prozess ein Singleton: erst ALLE Symbole von
+  Quelle 1 laden, dann Terminal wechseln und NUR die fehlenden Symbole
+  erneut versuchen. `KursDaten.hat_weiteren_terminal()/wechsle_terminal()`;
+  None-Cache-Einträge werden beim Wechsel gelöscht. GMT pro Feed korrekt
+  (Auto-GMT-Preisabgleich je Symbol — die Kurse eines Symbols kommen
+  konsistent aus EINEM Feed, kein Mischbestand). Admin-UI hat neuen
+  Abschnitt „Kursdatenquellen (MetaTrader)" mit Liste + Hilfe-Topic.
+  Fallback eingebaut in equity_rekonstruktion.py + equity_studie.py.
   Suite nach Fixes: Scanner 1341 Tests grün (+10 neue), mvn: robo 129,
   zulu 81, MqlDownloader 82, PelicanTrading 63, vantage 25. Bestand
   braucht Re-Scan (Dedup-Konsistenz + Robo-Brutto + RetDD-Basis).

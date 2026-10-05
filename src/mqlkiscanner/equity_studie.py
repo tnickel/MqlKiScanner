@@ -265,6 +265,21 @@ def studie(parsed, kurse, startkapital: float,
         else:
             ohne_kurse.append(s)
 
+    # Nutzer-Wunsch 05.10.: ZWEITE Kursdatenquelle (MetaTrader) als Fallback
+    # für Symbole, die die primäre Quelle nicht liefert. MT5-Python ist pro
+    # Prozess ein Singleton — sequentiell wechseln, nur fehlende neu laden.
+    if ohne_kurse and hasattr(kurse, 'hat_weiteren_terminal')             and kurse.hat_weiteren_terminal():
+        ok, msg = kurse.wechsle_terminal()
+        if ok:
+            noch_offen = []
+            for s in ohne_kurse:
+                bars = kurse.hole_h1(s, fenster_von, fenster_bis)
+                if bars:
+                    bars_je_symbol[s] = bars
+                else:
+                    noch_offen.append(s)
+            ohne_kurse = noch_offen
+
     # Kontrakt-/Quote-Auflösung — NUR mit Beleg (kein erfundener Faktor;
     # dieselbe Regel wie die produktive Reko, Review 29.09. Befund 4).
     aufgeloest: dict[str, dict] = {}

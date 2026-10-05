@@ -198,6 +198,47 @@ def rendern(settings: dict) -> None:
 
     with st.container(border=True):
         section_header(
+            "Kursdatenquellen (MetaTrader) für Equity-Rekonstruktion",
+            "Mehrere MetaTrader-Terminals als Kursquellen — Priorität in "
+            "Reihenfolge. Symbole, die die erste Quelle nicht liefert, "
+            "werden bei der nächsten versucht (z. B. Aktien nur bei "
+            "ActiveTrades). GMT wird je Symbol per Preisabgleich erkannt "
+            "und ist damit feed-unabhängig korrekt.",
+            help_key="settings_kursdaten")
+        termine = list(settings.get("kursdaten_terminals") or [])
+        neue_termine = []
+        for i, pfad in enumerate(termine):
+            col_pfad, col_del = st.columns([5, 1])
+            with col_pfad:
+                p = st.text_input(
+                    f"Terminal {i + 1}", value=str(pfad),
+                    key=f"admin_kurs_terminal_{i}",
+                    placeholder=r"C:\Forex\Mt5\...\terminal64.exe")
+            with col_del:
+                if i > 0 and st.button("🗑", key=f"admin_kurs_del_{i}",
+                                       help="Diese Quelle entfernen"):
+                    continue  # nicht in neue_termine aufnehmen
+            if p.strip():
+                neue_termine.append(p.strip())
+        st.text_input(
+            "Neue Quelle hinzufügen", key="admin_kurs_neu",
+            placeholder=r"C:\Forex\Mt5\...\terminal64.exe",
+            label_visibility="collapsed")
+        if st.session_state.get("admin_kurs_neu", "").strip():
+            neue_termine.append(
+                st.session_state["admin_kurs_neu"].strip())
+        kurs_werte = {"kursdaten_terminals": neue_termine}
+        _entwurfs_status(_geaendert(kurs_werte, settings))
+        if action_button("Kursdatenquellen speichern",
+                         key="admin_kursdaten_save",
+                         help_key="settings_kursdaten",
+                         icon=":material/save:"):
+            _speichern(kurs_werte,
+                       f"{len(neue_termine)} Kursdatenquelle(n) gespeichert "
+                       f"(Priorität in Reihenfolge).")
+
+    with st.container(border=True):
+        section_header(
             "Rollen konfigurieren",
             "Modell, Ausgabelimit und Aktivstatus je Rolle — GLM-5.3 ist Standard.",
             help_key="settings_agenten_rollen")

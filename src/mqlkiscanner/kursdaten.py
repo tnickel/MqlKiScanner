@@ -53,8 +53,18 @@ class KursDaten:
 
     def __init__(self, settings: dict):
         self.settings = settings or {}
-        self.terminal_pfad = str(self.settings.get("markt_terminal_pfad")
-                                 or _DEFAULT_TERMINAL)
+        # Nutzer-Wunsch 05.10.: MEHRERE Kursdatenquellen (MetaTrader).
+        # Setting kursdaten_terminals = [pfad1, pfad2, ...] — Prioritaet
+        # in Reihenfolge; Fallback nur fuer Symbole, die die vorderen
+        # nicht liefern. Ohne das Setting gilt der alte einzelne Pfad.
+        termine = self.settings.get("kursdaten_terminals")
+        if isinstance(termine, list) and termine:
+            self.terminals = [str(p).strip() for p in termine if str(p).strip()]
+        else:
+            self.terminals = [str(self.settings.get("markt_terminal_pfad")
+                                  or _DEFAULT_TERMINAL)]
+        self.terminal_idx = 0
+        self.terminal_pfad = self.terminals[0]
         self.start_erlauben = bool(self.settings.get("markt_start_erlauben", False))
         self._mt5 = None
         self._aktiv = False
@@ -63,6 +73,9 @@ class KursDaten:
         # B10: roh-Symbol → tatsächlich verwendetes Terminal-Symbol, wenn
         # das exakte (suffigierte) Symbol nicht existierte.
         self.suffix_annahmen: dict[str, str] = {}
+        # 05.10.: Welches Terminal lieferte welches Symbol (Transparenz,
+        # GMT je Feed unterschiedlich — Auto-GMT-Abgleich je Symbol).
+        self.terminal_herkunft: dict[str, str] = {}
 
     # ------------------------------------------------------------ Lebenszyklus
 
@@ -100,6 +113,26 @@ class KursDaten:
         self._mt5 = None
         self._aktiv = False
         terminal_beenden(self.terminal_pfad)
+
+    # ------------------------------------------------ Multi-Terminal (05.10.)
+
+    def hat_weiteren_terminal(self) -> bool:
+        """Gibt es noch eine weitere Kursdatenquelle (MetaTrader)?"""
+        return self.terminal_idx < len(self.terminals) - 1
+
+    def wechsle_terminal(self) -> tuple[bool, str]:
+        """Zur naechsten Kursdatenquelle wechseln. MT5-Python ist pro
+        Prozess ein Singleton: der Wechsel faehrt das aktuelle Terminal
+        herunter und startet das naechste. None-Cache-Eintraege werden
+        geloescht, damit der neue Terminal sie erneut versuchen kann."""
+        if not self.hat_weiteren_terminal():
+            return False, "keine weitere Quelle"
+        self.beenden()
+        self.terminal_idx += 1
+        self.terminal_pfad = self.terminals[self.terminal_idx]
+        self._cache = {k: v for k, v in self._cache.items() if v is not None}
+        ok, msg = self.starten()
+        return ok, f"{self.terminal_pfad}: {msg}"
 
     # --------------------------------------------------------------- Kursdaten
 
@@ -173,6 +206,7 @@ class KursDaten:
                  "close": float(r["close"])} for r in rates]
         bars.sort(key=lambda b: b["time"])
         self._cache[key] = bars
+        self.terminal_herkunft[symbol.upper().strip()] = self.terminal_pfad
         return bars
 
 

@@ -429,6 +429,25 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         else:
             fehlende_symbole.append(s)
 
+    # Nutzer-Wunsch 05.10.: ZWEITE Kursdatenquelle (MetaTrader) als Fallback.
+    # MT5-Python ist pro Prozess ein Singleton — erst ALLE Symbole von der
+    # primaeren Quelle laden, dann Terminal wechseln und NUR die fehlenden
+    # Symbole erneut versuchen. Der Auto-GMT-Preisabgleich je Symbol stellt
+    # den korrekten Zeitversatz DESSEN Feeds sicher (jeder MT5-Broker hat
+    # seinen eigenen Server-Zeitversatz; die Kurse eines Symbols kommen
+    # konsistent aus EINEM Feed — kein Mischbestand).
+    if fehlende_symbole and hasattr(kurse, 'hat_weiteren_terminal')             and kurse.hat_weiteren_terminal():
+        ok, msg = kurse.wechsle_terminal()
+        if ok:
+            noch_fehlend = []
+            for s in fehlende_symbole:
+                bars = kurse.hole_h1(s, fenster_von, fenster_bis)
+                if bars:
+                    bars_je_symbol[s] = bars
+                else:
+                    noch_fehlend.append(s)
+            fehlende_symbole = noch_fehlend
+
     # Kontrakt-/Quote-Auflösung je Symbol (einmalig) — NUR mit Beleg. Ohne
     # Spec/Klassenkontrakt wäre jeder Faktor erfunden (der frühere stille
     # 100-000-Default erzeugte Phantom-Floating und meldete es als
