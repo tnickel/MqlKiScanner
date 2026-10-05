@@ -32,7 +32,7 @@ from pathlib import Path
 import time
 
 from .agenten.marktdata import broker_symbol, terminal_beenden, terminal_laueft
-from .symbols import normalize_symbol
+from .symbols import alias_fuer_symbol, normalize_symbol
 
 ERLAUBTE_MT5_AUFRUFE = frozenset((
     "initialize", "shutdown", "terminal_info", "last_error",
@@ -163,6 +163,12 @@ class KursDaten:
         kandidaten = [am_broker]
         if normalisiert != symbol.upper().strip():
             kandidaten.append(broker_symbol(normalisiert, self.settings))
+        # Nutzer-Wunsch 05.10.: Broker-Ersetzungstabelle (z. B. DE40 heisst
+        # bei ActiveTrades GER40; USOIL heisst bei Tickmill XTIUSD).
+        alias = alias_fuer_symbol(symbol, self.terminal_pfad,
+                                  self.settings.get("symbol_aliases"))
+        if alias and alias.upper() not in [k.upper() for k in kandidaten]:
+            kandidaten.append(alias)
         gewaehlt = None
         for kandidat in kandidaten:
             if mt5.symbol_select(kandidat, True):

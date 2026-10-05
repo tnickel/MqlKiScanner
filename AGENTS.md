@@ -965,6 +965,14 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   konsistent aus EINEM Feed, kein Mischbestand). Admin-UI hat neuen
   Abschnitt „Kursdatenquellen (MetaTrader)" mit Liste + Hilfe-Topic.
   Fallback eingebaut in equity_rekonstruktion.py + equity_studie.py.
+  **SYMBOL-ERSETZUNGSTABELLE je Broker (Nutzer-Wunsch 05.10. nachts):**
+  symbols.py: SYMBOL_ALIASE_DEFAULT (DE40→GER40 bei ActiveTrades,
+  USOIL→XTIUSD/BRENT, NAS100→USTEC, SPX500→US500, BITCOIN→BTCUSD, …)
+  + terminal_key() (Pfad→Schlüssel, z. B. activetrades003) +
+  alias_fuer_symbol(). kursdaten.hole_h1 probiert jetzt: exakt →
+  normalisiert → ALIAS → nächstes Terminal. Admin-UI hat Sektion
+  „Symbol-Ersetzungen je Broker" mit Tabelle je Terminal (editierbar,
+  Setting symbol_aliases). Hilfe-Topic settings_symbol_aliases.
   Suite nach Fixes: Scanner 1341 Tests grün (+10 neue), mvn: robo 129,
   zulu 81, MqlDownloader 82, PelicanTrading 63, vantage 25. Bestand
   braucht Re-Scan (Dedup-Konsistenz + Robo-Brutto + RetDD-Basis).

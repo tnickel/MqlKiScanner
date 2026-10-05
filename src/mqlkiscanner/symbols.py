@@ -7,6 +7,7 @@ Contract-Specifications). Ohne Eintrag bleibt alles beim Alten: unbekannt.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import re
 
 from . import config
@@ -144,3 +145,41 @@ def _broker_matches(entry: dict, broker: str | None) -> bool:
         return False
     hay = (broker or "").casefold()
     return bool(hay) and any(tok in hay for tok in allowed)
+
+
+# ── Broker-Ersetzungstabelle (Nutzer-Wunsch 05.10.) ─────────────────────
+SYMBOL_ALIASE_DEFAULT = {
+    "DE40":  {"activetrades003": "GER40"},
+    "GER40": {"tickmilllifemql5": "DE40"},
+    "WTI":   {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
+    "USOIL": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
+    "NAS100": {"tickmilllifemql5": "USTEC"},
+    "US100": {"tickmilllifemql5": "USTEC"},
+    "NASUSD": {"tickmilllifemql5": "USTEC"},
+    "SPX500": {"tickmilllifemql5": "US500"},
+    "US500CASH": {"tickmilllifemql5": "US500"},
+    "GER30CASH": {"tickmilllifemql5": "DE40"},
+    "GER40-FUTURE": {"tickmilllifemql5": "DE40", "activetrades003": "GER40"},
+    "US100-FUTURE": {"tickmilllifemql5": "USTEC"},
+    "US500-FUTURE": {"tickmilllifemql5": "US500"},
+    "US30-FUTURE": {"tickmilllifemql5": "US30"},
+    "USOIL-FUTURE": {"tickmilllifemql5": "XTIUSD"},
+    "BITCOIN": {"tickmilllifemql5": "BTCUSD"},
+    "WT": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
+}
+
+
+def terminal_key(terminal_pfad: str) -> str:
+    """Terminal-Pfad → kurzer Schlüssel für die Alias-Tabelle."""
+    return Path(terminal_pfad).parent.name.lower().replace(" ", "")
+
+
+def alias_fuer_symbol(kanonisch: str, terminal_pfad: str,
+                      aliases: dict | None = None) -> str | None:
+    """Broker-spezifischer Name für ein kanonisches Symbol — oder None."""
+    tabelle = aliases or SYMBOL_ALIASE_DEFAULT
+    eintrag = tabelle.get(kanonisch.upper().strip())
+    if not eintrag:
+        return None
+    key = terminal_key(terminal_pfad)
+    return eintrag.get(key) or None

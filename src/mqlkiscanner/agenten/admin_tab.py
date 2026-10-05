@@ -239,6 +239,64 @@ def rendern(settings: dict) -> None:
 
     with st.container(border=True):
         section_header(
+            "Symbol-Ersetzungen je Broker",
+            "Kanonischer Name → broker-spezifischer Name je Terminal. "
+            "Z. B. DE40 heißt bei ActiveTrades GER40; USOIL heißt bei "
+            "Tickmill XTIUSD. Der Scanner probiert automatisch: "
+            "exakt → normalisiert → Ersetzungstabelle.",
+            help_key="settings_symbol_aliases")
+        from mqlkiscanner.symbols import SYMBOL_ALIASE_DEFAULT
+        gespeicherte = dict(settings.get("symbol_aliases")
+                            or SYMBOL_ALIASE_DEFAULT)
+        neue_aliases = {}
+        kanonische = sorted(set(list(gespeicherte.keys())
+                                + ["DE40", "USOIL", "WTI", "GER40",
+                                   "US100", "SPX500", "BITCOIN"]))
+        terminal_pfade = list(settings.get("kursdaten_terminals")
+                              or [])
+        terminal_keys = []
+        from mqlkiscanner.symbols import terminal_key as tk
+        for p in terminal_pfade:
+            k = tk(p)
+            if k and k not in terminal_keys:
+                terminal_keys.append(k)
+        if not terminal_keys:
+            terminal_keys = ["tickmilllifemql5", "activetrades003"]
+        tab_cols = st.columns([2] + [2] * len(terminal_keys))
+        with tab_cols[0]:
+            st.markdown("**Kanonisch**")
+        for i, tk_name in enumerate(terminal_keys):
+            with tab_cols[i + 1]:
+                st.markdown(f"**{tk_name[:16]}**")
+        for kanon in kanonische:
+            cols = st.columns([2] + [2] * len(terminal_keys))
+            with cols[0]:
+                st.text_input("K", value=kanon, key=f"alias_k_{kanon}",
+                              label_visibility="collapsed", disabled=True)
+            eintrag = gespeicherte.get(kanon, {})
+            zeile = {}
+            for i, tk_name in enumerate(terminal_keys):
+                with cols[i + 1]:
+                    v = st.text_input(
+                        tk_name, value=eintrag.get(tk_name, ""),
+                        key=f"alias_{kanon}_{tk_name}",
+                        label_visibility="collapsed",
+                        placeholder="—")
+                    if v.strip():
+                        zeile[tk_name] = v.strip()
+            if zeile:
+                neue_aliases[kanon] = zeile
+        alias_werte = {"symbol_aliases": neue_aliases}
+        _entwurfs_status(_geaendert(alias_werte, settings))
+        if action_button("Ersetzungen speichern",
+                         key="admin_alias_save",
+                         help_key="settings_symbol_aliases",
+                         icon=":material/save:"):
+            _speichern(alias_werte,
+                       f"{len(neue_aliases)} Symbol-Ersetzung(en) gespeichert.")
+
+    with st.container(border=True):
+        section_header(
             "Rollen konfigurieren",
             "Modell, Ausgabelimit und Aktivstatus je Rolle — GLM-5.3 ist Standard.",
             help_key="settings_agenten_rollen")

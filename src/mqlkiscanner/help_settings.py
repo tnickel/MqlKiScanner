@@ -386,4 +386,10 @@ Quelle nicht liefert (z. B. Aktien nur bei ActiveTrades), werden
 bei der nächsten versucht. GMT wird je Symbol per Preisabgleich
 erkannt und ist damit feed-unabhängig korrekt.
 """),
+    "settings_symbol_aliases": ("Symbol-Ersetzungen je Broker", """
+Ersetzungstabelle für Symbol-Namen, die bei verschiedenen Brokern
+unterschiedlich heißen. Z. B. heißt der DAX bei Tickmill DE40,
+bei ActiveTrades GER40. Der Scanner probiert automatisch:
+exakter Name → normalisierter Name → Ersetzungstabelle.
+"""),
 }
