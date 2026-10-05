@@ -683,6 +683,20 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
     (Mittel 4) `config.min_calmar_jahr(settings)` ist die EINE Lesart der
     Schwelle für Ampel, Matrix, Kriterientext, Admin und Sync (vorher
     machte `or 3.0` eine eingestellte 0 an zwei Stellen zu 3,0).
+  - ✅ **UNTERWASSER-GRAFIK + KURSLÜCKEN-AUSZAHLUNG (Nutzer-Fall KiraCat
+    2342895, 05.10., FORENSICS_VERSION 14):** Die Equity-Studie zeigte
+    ~97 % DD, MQL5 27,59 %. Ursache: 48k USD AUSZAHLUNGEN (19,5k März,
+    5k Mai, 4k Juli) bei 21,7k Trade-Gewinn — die Unterwasser-Grafiken
+    (`equity_studie_ui._chart`, `alle_signale_ui.kurve_unterwasser_chart`)
+    rechneten einen naiven laufenden Peak ohne Auszahlungs-Senkung. Jetzt
+    EINE Funktion `drawdown.unterwasser_verlauf(staende, fluesse)` mit
+    derselben Regel wie die Kennzahl (Auszahlung senkt Peak, nie unter
+    den Stand); `signal_statistik._kurve` liefert dafür `[zeit, stand,
+    fluss]`. Zusätzlicher Engine-Fehler: Beide Equity-Engines
+    (`equity_studie`, `equity_rekonstruktion`) verwarfen `flow_delta` an
+    Nicht-Messpunkten (aktive Position ohne Kurs) — eine Auszahlung in
+    einer Kurslücke zählte als DD (Test 12k→4k = 66,67 %). Jetzt wird
+    der Fluss bis zum nächsten Messpunkt mitgeführt. Nach Update: Full-Scan.
   - 🚨 **BEFUND B24 (02.10.2026, Lauf-Prüfung) — RetDD ist TOter Code.**
     Der vorige Eintrag beschreibt die *Verdrahtung* (Ampel-Zelle, Payloads,
     Prompts, Sync) korrekt — aber **die Werte werden nirgends berechnet**.

@@ -553,15 +553,22 @@ def studie(parsed, kurse, startkapital: float,
     hoch_t = None
     unter_wasser_seit = None
     unter_wasser_max_h = 0
+    offener_fluss = 0.0
     for p in punkte:
         if not p["messpunkt"]:
+            # Fluss an einem Punkt ohne Kurse nicht verwerfen, sondern am
+            # naechsten Messpunkt buchen — sonst zaehlte eine Auszahlung
+            # in einer Kursluecke als Drawdown.
+            offener_fluss += p.get("flow_delta", 0.0)
             continue
         wert = p["equity"]
+        fluss = p.get("flow_delta", 0.0) + offener_fluss
+        offener_fluss = 0.0
         # Nutzer-Regel 05.10.2026: Auszahlungen sind keine Verluste — Peak
         # um den Auszahlungsbetrag senken (nie unter den Stand), bevor der
         # Rueckfall gezaehlt wird. Einzahlungen heben Kurve und Peak.
-        if p.get("flow_delta", 0.0) < 0:
-            hoch = max(wert, hoch + p["flow_delta"]) if hoch is not None else wert
+        if fluss < 0:
+            hoch = max(wert, hoch + fluss) if hoch is not None else wert
         if hoch is None or wert > hoch:
             hoch = wert
             hoch_t = p["t"]

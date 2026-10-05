@@ -161,20 +161,22 @@ def tradeliste(trades_pfad: str, stats: dict | None) -> list[dict]:
 
 
 def _kurve(parsed, startkapital: float) -> list[list]:
-    """REALE Kontokurve [(ISO-Zeit, Stand USD)] — Trades UND Kontobewegungen
-    chronologisch (Nutzer-Regel 05.10.2026: Einzahlungen heben die Kurve,
-    Auszahlungen senken sie; im Chart als Sprünge sichtbar). Flows vor dem
-    ersten Trade stecken bereits im Startkapital — nicht doppeln."""
+    """REALE Kontokurve [(ISO-Zeit, Stand USD, Fluss USD)] — Trades UND
+    Kontobewegungen chronologisch (Nutzer-Regel 05.10.2026: Einzahlungen
+    heben die Kurve, Auszahlungen senken sie; im Chart als Sprünge
+    sichtbar). Der Fluss (0 bei Trades) lässt den Unterwasser-Chart den
+    Peak bei Auszahlungen senken. Flows vor dem ersten Trade stecken
+    bereits im Startkapital — nicht doppeln."""
     erste_open = min((t.open_time for t in parsed.trades), default=None)
-    ereignisse = [(t.close_time, t.net) for t in parsed.trades]
+    ereignisse = [(t.close_time, t.net, 0.0) for t in parsed.trades]
     if erste_open is not None:
-        ereignisse += [(b.time, b.amount) for b in getattr(parsed, "balances", [])
+        ereignisse += [(b.time, b.amount, b.amount) for b in getattr(parsed, "balances", [])
                        if b.time > erste_open]
     stand = float(startkapital)
     kurve: list[list] = []
-    for zeit, delta in sorted(ereignisse, key=lambda e: e[0]):
+    for zeit, delta, fluss in sorted(ereignisse, key=lambda e: e[0]):
         stand += delta
-        kurve.append([zeit.isoformat(sep=" "), round(stand, 2)])
+        kurve.append([zeit.isoformat(sep=" "), round(stand, 2), fluss])
     return kurve
 
 

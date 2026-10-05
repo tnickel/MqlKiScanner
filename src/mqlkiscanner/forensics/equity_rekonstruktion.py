@@ -727,9 +727,16 @@ def rekonstruiere(parsed, kurse, startkapital: float,
                       # gewachsenem Konto einen frueheren groesseren
                       # PROZENTVerlust (1000->600->2000->1500 meldete 25 %
                       # statt 40 %) — genau die Zahl, die in die Schranke geht.
+    offener_fluss = 0.0
     for _t, wert, messpunkt, flow_delta in curve:
         if not messpunkt:
-            continue   # F2: unvollstaendige Punkte sind keine Messpunkte
+            # F2: unvollstaendige Punkte sind keine Messpunkte — ihr Fluss
+            # wird aber am naechsten Messpunkt gebucht (sonst zaehlte eine
+            # Auszahlung in einer Kursluecke als Drawdown).
+            offener_fluss += flow_delta
+            continue
+        flow_delta += offener_fluss
+        offener_fluss = 0.0
         # Nutzer-Regel 05.10.2026: Auszahlungen sind keine Verluste — der
         # Peak wird um den Auszahlungsbetrag gesenkt (nie unter den Stand),
         # BEVOR der Rueckfall gezaehlt wird. Einzahlungen heben die Kurve

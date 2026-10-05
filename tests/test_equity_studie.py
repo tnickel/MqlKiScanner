@@ -11,6 +11,8 @@ from __future__ import annotations
 import datetime as dt
 from types import SimpleNamespace
 
+import pytest
+
 from mqlkiscanner import kursdaten
 from mqlkiscanner.equity_studie import ermittle_gmt_je_symbol, studie
 
@@ -580,3 +582,51 @@ def test_studie_einzahlung_vergroessert_den_ddd_naechster_verlust_zaehlt(monkeyp
     # Peak ~50k (10k + 40k), floating-Tief Stunde 4: 1 Lot x 100 x 50 = -5k
     # DD = 5.000/50.000 = 10 % — OHNE Einzahlung waeren es 5.000/10.000 = 50 %.
     assert k["equity_dd_pct"] == 10.0
+
+
+def test_studie_auszahlung_in_kursluecke_erzeugt_keinen_drawdown(monkeypatch):
+    """Nutzer-Fall KiraCat 05.10.: Auszahlung in einer Stunde ohne Kurs
+    (kein Messpunkt) darf nicht verworfen werden, sonst zaehlt sie am
+    naechsten Messpunkt als Drawdown."""
+    from mqlkiscanner import equity_studie as es
+    monkeypatch.setattr(es, "ermittle_gmt_je_symbol", lambda *_:
+                        {"offsets": {"XAUUSD": 0}, "befunde": []})
+    start = dt.datetime(2026, 1, 1)
+    bars = _bars("XAUUSD", start, 12)
+    for bar in bars:
+        bar["close"] = 2000
+    del bars[6]
+    trades = [
+        _trade("XAUUSD", "buy", start + dt.timedelta(minutes=1),
+               start + dt.timedelta(hours=2, minutes=1), 2000, 2000, pnl=2000.0),
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=4, minutes=1),
+               start + dt.timedelta(hours=10, minutes=1), 2000, 2000, pnl=0.0),
+    ]
+    parsed = SimpleNamespace(
+        trades=trades,
+        balances=[SimpleNamespace(time=start + dt.timedelta(hours=6, minutes=30),
+                                  amount=-8_000.0)],
+        pendings=[])
+    erg = es.studie(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars}), 10_000.0)
+    k = erg["kennzahlen"]
+    assert any(not p["messpunkt"] and p["flow_delta"] < 0 for p in erg["punkte"])
+    assert erg["punkte"][-1]["realisiert"] == 4_000.0
+    assert k["equity_dd_pct"] == 0.0
+
+
+def test_chart_unterwasser_senkt_peak_bei_auszahlung():
+    """Unterwasser-Grafik nach der Engine-Regel (KiraCat: −97 % aus 48k
+    Auszahlungen). Fluss an einem Nicht-Messpunkt wird mitgefuehrt."""
+    from mqlkiscanner.equity_studie_ui import _chart
+    punkte = [
+        {"t": 0, "equity": 12_000.0, "messpunkt": True, "flow_delta": 0.0},
+        {"t": 3600, "equity": None, "messpunkt": False, "flow_delta": -8_000.0},
+        {"t": 7200, "equity": 4_000.0, "messpunkt": True, "flow_delta": 0.0},
+        {"t": 10800, "equity": 3_000.0, "messpunkt": True, "flow_delta": 0.0},
+    ]
+    fig = _chart({"kennzahlen": {}, "punkte": punkte}, 10_000.0, 30)
+    unterwasser = list(fig.data[1].y)
+    assert unterwasser[0] == 0.0
+    assert unterwasser[1] is None
+    assert unterwasser[2] == 0.0
+    assert unterwasser[3] == pytest.approx(-25.0)

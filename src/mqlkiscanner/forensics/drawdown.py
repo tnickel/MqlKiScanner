@@ -25,6 +25,32 @@ from itertools import groupby
 from ..models import ParsedExport
 
 
+def unterwasser_verlauf(staende: list, fluesse: list) -> list:
+    """Unterwasser-% je Punkt (≤ 0) nach derselben Peak-Regel wie die DD-Engine.
+
+    staende: Kontostand je Punkt (None = kein Messpunkt, bleibt None);
+    fluesse: Ein-/Auszahlung, die an diesem Punkt gebucht wurde. Auszahlungen
+    senken den Peak (nie unter den Stand) — Geld, das das Konto verlässt, ist
+    kein Drawdown (Nutzer-Regel 05.10.2026). Flüsse an Nicht-Messpunkten
+    werden bis zum nächsten Messpunkt mitgeführt, nicht verworfen.
+    """
+    hoch = None
+    offen = 0.0
+    verlauf: list = []
+    for wert, fluss in zip(staende, fluesse):
+        offen += fluss or 0.0
+        if wert is None:
+            verlauf.append(None)
+            continue
+        if offen < 0 and hoch is not None:
+            hoch = max(wert, hoch + offen)
+        offen = 0.0
+        if hoch is None or wert > hoch:
+            hoch = wert
+        verlauf.append((wert / hoch - 1.0) * 100.0 if hoch > 0 else 0.0)
+    return verlauf
+
+
 def _max_drawdown(points: list[tuple], start: float) -> dict:
     """points: chronologische (zeitpunkt, delta)-Ereignisse.
 

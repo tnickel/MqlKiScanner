@@ -449,3 +449,35 @@ def test_auszahlung_erzeugt_keinen_drawdown_in_der_kurs_dd():
     assert erg["end_equity_usd"] == 4_000.0       # 10k + 2k Gewinn - 8k Auszahlung
     assert erg["equity_dd_pct"] == 0.0           # Peak-Anpassung greift
     assert "Auszahlungen erzeugen keinen Drawdown" in erg["kapitalfluesse"]
+
+
+def test_auszahlung_in_kursluecke_erzeugt_keinen_drawdown():
+    """Nutzer-Fall KiraCat 05.10.: Faellt eine Auszahlung in eine Stunde ohne
+    Kurs (kein Messpunkt), wurde ihr Fluss verworfen — der Peak blieb stehen
+    und die Auszahlung zaehlte am naechsten Messpunkt als Drawdown (12k ->
+    4k = 66 %). Jetzt wird der Fluss am naechsten Messpunkt gebucht."""
+    start = dt.datetime(2026, 1, 1)
+    # XAUUSD fehlt die Bar 08:00 (Punkt 09:00); EURUSD liefert den
+    # Rasterpunkt 09:00 trotzdem -> dort aktive Gold-Position ohne Kurs.
+    bars = [b for i, b in enumerate(_flache_bars(start, 48)) if i != 8]
+    euro = _flache_bars(start, 48, basis=1.1)
+    trades = [
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+               start + dt.timedelta(hours=3), 1999.9, 2000.0,
+               lots=1.0, pnl=2_000.0),
+        _trade("XAUUSD", "buy", start + dt.timedelta(hours=5),
+               start + dt.timedelta(hours=40), 2000.0, 2000.0,
+               lots=1.0, pnl=0.0),
+        _trade("EURUSD", "buy", start + dt.timedelta(hours=5),
+               start + dt.timedelta(hours=40), 1.1, 1.1,
+               lots=1.0, pnl=0.0),
+    ]
+    auszahlung = SimpleNamespace(time=start + dt.timedelta(hours=8, minutes=30),
+                                 amount=-8_000.0)
+    parsed = SimpleNamespace(trades=trades, balances=[auszahlung], pendings=[])
+    erg = er.rekonstruiere(parsed, kursdaten.FakeKursDaten({"XAUUSD": bars,
+                                                            "EURUSD": euro}),
+                           startkapital=10_000.0, gmt_offset_h=0)
+    assert erg["status"] == "ok", erg
+    assert erg["end_equity_usd"] == 4_000.0
+    assert erg["equity_dd_pct"] == 0.0

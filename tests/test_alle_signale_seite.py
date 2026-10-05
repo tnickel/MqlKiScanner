@@ -122,6 +122,17 @@ def test_kurve_unterwasser_chart_rechnet_rueckgang():
     assert max(unterwasser) <= 0.0
 
 
+def test_kurve_unterwasser_chart_auszahlung_ist_kein_drawdown():
+    """Nutzer-Fall KiraCat 05.10.: 48k Auszahlungen zeigten −97 %. Der
+    dritte Kurvenwert (Fluss) senkt den Peak wie in der DD-Engine."""
+    statistik = {"kurve": [["2026-01-01 10:00:00", 12_000.0, 0.0],
+                           ["2026-02-01 10:00:00", 4_000.0, -8_000.0],
+                           ["2026-03-01 10:00:00", 3_000.0, 0.0]]}
+    unterwasser = list(kurve_unterwasser_chart(statistik).data[1].y)
+    assert unterwasser[1] == 0.0
+    assert unterwasser[2] == pytest.approx(-25.0)
+
+
 def test_tabellen_zeile_ohne_statistik_zeigt_striche():
     class Fake:
         id = 1

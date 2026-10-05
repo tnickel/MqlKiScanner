@@ -14,4 +14,8 @@ Bei Änderungen an Pflichtprüfungen oder Bewertungsregeln erhöhen: Live-Befund
 # Calmar-Gate (f273287). Bestand ohne Status historie_zu_kurz/TWR waere
 # sonst als aktuell durchgegangen (10-Tage-Altdatensatz -> Gruen).
 # Alter Bestand: neu scannen.
-FORENSICS_VERSION = 13
+# 14 (05.10.2026 nachts, Nutzer-Fall KiraCat): Auszahlungen in Stunden ohne
+# vollstaendige Kurse (kein Messpunkt) wurden in der Equity-Rekonstruktion
+# verworfen — der Peak blieb stehen und die Auszahlung zaehlte als Drawdown.
+# Jetzt am naechsten Messpunkt gebucht. Alter Bestand: neu scannen.
+FORENSICS_VERSION = 14

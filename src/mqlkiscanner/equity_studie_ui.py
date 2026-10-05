@@ -109,16 +109,12 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
     x = [_als_datetime(p["t"]) for p in punkte]
     equity = [p["equity"] for p in punkte]
 
-    # Unterwasser (% unter dem laufenden Hoch) auf Messpunkten.
-    hoch = None
-    unterwasser: list[float | None] = []
-    for p in punkte:
-        if not p["messpunkt"] or p["equity"] is None:
-            unterwasser.append(None)
-            continue
-        wert = p["equity"]
-        hoch = wert if hoch is None or wert > hoch else hoch
-        unterwasser.append((wert / hoch - 1.0) * 100.0 if hoch > 0 else None)
+    # Unterwasser (% unter dem laufenden Hoch) auf Messpunkten — dieselbe
+    # Peak-Regel wie die Engine: Auszahlungen senken den Peak (Nutzer-Fall
+    # KiraCat 05.10.: ohne Anpassung zeigten 48k Auszahlungen −97 %).
+    unterwasser = drawdown.unterwasser_verlauf(
+        [p["equity"] if p.get("messpunkt") else None for p in punkte],
+        [p.get("flow_delta", 0.0) for p in punkte])
 
     fig = make_subplots(
         rows=2, cols=1, shared_xaxes=True,

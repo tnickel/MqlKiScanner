@@ -18,6 +18,7 @@ from plotly.subplots import make_subplots
 import streamlit as st
 
 from . import signal_statistik
+from .forensics import drawdown
 
 # Farbwelt wie Equity-Studie (dunkles Theme verträgt diese Töne am besten).
 _FARBE_POSITIV = "#2e7d32"
@@ -134,11 +135,10 @@ def kurve_unterwasser_chart(statistik: dict) -> go.Figure:
     kurve = statistik.get("kurve") or []
     x = [p[0] for p in kurve]
     y = [p[1] for p in kurve]
-    unterwasser: list[float] = []
-    spitze = float("-inf")
-    for stand in y:
-        spitze = max(spitze, stand)
-        unterwasser.append((stand / spitze - 1.0) * 100.0 if spitze > 0 else 0.0)
+    # Dritter Wert = Ein-/Auszahlung am Punkt; Auszahlungen senken den Peak
+    # wie in der DD-Engine (Nutzer-Fall KiraCat 05.10.: sonst −97 %).
+    unterwasser = drawdown.unterwasser_verlauf(
+        y, [p[2] if len(p) > 2 else 0.0 for p in kurve])
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
                         row_heights=[0.62, 0.38], vertical_spacing=0.08,
                         subplot_titles=("Kontokurve (Trades + Ein-/Auszahlungen)",
