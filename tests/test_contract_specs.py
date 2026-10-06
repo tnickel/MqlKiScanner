@@ -201,3 +201,40 @@ def test_class_convention_still_wins_for_known_symbols(tmp_path):
     result = exposure.run(export_mit("XAUUSD", lots=1.0))
     assert result["shock_usd"] == pytest.approx(1.0 * 50.0 * 100.0)
     assert result["per_symbol_scenarios"]["XAUUSD"]["contract_source"] == "klassenkonvention"
+
+
+# ---- Konflikt-Regel 06.10.2026 (Lunar-Fall): broker-spezifisch gewinnt ----
+def test_broker_spezifische_spec_schlaegt_cross_broker(tmp_path):
+    """DE40 global 1 EUR/Punkt (CFD) vs. TradeMaxGlobal 25 EUR/Punkt
+    (Futures, bewiesen aus 80 Trades): Am gelisteten Broker MUSS der
+    spezifische Eintrag gewinnen — sonst waere der Schock 25x zu klein."""
+    schreibe_specs(tmp_path, {
+        "DE40": {"contract_size": 1.0, "quote_currency": "EUR",
+                 "cross_broker": True, "aliases": []},
+        "DE40_TRADEMAXGLOBAL": {"contract_size": 25.0, "quote_currency": "EUR",
+                                "cross_broker": False,
+                                "brokers": ["trademaxglobal"],
+                                "aliases": ["DE40", "DAX"]},
+    })
+    assert symbols.spec_for("DE40", broker="TradeMaxGlobal-Live2")["contract_size"] == 25.0
+    # Alle anderen Broker (und ohne Brokerangabe) behalten die CFD-Konvention
+    assert symbols.spec_for("DE40", broker="Tickmill")["contract_size"] == 1.0
+    assert symbols.spec_for("DE40")["contract_size"] == 1.0
+
+
+def test_quellen_broker_fallback_in_ingest():
+    """06.10.: Vantage-/Zulu-/Robo-Monitor liefern kein Broker-Feld — die
+    Quelle bestimmt den Broker (Vantage-API = Vantage, CopyFX = RoboForex).
+    Ein geliefertes Broker-Feld (Pelican) gewinnt immer."""
+    from mqlkiscanner import ingest
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "vantage"})["broker_server"] == "vantage"
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "robo"})["broker_server"] == "roboforex"
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "zulu"})["broker_server"] == "zulu"
+    assert ingest.metrics_zu_stats(
+        {"metrics": {"Broker": "ICMarketsSC-Live15"}, "version": "pelican"}
+    )["broker_server"] == "ICMarketsSC-Live15"
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "mql5"})["broker_server"] is None

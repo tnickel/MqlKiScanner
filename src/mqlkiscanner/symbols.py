@@ -125,16 +125,28 @@ def spec_for(symbol: str, broker: str | None = None,
     def applies(entry: dict) -> bool:
         return ignore_broker or _broker_matches(entry, broker)
 
-    for cand in candidates:
-        entry = specs.get(cand)
-        if entry is not None and applies(entry):
-            return entry
-    for cand in candidates:
-        for entry in specs.values():
-            if cand in [str(a).upper() for a in (entry.get("aliases") or [])] \
-                    and applies(entry):
+    # Konflikt-Regel (Lunar-Fall 06.10.2026): Gibt es fuer denselben Symbol-
+    # Namen EINEN broker-spezifischen Eintrag (cross_broker=false) UND einen
+    # branchenweiten (cross_broker=true), gewinnt der SPEZIFISCHE — sonst
+    # waere z. B. DE40 am Futures-Broker TradeMaxGlobal (25 EUR/Punkt,
+    # bewiesen aus 80 Trades) fuer immer auf der Retail-CDD-Annahme
+    # (1 EUR/Punkt, Faktor 25 zu klein) gepinnt. Zwei Durchgaenge:
+    # erst Broker-gebundene Treffer (exakt + Alias), dann branchenweite.
+    def _finde(nur_broker_gebunden: bool) -> dict | None:
+        for cand in candidates:
+            entry = specs.get(cand)
+            if entry is not None and applies(entry) \
+                    and bool(entry.get("brokers")) == nur_broker_gebunden:
                 return entry
-    return None
+        for cand in candidates:
+            for entry in specs.values():
+                if cand in [str(a).upper() for a in (entry.get("aliases") or [])] \
+                        and applies(entry) \
+                        and bool(entry.get("brokers")) == nur_broker_gebunden:
+                    return entry
+        return None
+
+    return _finde(True) or _finde(False)
 
 
 def _broker_matches(entry: dict, broker: str | None) -> bool:

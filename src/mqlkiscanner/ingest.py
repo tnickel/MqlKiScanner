@@ -288,6 +288,20 @@ def _zahl(wert):
         return None
 
 
+# Broker-Fallback je Quellen-Version (06.10.2026): Monitore, die in metrics
+# KEIN "Broker"-Feld liefern (Vantage/Zulu), handeln an der Börse ihres
+# Anbieters — Vantage-Copy-API-Konten laufen bei Vantage, CopyFX bei
+# RoboForex. Diese Kanonisierung schaltet broker-abhängige Kontraktspecs
+# frei (MSFT: Vantage 1 vs. RoboForex 100 USD/Punkt — bewiesen 06.10.).
+# pelican/mql5 liefern den echten Server je Signal und brauchen keinen
+# Fallback.
+QUELLEN_BROKER_FALLBACK = {
+    "vantage": "vantage",
+    "robo": "roboforex",
+    "zulu": "zulu",
+}
+
+
 def metrics_zu_stats(antwort: dict | None) -> dict:
     """Metrics-Antwort → Felder der MQL5-Kennzahlenseite (doc/20 §4).
 
@@ -325,7 +339,16 @@ def metrics_zu_stats(antwort: dict | None) -> dict:
         "monitor_trade_eq_dd_pct": _zahl(metrics.get("TradeEqDrawdownPct")),
         # Broker-Kennung des Providers (B6, Intensiv-Review): häufigster
         # ServerCode über die Trades (z. B. PelicanMonitor metrics "Broker").
-        # Entcheidet cross_broker=false-Specs (USOIL: 1 vs. 100 Barrel/Lot!).
-        "broker_server": metrics.get("Broker"),
+        # Entscheidet cross_broker=false-Specs (USOIL: 1 vs. 100 Barrel/Lot!).
+        # Fallback (06.10.2026): Vantage-/Zulu-Monitor liefern KEIN Broker-
+        # Feld — dort ist der Broker durch die QUELLE bestimmt (Vantage-
+        # Copy-API-Konten laufen bei Vantage, ZuluTrade-Provider bei ihren
+        # Zulu-Brokern, CopyFX bei RoboForex). Pelican-Monitor nennt den
+        # echten Server je Signal und gewinnt; mql5 liefert ihn von der
+        # Signalseite. Ohne beide bleibt None (Specs mit cross_broker=true
+        # greifen weiterhin).
+        "broker_server": (metrics.get("Broker")
+                          or QUELLEN_BROKER_FALLBACK.get(
+                              str(antwort.get("version") or "").lower())),
         "stats_quelle": "datenquelle_metrics",
     }

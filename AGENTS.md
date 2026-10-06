@@ -593,6 +593,36 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   Definition dokumentiert. Bestands-Ranking (geom., 🟢/🟡): ImpulseNet
   5,15 · Gold Spike MT5 1,44 · Combo Profile 1,43 · S7PRO 1,09 ·
   MicroJump 1,07 · Pure Gold 1,04 … Gold Spike MT4 0,77.
+  - **KONTRAKT-KONFLIKTREGEL + QUELLEN-BROKER-FALLBACK (06.10.2026,
+    Abend-Auswertung des 05.10.-Full-Scans):** (1) `symbols.spec_for`
+    prüft jetzt in zwei Durchgängen — broker-spezifische Einträge
+    (cross_broker=false mit brokers) schlagen branchenweite
+    (cross_broker=true). Anlass Lunar #2332746 am TradeMaxGlobal-Live2:
+    Futures-Konventionen (USTEC exakt 20 USD/Punkt n=53, US500 50, US30 5,
+    DE40 25 EUR — bewiesen aus den Rohtraden), während die globale DE40-
+    CFD-Annahme 1 EUR/Punkt den Schock 25× zu klein gemacht hätte.
+    (2) `ingest.QUELLEN_BROKER_FALLBACK`: Vantage-/Zulu-Monitor liefern
+    KEIN Broker-Feld — dort ist der Broker durch die QUELLE bestimmt
+    (vantage→'vantage', robo→'roboforex', zulu→'zulu'); echtes
+    metrics.Broker (Pelican/mql5) gewinnt immer. Grund: MSFT ist bei
+    Vantage 1 USD/Bewegung/Lot, bei RoboForex 100 — ohne Broker-Trennung
+    unlösbar. (3) 30 beweisbasierte Spec-Einträge (Rückrechnung
+    Median(PnL/(Richtung×Δ×Lots)), Belegskript
+    scripts/reference/kontrakt_beweis.py): Vantage-US-Aktien 1 (ADBE …
+    SNAP, NVIDIA.24H), HKTECH 1 HKD/Punkt, SOLUSD 10, Robo-Cash-Indizes
+    1 (DE40CASH cross_broker — 2 Broker bewiesen —, US30CASH, US500CASH,
+    USTECHCASH n=266 exakt), JP225CASH 100 JPY, Robo-Öl BRENT/WTI 1000
+    Barrel, Robo-Aktien 100, ESZ23 50, TradeMaxGlobal-Futures,
+    XTIUSD_TRADEMAX 1000, XCUUSD_EXNESS 1. Geheilt: WallstreetInvest,
+    Sonrch (bis NQZ23 — Beweiswert negativ, nichts Unbewiesenes
+    eingetragen), SCR, BTC One Shot, Lunar. Ehrlich offen: ETHBCH n=1
+    unplausibel (#1096166), NQZ23 kaputter Beweiswert, Zulu-Symbol „U"
+    (3 Trades ~67 USD-Kurs = abgeschnittenes Symbol im ZuluMonitor —
+    dort fixen, nicht raten). (4) Token-Budget 5 Mio → 10 Mio (der
+    05.10.-Lauf fiel genau vor dem Portfolio-Bericht auf 0);
+    Downloader-Setting auf localhost angleichen (Divergenz-Warnung weg).
+    Wirkt alles erst mit dem nächsten Re-Scan (broker_server persistiert
+    je Lauf).
   - **TrueRetDD (Nutzer-Benennung 05.10.2026):** Die Effizienz gegen den
     ECHTEN Max-Drawdown (Equity inkl. schwebender Verluste, aus Kursen)
     heißt in ALLEN Tabellen/Details „TrueRetDD" — EINE Spalte statt

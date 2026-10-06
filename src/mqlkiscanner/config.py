@@ -92,7 +92,9 @@ DEFAULT_SETTINGS: dict = {
     "equity_rekonstruktion": True, # Equity-DD aus Kursen nachmessen (MT5-Terminal, Auto-GMT); ohne Terminal still aus
     "llm_stufe1": True,             # Massen-Profile (Flash)
     "llm_stufe2": True,             # Verdicts fuer Finalisten (starkes Modell)
-    "llm_max_total_tokens": 5_000_000,  # Token-Budget je Lauf (Abo: grosszuegig)
+    # 05.10. nachts: 5 Mio reichten fuer Full-Scan + Portfolio nicht mehr
+    # (Budget fiel genau vor dem Portfolio-Bericht auf 0) — 10 Mio.
+    "llm_max_total_tokens": 10_000_000,  # Token-Budget je Lauf (Abo: grosszuegig)
     "glm_base_url": GLM_BASE_URL,   # Coding-Plan-Endpunkt (Abo); umstellbar auf API-Endpunkt
     "model_stufe1": MODEL_STUFE1,
     "model_stufe2": MODEL_STUFE2,
