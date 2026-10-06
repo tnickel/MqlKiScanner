@@ -182,6 +182,14 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             meta_gb: dict = {}
             result.gesamtbericht = pipe.llm.chat(prompt, stufe=2, max_tokens=24576,
                                                  meta_out=meta_gb)
+            from .llm.verdict_check import validate_and_sanitize_verdict
+            bericht_sauber, llm_urteil, verdict_warnungen = validate_and_sanitize_verdict(
+                result.gesamtbericht, getattr(result, "ampel", "")
+            )
+            if verdict_warnungen:
+                for w in verdict_warnungen:
+                    log(f"  [Urteils-Validierung] {result.name}: {w}")
+            result.gesamtbericht = bericht_sauber
             result.gesamtbericht_at = datetime.now().isoformat(sep=" ", timespec="seconds")
             result.gesamtbericht_model = model_strong
             result.kurzfassung = _extract_kurzfassung(result.gesamtbericht)

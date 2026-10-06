@@ -814,7 +814,7 @@ with prompts_tab:
             "gesamtbericht": ("kandidat_json", "forensik_json", "trade_analyse", "risiko_analyse", "kriterien"),
             "portfolio": ("kandidaten_json", "kriterien"),
             "tiefenanalyse": ("kandidat_json", "forensik_json", "trades_json",
-                              "signal_name", "signal_url"),
+                              "signal_name"),
         }
         prompt_flow = {
             "trade_analyse": {

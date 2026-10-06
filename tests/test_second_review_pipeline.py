@@ -196,3 +196,40 @@ def test_portfolio_database_failure_remains_visible_and_archivable(monkeypatch):
     archived = json.loads(Path(path).read_text(encoding="utf-8"))
     assert archived["portfolio"] == summary
     assert archived["portfolio"]["model"] and archived["portfolio"]["created_at"]
+
+
+@pytest.mark.parametrize("status", [500, 502, 503, 504])
+def test_transient_server_error_retries_and_recovers(monkeypatch, status):
+    client = GlmClient("test", "test")
+    monkeypatch.setattr(client, "_headers", lambda: {})
+    post = Mock(side_effect=[_response(status), _response()])
+    wait = Mock()
+    monkeypatch.setattr("mqlkiscanner.llm.client.requests.post", post)
+    monkeypatch.setattr("mqlkiscanner.llm.client.time.sleep", wait)
+    assert client.chat("test") == "Vollständiger Bericht"
+    assert post.call_count == 2 and client.usage.requests == 1
+    wait.assert_called_once_with(5)
+
+
+def test_exhausted_server_error_raises_llm_error(monkeypatch):
+    client = GlmClient("test", "test")
+    monkeypatch.setattr(client, "_headers", lambda: {})
+    post = Mock(return_value=_response(503))
+    monkeypatch.setattr("mqlkiscanner.llm.client.requests.post", post)
+    monkeypatch.setattr("mqlkiscanner.llm.client.time.sleep", Mock())
+    with pytest.raises(LlmError, match="Serverfehler") as caught:
+        client.chat("test")
+    assert not isinstance(caught.value, LlmNoBalanceError)
+    assert post.call_count == 3
+    assert client._inflight_tokens == 0  # Reservierung wieder freigegeben
+
+
+@pytest.mark.parametrize("status", [400, 401, 404])
+def test_other_client_errors_are_not_retried(monkeypatch, status):
+    client = GlmClient("test", "test")
+    monkeypatch.setattr(client, "_headers", lambda: {})
+    post = Mock(return_value=_response(status))
+    monkeypatch.setattr("mqlkiscanner.llm.client.requests.post", post)
+    with pytest.raises(LlmError):
+        client.chat("test")
+    assert post.call_count == 1

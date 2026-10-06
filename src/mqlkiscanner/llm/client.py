@@ -152,6 +152,16 @@ class GlmClient:
                             "bereich umstellbar, ggf. dort aufladen.")
                     # 1302 bezeichnet das Parallelitätslimit, nicht fehlendes Guthaben.
                     # https://docs.z.ai/api-reference/api-code
+                    # 500/502/503/504 sind voruebergehende Serverfehler (Review
+                    # 06.10.2026): gleiche Wiederholung wie bei Drosselung, damit
+                    # ein Aussetzer nicht ein ganzes Signal kostet. Andere 4xx
+                    # bleiben sofort harte Fehler.
+                    if r.status_code in (500, 502, 503, 504):
+                        last_error = LlmError(
+                            f"GLM-Serverfehler (HTTP {r.status_code}): {r.text[:200]}")
+                        if attempt < 2:
+                            time.sleep(5 * (attempt + 1))
+                        continue
                     if r.status_code == 429 or code == "1302":
                         last_error = LlmError(
                             f"GLM-Drosselung (HTTP {r.status_code}, Code {code or 'unbekannt'}): "

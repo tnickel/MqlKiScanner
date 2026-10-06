@@ -17,8 +17,9 @@ from mqlkiscanner.pdf_reports import (render_report_pdf, report_storage_path,
 def test_vorlage_existiert_mit_pflicht_platzhaltern():
     vorlage = llm_prompts.DEFAULTS["tiefenanalyse"]
     for platzhalter in ("{kandidat_json}", "{forensik_json}", "{trades_json}",
-                        "{signal_name}", "{signal_url}"):
+                        "{signal_name}"):
         assert platzhalter in vorlage
+    assert "{signal_url}" not in vorlage
     # Der Beispiel-Anbieter/Link des Nutzers ist durch Variablen ersetzt:
     assert "Macro Overlay FX" not in vorlage
     assert "2385035" not in vorlage
@@ -26,14 +27,14 @@ def test_vorlage_existiert_mit_pflicht_platzhaltern():
     assert "{signal_name}" in llm_prompts.load_prompt("tiefenanalyse")
 
 
-def test_builder_ersetzt_name_und_url_mit_fallback():
+def test_builder_ersetzt_name_ohne_link():
     r = pipeline.ScanResult(id=2385035, name="Macro Overlay FX", platform="MT5",
                             url="", trades_path="x.csv")
     prompt = prompt_fill.build_tiefenanalyse_prompt(r, '{"meta": {"trades": 3}}')
     assert "Macro Overlay FX" in prompt
-    assert "https://www.mql5.com/en/signals/2385035" in prompt  # Standard-URL-Fallback
+    assert "mql5.com/en/signals" not in prompt  # kein Link: Modell hat kein Browsing
     assert '{"meta": {"trades": 3}}' in prompt
-    for slot in ("{signal_name}", "{signal_url}", "{trades_json}",
+    for slot in ("{signal_name}", "{trades_json}",
                  "{kandidat_json}", "{forensik_json}"):
         assert slot not in prompt
 

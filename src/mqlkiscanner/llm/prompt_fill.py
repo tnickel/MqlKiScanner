@@ -30,19 +30,25 @@ from __future__ import annotations
 import re
 
 from .client import LlmError
+from .bausteine import BAUSTEINE
 from . import prompts as llm_prompts
 
 KNOWN_PLACEHOLDERS = frozenset((
     "{kandidat_json}", "{kandidaten_json}", "{forensik_json}",
     "{trades_json}", "{trade_analyse}", "{risiko_analyse}", "{kriterien}",
-    "{signal_name}", "{signal_url}",
+    "{signal_name}",
 ))
 
 _PLACEHOLDER_RE = re.compile(r"\{[a-z_][a-z_0-9-]{1,39}\}")
 
 
 def fill_prompt(template: str, mapping: dict[str, str]) -> str:
-    """Ersetzt Vorlagen-Platzhalter, ohne eingefuegte Inhalte anzutasten."""
+    """Ersetzt Vorlagen-Platzhalter, ohne eingefuegte Inhalte anzutasten.
+
+    Die zentralen Regelbloecke (llm/bausteine.py) stehen immer zur Verfuegung;
+    ein explizit uebergebener Eintrag hat Vorrang.
+    """
+    mapping = {**BAUSTEINE, **mapping}
     tokens: dict[str, str] = {}
     out = template
     for i, (placeholder, value) in enumerate(mapping.items()):
@@ -56,8 +62,14 @@ def fill_prompt(template: str, mapping: dict[str, str]) -> str:
     return out
 
 
+def expand_bausteine(template: str) -> str:
+    """Vorlage mit eingesetzten Regelbloecken (fuer Anzeige und Tests)."""
+    return fill_prompt(template, {})
+
+
 def assert_template_covered(template: str, keys, vorlage: str) -> str:
     """Jeder platzhalterartige Ausdruck der Vorlage muss versorgt sein."""
+    keys = (*keys, *BAUSTEINE)
     unversorgt = sorted({slot for slot in _PLACEHOLDER_RE.findall(template)
                          if slot not in keys})
     if unversorgt:
@@ -125,21 +137,18 @@ def build_portfolio_prompt(eintraege_json: str, kriterien: str,
 def build_tiefenanalyse_prompt(result, trades_json: str) -> str:
     """Prompt 5 — Erweiterte KI-Analyse (manuell, starkes Modell, mit Trades).
 
-    {signal_name}/{signal_url} ersetzen den festen Anbieter-Namen bzw. Link;
-    die URL kommt vom Ergebnis und faellt auf das Standard-MQL5-Muster
-    zurueck (https://www.mql5.com/en/signals/{ID}), plattformunabhaengig.
+    {signal_name} ersetzt den festen Anbieter-Namen. Es gibt bewusst keinen
+    Link im Prompt: das Modell hat kein Browsing, eine URL wuerde nur zu
+    erfundenen Details einladen (Review 06.10.2026).
     """
     from ..pipeline import _forensik_json, _kandidat_json  # kein Kreisimport
     template = assert_template_covered(
         llm_prompts.load_prompt("tiefenanalyse"),
         ("{kandidat_json}", "{forensik_json}", "{trades_json}",
-         "{signal_name}", "{signal_url}"), "tiefenanalyse")
-    url = getattr(result, "url", "") or (
-        f"https://www.mql5.com/en/signals/{result.id}" if getattr(result, "id", None) else "")
+         "{signal_name}"), "tiefenanalyse")
     return fill_prompt(template, {
         "{kandidat_json}": _kandidat_json(result),
         "{forensik_json}": _forensik_json(result),
         "{trades_json}": trades_json,
         "{signal_name}": getattr(result, "name", "") or "Unbenanntes Signal",
-        "{signal_url}": url,
     })

@@ -190,8 +190,7 @@ Die Vorlagen bauen aufeinander auf:
 5. **ℹ️ Tiefenanalyse (gelb markiert):** die Erweiterte KI-Analyse — läuft bewusst
    NICHT im Workflow, sondern wird je Signal manuell über den Button
    „Erweiterte KI Analyse machen" in der Detailansicht gestartet, mit
-   vollständigen Trade-Daten ({trades_json}), Signalname ({signal_name}) und
-   Signal-Link ({signal_url}) im Prompt.
+   vollständigen Trade-Daten ({trades_json}), und Signalname ({signal_name}) im Prompt.
 
 Platzhalter in geschweiften Klammern werden durch Daten ersetzt. Sie müssen unverändert
 enthalten bleiben, damit die jeweilige Datengrundlage an das Modell übergeben wird.

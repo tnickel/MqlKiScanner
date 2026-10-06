@@ -2002,6 +2002,12 @@ class ScanPipeline:
         except Exception as exc:  # DB-Fehler darf den Bericht nicht verlieren
             storage_error = f"Portfolio nicht in Datenbank gespeichert: {type(exc).__name__}: {exc}"
             log(f"  {storage_error}")
+        from .llm.verdict_check import parse_and_validate_portfolio
+        cand_ampeln = {r.name: r.ampel for r in jobs}
+        p_check = parse_and_validate_portfolio(text, cand_ampeln)
+        if p_check["warnungen"]:
+            for w in p_check["warnungen"]:
+                log(f"  [Portfolio-Validierung] {w}")
         log(f"  ✓ Portfolio-Vorschlag fertig: {meta.get('zeichen', '?')} Zeichen "
             f"in {meta.get('dauer_s', '?')}s — gesamt bisher: "
             f"{self.llm.usage.total_tokens:,} Tokens")
@@ -2010,6 +2016,9 @@ class ScanPipeline:
         summary = {"text": text, "zeichen": meta.get("zeichen", len(text)),
                 "tokens": meta.get("total_tokens", self.llm.usage.total_tokens) or 0,
                 "model": model_strong,
+                "allokationen": p_check["allokationen"],
+                "summe_gewicht": p_check["summe_gewicht"],
+                "allokation_warnungen": p_check["warnungen"],
                 "created_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
                 "reason": storage_error, "storage_error": storage_error}
         try:

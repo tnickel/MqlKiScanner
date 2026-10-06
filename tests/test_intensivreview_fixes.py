@@ -408,11 +408,12 @@ def test_b12_default_prompts_sind_mit_den_dateien_synchron():
 
 def test_b16_alle_workflow_vorlagen_markieren_fremdtext():
     from pathlib import Path
+    from mqlkiscanner.llm import prompt_fill
     basis = Path("config/prompts")
     for datei in ("trade_analyse.md", "risiko_analyse.md", "gesamtbericht.md",
                   "portfolio.md", "tiefenanalyse.md"):
         text = (basis / datei).read_text(encoding="utf-8")
-        assert "FREMDTEXT" in text, datei
+        assert "FREMDTEXT" in prompt_fill.expand_bausteine(text), datei
 
 
 # ------------------------------------------------------------- B14 CLI-Lock

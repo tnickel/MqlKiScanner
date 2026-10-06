@@ -5,7 +5,7 @@ import pytest
 
 from mqlkiscanner.ampel_matrix import KRITERIEN
 from mqlkiscanner.help_content import HELP_CONTENT
-from mqlkiscanner.llm import prompts
+from mqlkiscanner.llm import prompt_fill, prompts
 
 
 @pytest.mark.parametrize("kind", ["risiko_analyse", "gesamtbericht", "portfolio"])
@@ -13,6 +13,7 @@ def test_retdd_prompt_und_default_gleiche_messbasis_und_harte_auswahl(kind):
     text = (Path(__file__).resolve().parents[1] / "config" / "prompts"
             / f"{kind}.md").read_text(encoding="utf-8")
     assert text.strip() == prompts.DEFAULTS[kind].strip()
+    text = prompt_fill.expand_bausteine(text)
     assert "{kriterien}" in text
     assert "ertrag_monat_geom_pct" in text and "max_drawdown_equity_pct" in text
     assert "inklusive Floating aus der eigenen Kurs-Rekonstruktion" in text

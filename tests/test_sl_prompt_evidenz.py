@@ -20,7 +20,7 @@ KINDS = tuple(prompts.DEFAULTS)
 
 
 def _assert_evidence_contract(text: str) -> None:
-    flat = " ".join(text.split())
+    flat = " ".join(prompt_fill.expand_bausteine(text).split())
     # Distinguish direct SL evidence from TP-only or provider claims.
     assert "dokumentierter S/L-Wert im Orderbuch" in flat
     assert "`[sl]`-Exit ist Entlastung fuer die belegten Positionen" in flat
