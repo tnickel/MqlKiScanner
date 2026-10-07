@@ -126,14 +126,14 @@ def test_running_step_glow_and_pulse():
     assert not at.exception, at.exception
     html = _stepper_html(at)
     assert html.count("mks-step--running") == 1, "laufende Station ist nicht genau eine"
-    assert 'aria-label="Station 3 von 6: Prüfen &amp; speichern · Läuft"' in html, \
+    assert 'aria-label="Station 3 von 7: Prüfen &amp; speichern · Läuft"' in html, \
         "laufende Station trägt keine Läuft-Kennung"
     # Das ganze Zentrale-Panel bekommt die Hintergrundbeleuchtung injiziert.
     panel_html = "\n".join(m.value for m in at.markdown)
     assert ".st-key-scan_control_panel" in panel_html and "mks-backlight" in panel_html, \
         "Panel-Backlight fehlt während ein Schritt läuft"
     # Nicht-laufende Stationen bleiben ohne Lauf-Status.
-    assert 'aria-label="Station 1 von 6: Signale holen · Läuft"' not in html
+    assert 'aria-label="Station 1 von 7: Signale holen · Läuft"' not in html
 
 
 def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):
