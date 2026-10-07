@@ -94,3 +94,24 @@ def test_launcher_stufe0_nur_mit_quellen(tmp_path, monkeypatch):
         client_updates.starte_alle_updates(settings)
     assert not aufgerufen, "MQL5-Modus ohne Quellen darf Stufe 0 nicht anstoßen"
     assert scan_launcher.client_updates is client_updates
+
+
+# --- Admin-Bereich (Rauch-Test der Einstellungs-Oberfläche) ---------------
+
+def test_admin_hat_stufe0_einstellungen():
+    """Der Stufe-0-Abschnitt im Admin rendert mit den gesetzten Defaults
+    (Ziel 200, 72-h-Fenster, Timeouts) — Nutzer ändert dort die Regeln."""
+    from streamlit.testing.v1 import AppTest as _AT
+    at = _AT.from_file(str(Path(__file__).resolve().parents[1]
+                           / "app_pages" / "admin.py"), default_timeout=60)
+    at.run()
+    assert not at.exception, at.exception
+    werte = [ni.value for ni in at.number_input]
+    assert 200 in werte, "Ziel-Signale-Default fehlt"
+    assert 72 in werte, "3-Tage-Fenster-Default (72 h) fehlt"
+    assert 120 in werte, "Gesamt-Timeout-Default fehlt"
+    assert 10 in werte, "Login-Wartezeit-Default fehlt"
+    # Toggle vorhanden und Standard: an
+    toggles = [tg for tg in at.toggle
+               if "Stufe 0 aktiv" in (tg.label or "")]
+    assert toggles and toggles[0].value is True
