@@ -146,13 +146,23 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
     """Kompletter Stufe-0-Ablauf für EINE Quelle. Liefert den finalen Zustand."""
     z = _neuer_zustand(quelle)
 
+    # Log-Takt (doc/23 §6.4 „dezenter Takt"): identische Nachrichten höchstens
+    # alle 30 s, echte Änderungen (Phase/Fortschritt) sofort. Der Live-Dialog
+    # bekommt JEDE Meldung (on_fortschritt) — nur die Datei wird geschont.
+    letzter_log: list = ["", 0.0]
+
     def _melde(detail: str = "", **felder) -> None:
         if detail:
             felder["detail"] = detail
         if felder:
             _setze(z, **felder)
         if log:
-            log(f"{z['kuerzel']}: {felder.get('detail') or z['detail']}")
+            nachricht = str(felder.get("detail") or z["detail"])
+            jetzt = time.monotonic()
+            if nachricht != letzter_log[0] or jetzt - letzter_log[1] >= 30.0:
+                log(f"{z['kuerzel']}: {nachricht}")
+                letzter_log[0] = nachricht
+                letzter_log[1] = jetzt
         if on_fortschritt:
             try:
                 on_fortschritt(dict(z))
@@ -183,6 +193,9 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
         if login_timeout_s is None else max(0.0, float(login_timeout_s)))
     login_seit: float | None = None
     versuche_409 = 0
+    # Einzelne Status-Poll-Fehlversuche (Netz-Schluckser) dürfen einen laufenden
+    # Client nicht sofort rot machen — erst 3 in Folge (doc/23-Review 07.10.).
+    status_fehler = 0
 
     while z["status"] not in _TERMINAL:
         if gestopft():
@@ -221,9 +234,17 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
         # Status pollen
         try:
             info = client.update_status()
+            status_fehler = 0
         except downloader_client.DownloaderError as exc:
-            _melde(f"Statusabfrage fehlgeschlagen: {exc}", status=FEHLER, fehler=str(exc))
-            break
+            status_fehler += 1
+            if status_fehler >= 3:
+                grund = f"Statusabfrage 3× fehlgeschlagen: {exc}"
+                _melde(grund, status=FEHLER, fehler=grund)
+                break
+            _melde(f"Statusabfrage fehlgeschlagen ({status_fehler}/3) — "
+                   f"versuche weiter: {exc}")
+            time.sleep(poll_s)
+            continue
         state = str(info.get("state") or "").lower()
         phase = str(info.get("phase") or "")
         done = int(info.get("done") or 0)
@@ -279,12 +300,15 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
 
 def starte_alle_updates(settings: dict, *, log=None, on_fortschritt=None,
                         gestopft=None, bereit_warten_s: float = 60.0,
-                        poll_s: float = 5.0, backoff_s: float = 30.0) -> dict[str, dict]:
+                        poll_s: float = 5.0, backoff_s: float = 30.0,
+                        timeout_s: float | None = None,
+                        login_timeout_s: float | None = None) -> dict[str, dict]:
     """Stufe 0 für ALLE aktiven Quellen, parallel. Rückgabe kuerzel → Zustand.
 
     gestopft: Callable[[], bool] (Stop-Button). on_fortschritt: Callback mit
     Kopie des Zustands je Quelle (Live-Dialog). log: Zeilen-Funktion. Die
-    Zeitparameter sind für Tests verkürzt; produktiv gelten die Defaults.
+    Zeitparameter sind für Tests verkürzt; produktiv gelten die Defaults
+    (None = aus den Settings: 120 min Gesamt, 10 min Login).
     """
     settings = settings or {}
     quellen._ensure()
@@ -305,7 +329,8 @@ def starte_alle_updates(settings: dict, *, log=None, on_fortschritt=None,
             z = _update_eine_quelle(
                 quelle, settings=settings, log=log, on_fortschritt=on_fortschritt,
                 gestopft=stop_flag, bereit_warten_s=bereit_warten_s,
-                poll_s=poll_s, backoff_s=backoff_s)
+                poll_s=poll_s, backoff_s=backoff_s, timeout_s=timeout_s,
+                login_timeout_s=login_timeout_s)
         except Exception as exc:  # eine Quelle darf nie die anderen mitreißen
             z = zustaende[str(quelle["kuerzel"])]
             _setze(z, status=FEHLER, fehler=f"{type(exc).__name__}: {exc}",

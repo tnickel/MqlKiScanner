@@ -593,3 +593,40 @@ der MqlDownloader (WebDriverManager lädt den Treiber automatisch).
 3. Sonderfälle über Status-Texte erkennbar: Robo ohne Cookie → login_required
    mit ANLEITUNG_DEALS-Hinweis; Pelican bei gescheitertem Auto-Login →
    Login-Fenster öffnet sich, Stufe 0 wartet die eingestellte Zeit.
+
+## 12. Intensiv-Review (Nutzer-Auftrag 07.10. spät) — Befunde und Fixes
+
+Jeder Schritt nochmals kritisch geprüft (Kern Zeile für Zeile, Java-Rand-
+stellen, Testabdeckung). **6 Befunde, alle behoben; 15 neue Tests.**
+
+| # | Befund | Schwere | Fix |
+|---|---|---|---|
+| 1 | Ein EINZELNER Netz-Schluckser beim Status-Poll machte einen laufenden Client sofort 🔴 (Job lief beim Client weiter) | hoch | Toleranz: erst 3 Fehlversuche in Folge → FEHLER (Zähler resetet bei Erfolg) |
+| 2 | Log-Flut: Jeder 5-s-Poll schrieb eine Zeile in scan_workflow.log (>1000 Zeilen je langem Pelican-Lauf) | mittel | Log-Takt: identische Nachrichten höchstens alle 30 s; echte Änderungen sofort; Dialog bleibt live (on_fortschritt ungefiltert) |
+| 3 | starte_alle_updates reichte timeout_s/login_timeout_s nicht durch → Gesamt-Timeout war untestbar | niedrig | Parameter durchgereicht; +Test |
+| 4 | w_run_clients (scan.py) bewertete die Bilanz aus dem CALLBACK-Stand (live) statt der Rückgabe — verlorene Callbacks hätten falsch grün/gelb gemacht | hoch | Bewertung aus ergebnisse (Rückgabe); live nur noch Dialog-Fallback |
+| 5 | DERSSELBE Fehler im scan_launcher (live_clients) — ein Total-Ausfall ohne on_fortschritt wäre STILL durchgelaufen (Test bewies es: Status „ok" statt „fehler") | hoch | Bewertung aus der Rückgabe; Launcher-Tests mit/ohne Total-Ausfall |
+| 6 | UpdateJob.melde() konnte nach login_required den Zustand zu „running" zurückholen (nachlaufender Callback) — Scanner hätte endlos gewartet | mittel | melde-Guard um LOGIN_REQUIRED in ALLEN 5 Clients + Pelican-Test |
+
+Weitere Prüfungen OHNE Befund: POST-Token-Check überall (auch MqlDownloader),
+405 für fremde POST-Pfade, OPTIONS unverändert, Path-Traversal (keine Pfade
+im Body), Credentials nicht im Git (verifiziert), Java-8-Kompatibilität
+MqlDownloader, FX-Thread-Verdrahtung Robo/Vantage/Zulu (runLater +
+beginJob/endJob), 3-Tage-Vermerk aller 5 Clients, Idle-Status vor erstem
+Job, Idle-Behandlung im Scanner-Poll (läuft wie running).
+
+Testlücken geschlossen (+15): Scanner — Gesamt-Timeout, Poll-Schluckser
+(2× toleriert / 3× Fehler), Log-Takt-Drossel, Ein-Knopf-Workflow
+(Stufe 0 VOR Station 1; Total-Ausfall bricht ab; mql5-Modus ohne Stufe 0),
+Launcher (Stoß + Total-Ausbruch, Merker-Reset). Pelican — LoginAutomat-
+Helfer testbar gemacht (Pfade parametrisierbar): credentials erkannt/
+unvollständig/fehlend, Cookie-Header-Format, melde-Guard. MqlDownloader —
+Vermerk-Helfer package-private + Roundtrip/Grenzen/defekt (0-h-Fenster
+gültig). Suiten danach: Scanner 1461 · Robo 146 · Vantage 35 · Zulu 94 ·
+MqlDownloader 90 · Pelican 79 — alles grün.
+
+Bewusst NICHT geändert (geprüft, vertretbar): datenstand=jetzt auch bei
+Katalog-Skip (Tradelisten wurden ja aktualisiert; katalogUebersprungen wird
+separat gemeldet); Pelican erlaubt parallele GUI-Tasks neben dem Update-Job
+(projektübliches Task-Modell, Store-Zugriffe synchronized); Selenium-Login
+bleibt manuelle Abnahme (Netz/GUI, doc/23 §9.3).

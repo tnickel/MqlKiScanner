@@ -60,10 +60,13 @@ class _FakeTransport:
             if url.endswith("/health"):
                 return transport.health
             if url.endswith("/update/status"):
-                if len(transport.status_seq) > 1:
-                    return transport.status_seq.pop(0)
-                return transport.status_seq[0] if transport.status_seq else _Antwort(
-                    body={"state": "idle"})
+                if not transport.status_seq:
+                    raise AssertionError("Status-Sequenz leer (Test-Fehler)")
+                naechster = (transport.status_seq.pop(0)
+                             if len(transport.status_seq) > 1 else transport.status_seq[0])
+                if isinstance(naechster, Exception):
+                    raise naechster
+                return naechster
             raise AssertionError(f"unerwarteter GET: {url}")
 
         def fake_post(url, json=None, headers=None, timeout=None):
@@ -242,6 +245,69 @@ def test_job_error_wird_fehler(monkeypatch):
 
 
 # --- Aggregat/Regel-Helfer ----------------------------------------------
+
+def test_gesamt_timeout_beendet_endlosen_job(monkeypatch):
+    """Review 07.10.: Ein Client, der ewig „running" bleibt, muss nach dem
+    Gesamt-Timeout gelb weiterlaufen lassen — kein Endlos-Warten."""
+    quelle = _quelle_an("http://rechner:8199")
+    _FakeTransport(status=[_status("running", done=1, total=200,
+                                   message="läuft und läuft …")]).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None,
+                               on_fortschritt=None, gestopft=lambda: False,
+                               bereit_warten_s=0.5, poll_s=0.2, backoff_s=0.01,
+                               timeout_s=1.0, login_timeout_s=5.0)
+    assert z["status"] == cu.TIMEOUT
+    assert "Gesamt-Timeout" in z["detail"]
+
+
+def test_status_poll_schluckser_wird_toleriert(monkeypatch):
+    """Review 07.10.: 1–2 einzelne Netz-Fehler beim Status-Poll dürfen einen
+    laufenden Client NICHT sofort rot machen (Job läuft beim Client weiter)."""
+    quelle = _quelle_an("http://rechner:8199")
+    schluckser = requests.exceptions.ConnectionError("refused")
+    _FakeTransport(status=[
+        _status("running", phase="katalog", done=1, total=200),
+        schluckser,                       # 1. Fehlversuch → weiter
+        _status("running", phase="katalog", done=2, total=200),
+        schluckser, schluckser,           # wieder standing (Zähler resetet)
+        _DONE,
+    ]).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None,
+                               on_fortschritt=None, gestopft=lambda: False,
+                               **_SCHNELL)
+    assert z["status"] == cu.FERTIG
+
+
+def test_status_poll_drei_schluckser_wird_fehler(monkeypatch):
+    quelle = _quelle_an("http://rechner:8199")
+    schluckser = requests.exceptions.ConnectionError("refused")
+    _FakeTransport(status=[schluckser, schluckser, schluckser]).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None,
+                               on_fortschritt=None, gestopft=lambda: False,
+                               **_SCHNELL)
+    assert z["status"] == cu.FEHLER
+    assert "Statusabfrage" in z["fehler"]
+
+
+def test_log_takt_drosselt_identische_wiederholungen(monkeypatch):
+    """Review 07.10.: Der 5-s-Poll darf scan_workflow.log nicht fluten —
+    identische Nachrichten höchstens alle 30 s, echte Änderungen sofort."""
+    quelle = _quelle_an("http://rechner:8199")
+    _FakeTransport(status=[
+        _status("login_required", message="wartet auf Login"),
+        _status("login_required", message="wartet auf Login"),
+        _status("login_required", message="wartet auf Login"),
+        _status("login_required", message="wartet auf Login"),
+        _DONE,
+    ]).install(monkeypatch)
+    zeilen: list[str] = []
+    z = cu._update_eine_quelle(quelle, settings={}, log=zeilen.append,
+                               on_fortschritt=None, gestopft=lambda: False,
+                               login_timeout_s=2.0, bereit_warten_s=0.5,
+                               poll_s=0.05, backoff_s=0.01, timeout_s=10.0)
+    wiederholungen = [z for z in zeilen if "wartet auf Login" in z]
+    assert len(wiederholungen) == 1, f"identische Nachricht zu oft geloggt: {zeilen}"
+    assert z["status"] == cu.FERTIG
 
 def test_alle_kritisch_nur_wenn_alles_rot():
     assert cu.alle_kritisch({"a": {"status": cu.FEHLER},

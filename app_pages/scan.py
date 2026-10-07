@@ -741,25 +741,28 @@ if command:
                                             client_updates.ABGEBROCHEN))
             w_step("clients", done=fertig, detail=client_updates.aggregat_text(live))
 
+        ergebnisse: dict[str, dict] = {}
         try:
             ergebnisse = client_updates.starte_alle_updates(
                 cfg, log=log, on_fortschritt=_fortschritt,
                 gestopft=lambda: bool(control.get("stop")))
         finally:
-            control["client_updates"] = live  # Endstand bleibt für den Dialog
-        if client_updates.alle_kritisch(live):
+            # Endstand für den Dialog: Rückgabe ist die Wahrheit; live ist
+            # nur derCallback-Stand (Review 07.10.: Bilanz nie aus live lesen).
+            control["client_updates"] = ergebnisse or live
+        if client_updates.alle_kritisch(ergebnisse):
             w_step("clients", "error",
                    detail="Alle Clients fehlgeschlagen/nicht erreichbar — "
                           "Scan ohne Quell-Daten abgebrochen (bitte Clients prüfen: startall)")
             return False
         if bool(control.get("stop")):
-            w_step("clients", "warning", detail=client_updates.aggregat_text(live))
-        elif client_updates.mit_hinweisen(live):
+            w_step("clients", "warning", detail=client_updates.aggregat_text(ergebnisse))
+        elif client_updates.mit_hinweisen(ergebnisse):
             w_step("clients", "warning",
-                   detail=client_updates.aggregat_text(live) + " — Hinweise im Kreis-Dialog")
+                   detail=client_updates.aggregat_text(ergebnisse) + " — Hinweise im Kreis-Dialog")
         else:
-            w_step("clients", "complete", done=len(live),
-                   detail=client_updates.aggregat_text(live))
+            w_step("clients", "complete", done=len(ergebnisse),
+                   detail=client_updates.aggregat_text(ergebnisse))
         return True
 
     def w_run_listen(cfg) -> list[dict]:

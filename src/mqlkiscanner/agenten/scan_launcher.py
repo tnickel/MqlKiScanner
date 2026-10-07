@@ -206,19 +206,22 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
                 pass
 
         try:
-            client_updates.starte_alle_updates(
+            ergebnis_clients = client_updates.starte_alle_updates(
                 settings, log=lambda m: log(f"  [clients] {m}"),
                 on_fortschritt=_client_fortschritt)
         except Exception as exc:  # eine Quelle darf den Lauf nicht killen
             log(f"  [clients] Stufe-0-Fehler (weiterlaufen): {exc}")
-        if client_updates.alle_kritisch(live_clients):
+            ergebnis_clients = dict(live_clients)
+        # Bilanz aus der RÜCKGABE (Review 07.10.) — live_clients ist nur der
+        # Callback-Stand und kann unvollständig sein.
+        if client_updates.alle_kritisch(ergebnisse := (ergebnis_clients or live_clients)):
             grund = ("Stufe 0: ALLE Clients fehlgeschlagen oder nicht erreichbar "
                      "— autonomer Scan abgebrochen (Clients/startall prüfen).")
             journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
                                            status="fehler",
                                            detail={"grund": grund})
             raise RuntimeError(grund)
-        log("  [clients] " + client_updates.aggregat_text(live_clients))
+        log("  [clients] " + client_updates.aggregat_text(ergebnisse))
 
     _f("listen", 0, 1, "Signallisten werden geholt …")
     journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
