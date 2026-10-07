@@ -1314,35 +1314,34 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
       dann Composite-Identität (quelle, signal_id), Betreuer auf Quellen
       umstellen, Crawler entfernen (listen_modus=quellen als Standard),
       Quell-Typen für weitere Signal-Börsen
-- [ ] Stufe 0 „Clients aktualisieren" vor jedem Scan (Konzept
-      `doc/23_stufe0-client-updates.md`, Nutzer-Auftrag 07.10.2026):
-      Scan-Start stößt über REST bei allen 5 Clients den Daten-Download an
-      (neue Endpoints POST /api/v1/update + GET /api/v1/update/status je
-      Client — alle Server sind heute GET-only), wartet auf „fertig"
-      (parallel, mit Login-/Gesamt-Timeouts), protokolliert je Quelle in
-      neuer Tabelle client_updates und zeigt Live-Status im Stufe-0-Kreis-
-      Dialog (großes Fenster, Muster Stations-Dialoge). Ziel ≥200 Signale
-      mit Abonnenten je Client (Versuch genügt — MqlDownloader liefert ~50).
-      Nutzer-Entscheidungen 07.10. abends (doc/23 §10): (a) Beste-200-Regel
-      — Pelican NICHT deckeln (keine beweisbar sortierte, neue Signale
-      einschließende Top-Liste): ALLE mit Abonnenten laden (~648); Robo/
-      Vantage/Zulu nutzen target=200 als Plattform-Top-Listenlänge.
-      (b) 3-Tage-Regel — Katalog-Load jünger als 72 h wird übersprungen
-      (EINE globale Schranke update_katalog_max_alter_h für ALLE Clients,
-      keine je-Client-Konfiguration; Tradelisten-Delta läuft immer;
-      GUI-Button erzwingt Voll-Load).
-      Pelican-Login AUTOMATISCH (Forschung 07.10. doc/23 §5): OAuth-PKCE
-      über identity.copy-trade.io (Duende/.NET 9, servergerenderte Identity-
-      Seite, stabile IDs #Email/#Password, kein Captcha; HTTP-Login bleibt
-      500 — Device-Felder füllen sich nur im echten Browser). Plan A =
-      Selenium-Firefox headless im Monitor (Muster MqlDownloader: selenium
-      4.26 + webdrivermanager, Cookie-Übernahme in session_cookie.txt,
-      persistentes Profil data/selenium_profile); Plan B WebView-Auto-Fill;
-      Plan C manueller Dialog (login_required). Zugangsdaten vom Nutzer
-      (07.10.) NUR in PelicanTrading/data/credentials.properties
-      (gitignored, nie Repo/Log/LLM — Werte stehen bewusst in keinem
-      Dokument). Robo-Cookie langlebig —
-      nur prüfen + melden. Ein-Knopf-Versprechen: Full-/Teilscan-Klick
-      reicht, autonomer scan_launcher (Sonntags-/Monats-Takte) genauso.
+- ✅ **STUFE 0 „CLIENTS AKTUALISIEREN" VOR JEDEM SCAN (07.10.2026 UMGESETZT
+      — Konzept + Umsetzungs-Changelog `doc/23`; alle 6 Projekte an einem
+      Abend, jede Suite grün):** Ein einziger Scan-Klick (Full/Teilscan)
+      stößt ZUERST per REST den Daten-Download aller Clients an und wartet
+      auf „fertig" — erst dann Station 1; auch der autonome scan_launcher
+      (Sonntags-/Monats-Takte). Protokoll v1 je Client: POST /api/v1/update
+      (target=200 Wunsch, katalogMaxAlterH=72 — EINE globale 3-Tage-Schranke
+      für ALLE Clients; 409 beschäftigt; alle anderen POST-Pfade bleiben
+      405) + GET /api/v1/update/status (idle/running/done/error/
+      login_required; ergebnis mit signaleGeliefert MIT Abonnenten +
+      datenstand). Scanner (c2c809b): client_updates.py (Bereitschaft 60 s,
+      Poll 5 s, Login-Warten 10 min, Gesamt-Timeout 120 min, 409-Backoff),
+      DB-Chronik client_updates, Settings stufe0_aktiv/update_*, Stufe-0-
+      Kreis „0" mit großem Live-Dialog, Admin-Abschnitt + Hilfe; +24 Tests.
+      Clients: Robo 7aa735e (146/146, Vorlage; Katalog→Tageslisten→Deals
+      inkrementell, Cookie fehlt/abgelaufen → login_required) · Vantage
+      c79bd39 (35/35) · Zulu bad95e3 (94/94; komplette Historie statt 5000)
+      · MqlDownloader 1c12e77 (87/87; Java 8; „Alles ausführen"-Kaskade
+      MQL4→MQL5→Konvertierung mit Status-Poller) · PelicanTrading 0da1b3c
+      (77/77; LoginAutomat = SELENIUM-Firefox headless füllt #Email/
+      #Password der IdentityServer-Seite [HTTP-Login bleibt 500 — AppsFlyer-
+      Device-Felder nur im echten Browser-JS], Cookies → session_cookie.txt,
+      persistentes Profil; Zugangsdaten NUR in gitignored
+      data/credentials.properties [vom Nutzer übergeben und angelegt; Werte
+      in keinem Repo/Dokument; ohne Datei kein Blind-Versuch]; Session-
+      Abfall im Batch → 1× Auto-Login dann Notausgang-Fenster; Katalog ALLE
+      mit Abonnenten ~648 OHNE Deckel — Beste-200-Regel doc/23 §5a).
+      Wirksam ab Client-NEUSTART (startall); Robo-Cookie langlebig, nur
+      Statusmeldung.
 - [ ] Erster voller autonomer Monat (Bestätigung der Phase-E-Abnahme
       „Monat ohne Scan-Klick" nach Oktober 2026)

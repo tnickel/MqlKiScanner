@@ -1,6 +1,6 @@
 # Konzept 23 — Stufe 0 „Clients aktualisieren" vor jedem Scan
 
-Stand: 07.10.2026 · Status: KONZEPT (zur Freigabe durch den Nutzer)
+Stand: 07.10.2026 · Status: **UMGESETZT** (gleicher Abend; Changelog §11)
 
 ## 1. Problem und Ziel
 
@@ -557,3 +557,39 @@ Nutzer klickt EINMAL „Full-Scan" (oder Teilscan, oder Sonntag kommt)
    der Downloader lädt die Plattform-Top-Liste sowieso vollständig; die
    Ergebnis-Meldung nennt die Zahl derer MIT Abonnenten (~50) — entspricht
    der Nutzer-Erwartung („versuchen was kommt").
+
+## 11. Umsetzungs-Changelog (07.10.2026 — komplett umgesetzt)
+
+Alle Commits desselben Tages; jede Suite vollständig grün.
+
+| Projekt | Commit | Inhalt |
+|---|---|---|
+| SignalKiScanner | c2c809b | `client_updates.py` (Kern: Bereitschaft 60 s → POST → Poll 5 s → Login-Warten 10 min → Gesamt-Timeout 120 min, 409-Backoff, 405/offline/stop), `downloader_client` POST/Status + Fehlerklassen, DB-Tabelle `client_updates`, Settings (stufe0_aktiv, update_ziel_signale 200, update_katalog_max_alter_h 72 global, Timeouts), scan.py Stufe 0 (Kreis „0", w_run_clients, großer Live-Dialog + Chronik), Admin-Abschnitt + Hilfe, scan_launcher + scan_fortschritt; +24 Tests |
+| RoboMonitor | 7aa735e | Vorlagen-Implementierung: UpdateJob/UpdateJobRunner (Katalog Top-N nach Abonnenten → Tageslisten inkrementell → Deals inkrementell mit geladen.json-Skip + Closing-DD; Cookie fehlt/abgelaufen → login_required), UpdateStarter, RestApiServer POST/status, App mit busy-Kopplung; +11 Tests, 146/146 |
+| VantageMonitor | c79bd39 | Struktur 1:1 von Robo; Katalog = downloadProviders + Stats-Nachzug der ersten 150 + copierDb-Snapshot; Tradelisten inkrementell mit SHA-Vergleich, TradeStore + Closing-DD; kein Login; +10 Tests, 35/35 |
+| ZuluMonitor | bad95e3 | Struktur 1:1 von Robo; Katalog = detectFlavor + downloadTopTraders nach Followern + Snapshot; Tradelisten inkrementell (Ledger) mit KOMPLETTER Historie statt GUI-Default 5000; kein Login; +10 Tests, 94/94 |
+| MqlDownloader | 1c12e77 | Java-8-kompatibel (kein record/switch-Ausdruck); Kaskade = „Alles ausführen" (MQL4 → MQL5 → Konvertierung, Selenium-Login automatisch) mit Status-Poller; Ergebnis = Signale MIT Abonnenten; 3-Tage-Vermerk config/update_state.json; +5 Tests, 87/87 |
+| PelicanTrading | 0da1b3c | LoginAutomat (Plan A §5.2): Selenium-Firefox headless, #Email/#Password, URL-Erfolgscheck, Cookies → session_cookie.txt, persistentes Profil; Credentials nur in gitignored data/credentials.properties (angelegt; ohne Datei kein Blind-Versuch); Kaskade login → katalog (ALLE, kein Deckel; signaleGeliefert = mit Abonnenten) → tradelisten (Merge); Session-Abfall im Batch → 1× Auto-Login, dann Notausgang-Fenster; +10 Tests, 77/77 |
+
+**Bewusste Abweichungen vom Konzept:**
+- Zulu lädt Tradelisten mit KOMPLETTER Historie statt GUI-Default 5000 —
+  headless muss fest wählen; tiefste Historie = beste Forensik-Basis, der
+  Ledger-Skip verhindert Wiederholungslast.
+- Pelican behandelt Session-Abfall MITTEN im Tradelisten-Batch mit EINEM
+  erneuten Auto-Login (Konzept sah nur den Vorcheck vor) — danach
+  Notausgang; verhindert Batch-Verlust bei kurzlebigen Sessions.
+- MqlDownloader: `tradelisten=false` ist dort sinnlos (Katalog+Trades sind
+  EIN Download) — Parameter wird ignoriert, im Code dokumentiert.
+
+**Wirksam ab Client-NEUSTART** (startall startet die neuen Builds); die
+Scanner-Seite wirkt sofort. Pelicans Auto-Login nutzt denselben Firefox wie
+der MqlDownloader (WebDriverManager lädt den Treiber automatisch).
+
+**E2E-Abnahme (manuell, Nutzer):**
+1. startall.bat → im Scanner „Full-Scan" → Stufe-0-Kreis anklicken: alle
+   5 Clients laufen live; Pelican meldet „Login automatisch ok".
+2. Direkt danach erneut starten → 3-Tage-Regel: Katalog-Phasen übersprungen
+   („Katalog aktuell genug"), nur Tradelisten-Delta — deutlich schneller.
+3. Sonderfälle über Status-Texte erkennbar: Robo ohne Cookie → login_required
+   mit ANLEITUNG_DEALS-Hinweis; Pelican bei gescheitertem Auto-Login →
+   Login-Fenster öffnet sich, Stufe 0 wartet die eingestellte Zeit.
