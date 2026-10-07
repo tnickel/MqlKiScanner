@@ -1314,5 +1314,20 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
       dann Composite-Identität (quelle, signal_id), Betreuer auf Quellen
       umstellen, Crawler entfernen (listen_modus=quellen als Standard),
       Quell-Typen für weitere Signal-Börsen
+- [ ] Stufe 0 „Clients aktualisieren" vor jedem Scan (Konzept
+      `doc/23_stufe0-client-updates.md`, Nutzer-Auftrag 07.10.2026):
+      Scan-Start stößt über REST bei allen 5 Clients den Daten-Download an
+      (neue Endpoints POST /api/v1/update + GET /api/v1/update/status je
+      Client — alle Server sind heute GET-only), wartet auf „fertig"
+      (parallel, mit Login-/Gesamt-Timeouts), protokolliert je Quelle in
+      neuer Tabelle client_updates und zeigt Live-Status im Stufe-0-Kreis-
+      Dialog (großes Fenster, Muster Stations-Dialoge). Ziel ≥200 Signale
+      mit Abonnenten je Client (Versuch genügt — MqlDownloader liefert ~50).
+      Pelican-Login AUTOMATISCH: Credentials nur lokal in
+      PelicanTrading/data/credentials.properties (gitignored, nie Repo/
+      Log/LLM), WebView-Auto-Fill im bestehenden Login-Dialog, Fallback
+      manuelle Eingabe (login_required-Status). Robo-Cookie langlebig —
+      nur prüfen + melden. Ein-Knopf-Versprechen: Full-/Teilscan-Klick
+      reicht, autonomer scan_launcher (Sonntags-/Monats-Takte) genauso.
 - [ ] Erster voller autonomer Monat (Bestätigung der Phase-E-Abnahme
       „Monat ohne Scan-Klick" nach Oktober 2026)
