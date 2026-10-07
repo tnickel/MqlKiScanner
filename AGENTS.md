@@ -1328,12 +1328,20 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
       einschließende Top-Liste): ALLE mit Abonnenten laden (~648); Robo/
       Vantage/Zulu nutzen target=200 als Plattform-Top-Listenlänge.
       (b) 3-Tage-Regel — Katalog-Load jünger als 72 h wird übersprungen
-      (Setting update_katalog_max_alter_h, Default 72; Tradelisten-Delta
-      läuft immer; GUI-Button erzwingt Voll-Load).
-      Pelican-Login AUTOMATISCH: Credentials nur lokal in
-      PelicanTrading/data/credentials.properties (gitignored, nie Repo/
-      Log/LLM), WebView-Auto-Fill im bestehenden Login-Dialog, Fallback
-      manuelle Eingabe (login_required-Status). Robo-Cookie langlebig —
+      (EINE globale Schranke update_katalog_max_alter_h für ALLE Clients,
+      keine je-Client-Konfiguration; Tradelisten-Delta läuft immer;
+      GUI-Button erzwingt Voll-Load).
+      Pelican-Login AUTOMATISCH (Forschung 07.10. doc/23 §5): OAuth-PKCE
+      über identity.copy-trade.io (Duende/.NET 9, servergerenderte Identity-
+      Seite, stabile IDs #Email/#Password, kein Captcha; HTTP-Login bleibt
+      500 — Device-Felder füllen sich nur im echten Browser). Plan A =
+      Selenium-Firefox headless im Monitor (Muster MqlDownloader: selenium
+      4.26 + webdrivermanager, Cookie-Übernahme in session_cookie.txt,
+      persistentes Profil data/selenium_profile); Plan B WebView-Auto-Fill;
+      Plan C manueller Dialog (login_required). Zugangsdaten vom Nutzer
+      (07.10.) NUR in PelicanTrading/data/credentials.properties
+      (gitignored, nie Repo/Log/LLM — Werte stehen bewusst in keinem
+      Dokument). Robo-Cookie langlebig —
       nur prüfen + melden. Ein-Knopf-Versprechen: Full-/Teilscan-Klick
       reicht, autonomer scan_launcher (Sonntags-/Monats-Takte) genauso.
 - [ ] Erster voller autonomer Monat (Bestätigung der Phase-E-Abnahme

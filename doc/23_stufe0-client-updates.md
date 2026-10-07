@@ -126,9 +126,12 @@ Request-Body (JSON, alle Felder optional):
   (inkrementell: bereits geladene aktualisieren/mergen, neue Top-Signale
   nachziehen). `false` = nur Katalog + Abonnenten-Snapshot (schneller Modus).
 - `katalogMaxAlterH` (int, Default 72): **3-Tage-Regel (Nutzer-Entscheid
-  07.10. abends, ersetzt „immer frisch")** — ist der letzte erfolgreiche
-  Katalog-Load des Clients jünger als dieses Fenster, überspringt der
-  Client die Katalog-Phase und meldet „Katalog aktuell genug (Stand …)".
+  07.10. abends, ersetzt „immer frisch")** — EINE globale Schranke für ALLE
+  Clients gleichermaßen (der Scanner übergibt denselben Wert an jeden
+  Client; bewusst KEINE je-Client-Konfiguration — Nutzer-Entscheid
+  07.10.): Ist der letzte erfolgreiche Katalog-Load des Clients jünger
+  als dieses Fenster, überspringt der Client die Katalog-Phase und meldet
+  „Katalog aktuell genug (Stand …)".
   Die Tradelisten-Phase läuft davon UNBERÜHRT weiter (inkrementelles
   Delta — sonst arbeitete der Scan auf alten Trades). Login-Phase nur
   bei Bedarf. Der Client hält den Zeitstempel des letzten Katalog-Loads
@@ -201,53 +204,106 @@ Nach `state=done` prüft der Scanner selbst nach (misstraut dem Job):
 Damit deckt Stufe 0 auch den Fall ab, dass ein Client „fertig" meldet,
 aber auswendig nichts Neues geschrieben hat (z. B. leerer API-Dialog).
 
-## 5. Pelican-Login automatisieren (Nutzer-Freigabe 07.10.2026)
+## 5. Pelican-Login voll automatisieren (Forschung 07.10.2026 abends)
 
 **Bisher:** Login-Dialog ist ein JavaFX-Dialog mit WebView auf
 `https://pelican.copy-trade.io/` — der Nutzer tippt E-Mail/Passwort; das
 Tool liest danach die Session-Cookies aus dem CookieManager und persistiert
-sie in `data/session_cookie.txt`. Reine HTTP-Logins scheitern an
-httpOnly/User-Agent/Anti-Scripting (deshalb die alte Regel „nicht
-automatisierbar" — sie galt für den Ansatz von außen, nicht für den
-eingebetteten Browser).
+sie in `data/session_cookie.txt` (Format `name=value` je Zeile).
 
-**Neu — dreiteilig:**
+### 5.1 Forschungsergebnis: Wie der Login technisch aufgebaut ist
 
-1. **Credentials lokal hinterlegen**: Datei
-   `PelicanTrading/data/credentials.properties` (`user=…`, `password=…`).
-   - Liegt in `data/` und damit außerhalb von Git (bereits ignoriert);
-     zusätzlich explizit in `.gitignore` absichern.
-   - **Niemals** im Scanner-Repo, niemals im LLM-Kontext, niemals geloggt
-     (AGENTS-Regel „Zugangsdaten nie in Code/Repo").
-   - Einmalige Befüllung: Der Nutzer übergibt die Daten der umsetzenden
-     Session (wie angeboten); alternativ trägt er sie selbst in die Datei
-     ein oder über einen kleinen Passwort-Dialog im Monitor
-     („Zugangsdaten hinterlegen", speichert in dieselbe Datei). Klartext
-     lokal ist der Heim-LAN-Sicherheitslinie (H2a, 04.10.) folgend ok.
-2. **Auto-Fill im WebView**: Der Login-Dialog (derselbe Codepfad
-   `zeigeLoginDialog`) bekommt nach erfolgreichem Page-Load einen
-   `engine.executeScript(...)`-Schritt: E-Mail-/Passwort-Felder über
-   Selektoren (`input[type=email]`, `input[type=password]` o. ä.)
-   ausfüllen — mit echten `input`/`change`-Events (dispatchEvent), damit
-   Framework-basierte Validierung anspringt — und danach Submit
-   (form.submit / Klick auf den Submit-Button). Läuft alles im FX-Thread
-   (`Platform.runLater`); das Fenster kann minimiert im Hintergrund sein.
-3. **Erfolg messen, nicht glauben**: Nach der Navigation prüft der Monitor
-   `client.hasCookie()` —Cookie da → `speichereCookies()`, Dialog schließt,
-   Update-Job läuft mit Phase `katalog` weiter. Kein Cookie nach Timeout
-   (30 s) → **Fallback-Kaskade**: (a) zweiter Füllversuch mit generischeren
-   Selektoren, (b) Fenster sichtbar in den Vordergrund + Status
-   `login_required` an den Scanner („Auto-Ausfüllen gescheitert — bitte
-   einmal tippen"). Der manuelle Weg bleibt also als Notausgang erhalten;
-   im Normalfall (DOM stabil) läuft alles ohne Zutun.
+Untersucht mit echtem Seitenabruf (GET, 07.10.2026):
 
-**Risiko, ehrlich benannt:** Ändert Pelican die Login-Seitenstruktur,
-bricht der Auto-Fill-Selektor. Konsequenz ist nur der Fallback auf die
-manuelle Eingabe (wie heute), nie ein stiller Ausfall — der Status-Endpoint
-meldet `login_required` mit Grund. Der Selektor-Satz wird zentral in einer
-Konstanten gepflegt und kann ohne Neukompilierung? (Nein — Java: Konstante
-im Code, Anpassung = kleiner Patch; im Konzept akzeptiert, DOM-Änderungen
-sind selten).
+- **Zwei-Stufen-OAuth:** `pelican.copy-trade.io` leitet auf den
+  IdentityProvider `identity.copy-trade.io` weiter (Duende IdentityServer
+  auf .NET 9): Authorization-Code-Flow **mit PKCE** (S256) und BFF-
+  Callback (`/bff/login-callback`, form_post). Die Passwortseite gehört
+  dem IdentityServer, nicht der App.
+- **Die Passwortseite ist servergerendertes ASP.NET-Core-Identity-HTML
+  mit STABILEN Feld-IDs** (keine SPA — DOM-Bruch-Risiko klein):
+  E-Mail `input#Email` (`type=email`), Passwort `input#Password`
+  (`type=password`), Hidden-Felder `ReturnUrl`, `Tenant=Pelican`,
+  `HasRegistration`, `__RequestVerificationToken` (CSRF) sowie
+  **`AfDeviceId`/`AdId`/`OsVersion`/`OsPlatform` — ohne JavaScript LEER**
+  (AppsFlyer-Device-Tracking, füllt sich erst im echten Browser per JS).
+  Formular: `method=post` auf die Seite selbst.
+- **Kein Captcha** (kein reCAPTCHA/hCaptcha/Turnstile im HTML).
+- **Warum der reine HTTP-Login 500 bleibt** (LoginManager-Kommentar,
+  verifiziert: „auch mit vollständigen Browser-Headern"): Ohne echte
+  JS-Ausführung bleiben die Device-Felder leer bzw. Fingerprint/JS-Signale
+  fehlen — serverseitige Bot-Erkennung. Scripted POST ist DAUERHAFT
+  ausgeschlossen; ein **echter Browser** (JS läuft, Felder füllen sich
+  von selbst) verhält sich aus Serversicht wie manuelles Tippen.
+
+### 5.2 Lösung: Plan-Kaskade — Plan A Selenium (Nutzer-Verdacht bestätigt)
+
+**Plan A — Selenium-Firefox im PelicanMonitor (Muster vom MqlDownloader):**
+Der MqlDownloader loggt sich seit jeher per Selenium in mql5.com ein
+(`SignalDownloader.performLogin`: Felder per `By.id`, Button-Klick per
+JS-Executor, Erfolg per URL-Check; `selenium-java` 4.26.0 +
+`webdrivermanager` 5.6.3). Dasselbe Rezept auf die Identity-Seite, mit den
+bewiesenen Selektoren:
+
+1. `driver.get("https://pelican.copy-trade.io/")` — der Firefox folgt dem
+   Redirect zum IdentityServer automatisch; PKCE/state/nonce übernimmt der
+   Browser, wir rechnen den OAuth-Flow NICHT selbst.
+2. Warten auf `#Email` → `sendKeys` Zugangsdaten; `#Password` →
+   `sendKeys`; Submit (Selektor-Kaskade wie `findLoginButton`).
+3. **Erfolg messen, nicht glauben:** warten, bis die URL zurück auf
+   `pelican.copy-trade.io` zeigt (BFF-Callback durch, kein `/connect/`
+   mehr). Timeout 30 s → `login_required`.
+4. **Cookies übernehmen:** `driver.manage().getCookies()` der Domain
+   `pelican.copy-trade.io` → als `name=value`-Zeilen in
+   `data/session_cookie.txt` (exakt das LoginManager-Format) + direkt in
+   den laufenden CookieManager injizieren und per
+   `aktualisiereClientCookie()` an den PelicanClient geben; Selenium
+   beenden.
+5. **Persistentes Firefox-Profil** `data/selenium_profile`: die Device-
+   Erkennung (AppsFlyer) sieht denselben „Browser" wie beim letzten Login
+   — weniger Bot-Verdacht, stabilere Sessions.
+
+Warum Selenium statt WebView zuerst: Der Update-Job soll VOLLautomatisch
+laufen — auch beim autonomen Sonntags-/Monatsscan. Selenium läuft
+**headless** (Firefox `-headless`) ganz ohne Fenster und unabhängig vom
+JavaFX-Thread; der WebView-Weg wäre an FX-Application-Thread und ein
+(minimiertes) Fenster gebunden. Firefox + automatischen Treiber-Download
+bringt der Rechner schon mit (MqlDownloader nutzt beides täglich).
+
+**Plan B — WebView-Auto-Fill (falls Selenium/Treiber streikt):** Der
+bestehende Login-Dialog füllt nach Page-Load per `engine.executeScript`
+`#Email`/`#Password` mit echten input/change-Events und submittiert. Der
+WebView IST ein echter Browser mit JS (Device-Felder füllen sich) — aus
+Serversicht identisch zum manuellen Tippen. Nachteil: FX-Thread + Fenster.
+
+**Plan C — manuell (Notausgang, wie heute):** Auto-Login scheitert →
+Login-Fenster sichtbar in den Vordergrund, Client meldet `login_required`,
+Stufe 0 zeigt „wartet auf Login-Eingabe" (Timeout 10 min). Kein stiller
+Ausfall — der heutige Weg bleibt immer erreichbar.
+
+**Risiko, ehrlich benannt:** Ändert Pelican die Login-Seite (andere Feld-
+IDs, Captcha nachrüsten), bricht Plan A/B — Konsequenz ist nur der
+Fallback auf manuelle Eingabe (Plan C), nie ein stiller Ausfall; der
+Status-Endpoint meldet `login_required` mit Grund. ASP.NET-Identity-IDs
+sind historisch stabil; die Selektoren liegen als Konstante im Code
+(Patch = kleine Änderung, DOM-Änderungen sind selten).
+
+### 5.3 Zugangsdaten: nur lokal, nie im Git (Regel bleibt)
+
+- Ablageort: `PelicanTrading/data/credentials.properties`
+  (`user=…`, `password=…`) — im `data/`-Verzeichnis des Monitors, per
+  .gitignore gesichert, zusätzlich explizit ignoriert.
+- **Niemals** im Git (auch nicht in Doku/Commits — dieses Konzept nennt
+  bewusst KEINE Werte), niemals im Log, niemals im LLM-Kontext, nie im
+  Scanner-Repo. Heim-LAN-Sicherheitslinie H2a (04.10.): Klartext lokal ok.
+- Befüllung: Der Nutzer hat die Zugangsdaten der umsetzenden Session
+  übergeben (07.10.); sie werden ausschließlich in diese Datei geschrieben.
+  Alternativ eigene Eingabe in die Datei oder ein kleiner
+  „Zugangsdaten hinterlegen"-Dialog im Monitor (maskierte Passwort-Eingabe,
+  speichert in dieselbe Datei).
+- Keine Credentials-Datei → Plan A/B melden ehrlich `login_required` mit
+  Hinweis „Zugangsdaten hinterlegen" (kein Blind-Versuch mit leeren
+  Feldern — kein Kontosperr-Risiko durch Fehlversuche).
 
 **RoboForex (bewusst ohne Auto-Login):** Cookie ist langlebig
 (Nutzer-Erfahrung). Stufe 0 prüft vor dem Deal-Download `client.hatCookies()`
@@ -301,7 +357,8 @@ starte_alle_updates(settings, log, on_fortschritt) -> dict[str, ClientUpdateErge
   2. `POST /update` mit `target=settings["update_ziel_signale"]`
      (Default 200, Admin editierbar) und
      `katalogMaxAlterH=settings["update_katalog_max_alter_h"]`
-     (Default 72 = 3-Tage-Regel, Admin editierbar); 409-Behandlung mit
+     (Default 72 = 3-Tage-Regel, Admin editierbar, EINE globale
+     Einstellung für alle Clients); 409-Behandlung mit
      Backoff. Der Client meldet im Status, ob er die Katalog-Phase
      übersprungen hat („Katalog aktuell genug, Stand …") — Stufe 0 zeigt
      das als normalen Erfolg, nicht als Warnung.
@@ -457,9 +514,15 @@ Nutzer klickt EINMAL „Full-Scan" (oder Teilscan, oder Sonntag kommt)
    Pelican (Reihenfolge: erst die ohne Login). Je Projekt 1–2 Java-Tests
    (Update-Job gegen Fake-Client/Temp-Verzeichnis; 405 bleibt für
    unbekannte POST-Pfade; Token gilt auch für POST).
-3. **Pelican Auto-Login**: credentials.properties + WebView-Auto-Fill +
-   Erfolgsmessung + Fallback-Kaskade; Test mit geladener Seite (manueller
-   Abnahmeschritt, Selenium-frei).
+3. **Pelican Auto-Login**: `data/credentials.properties` (gitignored) +
+   Selenium-Firefox-Login nach MqlDownloader-Muster (Selektoren `#Email`/
+   `#Password`, URL-Erfolgscheck, Cookie-Übernahme in
+   `data/session_cookie.txt`, persistentes Profil `data/selenium_profile`);
+   Plan B WebView-Auto-Fill; Plan C manueller Dialog. Abnahme: ein
+   echter Update-Lauf mit Auto-Login (headless), ein Lauf mit falschen
+   Zugangsdaten (muss sauber `login_required` melden), ein Lauf ohne
+   Credentials-Datei (muss „Zugangsdaten hinterlegen" melden, kein
+   Blind-Versuch).
 4. **GUI**: Stufe 0 in scan.py (STEPS-Eintrag mit Nummer 0, `w_run_clients`,
    Dialog, Fragment-Anbindung, Expertenpfade ohne Stufe 0), Admin-Settings
    (update_ziel_signale=200, update_katalog_max_alter_h=72,
@@ -482,13 +545,14 @@ Nutzer klickt EINMAL „Full-Scan" (oder Teilscan, oder Sonntag kommt)
    §5a). Begründung des Nutzers: „Es könnten ja neue Signale mit
    Abonnenten dabei sein — da könnten Top-Kandidaten bei sein."
    Kosten-Bremse dafür ist die 3-Tage-Regel (Punkt 2).
-2. **Katalog-Loads: 3-Tage-Regel statt „immer frisch" (72 h).** Ein
+2. **Katalog-Loads: 3-Tage-Regel statt „immer frisch" (72 h), GLOBAL.** Ein
    Katalog-Load, der jünger als 72 h ist, wird bei Stufe 0 übersprungen
    („einmal alle 3 Tage laden reicht"; erweitert die 24-h-Regel der
-   Pelican-UI, die damit als Grundlage diente). Fenster einstellbar
-   (`update_katalog_max_alter_h`, Default 72). Tradelisten-Delta läuft
-   weiterhin bei jedem Lauf (SHA/„nur neue"). Erzwungener Voll-Load über
-   den GUI-Button des Clients bleibt möglich.
+   Pelican-UI). **EINE Schranke für alle Clients gleich** — eine
+   Scanner-Einstellung (`update_katalog_max_alter_h`, Default 72), KEINE
+   je-Client-Konfiguration (Nutzer-Entscheid 07.10.). Tradelisten-Delta
+   läuft weiterhin bei jedem Lauf (SHA/„nur neue"). Erzwungener Voll-Load
+   über den GUI-Button des Clients bleibt möglich.
 3. MqlDownloader `target` (informativ): wirkt nur auf die Listen-Limits —
    der Downloader lädt die Plattform-Top-Liste sowieso vollständig; die
    Ergebnis-Meldung nennt die Zahl derer MIT Abonnenten (~50) — entspricht
