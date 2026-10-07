@@ -102,6 +102,12 @@ DEFAULT_SETTINGS: dict = {
     "tradeserver_base_url": "",     # MqlTradeMonitor-Sync-Ziel (leer = kein Sync möglich)
     "rest_api_enabled": True,       # schreibgeschütztes REST-Interface für MqlRealMonitor
     "rest_api_port": 8611,          # lauscht auf 127.0.0.1; Token optional (secrets_store)
+    # ── Stufe 0 „Clients aktualisieren" (doc/23, Nutzer-Auftrag 07.10.) ─
+    "stufe0_aktiv": True,           # Full-/Teilscan aktualisieren zuerst alle Clients
+    "update_ziel_signale": 200,     # Wunsch je Client (Versuch genügt — MqlDownloader ~50)
+    "update_katalog_max_alter_h": 72,  # EINE globale 3-Tage-Schranke für ALLE Clients
+    "update_timeout_min": 120,      # Gesamt-Timeout je Client, danach 🟡 Weiterlauf
+    "update_login_timeout_min": 10, # Warten auf manuelle Login-Eingabe (Notausgang)
     # ── Agentenbetrieb (doc/19; Phasen A–C) ──────────────────────────
     "agenten_enabled": False,       # Freigabe: darf der Daemon Läufe ausführen?
     "agenten_start_zeit": "06:30",  # täglicher Dirigent-Takt (werktags)

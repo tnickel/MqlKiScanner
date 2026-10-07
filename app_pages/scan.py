@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import config, db, downloader_sync, fix_signale, pipeline, scan_state, scan_worker, secrets_store
+from mqlkiscanner import client_updates, config, db, downloader_sync, fix_signale, pipeline, quellen, scan_state, scan_worker, secrets_store
 from mqlkiscanner.app_ui import (
     render_downloader_docs_panel,
     render_portfolio_pdf_viewer,
@@ -42,7 +42,13 @@ apply_theme()
 
 # Interne Status-Schritte (IDs stabil für Pipeline/Tests). Letztes Element =
 # Laien-Beschreibung, die in der Stationskarte mit angezeigt wird.
+# „clients" ist STUFE 0 (doc/23): Vor dem eigentlichen Workflow per REST die
+# Daten der angeschlossenen Clients aktualisieren — der Kreis zeigt 0, die
+# Stationen 1–6 behalten ihre Nummern (Nutzer-Sprache „Stufe 0").
 STEPS = (
+    ("clients", "Clients aktualisieren", "cloud_sync", "Quellen",
+     "Daten der angeschlossenen Clients (MqlDownloader, Pelican, RoboForex, "
+     "Vantage, Zulu) per REST auf den neuesten Stand bringen"),
     ("listen", "Signale holen", "cloud_download", "Seiten",
      "Signallisten und Handelsdaten von MQL5 laden"),
     ("kandidaten", "Auswahl treffen", "filter_list", "Signale",
@@ -56,6 +62,9 @@ STEPS = (
     ("downloader", "Abgleich", "sync", "Signale",
      "Abonnenten-Verläufe und Testreport-PDFs aus dem MqlDownloader holen — nie eine Neubewertung"),
 )
+# Angezeigte Nummer im Kreis: Stufe 0 bekommt „0", Stationen zählen ab 1.
+def _kreis_nummer(position: int, sid: str) -> int:
+    return 0 if sid == "clients" else position - 1
 STATES = {
     "pending": ("Wartet", "gray", "schedule"),
     "running": ("Läuft", "blue", "autorenew"),
@@ -256,8 +265,12 @@ def _live_status() -> None:
     dot = {"running": "running", "complete": "complete",
            "warning": "warning", "error": "error"}.get(status, "")
     if status == "running":
-        headline = (f"Station {laufend[1]} von {len(STEPS)} · {laufend[2]}"
-                    if laufend else "Workflow startet …")
+        if laufend and laufend[0] == "clients":
+            headline = f"Stufe 0 · {laufend[2]}"
+        elif laufend:
+            headline = f"Station {laufend[1] - 1} von {len(STEPS) - 1} · {laufend[2]}"
+        else:
+            headline = "Workflow startet …"
     else:
         headline = {
             "idle": "Bereit für die Analyse",
@@ -349,7 +362,8 @@ def _live_status() -> None:
     for nr, (sid, title, _icon, _unit, beschreibung) in enumerate(STEPS, 1):
         step = steps_state[sid]
         payload.append({
-            "nr": nr, "sid": sid, "title": title, "status": step["status"],
+            "nr": _kreis_nummer(nr, sid), "sid": sid, "title": title,
+            "status": step["status"],
             "label": STATES[step["status"]][0],
             "meta": step.get("detail") if step["status"] != "pending" else beschreibung,
             "frac": _step_fraction(step) if step["status"] == "running" else None,
@@ -380,8 +394,10 @@ def _live_status() -> None:
     # sichtbar und nennt die laufende Station (Fragment tickt jede Sekunde,
     # also verschwindet das Badge automatisch mit dem Laufende).
     if status == "running" and laufend:
+        titel = ("Stufe 0" if laufend[0] == "clients"
+                 else f"Station {laufend[1] - 1}")
         st.markdown(aktivitaets_html(
-            f"Station {laufend[1]}: {laufend[2]} läuft …"), unsafe_allow_html=True)
+            f"{titel}: {laufend[2]} läuft …"), unsafe_allow_html=True)
 
     # Lauf beendet? Einmal die GANZE Seite neu laden: Ergebnisübernahme
     # (Session) + Endstand (Tabelle, Portfolio) rendern.
@@ -686,6 +702,64 @@ if command:
         if not control.get("stop"):
             return False
         w_step(sid, "skipped", detail="Abbruch per Stop-Button vor dieser Station")
+        return True
+
+    def w_run_clients(cfg) -> bool:
+        """Stufe 0 (doc/23): Daten der REST-Clients aktualisieren, bevor der
+        eigentliche Workflow beginnt. Rückgabe False = Abbruch (alle Clients
+        ausgefallen — der Scan wäre reine Alt-Daten-Verarbeitung)."""
+        if w_skip_if_stopped("clients"):
+            return True
+        if not bool(cfg.get("stufe0_aktiv", True)):
+            w_step("clients", "skipped",
+                   detail="Stufe 0 ausgeschaltet (Admin → MqlDownloader → Datenquellen)")
+            return True
+        modus = str(cfg.get("listen_modus") or "mql5").strip().lower()
+        aktive = db.list_quellen(nur_aktiv=True)
+        if modus == "mql5":
+            w_step("clients", "skipped",
+                   detail="Nur MQL5-Direkt konfiguriert (listen_modus=mql5) — "
+                          "der Scanner lädt seine Daten selbst, keine Clients nötig")
+            return True
+        if not aktive:
+            w_step("clients", "skipped",
+                   detail="Keine aktive Datenquelle konfiguriert — nichts zu aktualisieren")
+            return True
+        w_step("clients", "running", total=len(aktive),
+               detail=f"{len(aktive)} Client(s) aktualisieren — Ziel ≥{cfg.get('update_ziel_signale', 200)} "
+                      f"Signale, Katalog-Frische {cfg.get('update_katalog_max_alter_h', 72)} h")
+        log = w_log_for("clients")
+        live: dict[str, dict] = {}
+        control["client_updates"] = live
+
+        def _fortschritt(zustand: dict) -> None:
+            live[zustand["kuerzel"]] = zustand
+            fertig = sum(1 for e in live.values()
+                         if e["status"] in (client_updates.FERTIG, client_updates.FEHLER,
+                                            client_updates.TIMEOUT, client_updates.OFFLINE,
+                                            client_updates.NICHT_UNTERSTUETZT,
+                                            client_updates.ABGEBROCHEN))
+            w_step("clients", done=fertig, detail=client_updates.aggregat_text(live))
+
+        try:
+            ergebnisse = client_updates.starte_alle_updates(
+                cfg, log=log, on_fortschritt=_fortschritt,
+                gestopft=lambda: bool(control.get("stop")))
+        finally:
+            control["client_updates"] = live  # Endstand bleibt für den Dialog
+        if client_updates.alle_kritisch(live):
+            w_step("clients", "error",
+                   detail="Alle Clients fehlgeschlagen/nicht erreichbar — "
+                          "Scan ohne Quell-Daten abgebrochen (bitte Clients prüfen: startall)")
+            return False
+        if bool(control.get("stop")):
+            w_step("clients", "warning", detail=client_updates.aggregat_text(live))
+        elif client_updates.mit_hinweisen(live):
+            w_step("clients", "warning",
+                   detail=client_updates.aggregat_text(live) + " — Hinweise im Kreis-Dialog")
+        else:
+            w_step("clients", "complete", done=len(live),
+                   detail=client_updates.aggregat_text(live))
         return True
 
     def w_run_listen(cfg) -> list[dict]:
@@ -1116,27 +1190,37 @@ if command:
                     else:
                         w_run_downloader(results, run_config)
                 else:
-                    signals = w_run_listen(run_config)
-                    current_step = "kandidaten"
-                    candidates = w_run_kandidaten(signals, run_config)
-                    current_step = "forensik"
-                    w_run_forensik(candidates, run_config)
-                    ki_an = config.llm_aktiv(run_config)
-                    gestoppt = bool(control.get("stop"))
-                    if ki_an and not gestoppt:
-                        current_step = "llm"
-                        w_run_llm(results, run_config)
-                        current_step = "portfolio"
-                        w_run_portfolio(results, run_config)
+                    current_step = "clients"
+                    if not w_run_clients(run_config):
+                        # Alle Clients ausgefallen (doc/23 §6.2): ohne Quell-
+                        # Daten wäre der Scan reine Alt-Daten-Verarbeitung.
+                        for sid, *_ in STEPS:
+                            if workflow["steps"][sid]["status"] == "pending":
+                                w_step(sid, "skipped",
+                                       detail="Nicht gestartet — Stufe 0 komplett fehlgeschlagen")
                     else:
-                        grund = ("Abbruch per Stop-Button vor dieser Station" if gestoppt
-                                 else "KI-Berichte für diesen Lauf ausgeschaltet")
-                        w_step("llm", "skipped", detail=grund if gestoppt
-                               else "KI-Berichte für diesen Lauf ausgeschaltet")
-                        w_step("portfolio", "skipped", detail=grund if gestoppt
-                               else "Portfolio-Vorschlag für diesen Lauf ausgeschaltet")
-                    current_step = "downloader"
-                    w_run_downloader(results, run_config)
+                        current_step = "listen"
+                        signals = w_run_listen(run_config)
+                        current_step = "kandidaten"
+                        candidates = w_run_kandidaten(signals, run_config)
+                        current_step = "forensik"
+                        w_run_forensik(candidates, run_config)
+                        ki_an = config.llm_aktiv(run_config)
+                        gestoppt = bool(control.get("stop"))
+                        if ki_an and not gestoppt:
+                            current_step = "llm"
+                            w_run_llm(results, run_config)
+                            current_step = "portfolio"
+                            w_run_portfolio(results, run_config)
+                        else:
+                            grund = ("Abbruch per Stop-Button vor dieser Station" if gestoppt
+                                     else "KI-Berichte für diesen Lauf ausgeschaltet")
+                            w_step("llm", "skipped", detail=grund if gestoppt
+                                   else "KI-Berichte für diesen Lauf ausgeschaltet")
+                            w_step("portfolio", "skipped", detail=grund if gestoppt
+                                   else "Portfolio-Vorschlag für diesen Lauf ausgeschaltet")
+                        current_step = "downloader"
+                        w_run_downloader(results, run_config)
             except Exception as exc:
                 message = f"{type(exc).__name__}: {exc}"
                 logs.setdefault(current_step, []).append(_stamped(f"FEHLER: {message}"))
@@ -1352,6 +1436,100 @@ def _probleme_dialog(probleme: list, gesamt: int) -> None:
             else:
                 st.markdown("Keine vollständige forensische Prüfung vorhanden — nur Vorprüfung.")
             st.caption(hinweis)
+
+
+_STATUS_INFO = {
+    client_updates.WARTET: ("⚪", "wartet auf Start"),
+    client_updates.BEREIT: ("🔵", "bereit — Update wird angestoßen"),
+    client_updates.LAEUFT: ("🔵", "läuft"),
+    client_updates.LOGIN: ("🟡", "wartet auf Login-Eingabe (Fenster im Client ist offen)"),
+    client_updates.FERTIG: ("🟢", "fertig"),
+    client_updates.FEHLER: ("🔴", "Fehler"),
+    client_updates.TIMEOUT: ("🟡", "Timeout — weiter mit vorhandenem Datenstand"),
+    client_updates.OFFLINE: ("🟡", "nicht erreichbar — läuft der Client (startall)?"),
+    client_updates.NICHT_UNTERSTUETZT: ("🟡", "Client-Version zu alt (kein Update-Endpoint) — Client aktualisieren"),
+    client_updates.ABGEBROCHEN: ("🟡", "abgebrochen (Stop-Button)"),
+}
+
+
+def _client_karte(z: dict, ziel: int) -> None:
+    """Eine Status-Karte je Client im Stufe-0-Dialog."""
+    emoji, status_text = _STATUS_INFO.get(z.get("status"), ("⚪", str(z.get("status"))))
+    with st.container(border=True):
+        kopf = st.container(horizontal=True, vertical_alignment="center")
+        kopf.markdown(f"{emoji} **{z.get('name')}** · {z.get('base_url', '')}")
+        with kopf:
+            st.caption(f"{status_text} · geändert {str(z.get('geaendert', ''))[11:]}")
+        if z.get("status") == client_updates.LAEUFT and z.get("total"):
+            st.progress(min(1.0, (z.get("done") or 0) / max(1, z["total"])),
+                        text=f"{z.get('phase') or '…'} — {z.get('done', 0)}/{z['total']}")
+        if z.get("detail"):
+            st.caption(z["detail"])
+        if z.get("fehler"):
+            st.error(z["fehler"])
+        for hinweis in (z.get("hinweise") or [])[:5]:
+            st.caption(f"Hinweis: {hinweis}")
+        fakten: list[str] = []
+        if z.get("signale_geliefert") is not None:
+            fakten.append(f"{z['signale_geliefert']} Signale geliefert "
+                          f"(Ziel ≥{ziel})")
+        if z.get("katalog_uebersprungen"):
+            fakten.append("Katalog übersprungen (3-Tage-Regel)")
+        if z.get("tradelisten_neu") is not None or z.get("tradelisten_aktualisiert") is not None:
+            fakten.append(f"Tradelisten: {z.get('tradelisten_neu') or 0} neu · "
+                          f"{z.get('tradelisten_aktualisiert') or 0} aktualisiert")
+        if z.get("datenstand"):
+            fakten.append(f"Datenstand {z['datenstand']}")
+        if z.get("dauer_s"):
+            fakten.append(f"Dauer {z['dauer_s']:.0f} s")
+        if fakten:
+            st.caption(" · ".join(fakten))
+
+
+@st.fragment(run_every=2.0, key="stufe0_live_fragment")
+def _clients_live_bereich(ziel: int) -> None:
+    """Live-Teil des Stufe-0-Dialogs: Zustände aus dem laufenden Worker."""
+    live = (st.session_state.get("scan_control") or {}).get("client_updates") or {}
+    if not live:
+        st.info("Noch kein Stufe-0-Lauf in dieser Sitzung. Die Karten erscheinen, "
+                "sobald „Full-Scan“ oder „Teilscan“ gestartet wird.")
+        return
+    for kuerzel in sorted(live):
+        _client_karte(live[kuerzel], ziel)
+    st.markdown(f"**Bilanz:** {client_updates.aggregat_text(live)}")
+
+
+@st.dialog("🔄 Stufe 0 · Clients aktualisieren — Live-Status", width="large")
+def _dialog_clients() -> None:
+    """Großes Fenster: was Stufe 0 bei jedem Client tut und wie weit er ist."""
+    st.markdown(
+        "**Was passiert hier?** Vor dem eigentlichen Workflow stößt der Scanner "
+        "per REST bei jedem angeschlossenen Client den Daten-Download an "
+        "(Signale, Abonnenten, Tradelisten) und wartet auf deren „fertig“. "
+        "Erst dann startet Station 1 — der Scan arbeitet also mit aktuellem "
+        "Datenstand. Stufe 0 bewertet nichts; sie beschafft nur Daten.")
+    ziel = int(settings.get("update_ziel_signale") or 200)
+    _clients_live_bereich(ziel)
+    st.markdown("---")
+    st.markdown("**Letzte Läufe (Chronik je Client)**")
+    chronik = db.list_client_updates(limit=12)
+    if chronik:
+        import pandas as pd
+        st.dataframe(pd.DataFrame([{
+            "Zeit": e.get("ts"), "Client": e.get("kuerzel"),
+            "Status": e.get("status"), "Signale": e.get("signale_geliefert"),
+            "Tradelisten neu": e.get("tradelisten_neu"),
+            "Datenstand": e.get("datenstand"),
+            "Dauer s": e.get("dauer_s"), "Fehler": e.get("fehler") or "",
+        } for e in chronik]), width="stretch", hide_index=True)
+    else:
+        st.caption("Noch keine Einträge — Chronik füllt sich mit dem ersten Stufe-0-Lauf.")
+    st.caption("Regeln: Ziel ≥200 Signale mit Abonnenten je Client (Versuch genügt — "
+               "MqlDownloader meldet real ~50). Katalog-Load jünger als "
+               f"{settings.get('update_katalog_max_alter_h', 72)} h wird übersprungen "
+               "(3-Tage-Regel); Tradelisten laufen immer als Delta. Login: Pelican "
+               "füllt sich automatisch; scheitert das, wartet Stufe 0 auf deine "
+               "Eingabe im Client-Fenster.")
 
 
 @st.dialog("📡 Station 1 · Signale holen — was kam rein?", width="large")
@@ -1766,6 +1944,7 @@ def _dialog_downloader() -> None:
 
 
 _station_dialoge = {
+    "clients": _dialog_clients,
     "listen": _dialog_listen, "kandidaten": _dialog_auswahl,
     "forensik": _dialog_forensik, "llm": _dialog_llm,
     "portfolio": _dialog_portfolio, "downloader": _dialog_downloader,

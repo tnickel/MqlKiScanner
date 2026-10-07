@@ -139,6 +139,23 @@ CREATE TABLE IF NOT EXISTS quellen_artefakte (
     fetched_at  TEXT,
     PRIMARY KEY (quelle_id, signal_id, version, art)
 );
+CREATE TABLE IF NOT EXISTS client_updates (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts                 TEXT NOT NULL,
+    quelle_id          INTEGER,
+    kuerzel            TEXT NOT NULL,
+    base_url           TEXT,
+    job_id             TEXT,
+    status             TEXT NOT NULL,
+    dauer_s            REAL,
+    signale_geliefert  INTEGER,
+    tradelisten_neu    INTEGER,
+    tradelisten_aktualisiert INTEGER,
+    datenstand         TEXT,
+    fehler             TEXT,
+    hinweise           TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_client_updates_ts ON client_updates(ts DESC);
 """
 
 
@@ -736,3 +753,57 @@ def get_quellen_artefakt(quelle_id: int, signal_id: int, version: str,
             "WHERE quelle_id=? AND signal_id=? AND version=? AND art=?",
             (int(quelle_id), int(signal_id), str(version), str(art))).fetchone()
     return dict(row) if row else None
+
+
+# ── Stufe 0 „Clients aktualisieren" (doc/23 §6.4) ─────────────────────
+
+def store_client_update(*, quelle_id: int, kuerzel: str, base_url: str = "",
+                        job_id: str = "", status: str, dauer_s: float = 0.0,
+                        signale_geliefert=None, tradelisten_neu=None,
+                        tradelisten_aktualisiert=None, datenstand: str = "",
+                        fehler: str = "", hinweise=None) -> None:
+    """Ergebnis EINER Quelle eines Stufe-0-Laufs (append-only, wie
+    ampel_verlauf) — die Chronik im Stufe-0-Dialog „Letzte Läufe"."""
+    init_db()
+    with _connect() as conn:
+        conn.execute(
+            """INSERT INTO client_updates
+               (ts, quelle_id, kuerzel, base_url, job_id, status, dauer_s,
+                signale_geliefert, tradelisten_neu, tradelisten_aktualisiert,
+                datenstand, fehler, hinweise)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (_now(), int(quelle_id), str(kuerzel), str(base_url or ""),
+             str(job_id or ""), str(status), float(dauer_s or 0.0),
+             (int(signale_geliefert) if signale_geliefert is not None else None),
+             (int(tradelisten_neu) if tradelisten_neu is not None else None),
+             (int(tradelisten_aktualisiert)
+              if tradelisten_aktualisiert is not None else None),
+             str(datenstand or ""), str(fehler or ""),
+             json.dumps(list(hinweise or []), ensure_ascii=False)))
+
+
+def list_client_updates(limit: int = 100) -> list[dict]:
+    """Chronik neueste zuerst."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM client_updates ORDER BY id DESC LIMIT ?",
+            (int(limit),)).fetchall()
+    out = []
+    for row in rows:
+        eintrag = dict(row)
+        try:
+            eintrag["hinweise"] = json.loads(eintrag.get("hinweise") or "[]")
+        except ValueError:
+            eintrag["hinweise"] = []
+        out.append(eintrag)
+    return out
+
+
+def letzte_client_updates_je_quelle() -> dict[str, dict]:
+    """Je Kürzel der NEUESTE Eintrag (Admin/Datenquellen-Spalte „letztes Update")."""
+    eintraege = list_client_updates(limit=500)
+    neueste: dict[str, dict] = {}
+    for eintrag in eintraege:  # absteigend — erster Treffer je Kürzel gewinnt
+        neueste.setdefault(str(eintrag.get("kuerzel")), eintrag)
+    return neueste

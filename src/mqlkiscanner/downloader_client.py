@@ -43,6 +43,14 @@ class DownloaderNotFound(DownloaderError):
     """Objekt existiert im Downloader nicht (HTTP 404) — kein Systemfehler."""
 
 
+class DownloaderUpdateNotSupported(DownloaderError):
+    """Client kennt POST /update nicht (HTTP 405) — älterer Build (doc/23 §8)."""
+
+
+class DownloaderBusy(DownloaderError):
+    """Client ist mit einer anderen Aktion beschäftigt (HTTP 409, doc/23 §4.1)."""
+
+
 def normalize_base_url(url: str) -> str:
     """Base-URL vereinheitlichen: Host:Port genügt, /api/v1 wird ergänzt.
 
@@ -188,6 +196,67 @@ class DownloaderClient:
         return self._get(
             f"/providers/{int(signal_id)}/{self._v(version)}/reports/{quote(name, safe='')}",
             raw=True)
+
+    # ── Stufe 0 „Clients aktualisieren" (doc/23 §4) ────────────────────
+    # Die Server sind historisch rein lesend; das Update-Job-Protokoll
+    # fügt genau EINEN Schreib-Endpoint hinzu (POST /update) plus Status-
+    # Abfrage. Ältere Client-Builds antworten 405 — das ist der saubere
+    # „noch nicht umgestellt"-Fall, kein Verbindungsfehler.
+
+    def _post(self, path: str, *, payload: dict | None = None):
+        """POST ausführen (nur Update-Job); Fehlersortierung wie _get."""
+        url = f"{self.base}{path}"
+        try:
+            response = requests.post(url, json=payload or {},
+                                     headers=self._headers(), timeout=self.timeout)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
+            raise DownloaderConnectionError(
+                f"Client unter {self.base} nicht erreichbar "
+                f"({type(exc).__name__}). Läuft der Client und stimmen Host/Port?"
+            ) from exc
+        if response.status_code == 401:
+            raise DownloaderAuthError(
+                "Der Client verlangt einen anderen API-Token (HTTP 401). "
+                "Gespeicherten Token im Admin-Bereich prüfen.")
+        if response.status_code == 405:
+            raise DownloaderUpdateNotSupported(
+                "Client-Version ohne Update-Endpoint (HTTP 405) — der Client "
+                "muss auf die Stufe-0-Version aktualisiert werden.")
+        if response.status_code == 409:
+            try:
+                detail = response.json().get("error", "")
+            except ValueError:
+                detail = ""
+            raise DownloaderBusy(
+                detail or "Client ist beschäftigt (HTTP 409) — z. B. läuft "
+                "gerade eine andere Aktion im Fenster.")
+        if response.status_code >= 400:
+            try:
+                detail = response.json().get("error", "")
+            except ValueError:
+                detail = response.text[:200]
+            raise DownloaderError(f"HTTP {response.status_code} von {path}: {detail}")
+        try:
+            return response.json()
+        except ValueError as exc:
+            raise DownloaderError(
+                f"Antwort von {path} ist kein JSON "
+                f"(Beginn: {response.text[:80]!r})") from exc
+
+    def update_starten(self, *, target: int = 200, tradelisten: bool = True,
+                       katalog_max_alter_h: int = 72, quelle: str = "signalkiscanner") -> dict:
+        """Stufe-0-Update-Job anstoßen (doc/23 §4.1). Antwort sofort:
+        {"jobId": …, "status": "gestartet", "bereitsLaufend": bool}."""
+        return self._post("/update", payload={
+            "target": int(target), "tradelisten": bool(tradelisten),
+            "katalogMaxAlterH": int(katalog_max_alter_h), "quelle": str(quelle),
+        })
+
+    def update_status(self) -> dict:
+        """Job-Status des Clients (doc/23 §4.2): state/phase/done/total/
+        message/ergebnis; state=idle wenn noch nie ein Job lief."""
+        data = self._get("/update/status")
+        return data if isinstance(data, dict) else {}
 
 
 def client_from_settings(settings: dict) -> DownloaderClient:

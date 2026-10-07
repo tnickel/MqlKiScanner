@@ -253,6 +253,33 @@ bestätigt die Netzwerkverbindung, nicht dass jedes Signal dort Daten hat: Ein S
 das der Downloader nie geladen hat, liefert je Endpunkt eine leere Antwort (404),
 ohne dass die Verbindung defekt ist.
 """),
+    "settings_stufe0": ("Stufe 0: Client-Updates vor jedem Scan", """
+**Stufe 0** (Konzept doc/23) läuft bei „Full-Scan“ und „Teilscan“ automatisch
+VOR Station 1: Der Scanner stößt bei jedem angeschlossenen Client (MqlDownloader,
+Pelican, RoboForex, Vantage, Zulu) per REST den Daten-Download an und wartet,
+bis alle „fertig“ gemeldet haben. Erst dann beginnt der eigentliche Workflow —
+der Scan arbeitet also immer mit dem aktuellen Datenstand. Ein Klick auf den
+Stufe-0-Kreis auf der Scan-Seite öffnet ein Live-Fenster mit Fortschritt,
+Ergebniszahlen und Datenstand je Client; alles wird dauerhaft protokolliert.
+
+**Ziel „Signale mit Abonnenten“** ist ein Wunsch an die Clients: Sie laden die
+Top-Liste mit dieser Länge, wo die Plattform sie hergibt (MqlDownloader meldet
+real ~50 — das ist in Ordnung). Pelican lädt bewusst ALLE Signale mit Abonnenten
+(~648), damit neue Top-Kandidaten nicht verpasst werden.
+
+**Katalog-Frische (3-Tage-Regel):** Ein Katalog-Load, der jünger als diese
+Stundenzahl ist (Standard 72 h = 3 Tage), wird übersprungen — ein voller
+Katalog-Holgang passiert also höchstens alle 3 Tage. Die **Tradelisten laufen
+jedoch bei jedem Lauf als Delta** (nur neue/geänderte). Die Regel gilt global
+für ALLE Clients gleich.
+
+**Timeouts:** Nach dem Gesamt-Timeout je Client läuft der Scan mit dem
+vorhandenen Datenstand weiter (gelb markiert). Nur wenn ALLE Clients
+fehlgeschlagen sind, bricht der Scan ab — sonst wäre er reine
+Alt-Daten-Verarbeitung. Logins: Pelican füllt sein Login-Fenster automatisch
+(scheitert das, wartet Stufe 0 die eingestellte Zeit auf deine Eingabe);
+RoboForex braucht nur selten einen neuen Cookie (Hinweis erscheint im Dialog).
+"""),
 "settings_agenten": ("Agentenbetrieb: fünf Rollen, ein Protokoll", """
 Der Agentenbetrieb (Bauplan doc/19) überträgt die Dauerbeobachtung an fünf
 LLM-Rollen: **Dirigent** (plant und steuert), **Marktbeobachter** (Kursdaten),

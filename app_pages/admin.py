@@ -426,6 +426,50 @@ with downloader_tab:
                        "deaktivieren.")
 
     with st.container(border=True):
+        section_header("Stufe 0 · Client-Updates vor jedem Scan",
+                       "Full-Scan und Teilscan aktualisieren zuerst alle Clients "
+                       "(Konzept doc/23): Der Scanner stößt per REST den Daten-"
+                       "Download an und wartet auf „fertig“ — erst dann startet "
+                       "Station 1. Live-Status per Klick auf den Stufe-0-Kreis "
+                       "auf der Scan-Seite.",
+                       help_key="settings_stufe0")
+        stufe0_werte = {
+            "stufe0_aktiv": st.toggle(
+                "Stufe 0 aktiv", value=bool(settings.get("stufe0_aktiv", True)),
+                help="Aus = Scan startet direkt mit dem vorhandenen Datenstand der Clients."),
+            "update_ziel_signale": st.number_input(
+                "Ziel: Signale mit Abonnenten je Client", min_value=1, max_value=5000,
+                value=int(settings.get("update_ziel_signale", 200) or 200), step=50,
+                help="Wunsch, kein Muss — der Client meldet die Ist-Zahl (MqlDownloader "
+                     "liefert real ~50). Pelican lädt bewusst ALLE Signale mit Abonnenten."),
+            "update_katalog_max_alter_h": st.number_input(
+                "Katalog-Frische (Stunden, global für ALLE Clients)", min_value=0,
+                max_value=24 * 30, value=int(settings.get("update_katalog_max_alter_h", 72) or 72),
+                step=12, help="3-Tage-Regel (72 h): Ein Katalog-Load, der jünger ist, "
+                              "wird übersprungen. 0 = immer neu laden. Tradelisten "
+                              "laufen davon unabhängig immer als Delta."),
+            "update_timeout_min": st.number_input(
+                "Gesamt-Timeout je Client (Minuten)", min_value=5, max_value=24 * 60,
+                value=int(settings.get("update_timeout_min", 120) or 120), step=10,
+                help="Danach läuft der Scan mit dem vorhandenen Datenstand weiter (🟡)."),
+            "update_login_timeout_min": st.number_input(
+                "Login-Wartezeit (Minuten)", min_value=0, max_value=120,
+                value=int(settings.get("update_login_timeout_min", 10) or 10), step=5,
+                help="Nur falls ein Auto-Login scheitert und das Login-Fenster im "
+                     "Client auf deine Eingabe wartet (Notausgang)."),
+        }
+        _draft_status(_changed(stufe0_werte, settings))
+        if action_button("Stufe-0-Einstellungen speichern", key="admin_stufe0_save",
+                         icon=":material/save:", type="primary",
+                         help_key="settings_stufe0", disabled=not _changed(stufe0_werte, settings)):
+            _save_group(stufe0_werte, "Stufe-0-Einstellungen gespeichert.")
+        letzte = db.letzte_client_updates_je_quelle()
+        if letzte:
+            st.caption("Letztes Update je Client: "
+                       + " · ".join(f"{k} {e['status']} ({(e.get('ts') or '')[5:16]})"
+                                    for k, e in sorted(letzte.items())))
+
+    with st.container(border=True):
         section_header("Datenquelle hinzufügen",
                        "Eine neue REST-Quelle registrieren. Das Kürzel erscheint in "
                        "der Ergebnisliste als Herkunft der Signale (z. B. mql5, pelik).")

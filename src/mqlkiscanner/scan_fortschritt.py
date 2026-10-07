@@ -31,9 +31,11 @@ def _status_datei() -> Path:
     return Path(config.DATA_DIR) / "scan_fortschritt.json"
 
 # Station -> (Start-Anteil, Ende-Anteil) am GESAMTBalken (0..1).
+# "clients" = Stufe 0 (doc/23): Client-Updates vor dem eigentlichen Workflow.
 GEWICHTE = {
-    "listen": (0.00, 0.03),
-    "kandidaten": (0.03, 0.05),
+    "clients": (0.00, 0.02),
+    "listen": (0.02, 0.04),
+    "kandidaten": (0.04, 0.05),
     "forensik": (0.05, 0.35),
     "ki": (0.35, 0.90),
     "portfolio": (0.90, 0.99),

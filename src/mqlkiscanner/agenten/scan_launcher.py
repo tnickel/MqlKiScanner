@@ -20,7 +20,7 @@ from datetime import date
 
 import json
 
-from .. import config, fix_signale, pipeline, scan_fortschritt
+from .. import client_updates, config, db, fix_signale, pipeline, scan_fortschritt
 from ..mql5.session import Mql5Session
 from . import journal, lock
 
@@ -181,6 +181,44 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
                                            start_ts, modus)
         except Exception:   # Anzeige darf den Scan nie brechen
             pass
+
+    # Stufe 0 (doc/23): Client-Updates VOR dem eigentlichen Workflow — auch
+    # die autonomen Takte (Sonntags-Teilscan, Monats-Full-Scan) laufen damit
+    # mit frischen Quell-Daten. Regeln identisch zur Scan-Seite (w_run_clients):
+    # nur bei aktiven Quellen und nicht im reinen MQL5-Direkt-Modus; scheitern
+    # ALLE Clients, bricht der Lauf ab (Alt-Daten-Scans sind kein Ergebnis).
+    if (bool(settings.get("stufe0_aktiv", True))
+            and str(settings.get("listen_modus") or "mql5").strip().lower() != "mql5"
+            and db.list_quellen(nur_aktiv=True)):
+        _f("clients", 0, 1, "Stufe 0: Clients aktualisieren …")
+        journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
+                                       detail={"modus": modus, "station": "clients"})
+        live_clients: dict[str, dict] = {}
+
+        def _client_fortschritt(zustand: dict) -> None:
+            live_clients[zustand["kuerzel"]] = zustand
+            fertig = sum(1 for e in live_clients.values()
+                         if e["status"] in client_updates._TERMINAL)
+            try:
+                _f("clients", fertig, max(1, len(live_clients)),
+                   client_updates.aggregat_text(live_clients))
+            except Exception:
+                pass
+
+        try:
+            client_updates.starte_alle_updates(
+                settings, log=lambda m: log(f"  [clients] {m}"),
+                on_fortschritt=_client_fortschritt)
+        except Exception as exc:  # eine Quelle darf den Lauf nicht killen
+            log(f"  [clients] Stufe-0-Fehler (weiterlaufen): {exc}")
+        if client_updates.alle_kritisch(live_clients):
+            grund = ("Stufe 0: ALLE Clients fehlgeschlagen oder nicht erreichbar "
+                     "— autonomer Scan abgebrochen (Clients/startall prüfen).")
+            journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
+                                           status="fehler",
+                                           detail={"grund": grund})
+            raise RuntimeError(grund)
+        log("  [clients] " + client_updates.aggregat_text(live_clients))
 
     _f("listen", 0, 1, "Signallisten werden geholt …")
     journal.schritt_protokollieren(lauf_id, "dirigent", "scan",
