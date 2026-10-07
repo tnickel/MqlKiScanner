@@ -639,3 +639,52 @@ auf, der Update-Job nicht. Fix: Vorab-Check in `starteUpdateJob` + defensiv
 in `hatSession()` (Robo/Vantage/Zulu/MqlDownloader erstellen ihre Clients
 beim App-Start — geprüft, kein gleichartiger Fall). Der Scanner hatte den
 Ausfall dabei KORREKT als 🟡-Hinweis geführt und der Scan lief weiter.
+
+### Nachtrag Auto-Login 2.0 (07.10. nachmittags — Session abgelaufen 11:22
+### aufgeklärt, LoginAutomat neu gebaut)
+
+**Fall „Session abgelaufen (HTTP 401)" im Stufe-0-Fenster (11:22):** Wurzel
+war eine LÜCKE in der Job-Logik, nicht der Auto-Login selbst —
+`hatSession()` prüft nur die EXISTENZ der Cookie-Datei; ob die Session noch
+lebt, zeigt erst der erste API-Call. Die letzte manuelle Session stammte vom
+04.10. 19:45 und war tot. Ablauf damals: Job glaubte „Session da" →
+übersprang den Auto-Login komplett → Katalog-Call 401 → Fehler mit dem alten
+Hand-Anweisungs-Text. **Fix (UpdateJobRunner):** SessionException in der
+Katalog-Phase fängt der Runner jetzt ab → 1× automatischer Nachlogin → Phase
+wird wiederholt; erst ein scheiternder Auto-Login führt zu login_required +
+manuellem Fenster (derselbe Retry existierte für die Tradelisten-Phase
+bereits). +2 Tests (Nachlogin-Retry / Login_required ohne Retry).
+
+**LoginAutomat: Selenium → JavaFX-WebView (Plan B §5.2).** Beweiskette aus
+~10 Live-Versuchen mit echtem Login: Firefox ist auf dem Zielrechner NICHT
+installiert (erster Blocker); Chrome-headless UND Chrome-sichtbar kommen
+durch den Identity-Login (der Server akzeptiert den Benutzernamen OHNE @ —
+`form.submit()` umgeht die clientseitige @-Validierung, die den Button
+still blockt), aber `/bff/login-callback` antwortet DURCHGÄNGLIG HTTP 500:
+Im WebDriver-Browser initialisiert das AppsFlyer-SDK nicht
+(`navigator.webdriver=true`; AfDeviceId/AdId/OsVersion/OsPlatform bleiben
+leer — auch nach 30 s und im sichtbaren Fenster) und der Identity-Server
+setzt keine Session-Cookie. Der JavaFX-WebView ist der bewiesen
+funktionierende Kontext (manueller Login des Nutzers). Neuer Ablauf:
+WebView-Stage (schließt sich selbst) → JS füllt #Email/#Password + stabile
+Geräte-ID (`data/auto_login_device.txt`, nur leere Device-Felder) →
+`form.noValidate=true` + echter Button-Klick → Watchdog auf der OAuth-
+Auto-Submit-Seite (eigenes sofortiges Submit würde die laufende Navigation
+ABBRECHEN — CANCELLED-Race live bewiesen; Watchdog feuert erst nach 8 s
+Stillstand) → Erfolg wird an den SESSION-COOKIES gemessen, nie an der URL
+(false positive bewiesen: der fehlgeschlagene Flow landet ebenfalls auf der
+App-Domain). Selenium-/WebDriverManager-Dependencies aus pom entfernt.
+
+**OFFEN (serverseitig, 07.10. Stand):** Der BFF-Callback
+(`/bff/login-callback`) antwortet am 07.10. AUCH im WebView mit Fehler
+(Navigation CANCELLED) — beim letzten manuellen Login (04.10. 19:45)
+funktionierte derselbe Flow. Die Login-UI validiert inzwischen clientseitig
+eine E-Mail-Adresse („@-Zeichen") — beides deutet auf einen Plattform-Deploy
+nach dem 04.10. hin. Der Auto-Login ist technisch fertig und greift
+automatisch, sobald der Login wieder durchgeht — vermutlich mit der
+Login-E-MAIL-Adresse statt des Benutzernamens: Dann in
+`PelicanTrading/data/credentials.properties` `user=…@…` eintragen (Datei ist
+gitignored; Passwort unverändert). Bis dahin: manuellen Login im
+PelicanMonitor testen (Login-Button → tippen → „Anmeldung"); das Update-Job-
+Ergebnis (login_required statt Endlosfehler) ist der saubere Notausgang.
+
