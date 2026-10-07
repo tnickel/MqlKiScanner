@@ -108,15 +108,32 @@ Pelican-Login im Batch-Betrieb.
 
 Request-Body (JSON, alle Felder optional):
 ```json
-{"target": 200, "tradelisten": true, "quelle": "signalkiscanner"}
+{"target": 200, "tradelisten": true, "katalogMaxAlterH": 72,
+ "quelle": "signalkiscanner"}
 ```
 - `target` (int, Default 200): Wunsch-Anzahl Signale mit Abonnenten für den
   Katalog-Load (Nutzer-Regel „mindestens 200 versuchen"). Der Client lädt
   so viele, wie die Plattform hergibt — die Antwort/der Status nennt die
   Ist-Zahl (MqlDownloader wird z. B. „50 geliefert" melden — gewollt).
+  **Bedeutung je Client (Nutzer-Entscheid 07.10. abends):** Bei Plattformen
+  mit serverseitig sortierter Top-Liste (Robo/Vantage/Zulu laden Top-N der
+  Plattform) ist `target` die Listenlänge. Bei Pelican gilt die
+  „Beste-200-Regel" (§5a): Deckeln ist nur erlaubt, wenn eine beweisbar
+  nach Abonnenten sortierte, NEUE Signale einschließende Top-Liste
+  existiert — das ist dort nicht der Fall, also lädt Pelican ALLE Signale
+  mit Abonnenten (~648; neue Top-Kandidaten dürfen nicht verpasst werden).
 - `tradelisten` (bool, Default true): Tradelisten-Update mitlaufen lassen
   (inkrementell: bereits geladene aktualisieren/mergen, neue Top-Signale
   nachziehen). `false` = nur Katalog + Abonnenten-Snapshot (schneller Modus).
+- `katalogMaxAlterH` (int, Default 72): **3-Tage-Regel (Nutzer-Entscheid
+  07.10. abends, ersetzt „immer frisch")** — ist der letzte erfolgreiche
+  Katalog-Load des Clients jünger als dieses Fenster, überspringt der
+  Client die Katalog-Phase und meldet „Katalog aktuell genug (Stand …)".
+  Die Tradelisten-Phase läuft davon UNBERÜHRT weiter (inkrementelles
+  Delta — sonst arbeitete der Scan auf alten Trades). Login-Phase nur
+  bei Bedarf. Der Client hält den Zeitstempel des letzten Katalog-Loads
+  selbst (z. B. `data/update_state.json`); ein erzwungener Voll-Load geht
+  weiterhin über den GUI-Button des Clients.
 - `quelle`: Absender-Kennung fürs Client-Log.
 
 Antwort (sofort, ohne auf das Laden zu warten):
@@ -162,7 +179,7 @@ Antwort (sofort, ohne auf das Laden zu warten):
 | Client | POST /update führt aus | Phasen |
 |---|---|---|
 | MqlDownloader | `handleDoAllButton()`-Kaskade: Selenium-Login (Credentials.java, automatisch) → MQL4-Download → MQL5-Download → Konvertierung. `target` setzt die Download-Limits je Version auf max(target, konfiguriert). | `login → mql4 → mql5 → konvertieren` |
-| Pelican | Session prüfen → ggf. **Auto-Login** (§5) → `ladeProvider()` mit minCopiers ≥ 1, sortiert nach Copiers, gedeckelt auf `target` (Plattform liefert ~648 — 200er-Ziel erfüllbar) → `batchTradelisten("Nur neue")` (Merge) → `copierDb.snapshot`. | `login → katalog → tradelisten` |
+| Pelican | Session prüfen → ggf. **Auto-Login** (§5) → `ladeProvider()` mit minCopiers ≥ 1 — **ALLE Signale mit Abonnenten (~648), kein Deckel** („Beste-200-Regel" §5a: neue Top-Kandidaten dürfen nicht verpasst werden) → `batchTradelisten("Nur neue")` (Merge) → `copierDb.snapshot`. | `login → katalog → tradelisten` |
 | Robo | Cookie-Check (fehlt → `login_required` mit ANLEITUNG_DEALS-Hinweis; ist langlebig, selten) → `startSignalDownload(count=target)` → Tagesliste ALLE → `starteDealsBatch(skipExisting=true)`. | `katalog → tagesliste → tradelisten` |
 | Vantage | `startSignalDownload(target)` → `startTradesDownload(all=true, skip=true)`. | `katalog → tradelisten` |
 | Zulu | `startTraderDownload(target)` → `startTradeDownload(all=true, skip=true)`. | `katalog → tradelisten` |
@@ -238,6 +255,34 @@ bzw. behandelt `SessionAbgelaufenException` → Client-Status
 `login_required` mit dem bewährten Hinweistext (ANLEITUNG_DEALS.md, Cookie
 aus Browser in `data/session_cookie.txt`). Kein zweiter Auto-Mechanismus.
 
+### 5a. Beste-200-Regel für Katalog-Loads (Nutzer-Entscheid 07.10. abends)
+
+„Nur die 200 besten Signale laden" ist eine **Optimierung mit
+Verlust-Risiko**: Eine Top-200-Liste nach Abonnenten sortiert NEUE Signale
+nach unten oder raus — genau die können aber die interessanten
+Top-Kandidaten sein (neu, erste Abonnenten, noch unbekannt). Deshalb:
+
+- **Deckeln (Top `target`) ist nur erlaubt, wenn die Plattform eine
+  serverseitig sortierte Liste liefert, die nachweislich vollständig ist
+  und neue Signale einschließt.** Bei Robo/Vantage/Zulu ist das gegeben:
+  `downloadTopSignals/downloadProviders/downloadTopTraders(count, sortBy=…)`
+  holen die sortierte Plattform-Top-Liste — dort ist `target=200` die
+  Listenlänge und die „besten 200" sind genau das, was die Plattform selbst
+  als Top führt.
+- **Pelican: KEIN Deckel.** Die API bietet keine beweisbar sortierte,
+  neue-Signale-einschließende Top-Liste (der Monitor lädt heute den
+  Gesamtbestand ~2250, gefiltert ~648 mit Abonnenten). Der Update-Job lädt
+  daher ALLE Signale mit Abonnenten (~648). Genau die Nutzer-Begründung:
+  „wenn nicht sichergestellt ist, dass man nur die 200 besten bekommt,
+  dann muss man halt 600 laden — es könnten ja neue Top-Kandidaten dabei
+  sein." Die 3-Tage-Regel (§4.1 `katalogMaxAlterH`) begrenzt die Kosten
+  dieses Voll-Loads auf einen Lauf je 3 Tage.
+- **MqlDownloader:** lädt die Plattform-Liste ohnehin vollständig; gemeldet
+  werden die ~50 Signale MIT Abonnenten — Wunsch 200, Ist ehrlich genannt.
+- Falls eine zukünftige Pelican-API-Version eine sortierte Top-Liste mit
+  Vollständigkeits-Garantie bekommt: Deckel wieder aktivieren — die Regel
+  steht hier, nicht im Code vergraben.
+
 ## 6. Scanner-Seite: Stufe 0 im Workflow
 
 ### 6.1 Neues Modul `src/mqlkiscanner/client_updates.py`
@@ -254,7 +299,12 @@ starte_alle_updates(settings, log, on_fortschritt) -> dict[str, ClientUpdateErge
   1. Bereitschaft: `/health`-Poll bis 60 s (Client evtl. gerade von
      startall hochgefahren; danach 🟡 „nicht erreichbar").
   2. `POST /update` mit `target=settings["update_ziel_signale"]`
-     (Default 200, Admin editierbar); 409-Behandlung mit Backoff.
+     (Default 200, Admin editierbar) und
+     `katalogMaxAlterH=settings["update_katalog_max_alter_h"]`
+     (Default 72 = 3-Tage-Regel, Admin editierbar); 409-Behandlung mit
+     Backoff. Der Client meldet im Status, ob er die Katalog-Phase
+     übersprungen hat („Katalog aktuell genug, Stand …") — Stufe 0 zeigt
+     das als normalen Erfolg, nicht als Warnung.
   3. Poll `GET /update/status` alle 5 s; jede Änderung → `on_fortschritt`
      (schreibt in `workflow["steps"]["clients"]` und das Stufe-0-Protokoll).
   4. `login_required` → wartet `update_login_timeout_min` (Default 10),
@@ -303,6 +353,7 @@ width="large")`), Inhalt live über das 1-s-Fragment:
 │   Datenstand 07.10. 15:41 ✅                                  │
 ├───────────────────────────────────────────────────────────────┤
 │ Pelican :8090         🔵 läuft — Tradelisten 47/200 (nur neue)│
+│   Katalog 06.10. ✅ (3-Tage-Regel: jünger als 72 h, übersprungen)│
 │   Phase: tradelisten · 21:03 min · Login automatisch ✅ 15:30  │
 ├───────────────────────────────────────────────────────────────┤
 │ RoboForex :8091        🟢 fertig · Cookie ✅ · 200/200         │
@@ -357,7 +408,8 @@ startall.bat
 Nutzer klickt EINMAL „Full-Scan" (oder Teilscan, oder Sonntag kommt)
   └─ Stufe 0: 5× POST /update (parallel)
        ├─ MqlDownloader: Selenium-Login automatisch → Listen → Trades → Konvertieren
-       ├─ Pelican: Auto-Login (WebView-Auto-Fill) → Katalog ≥200 → Tradelisten-Merge
+       ├─ Pelican: Auto-Login (WebView-Auto-Fill) → Katalog: ALLE mit
+       │    Abonnenten (~648; 3-Tage-Regel überspringt frische Loads) → Tradelisten-Merge
        ├─ Robo: Cookie-Check → 200 Signale → Tagesliste → Deals (nur neue)
        ├─ Vantage: 200 Signale → Tradelisten (nur neue)
        └─ Zulu: 200 Trader → Tradelisten (nur neue)
@@ -410,10 +462,10 @@ Nutzer klickt EINMAL „Full-Scan" (oder Teilscan, oder Sonntag kommt)
    Abnahmeschritt, Selenium-frei).
 4. **GUI**: Stufe 0 in scan.py (STEPS-Eintrag mit Nummer 0, `w_run_clients`,
    Dialog, Fragment-Anbindung, Expertenpfade ohne Stufe 0), Admin-Settings
-   (update_ziel_signale=200, update_timeout_min=120,
-   update_login_timeout_min=10, stufe0_aktiv=true), Hilfe-Thema
-   „stufe0_client_updates", DB-Tabelle client_updates, scan_launcher +
-   scan_fortschritt + Melder-Zeile.
+   (update_ziel_signale=200, update_katalog_max_alter_h=72,
+   update_timeout_min=120, update_login_timeout_min=10, stufe0_aktiv=true),
+   Hilfe-Thema „stufe0_client_updates", DB-Tabelle client_updates,
+   scan_launcher + scan_fortschritt + Melder-Zeile.
 5. **Abnahme E2E**: startall → ein Klick Full-Scan → Stufe-0-Fenster
    verfolgt alle 5 live → DB-Protokoll prüfen → zweiter Klick direkt danach
    zeigt „bereitsLaufend/aktuell genug" (Doppel-Trigger-Schutz).
@@ -421,16 +473,23 @@ Nutzer klickt EINMAL „Full-Scan" (oder Teilscan, oder Sonntag kommt)
    REST-Doku je Client (MqlDownloader REST_API_Dokumentation.md,
    UI_KONVENTIONEN), README-SIGNALDOWNLOADER-Kette ergänzen.
 
-## 10. Offene Punkte (Entscheidungen bei Umsetzung)
+## 10. Entscheidungen des Nutzers (07.10.2026 abends — offene Punkte geklärt)
 
-- Pelican „schneller Modus": Soll der Katalog-Load bei `target=200` wirklich
-  ALLE ~648 mit Copiers laden (Status quo „lädt bewusst alle") oder auf
-  Top-200 nach Copiers gedeckelt werden? Konzept sagt: gedeckelt auf
-  `target` (schneller); Vollstand bleibt per GUI-Button möglich.
-- MqlDownloader `target`: Wirkt nur auf die Listen-Limits — der Downloader
-  lädt die Plattform-Top-Liste sowieso vollständig. Ergebnis-Meldung nennt
-  die Zahl derer MIT Abonnenten (~50) — passt zur Nutzer-Erwartung.
-- Sollen Katalog-Loads, die am selben Tag schon liefen (24-h-Regel der
-  Pelican-UI), übersprungen werden? Vorschlag: Nein — Stufe 0 läuft
-  explizit auf Knopfdruck, immer frisch; die 24-h-Regel bleibt reine
-  GUI-Färbung.
+1. **Pelican-Deckel: NEIN — alle Signale mit Abonnenten laden (~648).**
+   „Nur die 200 besten" ist nur zulässig, wenn die Plattform eine
+   beweisbar sortierte Top-Liste liefert, die neue Signale einschließt.
+   Bei Pelican gibt es das nicht → Voll-Load aller ~648 (Beste-200-Regel
+   §5a). Begründung des Nutzers: „Es könnten ja neue Signale mit
+   Abonnenten dabei sein — da könnten Top-Kandidaten bei sein."
+   Kosten-Bremse dafür ist die 3-Tage-Regel (Punkt 2).
+2. **Katalog-Loads: 3-Tage-Regel statt „immer frisch" (72 h).** Ein
+   Katalog-Load, der jünger als 72 h ist, wird bei Stufe 0 übersprungen
+   („einmal alle 3 Tage laden reicht"; erweitert die 24-h-Regel der
+   Pelican-UI, die damit als Grundlage diente). Fenster einstellbar
+   (`update_katalog_max_alter_h`, Default 72). Tradelisten-Delta läuft
+   weiterhin bei jedem Lauf (SHA/„nur neue"). Erzwungener Voll-Load über
+   den GUI-Button des Clients bleibt möglich.
+3. MqlDownloader `target` (informativ): wirkt nur auf die Listen-Limits —
+   der Downloader lädt die Plattform-Top-Liste sowieso vollständig; die
+   Ergebnis-Meldung nennt die Zahl derer MIT Abonnenten (~50) — entspricht
+   der Nutzer-Erwartung („versuchen was kommt").

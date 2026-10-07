@@ -1323,6 +1323,13 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
       neuer Tabelle client_updates und zeigt Live-Status im Stufe-0-Kreis-
       Dialog (großes Fenster, Muster Stations-Dialoge). Ziel ≥200 Signale
       mit Abonnenten je Client (Versuch genügt — MqlDownloader liefert ~50).
+      Nutzer-Entscheidungen 07.10. abends (doc/23 §10): (a) Beste-200-Regel
+      — Pelican NICHT deckeln (keine beweisbar sortierte, neue Signale
+      einschließende Top-Liste): ALLE mit Abonnenten laden (~648); Robo/
+      Vantage/Zulu nutzen target=200 als Plattform-Top-Listenlänge.
+      (b) 3-Tage-Regel — Katalog-Load jünger als 72 h wird übersprungen
+      (Setting update_katalog_max_alter_h, Default 72; Tradelisten-Delta
+      läuft immer; GUI-Button erzwingt Voll-Load).
       Pelican-Login AUTOMATISCH: Credentials nur lokal in
       PelicanTrading/data/credentials.properties (gitignored, nie Repo/
       Log/LLM), WebView-Auto-Fill im bestehenden Login-Dialog, Fallback
