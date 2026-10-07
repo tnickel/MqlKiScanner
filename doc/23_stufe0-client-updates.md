@@ -630,3 +630,12 @@ Katalog-Skip (Tradelisten wurden ja aktualisiert; katalogUebersprungen wird
 separat gemeldet); Pelican erlaubt parallele GUI-Tasks neben dem Update-Job
 (projektübliches Task-Modell, Store-Zugriffe synchronized); Selenium-Login
 bleibt manuelle Abnahme (Netz/GUI, doc/23 §9.3).
+
+### Nachtrag Live-Betrieb (07.10. 11:17, erster echter Lauf)
+
+Pelican-Update-Job starb mit NPE (`client == null`): Der PelicanClient wird
+in der App LAZY erzeugt — die GUI-Buttons rufen vorher `clientInitialisiert()`
+auf, der Update-Job nicht. Fix: Vorab-Check in `starteUpdateJob` + defensiv
+in `hatSession()` (Robo/Vantage/Zulu/MqlDownloader erstellen ihre Clients
+beim App-Start — geprüft, kein gleichartiger Fall). Der Scanner hatte den
+Ausfall dabei KORREKT als 🟡-Hinweis geführt und der Scan lief weiter.
