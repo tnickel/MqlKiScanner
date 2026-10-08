@@ -14,7 +14,7 @@ HELP_SCAN = {
 **Die sechs Stationen** zeigen denselben Ablauf im Detail:
 Signale holen → Auswahl treffen → Prüfen & speichern → KI-Bericht → Portfolio → Abgleich.
 
-**Doppelklick auf einen Stationskreis** öffnet die Erklärung mit Tabelle. Das funktioniert auch vor dem ersten Lauf; vorhandene Laufdaten bleiben erhalten. Mit der Tastatur: Kreis fokussieren und Enter oder Leertaste drücken.
+**Klick auf einen Stationskreis** öffnet die Erklärung mit Tabelle. Das funktioniert auch vor dem ersten Lauf; vorhandene Laufdaten bleiben erhalten. Mit der Tastatur: Kreis fokussieren und Enter oder Leertaste drücken.
 
 **Farben:** Blau = läuft gerade · Grün = fertig · Orange = fertig mit Lücken · Rot = Fehler · Grau = wartet oder übersprungen.
 Grün bedeutet nur: der Schritt ist technisch durch — nicht, dass ein Signal „sicher“ ist.

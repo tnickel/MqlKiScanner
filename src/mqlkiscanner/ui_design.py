@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import html
 import re
+import time
 from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
@@ -586,7 +587,7 @@ def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
     Mini-Balken und wird nur bei laufenden Stationen angezeigt; overall
     (0..1) füllt die Schiene zwischen den Knoten proportional auf. Mit
     `sid` werden die Kugeln interaktiv. Die CCv2-Komponente übermittelt
-    Doppelklicks an Python; Stations-URLs bleiben als Fallback verfügbar.
+    Klicks an Python; Stations-URLs bleiben als Fallback verfügbar.
     """
     n = len(steps)
     fill = max(0.0, min(1.0, (overall * n - 0.5) / (n - 1))) if n > 1 else 0.0
@@ -614,7 +615,7 @@ def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
             node = (f'<a class="mks-node" role="button" '
                     f'data-station="{html.escape(sid_raw, quote=True)}" '
                     f'href="?station={quote(sid_raw, safe="")}" target="_self" '
-                    f'title="Doppelklick für Erklärung und Tabelle dieser Station" '
+                    f'title="Klick für Erklärung und Tabelle dieser Station" '
                     f'aria-label="{aria}">{mark}</a>')
         else:
             node = (f'<div class="mks-node" role="img" '
@@ -630,11 +631,35 @@ def workflow_stepper_html(steps: list[dict], overall: float = 0.0) -> str:
 
 
 # CCv2 hält die Sitzung einschließlich der laufenden Ergebnisse am Leben.
-# Die Knoten werden beim Live-Tick erhalten, damit beide Klicks desselben
-# Doppelklicks auch bei wechselndem Fortschritt denselben Knoten treffen.
+# Die Knoten werden beim Live-Tick erhalten, damit ein Klick auch bei
+# wechselndem Fortschritt denselben Knoten trifft (kein DOM-Austausch).
 _WORKFLOW_STEPPER_JS = """
+// Modul-Zustand überlebt alle Export-Läufe: Der Klick-Handler wird nur
+// EINMAL gekoppelt, aber `send` zeigt immer auf den JüNGSTEN Komponenten-
+// Kontext (ein alter setTriggerValue-Handle kann veralten).
+//
+// Zustell-Selbstheilung (Live-Befund 08.10.): Ein Klick, der während des
+// Rerun-Fensters nach dem Schließen eines Stationsdialogs passiert, kann auf
+// dem Server still verworfen werden. Python schreibt dafür den zuletzt
+// VERARBEITETEN Stationswert in `data.bestaetigt`; solange der eigene Klick
+// dort nicht auftaucht, sendet das Skript ihn bei jedem Export-Lauf
+// (Fragment-Takt 1 s) erneut.
+let _send = null;
+let _pending = null;
+let _seit = 0;
+
 export default function(component) {
     const { parentElement, data, setTriggerValue } = component;
+    _send = setTriggerValue;
+    const bestaetigt = (data && data.bestaetigt) || null;
+    if (_pending) {
+        if (bestaetigt === _pending) {
+            _pending = null;
+        } else if (Date.now() - _seit > 1200) {
+            _send('station', _pending);
+            _seit = Date.now();
+        }
+    }
     const root = parentElement.querySelector('.mks-stepper-root');
     const next = document.createElement('div');
     next.innerHTML = data.html;
@@ -660,36 +685,36 @@ export default function(component) {
                 fresh.querySelector('.mks-step-body').innerHTML;
         });
     }
-    const stationNode = event => event.target.closest('[data-station]');
-    const preventNavigation = event => {
-        if (stationNode(event)) event.preventDefault();
-    };
-    const openStation = event => {
-        const node = stationNode(event);
-        if (!node) return;
-        event.preventDefault();
-        setTriggerValue('station', node.dataset.station);
-    };
-    const keyboard = event => {
-        if (event.key === 'Enter' || event.key === ' ') openStation(event);
-    };
-    root.addEventListener('click', preventNavigation);
-    root.addEventListener('dblclick', openStation);
-    root.addEventListener('keydown', keyboard);
-    return () => {
-        root.removeEventListener('click', preventNavigation);
-        root.removeEventListener('dblclick', openStation);
-        root.removeEventListener('keydown', keyboard);
-    };
+    // Einzelklick öffnet die Stationsansicht — wie ein Button, keine
+    // Browser-Neuladung: preventDefault hält href als Fallback still.
+    if (!parentElement.dataset.mksWired) {
+        parentElement.dataset.mksWired = '1';
+        const openStation = event => {
+            const node = event.target.closest('[data-station]');
+            if (!node) return;
+            event.preventDefault();
+            _pending = node.dataset.station;
+            _seit = Date.now();
+            if (_send) _send('station', _pending);
+        };
+        const keyboard = event => {
+            if (event.key === 'Enter' || event.key === ' ') openStation(event);
+        };
+        parentElement.addEventListener('click', openStation);
+        parentElement.addEventListener('keydown', keyboard);
+    }
 }
 """
+
+
+
 
 
 def render_workflow_stepper(
     steps: list[dict], overall: float, *, key: str,
     on_station_change: Callable[[], None],
 ) -> None:
-    """Stationsdetails per Doppelklick/Tastatur ohne Browser-Neuladung."""
+    """Stationsdetails per Klick/Tastatur ohne Browser-Neuladung."""
     # Identische Definition ist idempotent. Registrierung gehört zur aktiven
     # Runtime, nicht zum Python-Modulcache (u. a. bei mehreren AppTest-Instanzen).
     component = st.components.v2.component(
@@ -698,12 +723,17 @@ def render_workflow_stepper(
         isolate_styles=False,
         js=_WORKFLOW_STEPPER_JS,
     )
+    # `bestaetigt` = letzter vom Server VERARBEITETER Klick (der Triggerwert
+    # bleibt in session_state[key] stehen); `nonce` erzwingt den 1-s-Export-
+    # Lauf, damit die JS-Wiederholung unbestätigter Klicks greifen kann.
+    zustand = st.session_state.get(key)
+    bestaetigt = zustand.get("station") if isinstance(zustand, dict) else None
     component(
-        data={"html": workflow_stepper_html(steps, overall)},
+        data={"html": workflow_stepper_html(steps, overall),
+              "bestaetigt": bestaetigt, "nonce": time.time()},
         key=key,
         on_station_change=on_station_change,
     )
-
 
 # --------------------------------------------------------------- Urteile
 # KI-Berichte nennen Urteile als Woerter (EMPFEHLUNG | WATCHLIST | ABLEHNUNG,
