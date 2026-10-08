@@ -1411,8 +1411,12 @@ class ScanPipeline:
                 quelle_version = str(cand.get("quelle_version") or "mql5")
                 log(f"Kennzahlen aus Datenquelle {quelle_row['kuerzel']} "
                     f"({quelle_version}) …")
+                # Quelle-Kuerzel als Broker-Fallback mitgeben: RoboMonitor
+                # antwortet mit version mql4/mql5 (nie 'robo'), der Broker-
+                # Fallback griff sonst fuer CopyFX-Signale nicht (08.10.).
                 stats = ingest.metrics_zu_stats(
-                    ingest.hole_metrics(quelle_row, res.id, quelle_version))
+                    ingest.hole_metrics(quelle_row, res.id, quelle_version),
+                    quelle_kuerzel=str(quelle_row["kuerzel"]))
             else:
                 log("Kennzahlen-Seite laden (mql5) …")
                 stats = signal_stats.fetch_signal_stats(session, res.id)

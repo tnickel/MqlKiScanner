@@ -1343,5 +1343,64 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
       mit Abonnenten ~648 OHNE Deckel — Beste-200-Regel doc/23 §5a).
       Wirksam ab Client-NEUSTART (startall); Robo-Cookie langlebig, nur
       Statusmeldung.
+- ✅ ARBEITSLISTE „47 SYMBOLE OHNE KONTRAKT" GESCHLOSSEN (08.10., Nutzer-
+      Auftrag „Contracts aus MetaTrader auslesen"): Diagnose vorab — der
+      GROSSE Teil war gar nicht fehlend, sondern zweierlei Blocker:
+      (a) STALE: Die Spec-Einträge vom 06.10. (CASH-Indizes, TradeMaxGlobal-
+      Futures, Vantage-/RoboForex-Aktien) wirkten im letzten Scan-Bestand
+      noch nicht. (b) BROKER-LOSER ROBO-BESTAND: Der Broker-Fallback
+      (06.10.) keyte auf die Antwort-version — der RoboMonitor antwortet
+      aber 'mql4' (23 Signale) bzw. 'mql5' (7 CopyFX-MT5-Signale), nie
+      'robo'; alle CopyFX-Signale blieben broker_server=None und JEDE
+      broker-gebundene Spec griff nicht. Fix (ingest.py): QUELLEN_BROKER_
+      FALLBACK um 'mql4' und die Kürzel 'robo'/'vant' erweitert +
+      metrics_zu_stats(…, quelle_kuerzel=) als zweite Fallback-Stufe
+      ('mql5' bleibt mehrdeutig, auch MqlDownloader-Direkt); pipeline.py
+      übergibt quelle_row['kuerzel']. FORENSICS_VERSION → 15 (Schock-/
+      Equity-Werte der Quellen-Signale ändern sich; Alter Bestand neu
+      scannen). NEU in contract_specs.json: ESU25_ROBOFOREX (E-mini-S&P
+      Sep-2025, 50 USD/Punkt — Beleg kontrakt_beweis.py 08.10.: Financial-
+      FreedomFX #21411352, n=2 Median exakt 50.000). NEU scripts/reference/
+      mt5_kontrakt_specs.py: NUR LESENDE MT5-Spec-Lesung (symbol_info:
+      Contract Size, Gewinnwährung, Volumen-/Tick-Details) über beliebig
+      viele Terminals — Default TickmillLifeMql5 + ActiveTrades003 +
+      Vantage, Portabelstart/-beendung wie kursdaten.py. Erst-Lesung 08.10.
+      (tmp/mt5_kontrakt_specs_20261008_*.json): Tickmill bestätigt BTCUSD 1
+      · DE40 1 EUR · USTEC/US500 1 · XTIUSD/BRENT 1 Barrel · SOLUSD 10 ·
+      XAUUSD 100 · XAGUSD 5000; ActiveTrades hat SOLUSD = 1 (≠ Tickmill 10
+      — Solana NICHT brancheneinheitlich, Vantage-Eintrag bleibt korrekt
+      broker-gebunden); Vantage-Terminal nicht nutzbar (Authorization
+      failed — Login fällig). BEWUSST OFFEN (kein Beleg, nichts erfunden):
+      NQZ23@Sonrch (n=1, Rohzeile Buy +0.25 Punkte mit PnL −0.62 — Daten-
+      artefakt), ETHBCH@the-best-one (n=1, Faktor 4523 mehrdeutig: 1×BCHUSD
+      oder 10×…), U@Spruce-waveband (n=3 Median ~877, kein runder Faktor;
+      Zulu broker-agnostisch — auch mit Faktor nicht bindbar). Verifikation
+      (tmp/verify_arbeitsliste.py): Nach Re-Scan verbleiben genau diese 3
+      Kontrakt-Lücken; die 6 „kein Kurs"-Fälle (XAUUSD/XAGUSD ×4-Signale,
+      BITCOIN, SPX500, NASUSD) sind reine Kurs-Lieferungen — Symbole am
+      Tickmill-Terminal per mt5_kontrakt_specs bestätigt verfügbar, Re-Scan
+      mit laufendem Terminal räumt ab. +3 Tests (test_contract_specs.py:
+      mql4/mql5-Fallback-Kaskade, ESU25 broker-gebunden).
+- ✅ VANTAGE ALS DRITTE KURSDATEN-/SPEC-QUELLE (08.10. nachmittags, Nutzer-
+      Auftrag „Vantage in Config aufnehmen, portable starten, auf Postfixe
+      achten"): Terminal C:\Forex\Mt5\Vantage (vom Nutzer eingerichtet,
+      Login aktiv) ist jetzt DRITTE Quelle in kursdaten_terminals (config-
+      Default; portabler Start/beenden wie die anderen). MT5-Lesung der
+      echten Namen (tmp/mt5_kontrakt_specs_20261008_*.json): Aktien PLAIN
+      (AAPL/MSFT/ADBE … — neue Kursquelle für Aktien-Signale, z. B. Sonrch-
+      RoboForex-Aktien), Indizes NAS100/SP500/GER40 (NICHT USTEC/US500 —
+      „SPX" ist dort die Spirax-AKTIE in GBX, „AXTIUSD" die AXT-Aktie!),
+      Öl USOUSD/UKOUSD, Gold als SUFFIX-FALLE XAUUSD+ (plain XAUUSD
+      existiert nicht; .crp = reine Kursumrechnung, 247 = 1-Unzen-Kontrakt).
+      SYMBOL_ALIASE_DEFAULT um vantage-Spalte erweitert (XAUUSD+ · SP500 ·
+      NAS100 · USOUSD · UKOUSD · GER40 · NAS100ft); Admin-UI-Spalte +
+      Hilfe-Topics aktualisiert. NEU in contract_specs.json, MT5-belegt:
+      ETHBCH_VANTAGE (CS 10, Quote BCH — konsistent mit dem einen Trade:
+      16.8 USD = 0.1857 BCH × 0.02 Lot × 10 × BCHUSD≈452; löst die letzte
+      the-best-one-Lücke), USOUSD_VANTAGE (WTI 1000 Barrel — Faktor-1000-
+      Falle für Vantage-Konten belegt; Tickmill bleibt 1), SOLUSD_VANTAGE
+      um MT5-Kreuzbeleg ergänzt (Tickmill ebenfalls 10, ActiveTrades 1).
+      +3 Tests (test_kursdaten_nachladen.py: 3-Terminal-Default, vantage-
+      Ersetzungen, XAUUSD+-Alias-Auflösung in hole_h1).
 - [ ] Erster voller autonomer Monat (Bestätigung der Phase-E-Abnahme
       „Monat ohne Scan-Klick" nach Oktober 2026)

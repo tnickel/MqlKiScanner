@@ -261,7 +261,8 @@ def rendern(settings: dict) -> None:
             if k and k not in terminal_keys:
                 terminal_keys.append(k)
         if not terminal_keys:
-            terminal_keys = ["tickmilllifemql5", "activetrades003"]
+            terminal_keys = ["tickmilllifemql5", "activetrades003",
+                             "vantage"]
         tab_cols = st.columns([2] + [2] * len(terminal_keys))
         with tab_cols[0]:
             st.markdown("**Kanonisch**")

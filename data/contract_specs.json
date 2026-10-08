@@ -9,8 +9,8 @@
    "cross_broker=false: Kontrakt ist brokerabhaengig und gilt nur fuer die gelisteten 'brokers' (Teilstring-Match, Gross-/Kleinschreibung egal). Der Grund: Oel ist der bekannte Fallstrick — Tickmill 1 Barrel je Lot, viele andere Broker 100 Barrel (Faktor 100!).",
    "aliases = weitere Broker-Namen fuer denselben Kontrakt (Matching nach Suffix-Bereinigung, 'USOUSD-ECN' -> 'USOUSD')."
   ],
-  "stand": "2026-09-08",
-  "hauptquelle": "Tickmill Contract Specifications (tickmill.com/instruments/<symbol>), vom Nutzer als Referenzbroker genannt. Abweichende Broker-Specs hier je Symbol ergaenzen."
+  "stand": "2026-10-08",
+  "hauptquelle": "Tickmill Contract Specifications (tickmill.com/instruments/<symbol>), vom Nutzer als Referenzbroker genannt. Abweichende Broker-Specs hier je Symbol ergaenzen. MT5-Terminal-Lesung (NUR LESEND) als weitere Belegart: scripts/reference/mt5_kontrakt_specs.py (Tickmill/ActiveTrades/Vantage, symbol_info)."
  },
  "symbols": {
   "BTCUSD": {
@@ -438,9 +438,46 @@
    "aliases": [
     "SOLUSD"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166, SOLUSD n=1",
-   "retrieved": "2026-10-06",
-   "note": "Vantage SOL-CFD: n=1, Median 9.974 ≈ 10 USD je 1 USD Bewegung je Lot (einziger Trade, Abweichung 0.3 % — bei Folgeträden gegenprüfen).",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 08.10.2026: Vantage #1096166, SOLUSD n=1; MT5-Kreuzbeleg 08.10.: symbol_info am Vantage-Terminal CS exakt 10",
+   "retrieved": "2026-10-08",
+   "note": "Vantage SOL-CFD: Rueckrechnung n=1 Median 9.974 ≈ 10; MT5 symbol_info bestaetigt exakt 10 (und Tickmill ebenfalls 10 — ActiveTrades dagegen 1: NICHT brancheneinheitlich, broker-gebunden bleibt richtig).",
+   "brokers": [
+    "vantage"
+   ]
+  },
+  "ETHBCH_VANTAGE": {
+   "contract_size": 10.0,
+   "quote_currency": "BCH",
+   "class": "CRYPTO",
+   "stress_move": 0.5,
+   "unit_label": "BCH Kursbewegung",
+   "cross_broker": false,
+   "aliases": [
+    "ETHBCH"
+   ],
+   "source": "MT5 symbol_info am Vantage-Terminal (scripts/reference/mt5_kontrakt_specs.py 08.10.2026): ETHBCH Contract Size 10, Gewinnwaehrung BCH; Trade-Konsistenz Vantage #1096166 n=1: 16.8 USD = 0.1857 BCH x 0.02 Lot x 10 x BCHUSD(~452) — exakt",
+   "retrieved": "2026-10-08",
+   "note": "Ethereum vs Bitcoin Cash, in BCH quotiert: USD-Schock bleibt gesperrt (BCH nicht in EZB-Umrechnung), nativer BCH-Schock 0.5 (~12 % aehnlich ETH-Konvention).",
+   "brokers": [
+    "vantage"
+   ]
+  },
+  "USOUSD_VANTAGE": {
+   "contract_size": 1000.0,
+   "quote_currency": "USD",
+   "class": "ENERGY",
+   "stress_move": 10.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "aliases": [
+    "USOUSD",
+    "USOIL",
+    "WTI",
+    "XTIUSD"
+   ],
+   "source": "MT5 symbol_info am Vantage-Terminal (scripts/reference/mt5_kontrakt_specs.py 08.10.2026): USOUSD 'WTI Crude Oil Cash' Contract Size 1000; UKOUSD (Brent) dort ebenfalls 1000",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Oel 1000 Barrel je Lot (wie VTMarkets/RoboForex/Axi-Future; Tickmill-XTIUSD-Eintrag 1 Barrel bleibt fuer Tickmill-Konten). Faktor-1000-Falle aus _meta hiermit fuer Vantage-Konten belegt.",
    "brokers": [
     "vantage"
    ]
@@ -708,6 +745,23 @@
    "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: RoboForex #73009362 ESZ23 n=1 Median 48.2 ≈ 50",
    "retrieved": "2026-10-06",
    "note": "E-mini-S&P-Future 50 USD/Punkt (CME-Konvention); n=1 — Folgemonats-Ticker (ESZ24 …) brauchen analoge Einträge.",
+   "brokers": [
+    "roboforex"
+   ]
+  },
+  "ESU25_ROBOFOREX": {
+   "contract_size": 50.0,
+   "quote_currency": "USD",
+   "class": "INDEX_FUTURE",
+   "stress_move": 50.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "aliases": [
+    "ESU25"
+   ],
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 08.10.2026: RoboForex #21411352 FinancialFreedomFX, ESU25 n=2 Median exakt 50.000 — 50 USD je Indexpunkt je Lot",
+   "retrieved": "2026-10-08",
+   "note": "E-mini-S&P-Future Sep-2025, gleiche CME-Familie wie ESZ23 (50 USD/Punkt); n=2 exakt.",
    "brokers": [
     "roboforex"
    ]

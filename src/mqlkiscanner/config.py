@@ -120,9 +120,16 @@ DEFAULT_SETTINGS: dict = {
     # Equity-Rekonstruktion — Priorität in Reihenfolge; Fallback nur für
     # Symbole, die die vorderen Quellen nicht liefern (GMT je Feed
     # unterschiedlich — Auto-GMT-Preisabgleich je Symbol behandelt das).
+    # Nutzer-Wunsch 08.10.: Vantage als DRITTE Quelle (C:\Forex\Mt5\Vantage,
+    # vom Nutzer eingerichtet) — liefert Aktien PLAIN (AAPL, MSFT, …: neue
+    # Kursquelle fuer Aktien-Signale) und die Vantage-Namen NAS100/SP500/
+    # USOUSD/UKOUSD/GER40; Gold heisst dort XAUUSD+ (Suffix-Falle, siehe
+    # SYMBOL_ALIASE_DEFAULT). Start portabel wie die anderen Quellen
+    # (initialize(portable=True), am Lauf-Ende pfadgenau beenden).
     "kursdaten_terminals": [
         r"C:\Forex\Mt5\TickmillLifeMql5\terminal64.exe",
         r"C:\Forex\Mt5\ActiveTrades003\terminal64.exe",
+        r"C:\Forex\Mt5\Vantage\terminal64.exe",
     ],
     "markt_start_erlauben": False,  # Standard: Terminal NIE selbst starten
     "markt_symbole_manuell": "",    # zusätzliche Symbole, Komma/Leerzeichen

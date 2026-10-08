@@ -295,19 +295,28 @@ def _zahl(wert):
 # frei (MSFT: Vantage 1 vs. RoboForex 100 USD/Punkt — bewiesen 06.10.).
 # pelican/mql5 liefern den echten Server je Signal und brauchen keinen
 # Fallback.
+# 08.10.2026, Arbeitslisten-Befund: Der RoboMonitor antwortet mit version
+# 'mql4' (23 Signale) ODER 'mql5' (7 CopyFX-MT5-Signale) — 'robo' kommt in
+# der Antwort NICHT vor, der Fallback griff deshalb fuer RoboForex nie.
+# 'mql5' ist Mehrdeutig (auch MqlDownloader-Direkt), deshalb zusaetzlich
+# der Fallback ueber das QUELLEN-KUERZEL des Aufrufers (metrics_zu_stats-
+# Parameter), der fuer beide Robo-Exportversionen greift.
 QUELLEN_BROKER_FALLBACK = {
     "vantage": "vantage",
+    "vant": "vantage",
     "robo": "roboforex",
+    "mql4": "roboforex",
     "zulu": "zulu",
 }
 
 
-def metrics_zu_stats(antwort: dict | None) -> dict:
+def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None) -> dict:
     """Metrics-Antwort → Felder der MQL5-Kennzahlenseite (doc/20 §4).
 
     Nur vorhanden Werte werden gemappt — nichts geraten. `initial_deposit_usd`
     greift automatisch, sobald der Downloader es liefert (bis dahin None und
-    die Kapitalbasis-Regel ruht für Quellen-Signale).
+    die Kapitalbasis-Regel ruht für Quellen-Signale). `quelle_kuerzel` ist
+    der Broker-Fallback zweiter Stufe (siehe QUELLEN_BROKER_FALLBACK).
     """
     antwort = antwort or {}
     metrics = antwort.get("metrics") if isinstance(antwort.get("metrics"), dict) else {}
@@ -349,6 +358,8 @@ def metrics_zu_stats(antwort: dict | None) -> dict:
         # greifen weiterhin).
         "broker_server": (metrics.get("Broker")
                           or QUELLEN_BROKER_FALLBACK.get(
-                              str(antwort.get("version") or "").lower())),
+                              str(antwort.get("version") or "").lower())
+                          or QUELLEN_BROKER_FALLBACK.get(
+                              str(quelle_kuerzel or "").strip().lower())),
         "stats_quelle": "datenquelle_metrics",
     }

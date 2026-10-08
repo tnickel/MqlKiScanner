@@ -17,6 +17,7 @@ DATEIEN = {
     2358336: ("data/trade_snapshots/14e5f450f2862286083d1a34011e7d28b9ed4aeeb10eeed96fa84c60dbab85b4.csv", "SCR EURAUD (mql5)"),
     2368681: ("data/trade_snapshots/76d0902a30f54f177e880e76e11bc3a603a2fb1d4f2a828ac0b4a6a36abadb1a.csv", "BTC One Shot (mql5)"),
     2332746: ("data/trade_snapshots/ba87df332050ad0822af5888dd52ac46a35decea0fc3ceaf26c923fb11f10f35.csv", "Lunar Express (mql5)"),
+    21411352: ("data/trade_snapshots/a2fccbf3b460477aa856f1d37d3d05219ed2c2bc800841ca0f49907a9c82472d.csv", "FinancialFreedomFX (robo)"),
 }
 
 for sid, (pfad, name) in DATEIEN.items():

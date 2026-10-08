@@ -238,3 +238,52 @@ def test_quellen_broker_fallback_in_ingest():
     )["broker_server"] == "ICMarketsSC-Live15"
     assert ingest.metrics_zu_stats(
         {"metrics": {}, "version": "mql5"})["broker_server"] is None
+
+
+def test_robo_monitor_mql4_und_mql5_version_fallen_auf_roboforex_zurueck():
+    """08.10., Arbeitslisten-Befund „47 Symbole ohne Kontrakt“: Der RoboMonitor
+    antwortet mit version 'mql4' (23 Signale) oder 'mql5' (7 CopyFX-MT5-
+    Signale) — NIE mit 'robo'. Ohne Kuerzel-Fallback blieben alle CopyFX-
+    Signale broker-los und jede broker-gebundene Spec (AAPL=100 statt 1,
+    .JP225CASH=100 JPY, WTI=1000 Barrel, ESU25-Future 50 USD/Punkt) griffe
+    nicht. 'mql5' allein bleibt mehrdeutig (auch MqlDownloader-Direkt) —
+    erst das Quellen-Kuerzel entscheidet."""
+    from mqlkiscanner import ingest
+    # version mql4 ist eindeutig RoboMonitor -> RoboForex
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "mql4"})["broker_server"] == "roboforex"
+    # version mql5 bleibt ohne Kuerzel unentschieden (MqlDownloader-Direkt!)
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "mql5"})["broker_server"] is None
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "mql5"},
+        quelle_kuerzel="robo")["broker_server"] == "roboforex"
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "mql5"},
+        quelle_kuerzel="vant")["broker_server"] == "vantage"
+    # MqlDownloader-Direkt bekommt den Broker weiterhin vom MT5-Export
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "mql5"},
+        quelle_kuerzel="mql5")["broker_server"] is None
+    # metrics.Broker gewinnt immer ueber beide Fallback-Stufen
+    assert ingest.metrics_zu_stats(
+        {"metrics": {"Broker": "PepperstoneLive01MT5"}, "version": "mql4"},
+        quelle_kuerzel="robo")["broker_server"] == "PepperstoneLive01MT5"
+
+
+def test_esu25_zukunftsvertrag_roborefx_greift_nur_dort(tmp_path):
+    """ESU25 (E-mini-S&P Sep-2025) am RoboForex-Konto: 50 USD/Punkt, bewiesen
+    aus FinancialFreedomFX #21411352 (n=2, Median exakt 50). Ohne RoboForex-
+    Broker bleibt der Kontrakt unbelegt (Futures-Punktwert ist broker-
+    abhängig: Vantage-CFD wäre 1)."""
+    schreibe_specs(tmp_path, {
+        "ESU25_ROBOFOREX": {
+            "contract_size": 50.0, "quote_currency": "USD",
+            "class": "INDEX_FUTURE", "stress_move": 50.0,
+            "cross_broker": False, "brokers": ["roboforex"],
+            "aliases": ["ESU25"]},
+    })
+    assert symbols.spec_for(
+        "ESU25", broker="RoboForex")["contract_size"] == 50.0
+    assert symbols.spec_for("ESU25", broker="Vantage") is None
+    assert symbols.spec_for("ESU25") is None

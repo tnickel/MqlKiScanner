@@ -160,22 +160,34 @@ def _broker_matches(entry: dict, broker: str | None) -> bool:
 
 
 # ── Broker-Ersetzungstabelle (Nutzer-Wunsch 05.10.) ─────────────────────
+# Vantage-Spalte (08.10., MT5-Lesung am eingerichteten Terminal): Aktien
+# heissen PLAIN (AAPL, MSFT — keine Ersetzung noetig); Indizes/Öl anders als
+# bei Tickmill: NAS100 statt USTEC, SP500 statt US500, USOUSD/UKOUSD statt
+# XTIUSD/BRENT; Gold als SUFFIX-Falle XAUUSD+ (plain XAUUSD existiert dort
+# NICHT — XAUUSD.crp ist nur Kursumrechnung, XAUUSD247 ein 1-Unzen-Kontrakt).
 SYMBOL_ALIASE_DEFAULT = {
-    "DE40":  {"activetrades003": "GER40"},
+    "DE40":  {"activetrades003": "GER40", "vantage": "GER40"},
     "GER40": {"tickmilllifemql5": "DE40"},
-    "WTI":   {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
-    "USOIL": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
+    "WTI":   {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT",
+              "vantage": "USOUSD"},
+    "USOIL": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT",
+              "vantage": "USOUSD"},
+    "XTIUSD": {"vantage": "USOUSD"},
+    "BRENT": {"vantage": "UKOUSD"},
+    "XAUUSD": {"vantage": "XAUUSD+"},
     "NAS100": {"tickmilllifemql5": "USTEC"},
-    "US100": {"tickmilllifemql5": "USTEC"},
-    "NASUSD": {"tickmilllifemql5": "USTEC"},
+    "US100": {"tickmilllifemql5": "USTEC", "vantage": "NAS100"},
+    "USTEC": {"vantage": "NAS100"},
+    "NASUSD": {"tickmilllifemql5": "USTEC", "vantage": "NAS100"},
     "SPX500": {"tickmilllifemql5": "US500"},
+    "US500": {"vantage": "SP500"},
     "US500CASH": {"tickmilllifemql5": "US500"},
     "GER30CASH": {"tickmilllifemql5": "DE40"},
     "GER40-FUTURE": {"tickmilllifemql5": "DE40", "activetrades003": "GER40"},
-    "US100-FUTURE": {"tickmilllifemql5": "USTEC"},
+    "US100-FUTURE": {"tickmilllifemql5": "USTEC", "vantage": "NAS100ft"},
     "US500-FUTURE": {"tickmilllifemql5": "US500"},
     "US30-FUTURE": {"tickmilllifemql5": "US30"},
-    "USOIL-FUTURE": {"tickmilllifemql5": "XTIUSD"},
+    "USOIL-FUTURE": {"tickmilllifemql5": "XTIUSD", "vantage": "USOUSD"},
     "BITCOIN": {"tickmilllifemql5": "BTCUSD"},
     "WT": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
 }
