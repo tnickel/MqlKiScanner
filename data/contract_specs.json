@@ -854,9 +854,10 @@
    ],
    "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: TradeMaxGlobal-Live2 (Lunar #2332746) XTIUSD n=1 Median 962 ≈ 1000",
    "retrieved": "2026-10-06",
-   "note": "WTI-Future 1000 Barrel/Lot (n=1, ~4 % Abweichung — bei Folgeträden gegenprüfen); Tickmill-Konten behalten 1 Barrel.",
+   "note": "Broker-Freigabe 08.10.2026 fuer Signal Lunar Express (#2332746): Provider wechselte nach dem 07.09.2026 zu TradeSmart-Server01. Der komplette vorhandene Datenbestand — inkl. des einzigen XTIUSD-Trades vom 21.05.2026 — stammt aus der TradeMaxGlobal-Aera; der 1000-Barrel-Beweis (Rueckrechnung, 06.10.) wurde aus genau diesen Daten berechnet (Ratio 961,7 ~ 1000, Gebuehr-verschoben). Gilt fuer den VORHANDENEN Bestand; tauchen neue XTIUSD-Trades unter TradeSmart auf, Kontraktgroesse dort neu beweisen.",
    "brokers": [
-    "trademaxglobal"
+    "trademaxglobal",
+    "tradesmart-server01"
    ]
   },
   "XCUUSD_EXNESS": {
@@ -876,6 +877,175 @@
    "brokers": [
     "exness"
    ]
+  },
+  "SP500_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 50.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "SP500"
+   ],
+   "source": "MT5 symbol_info am Vantage-Terminal 08.10.2026 (SP500 'S&P Index Cash CFD (USD)', CS=1) — Signal TRADE EASY 4YOU 2 (vant)"
+  },
+  "UKOUSD_VANTAGE": {
+   "contract_size": 1000.0,
+   "quote_currency": "USD",
+   "class": "ENERGY",
+   "stress_move": 10.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "UKOUSD",
+    "BRENT"
+   ],
+   "source": "MT5 symbol_info am Vantage-Terminal 08.10.2026 (UKOUSD 'Brent Crude Oil Cash', CS=1000 Barrel) — Signal Rebounds (vant)"
+  },
+  "DJ30FT_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 500.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "DJ30",
+    "DJ30FT"
+   ],
+   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=87, Quartile 1.00…1.00. DJ30 (n=1, exakt 1.00) als Alias mitgefuehrt."
+  },
+  "NAS100FT_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 500.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "NAS100FT"
+   ],
+   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=74, Quartile 1.00…1.00."
+  },
+  "SP500FT_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 50.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "SP500FT"
+   ],
+   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=19, Quartile 1.00…1.00."
+  },
+  "CL-OIL_VANTAGE": {
+   "contract_size": 1000.0,
+   "quote_currency": "USD",
+   "class": "ENERGY",
+   "stress_move": 10.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "CL-OIL",
+    "CL OIL",
+    "CLOIL"
+   ],
+   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=15, Quartile 1000.00…1000.01. 1000 Barrel/Lot (WTI-Future-Konvention am Vantage-Broker bewiesen)."
+  },
+  "VIX_VANTAGE": {
+   "contract_size": 1000.0,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 20.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "VIX"
+   ],
+   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=23, Quartile 1000.00…1000.00. VIX-Punkte x 1000 USD je Lot."
+  },
+  "GER40FT_VANTAGE": {
+   "contract_size": 1.08,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 500.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "GER40FT"
+   ],
+   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=9, Quartile 1.05…1.08. Lokalw EUR/Punkt, Spread = EURUSD-Spanne der Handelszeitraeume — als USD-Aequivalent (Median) eingetragen."
+  },
+  "UK100FT_VANTAGE": {
+   "contract_size": 1.35,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 200.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "UK100FT"
+   ],
+   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=13, Quartile 1.27…1.36. Lokalw GBP/Punkt, Spread = GBPUSD-Spanne — als USD-Aequivalent (Median) eingetragen."
+  },
+  "HK50FT_VANTAGE": {
+   "contract_size": 0.13,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 2000.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "HK50FT"
+   ],
+   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=385, Quartile 0.13…0.13. Lokalw HKD/Punkt, Peg 7,75-7,85 macht das USD-Aequivalent stabil — direkt gemessen."
+  },
+  "JPN225FT_VANTAGE": {
+   "contract_size": 0.01,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 5000.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "JPN225FT"
+   ],
+   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=40, Quartile 0.01…0.01. NIKKEI-Punkte: direkt gemessener USD-Effekt 0,01/Punkt/Lot ueber 2024-2026 konstant; Währungsmodell unklar, daher der Messwert selbst."
   }
  }
 }
