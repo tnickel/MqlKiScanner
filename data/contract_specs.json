@@ -198,7 +198,7 @@
    "aliases": [
     "ADBE"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', ADBE n=18, Median 1.001 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', ADBE n=18, Median 1.001 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=18); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -215,7 +215,7 @@
    "aliases": [
     "BOEING"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', BOEING n=5, Median 1.0 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', BOEING n=5, Median 1.0 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=5); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -232,7 +232,7 @@
    "aliases": [
     "BYND"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', BYND n=3, Median 1.0 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', BYND n=3, Median 1.0 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=3); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -249,7 +249,7 @@
    "aliases": [
     "COIN"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', COIN n=8, Median 1.0 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', COIN n=8, Median 1.0 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=8); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -266,7 +266,7 @@
    "aliases": [
     "CRM"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', CRM n=12, Median 1.001 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', CRM n=12, Median 1.001 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=12); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -283,7 +283,7 @@
    "aliases": [
     "GIS"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', GIS n=2, Median 1.001 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', GIS n=2, Median 1.001 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=2); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -300,7 +300,7 @@
    "aliases": [
     "MSFT"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', MSFT n=11, Median 0.999 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', MSFT n=11, Median 0.999 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=11); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -317,7 +317,7 @@
    "aliases": [
     "PG"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', PG n=4, Median 1.005 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', PG n=4, Median 1.005 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=4); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -334,7 +334,7 @@
    "aliases": [
     "PYPL"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', PYPL n=12, Median 1.0 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', PYPL n=12, Median 1.0 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=12); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -351,7 +351,7 @@
    "aliases": [
     "RBLX"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', RBLX n=6, Median 1.0 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', RBLX n=6, Median 1.0 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=6); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -368,7 +368,7 @@
    "aliases": [
     "SHOP"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', SHOP n=8, Median 1.001 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', SHOP n=8, Median 1.001 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=8); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -385,7 +385,7 @@
    "aliases": [
     "SNAP"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', SNAP n=10, Median 1.0 — 1 USD je 1 USD Bewegung je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', SNAP n=10, Median 1.0 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
    "retrieved": "2026-10-06",
    "note": "Vantage-Aktien-CFD (Beweis n=10); MSFT@RoboForex = 100 (Konflikt!) — deshalb broker-gebunden.",
    "brokers": [
@@ -438,7 +438,7 @@
    "aliases": [
     "SOLUSD"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 08.10.2026: Vantage #1096166, SOLUSD n=1; MT5-Kreuzbeleg 08.10.: symbol_info am Vantage-Terminal CS exakt 10",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 08.10.2026: Vantage #1096166, SOLUSD n=1; MT5-Kreuzbeleg 08.10.: symbol_info am Vantage-Terminal CS exakt 10 | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 10 USD)",
    "retrieved": "2026-10-08",
    "note": "Vantage SOL-CFD: Rueckrechnung n=1 Median 9.974 ≈ 10; MT5 symbol_info bestaetigt exakt 10 (und Tickmill ebenfalls 10 — ActiveTrades dagegen 1: NICHT brancheneinheitlich, broker-gebunden bleibt richtig).",
    "brokers": [
@@ -492,7 +492,7 @@
    "aliases": [
     "HKTECH"
    ],
-   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166, HKTECH n=3, Median 0.128 ≈ 1 x HKD/USD — 1 HKD je Indexpunkt je Lot",
+   "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166, HKTECH n=3, Median 0.128 ≈ 1 x HKD/USD — 1 HKD je Indexpunkt je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 HKD)",
    "retrieved": "2026-10-06",
    "note": "Hang-Seng-TECH-CFD in HKD; EZB-Kurse decken HKD, USD-Schock rechnet über FX.",
    "brokers": [

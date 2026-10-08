@@ -408,14 +408,21 @@ nächsten Lauf — ohne Neustart.
     "settings_kursdaten": ("Kursdatenquellen: mehrere MetaTrader", """
 Mehrere MetaTrader-Terminals als Kursquellen für die Equity-DD-
 Rekonstruktion. Priorität in Reihenfolge: Symbole, die die erste
-Quelle nicht liefert (z. B. Aktien nur bei ActiveTrades), werden
+Quelle nicht liefert (z. B. Aktien nur bei Vantage), werden
 bei der nächsten versucht. GMT wird je Symbol per Preisabgleich
 erkannt und ist damit feed-unabhängig korrekt.
+Standard (seit 08.10.): TickmillLifeMql5 → ActiveTrades003 →
+Vantage (C:\\Forex\\Mt5\\Vantage, startet portabel). Vantage
+liefert Aktien plain (AAPL, MSFT, …) und eigene Index-/Öl-Namen
+(NAS100, SP500, USOUSD, UKOUSD, GER40); Gold heißt dort
+XAUUSD+ — solche Ersetzungen stehen bei „Symbol-Ersetzungen“.
 """),
     "settings_symbol_aliases": ("Symbol-Ersetzungen je Broker", """
 Ersetzungstabelle für Symbol-Namen, die bei verschiedenen Brokern
 unterschiedlich heißen. Z. B. heißt der DAX bei Tickmill DE40,
-bei ActiveTrades GER40. Der Scanner probiert automatisch:
+bei ActiveTrades GER40; bei Vantage heißt Gold XAUUSD+ (plain
+XAUUSD existiert dort nicht), der S&P 500 SP500, WTI USOUSD,
+der Nasdaq NAS100. Der Scanner probiert automatisch:
 exakter Name → normalisierter Name → Ersetzungstabelle.
 """),
 }
