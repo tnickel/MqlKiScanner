@@ -182,3 +182,24 @@ def test_station3_filtert_nach_stepper_klick_und_live_tick(fragment_runs):
     assert table.empty, "Deselecting every source must show no signals"
     table = _change_filter(at, fragment_runs, "multiselect", "_flt_quelle_forensik", ["mql5", "pelik"])
     assert set(table["ID"]) == {1001, 1002, 2001, 2002}
+
+
+def test_stepper_klick_wird_im_naechsten_live_tick_bestaetigt(fragment_runs):
+    """Regression (08.10., Dialog-Loop): Das Stepper-JS wiederholt einen Klick
+    alle 1,2 s, bis der Server ihn in data.bestaetigt zurückmeldet. Der
+    CCv2-Triggerwert in session_state verfällt nach dem Ankunfts-Lauf — der
+    Ack muss deshalb im beständigen Key landen und im nächsten Live-Tick beim
+    JS ankommen, sonst öffnet der Dialog nach dem Schließen sofort wieder."""
+    at = AppTest.from_file(str(ROOT / "streamlit_app.py"), default_timeout=30)
+    at.run()
+    _open_station_from_stepper(at, fragment_runs, "clients")
+    stepper = next(item for item in at.get("bidi_component")
+                   if item.key == "scan_station_stepper")
+    daten = json.loads(stepper.proto.json)
+    assert daten.get("bestaetigt") == "clients", \
+        "Der Live-Tick muss den verarbeiteten Klick als bestaetigt melden"
+    # Schließen simulieren: voller App-Rerun ohne neuen Trigger — der Host
+    # darf den Dialog nicht wieder öffnen.
+    at.run()
+    assert not list(at.get("dialog")), \
+        "Nach bestätigtem Klick darf ein voller Rerun den Dialog nicht wieder öffnen"

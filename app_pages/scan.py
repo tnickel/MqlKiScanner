@@ -240,6 +240,14 @@ def _station_requested() -> None:
     event = st.session_state.get("scan_station_stepper") or {}
     sid = event.get("station")
     if sid in {step[0] for step in STEPS}:
+        # Bestätigung im BESTÄNDIGEN Key ablegen — der CCv2-Triggerwert in
+        # session_state["scan_station_stepper"] verfällt nach dem Ankunfts-
+        # Lauf (und genau dieser Lauf wird vom Keyed-Rerun des Dialog-Hosts
+        # abgebrochen). Nur so kann der nächste Live-Tick den Klick ans
+        # Stepper-JS zurückmelden; ohne Ack wiederholt das JS ihn alle 1,2 s
+        # und der Dialog öffnete nach dem Schließen sofort wieder
+        # (Live-Befund 08.10.).
+        st.session_state["scan_station_stepper_bestaetigt"] = sid
         st.session_state["_scan_station_dialog"] = sid
         st.rerun("scan_station_dialog_host")
 

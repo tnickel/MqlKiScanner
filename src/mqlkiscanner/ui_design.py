@@ -641,9 +641,10 @@ _WORKFLOW_STEPPER_JS = """
 // Zustell-Selbstheilung (Live-Befund 08.10.): Ein Klick, der während des
 // Rerun-Fensters nach dem Schließen eines Stationsdialogs passiert, kann auf
 // dem Server still verworfen werden. Python schreibt dafür den zuletzt
-// VERARBEITETEN Stationswert in `data.bestaetigt`; solange der eigene Klick
-// dort nicht auftaucht, sendet das Skript ihn bei jedem Export-Lauf
-// (Fragment-Takt 1 s) erneut.
+// VERARBEITETEN Stationswert in `data.bestaetigt` (beständig im Session-
+// State — der Triggerwert selbst verfällt nach einem Lauf); solange der
+// eigene Klick dort nicht auftaucht, sendet das Skript ihn bei jedem
+// Export-Lauf (Fragment-Takt 1 s) erneut.
 let _send = null;
 let _pending = null;
 let _seit = 0;
@@ -723,11 +724,16 @@ def render_workflow_stepper(
         isolate_styles=False,
         js=_WORKFLOW_STEPPER_JS,
     )
-    # `bestaetigt` = letzter vom Server VERARBEITETER Klick (der Triggerwert
-    # bleibt in session_state[key] stehen); `nonce` erzwingt den 1-s-Export-
-    # Lauf, damit die JS-Wiederholung unbestätigter Klicks greifen kann.
-    zustand = st.session_state.get(key)
-    bestaetigt = zustand.get("station") if isinstance(zustand, dict) else None
+    # `bestaetigt` = letzter vom Server VERARBEITETER Klick; `nonce` erzwingt
+    # den 1-s-Export-Lauf, damit die JS-Wiederholung unbestätigter Klicks
+    # greifen kann. Gelesen wird der beständige Key `<key>_bestaetigt`, den
+    # der on_station_change-Callback schreibt — NICHT der Triggerwert in
+    # session_state[key]: Der ist flüchtig (Streamlit setzt ihn nach dem
+    # Ankunfts-Lauf auf None zurück), und dieser Lauf wird zudem vom
+    # Keyed-Rerun des Dialog-Hosts abgebrochen, bevor die Komponente ihn
+    # melden könnte. Die JS-Schleife sah ihre Bestätigung also nie und
+    # öffnete den Dialog nach jedem Schließen erneut (Live-Befund 08.10.).
+    bestaetigt = st.session_state.get(f"{key}_bestaetigt")
     component(
         data={"html": workflow_stepper_html(steps, overall),
               "bestaetigt": bestaetigt, "nonce": time.time()},
