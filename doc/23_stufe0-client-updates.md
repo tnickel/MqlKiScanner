@@ -333,6 +333,34 @@ Top-Kandidaten sein (neu, erste Abonnenten, noch unbekannt). Deshalb:
   dann muss man halt 600 laden — es könnten ja neue Top-Kandidaten dabei
   sein." Die 3-Tage-Regel (§4.1 `katalogMaxAlterH`) begrenzt die Kosten
   dieses Voll-Loads auf einen Lauf je 3 Tage.
+  **Präzisierung 08.10. (Nutzer-Wunsch „wir brauchen nur max 200"):** Die
+  §5a-Regel schützt den KATALOG — nicht die Tradelisten. Der Katalog bleibt
+  vollständige 2250/648 ohne Deckel (neue Top-Kandidaten werden entdeckt
+  und im GUI gezeigt), aber die TEURE Tradelisten-Phase (Stats + volle
+  Historie + offene Positionen je Provider) läuft nur noch für Provider
+  MIT Abonnenten. Begründung: Der Scanner meldet 0-Copier-Provider nie
+  (providers-Filter minSubscribers=1) — deren Historien liest niemand.
+  Die §5a-Garantie bleibt vollständig: Ein Signal, das ERST später
+  Abonnenten gewinnt, hat dann noch keine Tradelisten-Datei und bekommt
+  sie im nächsten Update-Lauf nachgeladen (hatTradeliste == false).
+  Konfiguration: `data/rest_api.json`
+  `"updateTradelistenNurAbonnenten": true` (Default an), pro Auftrag
+  überschreibbar per `/update`-Body `"tradelistenNurAbonnenten": false`;
+  Fortschritt zeigt die gekürzten Totals, Ergebnisfeld
+  `tradelistenOhneAbonnentenUebersprungen` zählt die Übersprungenen.
+  **Top-N-Deckel 08.10. (Nutzer-Entscheid „die 2263 werden erst sortiert,
+  über 200 abschneiden"):** Zusätzlich werden die Tradelisten auf die TOP-N
+  Provider nach Abonnentenzahl gekürzt — lokal sortiert, was hier erstmals
+  „beweisbar" ist, weil der Katalog ja vollständig ist (wir haben ALLE
+  Abonnentenzahlen selbst). Default N=200, `0` = aus; konfigurierbar in
+  `data/rest_api.json` (`"updateTradelistenMaxNachAbonnenten": 200`) und
+  pro Auftrag per `/update`-Body. Bewusst akzeptiertes Restrisiko
+  (Nutzer-Entscheid): Rang N+1 nach Abonnenten könnte nach Rendite/DD der
+  bessere Kandidat sein — aber bereits vorhandene Tradelisten werden NIE
+  gelöscht, und steigt ein zurückgestelltes Signal in den Top-N (oder
+  gewinnt überhaupt erst Abonnenten), lädt der nächste Lauf seine
+  Historie nach. Ergebnisfeld `tradelistenDeckelUebersprungen` zählt die
+  zurückgestellten.
 - **MqlDownloader:** lädt die Plattform-Liste ohnehin vollständig; gemeldet
   werden die ~50 Signale MIT Abonnenten — Wunsch 200, Ist ehrlich genannt.
 - Falls eine zukünftige Pelican-API-Version eine sortierte Top-Liste mit

@@ -1,0 +1,94 @@
+# --- Geheimnisse: NIE committen ---
+.env
+.env.*
+!.env.example
+config/secrets.local.json
+**/secrets.local.json
+data/mql5_cookies.json
+data/chrome_profile/
+data/chrome_profile_accounts/
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+
+# Daten (lokale Scans, Exporte, Runs — koennen personenbezogene Daten enthalten)
+data/candidates.json
+data/stats/
+data/trades/
+data/trade_snapshots/
+data/runs/
+data/reports/
+data/*.db
+data/*.db-*
+# MqlDownloader-Spiegel: Abonnenten-Verlaeufe + analysierte PDFs — NIE committen
+data/downloader/
+
+# temporaere Arbeitsdateien
+.tmp/
+*.log
+scripts/_probe_*.py
+scripts/_cmp_*.py
+scripts/_repro_*.py
+
+# IDE / OS
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
+monthly.json
+
+# EZB-Kursdateien (nachladbar, kein Repo-Inhalt)
+data/fx_rates/
+deploy-cache/
+doc/zielrechner_ns1mqsv_betrieb.md
+config/app_settings.json
+config/deploy.local.json
+tests/tmp_*.py
+
+# Laufzeit-Cache der Datenquellen-Artefakte (SHA-Cache, ändert sich je Scan)
+data/quellen/
+tmp/
+data/scan_fortschritt.json
+data/*.lock
+data/auswahl_begruendung.json
+tmp/
+doc/reviews/**/_seiten/
+.zcode/
+output/
+
+# ===== ↑ 以上同步自 .gitignore（「从 .gitignore 同步」只重写以上部分）=====
+.git/
+.hg/
+.svn/
+node_modules/
+bower_components/
+jspm_packages/
+site-packages/
+coverage/
+htmlcov/
+lcov-report/
+cmakefiles/
+cmake-build-*/
+bazel-*/
+pods/
+deriveddata/
+storybook-static/
+playwright-report/
+test-results/
+allure-results/
+allure-report/
+cdk.out/
+*.dist-info/
+eggs/
+pip-wheel-metadata/
+wheels/
+# ----- ↑ 以上为 ZCode 默认排除规则（自定义规则请写在本行下方，不会被同步/恢复改动）-----
+# 自定义规则写在下方（本行提示可删除）

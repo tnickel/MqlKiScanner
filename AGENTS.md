@@ -1402,5 +1402,39 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
       um MT5-Kreuzbeleg ergänzt (Tickmill ebenfalls 10, ActiveTrades 1).
       +3 Tests (test_kursdaten_nachladen.py: 3-Terminal-Default, vantage-
       Ersetzungen, XAUUSD+-Alias-Auflösung in hole_h1).
+- ✅ PELICAN-CLIENT: TRADELISTEN NUR NOCH MIT ABONNENTEN (08.10., Nutzer-
+      Frage „warum läd er 2000+ Signale, wir brauchen max 200"): Befund —
+      der Update-Job hielt sich an §5a (Katalog ohne Deckel), aber die
+      TRADELISTEN-Phase iterierte die komplette Katalogliste (~2263
+      Provider) und lud für ~1600 Provider OHNE Abonnenten die volle
+      Historie (Stats + geschlossen + offen je Provider). Der Scanner
+      liest 0-Copier-Historien nie (providers-Filter minSubscribers=1).
+      Fix (PelicanTrading): UpdateJobRunner.tradelistenNurAbonnenten
+      (Default AN) filtert die Tradelisten-Phase auf numCopiers>0 — der
+      KATALOG bleibt vollständig (§5a unangetastet: neue Top-Kandidaten
+      werden weiterhin entdeckt; ein späterer Abonnenten-Gewinn holt die
+      Tradeliste im nächsten Lauf nach, hatTradeliste==false). Fortschritt
+      zeigt gekürzte Totals (~632 statt 2263), Ergebnisfeld
+      tradelistenOhneAbonnentenUebersprungen. Konfiguration:
+      data/rest_api.json „updateTradelistenNurAbonnenten": true (Default),
+      pro Auftrag überschreibbar per /update-Body. doc/23 §5a präzisiert.
+      mvn test 87/87 grün. WIRKSAM erst nach Pelican-Client-NEUSTART (der
+      aktuell laufende Job lief noch auf dem alten Stand — die 2263 waren
+      dort aber überwiegend lokale „vorhanden"-Skips, nur 6 echte Downloads;
+      Job lief 10:36 fertig).
+- ✅ PELICAN: ZUSÄTZLICH TOP-200-DECKEL NACH ABONNENTEN (08.10., Nutzer-
+      Nachfrage „die 2263 werden erst sortiert, über 200 kann man abschneiden"):
+      Der Nutzer entschärft §5a selbst — da der Katalog ja VOLLSTÄNDIG ist
+      (alle Abonnentenzahlen liegen lokal vor), ist die Sortierung
+      beweisbar und der Schnitt legitim. UpdateJobRunner kürzt die
+      Tradelisten-Phase nach dem Abonnenten-Filter auf die TOP-N Provider
+      nach numCopiers (Default N=200, 0=aus; rest_api.json
+      „updateTradelistenMaxNachAbonnenten" bzw. /update-Body
+      „tradelistenMaxNachAbonnenten"). Ergebnisfeld
+      tradelistenDeckelUebersprungen; Log-Zeile je Schnitt. Bestehende
+      Tradelisten werden NIE gelöscht; Rücksteiger in die Top 200 (oder
+      spätere Abonnenten) holen die Historie im nächsten Lauf nach.
+      Akzeptiertes Restrisiko dokumentiert (Rang 201+ könnte nach
+      Rendite/DD besser sein — Nutzer-Entscheid). mvn test 89/89 grün.
 - [ ] Erster voller autonomer Monat (Bestätigung der Phase-E-Abnahme
       „Monat ohne Scan-Klick" nach Oktober 2026)
