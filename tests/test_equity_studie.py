@@ -294,6 +294,58 @@ def test_keine_trades_ist_skipped():
     assert "keine geschlossenen Trades" in erg["grund"]
 
 
+class _MultiTerminalKurse:
+    """Kursanbieter-Doppel mit Multi-Terminal-Schnittstelle (siehe
+    test_equity_rekonstruktion): Wechsel muss am Ende zurückgesetzt sein."""
+
+    def __init__(self, quelle0, quelle1):
+        self.quellen = [quelle0, quelle1]
+        self.terminal_idx = 0
+        self.wechsel = 0
+        self.zurueck = 0
+
+    def starten(self):
+        return True, "fake"
+
+    def beenden(self):
+        pass
+
+    def hole_h1(self, symbol, von, bis, gmt_offset_s=0):
+        bars = self.quellen[self.terminal_idx].get(symbol, [])
+        return [b for b in bars
+                if von + gmt_offset_s <= b["time"] <= bis + gmt_offset_s] or None
+
+    def hat_weiteren_terminal(self):
+        return self.terminal_idx < len(self.quellen) - 1
+
+    def wechsle_terminal(self):
+        self.terminal_idx += 1
+        self.wechsel += 1
+        return True, "gewechselt"
+
+    def zurueck_zum_ersten_terminal(self):
+        self.terminal_idx = 0
+        self.zurueck += 1
+        return True, "zurueck"
+
+
+def test_terminal_fallback_wird_zurueckgesetzt():
+    """Terminal-Fallback darf nicht kleben — nach studie() muss wieder
+    Quelle 0 aktiv sein (Workflow-Scan cached den Anbieter über den Lauf)."""
+    start = dt.datetime(2026, 1, 1)
+    bars_a = _bars("XAUUSD", start, 24)
+    bars_b = _bars("NOSUCH", start, 24)
+    trades = [_trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+                     start + dt.timedelta(hours=2), 2000.0, 2007.0),
+              _trade("NOSUCH", "buy", start + dt.timedelta(hours=1),
+                     start + dt.timedelta(hours=2), 2000.0, 2007.0)]
+    fake = _MultiTerminalKurse({"XAUUSD": bars_a}, {"NOSUCH": bars_b})
+    studie(_parsed(trades), fake, 1000)
+    assert fake.wechsel >= 1, "Fallback hätte ausgelöst werden müssen"
+    assert fake.terminal_idx == 0, "Terminal-Wechsel klebt"
+    assert fake.zurueck >= 1, "zurueck_zum_ersten_terminal wurde nie gerufen"
+
+
 def test_alle_kurse_fehlend_ist_skipped_mit_namen():
     start = dt.datetime(2026, 1, 1)
     trades = [_trade("EURUSD", "buy", start + dt.timedelta(hours=1),

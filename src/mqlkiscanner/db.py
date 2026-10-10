@@ -156,6 +156,57 @@ CREATE TABLE IF NOT EXISTS client_updates (
     hinweise           TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_client_updates_ts ON client_updates(ts DESC);
+-- Vollkatalog der Clients (Nutzer 08.10.2026): ALLE gemeldeten Signale je
+-- Quelle — bewusst GETRENNT von `signals`, damit der Workflow-Vorfilter
+-- (Mindestalter/-abo) nur beim Scan greift und die Übersicht alles zeigt.
+CREATE TABLE IF NOT EXISTS katalog_signale (
+    quelle      TEXT NOT NULL,
+    signal_id   INTEGER NOT NULL,
+    name        TEXT,
+    platform    TEXT,
+    url         TEXT,
+    version     TEXT,
+    abonnenten  REAL,
+    wochen      REAL,
+    risiko      TEXT,
+    updated_at  TEXT,
+    PRIMARY KEY (quelle, signal_id)
+);
+CREATE TABLE IF NOT EXISTS katalog_sync (
+    quelle      TEXT PRIMARY KEY,
+    gelaufen_am TEXT,
+    anzahl      INTEGER,
+    fehler      TEXT
+);
+-- Equity-Studien aus dem Batch „Lücken füllen" (Nutzer 08.10.2026): dieselbe
+-- equity_rekonstruktion-Struktur wie im Workflow-Forensik-Snapshot, aber für
+-- Signale OHNE Scan-Lauf persistent abgelegt. trades_sha macht den Datensatz
+-- verfallbar: Neue Trade-Lieferung → Studie ist alt und wird neu gerechnet.
+-- Manuelle Nutzer-Markierungen (Nutzer 08.10.2026): gruen/gelb/orange je
+-- Signal, Filter über die Alle-Signale-Seite. Kein Eintrag = unmarkiert.
+-- Freitext-Kommentar je Signal (Nutzer 09.10.2026): z. B. warum aufgenommen
+-- und warum Fix-ID — langer Text, Bearbeitung über den Dialog der Seite.
+CREATE TABLE IF NOT EXISTS signal_kommentare (
+    signal_id   INTEGER PRIMARY KEY,
+    kommentar   TEXT NOT NULL,
+    updated_at  TEXT
+);
+CREATE TABLE IF NOT EXISTS signal_markierungen (
+    signal_id   INTEGER PRIMARY KEY,
+    farbe       TEXT NOT NULL,
+    updated_at  TEXT
+);
+CREATE TABLE IF NOT EXISTS equity_studien (
+    signal_id   INTEGER PRIMARY KEY,
+    trades_sha  TEXT,
+    json        TEXT,
+    cagr_jahr_pct REAL,
+    ertrag_monat_geom_pct REAL,
+    dd_usd      REAL,
+    basislos    INTEGER,
+    virtuell    INTEGER,
+    updated_at  TEXT
+);
 """
 
 
@@ -201,6 +252,11 @@ def init_db() -> None:
         # Änderung des Berichtsinhalts auf den bereits erlaubten NULL-Wert heben.
         conn.execute("UPDATE analyses SET signal_id=NULL "
                      "WHERE kind='portfolio' AND signal_id=0")
+        # equity_studien: virtuelle-Basis-Flag (08.10.) — Alt-Bestand None
+        if "virtuell" not in {row["name"] for row in
+                              conn.execute("PRAGMA table_info(equity_studien)")}:
+            conn.execute("ALTER TABLE equity_studien ADD COLUMN virtuell INTEGER")
+            conn.execute("UPDATE equity_studien SET virtuell=0 WHERE virtuell IS NULL")
 
 
 def _now() -> str:
@@ -730,6 +786,164 @@ def store_quell_pruefung(quelle_id: int, pruefung: dict) -> None:
                      (json.dumps(pruefung, ensure_ascii=False, default=str), int(quelle_id)))
 
 
+# Katalog-DELETE in Blöcken: SQLite begrenzt gebundene Parameter pro Statement
+# (historisch 999, heute 32 766) — sourceübergreifend korrekt ist NUR das
+# löschen konkret berechneter Stale-IDs per IN (NOT IN in Blöcken würde die
+# IDs der anderen Blöcke fälschlich mitlöschen).
+_KATALOG_STALE_CHUNK = 500
+
+
+def katalog_upsert_many(quelle_kuerzel: str, items: list[dict]) -> tuple[int, int]:
+    """Vollkatalog einer Quelle schreiben (Nutzer 08.10.2026).
+
+    Insert/Update je (quelle, signal_id); Zeilen dieser Quelle, die im
+    frischen Katalog NICHT mehr auftauchen, werden gelöscht (der Client
+    kennt nur sichtbare Provider — rausgefallene sind dann wirklich weg).
+    Rückgabe (gespeichert, geloescht).
+    """
+    init_db()
+    jetzt = _now()
+    with _connect() as conn:
+        frisch: set[int] = set()
+        for item in items:
+            signal_id = int(item["signal_id"])
+            frisch.add(signal_id)
+            conn.execute(
+                """INSERT INTO katalog_signale (quelle, signal_id, name, platform,
+                   url, version, abonnenten, wochen, risiko, updated_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(quelle, signal_id) DO UPDATE SET
+                     name=excluded.name, platform=excluded.platform, url=excluded.url,
+                     version=excluded.version, abonnenten=excluded.abonnenten,
+                     wochen=excluded.wochen, risiko=excluded.risiko,
+                     updated_at=excluded.updated_at""",
+                (str(quelle_kuerzel), signal_id, item.get("name"),
+                 item.get("platform"), item.get("url"), item.get("version"),
+                 item.get("abonnenten"), item.get("wochen"), item.get("risiko"),
+                 jetzt))
+        alt = {int(row["signal_id"]) for row in conn.execute(
+            "SELECT signal_id FROM katalog_signale WHERE quelle=?",
+            (str(quelle_kuerzel),))}
+        stale = sorted(alt - frisch)
+        geloescht = 0
+        for i in range(0, len(stale), _KATALOG_STALE_CHUNK):
+            block = stale[i:i + _KATALOG_STALE_CHUNK]
+            cur = conn.execute(
+                f"DELETE FROM katalog_signale WHERE quelle=? AND signal_id IN "
+                f"({','.join('?' * len(block))})",
+                [str(quelle_kuerzel), *block])
+            geloescht += cur.rowcount or 0
+    return len(frisch), geloescht
+
+
+def katalog_list() -> list[dict]:
+    """Alle Katalogzeilen (je Quelle + Signal), Abonnenten absteigend."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT quelle, signal_id, name, platform, url, version, abonnenten, "
+            "wochen, risiko, updated_at FROM katalog_signale "
+            "ORDER BY abonnenten DESC, quelle, signal_id").fetchall()
+    return [dict(row) for row in rows]
+
+
+def katalog_sync_vermerken(quelle_kuerzel: str, anzahl: int,
+                           fehler: str | None = None) -> None:
+    """Sync-Ergebnis je Quelle stempeln (auch Fehler — ein fehlgeschlagener
+    Auto-Sync bei Seitenstart soll nicht bei jedem Rerun wiederholt werden)."""
+    init_db()
+    with _connect() as conn:
+        conn.execute(
+            """INSERT INTO katalog_sync (quelle, gelaufen_am, anzahl, fehler)
+               VALUES (?,?,?,?)
+               ON CONFLICT(quelle) DO UPDATE SET
+                 gelaufen_am=excluded.gelaufen_am, anzahl=excluded.anzahl,
+                 fehler=excluded.fehler""",
+            (str(quelle_kuerzel), _now(), int(anzahl), fehler))
+
+
+def katalog_sync_status() -> dict[str, dict]:
+    """Letzter Katalog-Sync je Quelle: {"kuerzel": {"gelaufen_am", "anzahl", "fehler"}}."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT quelle, gelaufen_am, anzahl, fehler FROM katalog_sync").fetchall()
+    return {row["quelle"]: {"gelaufen_am": row["gelaufen_am"],
+                            "anzahl": row["anzahl"], "fehler": row["fehler"]}
+            for row in rows}
+
+
+def store_equity_studie(signal_id: int, trades_sha: str, report: dict, *,
+                        cagr_jahr_pct: float | None = None,
+                        ertrag_monat_geom_pct: float | None = None,
+                        dd_usd: float | None = None,
+                        basislos: bool = False,
+                        virtuell: bool = False) -> None:
+    """Batch-Equity-Studie persistieren (Nutzer 08.10.2026).
+
+    `report` ist das volle equity_rekonstruktion-dict (dieselbe Struktur wie
+    im Forensik-Snapshot — results_from_db kann es 1:1 mappen). cagr/geom
+    stammen aus der Vorstufen-Statistik zum Studienzeitpunkt; daraus rechnet
+    das Laden TrueRetDD. dd_usd ist basis-unabhängig und existiert auch bei
+    kapitalbasielosen Signalen (basislos=True → kein % speichern).
+    """
+    init_db()
+    with _connect() as conn:
+        conn.execute(
+            """INSERT INTO equity_studien (signal_id, trades_sha, json,
+               cagr_jahr_pct, ertrag_monat_geom_pct, dd_usd, basislos, virtuell,
+               updated_at)
+               VALUES (?,?,?,?,?,?,?,?,?)
+               ON CONFLICT(signal_id) DO UPDATE SET
+                 trades_sha=excluded.trades_sha, json=excluded.json,
+                 cagr_jahr_pct=excluded.cagr_jahr_pct,
+                 ertrag_monat_geom_pct=excluded.ertrag_monat_geom_pct,
+                 dd_usd=excluded.dd_usd, basislos=excluded.basislos,
+                 virtuell=excluded.virtuell, updated_at=excluded.updated_at""",
+            (int(signal_id), trades_sha,
+             json.dumps(report, ensure_ascii=False, sort_keys=True, default=str),
+             cagr_jahr_pct, ertrag_monat_geom_pct, dd_usd,
+             1 if basislos else 0, 1 if virtuell else 0, _now()))
+
+
+def get_equity_studie(signal_id: int) -> dict | None:
+    """Studien-Zeile je Signal (dict mit geparstem json) oder None."""
+    init_db()
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT signal_id, trades_sha, json, cagr_jahr_pct, "
+            "ertrag_monat_geom_pct, dd_usd, basislos, virtuell, updated_at "
+            "FROM equity_studien WHERE signal_id=?",
+            (int(signal_id),)).fetchone()
+    if row is None:
+        return None
+    daten = dict(row)
+    try:
+        daten["report"] = json.loads(daten.pop("json") or "{}")
+    except ValueError:
+        return None
+    return daten
+
+
+def list_equity_studien() -> dict[int, dict]:
+    """Alle Studien als {signal_id: zeile} — für das Befüllen der Tabellen."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT signal_id, trades_sha, json, cagr_jahr_pct, "
+            "ertrag_monat_geom_pct, dd_usd, basislos, virtuell, updated_at "
+            "FROM equity_studien").fetchall()
+    out: dict[int, dict] = {}
+    for row in rows:
+        daten = dict(row)
+        try:
+            daten["report"] = json.loads(daten.pop("json") or "{}")
+        except ValueError:
+            continue
+        out[int(daten["signal_id"])] = daten
+    return out
+
+
 def store_quellen_artefakt(quelle_id: int, signal_id: int, version: str, art: str,
                            sha256: str, path: str) -> None:
     with _connect() as conn:
@@ -807,3 +1021,65 @@ def letzte_client_updates_je_quelle() -> dict[str, dict]:
     for eintrag in eintraege:  # absteigend — erster Treffer je Kürzel gewinnt
         neueste.setdefault(str(eintrag.get("kuerzel")), eintrag)
     return neueste
+
+
+def setze_markierung(signal_id: int, farbe: str | None) -> None:
+    """Nutzer-Markierung setzen (gruen/gelb/orange) oder entfernen (None)."""
+    init_db()
+    with _connect() as conn:
+        if farbe is None:
+            conn.execute("DELETE FROM signal_markierungen WHERE signal_id=?",
+                         (int(signal_id),))
+        else:
+            conn.execute(
+                """INSERT INTO signal_markierungen (signal_id, farbe, updated_at)
+                   VALUES (?,?,?)
+                   ON CONFLICT(signal_id) DO UPDATE SET
+                     farbe=excluded.farbe, updated_at=excluded.updated_at""",
+                (int(signal_id), str(farbe), _now()))
+
+
+def list_markierungen() -> dict[int, str]:
+    """Alle Markierungen als {signal_id: farbe}."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT signal_id, farbe FROM signal_markierungen").fetchall()
+    return {int(r["signal_id"]): str(r["farbe"]) for r in rows}
+
+
+def setze_kommentar(signal_id: int, kommentar: str | None) -> None:
+    """Freitext-Kommentar setzen (None/leer = löschen)."""
+    init_db()
+    text_wert = (kommentar or "").strip()
+    with _connect() as conn:
+        if not text_wert:
+            conn.execute("DELETE FROM signal_kommentare WHERE signal_id=?",
+                         (int(signal_id),))
+        else:
+            conn.execute(
+                """INSERT INTO signal_kommentare (signal_id, kommentar, updated_at)
+                   VALUES (?,?,?)
+                   ON CONFLICT(signal_id) DO UPDATE SET
+                     kommentar=excluded.kommentar,
+                     updated_at=excluded.updated_at""",
+                (int(signal_id), text_wert, _now()))
+
+
+def get_kommentar(signal_id: int) -> str:
+    """Kommentar je Signal ("" = keiner)."""
+    init_db()
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT kommentar FROM signal_kommentare WHERE signal_id=?",
+            (int(signal_id),)).fetchone()
+    return (row["kommentar"] if row else "") or ""
+
+
+def list_kommentare() -> dict[int, str]:
+    """Alle Kommentare als {signal_id: text} — für die Tabellenanzeige."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT signal_id, kommentar FROM signal_kommentare").fetchall()
+    return {int(r["signal_id"]): (r["kommentar"] or "") for r in rows}

@@ -247,8 +247,11 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
             continue
         state = str(info.get("state") or "").lower()
         phase = str(info.get("phase") or "")
-        done = int(info.get("done") or 0)
-        total = int(info.get("total") or 0)
+        try:
+            done = int(info.get("done") or 0)
+            total = int(info.get("total") or 0)
+        except (TypeError, ValueError):
+            done, total = 0, 0
         nachricht = str(info.get("message") or "")
         if info.get("ergebnis"):
             _ergebnis_uebernehmen(z, info.get("ergebnis"))

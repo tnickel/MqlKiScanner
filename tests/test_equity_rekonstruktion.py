@@ -41,6 +41,42 @@ def _bars(symbol, start_dt, stunden, base=2000.0, schritt=7.0):
 STUNDE = 3600
 
 
+class _MultiTerminalKurse:
+    """Kursanbieter-Doppel mit Multi-Terminal-Schnittstelle: Quelle 0 kennt
+    nur XAUUSD, Quelle 1 nur NOSUCH — der Wechsel muss am Ende wieder
+    zurückgesetzt werden (Review-Befund: Terminal-Wechsel klebte)."""
+
+    def __init__(self, bars_je_symbol_quelle0, bars_je_symbol_quelle1):
+        self.quellen = [bars_je_symbol_quelle0, bars_je_symbol_quelle1]
+        self.terminal_idx = 0
+        self.wechsel = 0
+        self.zurueck = 0
+
+    def starten(self):
+        return True, "fake"
+
+    def beenden(self):
+        pass
+
+    def hole_h1(self, symbol, von, bis, gmt_offset_s=0):
+        bars = self.quellen[self.terminal_idx].get(symbol, [])
+        return [b for b in bars
+                if von + gmt_offset_s <= b["time"] <= bis + gmt_offset_s] or None
+
+    def hat_weiteren_terminal(self):
+        return self.terminal_idx < len(self.quellen) - 1
+
+    def wechsle_terminal(self):
+        self.terminal_idx += 1
+        self.wechsel += 1
+        return True, "gewechselt"
+
+    def zurueck_zum_ersten_terminal(self):
+        self.terminal_idx = 0
+        self.zurueck += 1
+        return True, "zurueck"
+
+
 def test_gmt_erkennung_findet_eindeutigen_shift():
     # Terminal-Bars ab 2026-01-01 00:00 UTC; Trades 2h VOR Terminal-Zeit
     start = dt.datetime(2026, 1, 1, 0, 0)
@@ -114,6 +150,25 @@ def test_rekonstruktion_skip_ohne_kurse():
     erg = er.rekonstruiere(parsed, fake, startkapital=1000.0)
     assert erg["status"] == "skipped"
     assert "Kursdaten fehlen" in erg["grund"]
+
+
+def test_terminal_fallback_wird_zurueckgesetzt():
+    """Der Terminal-Wechsel als Fallback darf nicht kleben — nach
+    rekonstruiere() muss wieder Quelle 0 aktiv sein, sonst binden die
+    Kurse eines Signals alle Folgesignale ans falsche Terminal."""
+    start = dt.datetime(2026, 1, 1)
+    bars_a = _bars("XAUUSD", start, 24)
+    bars_b = _bars("NOSUCH", start, 24)
+    trades = [_trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+                     start + dt.timedelta(hours=2), 2000.0, 2007.0),
+              _trade("NOSUCH", "buy", start + dt.timedelta(hours=1),
+                     start + dt.timedelta(hours=2), 2000.0, 2007.0)]
+    parsed = SimpleNamespace(trades=trades, balances=[], pendings=[])
+    fake = _MultiTerminalKurse({"XAUUSD": bars_a}, {"NOSUCH": bars_b})
+    er.rekonstruiere(parsed, fake, startkapital=1000.0)
+    assert fake.wechsel >= 1, "Fallback hätte ausgelöst werden müssen"
+    assert fake.terminal_idx == 0, "Terminal-Wechsel klebt"
+    assert fake.zurueck >= 1, "zurueck_zum_ersten_terminal wurde nie gerufen"
 
 
 def test_schranke_beruecksichtigt_reko_dd():

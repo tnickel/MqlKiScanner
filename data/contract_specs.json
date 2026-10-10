@@ -75,7 +75,8 @@
    "unit_label": "USD Kursbewegung",
    "cross_broker": false,
    "brokers": [
-    "tickmill"
+    "tickmill",
+    "tradesmart"
    ],
    "aliases": [
     "USOUSD",
@@ -84,11 +85,12 @@
    ],
    "source": "https://www.tickmill.com/instruments/xtiusd (EU-Seite: Contract Size 1, Min./Schritt 1 Lot, Max. 10.000 Lots)",
    "retrieved": "2026-09-08",
-   "note": "ACHTUNG, brokerabhaengig: Tickmill definiert 1 Lot = 1 Barrel (Mindestvolumen 1 Lot). Viele andere Broker (z. B. TMGM, laut FXNX-Referenz die Retail-Mehrheit) nutzen 100 Barrel je Lot — Faktor 100 Unterschied. Deshalb gilt diese Spec NUR bei Tickmill-Konten; fuer andere Broker hier eine broker-spezifische Ergaenzung eintragen.",
+   "note": "ACHTUNG, brokerabhaengig: Tickmill definiert 1 Lot = 1 Barrel (Mindestvolumen 1 Lot). Viele andere Broker (z. B. TMGM, laut FXNX-Referenz die Retail-Mehrheit) nutzen 100 Barrel je Lot — Faktor 100 Unterschied. Deshalb gilt diese Spec NUR bei Tickmill-Konten; fuer andere Broker hier eine broker-spezifische Ergaenzung eintragen. TradeSmart-Server01: 1000 USD je 1 USD Bewegung je Lot (Trade-Rueckrechnung Lunar Express Mission 11m #2332746, n=1, 09.10.2026 — Future-Vollgroesse wie AxiTrader2, NICHT die Retail-ueblichen 100).",
    "broker_variants": {
     "tickmill": 1.0,
     "uebrige_retail_broker_ueblich": 100.0,
-    "axitrader2_future": 1000.0
+    "axitrader2_future": 1000.0,
+    "tradesmart": 1000.0
    }
   },
   "USOUSD_VTMARKETS": {
@@ -1046,6 +1048,106 @@
     "JPN225FT"
    ],
    "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=40, Quartile 0.01…0.01. NIKKEI-Punkte: direkt gemessener USD-Effekt 0,01/Punkt/Lot ueber 2024-2026 konstant; Währungsmodell unklar, daher der Messwert selbst."
+  },
+  "DJ30FT": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "stress_move": 600.0,
+   "unit_label": "Punkte",
+   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=122/122 konsistent (±2%). Kursdaten-Alias: US30 (Tickmill-Referenzterminal).",
+   "class": "INDEX"
+  },
+  "NAS100FT": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "stress_move": 900.0,
+   "unit_label": "Punkte",
+   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=317/318 konsistent. Kursdaten-Alias: USTEC (Tickmill-Referenzterminal).",
+   "class": "INDEX"
+  },
+  "SP500FT": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "stress_move": 150.0,
+   "unit_label": "Punkte",
+   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=19/19 konsistent. Kursdaten-Alias: US500 (Tickmill-Referenzterminal).",
+   "class": "INDEX"
+  },
+  "GER40FT": {
+   "contract_size": 1.0,
+   "quote_currency": "EUR",
+   "stress_move": 600.0,
+   "unit_label": "Punkte",
+   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=9, Median 1,08 USD/Punkt ≈ EURUSD → 1 EUR/Punkt (Restschwankung = FX-Kurs). Kursdaten-Alias: DE40 (Tickmill-Referenzterminal).",
+   "class": "INDEX"
+  },
+  "UK100FT": {
+   "contract_size": 1.0,
+   "quote_currency": "GBP",
+   "stress_move": 450.0,
+   "unit_label": "Punkte",
+   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=13, Median 1,35 ≈ GBPUSD → 1 GBP/Punkt. Kursdaten-Alias: UK100 (Tickmill-Referenzterminal).",
+   "class": "INDEX"
+  },
+  "HK50FT": {
+   "contract_size": 1.0,
+   "quote_currency": "HKD",
+   "stress_move": 1200.0,
+   "unit_label": "Punkte",
+   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=385/385 konsistent, Median 0,1281 = 1/7,8 HKD → 1 HKD/Punkt. Kursdaten-Alias: HK50 (Tickmill-Referenzterminal).",
+   "class": "INDEX"
+  },
+  "JPN225FT": {
+   "contract_size": 1.0,
+   "quote_currency": "JPY",
+   "stress_move": 3000.0,
+   "unit_label": "Punkte",
+   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=42, Median 0,0066 ≈ 1/151 JPY → 1 JPY/Punkt. Kursdaten-Alias: JP225 (Tickmill-Referenzterminal).",
+   "class": "INDEX"
+  },
+  "CL-OIL": {
+   "contract_size": 1000.0,
+   "quote_currency": "USD",
+   "stress_move": 8.0,
+   "unit_label": "USD/Bewegung",
+   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=15/15 konsistent: 1000 USD je 1 USD Bewegung (WTI-Future-Vollgroesse, wie USOIL-FUTURE). Kursdaten-Alias: XTIUSD (Tickmill-Referenzterminal).",
+   "class": "INDEX"
+  },
+  "VIX": {
+   "contract_size": 1000.0,
+   "quote_currency": "USD",
+   "stress_move": 15.0,
+   "unit_label": "Punkte",
+   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+   "retrieved": "2026-10-08",
+   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=23/23 konsistent: 1000 USD je Indexpunkt. Kursdaten-Alias: VIX (Tickmill-Referenzterminal).",
+   "class": "INDEX"
+  },
+  "NQZ23": {
+   "contract_size": 20.0,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "stress_move": 900.0,
+   "unit_label": "Punkte",
+   "source": "Trade-Rueckrechnung RoboForex-Signal Sonrch #73009362 (mql4-Trades, n=1): USD-PnL / ((Exit-Entry)*Richtung*Lots) = 20,00 — deckt sich exakt mit dem CME-Standard des E-mini NASDAQ-100-Futures (NQ, 20 USD je Indexpunkt).",
+   "retrieved": "2026-10-09",
+   "note": "NQZ23 = NASDAQ-100-Future Dezember-2023-Laufzeit. Kursdaten: bewusst OHNE Alias auf USTEC gelassen — Future- vs Cash-Niveau weicht (Basis/Carry), Preisproben wuerden scheitern; die Equity-Reko ueberspringt das Symbol ehrlich, die Exposure-Rechnung nutzt die Kontraktgroesse."
   }
  }
 }

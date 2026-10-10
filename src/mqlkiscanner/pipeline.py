@@ -196,6 +196,18 @@ class ScanResult:
     # Monitorwert geskippt wird). Basis-Vorbehalt: Der Monitor rechnet gegen
     # seine eigene (ggf. rückgerechnete) Kapitalbasis.
     monitor_trade_eq_dd_pct: float | None = None
+    # True-DD in USD aus der Equity-Studie — basis-unabhängig und damit auch
+    # für kapitalbasielose Signale (z. B. Vantage ohne Einzahlungszeilen)
+    # belegbar; der %-True-DD bleibt dort bewusst leer (Nutzer 08.10.2026).
+    true_dd_usd: float | None = None
+    # Virtuelle-Basis-Variante (Nutzer 08.10.2026): Für Signale ohne jede
+    # Kontobasis rechnet der Batch den %-Drawdown gegen die markierte
+    # 10.000-USD-ANNAMHE — NUR Anzeige (Tabelle), geht NIEMALS in Schranken/
+    # Ampel (dd_maximum/refresh_efficiency lesen diese Felder nicht).
+    true_dd_virtuell_pct: float | None = None
+    retdd_virtuell_jahr: float | None = None
+    retdd_virtuell_monat: float | None = None
+    true_dd_basis_virtuell: bool = False
     kapitalbasis_verwendet_quelle: str = ""
     broker_server: str | None = None
     symbole: str = ""               # gehandelte Assets ("XAUUSD, US30, ...")
@@ -228,6 +240,14 @@ class ScanResult:
     llm_fehler: str = ""
     fehler: str = ""
     quelle: str = ""                # Herkunfts-Kürzel der Datenquelle (doc/20)
+    # Nur-Katalog-Zeilen der Übersicht „Alle Signale" (Nutzer 08.10.2026):
+    # direkt aus dem Client-Katalog, NOCH NICHT Teil des Workflows — der
+    # Vorfilter (Mindestalter/-abo) bleibt bewusst beim Scan. quelle_id/
+    # quelle_version erlauben es der Seite, Trades/Kennzahlen on demand
+    # vom Client nachzuladen.
+    herkunft: str = "Workflow"      # "Workflow" (gescannt) | "Katalog" (nur gemeldet)
+    quelle_id: int | None = None    # datenquellen.id der Herkunfts-Quelle
+    quelle_version: str = ""        # versions-Segment des Clients (z. B. vantage)
     source_kind: str = "live"  # Demo-Ergebnisse nie in den Live-Katalog übernehmen.
     persisted_this_run: bool = False  # Mindestens ein Versuch dieses analyze_candidate-Aufrufs gespeichert.
     ampel_wechsel: dict | None = None  # Protokollierter Wechsel gegen den letzten Chronik-Eintrag (ampel_verlauf).
@@ -455,6 +475,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
     """Alle in der SQLite-DB gespeicherten Signale als ScanResult-Liste."""
     settings = {**config.load_settings(), **(settings or {})}
     results: list[ScanResult] = []
+    _studien_cache = db.list_equity_studien()
     for row in db.list_catalog():
         stats = row.get("stats") or {}
         f = row.get("forensik") or {}
@@ -586,6 +607,9 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             tiefenanalyse_model=row.get("tiefe_model") or "",
             fehler=last_fehler or "",
         )
+        # Batch-Equity-Studien („Lücken füllen", Nutzer 08.10.2026) — nur
+        # wo die Forensik KEINE Equity-Messung hat; Forensik gewinnt immer.
+        studie_anwenden(res, _studien_cache)
         if forensik_stale and f:
             res.urteil = (f"Veraltete Forensik nach fehlgeschlagenem Neu-Lauf ({last_fehler})"
                           if last_fehler else
@@ -643,6 +667,68 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
                 "(Vorbehalt: Kursmessung unzuverlässig)")
         results.append(res)
     return results
+
+
+def studie_anwenden(res: ScanResult, studien: dict) -> None:
+    """Batch-Equity-Studie (Tabelle equity_studien) auf ein ScanResult mappen.
+
+    Nutzer-Wunsch 08.10.2026 („Lücken füllen“): Für Signale ohne Forensik-
+    Equity-Messung liefert die Batch-Studie dieselben Felder (True-DD %/≈,
+    TrueRetDD-Familie) plus basis-unabhängiges True-DD USD. Forensik-Werte
+    GEWINNEN immer — angewendet wird nur bei kompletter Lücke. Ein
+    veralteter Trade-Stand (SHA weicht ab) macht die Studie ungültig.
+    Basislose Studien (keine belegbare Kapitalbasis) liefern bewusst nur
+    den USD-Drawdown, nie Prozente.
+    """
+    studie = studien.get(int(res.id))
+    if studie is None:
+        return
+    if (res.max_drawdown_equity_pct is not None
+            or res.equity_dd_rekon_roh_pct is not None):
+        return
+    sha = studie.get("trades_sha") or ""
+    if sha and res.trades_sha256 and sha != res.trades_sha256:
+        return  # neue Trade-Lieferung — Studie veraltet, wird neu gerechnet
+    report = studie.get("report") or {}
+    res.true_dd_usd = studie.get("dd_usd")
+    if studie.get("virtuell"):
+        # Virtuelle 10k-Basis: Prozente NUR als Anzeige in separaten Feldern —
+        # equity_dd_rekonstruiert_pct bleibt frei (Schranke/Ampel unberührt).
+        dd = report.get("equity_dd_pct")
+        if dd is None:
+            dd = report.get("equity_dd_pct_raw")
+        res.true_dd_virtuell_pct = dd
+        res.true_dd_basis_virtuell = True
+        cagr = studie.get("cagr_jahr_pct")
+        geom = studie.get("ertrag_monat_geom_pct")
+        if dd:
+            res.retdd_virtuell_jahr = (cagr / dd if cagr else None)
+            res.retdd_virtuell_monat = (geom / dd if geom else None)
+        return
+    if studie.get("basislos"):
+        return  # alte nur-USD-Studien (werden als virtuell neu gerechnet)
+    roh = report.get("equity_dd_pct_raw", report.get("equity_dd_pct"))
+    if roh is None:
+        return
+    res.equity_dd_rekon_roh_pct = roh
+    res.equity_rekon_gmt_h = report.get("gmt_offset_h")
+    res.equity_rekon_status = report.get("status") or ""
+    res.equity_rekon_grund = report.get("grund") or ""
+    res.equity_rekon_abdeckung_pct = report.get("abdeckung_pct")
+    res.equity_rekon_methodik = report.get("methodik") or ""
+    res.equity_rekon_zeitbasis = report.get("zeitbasis") or {}
+    res.equity_rekon_ohne_kurse = report.get("symbole_ohne_kurse") or []
+    res.equity_rekon_ohne_kontrakt = report.get("symbole_ohne_kontrakt") or []
+    if report.get("verlaesslich") and report.get("equity_dd_pct") is not None:
+        res.equity_dd_rekonstruiert_pct = report.get("equity_dd_pct")
+        res.equity_dd_rekonstruiert_usd = report.get("equity_dd_usd")
+    # TrueRetDD-Familie aus der Studien-Kennzahlenbasis (dieselbe Formel wie
+    # refresh_efficiency — dort ist der Produzent effizienz_kennzahlen):
+    if res.ertrag_monat_geom_pct is None:
+        res.ertrag_monat_geom_pct = studie.get("ertrag_monat_geom_pct")
+    if res.cagr_jahr_pct is None:
+        res.cagr_jahr_pct = studie.get("cagr_jahr_pct")
+    res.refresh_efficiency()
 
 
 def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
@@ -1429,6 +1515,19 @@ class ScanPipeline:
             if res.wochen is None:
                 res.wochen = stats.get("weeks")
             res.broker_server = stats.get("broker_server")
+            if not res.broker_server:
+                # Der Broker eines Signals ist stabil — wenn die Quelle ihn
+                # (wie MqlDownloader-Metrics) nicht liefert, den einmal
+                # gelernten Wert aus der DB übernehmen, statt die broker-
+                # scoping Kontraktspecs (XTIUSD & Co.) aushungern zu lassen
+                # (Live-Fall Lunar Express #2332746: TradeSmart via Seiten-
+                # Abruf gelernt, 09.10.2026).
+                alt_row = db.get_signal(res.id) or {}
+                try:
+                    alt_stats = json.loads(alt_row.get("stats_json") or "{}")
+                except ValueError:
+                    alt_stats = {}
+                res.broker_server = alt_stats.get("broker_server") or None
             # Webseiten-Kapitalbasis (kann negativ sein — eigene rote Regel).
             # Quellen-Signale: erst mit Downloader-Lieferung von InitialDeposit
             # (doc/20 §4) — bis dahin ehrlich None.

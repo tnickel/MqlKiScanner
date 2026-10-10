@@ -73,7 +73,10 @@ def _is_mt4_summary_row(row: list[str], fmt: str) -> bool:
     die Erkennung gegen False Positives ab.
     """
     row_type = row[1].strip()
-    if row_type not in FILLED_TYPES or row[3].strip().casefold() != "profit":
+    # 'profit' = MT4-Orderbuch-Footer der MQL5-Webseite; 'summary' = selbe
+    # Zeile im MqlDownloader-mql4-Spiegel (Live-Fund 09.10.2026: MySingalStart
+    # #840474 — sonst „Pflichtfeld fehlt" und ganze Signale unlesbar).
+    if row_type not in FILLED_TYPES             or row[3].strip().casefold() not in ("profit", "summary"):
         return False
     if fmt == "mt4_orderbook":
         return not (row[4].strip() or row[8].strip())

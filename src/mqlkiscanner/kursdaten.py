@@ -134,6 +134,22 @@ class KursDaten:
         ok, msg = self.starten()
         return ok, f"{self.terminal_pfad}: {msg}"
 
+    def zurueck_zum_ersten_terminal(self) -> tuple[bool, str]:
+        """Nach wechsle_terminal() zurueck auf Quelle 0 (08.10.2026).
+
+        Studien-Batch: Der Fallback eines Signals (fehlende Symbole →
+        naechste Quelle) darf nicht alle FOLGESIGNALE am falschen Terminal
+        lassen — dort fehlen dann.plötzlich Symbole, die Quelle 0 hatte
+        (Live-Befund: NAS100FT nach einem HK50FT-Signal)."""
+        if self.terminal_idx == 0:
+            return True, "bereits erste Quelle"
+        self.beenden()
+        self.terminal_idx = 0
+        self.terminal_pfad = self.terminals[0]
+        self._cache = {k: v for k, v in self._cache.items() if v is not None}
+        ok, msg = self.starten()
+        return ok, f"{self.terminal_pfad}: {msg}"
+
     # --------------------------------------------------------------- Kursdaten
 
     def hole_h1(self, symbol: str, von_epoch: int, bis_epoch: int,

@@ -32,15 +32,15 @@ def test_true_drawdown_spalten_in_alle_signale_zeile():
     belastbar = _result(equity_dd_rekonstruiert_pct=6.0,
                         equity_dd_rekon_roh_pct=13.83)
     zeile = tabellen_zeile(belastbar, None)
-    assert zeile["True-Drawdown %"] == 6.0
-    assert zeile["True-Drawdown (Vorbehalt)"] is None
+    assert zeile["True-DD %"] == 6.0
+    assert zeile["True-DD ≈"] is None
     vorbehalt = _result(equity_dd_rekon_roh_pct=13.83,
                         equity_rekon_grund="Wechselgrenze")
     zeile2 = tabellen_zeile(vorbehalt, None)
     # Ohne belastbare Messung zeigt die Spalte den ROHEN Kurs-DD (orange) —
     # genau der Nenner des vorbehaltlichen Calmars.
-    assert zeile2["True-Drawdown %"] == 13.83
-    assert zeile2["True-Drawdown (Vorbehalt)"] == 13.83
+    assert zeile2["True-DD %"] == 13.83
+    assert zeile2["True-DD ≈"] == 13.83
 
 
 def test_trueretdd_vorbehalt_fuellt_die_spalte_mit_marker():
@@ -92,10 +92,10 @@ def test_alle_signale_zeile_verwendet_dieselbe_zusammenfuehrung():
     vorbehalt.refresh_efficiency()
     zeile = tabellen_zeile(vorbehalt, None)
     assert zeile["TrueRetDD"] == pytest.approx(18.2 / 13.83)
-    assert zeile["TrueRetDD (Vorbehalt)"] == pytest.approx(18.2 / 13.83)
+    assert zeile["TrueRetDD ≈"] == pytest.approx(18.2 / 13.83)
     belastbar = _result(equity_dd_rekonstruiert_pct=6.0,
                         equity_dd_rekon_roh_pct=13.83)
     belastbar.refresh_efficiency()
     zeile2 = tabellen_zeile(belastbar, None)
     assert zeile2["TrueRetDD"] == pytest.approx(18.2 / 6.0)
-    assert zeile2["TrueRetDD (Vorbehalt)"] is None
+    assert zeile2["TrueRetDD ≈"] is None

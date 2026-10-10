@@ -61,6 +61,9 @@ agenten_page = st.Page(
 alle_signale_page = st.Page(
     "app_pages/alle_signale.py", title="Alle Signale", icon=":material/analytics:"
 )
+faq_page = st.Page(
+    "app_pages/faq.py", title="FAQ", icon=":material/help:"
+)
 settings_page = st.Page(
     "app_pages/admin.py", title="Einstellungen", icon=":material/settings:"
 )
@@ -178,6 +181,9 @@ page = st.navigation(
         "Konfiguration": [
             settings_page,
             automatik_page,
+        ],
+        "Hilfe": [
+            faq_page,
         ],
     },
     position="sidebar",

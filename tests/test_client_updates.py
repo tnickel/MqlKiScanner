@@ -289,6 +289,22 @@ def test_status_poll_drei_schluckser_wird_fehler(monkeypatch):
     assert "Statusabfrage" in z["fehler"]
 
 
+def test_status_poll_mit_kaputten_zahlen_wird_toleriert(monkeypatch):
+    """done/total als nicht-numerische Strings (z. B. "abc") dürfen den
+    Job nicht als FEHLER beenden — die Zahl wird auf 0 abgesichert."""
+    quelle = _quelle_an("http://rechner:8199")
+    _FakeTransport(
+        status=[_status("running", phase="katalog", done="abc", total="xyz",
+                        message="Katalog"),
+                _DONE],
+    ).install(monkeypatch)
+    z = cu._update_eine_quelle(
+        quelle, settings={}, log=None,
+        on_fortschritt=lambda m: None,
+        gestopft=lambda: False, **_SCHNELL)
+    assert z["status"] == cu.FERTIG
+
+
 def test_log_takt_drosselt_identische_wiederholungen(monkeypatch):
     """Review 07.10.: Der 5-s-Poll darf scan_workflow.log nicht fluten —
     identische Nachrichten höchstens alle 30 s, echte Änderungen sofort."""

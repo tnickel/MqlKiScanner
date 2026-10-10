@@ -116,3 +116,31 @@ def test_real_blocked_signal_fixture_parses():
     # Signals erreicht diese Groesse; waere sie als Trade durchgerutscht,
     # lage der Maximalgewinn darueber.
     assert max(t.profit for t in parsed.trades) < 3613.41
+
+
+def test_mt4_summary_footer_downloader_spiegel():
+    """MqlDownloader-mql4-Spiegel nutzt 'SUMMARY' als Footer-Symbol statt
+    'profit' (Live-Fund 09.10.2026, MySingalStart #840474) — muss wie der
+    bekannte Footer übersprungen werden, die Balance-Zeile dahinter als
+    Kontobewegung gelesen werden."""
+    import tempfile
+    from pathlib import Path
+    from mqlkiscanner.parser import load_export
+    kopf = ("Time;Type;Volume;Symbol;Price;S/L;T/P;Time;Price;Commission;Swap;"
+            "Profit;Comment\n")
+    zeilen = (
+        "2020.12.21 17:57:33;Sell;0.01;NZDCAD;0.90869;1.40869;0.40869;"
+        "2021.01.04 07:18:06;0.91329;-0.06;-0.26;-2.96;\n"
+        "2020.12.31 23:59:59;Buy;0.01;SUMMARY;;;;2020.12.31 23:59:59;;;;17.96;\n"
+        "2020.12.03 19:50:39;Balance;;;;;;;;;;1 445.63;\n"
+    )
+    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False,
+                                     encoding="utf-8-sig") as f:
+        f.write(kopf + zeilen)
+        pfad = f.name
+    parsed = load_export(pfad)
+    assert len(parsed.trades) == 1
+    assert parsed.trades[0].symbol == "NZDCAD"
+    assert len(parsed.balances) == 1
+    assert parsed.balances[0].amount == 1445.63
+    Path(pfad).unlink()

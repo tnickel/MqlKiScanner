@@ -189,6 +189,26 @@ SYMBOL_ALIASE_DEFAULT = {
     "US30-FUTURE": {"tickmilllifemql5": "US30"},
     "USOIL-FUTURE": {"tickmilllifemql5": "XTIUSD", "vantage": "USOUSD"},
     "BITCOIN": {"tickmilllifemql5": "BTCUSD"},
+    # Vantage-FT-Indizes (Nutzer-Hinweis 08.10.: „GER40FT = GER40") —
+    # Kursdaten-Alias auf die Tickmill-Referenznamen; Kontrakt-Sizes stehen
+    # beweisbasiert in contract_specs.json (Trade-Rueckrechnung).
+    "GER40FT": {"tickmilllifemql5": "DE40", "activetrades003": "GER40"},
+    "DJ30FT": {"tickmilllifemql5": "US30"},
+    "NAS100FT": {"tickmilllifemql5": "USTEC"},
+    "SP500FT": {"tickmilllifemql5": "US500"},
+    "JPN225FT": {"tickmilllifemql5": "JP225"},
+    "HK50FT": {"tickmilllifemql5": "HK50"},
+    "UK100FT": {"tickmilllifemql5": "UK100"},
+    "CL-OIL": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
+    # RoboForex-CASH-Indizes (Punkt-Präfix-Schreibweise, live 09.10. in
+    # Skip-Gründen gesehen) — Kurs-Alias auf die Tickmill-Referenznamen.
+    ".US30CASH": {"tickmilllifemql5": "US30"},
+    ".USTECHCASH": {"tickmilllifemql5": "USTEC"},
+    ".US500CASH": {"tickmilllifemql5": "US500"},
+    ".DE40CASH": {"tickmilllifemql5": "DE40"},
+    ".JP225CASH": {"tickmilllifemql5": "JP225"},
+    ".UK100CASH": {"tickmilllifemql5": "UK100"},
+    ".HK50CASH": {"tickmilllifemql5": "HK50"},
     "WT": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
 }
 

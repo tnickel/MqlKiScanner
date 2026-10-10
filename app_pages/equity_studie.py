@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 import streamlit as st
 
-from mqlkiscanner import pipeline
+from mqlkiscanner import katalog, pipeline
 from mqlkiscanner.equity_studie_ui import render_studie
 from mqlkiscanner.ui_design import apply_theme, page_header
 
@@ -63,6 +63,11 @@ with st.expander('Wie wird gemessen?', expanded=False, icon=':material/science:'
 results_live = [r for r in pipeline.results_from_db()
                 if getattr(r, 'source_kind', 'live') == 'live'
                 and getattr(r, 'trades_path', '')]
+# Nur-Katalog-Zeilen (Nutzer 08.10.2026) mit bereits geladenem Trade-Cache
+# gehören hier ebenso hin — der Vorfilter des Workflows gilt nicht für die
+# Messung; Zeilen ohne Cache lädt die Seite „Alle Signale" on demand.
+_katalog_ergebnisse, _ = katalog.katalog_resultate()
+results_live += [r for r in _katalog_ergebnisse if getattr(r, 'trades_path', '')]
 results = [r for r in results_live if Path(r.trades_path).exists()]
 
 if not results:

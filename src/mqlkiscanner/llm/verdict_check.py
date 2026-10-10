@@ -15,7 +15,7 @@ import re
 
 
 _URTEIL_RE = re.compile(
-    r"(?:Urteilszeile|Urteil)\s*(?:\([^)]*\))?\s*[:：\-—]\s*(?:\*\*)?\s*(EMPFEHLUNG|WATCHLIST|ABLEHNUNG)\b",
+    r"(?:Urteilszeile|Urteil)\s*(?:\([^)]*\))?\s*[:：\-–—]\s*(?:\*\*)?\s*(EMPFEHLUNG|WATCHLIST|ABLEHNUNG)\b",
     re.IGNORECASE,
 )
 _FALLBACK_URTEIL_RE = re.compile(
@@ -86,11 +86,11 @@ def validate_and_sanitize_verdict(
     text_out = gesamtbericht
     if meldung and korrigiert and urteil:
         hinweis = f"\n\n> [!WARNING]\n> **Korrektur durch Scanner-Regelwerk:** {meldung}\n"
-        # Falls eine spezifische Urteilszeile existiert, ersetzen
+        # ALLE Urteilszeilen anpassen (nicht nur die erste) — sonst bleibt
+        # ein zweites, widersprüchliches Urteil im Bericht stehen (Review).
         text_out = _URTEIL_RE.sub(
             lambda m: m.group(0).replace(m.group(1), korrigiert),
             text_out,
-            count=1,
         )
         text_out += hinweis
 

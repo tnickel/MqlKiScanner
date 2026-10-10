@@ -63,42 +63,83 @@ def basis_kuerzel(quelle: str | None) -> str:
     return BASIS_KUERZEL.get(quelle or "", "—")
 
 
-def tabellen_zeile(result, statistik: dict | None) -> dict:
-    """Eine Tabellenzeile (reine Funktion) — Katalog- und Vorstufenwerte."""
+# Nutzer-Markierungen (Nutzer 08.10.2026): Farbe → Emoji in der Tabellen-
+# spalte „Mark." + dezente Zeilenfärbung über den Styler der Seite.
+MARKIERUNG_EMOJI = {"gruen": "🟩", "gelb": "🟨", "orange": "🟧"}
+
+
+def tabellen_zeile(result, statistik: dict | None,
+                   markierungen: dict | None = None,
+                   kommentare: dict | None = None) -> dict:
+    """Eine Tabellenzeile (reine Funktion) — Katalog- und Vorstufenwerte.
+
+    Spaltenschlüssel sind bewusst KURZ (Nutzer 08.10.2026: kompakte Tabelle,
+    breite Überschriften nerven) und nach Blöcken gruppiert: die VIER
+    Drawdown-Spalten stehen direkt nebeneinander (Plattform-DD · Trading-DD ·
+    True-DD · True-DD≈), dahinter der Ertrags-/Effizienz-Block. Erklärung
+    je Spalte über den Help-Text in der column_config der Seite.
+    """
     statistik = statistik or {}
+    markierungen = markierungen or {}
+    farbe = markierungen.get(getattr(result, "id", None))
+    kommentare = kommentare or {}
+    hat_kommentar = bool((kommentare.get(getattr(result, "id", None)) or "").strip())
     return {
+        "Mark.": MARKIERUNG_EMOJI.get(farbe or "", ""),
+        "Komm.": "📋" if hat_kommentar else "",
         "Ampel": getattr(result, "ampel", "") or "—",
         "Fix": "📌 FIX" if getattr(result, "id", None) in _fix_ids() else "",
         "Name": getattr(result, "name", "") or str(getattr(result, "id", "")),
+        # Klickbarer Link zur Original-Signalseite beim Broker (Nutzer
+        # 08.10.2026) — URL kommt aus Client-Katalog bzw. Scan; die Seite
+        # rendert sie als schmale ↗-Spalte (LinkColumn).
+        "Link": (getattr(result, "url", "") or "")[:500],
         "Quelle": getattr(result, "quelle", "mql5") or "mql5",
+        "Herkunft": getattr(result, "herkunft", "Workflow") or "Workflow",
         "Plattform": getattr(result, "platform", "") or "",
         "ID": getattr(result, "id", None),
         "Wochen": getattr(result, "wochen", None),
         "Abonnenten": getattr(result, "abonnenten", None),
-        "Drawdown % (Plattform)": getattr(result, "dd_equity_pct", None),
-        "Ertrag %/M (Plattform)": getattr(result, "ertrag_monat_pct", None),
-        "Gewinn %/M (geom.)": statistik.get("ertrag_monat_geom_pct"),
-        "Trading-DD % (Trades)": statistik.get("trading_dd_pct"),
-        # TrueRetDD (Nutzer 05.10.) = JAHRES-Calmar seit der Gate-Umstellung:
-        # belastbare Kursmessung normal, vorbehaltliche orange (Marker in
-        # der Vorbehalt-Spalte); der Monatswert steht daneben. True-Drawdown
-        # (Nutzer 06.10.) = derselbe Nenner als eigene Spalte (echter
-        # Max-DD aus Kursen, vorbehaltlich orange).
-        "True-Drawdown %": getattr(result, "true_max_drawdown_pct", None),
-        "True-Drawdown (Vorbehalt)": (
+        # ── Drawdown-Block (nebeneinander, Nutzer 08.10.2026) ──────────────
+        "Plattform-DD %": getattr(result, "dd_equity_pct", None),
+        "Trading-DD %": statistik.get("trading_dd_pct"),
+        # Belastbare Messung gewinnt; sonst virtuelle 10k-Basis (Batch,
+        # gekennzeichnet — geht nie in die Workflow-Schranken)
+        "True-DD %": (getattr(result, "true_max_drawdown_pct", None)
+                      if getattr(result, "true_max_drawdown_pct", None) is not None
+                      else getattr(result, "true_dd_virtuell_pct", None)),
+        "True-DD ≈": (
             getattr(result, "equity_dd_rekon_roh_pct", None)
             if getattr(result, "max_drawdown_equity_pct", None) is None
             else None),
-        "TrueRetDD": getattr(result, "true_retdd_jahr", None),
-        "TrueRetDD (Vorbehalt)": getattr(result, "retdd_jahr_vorbehalt", None),
+        # Basis-unabhängig (Batch „Lücken füllen" 08.10.): Equity inkl.
+        # Floating in USD — auch ohne belegbare Kapitalbasis ehrlich belegbar
+        "True-DD USD": getattr(result, "true_dd_usd", None),
+        # ── Ertrag/Effizienz ───────────────────────────────────────────────
+        "Plattform %/M": getattr(result, "ertrag_monat_pct", None),
+        "Geom. %/M": statistik.get("ertrag_monat_geom_pct"),
+        # TrueRetDD (Nutzer 05.10.) = JAHRES-Calmar seit der Gate-Umstellung:
+        # belastbare Kursmessung normal, vorbehaltlich orange (Marker in der
+        # ≈-Spalte); der Monatswert steht daneben. True-DD (Nutzer 06.10.) =
+        # derselbe Nenner als eigene Spalte.
+        "TrueRetDD": (getattr(result, "true_retdd_jahr", None)
+                      if getattr(result, "true_retdd_jahr", None) is not None
+                      else getattr(result, "retdd_virtuell_jahr", None)),
+        "TrueRetDD ≈": getattr(result, "retdd_jahr_vorbehalt", None),
         "RetDD/Monat": getattr(result, "true_retdd_monat", None),
-        "Profitfaktor": statistik.get("profit_faktor"),
-        "Winrate %": statistik.get("winrate_pct"),
+        "PF": statistik.get("profit_faktor"),
+        "Win %": statistik.get("winrate_pct"),
         "Trades": statistik.get("trades"),
         "Basis": basis_kuerzel(statistik.get("kapitalbasis_quelle"))
         if statistik.get("kapitalbasis_ok") else "—",
         "Forensik": "✓" if getattr(result, "forensik_vorhanden", False) else "—",
     }
+
+
+# Spalten mit Textinhalten — alles andere wird auf der Seite numerisch
+# konvertiert (None → NaN → leere Zelle statt „None“-Text in der Tabelle).
+TEXT_SPALTEN = {"Mark.", "Komm.", "Ampel", "Fix", "Name", "Link", "Quelle",
+                "Herkunft", "Plattform", "Basis", "Forensik"}
 
 
 def _fix_ids() -> set:

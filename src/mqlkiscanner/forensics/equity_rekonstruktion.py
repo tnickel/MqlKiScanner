@@ -436,17 +436,30 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # den korrekten Zeitversatz DESSEN Feeds sicher (jeder MT5-Broker hat
     # seinen eigenen Server-Zeitversatz; die Kurse eines Symbols kommen
     # konsistent aus EINEM Feed — kein Mischbestand).
-    if fehlende_symbole and hasattr(kurse, 'hat_weiteren_terminal')             and kurse.hat_weiteren_terminal():
+    # Nutzer-Logik 08.10.2026: SO LANGE durch die Quellen/Broker probieren,
+    # bis die Kurse da sind — nicht nur ein einziger Fallback. Jede Quelle
+    # (Terminal) hat ein anderes Symbol-Angebot (Tickmill: FX-Kreuze +
+    # Cash-Indizes; Vantage: XAUUSD+/CL-OIL/VIX/CHINA50 nativ; …); erst wenn
+    # KEINE Quelle mehr übrig ist, gilt ein Symbol als ohne Kurse.
+    while fehlende_symbole and hasattr(kurse, 'hat_weiteren_terminal')             and kurse.hat_weiteren_terminal():
         ok, msg = kurse.wechsle_terminal()
-        if ok:
-            noch_fehlend = []
-            for s in fehlende_symbole:
-                bars = kurse.hole_h1(s, fenster_von, fenster_bis)
-                if bars:
-                    bars_je_symbol[s] = bars
-                else:
-                    noch_fehlend.append(s)
-            fehlende_symbole = noch_fehlend
+        if not ok:
+            break
+        noch_fehlend = []
+        for s in fehlende_symbole:
+            bars = kurse.hole_h1(s, fenster_von, fenster_bis)
+            if bars:
+                bars_je_symbol[s] = bars
+            else:
+                noch_fehlend.append(s)
+        fehlende_symbole = noch_fehlend
+
+    # Der Fallback-Wechsel darf NICHT kleben: Nach der Rekonstruktion wieder
+    # auf Quelle 0 zurück — sonst binden die Kurse eines Signals alle Folge-
+    # signale ans falsche Terminal (08.10., NAS100FT-Fall). Gilt auch für den
+    # Workflow-Scan, der den Anbieter über den ganzen Lauf cached.
+    if hasattr(kurse, 'zurueck_zum_ersten_terminal')             and getattr(kurse, 'terminal_idx', 0) != 0:
+        kurse.zurueck_zum_ersten_terminal()
 
     # Kontrakt-/Quote-Auflösung je Symbol (einmalig) — NUR mit Beleg. Ohne
     # Spec/Klassenkontrakt wäre jeder Faktor erfunden (der frühere stille

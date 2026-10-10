@@ -279,6 +279,10 @@ def studie(parsed, kurse, startkapital: float,
                 else:
                     noch_offen.append(s)
             ohne_kurse = noch_offen
+    # Fallback-Wechsel nicht kleben lassen (siehe equity_rekonstruktion):
+    # zurück auf Quelle 0, damit Folge-Aufrufe am richtigen Terminal landen.
+    if hasattr(kurse, 'zurueck_zum_ersten_terminal')             and getattr(kurse, 'terminal_idx', 0) != 0:
+        kurse.zurueck_zum_ersten_terminal()
 
     # Kontrakt-/Quote-Auflösung — NUR mit Beleg (kein erfundener Faktor;
     # dieselbe Regel wie die produktive Reko, Review 29.09. Befund 4).

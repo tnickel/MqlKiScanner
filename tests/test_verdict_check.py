@@ -55,6 +55,27 @@ def test_sanitize_verdict_gelb_verbietet_empfehlung():
     assert "Urteilszeile: WATCHLIST" in bereinigt
 
 
+def test_sanitize_verdict_korrigiert_alle_urteilszeilen():
+    """Mehrere Urteilszeilen — auch die zweite muss konsistent korrigiert
+    werden, sonst bleibt ein widersprüchliches Urteil im Bericht (Review)."""
+    bericht = (
+        "Kurzfassung: Urteil: EMPFEHLUNG\n\n"
+        "Spaeter: Urteil: ABLEHNUNG"
+    )
+    bereinigt, urteil, warnungen = validate_and_sanitize_verdict(bericht, "🔴")
+    assert urteil == "ABLEHNUNG"
+    assert "Urteil: EMPFEHLUNG" not in bereinigt
+    assert bereinigt.count("ABLEHNUNG") >= 2
+
+
+def test_extract_llm_urteil_en_dash():
+    """Urteil – X (En-Dash U+2013) muss vom Primär-Regex erkannt werden,
+    nicht über den unsicheren Fallback (letztes Wort im Text-Tail)."""
+    assert extract_llm_urteil("Urteil – ABLEHNUNG") == "ABLEHNUNG"
+    assert extract_llm_urteil("Urteil — WATCHLIST") == "WATCHLIST"
+    assert extract_llm_urteil("Urteil: EMPFEHLUNG") == "EMPFEHLUNG"
+
+
 def test_sanitize_verdict_gruen_bleibt_unveraendert():
     bericht = "Urteilszeile: EMPFEHLUNG\nAlles in Ordnung."
     bereinigt, urteil, warnungen = validate_and_sanitize_verdict(bericht, "🟢")
