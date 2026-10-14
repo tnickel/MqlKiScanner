@@ -257,7 +257,7 @@ keine Daten übertragen und kein Sync-Lauf gestartet. Steht der Test auf „erre
 funktioniert auch der Sync-Button auf der Ergebnisseite.
 """),
     "settings_rest_api": ("REST-API für MqlRealMonitor", """
-Der MqlRealMonitor (Java, `D:\\git\\MQL\\MqlRealmonitor`) holt sich über dieses
+Der MqlRealMonitor (Java, `SIGNALDOWNLOADER\\MqlRealmonitor`) holt sich über dieses
 schreibgeschützte Interface die Signalliste samt Gesamt-Ampel — der Button
 „🤖 KiScanner“ dort überwacht danach nur noch Signale mit Ampel **grün oder gelb**.
 

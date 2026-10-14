@@ -38,7 +38,7 @@ eine eigene README.
      PUSH (Einmal-Sync v1)      PULL (schreibgeschützte REST-API)
      /api/kiscanner, X-User-Key GET /api/v1/signals?ampel=gruen,gelb
                      ▼                 ▼
-   GitWorkspace/MqlTradeMonitor   D:\git\MQL\MqlRealmonitor
+   GitWorkspace/MqlTradeMonitor   SIGNALDOWNLOADER/MqlRealmonitor
    (Spring Boot :8080, Kachel      (holt sich die Ampel-Liste
     „🔬 MqlKiScanner“ + PDFs)       selbst ab; 127.0.0.1:8611)
 
@@ -109,7 +109,7 @@ Autostart + Toolbar-Button „REST-API an/aus“.
 | Konsument | Richtung | Protokoll | Inhalt |
 |---|---|---|---|
 | **MqlTradeMonitor** (`GitWorkspace/MqlTradeMonitor`, Spring Boot :8080) | Scanner **pusht** transaktional | Einmal-Protokoll v1: `/api/kiscanner`, X-User-Key (doc/06) | Ergebnistabelle + alle PDF-BLOBs (SHA-Diff); Web-Cockpit mit Ampel-Kacheln, Scatter-Plots, Live-EA-Überwachung und Homey-Alarmierung. |
-| **MqlRealmonitor** (`D:\git\MQL\MqlRealmonitor`) | **holt selbst ab** | schreibgeschützte REST-API auf `127.0.0.1:8611` | Signalliste mit Ampel, Score, Urteil, Kurzfassung und Quellenkürzel. |
+| **MqlRealmonitor** (`SIGNALDOWNLOADER/MqlRealmonitor`) | **holt selbst ab** | schreibgeschützte REST-API auf `127.0.0.1:8611` | Signalliste mit Ampel, Score, Urteil, Kurzfassung und Quellenkürzel. |
 
 ---
 
