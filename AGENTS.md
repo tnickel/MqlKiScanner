@@ -20,6 +20,11 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   abgeschlossener Integration. Diese Integration vorerst nicht weiter umsetzen.
 - **PelicanWinnerLooser** ist ein eigenständiges Einzelprojekt und ebenfalls
   noch nicht in den Gesamtworkflow eingebunden; keine implementierte Hub-Anbindung.
+- **Review-Freigabe (Nutzerentscheidung 16.10.2026):** Die Dateien unter
+  `doc/reviews/` dürfen auf GitHub veröffentlicht werden. Diese ausdrückliche
+  Freigabe ersetzt für diese Review-Belege die frühere pauschale Archivregel
+  „bewusst nicht auf GitHub“. Zugangsdaten, Cookies, lokale Datenbanken,
+  Trade-Caches und sonstige Laufzeitdaten bleiben ausgeschlossen.
 - **Grün-Gate:** harte Regeln (Ausschlussliste, Martingale, DD-Schranke;
   Default 30 %) plus Jahres-Calmar `retdd_jahr >= min_calmar_jahr`
   (Default 3,0). Mindestens drei Monate Trade-Historie. Absolute Monats-
