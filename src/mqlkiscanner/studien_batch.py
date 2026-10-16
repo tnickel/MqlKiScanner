@@ -68,6 +68,11 @@ def luecken_sammeln(resultate: list, studien: dict, *,
     erledigt = 0
     for res in resultate:
         studie = studien.get(int(res.id))
+        if studie:
+            try:
+                pipeline.require_usd_account(res)
+            except ValueError:
+                studie = None
         spec_nachmessung = _neu_aufloesbare_kontrakte(res, studie)
         hat_messung = getattr(res, "max_drawdown_equity_pct", None) is not None
         if hat_messung and not spec_nachmessung:
@@ -152,15 +157,6 @@ def _laufe(jobs: list, control: dict, settings: dict,
     anbieter = None
     control.setdefault("start_ts", time.time())   # direkte Aufrufe (Tests/Live)
     try:
-        if jobs:
-            control["phase"] = "Terminal verbinden"
-            anbieter = kursdaten.KursDaten(settings)
-            ok, grund = anbieter.starten()
-            if not ok:
-                control["phase"] = "fehler"
-                control["fehler"].append(f"Kursdaten nicht verfügbar: {grund}")
-                return
-
         for res in jobs:
             if control["abbruch"]:
                 control["phase"] = "abgebrochen"
@@ -169,6 +165,18 @@ def _laufe(jobs: list, control: dict, settings: dict,
             control["phase"] = "rechnet"
             t0 = time.time()
             try:
+                pipeline.require_usd_account(res)
+                # Connect only after the first eligible account. A batch of
+                # unknown / non-USD MQL exports must not start a terminal.
+                if anbieter is None:
+                    control["phase"] = "Terminal verbinden"
+                    anbieter = kursdaten.KursDaten(settings)
+                    ok, grund = anbieter.starten()
+                    if not ok:
+                        control["phase"] = "fehler"
+                        control["fehler"].append(f"Kursdaten nicht verfügbar: {grund}")
+                        return
+                    control["phase"] = "rechnet"
                 if _rechne_ein_signal(res, control, anbieter, trades_nachladen):
                     control["gerechnet"] += 1
                 else:
@@ -358,6 +366,7 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
     control["skipped_gruende"])."""
     from . import parser, signal_statistik
     from .forensics import drawdown, equity_rekonstruktion
+    pipeline.require_usd_account(res)
 
     # 1) Trade-Cache sicherstellen (on demand von der Quelle)
     if not (getattr(res, "trades_path", "") or "") \
@@ -429,6 +438,7 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
     if startkapital:
         report = _rekonstruiere_mit_feed_fallback(
             parsed, anbieter, float(startkapital), broker)
+        report["account_currency"] = getattr(res, "account_currency", None)
         alter_dd = alter_report.get("equity_dd_pct")
         if alter_dd is None:
             alter_dd = alter_report.get("equity_dd_pct_raw")

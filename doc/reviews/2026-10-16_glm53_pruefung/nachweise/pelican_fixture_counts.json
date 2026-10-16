@@ -1,0 +1,14 @@
+{
+  "source": "versioned anonymized historical fixtures, 2026-09-27",
+  "statsInception": "2022-12-05T16:09:32.9957392Z",
+  "total": 30166,
+  "wins": 14517,
+  "losses": 690,
+  "winsPlusLosses": 15207,
+  "totalDividedByClassified": 1.9836917209179983,
+  "sumMarketCounts": 29838,
+  "closedFixtureCount": 637,
+  "closedFrom": "2026-09-01T03:43:47.421",
+  "closedTo": "2026-09-24T13:12:48.342",
+  "apiStatsQuotePct": 48.12371544122522
+}

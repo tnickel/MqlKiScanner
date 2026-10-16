@@ -1,0 +1,39 @@
+[
+  {
+    "snapshot": "Scanner_final",
+    "manifest": "Scanner_final.manifest.json",
+    "xml": "Scanner_final.pytest.xml",
+    "log": "Scanner_final.pytest.log"
+  },
+  {
+    "snapshot": "MqlDownloader_final2",
+    "manifest": "MqlDownloader_final2.manifest.json",
+    "log": "MqlDownloader_final2.maven.log",
+    "package": true
+  },
+  {
+    "snapshot": "vantage_final",
+    "manifest": "vantage_final.manifest.json",
+    "log": "vantage_final.maven.log",
+    "python_log": "vantage_final.python.log",
+    "package": true
+  },
+  {
+    "snapshot": "quellen_b/PelicanTrading",
+    "manifest": "quellen_b/PelicanTrading_manifest.json",
+    "log": "quellen_b/PelicanTrading_test.log",
+    "package_log": "quellen_b/PelicanTrading_package.log"
+  },
+  {
+    "snapshot": "quellen_b/zulumonitor",
+    "manifest": "quellen_b/zulumonitor_manifest.json",
+    "log": "quellen_b/zulumonitor_test.log",
+    "package_log": "quellen_b/zulumonitor_package.log"
+  },
+  {
+    "snapshot": "quellen_b/roboforex_fixed",
+    "manifest": "quellen_b/roboforex_fixed_manifest.json",
+    "log": "quellen_b/roboforex_fixed_test.log",
+    "package_log": "quellen_b/roboforex_fixed_package.log"
+  }
+]

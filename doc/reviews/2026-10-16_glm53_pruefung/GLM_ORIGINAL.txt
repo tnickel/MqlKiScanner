@@ -1,0 +1,102 @@
+Gesamtreview SignalKiScanner + 5 Quellprogramme — 16.10.2026
+Methode: 7 parallele Teil-Reviewer (MqlDownloader; RoboForex+Zulu; Vantage; Finanzmathematik; Filter/Ampel; LLM/Agenten; Scanner-REST/Persistenz) + eigene Kernprüfung (Pelican-Delta, Identitäten, §8-Defaults, Live-Sonden). Alle A-Befunde der Teil-Reviewer habe ich stichprobenartig am Code oder live nachgeprüft. Nur lesend; keine produktiven Daten verändert; keine kostenpflichtigen Modellaufrufe.
+
+A. Geprüfter Stand und Abdeckung
+Repo	Branch · Commit · Arbeitsbaum	Tests (frisch, heute)
+SignalKiScanner	main · 80d4692548c9 · sauber	python -m pytest tests/ → 1914 grün, 1 rot (reihenfolge-abhängig, s. E-S7), 9:29 min
+MqlDownloader	master · 92d8f9cea10b · sauber	mvn test → 105/105
+PelicanTrading	master · dde77d705a67 · sauber	mvn test → 176/176
+roboforex	master · 42b268641ad3 · sauber	mvn test → 147/147
+vantage	master · 1fe395805f29 · sauber	mvn test → 49/49
+zulumonitor	master · 72df0cf49aa4 · sauber	mvn test → 107/107
+Alle Stände stimmen mit dem Dokuabgleich überein. Wichtig: Die laufenden Instanzen starteten ~10:50; PelicanTrading läuft damit auf einem älteren Stand als der geprüfte Code (live bewiesen am url-Feld) — heute committete Fixes sind noch nicht wirksam. Live-Sonden: Health aller 5 Quellen + Scanner-REST :8611 (token-geschützt, verifiziert), Katalog-Stichproben je Quelle, Tradelisten-Alter je Quelle.
+
+Nicht geprüft (D): Plattform-Direktabgleiche mit Website (Pelican-API 401 mit Cookie-Datei; Zulu/Vantage/Robo/MQL5-Webgar nicht angefasst — nur wenige erlaubte GETs auf die lokalen Quellen), Selenium-Login-Flows live, GUI-Bedienung, Qualität tatsächlicher LLM-Antworten (keine kostenpflichtigen Calls), externer MqlTradeMonitor (nur Scanner-Seite des Sync), MqlRealmonitor/PelicanWinnerLooser (nur Referenz-Check: nicht produktiv eingebunden, keine Integration gefordert), fremde KI-Berichte (bis auf Pelicans internes Prüfdoc zu meinem Vormittags-Review nicht abgeglichen).
+
+B. Architektur und Datenfluss
+5 Java-Monitore spiegeln ihre Plattform je nach Protokoll „mql5-downloader-v1" (health, providers≥1-Abonnenten-Default, history, trades.csv im MQL5-11-Spalten-Format, metrics, reports, POST /update → Kaskade Login→Katalog→Tradelisten mit 3-Tage-Regel). Scanner: Stufe 0 stößt Updates an → Katalog-Sync in katalog_signale (PK quelle+signal_id) → Kandidaten (Vorfilter 26 Wochen/0 Abonnenten, Top-30 je Quelle nach Abonnenten; Fix-IDs umgehen Vorfilter, belegen keine Slots — verifiziert) → Trade-Export + Forensik (v16) → Kennzahlen → Ampel (⛔→Martingale→Kapitalbasis→DD-Schranke max. 5 Kanäle >30 %→Ertrag→≥3 Monate→Jahres-Calmar ≥3) → Berichte/Portfolio → Scanner-REST (8611) + Tradeserver-Sync. Doppelpfad MQL5: eigener Browser-Crawler (pipeline mql5/, Rate-Limit/Hard-Stop) neben dem MqlDownloader — beide existieren dokumentiert; „Spiegel" desselben MQL5-Signals über mehrere Downloader-Instanzen ist als Konzept angelegt (Instanz-Kennung gegen Verwechslung).
+
+Quellenidentität: signals.signal_id ist alleiniger PK (keine Quelle im Schlüssel) — bekannt und dokumentiert (R1-Review 29.09.: Quelle wird nie still überschrieben, Vorfall geloggt); Realdaten-Prüfung: keine einzige ID-Kollision über Quellen vorhanden (auch signals.quelle konsistent mit Katalog). Offen bleibt SYN-3: mql4+mql5 desselben Signals überschreiben sich gegenseitig (Dedupe-Key (id, platform) hält beide Kandidaten, trade_files/forensik mit ON CONFLICT(signal_id) → Last-wins; von mir verifiziert).
+
+C. Doku-/Code-Abgleich (Auszug der Abweichungen)
+Verifiziert stimmen: alle 12 erwarteten §8-Regeln aus Code+Konfiguration (26 Wochen exakt-bestanden, 0 Abonnenten, Top-30 je Quelle, DD-Schranke nur bei >30, Fünf-DD-Kanäle, Calmar ≥3 exakt=grün, 3-Monate-Spanne (91,31 Tage), Score/SL keine Gates, Forensik v16) — FLT-Reviewer mit Zeilenbelegen, von mir gegen config.py gespiegelt. README-Angaben zu target-Ignore (Pelican, MqlDownloader) korrekt; MQL5-„Vollständigkeit nicht zugesagt" ehrlich dokumentiert.
+Aktuell falsch (Produktionswirkung): LLM-Altregeln (E-S3): Portfolio-Statistik-Hinweis „retdd_monat<1 nicht empfehlen" (portfolio_statistik.py:416-420) und „Risiko-Score unter 5" als Empfehlungsvoraussetzung (llm/bausteine.py:83-87) widersprechen der Engine (Calmar-Jahres-Gate bzw. Score-Gate am 04.10. entfernt) — von mir am Code verifiziert. Doku behauptet Monatsbudget wirke (help_settings) — tut es nicht (LLM-3). REST-Moduldocstring „liest ausschließlich die DB" — /signals materialisiert PDFs (SYN-4, verifiziert).
+Historisch/planned vs. aktuell: doc/20 „Stufe 2 Composite-Identität" offen (bekannt); Betriebsalter „Weeks" wird zur Requestzeit berechnet (kein Cache) — Verwechslungsgefahr mit alten Exporten ausgeräumt.
+D. Kennzahlenmatrix (Kern; volle Tabellen in den Teil-Reviews)
+Kennzahl	Definition/Ort	Verwendung
+Winrate (Scanner)	wins/alle Trades, BE neutral (brutto) stats.py:33-35	Anzeige
+Profitfaktor	brutto; nur Verluste→0.0, nur Gewinn→None	Anzeige
+ertrag_monat_geom / CAGR	expm1(ln(End/Start)/Monate), TWR bei Flüssen; exakte Sekundenspanne	Ertrag-Gate ≥0; CAGR→Calmar
+TrueRetDD/Calmar (Jahr)	CAGR ÷ floating-inkl. H1-Equity-DD (nur Kursmessung, gleiche Kapitalbasis) pipeline.py:877-898	Grün-Gate ≥3
+DD-Schranke	max(5 Kanäle: Plattform-EQ, Plattform-Balance, Trading-DD geschlossen, Kurs-DD [nur verlässlich], Monitor TradeEqDrawdownPct) > 30 → nicht grün	Rot-Gate
+Virtuelle 10k-Basis	markiert (quelle=virtuelle_annnahme), fließt in DD%/Calmar	Nutzer-Entscheid 05.10.
+Monitor-Felder	Average3MonthProfit = je Quelle unterschiedliche Fenster (Pelican: Ø aller Monate; Vantage: 30-Tage-Fenster!, MQL5: Ø 3 Vormonate)	Scanner mappt auf ertrag_anzeige — Fenster-Semantik je Quelle verschieden
+Equity-Reko	H1-Schlusskurs-DD, GMT-auto, ≥95 % Abdeckung, Marktpausen ausgenommen	Calmar-Nenner — Untergrenze (E-S6/FIN-6)
+8 unabhängige Nachrechnungen des FIN-Reviewers (Sandbox, Produktionsimporte): alle exakt korrekt (inkl. TWR-Fluss, DD=0≠∞, Auszahlungs-Peak, USC-Skalierung). Kein Rechenfehler mit falscher Ampel gefunden.
+
+E. Priorisierte Findings
+Systemische Ursachen gebündelt (S1…S7), Projekteinzelheiten darunter; alle mit Datei:Zeile in den Teil-Reviews belegt, A-Befunde von mir nachgeprüft.
+
+S1 — Tradelisten-Freeze nach Erstladung [A, P0-Systemik, live bewiesen]
+Einmal geladene Historien werden nie aktualisiert; jede handelsbasierte Messung altert unbegrenzt → systematisch zu positive Ampeln (der Tokyo-Fall vom Vormittag ist kein Einzelfall, sondern der Normalzustand des Gesamtsystems):
+
+Vantage VAN-4: Skip-Register geladen.json ohne Zeitkriterium, tradelistenAktualisiert hart 0 — live: alle Top-Signale vom 08.10.
+RoboForex ROB-1: dealsFrischGeladen = lokaler SHA-Vergleich, kein Delta — live: Top-Signale vom 26.09. (20 Tage)
+Zulu ZUL-1: istFrisch SHA-only; geladenAm existiert im Ledger, wird nie gelesen — live: 07.10.
+Pelican: im Code gefixt (inkrementeller Nachzug, heute committet), aber laufende Instanz älter — Neustart aussteht.
+MqlDownloader: einzig gesund (5-Tage-Delta, live heute aktualisiert) — aber MDL-1 [A,P1]: Login-/Netzfehler werden im Download-Thread geschluckt, Job endet trotzdem done und schreibt den 72-h-Frische-Vermerk → 3 Tage Stillstand nach appearance of success (von mir im Code verifiziert; LOGIN_REQUIRED ist toter State). Fix-Muster steht mit dem Pelican-Delta-Nachzug bereit (letzter Handelstag → heute, Merge, only-if-stale); Zulu braucht nur geladenAm auszuwerten.
+S2 — DD-Basis-Verzerrungen in den Monitoren [A/B, P1-P2]
+TradeEqDrawdownPct (DD-Kanal 5 der Scanner-Schranke) steht auf teils schiefen Basen:
+
+ROB-3 [A]: Ein-/Auszahlungen zählen in die Closing-DD-Basis → DD zu klein (Risiko unterschätzt).
+ZUL-2/3 [B]: ROI-Rückrechnung ohne Kappungsschutz; PnL-lose Historien melden 0.0 % DD statt unbekannt.
+VAN-6 [B]: Basis = Fenster-PnL(≤2000 Trades) ÷ Gesamtrendite → bei Kappung verzerrt (live AlphaPilot 59,3 % vs. Plattform 0,39 %); VAN-3a: TradesTruncated:false obwohl unbekannt, wenn total fehlt.
+S3 — LLM-Altregeln, Budgets, Cache-Invalidierung [A/B, P1-P2]
+LLM-1/LLM-2 (=FLT-1) [A]: zwei Altregel-Texte in produktiven Prompts (retdd_monat≥1; Score<5) konterkarieren Engine-Entscheide — Berichtstext widerspricht Ampel; Empfehlungen können zu restriktiv ausfallen (HRC-Fall).
+LLM-3 [A]: Monatsbudget wird nirgends durchgesetzt (einzige Prüfung ohne Consumer; Dirigent meldet bei erschöpftem Monatsbudget fälschlich „Regelbetrieb freigegeben") → Kostenrisiko Monatsbudget pro Tag.
+LLM-4 [C]: Scan-/Portfolio-/Tiefen-Token laufen außerhalb der Agenten-Budgetbuchung; zwei Parallelprozesse können je 10 Mio. reservieren.
+SYN-1/FLT-2/LLM-8 [A]: report_basis kennt min_calmar_jahr nicht → nach Schwellenänderung bleiben alte EMPFEHLUNGS-Berichte „aktuell" (Text↔Ampel-Widerspruch, Portfolio-Prompt-Fehlsteuerung). SYN-2: equity_studien ohne Forensik-Version — überleben Version-Bumps.
+S4 — Auswahlverzerrungen VOR der Bewertung [B, P2]
+FLT-4: Top-30 je Quelle sortiert nach Abonnenten — rendite-starke Signale mit wenigen Copierern werden nie bewertet (transparent begründet in auswahl_begruendung.json, aber strukturell).
+VAN-1: Vantage-Katalogvereinigung degeneriert bei target≤250 zur reinen Kopiererliste (Return-Phase trägt nichts bei).
+MDL-5: MQL5-Katalog ist Plattform-Default-Ordnung (Stichprobe, kein Ranking; lokal max. 69 Abonnenten vs. Plattform-Spitze Tausende). MDL-4 [A]: MqlDownloader setzt kein ≥1-Default im REST (Parameter nur auf Anforderung) und kann 0-Abonnenten-/Extraktionsfehler-Signale liefern; Scanner filtert nicht selbst nach (vertraut Provider-Defaults). Für Pelican gilt ≥1 überall (Protokoll-Ursprung); die anderen vier Quellen: Robo/Vantage/Zulu Default 1 ✓, MQL5-Ausnahme dokumentieren oder Default setzen.
+FLT-3: Teilscan — ein transienter Scanfehler (⚪) wirft ein Signal dauerhaft aus der Beobachtung.
+ROB-5: stiller serverseitiger Filter „Yield ≤300 %" im RoboForex-Katalog.
+S5 — Identität/Versionierung [B, P2/P3]
+SYN-3 mql4/mql5-Last-wins (s. B); MDL-11 (CSV-ID aus Dateinamen-Ziffern); Pelican-F-3 (winrate wins/tradesTotal) — vom Parallel-Agenten als „nicht belastbar belegt" verteidigt, meine 2×-Zähl-Evidenz (Total≈2× Positionszeilen, zweier Provider) spricht für Deals-vs-Positionen; Website-Abgleich entscheidet (offen). Pelican F-1/F-2/F-4/F-7/F-8/F-10 sind am geprüften Stand bereits gefixt (176 Tests), F-5 (GUI-Gate ≥1) umgesetzt, F-6 bewusst abgelehnt.
+
+S6 — Methodische DD-Untergrenze der H1-Rekonstruktion [B, P2; Nutzer-akzeptierte Teilmessung]
+FIN-6: H1-Schlusskurse (Intrabar-Tiefs fehlen), offene Positionen am Exportende fehlen, MT5-Bid-Kurse → Calmar-Nenner ist systematisch eine Untergrenze (dokumentiert, aber nicht als Zahl am Gate ausgewiesen). FIN-5: Trading-DD-Floating-Falle ist durch die Regel „Calmar nur aus Kursmessung" sauber geschlossen.
+
+S7 — Testgesundheit Scanner [B, P2]
+Volllauf reihenfolge-abhängig: Lauf 1 zwei t12-Fehler, Lauf 2 ein parser-Fehler (WindowsPath.lower), jeweils einzeln grün — Testpollution, Polluter unbekannt. Java-Suiten stabil grün. FIN-Reviewer bestätigt: die geprüften Kerntests rechnen mit unabhängig hergeleiteten Erwartungen (spiegeln nicht blind).
+
+Korrekt bestätigt (Auszug): Finanzkern exakt (8 Nachrechnungen); Ampel-Grenzfälle exakt (>30, ≥3.0, 91,31 Tage); FORENSICS_VERSION-Stale-Mechanismus; SHA-/BOM-konsistente Caches mit ehrlichen Offline-Fehlern; atomares Schreiben + Lauf-Lock (Scanner); Token+Pfadsicherheit in allen 6 RESTs (MQL5 sogar konstanter Zeitvergleich); USC ÷100 korrekt in 4 Monitoren (MQL5-Direktpfad: FIN-7, %-Kennzahlen folgenlos, USD-Felder Irreführung); FX historisch je Schlussdatum ohne Zukunftskurse (Scanner/Zulu/Vantage/Robo/Pelican); Fix-ID-Mechanik (Vorfilter-Umgehung + unveränderte Risikoprüfung) exakt.
+
+F. Können wir damit belastbar die besten Signale finden?
+Was das System optimiert: Signale mit ≥26 Wochen Track-Record, ≥1 Abonnent (bis auf MQL5-Lücke), Top-30 je Quelle, deren Jahres-Calmar (CAGR ÷ floating-inklusive H1-Equity-DD) ≥3 bei DD-Schranke ≤30 % (max. 5 Kanäle), ohne Martingale-Muster, ohne Ausschlusseintrag. Das ist eine kohärente, durchgängig implementierte Definition von „Effizienz gegen gemessenes Risiko" — keine Garantie künftiger Gewinner, und die Schwellen (3 / 30 / 26 / 30) sind Projektregeln, nicht statistisch validiert (kein Out-of-Sample, keine Walk-Forward-Prüfung; Selektion über ~1.200 Kandidaten macht zufällige Kalmar-Werte ≥3 wahrscheinlich — die Schranke filtert, sie beweist keine Persistenz).
+
+Technisch richtig (belastbar): alle Kernformeln, die Gate-Logik, die Ehrlichkeits-Mechanismen (None statt 0, DD=0≠∞, Mindesthistorie, Abdeckungs-Gate, Stale-Markierung). Innerhalb der bewerteten Kandidaten ist die Rangfolge nach Calmar formal korrekt.
+
+Wo Risiko unterschätzt werden kann (geordnet nach Wirkung):
+
+S1-Freeze — fehlende Crashs in eingefrorenen Historien sind der Tokyo-Mechanismus: Ampeln können wochenlang auf Vorkrisendaten grün bleiben. Derzeit real in 4 von 5 Quellen aktiv.
+H1-Schluss-DD ist Untergrenze (S6) — Calmar systematisch nach oben verzerrt; kombiniert mit virtuellen 10k-Basen bei echten Mikro-Konten.
+Monitor-DD-Verzerrungen (S2) mindern Kanal 5; MDL-10/MQL5-Direkt hat keine Winrate-Plausibilisierung.
+Plattformrendite ≠ kopierbare Nettorendite: Performance-Fee, Spread/Slippage/Latenz werden nicht gemessen (Schock $ ist ein Kurs-, kein Ausführungsschock); Commission=0 bei Pelican/Vantage/Robo-Exporten ist plattformbedingt, aber verschiebt Kosten-Kennzahlen gegenüber MQL5-Quellen mit echten Kommissionen.
+Portfolio: Korrelation nur Anzeige; gemeinsame Verlustphasen/gleiche Werkstatt-Hinter Signale nicht getestet (im Prompt des LLM als Warnung vorhanden, rechnerisch nicht erzwungen).
+Wo gute Signale zu früh herausgefiltert werden: Top-30-nach-Abonnenten je Quelle (renditeeffiziente Neueinsteiger unsichtbar), 26-Wochen-Schwelle (bewusst), Vantage-Return-Phase degeneriert (VAN-1), MQL5-Katalogstichprobe in Plattform-Default-Ordnung (MDL-5), Teilscan-⚪-Fehller-Falle (FLT-3).
+
+Aussagegrenze: „Die besten Signale" sind mit diesen Daten als Rangfolge unter den beobachtbaren, frisch gemessenen Kandidaten möglich — sobald S1 behoben und Datenfrische garantiert ist. Heute ist die stärkste Aussage: Die Maschine rechnet richtig, aber 4 der 5 Datenquellen speisen sie mit eingefrorenen Historien.
+
+G. Priorisierter Korrekturplan
+Akut (P0/P1):
+
+Freeze-Fixe nach Pelican-Vorbild: ZUL-1 (geladenAm auswerten), VAN-4 (Alter im Register), ROB-1+ROB-2 (geladenAm-Meta) — je mit Regressionstest; danach alle Monitore neu starten (inkl. Pelican: bringt Delta-Nachzug + URL-Fix live).
+MDL-1: Fehler → job.error, Frische-Vermerk nur bei Erfolg (+ LOGIN_REQUIRED endlich setzen).
+LLM-1/LLM-2: zwei Ein-Zeilen-Promptfixes (sofortige Berichtsqualität); LLM-3: budget_rest()-Helper an 6 Aufrufstellen + Dirigent-Text.
+Wichtig (P2): DD-Basen ROB-3/ZUL-2/ZUL-3/VAN-6/VAN-3a; SYN-1 (min_calmar_jahr in report_basis) + SYN-2 (Studien-Version); SYN-3 (mql4/5-Version dedupen oder migrieren); SYN-4 (materialize_pdfs=False im REST); MDL-2/3/4; VAN-1/8/9 (Fenster-Kennzeichen metricsWindow); FLT-3 (⚪-Fehler im Teilscan-Scope); FLT-6 (Ertrags-Fallback 5.0→0.0); LLM-4 (Scan-Tokens ins Journal); Test-Pollution (S7) isolieren; FIN-7 (Currency-Feld parsen) + FIN-6 (Untergrenzen-Hinweis am Calmar-Gate).
+
+Später / Doku (P3): MDL-5/8/9/11/12, ROB-4/5/6/10, SYN-5…12, LLM-5/6/9/13, FLT-4-Dokumentation (sekundärer Sortierschlüssel), FLT-7 Grenzwert-Parametrisierung, VAN-7 (ddSource-Feld), Pelican-F-3 per Website-Abgleich schlichten, MQL5-≥1-Default entscheiden.
+
+Keine erfundenen Findings; alle Einzelfunde inkl. Gegenargumenten und Regressionstest-Ideen liegen in den sieben Teil-Reviews mit Datei:Zeile vor. Die zwei breitesten Aussagen des Auftrags beantwortet: Katalog-/Abonnentenregel: bei 4 von 5 Quellen durchgängig, MQL5-Ausnahme offen. „Zu positive Bewertung möglich?": Ja — derzeit strukturell, über den Daten-Freeze; nach dessen Behebung verbleiben die dokumentierten Untergrenzen-Effekte der DD-Messung.

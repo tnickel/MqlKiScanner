@@ -218,7 +218,7 @@ def begruende_teilscan_scope(begruendung: list[dict] | None, cands: list[dict],
 
 
 def teilscan_ziel_ids(alt_ergebnisse, settings: dict | None = None) -> set[int]:
-    """Teilscan-Scope: 🟢/🟡 laut DB-Stand PLUS alle Fix-IDs.
+    """Teilscan-Scope: 🟢/🟡, deren fehlgeschlagene Wiederholungen und Fix-IDs.
 
     Fix-IDs sollen immer geprueft werden — auch wenn ihre aktuelle Ampel
     gerade 🔴/⛔/⚪ ist (z. B. veraltete Forensik): sonst wuerde ein
@@ -226,9 +226,21 @@ def teilscan_ziel_ids(alt_ergebnisse, settings: dict | None = None) -> set[int]:
     dringendsten neu bewerten muesste. Dafuer gilt die Live-Einschraenkung
     (keine Demo-/CSV-Zeilen) weiter.
     """
-    ids = {r.id for r in alt_ergebnisse
-           if r.ampel in ("🟢", "🟡")
-           and getattr(r, "source_kind", "live") == "live"}
+    from . import db
+    ids = set()
+    for r in alt_ergebnisse:
+        if getattr(r, "source_kind", "live") != "live":
+            continue
+        eligible = r.ampel in ("🟢", "🟡")
+        if r.ampel == "⚪" and getattr(r, "fehler", ""):
+            # Failed attempts deliberately do not append an evaluation to the
+            # colour history. Retry the last successful eligible evaluation,
+            # without upgrading the current failed result or admitting every
+            # white / never-scanned entry to the partial scan.
+            previous = db.get_last_ampel_verlauf(r.id) or {}
+            eligible = previous.get("ampel") in ("🟢", "🟡")
+        if eligible:
+            ids.add(r.id)
     return ids | fix_ids(settings)
 
 

@@ -37,7 +37,9 @@ _FARBE_FLOATING = "#d32f2f"
 def _cache_key(result) -> str:
     from .analysis_version import FORENSICS_VERSION
     sha = getattr(result, "trades_sha256", "") or ""
-    return f"eqdd_studie_v{FORENSICS_VERSION}_{result.id}_{sha[:12] or 'nosha'}"
+    currency = getattr(result, "account_currency", None) or "unknown"
+    kind = getattr(result, "source_kind", "live")
+    return f"eqdd_studie_v{FORENSICS_VERSION}_{result.id}_{sha[:12] or 'nosha'}_{kind}_{currency}"
 
 
 def berechne(result, progress) -> dict:
@@ -46,6 +48,8 @@ def berechne(result, progress) -> dict:
     Wirft RuntimeError mit klarem Text, wenn die Trade-Datei fehlt oder das
     Kurs-Terminal nicht verfügbar ist. progress: callback(anteil_0_1, text).
     """
+    from .pipeline import require_usd_account
+    require_usd_account(result)
     progress(0.02, "Trade-Liste laden …")
     pfad = (getattr(result, "trades_path", "") or "").strip()
     if not pfad or not Path(pfad).exists():
@@ -96,6 +100,7 @@ def berechne(result, progress) -> dict:
         "quelle": getattr(result, "quelle", "mql5") or "mql5",
         "trades_pfad": pfad,
         "startkapital_quelle": dd.get("startkapital_quelle") or "unbekannt",
+        "account_currency": getattr(result, "account_currency", None),
     }
     return daten
 

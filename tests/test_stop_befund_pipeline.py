@@ -39,7 +39,7 @@ def history(tmp_path, orderbook):
 def test_stop_facts_are_persisted_and_bound_to_report_basis(tmp_path, monkeypatch, orderbook):
     path = history(tmp_path, orderbook)
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats",
-                        lambda *_: {"dd_equity_pct": 4, "weeks": 52, "monthly_growth_pct": 7})
+                        lambda *_: {"account_currency": "USD", "dd_equity_pct": 4, "weeks": 52, "monthly_growth_pct": 7})
     monkeypatch.setattr(pipeline.exporter, "export_positions", lambda *a, **k: (str(path), True))
     monkeypatch.setattr(pipeline.fx_rates, "status", lambda: {"geladen": False})
     settings = {"equity_rekonstruktion": False, "llm_stufe1": False, "llm_stufe2": False}

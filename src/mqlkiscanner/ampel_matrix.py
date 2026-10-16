@@ -243,7 +243,7 @@ def _stop_zelle(r) -> Zelle:
 
 def _ertrag_zelle(r, settings) -> Zelle:
     r.refresh_efficiency()
-    minimum = float(settings.get("min_ertrag_pct_monat", 5.0))
+    minimum = float(settings.get("min_ertrag_pct_monat", 0.0))
     # Auswahl und RetDD verwenden dieselbe eigene geometrische Rendite.
     # Linearer Ertrag und Plattformwert ersetzen fehlende Messdaten nicht.
     wert = getattr(r, "ertrag_monat_geom_pct", None)
@@ -417,7 +417,11 @@ def _retdd_zelle(r, settings: dict | None = None) -> Zelle:
         f"= Calmar {wert:g}{monat_text}. "
         f"Messung: {r.equity_messung_status}. "
         "Kapitalbasis, Zeitraum und Messabdeckung begrenzen die Aussage; "
-        "historische Effizienz ist keine Prognose. ")
+        "historische Effizienz ist keine Prognose. H1-Modell: keine Intrabar-Tiefs; "
+        "nur exportierte geschlossene Positionen, Referenzkurse ohne "
+        "Ausführungsspread. DD kann unterschätzt, Calmar überschätzt sein; "
+        "bei anderer Kapitalbasis/Teilmessung keine garantierte Untergrenze "
+        "des echten Konto-DD. ")
     if wert >= min_calmar:
         return Zelle(GRUEN, f"{wert:g} / Jahr",
                      herleitung +
@@ -462,7 +466,7 @@ def matrix_payload(result, settings: dict | None = None) -> dict:
     settings = settings or {}
     return {
         "grenzen": {"schranke_eq_dd_pct": settings.get("schranke_eq_dd_pct", 30.0),
-                    "min_ertrag_pct_monat": settings.get("min_ertrag_pct_monat", 5.0),
+                    "min_ertrag_pct_monat": settings.get("min_ertrag_pct_monat", 0.0),
                     "min_calmar_jahr": config.min_calmar_jahr(settings)},
         "kriterien": {key: {"ampel": z.ampel, "kurz": z.kurz, "detail": z.detail}
                       for key, z in kriterien_matrix(result, settings).items()},

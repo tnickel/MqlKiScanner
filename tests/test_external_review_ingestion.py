@@ -33,6 +33,7 @@ def test_separate_values_are_not_merged_when_reading_a_label_buffer():
 
 
 HTML = (
+    "<b>Balance:</b><span>1010 USD</span>"
     "<b>Trades:</b><span>1,085</span>"
     "<b>Growth:</b><span>1,403.03 %</span>"
     "<b>Gross Profit:</b><span>12,345.67 USD</span>"

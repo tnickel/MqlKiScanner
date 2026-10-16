@@ -16,11 +16,15 @@ eigenständiges Einzelprojekt und ebenfalls noch nicht in den Gesamtworkflow
 eingebunden**; eine Hub-Anbindung ist nicht implementiert.
 
 Die Korrekturen des [Gesamtreviews vom 16.10.2026](doc/reviews/2026-10-16_gesamtreview/BEHEBUNG.md)
-verwenden Forensik-Version 17. Ältere Befunde und Equity-Studien werden nicht
+und der [kritischen GLM-Gegenprüfung](doc/reviews/2026-10-16_glm53_pruefung/README.md)
+verwenden inzwischen Forensik-Version 18. Ältere Befunde und Equity-Studien werden nicht
 als aktuelle Freigabe wiederverwendet. Vor einer neuen Auswahl müssen die
 geänderten Quellen neu gebaut und gestartet sowie betroffene Signale neu
 geladen und analysiert werden. Kapitalflüsse während offener Positionen
 erlauben ohne belegte Equity am Flusszeitpunkt keinen belastbaren Calmar.
+Direkte MQL-Kontobeträge brauchen für USD-Forensik und USD-Kontostudien einen
+belegten USD-Kontowährungsnachweis; fremde oder unbekannte native Einheiten
+werden als solche erhalten. Ohne belegte Umrechnung wird keine USD-Messung freigegeben.
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
@@ -53,7 +57,7 @@ Ampel und Score werden dadurch nicht geändert.
   - Harte 30-%-Drawdown-Schranke
 - **Optionale KI-Berichte:** Trade- und Risiko-Analyse parallel, anschließend Gesamtbericht; Modelle konfigurierbar (Defaults GLM-5.3 / GLM-5.3-Flash). Zusätzlich autonomer Agentenbetrieb für Beobachtung, Dossiers und Meldungen.
 - **Append-only Wechsel-Protokoll:** Lückenlose Historisierung jedes Ampelwechsels (alt → neu je Kriterium) zur revisionssicheren Nachvollziehbarkeit.
-- **Zwei Scan-Modi:** **Full-Scan** (ausgewählte Kandidaten) und **Teilscan** (aktuell grüne/gelbe Signale plus Fix-IDs; alle KI-Stufen neu).
+- **Zwei Scan-Modi:** **Full-Scan** (ausgewählte Kandidaten) und **Teilscan** (aktuell grüne/gelbe Signale, fehlgeschlagene Wiederholungen vormals grüner/gelber Signale und Fix-IDs; alle KI-Stufen neu).
 - **Tradeserver-Sync v1:** Transaktionale Synchronisation von Signaldaten und PDF-Dossiers zum `MqlTradeMonitor` (:8080).
 - **Vorbereitete REST-API für MqlRealmonitor:** Schreibgeschützt unter `127.0.0.1:8611/api/v1` (`/health`, `/signals?ampel=gruen,gelb`). Die vorhandene Schnittstelle bedeutet keine abgeschlossene Integration; diese bleibt zurückgestellt.
 

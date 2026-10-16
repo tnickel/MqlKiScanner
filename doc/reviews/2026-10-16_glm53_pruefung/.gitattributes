@@ -1,0 +1,2 @@
+# Review evidence retains exact bytes, line endings and original whitespace.
+* -text whitespace=-blank-at-eol,-blank-at-eof,cr-at-eol

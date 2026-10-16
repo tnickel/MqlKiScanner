@@ -30,8 +30,9 @@ Pipeline (pipeline.py) — Katalog/Crawl → Trades → Forensik → Score/Ampel
 Nebenläufig: rest_api.py — schreibgeschützter HTTP-Server (127.0.0.1:8611)
 als Vorbereitung für MqlRealmonitor; Integration zurückgestellt.
 Liest gespeicherte Forensik und leitet Ampel/Urteil mit aktuellen Einstellungen
-neu ab; kein neuer Trade-/Kursabruf und keine neue Forensik. Fehlende Bericht-PDFs
-können beim Laden materialisiert werden.
+neu ab; kein neuer Trade-/Kursabruf und keine neue Forensik. Die REST-Abfrage
+erzeugt keine Bericht-PDFs. GUI-/Exportpfade können fehlende PDFs aus gespeicherten
+Berichtstexten materialisieren.
 Nebenläufig (Phasen A–E): agenten/ — autonomer LLM-Daemon als
 eigener Prozess (python -m mqlkiscanner.agenten): Dirigent-Tageslauf,
 Scheduler mit Herzschlag/Stopp, Journal (agenten_laeufe/schritte/
@@ -59,8 +60,8 @@ LLM-Payload Ampel/Ausschluss-Grund nicht enthielt — behoben durch
 ## Datenfluss (Live-Scan)
 
 Zwei Start-Modi mit gemeinsamem Ablauf: **Full-Scan** (alle ausgewählten
-Signale) und **Teilscan** (Signale mit letzter Bewertung 🟢/🟡 laut DB plus
-Fix-IDs; erzwingt alle LLM-Stufen neu).
+Signale) und **Teilscan** (aktuell 🟢/🟡, fehlgeschlagene Wiederholungen mit
+letzter erfolgreicher Bewertung 🟢/🟡 und Fix-IDs; erzwingt alle LLM-Stufen neu).
 
 0. **Clients aktualisieren:** Wenn `stufe0_aktiv`, aktive Quellen parallel
    über `POST /api/v1/update` aktualisieren und `GET /api/v1/update/status`

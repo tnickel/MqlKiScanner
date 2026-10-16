@@ -28,7 +28,7 @@ def _analyze_mit_cache(tmp_path, monkeypatch, csv_text: str):
     cache = tmp_path / "cache.csv"
     cache.write_text(csv_text, encoding="utf-8")
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats",
-                        Mock(return_value={"dd_equity_pct": 12.0,
+                        Mock(return_value={"account_currency": "USD", "dd_equity_pct": 12.0,
                                            "monthly_growth_pct": 9.0}))
     monkeypatch.setattr(pipeline.exporter, "export_positions",
                         Mock(return_value=(str(cache), False)))

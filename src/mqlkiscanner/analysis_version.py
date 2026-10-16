@@ -29,4 +29,6 @@ Bei Änderungen an Pflichtprüfungen oder Bewertungsregeln erhöhen: Live-Befund
 # Kontokurven; niemals als externer Flow neutralisieren. Neu scannen.
 # 17: Teilmessung erhält bekannte Floatings, Flow-Rendite wird ohne belegte
 # Preflow-Equity nicht als Equity-TWR freigegeben, Roh-DD/Kosten/FX korrigiert.
-FORENSICS_VERSION = 17
+# 18: Direkte MQL-Kontobeträge benötigen belegtes USD; native Fremdwährung
+# darf nicht als USD-Basis für H1-/Schockmessung wiederverwendet werden.
+FORENSICS_VERSION = 18

@@ -42,8 +42,15 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   Täglicher Betreuer derzeit nur MQL5, andere Quellen werden übersprungen.
 - **Maßgebliche Codeorte:** `pipeline.ampel_for`, `ScanResult.refresh_efficiency`,
   `config.DEFAULT_SETTINGS`, `portfolio_statistik.MIN_HISTORIE_MONATE` und
-  `analysis_version.FORENSICS_VERSION` (nach Gesamtreview-Fixes 17). Produktive Settings
+  `analysis_version.FORENSICS_VERSION` (nach GLM-Gegenprüfung 18). Produktive Settings
   ausschließlich `config/app_settings.json`.
+- **GLM-Gegenprüfung 16.10.2026:** Direkte MQL-USD-Forensik und Kontostudien
+  benötigen belegte USD-Kontowährung; native Beträge bleiben im Audit erhalten.
+  Mehrdeutige Quellen-/Plattformidentitäten werden vor Persistenz abgewiesen.
+  Teilscans wiederholen auch fehlgeschlagene Läufe vormals grüner/gelber Signale,
+  ohne die aktuelle Fehler-Ampel aufzuwerten. REST-GET erzeugt keine PDFs;
+  zentrale Promptregeln sind an den Berichtshash gebunden. Details im
+  `doc/reviews/2026-10-16_glm53_pruefung/README.md`.
 
 ## Auftrag und Nutzer-Kriterien (fest)
 

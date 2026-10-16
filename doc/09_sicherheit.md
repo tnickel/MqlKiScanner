@@ -55,8 +55,8 @@ Reihenfolge in `secrets_store.py`: Umgebung → `.env` →
   ist vorerst zurückgestellt. Die Scanner-Schnittstelle lauscht bewusst
   nur auf `127.0.0.1:8611`
   (kein Fernzugriff), ohne schreibende HTTP-Endpunkte. Ampel und Urteil werden
-  aus gespeicherter Forensik mit aktuellen Einstellungen abgeleitet; fehlende
-  PDF-Dateien können materialisiert werden. Optionaler Token über
+  aus gespeicherter Forensik mit aktuellen Einstellungen abgeleitet.
+  Der REST-GET erzeugt keine PDF-Dateien. Optionaler Token über
   Env `MQLKISCANNER_REST_TOKEN` / secrets_store; Client sendet Header
   `X-User-Key` (Vergleich mit `hmac.compare_digest`). Der Token wird als
   Headerwert übertragen; der konstante Vergleich verschlüsselt ihn nicht.

@@ -201,7 +201,7 @@ def _statistik_fuer(result) -> dict | None:
     # Katalog-Nachladungen nicht).
     return _statistik_cached(pfad, getattr(result, 'trades_sha256', '') or '',
                              json.dumps(rohstats, sort_keys=True, default=str),
-                             '2026-10-16-forex17-roh-dd-flow-evidenz-v5')
+                             f'2026-10-16-forex{pipeline.FORENSICS_VERSION}-roh-dd-flow-evidenz-v5')
 
 
 suche_cf = (suche or '').strip().casefold()

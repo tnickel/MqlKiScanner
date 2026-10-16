@@ -1,0 +1,26 @@
+[
+  {
+    "repository": "roboforex",
+    "manifest": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\glm53_review_pruefung_2026-10-16\\quellen_b\\roboforex_fixed_manifest.json",
+    "sourceFileCount": 66,
+    "overlayCount": 16,
+    "liveOverlayMismatch": [],
+    "snapshotSourceMismatch": []
+  },
+  {
+    "repository": "zulumonitor",
+    "manifest": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\glm53_review_pruefung_2026-10-16\\quellen_b\\zulumonitor_manifest.json",
+    "sourceFileCount": 56,
+    "overlayCount": 2,
+    "liveOverlayMismatch": [],
+    "snapshotSourceMismatch": []
+  },
+  {
+    "repository": "PelicanTrading",
+    "manifest": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\glm53_review_pruefung_2026-10-16\\quellen_b\\PelicanTrading_manifest.json",
+    "sourceFileCount": 98,
+    "overlayCount": 2,
+    "liveOverlayMismatch": [],
+    "snapshotSourceMismatch": []
+  }
+]

@@ -54,9 +54,11 @@ KI-Bericht → Portfolio → Abgleich):
    filtert, übernimmt Trades der Top-N je Quelle, rechnet Forensik und
    speichert in SQLite.
 2. **Teilscan** (vormals Gelb/Grün-Scan) — die regelmäßige Überwachungsrunde:
-   prüft **nur** Signale, deren letzte gespeicherte Bewertung 🟢 (Kandidat)
-   oder 🟡 (Beobachtung) ist. Alle anderen Farben werden in diesem Lauf nicht
-   beachtet. Definierte Fix-IDs sind zusätzlich immer im Scan-Scope; sie
+   prüft Signale mit aktueller Bewertung 🟢 (Kandidat) oder 🟡 (Beobachtung).
+   Nach einem fehlgeschlagenen Wiederholungslauf werden auch aktuell weiße
+   Fehlerfälle erneut geprüft, wenn ihre letzte erfolgreiche Bewertung grün
+   oder gelb war. Ihr Fehlerstatus bleibt bis zu einer erfolgreichen Prüfung
+   sichtbar. Definierte Fix-IDs sind zusätzlich immer im Scan-Scope; sie
    umgehen keine Bewertungsregel. Für jedes geprüfte Signal werden
    **immer alle KI-Stufen neu
    erzeugt** (Trade-Analyse, Risiko-Analyse, Gesamtbericht; danach der
@@ -112,6 +114,13 @@ entscheidet aber nicht mehr. Die absolute Monats-Ertragshürde ist mit
 Einstellungen wieder gesetzt werden. Drawdown-Verstöße, nachgewiesene
 Martingale-Signatur und Ausschlussliste bleiben vorrangige Ablehnungsgründe.
 
+**Messgrenze:** Die Rekonstruktion verwendet H1-Referenzkurse und die
+exportierten geschlossenen Positionen. Intrabar-Extrema, am Exportende noch
+offene Positionen und der tatsächliche Ausführungsspread fehlen. DD kann
+unterschätzt und Calmar überschätzt sein; bei Teilhistorie, fehlenden Hedges
+oder virtueller Kapitalbasis ist der Modell-DD keine garantierte Untergrenze
+des echten Kontos.
+
 **Equity-Drawdown wird nachgemessen (28.09.2026):** Der vom Broker gemeldete
 „By Equity"-Drawdown ist eine Selbstauskunft. Mit laufendem MetaTrader-Terminal
 (oder bei aktiviertem portablen Selbststart) rekonstruiert der Scanner die
@@ -144,6 +153,14 @@ berücksichtigt und zählen nicht als Handelsverlust. Bei späteren
 Kapitalflüssen wird die Rendite zeitgewichtet berechnet (TWR), damit
 Einzahlungen nicht als Gewinn zählen. Plattform-Rendite und linearer
 Startbasis-Ertrag bleiben Zusatzinformationen.
+
+**Kontowährung beim direkten MQL5-Abruf:** USD-Forensik und unabhängige
+Equity-Studien erfordern einen eindeutigen USD-Beleg in den Konto-Geldfeldern.
+Native Beträge und ihre Einheit bleiben erhalten. USC, Fremdwährung sowie
+fehlende oder widersprüchliche Einheiten liefern ohne belegten
+Umrechnungsvertrag keine USD-Kursmessung. Forensik-Version **18** verlangt
+eine Neubewertung älterer Befunde; alte Studien oder Sitzungsdaten umgehen
+diese Währungsprüfung nicht.
 
 ### Ampel-Verlauf und Wechsel-Protokoll
 

@@ -1,0 +1,57 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/D:/DevelopmentTools/apache-maven-3.9.6/lib/jansi-2.4.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/D:/DevelopmentTools/apache-maven-3.9.6/lib/guava-32.0.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< de.zulumonitor:zulumonitor >---------------------
+[INFO] Building ZuluMonitor 1.2.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ zulumonitor ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ zulumonitor ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 26 source files with javac [debug release 25] to target\classes
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/glm53_review_pruefung_2026-10-16/quellen_b/zulumonitor/src/main/java/de/zulumonitor/store/TradeListenStore.java: D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\glm53_review_pruefung_2026-10-16\quellen_b\zulumonitor\src\main\java\de\zulumonitor\store\TradeListenStore.java verwendet oder überschreibt eine veraltete API.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/glm53_review_pruefung_2026-10-16/quellen_b/zulumonitor/src/main/java/de/zulumonitor/store/TradeListenStore.java: Wiederholen Sie die Kompilierung mit -Xlint:deprecation, um Details zu erhalten.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/glm53_review_pruefung_2026-10-16/quellen_b/zulumonitor/src/main/java/de/zulumonitor/ZuluMonitorApp.java: Einige Eingabedateien verwenden nicht geprüfte oder unsichere Vorgänge.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/glm53_review_pruefung_2026-10-16/quellen_b/zulumonitor/src/main/java/de/zulumonitor/ZuluMonitorApp.java: Wiederholen Sie die Kompilierung mit -Xlint:unchecked, um Details zu erhalten.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ zulumonitor ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ zulumonitor ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 19 source files with javac [debug release 25] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ zulumonitor ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running de.zulumonitor.report.DrawdownBasisTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.105 s -- in de.zulumonitor.report.DrawdownBasisTest
+[INFO] Running de.zulumonitor.store.TradeListenStoreTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in de.zulumonitor.store.TradeListenStoreTest
+[INFO] Running de.zulumonitor.UpdateJobStufe0Test
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.286 s -- in de.zulumonitor.UpdateJobStufe0Test
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.614 s
+[INFO] Finished at: 2026-10-16T19:11:49+02:00
+[INFO] ------------------------------------------------------------------------

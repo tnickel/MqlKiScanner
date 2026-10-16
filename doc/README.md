@@ -35,6 +35,9 @@ nicht eingebunden; eine Hub-Anbindung ist nicht implementiert.
 
 ## Reviews
 
+- [Kritische Prüfung des GLM-5.3-Reviews](reviews/2026-10-16_glm53_pruefung/README.md)
+  trennt bereits behobene, zusätzliche und unbelegte Befunde; die aktuellen
+  fachlichen Korrekturen verwenden Forensik-Version 18.
 - [Gesamtreview vom 16.10.2026](reviews/2026-10-16_gesamtreview/REVIEW.md)
   dokumentiert die damaligen Gegenbeispiele; der
   [Behebungsnachweis](reviews/2026-10-16_gesamtreview/BEHEBUNG.md) ordnet

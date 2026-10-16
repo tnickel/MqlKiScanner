@@ -1014,10 +1014,10 @@ def render_detail(result) -> None:
                  "Equity-DD mit Puffer"), color=dd_farbe)
             st.badge(
                 "Ertragsziel erreicht"
-                if gewinn_monat is not None and gewinn_monat >= settings.get("min_ertrag_pct_monat", 5.0)
+                if gewinn_monat is not None and gewinn_monat >= settings.get("min_ertrag_pct_monat", 0.0)
                 else "Ertragsziel nicht belegt",
                 color="green"
-                if gewinn_monat is not None and gewinn_monat >= settings.get("min_ertrag_pct_monat", 5.0)
+                if gewinn_monat is not None and gewinn_monat >= settings.get("min_ertrag_pct_monat", 0.0)
                 else "gray",
             )
         st.markdown("**Urteil**")

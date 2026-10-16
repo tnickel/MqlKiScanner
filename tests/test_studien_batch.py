@@ -410,7 +410,8 @@ def test_direkte_mql5_seitenbasis_nur_positiv_und_nach_cached_metrics(
         return {'status': 'skipped', 'grund': 'Testkursanbieter'}
     monkeypatch.setattr(equity_rekonstruktion, 'rekonstruiere', reconstruct)
     result = pipeline.ScanResult(id=919192, quelle='mql5', trades_path=str(path),
-                                 trades_sha256='same', kapitalbasis_usd=seitenbasis)
+                                 trades_sha256='same', kapitalbasis_usd=seitenbasis,
+                                 account_currency='USD')
     studien_batch._rechne_ein_signal(result, {'skipped_gruende': []}, _FakeKurse(), False)
     assert captured['capital'] == erwartete_basis
     assert bool(db.get_equity_studie(result.id)['virtuell']) is virtuell

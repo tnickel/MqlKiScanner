@@ -1,0 +1,635 @@
+{
+  "scope": "Offline synthetic tests; no production data, platform login or paid model validation",
+  "runs": [
+    {
+      "snapshot": "Scanner_final",
+      "manifest": "Scanner_final.manifest.json",
+      "xml": "Scanner_final.pytest.xml",
+      "log": "Scanner_final.pytest.log",
+      "baseline_commit": "a4839983e72a0c902c3cf1306ec73ac0b56251ef",
+      "passed": 1998,
+      "totals": {
+        "tests": 2002,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      "suites": [
+        {
+          "name": "pytest",
+          "time_seconds": 544.668,
+          "tests": 2002,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 4,
+          "nonpassing_cases": [
+            {
+              "class": "tests.test_archiv_finanzaggregate",
+              "name": "test_alle_bekannten_original_archivzeilen_finanziell_vollstaendig",
+              "status": "skipped",
+              "reason": "Optionaler lokaler Originalexport"
+            },
+            {
+              "class": "tests.test_parser_export_artefakte",
+              "name": "test_real_blocked_signal_fixture_parses",
+              "status": "skipped",
+              "reason": "Lokaler Realexport-Regressionstest: privater Live-Cache fehlt; die synthetischen Export-Artefakt-Tests laufen unabhaengig davon."
+            },
+            {
+              "class": "tests.test_retdd_produzent_und_dedup",
+              "name": "test_ticketlose_lieferung_thg_wird_nicht_per_mengenheuristik_gekuerzt",
+              "status": "skipped",
+              "reason": "Original-Lieferung nicht mehr im Cache"
+            },
+            {
+              "class": "tests.test_retdd_produzent_und_dedup",
+              "name": "test_night_scalper_realer_export_bleibt_299_positionen",
+              "status": "skipped",
+              "reason": "Realer Night-Scalper-Snapshot nicht vorhanden"
+            }
+          ]
+        }
+      ],
+      "log_sha256": {
+        "Scanner_final.pytest.log": "9ffd2b7a0b92e1a1cf045ed0dc253890933f8c75ce053d825c77b6e888d79d18"
+      }
+    },
+    {
+      "snapshot": "MqlDownloader_final2",
+      "manifest": "MqlDownloader_final2.manifest.json",
+      "log": "MqlDownloader_final2.maven.log",
+      "package": true,
+      "baseline_commit": "908c69088a1fc8c36f20c3bffec7b3f9338bb987",
+      "passed": 116,
+      "totals": {
+        "tests": 116,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "suites": [
+        {
+          "name": "calculators.MPDDDataQualityTest",
+          "time_seconds": 0.206,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "config.ConfigurationManagerTest",
+          "time_seconds": 0.018,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "database.DatabaseManagerTest",
+          "time_seconds": 0.503,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "downloader.DownloadFilesTest",
+          "time_seconds": 0.008,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.ReportCellLayoutTest",
+          "time_seconds": 0.121,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.ReportFilesTest",
+          "time_seconds": 0.01,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.RiskCellEditorTest",
+          "time_seconds": 0.033,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.RiskEditingTableTest",
+          "time_seconds": 0.025,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.SubscriberStatisticsClickHandlerTest",
+          "time_seconds": 0.004,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.SubscriberStatisticsDialogTest",
+          "time_seconds": 2.696,
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.SubscriberStatisticsRenderingTest",
+          "time_seconds": 0.001,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.UpdateVermerkTest",
+          "time_seconds": 0.007,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.CsvParserTest",
+          "time_seconds": 0.003,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.JsonWriterTest",
+          "time_seconds": 0.002,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.MetricsParserTest",
+          "time_seconds": 0.004,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.ProviderFilesTest",
+          "time_seconds": 0.266,
+          "tests": 16,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.RestApiServerTest",
+          "time_seconds": 0.186,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.SubscriberDefaultTest",
+          "time_seconds": 0.062,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.UpdateEndpointTest",
+          "time_seconds": 0.1,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "utils.AutoSchedulerManagerTest",
+          "time_seconds": 0.002,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "utils.FileUtilsTest",
+          "time_seconds": 0.022,
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "log_sha256": {
+        "MqlDownloader_final2.maven.log": "52637914d3360e402d08f68de83efa1fa95eb77fc39e583e5336c55ab0d424f9"
+      }
+    },
+    {
+      "snapshot": "vantage_final",
+      "manifest": "vantage_final.manifest.json",
+      "log": "vantage_final.maven.log",
+      "python_log": "vantage_final.python.log",
+      "package": true,
+      "baseline_commit": "9d3849b16d77cd558bf686f3d685b6af5e016b6b",
+      "passed": 65,
+      "totals": {
+        "tests": 65,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "suites": [
+        {
+          "name": "de.vantagemonitor.api.MetricsWindowTest",
+          "time_seconds": 0.29,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.api.RankingUnionTest",
+          "time_seconds": 0.07,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.api.TradeContractTest",
+          "time_seconds": 0.028,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.config.PromptMigrationTest",
+          "time_seconds": 0.048,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.FxRatesTest",
+          "time_seconds": 0.022,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.HeadlessTradelistenLoadTest",
+          "time_seconds": 0.002,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.report.DrawdownBasisTest",
+          "time_seconds": 0.004,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.RestApiServerTest",
+          "time_seconds": 1.072,
+          "tests": 19,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.store.TradeIntegrityTest",
+          "time_seconds": 0.029,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.store.TradeListStoreTest",
+          "time_seconds": 0.044,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.store.TradeStoreMonateTest",
+          "time_seconds": 0.009,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.store.UiPrefsTest",
+          "time_seconds": 0.01,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.UpdateJobStufe0Test",
+          "time_seconds": 0.087,
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "log_sha256": {
+        "vantage_final.maven.log": "412dcdb45b4f8f8924de51c30ea8a79b7c11f59892d7ac31b3cd295c25240247",
+        "vantage_final.python.log": "162601915f79d58bd7edb9a4ba0d7e176da8139c3c0db2c46c0ce7591b094f20"
+      }
+    },
+    {
+      "snapshot": "quellen_b/PelicanTrading",
+      "manifest": "quellen_b/PelicanTrading_manifest.json",
+      "log": "quellen_b/PelicanTrading_test.log",
+      "package_log": "quellen_b/PelicanTrading_package.log",
+      "baseline_commit": "c2c4ac71a889c14896366778c1d5b77b13a0adf3",
+      "passed": 46,
+      "totals": {
+        "tests": 46,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "suites": [
+        {
+          "name": "de.pelicanmonitor.CoreRegressionTest",
+          "time_seconds": 0.249,
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.FixtureParseTest",
+          "time_seconds": 0.177,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.UpdateJobStufe0Test",
+          "time_seconds": 0.297,
+          "tests": 28,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "log_sha256": {
+        "PelicanTrading_test.log": "eff5dca4ce8b6aa6d822804178ec0e22833811a2e43b1047eb16844b8d15c78a",
+        "PelicanTrading_package.log": "519342945581756e638939169abe7cdeeee11d9066adb7d47a33fc294b153666"
+      }
+    },
+    {
+      "snapshot": "quellen_b/zulumonitor",
+      "manifest": "quellen_b/zulumonitor_manifest.json",
+      "log": "quellen_b/zulumonitor_test.log",
+      "package_log": "quellen_b/zulumonitor_package.log",
+      "baseline_commit": "5221b4838f935abe853b0ac8204d4f7639381e93",
+      "passed": 18,
+      "totals": {
+        "tests": 18,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "suites": [
+        {
+          "name": "de.zulumonitor.report.DrawdownBasisTest",
+          "time_seconds": 0.105,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.store.TradeListenStoreTest",
+          "time_seconds": 0.11,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.UpdateJobStufe0Test",
+          "time_seconds": 0.286,
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "log_sha256": {
+        "zulumonitor_test.log": "2da3954908e814c0ae2a535ab2cdecd3339b38fe386c287b81a20f7584fd33a2",
+        "zulumonitor_package.log": "929f009f7f3a3dcb6791888716ceb003bb43c5485501d390b3ab4b0a246b4cb9"
+      }
+    },
+    {
+      "snapshot": "quellen_b/roboforex_fixed",
+      "manifest": "quellen_b/roboforex_fixed_manifest.json",
+      "log": "quellen_b/roboforex_fixed_test.log",
+      "package_log": "quellen_b/roboforex_fixed_package.log",
+      "baseline_commit": "99afb590a11bbe066555a35a9aa8a176f08130a3",
+      "passed": 179,
+      "totals": {
+        "tests": 179,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "suites": [
+        {
+          "name": "de.robomonitor.ClosingDdDealsTest",
+          "time_seconds": 0.099,
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.CoreRegressionTest",
+          "time_seconds": 0.336,
+          "tests": 61,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.deals.TradeAggregatorTest",
+          "time_seconds": 0.007,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.DealStoreTest",
+          "time_seconds": 0.033,
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.LlmSettingsTest",
+          "time_seconds": 0.018,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.RestApiServerTest",
+          "time_seconds": 0.956,
+          "tests": 15,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.ReviewDataIntegrityTest",
+          "time_seconds": 0.525,
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.SignalFilterTest",
+          "time_seconds": 0.008,
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.store.UiPrefsTest",
+          "time_seconds": 0.011,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.SubscriberDbTest",
+          "time_seconds": 0.322,
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.TradeDdProvenanceTest",
+          "time_seconds": 0.067,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.TradelistenPersistenzTest",
+          "time_seconds": 0.036,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.UpdateJobStufe0Test",
+          "time_seconds": 0.083,
+          "tests": 16,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "log_sha256": {
+        "roboforex_fixed_test.log": "0d4b5340fc2f4a352bdbe642a68fa85c008a2ecba75ea6fccce156c9e976ad35",
+        "roboforex_fixed_package.log": "3e3cf1b5bb944155d595bbb4015d151795a5cede887c0bbaaf414e6eb4c5dbca"
+      }
+    }
+  ]
+}

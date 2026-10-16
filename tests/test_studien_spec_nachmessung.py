@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def _res(**kwargs):
     return SimpleNamespace(id=91, name="Teil", trades_path="cached.csv",
                            trades_sha256="sha", quelle="mql5",
+                           account_currency="USD",
                            max_drawdown_equity_pct=8, **kwargs)
 
 

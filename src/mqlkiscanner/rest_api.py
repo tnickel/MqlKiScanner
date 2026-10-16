@@ -11,12 +11,12 @@ Endpunkte:
                            Query-Parameter `ampel` (Kommaliste) filtert
                            serverseitig, z. B. ?ampel=gruen,gelb
 
-Grundregeln (wie beim Tradeserver-Sync): Der Server liest ausschließlich
-die SQLite-Datenbank und bewertet NIE neu — die Ampel wird mit
-pipeline.ampel_for aus den gespeicherten Werten und den aktuellen
-Einstellungen abgeleitet, exakt wie die Ergebnisse-Seite. Es gibt keine
-Dauerverbindung: Der MqlRealMonitor holt sich die Liste, wenn der Nutzer
-den KiScanner-Button drückt.
+Grundregeln: Der Server verwendet gespeicherte Evidenz aus SQLite und
+vorhandenen lokalen Artefakten. Die Ampel wird mit pipeline.ampel_for nach
+den aktuellen Einstellungen abgeleitet, exakt wie die Ergebnisse-Seite;
+Trade-/Kursabruf und neue Forensik finden nicht statt. Der GET-Abruf erzeugt
+keine Bericht-PDFs und schreibt keine fachlichen Bewertungen zurück.
+Die MqlRealmonitor-Integration ist vorbereitet und weiterhin zurückgestellt.
 
 Der Server lauscht standardmäßig nur auf 127.0.0.1 (kein Fernzugriff),
 läuft als Daemon-Thread neben der Streamlit-App und ist auch standalone
@@ -245,7 +245,7 @@ def build_server(port: int = DEFAULT_PORT, bind: str = DEFAULT_BIND,
 
 def _results_aus_db():
     """Standard-Datenquelle: gespeicherte Signale, Ampel wie Ergebnis-Ansicht."""
-    return pipeline.results_from_db()
+    return pipeline.results_from_db(materialize_pdfs=False)
 
 
 def konfiguriert(settings: dict | None = None) -> bool:

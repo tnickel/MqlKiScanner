@@ -308,7 +308,7 @@ def test_complete_stop_finding_survives_real_csv_db_archive_and_prompt_payload(t
     path = tmp_path / "9000321_positions.csv"
     path.write_text("\n".join(rows) + "\n", encoding="utf-8")
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", lambda *a: {
-        "dd_equity_pct": 5, "weeks": 100, "monthly_growth_pct": 10,
+        "account_currency": "USD", "dd_equity_pct": 5, "weeks": 100, "monthly_growth_pct": 10,
     })
     monkeypatch.setattr(pipeline.exporter, "export_positions", lambda *a, **k: (str(path), False))
     monkeypatch.setattr(pipeline.ScanPipeline, "_kursanbieter_fuer", lambda *a: None)

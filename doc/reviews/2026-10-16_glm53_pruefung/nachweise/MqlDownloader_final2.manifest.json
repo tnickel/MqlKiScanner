@@ -1,0 +1,11 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\MqlDownloader",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\glm53_review_pruefung_2026-10-16\\MqlDownloader_final2",
+  "head": "908c69088a1fc8c36f20c3bffec7b3f9338bb987",
+  "overlay_sha256": {
+    "README.md": "a35ad6cdcf077f678037c6f130640bb69e90b5686e65ac4c53515b67abfca95e",
+    "src\\rest\\RestApiServer.java": "afcaaa71a0caca49fda0a53e1eef8a3e176d87da6ad9ac8ee9c30ac31fb9210f",
+    "tests\\rest\\RestApiServerTest.java": "00071d24cb6f487b55266f572f8cff771e8e4ed84e37906ee62edac0622a4240",
+    "tests\\rest\\SubscriberDefaultTest.java": "cddb1d700b2794a8578b0dd741cee23de406c7b700528bb58484c37942397868"
+  }
+}

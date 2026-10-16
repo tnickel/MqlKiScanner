@@ -14,7 +14,7 @@ def test_retry_bad_csv_laesst_zweiten_download_zu(tmp_path, monkeypatch):
     good = header + '2025.12.31 00:00:00;Balance;;;;;;;;;1000\n' + '2026.01.01 00:00:00;Buy;0.1;XAUUSD;2000;0.1;2026.01.01 01:00:00;2001;0;0;10\n'
     monkeypatch.setattr(exporter, 'TRADES_DIR', tmp_path / 'exports')
     monkeypatch.setattr(pipeline.signal_stats, 'fetch_signal_stats',
-                        lambda *_: {'dd_equity_pct':5,'monthly_growth_pct':10,
+                        lambda *_: {'account_currency':'USD','dd_equity_pct':5,'monthly_growth_pct':10,
                                     'quelle_trades_gekappt':True,
                                     'quelle_trades_total_available':42000,
                                     'quelle_trades_stored':2000,

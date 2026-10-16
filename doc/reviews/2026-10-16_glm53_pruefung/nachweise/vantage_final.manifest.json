@@ -1,0 +1,15 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\vantage",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\glm53_review_pruefung_2026-10-16\\vantage_final",
+  "head": "9d3849b16d77cd558bf686f3d685b6af5e016b6b",
+  "overlay_sha256": {
+    "README.md": "cd6a9e5888f0debd1a8d330cb7abff36352633881f11566a639f606694a1ca50",
+    "src\\main\\java\\de\\vantagemonitor\\api\\VantageClient.java": "acc88a9291e7a0516a14f39af5a5e63240b65bd26c1604739e3cda7c04db0b7c",
+    "src\\main\\java\\de\\vantagemonitor\\model\\SignalProvider.java": "f69ccea680b23bcbfb7974d1630dacc382ea98b32a9c57aac4d99cf8f541fe3a",
+    "src\\main\\java\\de\\vantagemonitor\\rest\\RestApiServer.java": "5221f51e0e25055a18dd283d8df6c5d57de3d1450d77b3e351f691a0f600aa6b",
+    "src\\main\\java\\de\\vantagemonitor\\store\\DataStore.java": "9794479b8b2d0c6310b6c307c6be3f7704d4f65cc02b214462475d91042bfb1d",
+    "src\\test\\java\\de\\vantagemonitor\\RestApiServerTest.java": "809c2caa46b7723c78eedf415ee43ed0591360d9b8e272144b6e9e4fc9721a4e",
+    "src\\test\\java\\de\\vantagemonitor\\api\\MetricsWindowTest.java": "2bc854485c0f57cd3cbc0224933ea15f08ec973b168659828123bad9db868c03",
+    "src\\test\\java\\de\\vantagemonitor\\api\\RankingUnionTest.java": "e98651a9dccb797180962148da8fd6e7bb01f4f08e416e6c952baec3ce7ad4a1"
+  }
+}

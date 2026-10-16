@@ -61,7 +61,7 @@ def test_real_history_stop_neutralitaet_survives_database_archive_and_llm_payloa
         tmp_path, monkeypatch, evidence, expected, stichwort):
     path = write_history(tmp_path, evidence)
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", Mock(return_value={
-        "dd_equity_pct": 1, "monthly_growth_pct": 6, "weeks": 110,
+        "account_currency": "USD", "dd_equity_pct": 1, "monthly_growth_pct": 6, "weeks": 110,
         "monitor_trade_eq_dd_pct": 1,
     }))
     download = Mock(return_value=(str(path), False))

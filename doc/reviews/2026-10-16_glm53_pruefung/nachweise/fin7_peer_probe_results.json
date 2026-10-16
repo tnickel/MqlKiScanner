@@ -1,0 +1,35 @@
+{
+  "mixed_money_rows": {
+    "account_currency": null,
+    "balance_usd": null,
+    "initial_deposit_usd": null
+  },
+  "unitless_money_row": {
+    "account_currency": null,
+    "balance_usd": null,
+    "initial_deposit_usd": null
+  },
+  "usd_rows_and_unrelated_eur_text": {
+    "account_currency": "USD",
+    "balance_usd": 1100.0,
+    "initial_deposit_usd": 1000.0
+  },
+  "old_study_None": {
+    "true_dd_usd": 42,
+    "display_dd_pct": 4
+  },
+  "old_study_USC": {
+    "true_dd_usd": 42,
+    "display_dd_pct": 4
+  },
+  "old_study_USD": {
+    "true_dd_usd": 42,
+    "display_dd_pct": 4
+  },
+  "ui_cache_currency_isolated": false,
+  "source_sha256": {
+    "pipeline.py": "589a9e0ab2ebab125765a5a15a4f998be2eaee703811cf36bddbffbc6ed3220d",
+    "equity_studie_ui.py": "23c70b590bee8ef9f86bb63ec03c86354a67c74a001859612b5e6a387c710219",
+    "mql5/signal_stats.py": "551e34fb893ee8cff3a127c76e8cfabff53d1045e2864ab9c3205c0da7b5fd3b"
+  }
+}

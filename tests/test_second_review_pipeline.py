@@ -25,7 +25,7 @@ def live_scan(tmp_path, monkeypatch):
         encoding="utf-8",
     )
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats",
-                        Mock(return_value={"dd_equity_pct": 5, "monthly_growth_pct": 10}))
+                        Mock(return_value={"account_currency": "USD", "dd_equity_pct": 5, "monthly_growth_pct": 10}))
     monkeypatch.setattr(pipeline.exporter, "export_positions", Mock(return_value=(str(csv), False)))
     monkeypatch.setattr(pipeline.time, "sleep", lambda _: None)
     db.init_db()

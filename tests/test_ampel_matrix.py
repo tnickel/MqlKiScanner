@@ -83,7 +83,8 @@ def test_stop_nachweis_stufen():
 
 
 def test_ertrag_grenzwerte():
-    f = lambda wert: _matrix(_result(ertrag_monat_geom_pct=wert))["ertrag"].ampel
+    f = lambda wert: kriterien_matrix(_result(ertrag_monat_geom_pct=wert),
+                                     {"min_ertrag_pct_monat": 5})["ertrag"].ampel
     assert f(5.0) == GRUEN      # Schwelle ist inklusiv
     assert f(4.99) == GELB
     assert f(0.0) == GELB
@@ -331,9 +332,9 @@ def test_ertrag_zelle_massgeblich_ist_geometrische_rendite():
     """B2: Plattform meldet 6,46 %/Monat, die eigene Kurve auf der DD-Basis
     liefert 0,5 %/Monat (Fall SafeGold) — die Zelle muss GELB zeigen und
     beide Werte im Detail nennen."""
-    matrix = _matrix(_result(ertrag_monat_pct=6.46,
+    matrix = kriterien_matrix(_result(ertrag_monat_pct=6.46,
                              ertrag_monat_pct_forensik=8.0,
-                             ertrag_monat_geom_pct=0.5))
+                             ertrag_monat_geom_pct=0.5), {"min_ertrag_pct_monat": 5})
     assert matrix["ertrag"].ampel == GELB
     assert "0,5 % < 5 %" in matrix["ertrag"].kurz
     assert "Plattform meldet 6,5 %/Monat" in matrix["ertrag"].detail

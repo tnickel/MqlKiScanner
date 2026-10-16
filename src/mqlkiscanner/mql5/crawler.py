@@ -121,14 +121,16 @@ def crawl_lists(session: Mql5Session, seiten_pro_liste: int = 2,
     jobs = [(plattform, base if page == 1 else f"{base}/page{page}")
             for plattform, base in lists
             for page in range(1, max(1, seiten_pro_liste) + 1)]
-    signals: dict[int, dict] = {}
+    signals: dict[tuple[int, str], dict] = {}
     for i, (plattform, url) in enumerate(jobs):
         r = session.get(url, extra_pause_s=1.0)
         page_signals = parse_list_html(r.text)
         for s in page_signals:
             if not s["platform"]:
                 s["platform"] = plattform.upper()
-            signals[s["id"]] = s
+            # Keep conflicting MT4/MT5 identities visible for the pipeline's
+            # collision rejection; numeric ID alone must not make MT4 win.
+            signals.setdefault((s["id"], str(s["platform"]).upper()), s)
         if on_progress:
             page_no = url.rsplit("page", 1)[-1] or "1"
             on_progress(i + 1, len(jobs),

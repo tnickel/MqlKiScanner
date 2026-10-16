@@ -22,7 +22,8 @@ def scan(monkeypatch, tmp_path):
     )
     export = Mock(return_value=(str(csv), False))
     monkeypatch.setattr(pipeline.exporter, "export_positions", export)
-    stats = Mock(return_value={"dd_equity_pct": 5, "monthly_growth_pct": 10})
+    stats = Mock(return_value={"dd_equity_pct": 5, "monthly_growth_pct": 10,
+                              "account_currency": "USD"})
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", stats)
     monkeypatch.setattr(pipeline.time, "sleep", Mock())
     return pipeline.ScanPipeline(), stats, export

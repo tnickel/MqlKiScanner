@@ -132,7 +132,28 @@ def parse_detail_html(html: str) -> dict:
         broker_server = broker_m.group(0) if broker_m else None
     leverage_m = _LEVERAGE_RE.search(text_all)
 
+    # A site's numeric account values are not necessarily USD (e.g. USC,
+    # EUR). Retain their native unit and never silently feed it to USD H1
+    # reconstruction. Every present numeric money row must agree on a unit.
+    money_labels = {"initial_deposit": "Initial Deposit:", "balance": "Balance:",
+                    "equity": "Equity:", "withdrawals": "Withdrawals:",
+                    "deposits": "Deposits:", "profit": "Profit:"}
+    native = {key: _number(values.get(label, ""))
+              for key, label in money_labels.items()}
+    units = []
+    for key, label in money_labels.items():
+        if native[key] is not None:
+            codes = set(re.findall(r"\b[A-Z]{3}\b", values.get(label, "")))
+            units.append(next(iter(codes)) if len(codes) == 1 else None)
+    account_currency = units[0] if units and units[0] and all(
+        unit == units[0] for unit in units) else None
+    money = {f"{key}_account": value for key, value in native.items()}
+    money.update({f"{key}_usd": value if account_currency == "USD" else None
+                  for key, value in native.items()})
+
     return {
+        **money,
+        "account_currency": account_currency,
         "raw": values,
         "growth_pct": _number(values.get("Growth:", "")),
         "profit_abs": values.get("Profit:", ""),
@@ -144,11 +165,6 @@ def parse_detail_html(html: str) -> dict:
         # Numerische Kontobasis: die Signalseite belegt das Startkapital auch
         # dann, wenn der Trade-Export keine Einzahlung vor dem ersten Trade
         # enthaelt (MT4-Orderbuch beginnt mit der Signalhistorie).
-        "initial_deposit_usd": _number(values.get("Initial Deposit:", "")),
-        "balance_usd": _number(values.get("Balance:", "")),
-        "withdrawals_usd": _number(values.get("Withdrawals:", "")),
-        "deposits_usd": _number(values.get("Deposits:", "")),
-        "profit_usd": _number(values.get("Profit:", "")),
         "weeks": _number(values.get("Weeks:", "")),
         "trades": _number(values.get("Trades:", "")),
         "profit_trades_pct": _number(values.get("Profit Trades:", "")),

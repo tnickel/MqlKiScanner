@@ -32,7 +32,7 @@ def test_regelwerk_nennt_kategorien_und_grenzwerte():
         assert kategorie in text
     assert "Grenznahe Risikokombination" in text          # Kenni-Kategorie
     assert "Schranke 30 % Drawdown" in text
-    assert "Mindest-Ertrag 5 %/Monat" in text
+    assert "Mindest-Ertrag 0 %/Monat" in text
     assert "Wiederaufnahme" in text                        # Entkraeftungs-Pfad
 
 

@@ -29,7 +29,7 @@ def live_reports(tmp_path, monkeypatch):
                     f"{closed:%Y.%m.%d %H:%M:%S};2060;0;0;110;")
     path.write_text("\n".join(rows) + "\n", encoding="utf-8")
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", Mock(return_value={
-        "dd_equity_pct": 5, "monthly_growth_pct": 10, "weeks": 110,
+        "account_currency": "USD", "dd_equity_pct": 5, "monthly_growth_pct": 10, "weeks": 110,
         "monitor_trade_eq_dd_pct": 5,
         "profit_factor": 2, "broker_server": "Example",
     }))

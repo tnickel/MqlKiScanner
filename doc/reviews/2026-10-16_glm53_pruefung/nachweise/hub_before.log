@@ -1,0 +1,127 @@
+FFFF                                                                     [100%]
+================================== FAILURES ===================================
+__ test_green_high_score_candidate_has_no_contradicting_prompt_gate[risiko] ___
+
+kind = 'risiko'
+
+    @pytest.mark.parametrize('kind', ['risiko', 'gesamt', 'portfolio'])
+    def test_green_high_score_candidate_has_no_contradicting_prompt_gate(kind):
+        result = pipeline.ScanResult(
+            id=123, name='Synthetic high score', forensik_vorhanden=True, score=7.2,
+            ertrag_monat_geom_pct=6.5, cagr_jahr_pct=112.0,
+            martingale_flag=False, equity_dd_rekonstruiert_pct=4.0)
+        result.ampel, result.urteil = pipeline.ampel_for(result, {})
+        assert result.ampel == '\U0001f7e2'
+        if kind == 'risiko':
+            prompt = prompt_fill.build_risk_prompt(result, 'Aktuelle Kriterien')
+        elif kind == 'gesamt':
+            prompt = prompt_fill.build_gesamtbericht_prompt(result, 'Aktuelle Kriterien', '', '')
+        else:
+            prompt = prompt_fill.build_portfolio_prompt(
+                json.dumps([{'name':result.name,'ampel':result.ampel,'score':result.score}]),
+                'Aktuelle Kriterien')
+>       assert not re.search(r'Risiko.Score\s+unter\s+5\b', prompt)
+E       assert not <re.Match object; span=(10375, 10395), match='Risiko-Score unter\n5'>
+E        +  where <re.Match object; span=(10375, 10395), match='Risiko-Score unter\n5'> = <function search at 0x000002917F53D6C0>('Risiko.Score\\s+unter\\s+5\\b', '# Prompt 2 � Risiko-Analyse aus den Forensik-Kennzahlen (GLM Flash)\n\nDu bist ein forensischer Analyst fuer MetaTrad...Emojis.\nWenn zentrale Forensik fehlt, sage das explizit ("keine positive Einstufung\nvor vollstaendiger Forensik").\n')
+E        +    where <function search at 0x000002917F53D6C0> = re.search
+
+tests\test_glm53_review_hub.py:30: AssertionError
+__ test_green_high_score_candidate_has_no_contradicting_prompt_gate[gesamt] ___
+
+kind = 'gesamt'
+
+    @pytest.mark.parametrize('kind', ['risiko', 'gesamt', 'portfolio'])
+    def test_green_high_score_candidate_has_no_contradicting_prompt_gate(kind):
+        result = pipeline.ScanResult(
+            id=123, name='Synthetic high score', forensik_vorhanden=True, score=7.2,
+            ertrag_monat_geom_pct=6.5, cagr_jahr_pct=112.0,
+            martingale_flag=False, equity_dd_rekonstruiert_pct=4.0)
+        result.ampel, result.urteil = pipeline.ampel_for(result, {})
+        assert result.ampel == '\U0001f7e2'
+        if kind == 'risiko':
+            prompt = prompt_fill.build_risk_prompt(result, 'Aktuelle Kriterien')
+        elif kind == 'gesamt':
+            prompt = prompt_fill.build_gesamtbericht_prompt(result, 'Aktuelle Kriterien', '', '')
+        else:
+            prompt = prompt_fill.build_portfolio_prompt(
+                json.dumps([{'name':result.name,'ampel':result.ampel,'score':result.score}]),
+                'Aktuelle Kriterien')
+>       assert not re.search(r'Risiko.Score\s+unter\s+5\b', prompt)
+E       AssertionError: assert not <re.Match object; span=(10543, 10563), match='Risiko-Score unter\n5'>
+E        +  where <re.Match object; span=(10543, 10563), match='Risiko-Score unter\n5'> = <function search at 0x000002917F53D6C0>('Risiko.Score\\s+unter\\s+5\\b', '# Prompt 3 � Gesamtauswertung: ausfuehrlicher Abschlussbericht (GLM 5.3)\n\nDu bist der leitende Pruefer und schreibs...ten der maschinellen Forensik-Zahlen und weise im\nBericht darauf hin. Sachlich, keine Anlageberatung, keine Emojis.\n')
+E        +    where <function search at 0x000002917F53D6C0> = re.search
+
+tests\test_glm53_review_hub.py:30: AssertionError
+_ test_green_high_score_candidate_has_no_contradicting_prompt_gate[portfolio] _
+
+kind = 'portfolio'
+
+    @pytest.mark.parametrize('kind', ['risiko', 'gesamt', 'portfolio'])
+    def test_green_high_score_candidate_has_no_contradicting_prompt_gate(kind):
+        result = pipeline.ScanResult(
+            id=123, name='Synthetic high score', forensik_vorhanden=True, score=7.2,
+            ertrag_monat_geom_pct=6.5, cagr_jahr_pct=112.0,
+            martingale_flag=False, equity_dd_rekonstruiert_pct=4.0)
+        result.ampel, result.urteil = pipeline.ampel_for(result, {})
+        assert result.ampel == '\U0001f7e2'
+        if kind == 'risiko':
+            prompt = prompt_fill.build_risk_prompt(result, 'Aktuelle Kriterien')
+        elif kind == 'gesamt':
+            prompt = prompt_fill.build_gesamtbericht_prompt(result, 'Aktuelle Kriterien', '', '')
+        else:
+            prompt = prompt_fill.build_portfolio_prompt(
+                json.dumps([{'name':result.name,'ampel':result.ampel,'score':result.score}]),
+                'Aktuelle Kriterien')
+>       assert not re.search(r'Risiko.Score\s+unter\s+5\b', prompt)
+E       AssertionError: assert not <re.Match object; span=(5301, 5321), match='Risiko-Score unter\n5'>
+E        +  where <re.Match object; span=(5301, 5321), match='Risiko-Score unter\n5'> = <function search at 0x000002917F53D6C0>('Risiko.Score\\s+unter\\s+5\\b', '# Prompt 4 � Portfolio-Vorschlag: Welche Strategien passen zusammen ins Depot? (GLM 5.3)\n\nDu bist ein Portfolio-Man...andidat.quelle (leer bedeutet mql5) und kandidat.id stammen. Keine erfundenen Kandidaten, keine doppelte Gewichtung.\n')
+E        +    where <function search at 0x000002917F53D6C0> = re.search
+
+tests\test_glm53_review_hub.py:30: AssertionError
+___________ test_default_rest_signals_does_not_materialize_reports ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000029104F4FA40>
+
+    def test_default_rest_signals_does_not_materialize_reports(monkeypatch):
+        db.init_db()
+        monkeypatch.setattr(db, 'list_catalog', lambda:[{
+            'signal_id':123, 'name':'Synthetic', 'stats':{}, 'forensik':{},
+            'gesamtbericht':'Existing synthetic report'}])
+        pdf = Mock()
+        monkeypatch.setattr('mqlkiscanner.pdf_reports.materialize_result_pdfs', pdf)
+        # Exercise the real default provider and HTTP route, rather than a fake result list.
+        server = rest_api.build_server(port=0)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with urllib.request.urlopen(
+                f'http://127.0.0.1:{server.server_address[1]}/api/v1/signals',timeout=5) as response:
+                payload=json.load(response)
+            assert payload['count'] == 1
+            assert payload['signals'][0]['signalId'] == 123
+>           pdf.assert_not_called()
+
+tests\test_glm53_review_hub.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <Mock id='2821876674352'>
+
+    def assert_not_called(self):
+        """assert that the mock was never called.
+        """
+        if self.call_count != 0:
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+>           raise AssertionError(msg)
+E           AssertionError: Expected 'mock' to not have been called. Called 1 times.
+E           Calls: [call(ScanResult(id=123, name='Synthetic', platform='', url='', autor='', abonnenten=None, abo_preis_usd=None, wochen=None, growth_pct=None, ertrag_monat_pct=None, ertrag_monat_pct_forensik=None, retdd_monat=None, retdd_jahr=None, retdd_monat_vorbehalt=None, retdd_jahr_vorbehalt=None, retdd_vorbehalt_grund='', ertrag_monat_geom_pct=None, cagr_jahr_pct=None, effizienz_befund={'effizienz_status': 'rendite_nicht_berechenbar', 'dd_max_equity_pct': None, 'ertrag_monat_geom_pct': None, 'cagr_jahr_pct': None, 'retdd_monat': None, 'retdd_jahr': None, 'retdd_monat_vorbehalt': None, 'retdd_jahr_vorbehalt': None, 'retdd_vorbehalt_grund': None, 'retdd_vorbehalt_nenner': None, 'retdd_basis': 'gemessener_max_equity_drawdown_inkl_floating', 'equity_messung': 'Keine belastbare Equity-Messung vorhanden', 'formel_monat': 'ertrag_monat_geom_pct / dd_max_equity_pct', 'formel_jahr': 'cagr_jahr_pct / dd_max_equity_pct', 'vergleichbarkeit': 'Trade-Netto-Rendite auf verwendeter Kapitalbasis; sp\xe4tere Flows nur ohne offene Exportposition am Flow. Kurs-DD enth\xe4lt reale Flows nach Projektregel. Zeitraum, Teilmessung und virtuelle Kapitalannahmen begrenzen die Vergleichbarkeit.'}, pf=None, dd_equity_pct=None, dd_balance_pct=None, forensik_vorhanden=False, forensik_version=None, trading_dd_pct=None, trading_dd_usd=None, winrate_pct=None, identische_tradezeilen=0, duplikate_entfernt=0, plattform_trades=None, max_verlustserie=None, verlustserie_usd=None, peak_positionen=None, peak_netto_lots=None, shock_usd=None, shock_pct_max=None, shock_pct_peak_time=None, shock_pct_peak_account=None, shock_pct_peak_usd=None, martingale_flag=None, martingale_evidenz=[], stop_nachweis='', stop_evidence=None, stop_befund=None, kapitalbasis_usd=None, kapitalbasis_verwendet_usd=None, equity_dd_rekonstruiert_pct=None, equity_dd_rekonstruiert_usd=None, equity_dd_rekon_roh_pct=None, equity_rekon_gmt_h=None, equity_rekon_status='', equity_rekon_grund='', equity_rekon_abdeckung_pct=None, equity_rekon_methodik='', equity_rekon_zeitbasis={}, equity_rekon_ohne_kurse=[], equity_rekon_ohne_kontrakt=[], monitor_trade_eq_dd_pct=None, true_dd_usd=None, true_dd_virtuell_pct=None, retdd_virtuell_jahr=None, retdd_virtuell_monat=None, true_dd_basis_virtuell=False, true_dd_virtuell_vorbehalt=False, true_dd_virtuell_grund='', studie_anzeige_dd_pct=None, studie_anzeige_vorbehalt=False, studie_anzeige_grund='', kapitalbasis_verwendet_quelle='', broker_server=None, symbole='', score=None, forensik_stale=False, forensik_aktualisiert='', schranke_verletzt=False, ampel='\u26aa', urteil='Vorpr\xfcfung (ohne Trade-Export-Forensik)', trades_path='', trades_sha256='', berichte_basis='', bericht_hinweis='', pdf_fehler='', trade_analyse='', trade_analyse_at='', trade_analyse_model='', risiko_analyse='', risiko_analyse_at='', risiko_analyse_model='', gesamtbericht='', gesamtbericht_at='', gesamtbericht_model='', kurzfassung='', tiefenanalyse='', tiefenanalyse_at='', tiefenanalyse_model='', llm_fehler='', fehler='', quelle='mql5', herkunft='Workflow', quelle_id=None, quelle_version='', source_kind='live', persisted_this_run=False, ampel_wechsel=None))].
+
+C:\Users\tnickel\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:905: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_glm53_review_hub.py::test_green_high_score_candidate_has_no_contradicting_prompt_gate[risiko]
+FAILED tests/test_glm53_review_hub.py::test_green_high_score_candidate_has_no_contradicting_prompt_gate[gesamt]
+FAILED tests/test_glm53_review_hub.py::test_green_high_score_candidate_has_no_contradicting_prompt_gate[portfolio]
+FAILED tests/test_glm53_review_hub.py::test_default_rest_signals_does_not_materialize_reports
+4 failed in 0.99s

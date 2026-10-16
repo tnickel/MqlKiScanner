@@ -99,7 +99,7 @@ def regelwerk_markdown(settings: dict | None = None) -> str:
     """Vollständiges Regelwerk als Markdown (inkl. aktueller Liste)."""
     settings = settings or {}
     schranke = float(settings.get("schranke_eq_dd_pct", 30.0))
-    min_ertrag = float(settings.get("min_ertrag_pct_monat", 5.0))
+    min_ertrag = float(settings.get("min_ertrag_pct_monat", 0.0))
     known = config.load_known_signals()
     liste = known.get("ausgeschlossen", [])
 

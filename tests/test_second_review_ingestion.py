@@ -52,7 +52,7 @@ def test_new_bad_download_cannot_poison_retry_cache(isolated_exports):
 def test_pipeline_retry_fetches_recovered_csv(isolated_exports, monkeypatch):
     remote = Mock(side_effect=[BAD, GOOD])
     monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats",
-                        lambda *_: {"dd_equity_pct": 5, "monthly_growth_pct": 10})
+                        lambda *_: {"account_currency": "USD", "dd_equity_pct": 5, "monthly_growth_pct": 10})
     monkeypatch.setattr(pipeline.time, "sleep", lambda _: None)
     result = pipeline.ScanPipeline().analyze_candidate(
         SimpleNamespace(export_positions_csv=remote), {"id": 123}, lambda _: None)

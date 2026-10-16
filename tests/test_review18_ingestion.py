@@ -19,6 +19,7 @@ def page(title="A signal"):
         f'<h1 class="s-line-card__title">{title}</h1><a>Signals</a><span>7</span>'
         + metric("Growth:", "120.5%", "s-list-info")
         + metric("Weeks:", "104", "s-list-info")
+        + metric("Balance:", "10026 USD", "s-list-info")
         + metric("Profit Factor:", "1.8")
         + metric("Monthly growth:", "10.5%")
         + metric("By Equity:", '<i class="red">41.2%</i> (1 234.50 USD)')

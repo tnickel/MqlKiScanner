@@ -31,7 +31,8 @@ def test_local_export_without_closed_trades_does_not_abort_later_files(tmp_path,
 def test_live_empty_export_returns_readable_failure_and_retains_csv(tmp_path, monkeypatch):
     path = tmp_path / "empty.csv"
     path.write_text(";".join(ORDERBOOK_HEADER) + "\n", encoding="utf-8")
-    monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats", Mock(return_value={}))
+    monkeypatch.setattr(pipeline.signal_stats, "fetch_signal_stats",
+                        Mock(return_value={"account_currency": "USD"}))
     export = Mock(return_value=(str(path), False))
     monkeypatch.setattr(pipeline.exporter, "export_positions", export)
     monkeypatch.setattr(pipeline.time, "sleep", lambda _: None)

@@ -245,6 +245,7 @@ class ScanResult:
     llm_fehler: str = ""
     fehler: str = ""
     quelle: str = ""                # Herkunfts-Kürzel der Datenquelle (doc/20)
+    account_currency: str | None = None  # Belegte Export-/Kontowährung; nie USD raten.
     # Nur-Katalog-Zeilen der Übersicht „Alle Signale" (Nutzer 08.10.2026):
     # direkt aus dem Client-Katalog, NOCH NICHT Teil des Workflows — der
     # Vorfilter (Mindestalter/-abo) bleibt bewusst beim Scan. quelle_id/
@@ -540,6 +541,7 @@ def results_from_db(settings: dict | None = None, *, catalog_rows=None,
             abo_preis_usd=row.get("abo_preis"),
             wochen=row.get("wochen"),
             quelle=str(row.get("quelle") or "mql5"),
+            account_currency=stats.get("account_currency"),
             growth_pct=stats.get("growth_pct"),
             ertrag_monat_pct=stats.get("ertrag_monat_pct"),
             ertrag_monat_pct_forensik=stats.get("ertrag_monat_pct_forensik"),
@@ -717,6 +719,10 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
     studie = studien.get(int(res.id))
     if studie is None:
         return
+    try:
+        require_usd_account(res)
+    except ValueError:
+        return  # SHA alone cannot prove that the current account uses USD.
     # Unabhaengige, SHA-exakte Studie darf die Tabelle fuellen, waehrend
     # eine alte Engine-Batterie weiterhin fuer Ampel/Score gesperrt bleibt.
     # Keine Uebertragung in bewertende Forensikfelder dieses Sonderwegs.
@@ -790,6 +796,20 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
     if res.cagr_jahr_pct is None:
         res.cagr_jahr_pct = studie.get("cagr_jahr_pct")
     res.refresh_efficiency()
+
+
+def require_usd_account(result: ScanResult) -> None:
+    """Direct MQL trades may enter USD H1 models only with a proven USD unit.
+
+    Local CSV/demo analysis and other source APIs retain their explicit USD
+    model/export contracts. Historical MQL rows without currency need a rescan.
+    """
+    if (getattr(result, "quelle", "") == "mql5"
+            and getattr(result, "source_kind", "live") != "demo"
+            and getattr(result, "account_currency", None) != "USD"):
+        currency = getattr(result, "account_currency", None) or "unbekannt/uneindeutig"
+        raise ValueError(f"Kontowährung {currency}: USD-Forensik gesperrt — "
+                         "keine belegte Umrechnung von Export und Kontobasis in USD.")
 
 
 def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
@@ -899,7 +919,11 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
             score_text = (f", Risiko-Score {result.score:g}"
                           if result.score is not None else "")
             return "🟢", (f"Kandidat: Forensik bestanden, Ertrag ok{geom_text}"
-                          f"{calmar_text}{monat_text}{score_text} · {stop_kontext}")
+                          f"{calmar_text}{monat_text}{score_text} · {stop_kontext} · "
+                          "H1-Modell: keine Intrabar-Tiefs; nur exportierte geschlossene "
+                          "Positionen, Referenzkurse ohne Ausführungsspread. "
+                          "DD kann unterschätzt, Calmar überschätzt sein; "
+                          "keine garantierte Untergrenze des echten Konto-DD.")
         return "🟡", (f"Forensik ok ({stop_kontext}), aber Ertrag < {min_return:g} %/Monat "
                       f"(geom. {ertrag_wert:g})")
     return "⚪", "Vorprüfung (ohne Trade-Export-Forensik)"
@@ -1201,9 +1225,14 @@ def report_basis_for(result: ScanResult, settings: dict) -> str | None:
     facts = {k: v for k, v in facts.items() if k in _BASIS_FAKTEN_FELDER}
     forensics = json.loads(_forensik_json(result))
     forensics["martingale_evidenz"] = result.martingale_evidenz or []
+    from .llm.bausteine import BAUSTEINE
+    rules_hash = hashlib.sha256(json.dumps(
+        BAUSTEINE, sort_keys=True, ensure_ascii=False, separators=(",", ":"),
+        allow_nan=False).encode("utf-8")).hexdigest()
     content = {
         "format": 2, "version": result.forensik_version,
         "implementation_version": FORENSICS_VERSION,
+        "prompt_rules_sha256": rules_hash,
         "forensics_complete": result.forensik_vorhanden,
         "csv_sha256": csv_hash, "facts": facts, "forensics": forensics,
         "exclusion": next((entry for entry in config.load_known_signals().get("ausgeschlossen", [])
@@ -1439,6 +1468,25 @@ class ScanPipeline:
         wird, erhält JEDES Eingangssignal einen Erklärungs-Datensatz
         (Nutzer-Wunsch 02.10.2026: Auswahl nachvollziehbar — warum drin,
         warum draußen)."""
+        identities: dict[int, set[tuple[str, str]]] = {}
+        for s in signals:
+            platform = str(s.get("platform") or "").upper().replace("MQL", "MT")
+            identities.setdefault(s["id"], set()).add(
+                (str(s.get("quelle_kuerzel") or "mql5"), platform))
+        conflicts = {sid for sid, values in identities.items() if len(values) > 1}
+        unique = []
+        seen = set()
+        for s in signals:
+            if s["id"] in conflicts:
+                reason = ("✗ ID-Kollision: mehrere Quellen/Plattformen für dieselbe "
+                          "numerische ID — keine eindeutige Speicherung möglich.")
+                log(f"Signal {s['id']}: {reason}")
+                if begruendung is not None:
+                    begruendung.append(fix_signale.begruendungseintrag(s, "DRAUSSEN", reason))
+            elif s["id"] not in seen:
+                seen.add(s["id"])
+                unique.append(s)
+        signals = unique
         min_abo = int(self.settings.get("min_abonnenten", 0))
         min_wochen = float(self.settings.get("min_wochen", 26))
         fix = fix_signale.fix_ids(self.settings)
@@ -1545,13 +1593,25 @@ class ScanPipeline:
                          abonnenten=cand.get("abonnenten"),
                          abo_preis_usd=cand.get("abo_preis_usd"),
                          wochen=cand.get("wochen"), growth_pct=cand.get("growth_pct"),
-                         quelle=str(cand.get("quelle_kuerzel") or ""))
+                         quelle=str(cand.get("quelle_kuerzel") or "mql5"))
         try:
             # Auch der erste headless Lauf braucht das Schema vor dem
             # lesenden Broker-Fallback. Ein fehlendes Schema darf keinen
             # Exportversuch verbrauchen; echte DB-Fehler bleiben im
             # vorhandenen Fehler-/Retrypfad dieser Einzelpruefung.
             db.init_db()
+            existing = db.get_signal(res.id) or {}
+            previous_platform = str(existing.get("platform") or "").upper().replace("MQL", "MT")
+            current_platform = str(res.platform).upper().replace("MQL", "MT")
+            if (previous_platform in ("MT4", "MT5")
+                    and current_platform in ("MT4", "MT5")
+                    and previous_platform != current_platform):
+                res.fehler = (f"ID-Kollision: Signal {res.id} ist als {previous_platform} "
+                              f"gespeichert, Kandidat meldet {current_platform}; "
+                              "Bestand bleibt unverändert.")
+                refresh_report_verdict(res, self.settings)
+                log(res.fehler)
+                return res
             quelle_row = None
             quelle_version = None
             if cand.get("quelle_kuerzel"):
@@ -1577,6 +1637,10 @@ class ScanPipeline:
                 log("Kennzahlen-Seite laden (mql5) …")
                 stats = signal_stats.fetch_signal_stats(session, res.id)
             res.dd_equity_pct = stats.get("dd_equity_pct")
+            # Source API money fields have a documented USD export contract;
+            # direct HTML must prove its native unit explicitly.
+            res.account_currency = stats.get("account_currency") or (
+                "USD" if quelle_row is not None else None)
             res.dd_balance_pct = stats.get("dd_balance_pct")
             res.ertrag_monat_pct = stats.get("monthly_growth_pct")
             res.pf = stats.get("profit_factor")
@@ -1650,6 +1714,7 @@ class ScanPipeline:
                 log(f"✓ Trade-Export: {n_lines} Zeilen "
                     f"({'Cache' if from_cache else 'neu geladen'})")
                 log("Forensik-Batterie (4 Tests) läuft …")
+                require_usd_account(res)
                 # EZB-Kurse vorwaermen (Download beim ersten Bedarf) und den
                 # Stand ins Protokoll nehmen — FX-Kreuze brauchen sie zur
                 # USD-Umrechnung; offline bleibt die Umrechnung ehrlich gesperrt.
@@ -1909,6 +1974,9 @@ class ScanPipeline:
                 # Webseiten-Kontobasis (Audit: woher die Kapitalbasis kommt)
                 "initial_deposit_usd": stats.get("initial_deposit_usd"),
                 "balance_usd": stats.get("balance_usd"),
+                "account_currency": res.account_currency,
+                "account_money": {key: value for key, value in stats.items()
+                                  if key.endswith("_account")},
                 # Virtuelle Annahme aus dem Quellen-Monitor (Audit-Snapshot)
                 "kapitalbasis_virtual_usd": stats.get("kapitalbasis_virtual_usd"),
                 # Monitor-Closing-DD (Audit-Snapshot, KI-Kontext)
