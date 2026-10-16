@@ -1,0 +1,46 @@
+{
+  "_meta": {
+    "datum": "2026-10-10",
+    "herkunft": "Historischer Vantage-MT5-symbol_info-Snapshot; extrahiert aus dem lokalen Rohbeleg vantage_masterhong_kontrakte_2026-10-10.json.",
+    "umfang": "Nur Instrumentname, trade_contract_size und currency_profit; keine Konto-, Trade-, Login- oder Terminaldaten.",
+    "hinweis": "Dokumentierter damaliger Spec-Snapshot, kein aktueller Live-Nachweis."
+  },
+  "specs": {
+    "BTCETH": {
+      "trade_contract_size": 1,
+      "currency_profit": "ETH"
+    },
+    "BTCJPY": {
+      "trade_contract_size": 1,
+      "currency_profit": "JPY"
+    },
+    "CRVUSD": {
+      "trade_contract_size": 1000,
+      "currency_profit": "USD"
+    },
+    "DOGUSD": {
+      "trade_contract_size": 10000,
+      "currency_profit": "USD"
+    },
+    "HBARUSD": {
+      "trade_contract_size": 10000,
+      "currency_profit": "USD"
+    },
+    "HK50": {
+      "trade_contract_size": 1,
+      "currency_profit": "HKD"
+    },
+    "TRUMPUSD": {
+      "trade_contract_size": 100,
+      "currency_profit": "USD"
+    },
+    "UNIUSD": {
+      "trade_contract_size": 100,
+      "currency_profit": "USD"
+    },
+    "XAUUSD247": {
+      "trade_contract_size": 1,
+      "currency_profit": "USD"
+    }
+  }
+}

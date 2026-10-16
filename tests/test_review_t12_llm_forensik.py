@@ -10,7 +10,7 @@ from datetime import datetime
 from mqlkiscanner import pipeline, regelwerk
 from mqlkiscanner.forensics import drawdown, exposure, stops
 from mqlkiscanner.llm import client as llm_client
-from mqlkiscanner.models import BalanceRow, Trade
+from mqlkiscanner.models import BalanceRow, ParsedExport, Trade
 
 
 # ----------------------------------------------------------------- M2 + M4
@@ -117,16 +117,10 @@ def test_einzahlung_plus_auszahlung_vor_start_gleiches_startkapital():
     eines mit und eines ohne externe Kapitalbasis."""
     trades = [_trade(1), _trade(2), _trade(3)]
 
-    class Parsed:
-        pass
-
-    p = Parsed()
-    p.trades = trades
-    p.balances = [
+    p = ParsedExport("test", "positions", trades=trades, balances=[
         BalanceRow(time=datetime(2026, 1, 1, 8), amount=100.0),
         BalanceRow(time=datetime(2026, 1, 1, 9), amount=-200.0),
-    ]
-    p.meta = {}
+    ])
 
     dd = drawdown.run(p, kapitalbasis_usd=1000.0, kapitalbasis_quelle="web")
     # Beide Module: positive Einzahlung VOR Start existiert → KEINE Injektion
@@ -141,13 +135,8 @@ def test_ohne_jede_einzahlung_injizieren_beide():
     BEIDEN Modulen die externe Kapitalbasis."""
     trades = [_trade(1), _trade(2), _trade(3)]
 
-    class Parsed:
-        pass
-
-    p = Parsed()
-    p.trades = trades
-    p.balances = [BalanceRow(time=datetime(2026, 1, 1, 9), amount=-200.0)]
-    p.meta = {}
+    p = ParsedExport("test", "positions", trades=trades,
+                     balances=[BalanceRow(time=datetime(2026, 1, 1, 9), amount=-200.0)])
 
     dd = drawdown.run(p, kapitalbasis_usd=1000.0, kapitalbasis_quelle="web")
     assert dd["startkapital_quelle"] == "web"

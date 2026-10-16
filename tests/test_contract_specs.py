@@ -30,8 +30,8 @@ def test_masterhong_live_specs_native_quote_and_broker_scope(monkeypatch, name, 
     from mqlkiscanner import config
     root = Path(__file__).resolve().parents[1]
     monkeypatch.setattr(config, "CONTRACT_SPECS_FILE", root / "data" / "contract_specs.json")
-    evidence = json.loads((root / "doc" / "reviews" /
-        "vantage_masterhong_kontrakte_2026-10-10.json").read_text(encoding="utf-8"))["specs"][name]
+    evidence = json.loads((root / "tests" / "fixtures" /
+        "vantage_masterhong_specs_2026-10-10.json").read_text(encoding="utf-8"))["specs"][name]
     for symbol in (name, name + "+"):
         spec = symbols.spec_for(symbol, broker="Vantage International Group Limited")
         assert spec["contract_size"] == factor == evidence["trade_contract_size"]

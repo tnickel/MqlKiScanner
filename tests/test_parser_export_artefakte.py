@@ -9,6 +9,7 @@ komplett blockiert (DB last_fehler 2026-09-08).
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 
@@ -105,7 +106,10 @@ def test_real_blocked_signal_fixture_parses():
     Grundbedingung (Format, Groessenordnung, keine 'profit'-Summenzeile in
     den Trades) bleibt scharf.
     """
-    path = "data/trades/1496203_positions.csv"
+    path = Path(__file__).resolve().parents[1] / "data" / "trades" / "1496203_positions.csv"
+    if not path.is_file():
+        pytest.skip("Lokaler Realexport-Regressionstest: privater Live-Cache fehlt; "
+                    "die synthetischen Export-Artefakt-Tests laufen unabhaengig davon.")
     parsed = parser.load_export(path)
     assert parsed.source_format == "mt4_orderbook"
     assert len(parsed.trades) >= 2461          # Stand beim Fix; waechst nur
