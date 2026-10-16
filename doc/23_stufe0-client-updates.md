@@ -12,6 +12,17 @@ stehen ab §11. MqlRealmonitor gehört nicht zu den fünf aktualisierten
 Datenquellen und ist noch nicht produktiv eingebunden; seine Integration
 bleibt vorerst zurückgestellt.
 
+**Ergaenzung nach Fremdreview (16.10.2026):** Pelican liefert bei beendeten
+Updatejobs zusaetzlich `ergebnis.tradelistenFehler` (Anzahl) und
+`ergebnis.tradelistenAbgebrochen` (Boolean). `state=done` allein beweist keinen
+vollstaendig aktualisierten Datenumfang. Der Scanner beendet solche Laeufe
+bei Fehlerzahl >0 oder Abbruch als `teilweise` (gelb), zeigt die Workflowstation
+mit Hinweis und erhaelt die tatsaechlichen Fortschrittszaehler. Verfuegbare
+Daten koennen weiter analysiert werden; das Ergebnis wird nicht als sauberer
+Gesamterfolg ausgegeben. Reine Scope-/Top-N-Hinweise bleiben `fertig`.
+Aeltere Clients ohne diese optionalen Felder bleiben kompatibel; fuer den
+neuen Teilfehlernachweis muss der aktualisierte Pelican-Build laufen.
+
 ## 1. Problem und Ziel
 
 Der SignalKiScanner startet seinen Workflow (Full-Scan/Teilscan) mit dem

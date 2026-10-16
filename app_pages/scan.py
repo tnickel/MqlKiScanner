@@ -749,7 +749,7 @@ if command:
         def _fortschritt(zustand: dict) -> None:
             live[zustand["kuerzel"]] = zustand
             fertig = sum(1 for e in live.values()
-                         if e["status"] in (client_updates.FERTIG, client_updates.FEHLER,
+                         if e["status"] in (client_updates.FERTIG, client_updates.TEILWEISE, client_updates.FEHLER,
                                             client_updates.TIMEOUT, client_updates.OFFLINE,
                                             client_updates.NICHT_UNTERSTUETZT,
                                             client_updates.ABGEBROCHEN))

@@ -40,7 +40,10 @@ def _scan_seite() -> AppTest:
     return AppTest.from_file(str(ROOT / "app_pages" / "scan.py"), default_timeout=60)
 
 
-def test_fullscan_laueft_stufe0_vor_station_1(monkeypatch):
+@pytest.mark.parametrize("update_status, expected_workflow", [
+    (client_updates.FERTIG, "complete"), (client_updates.TEILWEISE, "warning"),
+])
+def test_fullscan_laueft_stufe0_vor_station_1(monkeypatch, update_status, expected_workflow):
     """Ein-Knopf-Versprechen: Scan-Start stößt ZUERST die Client-Updates an;
     erst danach Station 1 (Signale holen)."""
     quelle = _quelle_anlegen()
@@ -48,7 +51,7 @@ def test_fullscan_laueft_stufe0_vor_station_1(monkeypatch):
 
     def fake_updates(settings, *, log=None, on_fortschritt=None, gestopft=None, **_):
         reihenfolge.append("stufe0")
-        zustand = _zustand(quelle, client_updates.FERTIG)
+        zustand = _zustand(quelle, update_status)
         zustand["signale_geliefert"] = 200
         if on_fortschritt:
             on_fortschritt(zustand)
@@ -69,12 +72,12 @@ def test_fullscan_laueft_stufe0_vor_station_1(monkeypatch):
     warte_auf_lauf(at, timeout_s=90)
     assert not at.exception, at.exception
     workflow = at.session_state["scan_workflow"]
-    assert workflow["steps"]["clients"]["status"] == "complete"
+    assert workflow["steps"]["clients"]["status"] == expected_workflow
     assert workflow["steps"]["listen"]["status"] == "complete"
     assert reihenfolge[:2] == ["stufe0", "listen"]
     # Endstand für den Dialog ist die RÜCKGABE (Review-Fund: nie aus live lesen)
     live = at.session_state["scan_control"]["client_updates"]
-    assert live["fake"]["status"] == client_updates.FERTIG
+    assert live["fake"]["status"] == update_status
     assert live["fake"]["signale_geliefert"] == 200
 
 

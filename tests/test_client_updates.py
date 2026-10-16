@@ -96,6 +96,35 @@ _SCHNELL = dict(bereit_warten_s=0.5, poll_s=0.01, backoff_s=0.01,
                 timeout_s=5.0, login_timeout_s=0.3)
 
 
+def test_done_with_trade_failures_finishes_with_warning(monkeypatch):
+    quelle = _quelle_an("http://rechner:8199")
+    _FakeTransport(status=[_status("done", phase="tradelisten", done=5, total=7,
+        ergebnis={"tradelistenFehler": 5, "tradelistenAbgebrochen": True,
+                  "tradelistenNeu": 0, "datenstand": "2026-10-16T12:00:00",
+                  "hinweise": ["5 Tradelisten fehlgeschlagen"]})]).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None, on_fortschritt=None,
+                             gestopft=lambda: False, **_SCHNELL)
+    assert z["status"] == cu.TEILWEISE
+    assert z["done"] == 5
+    assert z["total"] == 7
+    assert cu.STATUS_FARBE[z["status"]] == "gelb"
+    assert cu.mit_hinweisen({"pelican": z})
+    assert not cu.alle_kritisch({"pelican": z})
+    assert "1 mit Hinweis" in cu.aggregat_text({"pelican": z})
+    assert any(entry["status"] == cu.TEILWEISE for entry in db.list_client_updates(limit=5))
+
+
+def test_informational_scope_note_is_not_a_trade_failure(monkeypatch):
+    quelle = _quelle_an("http://rechner:8199")
+    _FakeTransport(status=[_status("done", ergebnis={
+        "tradelistenFehler": 0, "tradelistenAbgebrochen": False,
+        "hinweise": ["Trade-Scope absichtlich Top 200"]})]).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None, on_fortschritt=None,
+                             gestopft=lambda: False, **_SCHNELL)
+    assert z["status"] == cu.FERTIG
+    assert not cu.mit_hinweisen({"pelican": z})
+
+
 # --- Happy Path ----------------------------------------------------------
 
 def test_happy_path_laeuft_bis_fertig(monkeypatch):

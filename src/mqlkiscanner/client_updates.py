@@ -28,6 +28,7 @@ BEREIT = "bereit"                    # health ok, POST folgt
 LAEUFT = "laeuft"                    # Job running
 LOGIN = "login"                      # Client wartet auf Login-Eingabe
 FERTIG = "fertig"                    # Job done
+TEILWEISE = "teilweise"              # Job beendet, Datenaktualisierung teilweise fehlgeschlagen
 FEHLER = "fehler"                    # Job error (rot)
 TIMEOUT = "timeout"                  # Gesamt-/Login-Timeout überschritten
 OFFLINE = "offline"                  # nie erreichbar
@@ -37,12 +38,13 @@ ABGEBROCHEN = "abgebrochen"          # Stop-Button
 # Anzeigefarbe je Status für GUI (🟢 fertig · 🔵 läuft · 🟡 hinweis · 🔴 fehler)
 STATUS_FARBE = {
     FERTIG: "gruen", LAEUFT: "blau", BEREIT: "blau", WARTET: "grau",
+    TEILWEISE: "gelb",
     LOGIN: "gelb", TIMEOUT: "gelb", OFFLINE: "gelb",
     NICHT_UNTERSTUETZT: "gelb", FEHLER: "rot", ABGEBROCHEN: "gelb",
 }
 
 # Zustände, nach denen die Poll-Schleife endet
-_TERMINAL = {FERTIG, FEHLER, TIMEOUT, OFFLINE, NICHT_UNTERSTUETZT, ABGEBROCHEN}
+_TERMINAL = {FERTIG, TEILWEISE, FEHLER, TIMEOUT, OFFLINE, NICHT_UNTERSTUETZT, ABGEBROCHEN}
 
 
 def _neuer_zustand(quelle: dict) -> dict:
@@ -61,6 +63,8 @@ def _neuer_zustand(quelle: dict) -> dict:
         "signale_geliefert": None,
         "tradelisten_neu": None,
         "tradelisten_aktualisiert": None,
+        "tradelisten_fehler": 0,
+        "tradelisten_abgebrochen": False,
         "katalog_uebersprungen": False,
         "hinweise": [],
         "fehler": "",
@@ -80,6 +84,11 @@ def _ergebnis_uebernehmen(z: dict, ergebnis: dict) -> None:
     z["signale_geliefert"] = ergebnis.get("signaleGeliefert")
     z["tradelisten_neu"] = ergebnis.get("tradelistenNeu")
     z["tradelisten_aktualisiert"] = ergebnis.get("tradelistenAktualisiert")
+    try:
+        z["tradelisten_fehler"] = max(0, int(ergebnis.get("tradelistenFehler") or 0))
+    except (TypeError, ValueError, OverflowError):
+        z["tradelisten_fehler"] = 0
+    z["tradelisten_abgebrochen"] = ergebnis.get("tradelistenAbgebrochen") is True
     z["katalog_uebersprungen"] = bool(ergebnis.get("katalogUebersprungen"))
     z["datenstand"] = str(ergebnis.get("datenstand") or "")
     hinweise = ergebnis.get("hinweise") or []
@@ -260,8 +269,12 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
             stand = z["datenstand"] or "?"
             katalog = (" (Katalog übersprungen — 3-Tage-Regel)"
                        if z["katalog_uebersprungen"] else "")
-            _melde(f"Fertig — Datenstand {stand}{katalog}", status=FERTIG,
-                   phase=phase, done=max(done, total), total=total)
+            teilweise = z["tradelisten_fehler"] > 0 or z["tradelisten_abgebrochen"]
+            detail = (f"Teilweise aktualisiert — {z['tradelisten_fehler']} Tradelistenfehler; "
+                      f"Jobende {stand}{katalog}" if teilweise
+                      else f"Fertig — Datenstand {stand}{katalog}")
+            _melde(detail, status=TEILWEISE if teilweise else FERTIG,
+                   phase=phase, done=done if teilweise else max(done, total), total=total)
             break
         if state == "error":
             fehler = str(info.get("error") or nachricht or "Client meldete Fehler")
