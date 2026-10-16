@@ -1,0 +1,11 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\PelicanTrading",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\deepseek_review_pruefung_2026-10-16\\PelicanTrading_round1",
+  "head": "2c611aea3c3dcf092cceb369349f191f596b3d52",
+  "overlay_sha256": {
+    "README.md": "c4fb2aac2b48bb2f73c239fd4e04ecf671f7efe6ac17398854167a6991c45b44",
+    "src\\main\\java\\de\\pelicanmonitor\\model\\Provider.java": "53be2ba577159ee9821f9f9d3bd35a97e12848e2282b2bf9b07ee0c1f3736ebe",
+    "src\\main\\java\\de\\pelicanmonitor\\rest\\RestApiServer.java": "6ba36044d27c271748b18d0de6a36bfb02e526f93e27bb0d2a6118dfa350bc93",
+    "src\\test\\java\\de\\pelicanmonitor\\model\\WeekEvidenceTest.java": "0908c18d7ec97e150ae0137513879ee7b2cca26635ff7839f622ab05bae19861"
+  }
+}

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import tempfile
@@ -84,6 +85,17 @@ def hole_katalog(quelle: dict, *, client: downloader_client.DownloaderClient | N
     return items
 
 
+def normalisiere_wochen(wert) -> float | None:
+    """An age is proven only by a finite, nonnegative number, never a bool."""
+    if wert is None or isinstance(wert, bool):
+        return None
+    try:
+        zahl = float(wert)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return zahl if math.isfinite(zahl) and zahl >= 0 else None
+
+
 def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
     """Katalog-Items → Kandidaten im Pipeline-Format (crawler-Kompatibel).
 
@@ -102,11 +114,7 @@ def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
         # PelicanTrading liefert das Signalalter (weeks) mit — dann greift der
         # Wochen-Vorfilter erstmals auch für Quellen-Signale; MQL5-Kataloge
         # kennen es nicht (ohne Altersbeleg regulär kein Kandidat).
-        wochen = item.get("weeks")
-        try:
-            wochen = float(wochen) if wochen is not None else None
-        except (TypeError, ValueError):
-            wochen = None
+        wochen = normalisiere_wochen(item.get("weeks"))
         out.append({
             "id": signal_id,
             "name": str(item.get("signalName") or str(signal_id)),

@@ -35,6 +35,9 @@ nicht eingebunden; eine Hub-Anbindung ist nicht implementiert.
 
 ## Reviews
 
+- [Kritische Prüfung des DeepSeek-Reviews](reviews/2026-10-16_deepseek_pruefung/README.md)
+  prüft alte Befunde gegen den veröffentlichten Stand und dokumentiert
+  zusätzliche Anzeige-, Alters- und Testdatenkorrekturen.
 - [Kritische Prüfung des GLM-5.3-Reviews](reviews/2026-10-16_glm53_pruefung/README.md)
   trennt bereits behobene, zusätzliche und unbelegte Befunde; die aktuellen
   fachlichen Korrekturen verwenden Forensik-Version 18.

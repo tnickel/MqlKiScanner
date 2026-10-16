@@ -1,0 +1,31 @@
+{
+  "headBefore": "cef1e5af53e5737eb3dfdc2e093c8b7b979a83b5",
+  "snapshot": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\deepseek_review_pruefung_2026-10-16\\hub_snapshot",
+  "sha256": {
+    "src/mqlkiscanner/agenten/budget.py": "0868107f82bbddfc7cd76cccd8cb52ed7c27b6c5f0810e188d3dc27ea4ff595d",
+    "src/mqlkiscanner/agenten/journal.py": "cfa4b6000ddc8151805bf4cba798498c4aa44c60350e1224ef082f4465e56705",
+    "src/mqlkiscanner/agenten/dirigent.py": "ff96f5786b83b91fba8db30980cf33b950830f6a9a6c43c41ad804eb628f69e5",
+    "src/mqlkiscanner/agenten/betreuer.py": "393958a1bf6312161663a63ee542b19db6d75f3602dd212397940937702bf3a8",
+    "src/mqlkiscanner/agenten/destillation.py": "9181608a98367daa1713c523bc0cd9a75e5632781e307c4aef737e414daed857",
+    "src/mqlkiscanner/agenten/markt.py": "34db60fde4e37b2c05dbe32ca914b11f8b3532247980ffe45a29f59d3a6a0513",
+    "src/mqlkiscanner/agenten/melder.py": "8967b999e4bb8d7b6655fc25c8dfd158d76b13ce9fdfebe314727fe3d02363ce",
+    "src/mqlkiscanner/agenten/chef.py": "e4a6445a1c58d296285e599fb6083cdd7c6afc60e50a01e6fafe66f93615d7e6",
+    "src/mqlkiscanner/agenten/scan_launcher.py": "5e9f779713edee19f16a61fea93a6a5edde9639c3218e09231d01fd0c229eded",
+    "src/mqlkiscanner/llm/client.py": "d22c8e588bf69c40817eef20bc4df4a8ff2a04601528acff12351b6962cbee45",
+    "src/mqlkiscanner/llm/bausteine.py": "3281df54f269cc5219da15f7393ebd1f012602089285c5d11718b481f966335c",
+    "src/mqlkiscanner/llm/prompts.py": "39e1ff411956b7c25606d1055cc8f21068a51e8763e7facc085f63c0e28fb685",
+    "src/mqlkiscanner/portfolio_statistik.py": "c56de36b47b953f9713544b59572f6cd1daa126babc57fcb05d5c131c76d8580",
+    "src/mqlkiscanner/config.py": "7fc87cc3075780cbf636b525fe1d9dccd52a70c4cdc1d5d01ff9564ef9d14f7f",
+    "src/mqlkiscanner/pipeline.py": "be4c7189607c4d0b909ece54d218ef7c0a6249f6e7844544d3e9d307e459b0ba",
+    "src/mqlkiscanner/regelwerk.py": "5429538665940ec36f48da480910a43eb29b0d90a4fb0c8bd82113f82d363a4d",
+    "src/mqlkiscanner/ampel_matrix.py": "3a8bff6067205bfeb1f11b88f1b54e071924a72158f64a699fd28a6e7cdc7a17",
+    "src/mqlkiscanner/app_ui.py": "505fe911a9449291efba1f12850c2f7ca848ed78bfc817d25b93cd97758df292",
+    "src/mqlkiscanner/tradeserver_sync.py": "49b7fc6c71ee0430d10b481edaab3ed90bf2da167093243f5bf1c614dbdbeb81",
+    "src/mqlkiscanner/scoring.py": "22935942ddf398923795bacf70a4b50821c553207bf58b88c9c24bb0c739ddfe",
+    "tests/test_regelwerk.py": "97bd5a999e7577a51f9f7e431e2e0d8ecbf49a12214fbc218dadf315a2510064",
+    "tests/test_agent_budget_periods.py": "72b084b231f0e6f2b49589db27636f2b31e6bc6cb38d02b8233d12e2358d4849",
+    "tests/test_gesamt_review_hub_fixes.py": "5bc9c1bd98526671fb990f122b457cd354bd8883d54c24a1e06534917370f272",
+    "tests/test_retdd_kriterien_prompts.py": "a8d10c2318f40e650c35eb6e62f4ccff7e95432cd2d05fe9f96cf6ce942fff33",
+    "tests/test_finance_review_20261016.py": "b18f9be068b5dcadf1f2655886593cbf7eadb24b2bd6f9c7b4d694e7bc652f3b"
+  }
+}

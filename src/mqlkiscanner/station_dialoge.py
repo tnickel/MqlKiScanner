@@ -522,8 +522,8 @@ def _dialog_forensik() -> None:
             "Equity-Messung": (r.equity_messung_status if r else "Noch nicht geprüft"),
             "Gewinn %/Monat": (getattr(r, "ertrag_monat_geom_pct", None)
                          if geprueft else None),
-            "TrueRetDD": (r.true_retdd_monat if geprueft else None),
-            "TrueRetDD (Vorbehalt)": (getattr(r, "retdd_monat_vorbehalt", None)
+            "TrueRetDD": (r.true_retdd_jahr if geprueft else None),
+            "TrueRetDD (Vorbehalt)": (getattr(r, "retdd_jahr_vorbehalt", None)
                                       if geprueft else None),
             "Grund": (e.get("grund") or "")
                      + ((" · ⚠ " + (r.fehler or "")[:90]) if r and r.fehler else ""),
@@ -544,8 +544,8 @@ def _dialog_forensik() -> None:
             "Trading-DD % (geschlossen)": r.trading_dd_pct,
             "Equity-Messung": r.equity_messung_status,
             "Gewinn %/Monat": getattr(r, "ertrag_monat_geom_pct", None),
-            "TrueRetDD": r.true_retdd_monat,
-            "TrueRetDD (Vorbehalt)": getattr(r, "retdd_monat_vorbehalt", None),
+            "TrueRetDD": r.true_retdd_jahr,
+            "TrueRetDD (Vorbehalt)": getattr(r, "retdd_jahr_vorbehalt", None),
             "Grund": "Aus dem Datenbank-Stand (kein Eintrag in der gespeicherten "
                      "Auswahl dieses Laufs).",
             "Link": _signal_link({"url": r.url, "id": r.id,
@@ -575,14 +575,15 @@ def _dialog_forensik() -> None:
             _trueretdd_stil, axis=1, subset=["TrueRetDD", "TrueRetDD (Vorbehalt)"])
     st.dataframe(forensik_styled, width="stretch", hide_index=True,
                  column_config={"Link": _link_spalte()})
-    st.caption("Max-Drawdown (Equity) enthält offene Gewinne und Verluste "
-               "aus belastbaren Kurs- oder Monitor-Messungen; ohne diese "
-               "bleibt das Feld leer. Trading-DD berücksichtigt nur "
-               "geschlossene Trades. Die Schranke verwendet zusätzlich "
+    calmar_schwelle = f"{config.min_calmar_jahr(settings):g}".replace(".", ",")
+    st.caption("Max-Drawdown (Equity) enthält Floating der exportierten Positionen "
+               "aus einer belastbaren eigenen Kursmessung; ohne diese "
+               "bleibt das Feld leer. Trading-DD und Monitor-DD sind "
+               "Closing-Kurven. Die Schranke verwendet zusätzlich "
                "die Plattform-Angaben. Gewinn %/Monat ist die eigene geometrische "
                "Monatsrendite; TrueRetDD ist der Jahres-Calmar (CAGR ÷ "
                "gemessener maximaler Equity-Drawdown inkl. Floating; "
-               "Grün-Gate ab 3,0). Geschlossener Drawdown dient nie als "
+               f"Grün-Gate ab {calmar_schwelle}). Geschlossener Drawdown dient nie als "
                "Nenner.")
     probleme = [r for r in results if r.fehler]
     if probleme:
@@ -662,8 +663,8 @@ def _dialog_portfolio() -> None:
             "Signal": r.name, "Quelle": r.quelle or "mql5",
             "Ampel": r.ampel, "Ertrag/M (geom.)":
             getattr(r, "ertrag_monat_geom_pct", None),
-            "TrueRetDD": r.true_retdd_monat,
-            "TrueRetDD (Vorbehalt)": getattr(r, "retdd_monat_vorbehalt", None),
+            "TrueRetDD": r.true_retdd_jahr,
+            "TrueRetDD (Vorbehalt)": getattr(r, "retdd_jahr_vorbehalt", None),
             "Link": _signal_link({"url": r.url, "id": r.id,
                                   "quelle": r.quelle or "mql5"})}
             for r in basis])

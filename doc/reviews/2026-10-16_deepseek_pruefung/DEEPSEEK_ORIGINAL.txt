@@ -1,0 +1,158 @@
+# Review: SignalKiScanner + 5 Quellprogramme
+
+
+## A. Geprüfter Stand (alle Repos clean, exakt die Doku-Baseline-Commits)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+| Repo | Branch | Commit | Tests heute | Ergebnis |
+| --- | --- | --- | --- | --- |
+| SignalKiScanner | main | `80d4692548c9` | 1919 | **1914 pass, 1 FAIL, 4 desc.** |
+| MqlDownloader | master | `92d8f9cea10b` | 105 | BUILD SUCCESS |
+| PelicanTrading | master | `dde77d705a67` | 176 | BUILD SUCCESS |
+| roboforex | master | `42b268641ad3` | 147 | BUILD SUCCESS |
+| vantage | master | `1fe395805f29` | 49 | BUILD SUCCESS |
+| zulumonitor | master | `72df0cf49aa4` | 107 | BUILD SUCCESS |
+
+
+
+Python 3.12.10 / pytest 9.1.1, JDK 25, Maven 3.9.6. **Kein Live-Plattformabruf**, keine Modellaufrufe, keine Schreibzugriffe auf Produktivdaten (nur read-only SQLite).
+
+
+**Nicht geprüft:** Streamlit-UI-Laufzeitverhalten, echte WebView-/Chrome-Logins (Login-Automat, LoginManager), Tradeserver-Gegenstelle (`monitor.tnickel-ki.de`), MqlRealmonitor/PelicanWinnerLooser (nicht eingebunden), LLM-Marker-Tests (`-m llm`, kostenpflichtig).
+
+
+## E. Priorisierte Findings
+
+
+### P1-1 — Wochen-Vorfilter wirft Quellen-Signale ohne `weeks` heraus; Kommentar behauptet das Gegenteil
+
+
+`ingest.py:71-73` dokumentiert: „`wochen` ist unbekannt (None) — der Wochen-Vorfilter lässt None **bewusst durch**". `pipeline.py:1465` tut das Gegenteil: `if weeks is None or weeks < min_wochen: continue` → das Signal wird als „DRAUSSEN" verworfen.
+
+**Widerspruch innerhalb desselben Moduls** (der Kommentar in `pipeline.py:1461` beschreibt korrekt den Rauswurf). Mit `min_wochen=26` (wirksam) werden alle Quellen-Signale mit `weeks=null` **vor** jeder Bewertung dauerhaft ausgeschlossen — obwohl `roboforex:346`, `vantage:354`, `zulumonitor:360` `weeks` liefern und `PelicanTrading` seit dem Fix bewusst `null` statt irreführender `0` liefert (Provider ohne geladene Stats). **Auswirkung:** gute Signale verschwinden unsichtbar; der `begruendung`-Text nennt den Grund, aber `REST /signals` und Ranking zeigen sie nie. Der stärkste Gegenpunkt: der Rauswurf ist fachlich verteidigbar („Mindestalter nicht belegt") — falsch ist die Dokumentation. **Fix:** Kommentar in `ingest.py` korrigieren oder `weeks is None` durchlassen und im Vorfilter-Log separat ausweisen. **Test:** Kandidat mit `wochen=None` gegen `min_wochen=26`.
+
+
+### P1-2 — `parser.load_export(Path)` schlägt hart fehl
+
+
+`parser.py:110`: `if path.lower().endswith(".json")` — `Path` hat kein `.lower()`. Der einzige Test mit `Path`-Argument (`test_parser_export_artefakte.py:113`, mit `pathlib.Path`) **fällt deshalb um**; alle anderen Aufrufer übergeben `str`. Reproduziert: `AttributeError: 'WindowsPath' object has no attribute 'lower'`. **Fix:** `str(path).lower()` oder `Path(path)` normalisieren. **Test:** `load_export(tmp_path/"x.csv")` grün.
+
+
+### P1-3 — Test hängt an privatem Live-Cache, der per `.gitignore` ausgeschlossen ist
+
+
+`test_real_blocked_signal_fixture_parses` nutzt `data/trades/1496203_positions.csv`; `data/trades/` steht in `.gitignore`, die Datei ist **nicht** getrackt. Sie existiert nur lokal (222 KB) — der Skip-Zweig greift in einem frischen Checkout, hier lief sie echt. Der Test ist damit ein **Residualtest**, der den realen Defekt P1-2 verdeckt. **Fix:** bereinigte Fixture versionieren oder Test entfernen.
+
+
+### P2-1 — Monatsbudget wird nie durchgesetzt (nur angezeigt)
+
+
+`agenten_monatsbudget_tokens` erscheint ausschließlich in UI/Status (`admin_tab.py:108,125`, `chef.py:110`, `dirigent.py:48`, `ui_tree.py:398`). Erzwungen wird nur das **Tages**budget (`betreuer.py:124`). **Antwort auf die Reviewfrage (c): Ja** — ist das Monatsbudget erschöpft und das Tagesbudget frei, laufen weitere Modellaufrufe. **Fix:** gemeinsamen Verbrauchszähler prüfen (Monat **und** Tag) vor jedem Aufruf.
+
+
+### P2-2 — Portfolio-Prompt widerspricht der aktuellen Calmar-Regel (Punkt (a) bestätigt)
+
+
+`portfolio_statistik.py:416-420` verlangt „Mindestqualität ist 1,0 je Prozent DD (Nutzer-Regel 02.10.) — Signale mit **retdd_monat < 1,0 nicht empfehlen**". Seit 05.10. ist `retdd_monat` ausdrücklich **kein Gate** mehr (`pipeline.py:864-890`, `min_calmar_jahr=3.0` entscheidet). Der Prompt kann im Portfolio-Bericht Signale abwerten, die das Grün-Gate bestanden haben. **Fix:** Prompt auf `retdd_jahr`/Calmar umstellen.
+
+
+### P3-1 — Uneinheitliche Defaults für `min_ertrag_pct_monat` (kosmetisch)
+
+
+`0.0` in `pipeline.py:854`, aber `5.0` in `regelwerk.py:102`, `ampel_matrix.py:246,465`, `app_ui.py:1017`, **`tradeserver_sync.py:101`**. Da `load_settings()` `DEFAULT_SETTINGS` merged, ist der wirksame Wert 0.0 — nur relevant, falls ein Settings-Dict ohne den Key entsteht. Der `minReturnMonthlyPct=5.0`-Wert reist zudem in den Sync-Payload; die Gegenstelle liest ihn lokal nicht (nicht verifizierbar, deshalb nur P3).
+
+
+### Bestätigt korrekt (nicht beanstandet)
+
+
+Die Doku-Baseline ist am Code verifiziert: `min_wochen=26`, `top_n_export=30`, **je Quelle** (`fix_signale.waehle_fuer_export`), Fix-IDs umgehen Vorfilter + belegen keine Slots, DD-Schranke 30 % als **Fünffach**-Maximum (`scoring.dd_maximum`), `min_calmar_jahr=3.0`, 3 Monate (`MIN_HISTORIE_MONATE=3.0`), Score kein Grün-Gate, fehlender SL neutral, `FORENSICS_VERSION=16`. **Abweichung zur Doku:** `min_abonnenten` steht in `app_settings.json` auf **1**, nicht auf der dokumentierten 0 (verschärfend, nicht lockernd).
+
+
+## F. Können wir damit die besten Signale finden?
+
+
+**Technisch richtig:** Risiko-vor-Ertrag ist echt implementiert, nicht nur proklamiert — die DD-Schranke nimmt das Maximum aus fünf unabhängigen Kanälen, Grün verlangt belastbaren H1-Equity-DD, und fehlende Messung sperrt Grün statt als Nullrisiko zu gelten. Closing-DD ist korrekt als Untergrenze markiert und nicht Calmar-Nenner.
+
+
+**Statistisch schwach:** Calmar 3 und „3 Monate" sind **Projektregeln, keine validierten Schwellen** — es gibt keine Walk-forward-/Out-of-sample-Prüfung, keine Konfidenzintervalle. Ein Calmar aus 3 Monaten H1-Daten hat eine so breite Unsicherheit, dass die Rangfolge innerhalb der Top-30 bei kleinen Parameteränderungen kippen kann. Die Auswahl ist abonnenten-sortiert (`ingest.py:140`, `fix_signale`): das ist **kein Qualitätsmaß** und erzeugt Selektionsbias — genau wie im Tool dokumentiert.
+
+
+**Risiko kann unterschätzt werden:** H1-Schlusskurse erfassen keine Intrabar-Extrema (im Code benannt, aber die Größe der Lücke wird nirgends gemessen); kurze Historien annualisieren; seltene Großverluste sind bei 3 Monaten oft noch nicht aufgetreten.
+
+
+**Gute Signale können herausfallen:** über P1-1 (`weeks=null`) und über die Slot-Grenze Top-30 **je Quelle** — Rang 31 wird nie forensisch geprüft, und der Abonnenten-Rang entscheidet darüber.
+
+
+**Schlechte können zu positiv erscheinen:** über P2-2 (Prompt wertet gegen abgelöste Regel) und darüber, dass ausgeschlossene Signale zwar keine Slots belegen (B7, gut), aber die Ausschlussliste selbst **manuell kuratiert** ist und eine bessere Kennzahl den Ausschluss nicht automatisch aufhebt (`regelwerk.py`).
+
+
+**Belastbare Aussage:** Das System kann zuverlässig *riskante* Signale aussortieren. Die Rangfolge der Überlebenden ist mit diesen Daten **nicht** als „die besten Signale" belegbar — nur als „die risikoärmsten unter den abonnentenstärksten".
+
+
+## G. Korrekturplan
+
+
+**Akut (Code):** 1. `parser.py:110` Path-Fehler (P1-2, bricht einen Test). 2. Monatsbudget durchsetzen (P2-1). 3. Portfolio-Prompt auf Calmar umstellen (P2-2).
+
+**Dokumentation:** 4. `ingest.py:71-73` korrigieren (P1-1). 5. `min_abonnenten=1` in der Doku nachziehen. 6. Einheitliche Defaults für `min_ertrag_pct_monat` (P3-1).
+
+**Testinfrastruktur:** 7. `1496203`-Fixture bereinigt versionieren oder Residualtest entfernen (P1-3). 8. Regressionstests für P1-1/P2-1/P2-2.
+
+**Datenverbesserung:** 9. `weeks` für Quellen-Signale verlässlich befüllen (Voraussetzung, damit der Vorfilter fachlich trägt).
+
+**Später (methodisch):** 10. `(quelle, signal_id)`-Composite-Identität (doc/20 Stufe 2) — aktuell nur durch Abweisung geschützt (`db.py:303`, ValueError wird in `pipeline.py:2020` gefangen und degradiert zu `res.fehler`, bricht den Lauf also nicht ab). 11. Intrabar-Lücke quantifizieren; 12. Sensitivitäts-/Resampling-Prüfung der Rangfolge, bevor Calmar 3 als Qualitätsaussage gilt.

@@ -1,0 +1,82 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+__ test_forensics_station_shows_year_calmar_and_configured_threshold[False] ___
+
+with_selection_record = False
+
+    @pytest.mark.parametrize("with_selection_record", [False, True])
+    def test_forensics_station_shows_year_calmar_and_configured_threshold(with_selection_record):
+        """Station and results must use the same annual quantity and active gate."""
+        config.save_settings({**config.load_settings(), "min_calmar_jahr": 4.25})
+        result = pipeline.ScanResult(
+            id=910001, name="Synthetischer Jahres-Calmar", ampel="\U0001f7e2",
+            forensik_vorhanden=True, ertrag_monat_geom_pct=4.0,
+            cagr_jahr_pct=60.0, equity_dd_rekonstruiert_pct=10.0,
+        )
+        if with_selection_record:
+            (config.DATA_DIR / "auswahl_begruendung.json").write_text(json.dumps({
+                "eintraege": [{"id": result.id, "name": result.name,
+                               "status": "AUSGEWAEHLT", "quelle": "mql5"}],
+            }), encoding="utf-8")
+        at = _app("forensik")
+        at.session_state["scan_results"] = [result]
+        at.run()
+        dialog = _dialog(at)
+        table = dialog.get("dataframe")[0].value
+        # 60 percent annual CAGR / 10 percent DD = 6; monthly return / DD is 0.4.
+>       assert table.loc[0, "TrueRetDD"] == pytest.approx(6.0)
+E       assert np.float64(0.4) == 6.0 � 6.0e-06
+E         
+E         comparison failed
+E         Obtained: 0.4
+E         Expected: 6.0 � 6.0e-06
+
+tests\test_scan_station_details.py:171: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-16 19:52:45.726 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-16 19:52:45.726 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call ------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+___ test_forensics_station_shows_year_calmar_and_configured_threshold[True] ___
+
+with_selection_record = True
+
+    @pytest.mark.parametrize("with_selection_record", [False, True])
+    def test_forensics_station_shows_year_calmar_and_configured_threshold(with_selection_record):
+        """Station and results must use the same annual quantity and active gate."""
+        config.save_settings({**config.load_settings(), "min_calmar_jahr": 4.25})
+        result = pipeline.ScanResult(
+            id=910001, name="Synthetischer Jahres-Calmar", ampel="\U0001f7e2",
+            forensik_vorhanden=True, ertrag_monat_geom_pct=4.0,
+            cagr_jahr_pct=60.0, equity_dd_rekonstruiert_pct=10.0,
+        )
+        if with_selection_record:
+            (config.DATA_DIR / "auswahl_begruendung.json").write_text(json.dumps({
+                "eintraege": [{"id": result.id, "name": result.name,
+                               "status": "AUSGEWAEHLT", "quelle": "mql5"}],
+            }), encoding="utf-8")
+        at = _app("forensik")
+        at.session_state["scan_results"] = [result]
+        at.run()
+        dialog = _dialog(at)
+        table = dialog.get("dataframe")[0].value
+        # 60 percent annual CAGR / 10 percent DD = 6; monthly return / DD is 0.4.
+>       assert table.loc[0, "TrueRetDD"] == pytest.approx(6.0)
+E       assert np.float64(0.4) == 6.0 � 6.0e-06
+E         
+E         comparison failed
+E         Obtained: 0.4
+E         Expected: 6.0 � 6.0e-06
+
+tests\test_scan_station_details.py:171: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-16 19:52:47.111 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-16 19:52:47.111 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call ------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+=========================== short test summary info ===========================
+FAILED tests/test_scan_station_details.py::test_forensics_station_shows_year_calmar_and_configured_threshold[False]
+FAILED tests/test_scan_station_details.py::test_forensics_station_shows_year_calmar_and_configured_threshold[True]
+2 failed, 14 deselected in 2.73s

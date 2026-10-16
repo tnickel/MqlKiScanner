@@ -1,0 +1,29 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\deepseek_review_pruefung_2026-10-16\\Scanner_final3",
+  "head": "cef1e5af53e5737eb3dfdc2e093c8b7b979a83b5",
+  "overlay_sha256": {
+    "AGENTS.md": "6a75cb9fd952a7ba18744275543ef59c85b67d72f0c642309a06219d15424138",
+    "README.md": "d748d9cd012f97ba8109bd74d89d6065b5e70891d5f62e6705b0f93deacc76e5",
+    "doc\\07_benutzerhandbuch.md": "a9c120632c60830be73026ad8c931d46cce6b37d0a82aed10f45fa2758406b83",
+    "doc\\README.md": "a0e84468bebdd2dda23fe7585ae9014cdebd21d74b4621f81d9fa8d163e8a212",
+    "src\\mqlkiscanner\\ampel_matrix.py": "9a994f03c4165570102152ca95080577bfe1098feb7f77875a5aae88d6bebde3",
+    "src\\mqlkiscanner\\help_content.py": "d77735e3a054f87a50cfdb7c1662d760e7c0ae1af29bc90ab650acc1a5b171f1",
+    "src\\mqlkiscanner\\ingest.py": "6edca9454cf8c25c559c3ecd804fb3beb134129ba3acb9cdb199eb065420b283",
+    "src\\mqlkiscanner\\pipeline.py": "ce3faf982ffe870fb125decc2091bfed3560c952c5469e14e3a9f3380fd8149f",
+    "src\\mqlkiscanner\\regelwerk.py": "5429538665940ec36f48da480910a43eb29b0d90a4fb0c8bd82113f82d363a4d",
+    "src\\mqlkiscanner\\station_dialoge.py": "24600e8835e80c7ddfcf3a72b0d4e6bad6e83fc4d0e6bb41bc41a89b94aefa79",
+    "tests\\test_parser_export_artefakte.py": "f0fee462b7cd0a9f5db2f60999f367ac25968755a4e213246fde70c039da16e9",
+    "tests\\test_regelwerk.py": "97bd5a999e7577a51f9f7e431e2e0d8ecbf49a12214fbc218dadf315a2510064",
+    "tests\\test_scan_station_details.py": "ca4ad3a670993784d43485e4076055a424562085af755e333ddadafb9b8aca28",
+    "doc\\reviews\\2026-10-16_deepseek_pruefung\\.gitattributes": "6e5dc55da9a93d4e67ae65efef3efba468b720fc8a70b3e7fdad39d9258ba8f1",
+    "doc\\reviews\\2026-10-16_deepseek_pruefung\\.gitignore": "dd39f9b53f9c1425713432a2afd887539bc2e777e31fe217b7c8f5681719fc40",
+    "doc\\reviews\\2026-10-16_deepseek_pruefung\\DEEPSEEK_ORIGINAL.txt": "d204d71fcbd84a6c4a21046c8f31706c1e34eb99efff00652dc41ed7d5a7f540",
+    "doc\\reviews\\2026-10-16_deepseek_pruefung\\README.md": "b5ec82979e6405d335259439972976a6f2cc2b3fd9dca1dcf9e8da1913df27c6",
+    "tests\\fixtures\\parser\\README.md": "39bb2772b27d238ca351aa980cefc0a0a5dc9bd5ef2396045720d84838c451d3",
+    "tests\\fixtures\\parser\\mt4_export_artifacts.csv": "086ffcda567ffae3dcec89efefd93166f758541a7ef42a3432d8b06d8d43c288",
+    "tests\\fixtures\\parser\\mt5_export_artifacts.csv": "0037de23b9fc5342e2ebb4d36c1fe81fd526085ef62c52b7a7a37c26c8e2dd4a",
+    "tests\\test_deepseek_parser_public_fixtures.py": "35185190d8ea22ec88b37c1a6d7570ec15eb4551679e264bfccb41ac8f4494ec",
+    "tests\\test_deepseek_weeks_validation.py": "b172213400677513c4a90cc19bf82403d1cd0dd0b73eaac728713ee5d8a6aa35"
+  }
+}

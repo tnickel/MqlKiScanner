@@ -51,6 +51,11 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   ohne die aktuelle Fehler-Ampel aufzuwerten. REST-GET erzeugt keine PDFs;
   zentrale Promptregeln sind an den Berichtshash gebunden. Details im
   `doc/reviews/2026-10-16_glm53_pruefung/README.md`.
+- **DeepSeek-Gegenprüfung 16.10.2026:** Sichtbares Regelwerk und Stationsdialoge
+  verwenden den konfigurierten Jahres-Calmar mit Jahres-Vorbehalt. Monitor-DD
+  bleibt Closing-Kurve und Schrankenkanal. Öffentliche synthetische Parser-Fixtures
+  ersetzen die private Testabhängigkeit. Quellen-Altersbelege und unbekannte
+  Werte sind im `doc/reviews/2026-10-16_deepseek_pruefung/README.md` eingeordnet.
 
 ## Auftrag und Nutzer-Kriterien (fest)
 

@@ -1,0 +1,26 @@
+[
+  {
+    "snapshot": "Scanner_final3",
+    "verified_code_test_files": 14
+  },
+  {
+    "snapshot": "MqlDownloader_round1",
+    "verified_code_test_files": 0
+  },
+  {
+    "snapshot": "PelicanTrading_round1",
+    "verified_code_test_files": 3
+  },
+  {
+    "snapshot": "roboforex_round1",
+    "verified_code_test_files": 3
+  },
+  {
+    "snapshot": "vantage_final_ui",
+    "verified_code_test_files": 7
+  },
+  {
+    "snapshot": "zulumonitor_final_ui",
+    "verified_code_test_files": 7
+  }
+]

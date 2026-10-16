@@ -1,0 +1,26 @@
+{
+  "baseHead": "cef1e5a",
+  "generatedUtc": "2026-10-16T17:54:56.0031628Z",
+  "files": [
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\tests\\test_parser_export_artefakte.py",
+      "sha256": "f0fee462b7cd0a9f5db2f60999f367ac25968755a4e213246fde70c039da16e9"
+    },
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\tests\\test_deepseek_parser_public_fixtures.py",
+      "sha256": "35185190d8ea22ec88b37c1a6d7570ec15eb4551679e264bfccb41ac8f4494ec"
+    },
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\tests\\fixtures\\parser\\mt4_export_artifacts.csv",
+      "sha256": "086ffcda567ffae3dcec89efefd93166f758541a7ef42a3432d8b06d8d43c288"
+    },
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\tests\\fixtures\\parser\\mt5_export_artifacts.csv",
+      "sha256": "0037de23b9fc5342e2ebb4d36c1fe81fd526085ef62c52b7a7a37c26c8e2dd4a"
+    },
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\tests\\fixtures\\parser\\README.md",
+      "sha256": "39bb2772b27d238ca351aa980cefc0a0a5dc9bd5ef2396045720d84838c451d3"
+    }
+  ]
+}

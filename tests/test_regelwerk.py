@@ -2,6 +2,8 @@
 """Regelwerk der Ausschlussliste: Inhalt, Grenzwerte und Anzeige."""
 from __future__ import annotations
 
+import pytest
+
 from streamlit.testing.v1 import AppTest
 
 from mqlkiscanner import config, db, pipeline, regelwerk
@@ -38,14 +40,30 @@ def test_regelwerk_nennt_kategorien_und_grenzwerte():
 
 def test_regelwerk_zeigt_grenzwerte_aus_settings():
     text = regelwerk_markdown({"schranke_eq_dd_pct": 25.0,
-                               "min_ertrag_pct_monat": 10.0})
+                               "min_ertrag_pct_monat": 10.0,
+                               "min_calmar_jahr": 4.25})
     assert "Schranke 25 % Drawdown" in text
     assert "Mindest-Ertrag 10 %/Monat" in text
     assert "Drawdown-Maximum ≤ 25 %" in text
-    assert "Monatsrendite ≥ 10 % und RetDD ≥ 1,0" in text
+    assert "Monatsrendite ≥ 10 % und Jahres-Calmar ≥ 4.25" in text
     assert "eigene geometrische Rendite" in text
     assert "niemals als RetDD-Nenner" in text
     assert "Intrabar-Extrema" in text
+
+
+@pytest.mark.parametrize("settings,minimum", [({}, "3"), ({"min_calmar_jahr": 4.25}, "4.25")])
+def test_regelwerk_beschreibt_aktuellen_jahres_calmar_statt_monats_gate(settings, minimum):
+    text = regelwerk_markdown(settings)
+    assert f"Jahres-Calmar mindestens {minimum}" in text
+    assert f"Jahres-Calmar ≥ {minimum}" in text
+    assert "mindestens drei Monate Trade-Historie" in text
+    assert "eigene belastbare H1-Equity-Messung inklusive Floating" in text
+    assert "Monats-RetDD ist eine Zusatzkennzahl ohne eigenes Mindest-Gate" in text
+    assert "Monitor-DD nur als Kanal der Drawdown-Schranke" in text
+    assert "RetDD ≥ 1,0" not in text
+    assert "RetDD < 1,0" not in text
+    assert "RetDD mindestens 1,0" not in text
+    assert "Kurs- oder Monitor-Messung" not in text
 
 
 def test_ausgeschlossen_eintrag_liefert_grund_oder_none(monkeypatch):

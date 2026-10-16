@@ -1,0 +1,501 @@
+...F.FFFFFFFFFFFFFFFFFFFFF.F.F...F.FFFFFFFFFFFFFFFFFFFFF.F.F.....F.....F [ 65%]
+.F...F...F.FFFFFFFFFFFFFFFFFFFFF.F.F.F                                   [100%]
+================================== FAILURES ===================================
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-unknown-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-NaN-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-NaN-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-Infinity-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-Infinity-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--Infinity-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert -inf is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--Infinity-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-nan-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-nan-direct] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...nnenten': 10}] == []
+E     
+E     Left contains one more item: {'id': 123, 'platform': 'MT5', 'wochen': nan, 'abonnenten': 10}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-inf-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-inf-direct] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...nnenten': 10}] == []
+E     
+E     Left contains one more item: {'id': 123, 'platform': 'MT5', 'wochen': inf, 'abonnenten': 10}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--inf-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert -inf is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--inf-direct] _
+tests\test_deepseek_weeks_validation.py:33: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert "Alter unbekannt" in reasons[0]["grund"]
+E   AssertionError: assert 'Alter unbekannt' in '\u2717 Alter: -inf Wochen < Mindestalter 0 Wochen.'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--1-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert -1.0 is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--1-direct] _
+tests\test_deepseek_weeks_validation.py:33: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert "Alter unbekannt" in reasons[0]["grund"]
+E   AssertionError: assert 'Alter unbekannt' in '\u2717 Alter: -1 Wochen < Mindestalter 0 Wochen.'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--0.25-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert -0.25 is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--0.25-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-True-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-True-direct] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...nnenten': 10}] == []
+E     
+E     Left contains one more item: {'id': 123, 'platform': 'MT5', 'wochen': True, 'abonnenten': 10}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-False-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-False-direct] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...nnenten': 10}] == []
+E     
+E     Left contains one more item: {'id': 123, 'platform': 'MT5', 'wochen': False, 'abonnenten': 10}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-raw13-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'dict' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-raw14-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'list' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-unknown-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-NaN-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-NaN-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-Infinity-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-Infinity-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--Infinity-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert -inf is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--Infinity-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-nan-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-nan-direct] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...nnenten': 10}] == []
+E     
+E     Left contains one more item: {'id': 123, 'platform': 'MT5', 'wochen': nan, 'abonnenten': 10}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-inf-ingest] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'mt5', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-inf-direct] _
+tests\test_deepseek_weeks_validation.py:30: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...nnenten': 10}] == []
+E     
+E     Left contains one more item: {'id': 123, 'platform': 'MT5', 'wochen': inf, 'abonnenten': 10}
+E     Use -v to get more diff
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--inf-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert -inf is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--inf-direct] _
+tests\test_deepseek_weeks_validation.py:33: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert "Alter unbekannt" in reasons[0]["grund"]
+E   AssertionError: assert 'Alter unbekannt' in '\u2717 Alter: -inf Wochen < Mindestalter 26 Wochen.'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--1-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert -1.0 is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--1-direct] _
+tests\test_deepseek_weeks_validation.py:33: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert "Alter unbekannt" in reasons[0]["grund"]
+E   AssertionError: assert 'Alter unbekannt' in '\u2717 Alter: -1 Wochen < Mindestalter 26 Wochen.'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--0.25-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert -0.25 is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--0.25-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-True-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert 1.0 is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-True-direct] _
+tests\test_deepseek_weeks_validation.py:33: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert "Alter unbekannt" in reasons[0]["grund"]
+E   AssertionError: assert 'Alter unbekannt' in '\u2717 Alter: 1 Wochen < Mindestalter 26 Wochen.'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-False-ingest] _
+tests\test_deepseek_weeks_validation.py:32: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert entry["wochen"] is None
+E   assert 0.0 is None
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-False-direct] _
+tests\test_deepseek_weeks_validation.py:33: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    assert "Alter unbekannt" in reasons[0]["grund"]
+E   AssertionError: assert 'Alter unbekannt' in '\u2717 Alter: 0 Wochen < Mindestalter 26 Wochen.'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-raw13-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'dict' and 'float'
+_ test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-raw14-direct] _
+tests\test_deepseek_weeks_validation.py:28: in test_invalid_age_is_unproven_and_never_passes_local_weeks_filter
+    selected = pipeline.ScanPipeline({"min_wochen": minimum, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'list' and 'float'
+_ test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary[25.99-False1-direct] _
+tests\test_deepseek_weeks_validation.py:42: in test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary
+    selected = pipeline.ScanPipeline({"min_wochen": 26, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary[26-True1-direct] _
+tests\test_deepseek_weeks_validation.py:42: in test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary
+    selected = pipeline.ScanPipeline({"min_wochen": 26, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary[ 26.0 -True-direct] _
+tests\test_deepseek_weeks_validation.py:42: in test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary
+    selected = pipeline.ScanPipeline({"min_wochen": 26, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary[52.5-True-direct] _
+tests\test_deepseek_weeks_validation.py:42: in test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary
+    selected = pipeline.ScanPipeline({"min_wochen": 26, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-direct] __
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   AssertionError: assert '' is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[unknown-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   AssertionError: assert 'unknown' is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[NaN-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert nan is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[NaN-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   AssertionError: assert 'NaN' is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[Infinity-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert inf is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[Infinity-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   AssertionError: assert 'Infinity' is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-Infinity-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert -inf is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-Infinity-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   AssertionError: assert '-Infinity' is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[nan-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert nan is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[nan-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert nan is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[inf-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert inf is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[inf-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert inf is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-inf-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert -inf is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-inf-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert -inf is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-1-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert -1.0 is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-1-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert -1 is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-0.25-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert -0.25 is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-0.25-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   AssertionError: assert '-0.25' is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[True-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert 1.0 is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[True-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert True is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[False-ingest] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert 0.0 is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[False-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert False is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[raw13-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert {} is None
+_ test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[raw14-direct] _
+tests\test_deepseek_weeks_validation.py:57: in test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown
+    assert selected[0]["wochen"] is None
+E   assert [] is None
+_______________ test_zero_is_valid_when_minimum_is_zero[direct] _______________
+tests\test_deepseek_weeks_validation.py:63: in test_zero_is_valid_when_minimum_is_zero
+    selected = pipeline.ScanPipeline({"min_wochen": 0, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1517: in build_candidates
+    if weeks is None or weeks < min_wochen:
+                        ^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'float'
+=========================== short test summary info ===========================
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-unknown-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-NaN-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-NaN-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-Infinity-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-Infinity-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--Infinity-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--Infinity-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-nan-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-nan-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-inf-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-inf-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--inf-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--inf-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--1-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--1-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--0.25-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0--0.25-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-True-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-True-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-False-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-False-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-raw13-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[0-raw14-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-unknown-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-NaN-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-NaN-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-Infinity-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-Infinity-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--Infinity-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--Infinity-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-nan-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-nan-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-inf-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-inf-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--inf-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--inf-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--1-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--1-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--0.25-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26--0.25-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-True-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-True-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-False-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-False-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-raw13-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_invalid_age_is_unproven_and_never_passes_local_weeks_filter[26-raw14-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary[25.99-False1-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary[26-True1-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary[ 26.0 -True-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary[52.5-True-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[unknown-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[NaN-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[NaN-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[Infinity-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[Infinity-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-Infinity-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-Infinity-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[nan-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[nan-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[inf-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[inf-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-inf-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-inf-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-1-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-1-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-0.25-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[-0.25-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[True-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[True-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[False-ingest]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[False-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[raw13-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown[raw14-direct]
+FAILED tests/test_deepseek_weeks_validation.py::test_zero_is_valid_when_minimum_is_zero[direct]
+77 failed, 33 passed in 1.43s

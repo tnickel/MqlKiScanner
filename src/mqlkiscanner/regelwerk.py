@@ -74,9 +74,10 @@ HARTREGELN: list[tuple[str, str]] = [
      "Kein bewiesener Stop-Loss (Orderbuch/Cluster) — seit 28.09.2026 "
      "NEUTRAL: kein Malus, keine Ampel-Sperre. Nur die KI-Analyse darf "
      "begründet abwerten; bewiesener SL bleibt Entlastung."),
-    ("🟡 Ertrag oder RetDD reichen nicht",
+    ("🟡 Ertrag oder Jahres-Calmar reichen nicht",
      "Eigene geometrische Monatsrendite unter der konfigurierten "
-     "Mindestschwelle oder RetDD < 1,0 — nur Beobachtung, keine "
+     "Mindestschwelle oder Jahres-Calmar unter der konfigurierten "
+     "Schwelle — nur Beobachtung, keine "
      "Empfehlung. Ohne aktuelle geometrische Rendite oder belastbare "
      "Equity-Messung ebenfalls kein Grün. Linearer Ertrag, Plattform-, "
      "Balance- und Trading-DD ersetzen diese Nachweise nicht."),
@@ -100,6 +101,7 @@ def regelwerk_markdown(settings: dict | None = None) -> str:
     settings = settings or {}
     schranke = float(settings.get("schranke_eq_dd_pct", 30.0))
     min_ertrag = float(settings.get("min_ertrag_pct_monat", 0.0))
+    min_calmar = config.min_calmar_jahr(settings)
     known = config.load_known_signals()
     liste = known.get("ausgeschlossen", [])
 
@@ -114,7 +116,7 @@ def regelwerk_markdown(settings: dict | None = None) -> str:
         "",
         f"Aktuelle Grenzwerte: Schranke {schranke:g} % Drawdown, "
         f"Mindest-Ertrag {min_ertrag:g} %/Monat (eigene geometrische Rendite) "
-        "und RetDD mindestens 1,0. Risiko vor Ertrag. Der Risiko-Score ist "
+        f"und Jahres-Calmar mindestens {min_calmar:g}. Risiko vor Ertrag. Der Risiko-Score ist "
         "seit 04.10.2026 Information ohne Ampel-Sperre. "
         "Bewiesener Stop-Loss (Orderbuch/Cluster) entlastet; fehlender "
         "Nachweis ist neutral (bindende Regel 28.09.2026).",
@@ -122,11 +124,14 @@ def regelwerk_markdown(settings: dict | None = None) -> str:
         "**Empfehlung/Grün:** vollständige aktuelle Forensik, keine "
         "Ausschluss- oder harte Risikoregel, "
         f"Drawdown-Maximum ≤ {schranke:g} %, eigene geometrische "
-        f"Monatsrendite ≥ {min_ertrag:g} % und RetDD ≥ 1,0. "
-        "RetDD = geometrische Monatsrendite ÷ gemessenen Max-Drawdown der "
-        "Equity inklusive Floating (belastbare Kurs- oder Monitor-Messung). "
+        f"Monatsrendite ≥ {min_ertrag:g} % und Jahres-Calmar ≥ {min_calmar:g}. "
+        "Jahres-Calmar = Jahres-CAGR ÷ gemessenen Max-Drawdown der Equity; "
+        "er benötigt eine eigene belastbare H1-Equity-Messung inklusive Floating "
+        "und mindestens drei Monate Trade-Historie. "
+        "Monats-RetDD ist eine Zusatzkennzahl ohne eigenes Mindest-Gate. "
         "Die konservative Drawdown-Schranke prüft zusätzlich Plattform- "
-        "und geschlossene Drawdowns; diese dienen niemals als RetDD-Nenner. "
+        "und geschlossene Drawdowns sowie Monitor-DD nur als Kanal der Drawdown-Schranke; "
+        "diese dienen niemals als RetDD-Nenner. "
         "Kursmessungen auf H1-Schlusskursen erfassen keine Intrabar-Extrema; "
         "virtuelle Kapitalbasis, Zeitraum und Datenabdeckung beachten. "
         "RetDD/Jahr verwendet CAGR auf demselben Equity-DD, nicht den "

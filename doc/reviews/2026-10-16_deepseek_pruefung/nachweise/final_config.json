@@ -1,0 +1,20 @@
+{
+  "runs": [
+    {"snapshot": "Scanner_final3", "manifest": "Scanner_final3.manifest.json", "xml": "Scanner_final3.pytest.xml", "log": "Scanner_final3.pytest.log"},
+    {"snapshot": "MqlDownloader_round1", "manifest": "MqlDownloader_round1.manifest.json", "log": "MqlDownloader_round1.maven.log", "package": true},
+    {"snapshot": "PelicanTrading_round1", "manifest": "PelicanTrading_round1.manifest.json", "log": "PelicanTrading_round1.maven.log", "package": true},
+    {"snapshot": "roboforex_round1", "manifest": "roboforex_round1.manifest.json", "log": "roboforex_round1.maven.log", "package": true},
+    {"snapshot": "vantage_final_ui", "manifest": "vantage_final_ui.manifest.json", "log": "vantage_final_ui.maven.log", "python_log": "vantage_final_ui.python.log", "package": true},
+    {"snapshot": "zulumonitor_final_ui", "manifest": "zulumonitor_final_ui.manifest.json", "log": "zulumonitor_final_ui.maven.log", "package": true}
+  ],
+  "attachments": [
+    "clients.md", "clients_weeks.md", "hub.md", "ui_peer.md", "quellen.md", "quellen_peer.md",
+    "clients_before_wrong_cwd.log", "clients_before.log", "clients_before.xml",
+    "clients_final.log", "clients_final.xml", "clients_files_manifest.json",
+    "clients_public_fixtures.log", "clients_public_fixtures.xml",
+    "clients_weeks_before.log", "clients_weeks_before.xml", "clients_weeks_after.log", "clients_weeks_after.xml", "clients_weeks_manifest.json",
+    "hub_regelwerk_before.log", "hub_targeted.log", "hub_result.json", "hub_manifest.json", "hub_codehashes.json", "hub_hash_verification.json",
+    "ui_before.log", "ui_portfolio_before.log", "ui_targeted.log", "ui_targeted.xml",
+    "final_code_hash_check.json", "check_final_hashes.py"
+  ]
+}

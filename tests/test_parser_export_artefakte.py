@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
-"""MT4-Orderbuch-Footer und typenlose Zeilen: echte Export-Artefakte.
+"""Synthetische Regressionen für dokumentierte MT4-/MT5-Export-Artefakte.
 
-Beweislage: data/trades/1496203_positions.csv (MySingalStart 2) bricht seit
-dem strengen Parser an der MT4-Summenzeile ab — Typ 'Buy', Symbol 'profit',
-keine Preise, Profit-Spalte = Gesamtsumme. Drei reale Signale wurden dadurch
-komplett blockiert (DB last_fehler 2026-09-08).
+Typ 'Buy', Symbol 'profit', keine Preise und eine Gesamtsumme bilden einen
+MT4-Footer statt eines Trades. Öffentliche Integrationsfixtures und der
+Großmengenfall stehen in test_deepseek_parser_public_fixtures.py; für diese
+Regressionen werden keine privaten Live-Caches benötigt.
 """
 from __future__ import annotations
-
-from datetime import datetime
-from pathlib import Path
 
 import pytest
 
 from mqlkiscanner import parser
-from mqlkiscanner.models import Trade
 
 ORDER_HEAD = ("Time;Type;Volume;Symbol;Price;S/L;T/P;Time;Price;Commission;"
               "Swap;Profit;Comment\n")
@@ -98,38 +94,11 @@ def test_typeless_row_with_payload_still_fails(tmp_path):
         parser.load_export(path)
 
 
-def test_real_blocked_signal_fixture_parses():
-    """Die echte, vormals blockierte Datei muss komplett durchlaufen.
-
-    data/trades ist ein Live-Cache: das Signal handelt weiter, die Tradezahl
-    wächst. Deshalb strukturelle Assertions statt exakter Zahl — die
-    Grundbedingung (Format, Groessenordnung, keine 'profit'-Summenzeile in
-    den Trades) bleibt scharf.
-    """
-    path = Path(__file__).resolve().parents[1] / "data" / "trades" / "1496203_positions.csv"
-    if not path.is_file():
-        pytest.skip("Lokaler Realexport-Regressionstest: privater Live-Cache fehlt; "
-                    "die synthetischen Export-Artefakt-Tests laufen unabhaengig davon.")
-    parsed = parser.load_export(path)
-    assert parsed.source_format == "mt4_orderbook"
-    assert len(parsed.trades) >= 2461          # Stand beim Fix; waechst nur
-    assert len(parsed.balances) >= 9
-    assert all(isinstance(t, Trade) for t in parsed.trades)
-    assert all(t.symbol.casefold() != "profit" for t in parsed.trades)
-    # Die Summenzeile trug 3 613.41 als 'Profit' — kein Einzeltrade des
-    # Signals erreicht diese Groesse; waere sie als Trade durchgerutscht,
-    # lage der Maximalgewinn darueber.
-    assert max(t.profit for t in parsed.trades) < 3613.41
-
-
-def test_mt4_summary_footer_downloader_spiegel():
+def test_mt4_summary_footer_downloader_spiegel(tmp_path):
     """MqlDownloader-mql4-Spiegel nutzt 'SUMMARY' als Footer-Symbol statt
     'profit' (Live-Fund 09.10.2026, MySingalStart #840474) — muss wie der
     bekannte Footer übersprungen werden, die Balance-Zeile dahinter als
     Kontobewegung gelesen werden."""
-    import tempfile
-    from pathlib import Path
-    from mqlkiscanner.parser import load_export
     kopf = ("Time;Type;Volume;Symbol;Price;S/L;T/P;Time;Price;Commission;Swap;"
             "Profit;Comment\n")
     zeilen = (
@@ -138,13 +107,10 @@ def test_mt4_summary_footer_downloader_spiegel():
         "2020.12.31 23:59:59;Buy;0.01;SUMMARY;;;;2020.12.31 23:59:59;;;;17.96;\n"
         "2020.12.03 19:50:39;Balance;;;;;;;;;;1 445.63;\n"
     )
-    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False,
-                                     encoding="utf-8-sig") as f:
-        f.write(kopf + zeilen)
-        pfad = f.name
-    parsed = load_export(pfad)
+    pfad = tmp_path / "downloader_summary.csv"
+    pfad.write_text(kopf + zeilen, encoding="utf-8-sig")
+    parsed = parser.load_export(pfad)
     assert len(parsed.trades) == 1
     assert parsed.trades[0].symbol == "NZDCAD"
     assert len(parsed.balances) == 1
     assert parsed.balances[0].amount == 1445.63
-    Path(pfad).unlink()

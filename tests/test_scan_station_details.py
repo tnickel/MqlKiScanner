@@ -103,6 +103,7 @@ def test_station_details_read_scan_results_from_current_session(station):
     result = pipeline.ScanResult(
         id=1001, name="Aktuelles Signal", ampel="🟡", forensik_vorhanden=True,
         score=67.0, trading_dd_pct=12.5, ertrag_monat_pct_forensik=8.0,
+        cagr_jahr_pct=40.0,
         ertrag_monat_geom_pct=6.4, retdd_monat=99,
         equity_dd_rekonstruiert_pct=18.5,
         trade_analyse="Trade-Bericht", risiko_analyse="Risiko-Bericht",
@@ -118,7 +119,7 @@ def test_station_details_read_scan_results_from_current_session(station):
         assert table.loc[0, "Max-Drawdown % (Equity)"] == 18.5
         assert table.loc[0, "Trading-DD % (geschlossen)"] == 12.5
         assert table.loc[0, "Gewinn %/Monat"] == 6.4
-        assert table.loc[0, "TrueRetDD"] == pytest.approx(6.4 / 18.5)
+        assert table.loc[0, "TrueRetDD"] == pytest.approx(40.0 / 18.5)
         # Review 05.10. abends, Befund 2: Der Dialog trägt dieselbe Vorbehalt-
         # Markierung wie die Ergebnistabelle — Spalte + (per Stil) Orange.
         assert "TrueRetDD (Vorbehalt)" in table.columns
@@ -144,8 +145,54 @@ def test_station_forensik_markiert_vorbehaltliches_trueretdd():
     at.run()
     dialog = _dialog(at)
     table = dialog.get("dataframe")[0].value
-    assert table.loc[0, "TrueRetDD"] == pytest.approx(1.4269 / 13.83)
-    assert table.loc[0, "TrueRetDD (Vorbehalt)"] == pytest.approx(1.4269 / 13.83)
+    assert table.loc[0, "TrueRetDD"] == pytest.approx(18.2 / 13.83)
+    assert table.loc[0, "TrueRetDD (Vorbehalt)"] == pytest.approx(18.2 / 13.83)
+
+
+@pytest.mark.parametrize("with_selection_record", [False, True])
+def test_forensics_station_shows_year_calmar_and_configured_threshold(with_selection_record):
+    """Station and results must use the same annual quantity and active gate."""
+    config.save_settings({**config.load_settings(), "min_calmar_jahr": 4.25})
+    result = pipeline.ScanResult(
+        id=910001, name="Synthetischer Jahres-Calmar", ampel="🟢",
+        forensik_vorhanden=True, ertrag_monat_geom_pct=4.0,
+        cagr_jahr_pct=60.0, equity_dd_rekonstruiert_pct=10.0,
+    )
+    if with_selection_record:
+        (config.DATA_DIR / "auswahl_begruendung.json").write_text(json.dumps({
+            "eintraege": [{"id": result.id, "name": result.name,
+                           "status": "AUSGEWAEHLT", "quelle": "mql5"}],
+        }), encoding="utf-8")
+    at = _app("forensik")
+    at.session_state["scan_results"] = [result]
+    at.run()
+    dialog = _dialog(at)
+    table = dialog.get("dataframe")[0].value
+    # 60 percent annual CAGR / 10 percent DD = 6; monthly return / DD is 0.4.
+    assert table.loc[0, "TrueRetDD"] == pytest.approx(6.0)
+    assert pd.isna(table.loc[0, "TrueRetDD (Vorbehalt)"])
+    assert "Grün-Gate ab 4,25" in _text(dialog)
+
+
+@pytest.mark.parametrize("provisional", [False, True])
+def test_portfolio_station_shows_year_calmar_with_matching_provisional_marker(provisional):
+    result = pipeline.ScanResult(
+        id=910002, name="Synthetische Portfolio-Basis", ampel="🟡",
+        forensik_vorhanden=True, ertrag_monat_geom_pct=4.0,
+        cagr_jahr_pct=60.0,
+        equity_dd_rekonstruiert_pct=None if provisional else 10.0,
+        equity_dd_rekon_roh_pct=10.0 if provisional else None,
+    )
+    at = _app("portfolio")
+    at.session_state["scan_results"] = [result]
+    at.session_state["portfolio_bericht"] = "Synthetischer Testbericht ohne Modellaufruf"
+    at.run()
+    table = _dialog(at).get("dataframe")[-1].value
+    assert table.loc[0, "TrueRetDD"] == pytest.approx(6.0)
+    if provisional:
+        assert table.loc[0, "TrueRetDD (Vorbehalt)"] == pytest.approx(6.0)
+    else:
+        assert pd.isna(table.loc[0, "TrueRetDD (Vorbehalt)"])
 
 
 def test_portfolio_station_reads_saved_session_text_fallback():

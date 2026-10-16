@@ -1,0 +1,11 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\roboforex",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\deepseek_review_pruefung_2026-10-16\\roboforex_round1",
+  "head": "82223abd09ebf2ab27e30eac8b5026c88f67a2b6",
+  "overlay_sha256": {
+    "README.md": "3a1fe0a43cfee9539e4b515daeb051a1319817dd274a2756b923cb7668f6f6b4",
+    "src\\main\\java\\de\\robomonitor\\model\\SignalAccount.java": "308359298ea2dd0dd6bc2d57cc0f5d205646dbe96102eac330d92d91278d192d",
+    "src\\main\\java\\de\\robomonitor\\rest\\RestApiServer.java": "cddebad6a4c14e6042119708a98a66e83256d446fecb6e77cca9f39c920df5e8",
+    "src\\test\\java\\de\\robomonitor\\RestApiServerTest.java": "34f36cae3e332475bab0939e8e89d36e799357669cbb537a695829b2f26daa27"
+  }
+}

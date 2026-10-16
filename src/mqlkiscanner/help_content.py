@@ -6,7 +6,7 @@ HELP_CONTENT = {
 
 **1 · Einmal vorbereiten.** Unter Einstellungen MQL5-Zugang und optional einen KI-Key hinterlegen. Testdaten gehen auch ohne Login.
 
-**2 · Workflow starten.** Ein Knopf führt den Ablauf aus: Daten von MQL5 holen → speichern → Computer prüft → optional KI-Bericht. Die Statuskarten zeigen, wo der Lauf gerade steht. Fertig heißt nicht „empfohlen“.
+**2 · Workflow starten.** Ein Knopf führt den Ablauf aus: Daten aus den konfigurierten Quellen oder direkt von MQL5 holen → auswählen → Computer prüft und speichert → optional KI-Bericht. Die Statuskarten zeigen, wo der Lauf gerade steht. Fertig heißt nicht „empfohlen“.
 
 **3 · Ergebnisse lesen.** Tabelle filtern, Zeile wählen, zuerst Drawdown, Exposure und Stop-Nachweis ansehen. Die KI erklärt; die Zahlen rechnet das Programm.
 
@@ -15,7 +15,7 @@ HELP_CONTENT = {
     "arbeitsbereich": ("Arbeitsbereich: Scan, Ergebnisse, Agenten — wer macht was?", """
 **Kurzfassung:** **Scan** ist die Prüfung selbst (ein Lauf auf deinen Klick) — **Agenten** sind der Wachdienst (läuft von selbst zu festen Zeiten und bestellt bei Bedarf neue Scans).
 
-**🔍 Scan — die Analyse auf Knopfdruck.** Hier startest du eine echte Prüfung. **Full-Scan** nimmt alle Signale von MQL5: Daten holen → Forensik (Martingale, Exposure, Stop-Nachweis, Drawdown) → KI-Berichte → Ampel. **Teilscan** macht dasselbe nur für die Signale, die aktuell 🟢/🟡 sind (Restkontrolle der Hoffnungskandidaten, immer mit frischen KI-Stufen). Ohne deinen Klick passiert hier nichts.
+**🔍 Scan — die Analyse auf Knopfdruck.** Hier startest du eine echte Prüfung. **Full-Scan** bewertet die ausgewählten Kandidaten aus den konfigurierten Quellen bzw. direkt von MQL5: Daten holen → Auswahl je Quelle → Forensik (Martingale, Exposure, Stop-Nachweis, Drawdown) → KI-Berichte → Ampel. **Teilscan** prüft aktuelle 🟢/🟡, fehlgeschlagene Wiederholungen vormals grüner/gelber Signale und Fix-IDs, mit neuen KI-Stufen. Fehlgeschlagene Ergebnisse bleiben bis zur erfolgreichen Neubewertung als Fehler sichtbar. Manuelle Scans startest du hier; autonome Scans können zusätzlich vom Agentenbetrieb kommen.
 
 **📊 Ergebnisse — das Archiv.** Zeigt, was die Scans erarbeitet haben: Tabelle, Ampel-Matrix, KI-Berichte, PDFs, Ampel-Verlauf und Wechsel-Protokoll. Diese Seite startet selbst nichts.
 
@@ -89,7 +89,7 @@ Beim Scan wird die Matrix mit allen Herleitungen als Snapshot in der Datenbank g
     "risk_status": ("Was die Einstufungen aussagen", """
 **Grün · Kandidat:** Vollständige aktuelle Forensik, keine harte Risikoverletzung, eigene geometrische Monatsrendite mindestens an der konfigurierten Schwelle und Jahres-Calmar (retdd_jahr) mindestens min_calmar_jahr (Default 3,0). Der Calmar braucht eine belastbare Equity-Messung inklusive Floating und mindestens 3 Monate Trade-Historie. Das ist ein Prüfkandidat, keine Garantie. Fehlender Stop-Nachweis bleibt neutral.
 
-**Gelb · Beobachtung:** Forensik ist vorhanden, aber Score, geometrische Monatsrendite oder Calmar reichen nicht für Grün; fehlende aktuelle Rendite oder Equity-Messung erlauben ebenfalls keine Empfehlung. **Rot · Risiko-Flag:** Eine Drawdown-Schranke oder Martingale-Signatur ist angeschlagen.
+**Gelb · Beobachtung:** Forensik ist vorhanden, aber geometrische Monatsrendite oder Jahres-Calmar reichen nicht für Grün; fehlende aktuelle Rendite oder belastbare Equity-Messung erlauben ebenfalls keine Empfehlung. Der Risiko-Score ist Zusatzinformation ohne eigenes Grün-Gate. **Rot · Risiko-Flag:** Eine Drawdown-Schranke oder Martingale-Signatur ist angeschlagen.
 
 **Ausgeschlossen:** Das Signal steht auf der Ausschlussliste. Die Begründung steht beim Urteil. **Grau · Vorprüfung:** Trade-Forensik fehlt oder konnte nicht erstellt werden. Fehlende Evidenz entlastet nicht.
 
@@ -98,7 +98,7 @@ Die Übersicht zählt die Einstufungen aller Signale des ausgewählten Laufs. Di
     "risk_metrics": ("Drawdown, Risiko-Score und Ertrag", """
 **Risiko-Score (1–10):** Aggregierte Risikobewertung; kleinere Werte bedeuten weniger erkannte Risikofaktoren. Bei lokalen Referenzdaten kann ein hinterlegter Referenz-Score verwendet werden. Kein Wahrscheinlichkeitsmaß und keine Prognose.
 
-**Max-Drawdown (Equity, gemessen):** Maximaler Rückgang der Equity inklusive offener Gewinne und Verluste, aus einer belastbaren Kurs-Nachmessung oder Monitor-Messung. Ohne belastbare Equity-Messung bleibt der Wert leer; H1-Kurse erfassen keine Tiefs innerhalb einer Stunde. **Trading-DD (geschlossen):** Separater Drawdown aus den Nettogewinnen geschlossener Trades; zwischenzeitliche offene Verluste fehlen hier. **Drawdown (Plattform):** Selbstauskunft der Plattform. Die Schranke verwendet den höchsten verfügbaren Wert einschließlich der Plattform-Angaben.
+**Max-Drawdown (Equity, gemessen):** Maximaler Rückgang der rekonstruierten Equity inklusive Floating der exportierten Positionen, aus einer belastbaren eigenen Kurs-Nachmessung. Ohne diese Messung bleibt der Wert leer; H1-Kurse erfassen keine Tiefs innerhalb einer Stunde. **Trading-DD (geschlossen) und Monitor-DD:** Separate Closing-Kurven; sie ersetzen keine historische Floating-Equity-Messung und keinen Calmar-Nenner. **Drawdown (Plattform):** Selbstauskunft der Plattform. Die Schranke verwendet den höchsten verfügbaren Wert einschließlich der Plattform-Angaben und des Monitor-DD.
 
 **Gewinn pro Monat:** Maßgeblich ist die eigene geometrische Monatsrendite auf der Forensik-Kapitalbasis: die über den beobachteten Zeitraum äquivalente Rendite mit Zinseszins. Linearer Startbasis-Ertrag und Plattformwert bleiben Zusatzinformation und ersetzen fehlende geometrische Rendite nicht. Die Mindestschwelle ist konfigurierbar; maßgeblich sind die aktuellen Grenzwerte im Regelwerk und den Matrix-Tooltips. Historische Kennzahl, keine erwartete Auszahlung.
 
@@ -107,9 +107,9 @@ Die Übersicht zählt die Einstufungen aller Signale des ausgewählten Laufs. Di
 **Profit-Faktor:** Verhältnis summierter Gewinne zum Betrag summierter Verluste. **Winrate:** Anteil gewinnender geschlossener Trades. Bei CSV-Daten verwenden diese Handelsstatistiken den Profit vor Kommission und Swap; der Trading-DD rechnet dagegen mit Nettowerten. Hohe Trefferquoten können mit seltenen, großen Verlusten einhergehen.
 """),
     "exposure": ("Positionen, Verlustserien und Schockrechnung", """
-**Peak-Positionen** bezeichnet die größte rekonstruierte Anzahl gleichzeitig offener Positionen. **Netto-Lots** zeigt die richtungsabhängige Positionierung beim ersten Erreichen dieses Positionsmaximums, nicht zwingend das maximale Netto-Volumen über die gesamte Laufzeit. Viele kleine, gleichgerichtete Trades können ein großes Risiko bilden.
+**Peak-Positionen** bezeichnet die größte rekonstruierte Anzahl gleichzeitig offener Positionen. **Netto-Lots und Dollar-Schock** beziehen sich auf den Zeitpunkt des maximalen berechneten Dollar-Schocks; dieser kann vom Zeitpunkt der größten Positionsanzahl abweichen. Viele kleine, gleichgerichtete Trades können ein großes Risiko bilden.
 
-**50-USD-Schock bei XAUUSD:** Für den verwendeten Standardkontrakt entspricht 1 Lot einer Änderung von 100 USD je 1 USD Goldpreisbewegung. Die Rechnung lautet Betrag der Netto-Lots am Positionsmaximum × 100 × 50.
+**50-USD-Schock bei XAUUSD:** Für den verwendeten Standardkontrakt entspricht 1 Lot einer Änderung von 100 USD je 1 USD Goldpreisbewegung. Für eine reine Goldposition lautet die Rechnung Betrag der Netto-Lots am Schockmaximum × 100 × 50. Bei mehreren Instrumenten werden deren belegte Kontrakte, Währungen und Schockbewegungen verwendet; gegenläufige Positionen verschiedener Instrumente werden nicht als Hedge verrechnet.
 
 Das ist ein Szenario, kein gemessener Verlust und keine Verlustobergrenze. Slippage, Währungsumrechnung und abweichende Brokerkontrakte können das Ergebnis verändern. Bei gemischten Symbolen ist die gemeinsame Aggregation nur eine Näherung, keine getrennte Portfoliobewertung.
 

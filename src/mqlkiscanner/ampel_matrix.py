@@ -62,17 +62,19 @@ KRITERIEN: list[Kriterium] = [
         "Equity und By Balance — Selbstauskunft), dem aus den Trades selbst "
         "berechneten Trading-DD (geschlossen), dem Max-Drawdown aus "
         "Kursmessung (Equity inklusive Floating; nur bei belastbarer "
-        "Abdeckung) UND der floating-inclusiven Zweitmessung des "
+        "Abdeckung) UND dem Closing-DD des "
         "Datenquellen-Monitors darf die Schranke (Standard "
         "30 %) nicht überschreiten. Grün = mit Puffer ≥ 5 Punkten eingehalten, "
         "gelb = eingehalten, aber Puffer unter 5 Punkte, rot = verletzt. Alle "
         "Werte fehlen → grau (keine Daten). Der höchste Wert entscheidet — "
         "der Plattform-Drawdown (By Equity) kann deutlich niedriger als By "
         "Balance ausfallen, "
-        "und Kurs-/Monitor-Messung machen floating Verluste sichtbar. "
+        "die eigene Kursmessung berücksichtigt Floating der exportierten "
+        "Positionen. Der Monitor-Closing-DD ersetzt keine historische "
+        "Floating-Equity-Messung. "
         "Vorbehalt Closing-DD (Monitor): Der Monitor rechnet gegen seine eigene "
-        "(ggf. rückgerechnete) Kapitalbasis — Werte über 100 % überzeichnen "
-        "absolut, bleiben aber ein harter Warnmarker."),
+        "(ggf. rückgerechnete) Kapitalbasis. Der Wert bleibt ein "
+        "Schrankenkanal und beweist keinen vollständigen Konto-Equity-DD."),
     Kriterium(
         "martingale", "Martingale",
         "Forensik-Test a) aus doc/03: Systematische Lot-Vergrößerung nach "
@@ -108,7 +110,9 @@ KRITERIEN: list[Kriterium] = [
     Kriterium(
         "schock", "Schock vs. Konto",
         "Stress-Szenario, KEIN gemessener Verlust: Peak-Netto-Exposure im "
-        "50-USD-Schock, ins Verhältnis zum Kontostand am Expositionspeak "
+        "maximalen berechneten Dollar-Schock mit instrumentabhängigen "
+        "Kontrakten und Schockbewegungen, ins Verhältnis zum Kontostand "
+        "an diesem Schockzeitpunkt "
         "gesetzt. Grün = unter 30 %, gelb = 30–100 %, orange = über 100 % "
         "des Kontos. Begründet Gewichtung und Beobachtung — allein nie "
         "einen Ausschluss."),

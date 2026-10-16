@@ -1468,6 +1468,7 @@ class ScanPipeline:
         wird, erhält JEDES Eingangssignal einen Erklärungs-Datensatz
         (Nutzer-Wunsch 02.10.2026: Auswahl nachvollziehbar — warum drin,
         warum draußen)."""
+        from .ingest import normalisiere_wochen
         identities: dict[int, set[tuple[str, str]]] = {}
         for s in signals:
             platform = str(s.get("platform") or "").upper().replace("MQL", "MT")
@@ -1497,6 +1498,11 @@ class ScanPipeline:
             return fix_signale.begruendungseintrag(s, status, grund)
 
         for s in signals:
+            if "wochen" in s:
+                # Validate direct candidates too; NaN compares false to every
+                # minimum and must not prove age. Copy instead of mutating the
+                # source catalog. Fix-IDs still bypass the filter below.
+                s = dict(s, wochen=normalisiere_wochen(s["wochen"]))
             # Fix-IDs umgehen die Vorfilter (Nutzer-Wunsch: immer scannen) —
             # ein gepinntes Signal darf nicht an Wochen/Abonnenten scheitern.
             if s.get("id") in fix:

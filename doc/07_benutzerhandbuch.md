@@ -70,6 +70,13 @@ KI-Bericht → Portfolio → Abgleich):
 4. Einstellungen: Listen-Seiten, Max. Signale gründlich prüfen (Standard 30),
    Mindestwochen, Abonnenten, Rate-Limits.
 
+Dokumentierte Defaults und aktive Einstellungen sind zu unterscheiden:
+`min_abonnenten=0` ist der Code-Default für den zusätzlichen lokalen
+Vorfilter. Eine Instanz kann beispielsweise `1` eingestellt haben; diese
+gespeicherte Einstellung geht vor und ist in der Einstellungen-Seite sichtbar.
+Die Quellen liefern ihrerseits begrenzte Kataloge mit ihrem eigenen
+Abonnentenstandard. Ein lokaler Filter von0 hebt diese Quellenauswahl nicht auf.
+
 **Stufe 0 „Clients aktualisieren“ ist implementiert:** Full- und Teilscan
 aktualisieren im Quellen-/Mischmodus zuerst die aktiven REST-Clients parallel
 (`stufe0_aktiv`, Standard an). Der Kreis „0“ zeigt Fortschritt und Protokoll.

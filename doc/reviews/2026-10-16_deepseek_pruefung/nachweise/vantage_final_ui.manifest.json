@@ -1,0 +1,15 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\vantage",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\deepseek_review_pruefung_2026-10-16\\vantage_final_ui",
+  "head": "28d2021863f35a0514b45b0fc802fb80d119368c",
+  "overlay_sha256": {
+    "README.md": "283fcff1a7b6be347dd9c9f419a91bd768e60f18ae60f90624b7ce43ab8e58ce",
+    "src\\main\\java\\de\\vantagemonitor\\VantageMonitorApp.java": "af6edd28e73b8e9043fb2e34e730ed504f5b0dd304ab9ea989bf867e25e8a62d",
+    "src\\main\\java\\de\\vantagemonitor\\api\\VantageClient.java": "aa4cc4dd2912dcfa4ccbf4e9c0e411d4824556482508db98295e4551527a222b",
+    "src\\main\\java\\de\\vantagemonitor\\model\\SignalProvider.java": "62556441b0c4cb77e17499159b453384e68fb4d36b33f05c944f24235b6cd302",
+    "src\\main\\java\\de\\vantagemonitor\\rest\\RestApiServer.java": "86bec7fe32c2fa01ca66a4b9c58469b1bc99d5858b2015c4f7f6ccfeb005f579",
+    "src\\main\\java\\de\\vantagemonitor\\store\\TradeStore.java": "b32729e7d87e1e4be8764d64920541758493f307529739a1f4338afd4d5ebdbd",
+    "src\\test\\java\\de\\vantagemonitor\\RestApiServerTest.java": "4ff46fa57627675810b4222bf40dd828bf1a10c07e9d4abddfda7fcb5b5eb2cb",
+    "src\\test\\java\\de\\vantagemonitor\\store\\TradeStoreMonateTest.java": "cfd5f587a122f3a65f0702c7acb6858634ecd84d994189930751b2de5d70a3a3"
+  }
+}

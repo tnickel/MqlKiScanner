@@ -1,0 +1,74 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_ test_portfolio_station_shows_year_calmar_with_matching_provisional_marker[False] _
+
+provisional = False
+
+    @pytest.mark.parametrize("provisional", [False, True])
+    def test_portfolio_station_shows_year_calmar_with_matching_provisional_marker(provisional):
+        result = pipeline.ScanResult(
+            id=910002, name="Synthetische Portfolio-Basis", ampel="\U0001f7e1",
+            forensik_vorhanden=True, ertrag_monat_geom_pct=4.0,
+            cagr_jahr_pct=60.0,
+            equity_dd_rekonstruiert_pct=None if provisional else 10.0,
+            equity_dd_rekon_roh_pct=10.0 if provisional else None,
+        )
+        at = _app("portfolio")
+        at.session_state["scan_results"] = [result]
+        at.session_state["portfolio_bericht"] = "Synthetischer Testbericht ohne Modellaufruf"
+        at.run()
+        table = _dialog(at).get("dataframe")[-1].value
+>       assert table.loc[0, "TrueRetDD"] == pytest.approx(6.0)
+E       assert np.float64(0.4) == 6.0 � 6.0e-06
+E         
+E         comparison failed
+E         Obtained: 0.4
+E         Expected: 6.0 � 6.0e-06
+
+tests\test_scan_station_details.py:191: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-16 19:55:07.880 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-16 19:55:07.881 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-16 19:55:07.881 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call ------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+_ test_portfolio_station_shows_year_calmar_with_matching_provisional_marker[True] _
+
+provisional = True
+
+    @pytest.mark.parametrize("provisional", [False, True])
+    def test_portfolio_station_shows_year_calmar_with_matching_provisional_marker(provisional):
+        result = pipeline.ScanResult(
+            id=910002, name="Synthetische Portfolio-Basis", ampel="\U0001f7e1",
+            forensik_vorhanden=True, ertrag_monat_geom_pct=4.0,
+            cagr_jahr_pct=60.0,
+            equity_dd_rekonstruiert_pct=None if provisional else 10.0,
+            equity_dd_rekon_roh_pct=10.0 if provisional else None,
+        )
+        at = _app("portfolio")
+        at.session_state["scan_results"] = [result]
+        at.session_state["portfolio_bericht"] = "Synthetischer Testbericht ohne Modellaufruf"
+        at.run()
+        table = _dialog(at).get("dataframe")[-1].value
+>       assert table.loc[0, "TrueRetDD"] == pytest.approx(6.0)
+E       assert np.float64(0.4) == 6.0 � 6.0e-06
+E         
+E         comparison failed
+E         Obtained: 0.4
+E         Expected: 6.0 � 6.0e-06
+
+tests\test_scan_station_details.py:191: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-16 19:55:09.235 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-16 19:55:09.235 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-16 19:55:09.235 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call ------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+=========================== short test summary info ===========================
+FAILED tests/test_scan_station_details.py::test_portfolio_station_shows_year_calmar_with_matching_provisional_marker[False]
+FAILED tests/test_scan_station_details.py::test_portfolio_station_shows_year_calmar_with_matching_provisional_marker[True]
+2 failed, 16 deselected in 2.82s

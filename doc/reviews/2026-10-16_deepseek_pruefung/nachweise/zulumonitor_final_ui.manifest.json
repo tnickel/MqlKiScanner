@@ -1,0 +1,15 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\zulumonitor",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\deepseek_review_pruefung_2026-10-16\\zulumonitor_final_ui",
+  "head": "d1a54ff8406577574e788678a1b8713a99077f29",
+  "overlay_sha256": {
+    "README.md": "6a9853a2e6a1c2dfc864df691a9a326d8ea4526d35758a941f84ce3a3f8b51a9",
+    "src\\main\\java\\de\\zulumonitor\\ZuluMonitorApp.java": "7df758b9d7ff1194f7387714f1c8c1828bce40f3d26ba36c843d1919c35b59fb",
+    "src\\main\\java\\de\\zulumonitor\\api\\ZuluTradeClient.java": "c9f284fc83ea7fd614dbee9e163ca31b3080b127dbbabed2048905d84111aea5",
+    "src\\main\\java\\de\\zulumonitor\\model\\Trader.java": "cbe072e74f01d6918db62b2fed4edb3f62a9427e4eab4640ce6506c1b9806b3b",
+    "src\\main\\java\\de\\zulumonitor\\rest\\RestApiServer.java": "6c725167b2361748a0330365e61ad87cb368f0903767b9c3647d86a102814700",
+    "src\\main\\java\\de\\zulumonitor\\store\\DataStore.java": "7db741cd313b8c080ffdf2e371f7b4dba6c9d0d10592bb1fc86f46d0347534d0",
+    "src\\test\\java\\de\\zulumonitor\\RestApiServerTest.java": "072bb80adfbfa960bd32b2a0c06cb9065a26c9b8d018acdd998065c26319d981",
+    "src\\test\\java\\de\\zulumonitor\\api\\WeekEvidenceTest.java": "0f10f7c5fb1d500734619ec25c095e15310abaa5b911eba92339e55c8df1fa26"
+  }
+}

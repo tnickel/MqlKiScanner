@@ -1,0 +1,28 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_ test_regelwerk_beschreibt_aktuellen_jahres_calmar_statt_monats_gate[settings0-3] _
+
+settings = {}, minimum = '3'
+
+    @pytest.mark.parametrize("settings,minimum", [({}, "3"), ({"min_calmar_jahr": 4.25}, "4.25")])
+    def test_regelwerk_beschreibt_aktuellen_jahres_calmar_statt_monats_gate(settings, minimum):
+        text = regelwerk_markdown(settings)
+>       assert f"Jahres-Calmar mindestens {minimum}" in text
+E       AssertionError: assert 'Jahres-Calmar mindestens 3' in '## Harte Regeln (urteilt die Engine automatisch)\n\nDiese Regeln greifen bei jedem Lauf unabh�ngig von der Liste:\n\n...Sharpe 0.07, kurz |\n| [#2383311](https://www.mql5.com/en/signals/2383311) | Gold and GBPUSD | Reliability 76%, kurz |'
+
+tests\test_regelwerk.py:57: AssertionError
+_ test_regelwerk_beschreibt_aktuellen_jahres_calmar_statt_monats_gate[settings1-4.25] _
+
+settings = {'min_calmar_jahr': 4.25}, minimum = '4.25'
+
+    @pytest.mark.parametrize("settings,minimum", [({}, "3"), ({"min_calmar_jahr": 4.25}, "4.25")])
+    def test_regelwerk_beschreibt_aktuellen_jahres_calmar_statt_monats_gate(settings, minimum):
+        text = regelwerk_markdown(settings)
+>       assert f"Jahres-Calmar mindestens {minimum}" in text
+E       AssertionError: assert 'Jahres-Calmar mindestens 4.25' in '## Harte Regeln (urteilt die Engine automatisch)\n\nDiese Regeln greifen bei jedem Lauf unabh�ngig von der Liste:\n\n...Sharpe 0.07, kurz |\n| [#2383311](https://www.mql5.com/en/signals/2383311) | Gold and GBPUSD | Reliability 76%, kurz |'
+
+tests\test_regelwerk.py:57: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_regelwerk.py::test_regelwerk_beschreibt_aktuellen_jahres_calmar_statt_monats_gate[settings0-3]
+FAILED tests/test_regelwerk.py::test_regelwerk_beschreibt_aktuellen_jahres_calmar_statt_monats_gate[settings1-4.25]
+2 failed, 7 deselected in 0.73s

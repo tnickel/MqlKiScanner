@@ -1,0 +1,18 @@
+{
+  "baseHead": "cef1e5a",
+  "generatedUtc": "2026-10-16T18:07:15.1063080Z",
+  "files": [
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\src\\mqlkiscanner\\ingest.py",
+      "sha256": "6edca9454cf8c25c559c3ecd804fb3beb134129ba3acb9cdb199eb065420b283"
+    },
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\src\\mqlkiscanner\\pipeline.py",
+      "sha256": "ce3faf982ffe870fb125decc2091bfed3560c952c5469e14e3a9f3380fd8149f"
+    },
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\tests\\test_deepseek_weeks_validation.py",
+      "sha256": "b172213400677513c4a90cc19bf82403d1cd0dd0b73eaac728713ee5d8a6aa35"
+    }
+  ]
+}
