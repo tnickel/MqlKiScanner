@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import streamlit as st  # noqa: E402
 
-from mqlkiscanner import config, downloader_sync, secrets_store, tradeserver_sync, rest_api  # noqa: E402
+from mqlkiscanner import config, portfolio_statistik, secrets_store, verbindungs_monitor, rest_api  # noqa: E402
 from mqlkiscanner.agenten import daemon as agenten_daemon  # noqa: E402
 from mqlkiscanner.ui_design import apply_theme, info_button  # noqa: E402
 
@@ -96,51 +96,45 @@ with st.sidebar:
                  color="green" if mql_ready else "orange", icon=":material/person:")
         st.badge("KI bereit" if status["glm_api_key"] else "KI optional",
                  color="green" if status["glm_api_key"] else "gray", icon=":material/psychology:")
-        # Erreichbarkeit des MqlDownloader: einmal beim Programmstart geprüft,
-        # danach 5 Min. gecacht (verbindungs_status verhindert REST-Flut).
-        dl_status = downloader_sync.verbindungs_status(timeout=3.0)
-        # „Downloader" = klassischer MqlDownloader (kuerzel mql5); jede
-        # weitere REST-Quelle (Pelican, RoboForex, …) bekommt ihren eigenen
-        # Badge (Nutzer-Wunsch 29.09.: „für den Pelican auch so eine grüne
-        # Anzeige … er sollte Pelican heissen").
-        mql_quelle = next((q for q in dl_status.get("quellen", [])
-                           if q["kuerzel"] == "mql5"), None)
-        if not dl_status["konfiguriert"] or mql_quelle is None:
-            st.badge("Downloader optional", color="gray", icon=":material/sync:")
-        elif mql_quelle["ok"]:
-            st.badge("Downloader verbunden", color="green", icon=":material/sync:")
-            st.caption(f"{mql_quelle['anbieter'] or 0} Provider · geprüft "
-                       f"{mql_quelle['geprueft']:%H:%M}")
-        else:
-            st.badge("Downloader offline", color="red", icon=":material/sync_disabled:")
-            st.page_link(settings_page, label="Verbindung prüfen",
-                         icon=":material/arrow_forward:")
-        for q in dl_status.get("quellen", []):
-            if q["kuerzel"] == "mql5":
-                continue  # oben als „Downloader" gezeigt
-            if q["ok"]:
-                st.badge(f"{q['name']} verbunden", color="green",
-                         icon=":material/sync:")
-                st.caption(f"{q['anbieter'] or 0} Provider · geprüft "
-                           f"{q['geprueft']:%H:%M}")
-            else:
-                st.badge(f"{q['name']} offline", color="red",
-                         icon=":material/sync_disabled:")
-                st.page_link(settings_page, label="Verbindung prüfen",
-                             icon=":material/arrow_forward:")
-        # Tradeserver (MqlTradeMonitor): Einmal-Sync-Ziel für Tabelle + PDFs.
-        ts_status = tradeserver_sync.verbindungs_status(timeout=3.0)
-        if not ts_status["konfiguriert"]:
-            st.badge("Tradeserver optional", color="gray", icon=":material/cloud_upload:")
-        elif ts_status["ok"]:
-            st.badge("Tradeserver verbunden", color="green", icon=":material/cloud_upload:")
-            st.caption(f"{ts_status['service'] or 'MqlTradeMonitor'} · geprüft "
-                       f"{ts_status['geprueft']:%H:%M}")
-        else:
-            st.badge("Tradeserver nicht erreichbar", color="red",
-                     icon=":material/cloud_off:")
-            st.page_link(settings_page, label="Verbindung prüfen",
-                         icon=":material/arrow_forward:")
+        @st.fragment(run_every=2.0)
+        def _verbindungen_anzeigen():
+            snapshot = verbindungs_monitor.zustand()
+            if snapshot["fehler"]:
+                st.badge("Verbindungskonfiguration nicht lesbar", color="orange",
+                         icon=":material/sync_problem:")
+                st.caption("Die Prüfung wird automatisch erneut versucht.")
+            if not snapshot["geladen"]:
+                if not snapshot["fehler"]:
+                    st.badge("Verbindungen werden geprüft", color="gray",
+                             icon=":material/sync:")
+                return
+            verbindungen = snapshot["verbindungen"]
+            if not any(v["name"] == "Downloader" for v in verbindungen):
+                st.badge("Downloader optional", color="gray", icon=":material/sync:")
+            if not any(v["art"] == "tradeserver" for v in verbindungen):
+                st.badge("Tradeserver optional", color="gray", icon=":material/cloud_upload:")
+            for v in verbindungen:
+                ergebnis = v["ergebnis"]
+                if ergebnis is None:
+                    st.badge(f"{v['name']} wird geprüft", color="gray",
+                             icon=":material/sync:")
+                    continue
+                eingeschraenkt = ergebnis.get("eingeschraenkt", False)
+                ok = ergebnis["ok"] and not eingeschraenkt
+                text = "verbunden" if ok else (
+                    "Token erforderlich" if eingeschraenkt else "nicht erreichbar")
+                st.badge(f"{v['name']} {text}",
+                         color="green" if ok else ("orange" if eingeschraenkt else "red"),
+                         icon=":material/sync:" if ok else ":material/sync_disabled:")
+                suffix = " · wird erneut geprüft" if v["prueft"] else ""
+                provider = (f"{ergebnis.get('anbieter') or 0} Provider · "
+                            if v["art"] == "quelle" and ok else "")
+                st.caption(f"{provider}Geprüft {ergebnis['geprueft']:%H:%M}{suffix}")
+                if not ok:
+                    st.page_link(settings_page, label="Verbindung prüfen",
+                                 icon=":material/arrow_forward:")
+
+        _verbindungen_anzeigen()
         # REST-Interface für den MqlRealMonitor (nur lesend, localhost).
         # Der Monitor ruft nur auf Knopfdruck ab — der Badge zeigt deshalb,
         # wann der Client zuletzt erreicht hat (grün ab erstem Abruf).
@@ -164,8 +158,18 @@ with st.sidebar:
                          icon=":material/arrow_forward:")
     with st.container(border=True):
         st.caption("ENTSCHEIDUNGSREGEL")
-        st.markdown("**≤ 30 % Drawdown**  \n**> 5 % Ertrag / Monat**")
-        st.caption("Ein Stop zählt nur, wenn er belegt ist.")
+        dd_limit = float(settings.get("schranke_eq_dd_pct", config.DEFAULT_SETTINGS["schranke_eq_dd_pct"]))
+        min_return = float(settings.get("min_ertrag_pct_monat", config.DEFAULT_SETTINGS["min_ertrag_pct_monat"]))
+        min_calmar = config.min_calmar_jahr(settings)
+        st.markdown(f"**≤ {dd_limit:g} % Drawdown**  \n"
+                    f"**Jahres-Calmar ≥ {min_calmar:g}**")
+        if min_return > 0:
+            st.markdown(f"**≥ {min_return:g} % Ertrag / Monat**")
+        else:
+            st.caption("Absolute Monats-Ertragshürde deaktiviert.")
+        st.caption(f"Mindestens {portfolio_statistik.MIN_HISTORIE_MONATE:g} Monate "
+                   "Trade-Historie. Calmar auf gemessener Equity inklusive Floating.")
+        st.caption("Fehlender SL-Nachweis ist neutral; ein belegter Stop entlastet.")
     if st.session_state.last_run_file:
         st.caption(f"Letzter Lauf · {Path(st.session_state.last_run_file).parent.name}")
 
