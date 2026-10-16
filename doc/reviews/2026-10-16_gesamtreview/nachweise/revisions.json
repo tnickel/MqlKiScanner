@@ -1,0 +1,38 @@
+{
+  "workspace": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "executable": "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "repositories": {
+    "SignalKiScanner": {
+      "commit": "80d4692548c9a770666315761e054bdf535d0446",
+      "branch": "main",
+      "status": ""
+    },
+    "MqlDownloader": {
+      "commit": "92d8f9cea10bdc8f99c96782d75631b21e1714e6",
+      "branch": "master",
+      "status": ""
+    },
+    "PelicanTrading": {
+      "commit": "dde77d705a670b37fc0f422504e566a857527893",
+      "branch": "master",
+      "status": ""
+    },
+    "roboforex": {
+      "commit": "42b268641ad370ccae7841b6a478f9745cb57bd3",
+      "branch": "master",
+      "status": ""
+    },
+    "vantage": {
+      "commit": "1fe395805f29e20d2598aa37162e717769a15762",
+      "branch": "master",
+      "status": ""
+    },
+    "zulumonitor": {
+      "commit": "72df0cf49aa4f44fe0d82d9d07112091cf4d5665",
+      "branch": "master",
+      "status": ""
+    }
+  }
+}

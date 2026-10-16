@@ -1,0 +1,953 @@
+{
+  "scope": "Offline tests; no live platform or paid model validation",
+  "runs": [
+    {
+      "snapshot": "scanner_round1",
+      "xml": "scanner_round1_pytest.xml",
+      "log": "scanner_round1_pytest.log",
+      "superseded_by": "scanner_final_delta",
+      "deselected_paid_llm": 4,
+      "baseline_commit": "80d4692548c9a770666315761e054bdf535d0446",
+      "totals": {
+        "tests": 1957,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      "passed": 1953,
+      "suites": [
+        {
+          "name": "pytest",
+          "time_seconds": 571.448,
+          "tests": 1957,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 4,
+          "nonpassing_cases": [
+            {
+              "class": "tests.test_archiv_finanzaggregate",
+              "name": "test_alle_bekannten_original_archivzeilen_finanziell_vollstaendig",
+              "status": "skipped",
+              "reason": "Optionaler lokaler Originalexport"
+            },
+            {
+              "class": "tests.test_parser_export_artefakte",
+              "name": "test_real_blocked_signal_fixture_parses",
+              "status": "skipped",
+              "reason": "Lokaler Realexport-Regressionstest: privater Live-Cache fehlt; die synthetischen Export-Artefakt-Tests laufen unabhaengig davon."
+            },
+            {
+              "class": "tests.test_retdd_produzent_und_dedup",
+              "name": "test_ticketlose_lieferung_thg_wird_nicht_per_mengenheuristik_gekuerzt",
+              "status": "skipped",
+              "reason": "Original-Lieferung nicht mehr im Cache"
+            },
+            {
+              "class": "tests.test_retdd_produzent_und_dedup",
+              "name": "test_night_scalper_realer_export_bleibt_299_positionen",
+              "status": "skipped",
+              "reason": "Realer Night-Scalper-Snapshot nicht vorhanden"
+            }
+          ]
+        }
+      ],
+      "later_source_changes": [
+        "src\\mqlkiscanner\\agenten\\betreuer.py",
+        "src\\mqlkiscanner\\agenten\\chef.py",
+        "src\\mqlkiscanner\\agenten\\destillation.py",
+        "src\\mqlkiscanner\\agenten\\dirigent.py",
+        "src\\mqlkiscanner\\agenten\\journal.py",
+        "src\\mqlkiscanner\\agenten\\markt.py",
+        "src\\mqlkiscanner\\agenten\\melder.py",
+        "src\\mqlkiscanner\\llm\\client.py",
+        "src\\mqlkiscanner\\llm\\verdict_check.py",
+        "src\\mqlkiscanner\\agenten\\budget.py",
+        "tests\\test_gesamt_review_hub_fixes.py"
+      ],
+      "log_sha256": "afe1947a936cce99c6bba65df9fe6b3004cac6ac60c87fde97f57e8894b6d16a"
+    },
+    {
+      "snapshot": "scanner_final_delta",
+      "xml": "scanner_final_delta_pytest.xml",
+      "log": "scanner_final_delta_pytest.log",
+      "scope": "final changed paths",
+      "deselected_paid_llm": 4,
+      "baseline_commit": "80d4692548c9a770666315761e054bdf535d0446",
+      "totals": {
+        "tests": 354,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 354,
+      "suites": [
+        {
+          "name": "pytest",
+          "time_seconds": 235.539,
+          "tests": 354,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "later_source_changes": [],
+      "log_sha256": "d3d3fa049bcb51ef8723fcd6b7a836ac98c2e2132dad74ab8629a98eae5fb5c2"
+    },
+    {
+      "snapshot": "PelicanTrading_final",
+      "log": "PelicanTrading_final.maven.log",
+      "package": true,
+      "baseline_commit": "dde77d705a670b37fc0f422504e566a857527893",
+      "totals": {
+        "tests": 179,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 179,
+      "suites": [
+        {
+          "name": "de.pelicanmonitor.api.CatalogueAndFreshStatsTest",
+          "time_seconds": 0.289,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.api.ClosedResponseSchemaTest",
+          "time_seconds": 0.04,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.api.ClosedTradeValidationTest",
+          "time_seconds": 0.012,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.api.FinancialUnitsTest",
+          "time_seconds": 0.008,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.auth.ChromeLoginFallbackTest",
+          "time_seconds": 0.033,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.config.PromptFinancialContractTest",
+          "time_seconds": 0.103,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.CoreRegressionTest",
+          "time_seconds": 0.061,
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.EmptyHistoryConsistencyTest",
+          "time_seconds": 0.03,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.EquityKurveTest",
+          "time_seconds": 0.014,
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.FixtureParseTest",
+          "time_seconds": 0.085,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.FxRatesSnapshotTest",
+          "time_seconds": 0.03,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.GlmParallelTest",
+          "time_seconds": 1.173,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.HistoricalFxRatesTest",
+          "time_seconds": 0.022,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.HistoricalTradeFxTest",
+          "time_seconds": 0.249,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.LiveDataStoreTest",
+          "time_seconds": 0.208,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.LoginCallbackAustauschTest",
+          "time_seconds": 0.021,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.model.ProviderUncertaintyTest",
+          "time_seconds": 0.001,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.MonthlyReturnRegressionTest",
+          "time_seconds": 0.009,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.PelicanMonitorUiTest",
+          "time_seconds": 1.69,
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.report.ReportFinancialUnitsTest",
+          "time_seconds": 0.017,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.RestApiServerTest",
+          "time_seconds": 1.392,
+          "tests": 23,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.store.DataStoreAtomicWriteTest",
+          "time_seconds": 0.024,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.store.SignalStoreIntegrityTest",
+          "time_seconds": 0.087,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.store.SignalStoreMergeTest",
+          "time_seconds": 0.023,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.store.UiPrefsTest",
+          "time_seconds": 0.009,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.pelicanmonitor.UpdateJobStufe0Test",
+          "time_seconds": 0.12,
+          "tests": 28,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "later_source_changes": [],
+      "log_sha256": "264e28d104f3e411619f3d478373b2c02313d2fad6254e165ccc229222cce57b"
+    },
+    {
+      "snapshot": "vantage_checkout",
+      "log": "vantage_checkout.maven.log",
+      "package": true,
+      "python_log": "vantage_checkout.python.log",
+      "baseline_commit": "9d3849b16d77cd558bf686f3d685b6af5e016b6b",
+      "totals": {
+        "tests": 59,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 59,
+      "suites": [
+        {
+          "name": "de.vantagemonitor.api.TradeContractTest",
+          "time_seconds": 0.328,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.config.PromptMigrationTest",
+          "time_seconds": 0.066,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.FxRatesTest",
+          "time_seconds": 0.028,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.HeadlessTradelistenLoadTest",
+          "time_seconds": 0.002,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.report.DrawdownBasisTest",
+          "time_seconds": 0.004,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.RestApiServerTest",
+          "time_seconds": 1.057,
+          "tests": 17,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.store.TradeIntegrityTest",
+          "time_seconds": 0.033,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.store.TradeListStoreTest",
+          "time_seconds": 0.047,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.store.TradeStoreMonateTest",
+          "time_seconds": 0.01,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.store.UiPrefsTest",
+          "time_seconds": 0.024,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.vantagemonitor.UpdateJobStufe0Test",
+          "time_seconds": 0.093,
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "later_source_changes": [],
+      "log_sha256": "f9f68bf874965652fb5bd34324cc95175538ee2ff0c877ab9b718778e6f2ba76",
+      "python_log_sha256": "7f15b0307db944c46188ff5f42948042e5d8a2303f3d10c34a37f571c7353be0",
+      "python_passed": 12
+    },
+    {
+      "snapshot": "zulumonitor_checkout",
+      "log": "zulumonitor_checkout.maven.log",
+      "package": true,
+      "baseline_commit": "5221b4838f935abe853b0ac8204d4f7639381e93",
+      "totals": {
+        "tests": 116,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 116,
+      "suites": [
+        {
+          "name": "de.zulumonitor.api.ClosedTradeContractTest",
+          "time_seconds": 0.301,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.api.ZuluTradeClientLocalTest",
+          "time_seconds": 0.121,
+          "tests": 10,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.config.PromptMigrationTest",
+          "time_seconds": 0.062,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.CoreRegressionTest",
+          "time_seconds": 0.033,
+          "tests": 19,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.FxRatesTest",
+          "time_seconds": 0.026,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.report.DrawdownBasisTest",
+          "time_seconds": 0.003,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.ReportPipelineTest",
+          "time_seconds": 0.161,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.RestApiServerTest",
+          "time_seconds": 0.596,
+          "tests": 18,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.SettingsRegressionTest",
+          "time_seconds": 0.012,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.store.DataStoreIntegrityTest",
+          "time_seconds": 0.047,
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.store.SubscriberDbTest",
+          "time_seconds": 0.207,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.store.TradeArchiveMergeTest",
+          "time_seconds": 0.024,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.store.TradeListenStoreTest",
+          "time_seconds": 0.033,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.store.UiPrefsTest",
+          "time_seconds": 0.011,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.UpdateJobStufe0Test",
+          "time_seconds": 0.087,
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.zulumonitor.ZuluMonitorUiTest",
+          "time_seconds": 0.729,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "later_source_changes": [],
+      "log_sha256": "c6e4ff5c918afe5065ce884876422b5f60bb32e42786ffcb36f7125633417148"
+    },
+    {
+      "snapshot": "quellen_b/roboforex",
+      "manifest": "quellen_b/roboforex_manifest.json",
+      "log": "quellen_b/roboforex_test.log",
+      "package_log": "quellen_b/roboforex_package.log",
+      "baseline_commit": "42b268641ad370ccae7841b6a478f9745cb57bd3",
+      "totals": {
+        "tests": 164,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 164,
+      "suites": [
+        {
+          "name": "de.robomonitor.ClosingDdDealsTest",
+          "time_seconds": 0.102,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.CoreRegressionTest",
+          "time_seconds": 0.344,
+          "tests": 61,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.deals.TradeAggregatorTest",
+          "time_seconds": 0.011,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.DealStoreTest",
+          "time_seconds": 0.039,
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.LlmSettingsTest",
+          "time_seconds": 0.018,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.RestApiServerTest",
+          "time_seconds": 0.837,
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.ReviewDataIntegrityTest",
+          "time_seconds": 0.535,
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.SignalFilterTest",
+          "time_seconds": 0.01,
+          "tests": 13,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.store.UiPrefsTest",
+          "time_seconds": 0.009,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.SubscriberDbTest",
+          "time_seconds": 0.329,
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.TradelistenPersistenzTest",
+          "time_seconds": 0.039,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "de.robomonitor.UpdateJobStufe0Test",
+          "time_seconds": 0.089,
+          "tests": 15,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "later_source_changes": [],
+      "log_sha256": "bede2b6210eaf510980488a5d42e742fa949c9d7ea8b4956ed3fc1154444699f",
+      "package_log_sha256": "b6dc297f08d21b6ba372648c5d01487eb9b741e68b2fb3310043c4dc0618a90b"
+    },
+    {
+      "snapshot": "../dependabot_mql_2026-10-16/MqlDownloader_final",
+      "log": "../dependabot_mql_2026-10-16/mql_security_package.log",
+      "package": true,
+      "baseline_commit": "eedd328dafcc1ccd678ca63e4a3da8c0d98e2824",
+      "totals": {
+        "tests": 114,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "passed": 114,
+      "suites": [
+        {
+          "name": "calculators.MPDDDataQualityTest",
+          "time_seconds": 0.238,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "config.ConfigurationManagerTest",
+          "time_seconds": 0.018,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "database.DatabaseManagerTest",
+          "time_seconds": 0.505,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "downloader.DownloadFilesTest",
+          "time_seconds": 0.009,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.ReportCellLayoutTest",
+          "time_seconds": 0.126,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.ReportFilesTest",
+          "time_seconds": 0.011,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.RiskCellEditorTest",
+          "time_seconds": 0.035,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.RiskEditingTableTest",
+          "time_seconds": 0.027,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.SubscriberStatisticsClickHandlerTest",
+          "time_seconds": 0.005,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.SubscriberStatisticsDialogTest",
+          "time_seconds": 2.723,
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.SubscriberStatisticsRenderingTest",
+          "time_seconds": 0.002,
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "gui.UpdateVermerkTest",
+          "time_seconds": 0.008,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.CsvParserTest",
+          "time_seconds": 0.003,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.JsonWriterTest",
+          "time_seconds": 0.003,
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.MetricsParserTest",
+          "time_seconds": 0.004,
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.ProviderFilesTest",
+          "time_seconds": 0.27,
+          "tests": 16,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.RestApiServerTest",
+          "time_seconds": 0.183,
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "rest.UpdateEndpointTest",
+          "time_seconds": 0.101,
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "utils.AutoSchedulerManagerTest",
+          "time_seconds": 0.002,
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        },
+        {
+          "name": "utils.FileUtilsTest",
+          "time_seconds": 0.024,
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "nonpassing_cases": []
+        }
+      ],
+      "later_source_changes": [],
+      "log_sha256": "0a81ec9267a88a886633e2f2ffa926d348159e7e5d5707894bbee3d300b64169"
+    }
+  ]
+}

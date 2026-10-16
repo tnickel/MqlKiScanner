@@ -1,0 +1,103 @@
+{
+  "partial_expected_remaining_apiLots_0_75" : {
+    "trades" : 1,
+    "openPositions" : 0,
+    "totalNet" : 25.0,
+    "lots" : 1.0,
+    "open" : "2026-01-02T13:00",
+    "close" : "2026-01-02T14:00",
+    "openPrice" : 1.1,
+    "closePrice" : 1.11,
+    "net" : 25.0,
+    "csv" : "2026.01.02 13:00:00;Buy;10;EURUSD;1.1;10;2026.01.02 14:00:00;1.11;0;0;25"
+  },
+  "two_outs_expected_remaining_apiLots_0_5" : {
+    "trades" : 1,
+    "openPositions" : 0,
+    "totalNet" : 50.0,
+    "lots" : 1.0,
+    "open" : "2026-01-02T13:00",
+    "close" : "2026-01-02T15:00",
+    "openPrice" : 1.1,
+    "closePrice" : 1.12,
+    "net" : 50.0,
+    "csv" : "2026.01.02 13:00:00;Buy;10;EURUSD;1.1;10;2026.01.02 15:00:00;1.12;0;0;50"
+  },
+  "orphan_unknown_open" : {
+    "trades" : 1,
+    "openPositions" : 0,
+    "totalNet" : -25.0,
+    "lots" : 0.1,
+    "open" : "2026-01-02T16:00",
+    "close" : "2026-01-02T16:00",
+    "openPrice" : 1.11,
+    "closePrice" : 1.11,
+    "net" : -25.0,
+    "csv" : "2026.01.02 16:00:00;Buy;1;EURUSD;1.11;1;2026.01.02 16:00:00;1.11;0;0;-25"
+  },
+  "netting_reversal" : {
+    "trades" : 2,
+    "openPositions" : 0,
+    "totalNet" : 500.0,
+    "lots" : 2.0,
+    "open" : "2026-01-02T14:00",
+    "close" : "2026-01-02T14:00",
+    "openPrice" : 1.12,
+    "closePrice" : 1.12,
+    "net" : 200.0,
+    "csv" : "2026.01.02 14:00:00;Sell;20;EURUSD;1.12;20;2026.01.02 14:00:00;1.12;0;0;200"
+  },
+  "missing_profit" : {
+    "trades" : 1,
+    "openPositions" : 0,
+    "totalNet" : 0.0,
+    "lots" : 0.1,
+    "open" : "2026-01-01T12:00",
+    "close" : "2026-01-02T12:00",
+    "openPrice" : 1.1,
+    "closePrice" : 1.11,
+    "net" : 0.0,
+    "csv" : "2026.01.01 12:00:00;Buy;1;EURUSD;1.1;1;2026.01.02 12:00:00;1.11;0;0;0"
+  },
+  "closing_dd_same_data_with_balance" : {
+    "fromTrades" : 8.333333333333332,
+    "dealsWithoutDeposit" : 8.333333333333332,
+    "fromDeals" : 0.43103448275862066
+  },
+  "partial_rest" : {
+    "status" : 200,
+    "body" : "?Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n2026.01.02 13:00:00;Buy;10;EURUSD;1.1;10;2026.01.02 14:00:00;1.11;0;0;25\n",
+    "json" : null
+  },
+  "signed_semantically_invalid_cache" : {
+    "storedRows" : 2,
+    "hasDeals" : true,
+    "loadedRows" : 1,
+    "response" : {
+      "status" : 200,
+      "body" : "?Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n",
+      "json" : null
+    }
+  },
+  "old_cache_still_fresh" : true,
+  "failed_download_calls" : 11,
+  "all_downloads_failed_job" : {
+    "jobId" : "synthetic-errors",
+    "state" : "done",
+    "phase" : "deals",
+    "done" : 6,
+    "total" : 6,
+    "message" : "Deals: 0 neu, 0 �bersprungen, 6 Fehler",
+    "startedAt" : "2026-10-16T17:32:03",
+    "finishedAt" : "2026-10-16T17:32:03",
+    "ergebnis" : {
+      "signaleGeliefert" : 6,
+      "tradelistenNeu" : 0,
+      "tradelistenAktualisiert" : 0,
+      "katalogUebersprungen" : false,
+      "datenstand" : "2026-10-16T17:32:03",
+      "hinweise" : [ "Tageslisten nach 5 Fehlern in Folge abgebrochen (RoboForex-API gest�rt?)", "6 Deal-Downloads fehlgeschlagen (Details: data/robomonitor.log)" ]
+    },
+    "error" : null
+  }
+}

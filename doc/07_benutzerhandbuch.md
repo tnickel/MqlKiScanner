@@ -350,7 +350,8 @@ Bearbeiten geschützt und werden vor dem Speichern geprüft.
 Fünf LLM-Rollen übernehmen die Dauerbeobachtung der Signale (Bauplan:
 `doc/19_agentenbetrieb-bauplan.md`). **Phase A**: Der Dirigent plant
 täglich werktags. **Phase B**: Der Signal-Betreuer prüft täglich die
-Trade-Deltas gegen die Algo-Profile. **Phase C**: Der Marktbeobachter
+Trade-Deltas der MQL5-Signale gegen die Algo-Profile; andere Quellen werden
+derzeit übersprungen. **Phase C**: Der Marktbeobachter
 liefert den täglichen Marktkontext aus deinem MetaTrader. **Phase D**:
 Der Melder bringt Alerts und den Tagesdigest ins Postfach. **Phase E**:
 Der Chefermittler schreibt den Wochen-Lagebericht, und der Dirigent
@@ -367,10 +368,15 @@ komplett autonome Monat läuft damit an; nachvollziehbar bleibt alles
   kooperativ beim nächsten Tick (max. ~30 s). Der Status zeigt
   Herzschlag und PID.
 - **Budget und Takt:** Tages-/Monatsbudget (Standard 500.000 / 5.000.000
-  Token — nur Agenten-Modellaufrufe; reguläre Scan-Läufe zählen auf ihr
-  eigenes Lauf-Budget) und die tägliche Startzeit (Standard 06:30).
+  Token — Rollen und autonome Scan-Aufrufe gemeinsam; manuelle GUI-Scans
+  behalten ihr eigenes Lauf-Budget) und die tägliche Startzeit (Standard 06:30).
+  Jeder HTTP-Versuch reserviert sein Budget atomar in SQLite. Auch Retries
+  zählen; bei Transportfehlern mit unbekannten Kosten wird konservativ die
+  Reservierung berechnet. Nach einem Absturz bleiben offene Reservierungen
+  für ihre Tages-/Monatsperiode bestehen.
   Wochenende ruht.
-- **Rollen:** je Rolle aktiv/aus, Modell (Standard **GLM-5.3** je Rolle;
+- **Rollen:** je Rolle aktiv/aus, Modell (Standard **GLM-5.3-Flash** für
+  Dirigent/Melder, **GLM-5.3** für die übrigen Rollen;
   Flash wählbar, Freitext für OpenAI-kompatible Modelle) und
   Token-Limit je Aufruf.
 - **Rollen-Prompts:** sechs Vorlagen (`config/prompts/agenten/`), editierbar
@@ -381,7 +387,9 @@ komplett autonome Monat läuft damit an; nachvollziehbar bleibt alles
 - **Live:** Daemon-Status, die fünf Rollen mit Phasen-Badge, letzte Läufe.
 - **Protokoll:** jeder Schritt chronologisch (Filter nach Rolle und Tag);
   LLM-Schritte öffnen den **vollständig gefüllten Prompt** und die
-  **vollständige Antwort** — nichts wird gekürzt. Dieses lückenlose
+  **vollständige Antwort**. Zusätzliche `llm_http_versuch`-Schritte erhalten
+  auch verworfene Retryantworten; das Budgetjournal enthält jeden HTTP-Versuch.
+  Dieses
   Protokoll ersetzt den bewusst abgelehnten Trockenmodus.
 - **Dossiers (Phase B):** je Signal das versionierte **Algo-Profil**
   (aus Tiefenanalyse/Gesamtbericht destilliert, mit nummerierten

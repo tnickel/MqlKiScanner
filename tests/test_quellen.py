@@ -773,7 +773,7 @@ def test_boese_version_bleibt_im_quellen_verzeichnis(monkeypatch):
     data/quellen/<kuerzel>/ herausführen (Path-Traversal)."""
     from mqlkiscanner import ingest as _ing
     quelle = _quelle("pelik", "http://pelican:8090")
-    boese = "..\..\..\pwned"
+    boese = r"..\..\..\pwned"
     gesichert = _ing._version_sicher(boese)
     assert "\\" not in gesichert and "/" not in gesichert and "." not in gesichert
     pfad, _ = _ing.hole_trades(quelle, 12345, boese, client=FakeClient(trades=MINI_CSV))

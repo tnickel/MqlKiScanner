@@ -64,13 +64,14 @@ def test_existing_portfolio_migration_preserves_history_and_latest_lookup(monkey
 
 
 def test_pipeline_portfolio_saves_with_enforced_foreign_keys(monkeypatch):
+    monkeypatch.setattr(pipeline, 'refresh_report_verdict', lambda *a: None)
     enforce_foreign_keys(monkeypatch)
     db.init_db()
     db.upsert_signal(123)
     pipe = pipeline.ScanPipeline()
     pipe.llm = SimpleNamespace(has_key=True, usage=SimpleNamespace(total_tokens=10),
-                               chat=Mock(return_value="Portfolio ohne Elternsignal"))
-    result = pipeline.ScanResult(id=123, forensik_vorhanden=True, ampel="🟢")
+                               chat=Mock(return_value="- [mql5:123] Alpha — 100 % — Kern"))
+    result = pipeline.ScanResult(id=123, name='Alpha', forensik_vorhanden=True, ampel="🟢")
     summary = pipe.run_portfolio([result], lambda _: None)
     assert summary["storage_error"] == summary["reason"] == ""
     assert db.get_latest_analysis(None, "portfolio")["text"] == summary["text"]

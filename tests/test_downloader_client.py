@@ -248,7 +248,7 @@ def test_fetch_history_legt_punkte_ab_und_ignoriert_404(monkeypatch):
 def test_fetch_reports_spiegelt_pdf_und_ueberspringt_unveraenderte(monkeypatch):
     db.init_db()
     fake = _FakeClient(reports={
-        "mql5": [{"name": "testreport_77.pdf", "sizeBytes": 12,
+        "mql5": [{"name": "testreport_77.pdf", "sizeBytes": len(b'%PDF-1.4 fake'),
                   "lastModified": "2026-09-20T10:00:00"}],
     })
     _quelle_an()

@@ -104,11 +104,13 @@ def test_netto_inkl_gebuehren_kapitalfluesse_als_basisgrenze(tmp_path):
     assert eff["netto_gesamt_usd"] == 95
     assert eff["endkapital_virtuell_usd"] == 1095
     assert eff["kapitalfluesse_nach_start"] == 1
-    # TWR seit Copilot-Review 05.10. abends (Hoch 1): Der Zaehler rechnet
-    # auf der realen Kurve — Fluss ist Nenner, kein Gewinn (kein "andere
-    # Bezugsbasis"-Vorbehalt mehr, Zaehler und Nenner sind konsistent).
-    assert "TWR auf der realen Kontokurve" in eff["basis_hinweis"]
-    assert eff["rendite_basis"] == "twr_reale_kurve_monatsverkettung"
+    # Die Position ist am Flow offen: Ihre Equity ist nicht die realisierte
+    # Balance. Kosten bleiben sichtbar, unbelegte Equity-TWR wird gesperrt.
+    assert "Equity unmittelbar vor" in eff["basis_hinweis"]
+    assert eff["rendite_basis"] == "preflow_equity_unbelegt"
+    assert eff["effizienz_status"] == "kapitalfluss_equity_unbelegt"
+    assert eff["cagr_jahr_pct"] is None
+    assert eff["retdd_jahr"] is None
 
 
 @pytest.mark.parametrize("profit", [-1000, -1100])

@@ -23,6 +23,16 @@ Gesamterfolg ausgegeben. Reine Scope-/Top-N-Hinweise bleiben `fertig`.
 Aeltere Clients ohne diese optionalen Felder bleiben kompatibel; fuer den
 neuen Teilfehlernachweis muss der aktualisierte Pelican-Build laufen.
 
+**Gesamtreview-Korrektur 16.10.2026:** Die aktualisierten Builds aller fünf
+Quellen melden Tradelistenfehler und Abbruch strukturiert im Ergebnisobjekt.
+Der Scanner vergleicht eine gemeldete Job-ID mit der beim Start erhaltenen
+ID; ein fremder Job gilt nicht als Erfolg des angeforderten Updates.
+RoboForex, Vantage und Zulu aktualisieren auch bereits bekannte Historien;
+eine passende SHA beweist nur lokale Integrität. Pelican erneuert die für
+seine implizite DD-Kapitalbasis nötigen Stats vor einem Trade-Delta.
+Zeitlich oder fachlich unbelegte DD-Basen liefern keinen konkreten Null-DD.
+Diese Verträge gelten erst nach Neubau und Neustart der geänderten Clients.
+
 ## 1. Problem und Ziel
 
 Der SignalKiScanner startet seinen Workflow (Full-Scan/Teilscan) mit dem

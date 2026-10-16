@@ -85,10 +85,9 @@ def _trading_dd_for_risk(trading_dd: dict | None) -> float:
     """Risiko-%: max. relativer DD, Fallback dd_pct. 0.0 ist ein gueltiger Wert."""
     if not trading_dd:
         return 0.0
-    if trading_dd.get("dd_pct_max_rel") is not None:
-        return float(trading_dd["dd_pct_max_rel"])
-    if trading_dd.get("dd_pct") is not None:
-        return float(trading_dd["dd_pct"])
+    for key in ("dd_pct_max_rel_raw", "dd_pct_max_rel", "dd_pct_raw", "dd_pct"):
+        if trading_dd.get(key) is not None:
+            return float(trading_dd[key])
     return 0.0
 
 
@@ -262,6 +261,10 @@ def evaluate(report: dict, platform: dict | None = None,
 def _forensics_complete(report: dict) -> bool:
     f = report.get("forensics", {})
     expo = f.get("exposure", {})
+    shock_pct = expo.get("shock_pct_max")
+    if (not isinstance(shock_pct, (int, float)) or isinstance(shock_pct, bool)
+            or not math.isfinite(shock_pct) or shock_pct < 0):
+        return False
     if (expo.get("capital_history_complete") is False
             or expo.get("contract_complete") is False
             or expo.get("conversion_complete") is False

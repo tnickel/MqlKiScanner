@@ -182,15 +182,16 @@ def test_bad_csv_marks_one_signal_and_continues_with_valid_input(live_scan, tmp_
 
 
 def test_portfolio_database_failure_remains_visible_and_archivable(monkeypatch):
+    monkeypatch.setattr(pipeline, 'refresh_report_verdict', lambda *a: None)
     db.init_db()
     pipe = pipeline.ScanPipeline()
     pipe.llm = SimpleNamespace(has_key=True, usage=SimpleNamespace(total_tokens=15),
-                               chat=Mock(return_value="Einzigartiger Portfolio-Bericht"))
+                               chat=Mock(return_value="Einzigartiger Portfolio-Bericht\n- [mql5:123] Alpha — 100 % — Kern"))
     monkeypatch.setattr(db, "store_analysis", Mock(side_effect=sqlite3.OperationalError("disk full")))
-    results = [pipeline.ScanResult(id=123, forensik_vorhanden=True, ampel="🟢")]
+    results = [pipeline.ScanResult(id=123,name='Alpha',forensik_vorhanden=True,ampel="🟢")]
     summary = pipe.run_portfolio(results, lambda _: None)
     assert summary["reason"] and summary["storage_error"]
-    assert summary["text"] == "Einzigartiger Portfolio-Bericht"
+    assert summary["text"].startswith("Einzigartiger Portfolio-Bericht")
     assert db.get_latest_analysis(0, "portfolio") is None
     path = pipe.save_run(results, {}, portfolio=summary)
     archived = json.loads(Path(path).read_text(encoding="utf-8"))

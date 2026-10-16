@@ -1,0 +1,13 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\PelicanTrading",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\gesamt_review_fixes_2026-10-16\\PelicanTrading_final",
+  "head": "dde77d705a670b37fc0f422504e566a857527893",
+  "overlay_sha256": {
+    "README.md": "807801d1ae0658420cabee274088ef1c240241e7ef34eb22d3515b5200abe521",
+    "src\\main\\java\\de\\pelicanmonitor\\PelicanMonitorApp.java": "e136ad72c3d16b1425fcfae9d723c235e57fbc5bda7877532a88d2db3251ba05",
+    "src\\main\\java\\de\\pelicanmonitor\\api\\PelicanClient.java": "9568c33688a279bd320c0c8208a38a1ae6ae170a5f491df11450a7ae3884bba7",
+    "src\\main\\java\\de\\pelicanmonitor\\rest\\RestApiServer.java": "c279c2e96281c74ceba42ed14ada4cdd6abb2cfe5c2c278d40bd244641d6f273",
+    "src\\test\\java\\de\\pelicanmonitor\\RestApiServerTest.java": "a46dce727542ed6f4aec886efb6a67013bf6730b81926815ec401f52f125c0a4",
+    "src\\test\\java\\de\\pelicanmonitor\\api\\CatalogueAndFreshStatsTest.java": "dbf9b036ea792ffacc7b218335ce87aac1ece3c44db02560d63e0789a32c52ef"
+  }
+}

@@ -1,0 +1,465 @@
+{
+  "vantage_missing_pnl_parsed" : 0.0,
+  "vantage_negative_dd_basis" : {
+    "realised_pnl" : -25,
+    "implied_basis" : -50,
+    "lifetime_return_pct" : 50,
+    "returned_dd" : 0.0
+  },
+  "vantage_endpoint_matrix" : [ {
+    "body" : "{\"status\":\"ok\",\"service\":\"VantageMonitor\",\"instance\":\"audit-vantage\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:16.6418561\",\"providers\":1,\"tokenRequired\":false}",
+    "path" : "/health",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"total\":1,\"count\":1,\"offset\":0,\"items\":[{\"signalId\":\"970101\",\"version\":\"vantage\",\"signalName\":\"Synthetic Vantage\",\"subscribers\":1,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":\"2026-10-16T15:36:16.401699300Z\",\"currencyCode\":\"USD\",\"weeks\":52,\"risk\":\"0\",\"rowColor\":null,\"url\":\"https://secure.vantagemarkets.com/copyTrading/visitor/discover/discoverDetail?strategyId=970101&mode=visitor\",\"links\":{\"history\":\"/api/v1/providers/970101/vantage/history\",\"trades\":\"/api/v1/providers/970101/vantage/trades\",\"tradesCsv\":\"/api/v1/providers/970101/vantage/trades.csv\",\"metrics\":\"/api/v1/providers/970101/vantage/metrics\",\"reports\":\"/api/v1/providers/970101/vantage/reports\"}}]}",
+    "path" : "/providers",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"total\":2,\"count\":2,\"offset\":0,\"items\":[{\"signalId\":\"970101\",\"version\":\"vantage\",\"signalName\":\"Synthetic Vantage\",\"subscribers\":1,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":\"2026-10-16T15:36:16.401699300Z\",\"currencyCode\":\"USD\",\"weeks\":52,\"risk\":\"0\",\"rowColor\":null,\"url\":\"https://secure.vantagemarkets.com/copyTrading/visitor/discover/discoverDetail?strategyId=970101&mode=visitor\",\"links\":{\"history\":\"/api/v1/providers/970101/vantage/history\",\"trades\":\"/api/v1/providers/970101/vantage/trades\",\"tradesCsv\":\"/api/v1/providers/970101/vantage/trades.csv\",\"metrics\":\"/api/v1/providers/970101/vantage/metrics\",\"reports\":\"/api/v1/providers/970101/vantage/reports\"}},{\"signalId\":\"970102\",\"version\":\"vantage\",\"signalName\":\"Synthetic zero\",\"subscribers\":0,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":null,\"currencyCode\":\"USD\",\"weeks\":0,\"risk\":\"0\",\"rowColor\":null,\"url\":\"https://secure.vantagemarkets.com/copyTrading/visitor/discover/discoverDetail?strategyId=970102&mode=visitor\",\"links\":{\"history\":\"/api/v1/providers/970102/vantage/history\",\"trades\":\"/api/v1/providers/970102/vantage/trades\",\"tradesCsv\":\"/api/v1/providers/970102/vantage/trades.csv\",\"metrics\":\"/api/v1/providers/970102/vantage/metrics\",\"reports\":\"/api/v1/providers/970102/vantage/reports\"}}]}",
+    "path" : "/providers?minSubscribers=0",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"total\":1,\"count\":0,\"offset\":1,\"items\":[]}",
+    "path" : "/providers?limit=1&offset=1",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"error\":\"Interner Fehler: fromIndex = -2147482649\"}",
+    "path" : "/providers?offset=2147483647",
+    "method" : "GET",
+    "status" : 500
+  }, {
+    "body" : "{\"count\":1,\"items\":[{\"signalId\":\"970101\",\"version\":\"vantage\",\"signalName\":\"Synthetic Vantage\",\"subscribers\":1,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":\"2026-10-16T15:36:16.401699300Z\",\"currencyCode\":\"USD\",\"weeks\":52,\"risk\":\"0\",\"rowColor\":null,\"url\":\"https://secure.vantagemarkets.com/copyTrading/visitor/discover/discoverDetail?strategyId=970101&mode=visitor\",\"links\":{\"history\":\"/api/v1/providers/970101/vantage/history\",\"trades\":\"/api/v1/providers/970101/vantage/trades\",\"tradesCsv\":\"/api/v1/providers/970101/vantage/trades.csv\",\"metrics\":\"/api/v1/providers/970101/vantage/metrics\",\"reports\":\"/api/v1/providers/970101/vantage/reports\"}}]}",
+    "path" : "/providers/970101",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"count\":0,\"points\":[]}",
+    "path" : "/providers/970101/vantage/history",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"signalId\":\"970101\",\"version\":\"vantage\",\"metrics\":{\"Subscribers\":1,\"EquityDrawdown\":10.0,\"MaxDDGraphic\":10.0,\"TradeEqDrawdownPct\":null,\"Average3MonthProfit\":5.0,\"Return30dPct\":5.0,\"ReturnAllPct\":0.0,\"WinRate\":0.0,\"ProfitFactor\":0.0,\"Weeks\":52,\"Months\":12,\"CopiersAumUsd\":0.0,\"Currency\":\"USD\",\"TradesStored\":1,\"TradesTotalAvailable\":1,\"TradesTruncated\":false,\"UsdNormalization\":{\"status\":\"ok\",\"sourceCurrency\":\"USD\",\"targetCurrency\":\"USD\",\"storedPnlCurrency\":\"USD\",\"method\":\"already_usd\",\"source\":\"USD/USC beim Import normalisiert\",\"maxWalkbackDays\":10,\"fieldsScaled\":[],\"note\":\"Tagesreferenzkurs, kein Ausfuehrungskurs; Preise und Lots bleiben unveraendert. USC ist bereits beim Import nach USD normalisiert.\",\"rates\":[{\"tradeCloseDate\":\"2026-09-21\",\"rateDate\":null,\"usdPerStoredPnlUnit\":1.0,\"source\":\"USD: keine Umrechnung\"}],\"priceNetSignDiagnostic\":{\"ignoredOrZero\":1,\"note\":\"Beschreibender Vorzeichenvergleich der Rohdaten, kein Fehlernachweis: Kommission/Swap koennen das Nettozeichen beeinflussen. Keine automatische Aenderung von Richtung, Preisen oder PnL.\",\"sameSign\":0,\"oppositeSign\":0,\"examples\":[]}}}}",
+    "path" : "/providers/970101/vantage/metrics",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"signalId\":\"970101\",\"version\":\"vantage\",\"header\":\"﻿Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\",\"count\":1,\"rows\":[[\"2026.09.21 12:00:00\",\"Sell\",\"0.1\",\"EURUSD\",\"1.1\",\"0.1\",\"2026.09.21 13:00:00\",\"1.2\",\"0\",\"\",\"0\"]],\"href\":\"/api/v1/providers/970101/vantage/trades.csv\",\"usdNormalization\":{\"status\":\"ok\",\"sourceCurrency\":\"USD\",\"targetCurrency\":\"USD\",\"storedPnlCurrency\":\"USD\",\"method\":\"already_usd\",\"source\":\"USD/USC beim Import normalisiert\",\"maxWalkbackDays\":10,\"fieldsScaled\":[],\"note\":\"Tagesreferenzkurs, kein Ausfuehrungskurs; Preise und Lots bleiben unveraendert. USC ist bereits beim Import nach USD normalisiert.\",\"rates\":[{\"tradeCloseDate\":\"2026-09-21\",\"rateDate\":null,\"usdPerStoredPnlUnit\":1.0,\"source\":\"USD: keine Umrechnung\"}],\"priceNetSignDiagnostic\":{\"ignoredOrZero\":1,\"note\":\"Beschreibender Vorzeichenvergleich der Rohdaten, kein Fehlernachweis: Kommission/Swap koennen das Nettozeichen beeinflussen. Keine automatische Aenderung von Richtung, Preisen oder PnL.\",\"sameSign\":0,\"oppositeSign\":0,\"examples\":[]}}}",
+    "path" : "/providers/970101/vantage/trades",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "﻿Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n2026.09.21 12:00:00;Sell;0.1;EURUSD;1.1;0.1;2026.09.21 13:00:00;1.2;0;;0\n",
+    "path" : "/providers/970101/vantage/trades.csv",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"count\":0,\"items\":[]}",
+    "path" : "/providers/970101/vantage/reports",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"error\":\"Unbekannte Version „wrong“ — dieser Dienst kennt nur „vantage“.\"}",
+    "path" : "/providers/970101/wrong/metrics",
+    "method" : "GET",
+    "status" : 404
+  }, {
+    "body" : "{\"error\":\"Signal 999999999 unbekannt.\"}",
+    "path" : "/providers/999999999/vantage/metrics",
+    "method" : "GET",
+    "status" : 404
+  }, {
+    "body" : "{\"jobId\":\"synthetic-job\",\"state\":\"running\",\"phase\":\"katalog\",\"done\":0,\"total\":1,\"message\":\"audit running\",\"startedAt\":\"2026-10-16T17:36:16\",\"finishedAt\":null,\"ergebnis\":{\"signaleGeliefert\":null,\"tradelistenNeu\":null,\"tradelistenAktualisiert\":null,\"katalogUebersprungen\":false,\"datenstand\":null,\"hinweise\":[]},\"error\":null}",
+    "path" : "/update/status",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"jobId\":\"synthetic-job\",\"status\":\"gestartet\",\"bereitsLaufend\":false}",
+    "path" : "/update",
+    "method" : "POST",
+    "status" : 202
+  }, {
+    "body" : "{\"error\":\"Ungültiger oder fehlender API-Token (X-API-Token, Bearer oder ?token=)\"}",
+    "path" : "token_probe",
+    "method" : "missing",
+    "status" : 401
+  }, {
+    "body" : "{\"status\":\"ok\",\"service\":\"VantageMonitor\",\"instance\":\"audit-vantage\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:16.8959757\",\"providers\":1,\"tokenRequired\":true}",
+    "path" : "token_probe",
+    "method" : "X-API-Token",
+    "status" : 200
+  }, {
+    "body" : "{\"status\":\"ok\",\"service\":\"VantageMonitor\",\"instance\":\"audit-vantage\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:16.8999759\",\"providers\":1,\"tokenRequired\":true}",
+    "path" : "token_probe",
+    "method" : "Bearer",
+    "status" : 200
+  }, {
+    "body" : "{\"status\":\"ok\",\"service\":\"VantageMonitor\",\"instance\":\"audit-vantage\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:16.9029594\",\"providers\":1,\"tokenRequired\":true}",
+    "path" : "token_probe",
+    "method" : "query",
+    "status" : 200
+  }, {
+    "body" : "",
+    "path" : "token_probe",
+    "method" : "OPTIONS",
+    "status" : 204
+  }, {
+    "body" : "{\"error\":\"Ungültiger oder fehlender API-Token (X-API-Token, Bearer oder ?token=)\"}",
+    "path" : "token_probe",
+    "method" : "POST",
+    "status" : 401
+  } ],
+  "vantage_repeated_cursor" : {
+    "requests" : [ "GET /stTradeApp/order/history-list/page?strategyId=970101&size=20", "GET /stTradeApp/order/history-list/page?strategyId=970101&size=20&lastId=cursor-1", "GET /stTradeApp/order/history-list/page?strategyId=970101&size=20&lastId=cursor-1", "GET /stTradeApp/order/positions/page?strategyId=970101&size=20" ],
+    "unique_trade_ids" : 1,
+    "reported_total" : 2,
+    "rows" : 3
+  },
+  "vantage_union_default_target" : {
+    "requests" : [ "GET /stTradeApp/strategy/discover/topLists/forWeb?accountId=&type=0&size=12", "GET /stTradeApp/strategy/discover/topLists/forWeb?accountId=&type=1&size=12", "GET /stTradeApp/strategy/discover/topLists/forWeb?accountId=&type=2&size=12", "GET /stTradeApp/strategy/discover/topLists/forWeb?accountId=&type=3&size=12", "GET /stTradeApp/strategy/discover/topLists/forWeb?accountId=&type=4&size=12", "POST /stTradeApp/strategy/filter-signal/forWeb?null overallSort=2", "POST /stTradeApp/strategy/filter-signal/forWeb?null overallSort=2" ],
+    "rows" : 200
+  },
+  "zulu_missing_pnl_validation" : {
+    "pnl" : 0.0,
+    "accepted" : true
+  },
+  "zulu_negative_dd_basis" : {
+    "realised_pnl" : -25,
+    "implied_basis" : -50,
+    "lifetime_return_pct" : 50,
+    "returned_dd" : 0.0
+  },
+  "zulumonitor_endpoint_matrix" : [ {
+    "body" : "{\"status\":\"ok\",\"service\":\"ZuluMonitor\",\"instance\":\"audit-zulu\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:16.9654116\",\"providers\":1,\"tokenRequired\":false}",
+    "path" : "/health",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"total\":1,\"count\":1,\"offset\":0,\"items\":[{\"signalId\":\"970201\",\"version\":\"zulu\",\"signalName\":\"Synthetic Zulu\",\"subscribers\":1,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":\"2026-10-16T15:36:16.951693400Z\",\"currencyCode\":\"USD\",\"weeks\":52,\"demo\":false,\"risk\":\"0\",\"rowColor\":null,\"url\":\"https://www.zulutrade.com/trader/970201\",\"links\":{\"history\":\"/api/v1/providers/970201/zulu/history\",\"trades\":\"/api/v1/providers/970201/zulu/trades\",\"tradesCsv\":\"/api/v1/providers/970201/zulu/trades.csv\",\"metrics\":\"/api/v1/providers/970201/zulu/metrics\",\"reports\":\"/api/v1/providers/970201/zulu/reports\"}}]}",
+    "path" : "/providers",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"total\":2,\"count\":2,\"offset\":0,\"items\":[{\"signalId\":\"970201\",\"version\":\"zulu\",\"signalName\":\"Synthetic Zulu\",\"subscribers\":1,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":\"2026-10-16T15:36:16.951693400Z\",\"currencyCode\":\"USD\",\"weeks\":52,\"demo\":false,\"risk\":\"0\",\"rowColor\":null,\"url\":\"https://www.zulutrade.com/trader/970201\",\"links\":{\"history\":\"/api/v1/providers/970201/zulu/history\",\"trades\":\"/api/v1/providers/970201/zulu/trades\",\"tradesCsv\":\"/api/v1/providers/970201/zulu/trades.csv\",\"metrics\":\"/api/v1/providers/970201/zulu/metrics\",\"reports\":\"/api/v1/providers/970201/zulu/reports\"}},{\"signalId\":\"970202\",\"version\":\"zulu\",\"signalName\":\"Synthetic Zulu\",\"subscribers\":0,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":null,\"currencyCode\":\"USD\",\"weeks\":52,\"demo\":false,\"risk\":\"0\",\"rowColor\":null,\"url\":\"https://www.zulutrade.com/trader/970202\",\"links\":{\"history\":\"/api/v1/providers/970202/zulu/history\",\"trades\":\"/api/v1/providers/970202/zulu/trades\",\"tradesCsv\":\"/api/v1/providers/970202/zulu/trades.csv\",\"metrics\":\"/api/v1/providers/970202/zulu/metrics\",\"reports\":\"/api/v1/providers/970202/zulu/reports\"}}]}",
+    "path" : "/providers?minSubscribers=0",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"total\":1,\"count\":0,\"offset\":1,\"items\":[]}",
+    "path" : "/providers?limit=1&offset=1",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"error\":\"Interner Fehler: fromIndex = -2147482649\"}",
+    "path" : "/providers?offset=2147483647",
+    "method" : "GET",
+    "status" : 500
+  }, {
+    "body" : "{\"count\":1,\"items\":[{\"signalId\":\"970201\",\"version\":\"zulu\",\"signalName\":\"Synthetic Zulu\",\"subscribers\":1,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":\"2026-10-16T15:36:16.951693400Z\",\"currencyCode\":\"USD\",\"weeks\":52,\"demo\":false,\"risk\":\"0\",\"rowColor\":null,\"url\":\"https://www.zulutrade.com/trader/970201\",\"links\":{\"history\":\"/api/v1/providers/970201/zulu/history\",\"trades\":\"/api/v1/providers/970201/zulu/trades\",\"tradesCsv\":\"/api/v1/providers/970201/zulu/trades.csv\",\"metrics\":\"/api/v1/providers/970201/zulu/metrics\",\"reports\":\"/api/v1/providers/970201/zulu/reports\"}}]}",
+    "path" : "/providers/970201",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"count\":0,\"points\":[]}",
+    "path" : "/providers/970201/zulu/history",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"signalId\":\"970201\",\"version\":\"zulu\",\"metrics\":{\"Subscribers\":1,\"EquityDrawdown\":10.0,\"MaxDDGraphic\":10.0,\"TradeEqDrawdownPct\":null,\"Average3MonthProfit\":4.166666666666667,\"Weeks\":52,\"RoiInceptionPct\":50.0,\"WinRate\":0.0,\"Trades\":1,\"ZuluRank\":0,\"Demo\":false,\"Currency\":\"USD\",\"TradesStored\":1,\"TradesTotalAvailable\":1,\"TradesTruncated\":false,\"TradesCompletenessNote\":\"Total aus Trader-Katalogsnapshot; kleinerer Cache kann gekappt oder aelter sein. Auch gleiche Anzahl beweist keine vollstaendige Historie.\",\"UsdNormalization\":{\"status\":\"ok\",\"sourceCurrency\":\"USD\",\"storedPnlCurrency\":\"USD\",\"targetCurrency\":\"USD\",\"method\":\"already_usd\",\"source\":\"USD/USC feste Einheit\",\"maxWalkbackDays\":10,\"fieldsScaled\":[],\"closeDateBasis\":\"UTC bei vorhandenem API-Instant; sonst Datum des Legacy-Zeitstempels\",\"note\":\"Tagesreferenzkurs, kein Ausfuehrungskurs. Preise, Lots und Rohcache bleiben unveraendert.\",\"rates\":[{\"tradeCloseDate\":\"2026-09-21\",\"rateDate\":null,\"usdPerStoredPnlUnit\":1.0,\"source\":\"USD: keine Umrechnung\"}]}}}",
+    "path" : "/providers/970201/zulu/metrics",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"signalId\":\"970201\",\"version\":\"zulu\",\"header\":\"﻿Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\",\"count\":1,\"rows\":[[\"2026.09.21 12:00:00\",\"Sell\",\"0.1\",\"EURUSD\",\"1.1\",\"0.1\",\"2026.09.21 13:00:00\",\"1.2\",\"0\",\"\",\"0\"]],\"href\":\"/api/v1/providers/970201/zulu/trades.csv\",\"usdNormalization\":{\"status\":\"ok\",\"sourceCurrency\":\"USD\",\"storedPnlCurrency\":\"USD\",\"targetCurrency\":\"USD\",\"method\":\"already_usd\",\"source\":\"USD/USC feste Einheit\",\"maxWalkbackDays\":10,\"fieldsScaled\":[],\"closeDateBasis\":\"UTC bei vorhandenem API-Instant; sonst Datum des Legacy-Zeitstempels\",\"note\":\"Tagesreferenzkurs, kein Ausfuehrungskurs. Preise, Lots und Rohcache bleiben unveraendert.\",\"rates\":[{\"tradeCloseDate\":\"2026-09-21\",\"rateDate\":null,\"usdPerStoredPnlUnit\":1.0,\"source\":\"USD: keine Umrechnung\"}]}}",
+    "path" : "/providers/970201/zulu/trades",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "﻿Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n2026.09.21 12:00:00;Sell;0.1;EURUSD;1.1;0.1;2026.09.21 13:00:00;1.2;0;;0\n",
+    "path" : "/providers/970201/zulu/trades.csv",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"count\":0,\"items\":[]}",
+    "path" : "/providers/970201/zulu/reports",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"error\":\"Unbekannte Version „wrong“ — dieser Dienst kennt nur „zulu“.\"}",
+    "path" : "/providers/970201/wrong/metrics",
+    "method" : "GET",
+    "status" : 404
+  }, {
+    "body" : "{\"error\":\"Trader 999999999 unbekannt.\"}",
+    "path" : "/providers/999999999/zulu/metrics",
+    "method" : "GET",
+    "status" : 404
+  }, {
+    "body" : "{\"jobId\":\"synthetic-job\",\"state\":\"running\",\"phase\":\"katalog\",\"done\":0,\"total\":1,\"message\":\"audit running\",\"startedAt\":\"2026-10-16T17:36:16\",\"finishedAt\":null,\"ergebnis\":{\"signaleGeliefert\":null,\"tradelistenNeu\":null,\"tradelistenAktualisiert\":null,\"katalogUebersprungen\":false,\"datenstand\":null,\"hinweise\":[]},\"error\":null}",
+    "path" : "/update/status",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"jobId\":\"synthetic-job\",\"status\":\"gestartet\",\"bereitsLaufend\":false}",
+    "path" : "/update",
+    "method" : "POST",
+    "status" : 202
+  }, {
+    "body" : "{\"error\":\"Ungültiger oder fehlender API-Token (X-API-Token, Bearer oder ?token=)\"}",
+    "path" : "token_probe",
+    "method" : "missing",
+    "status" : 401
+  }, {
+    "body" : "{\"status\":\"ok\",\"service\":\"ZuluMonitor\",\"instance\":\"audit-zulu\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:17.0484496\",\"providers\":1,\"tokenRequired\":true}",
+    "path" : "token_probe",
+    "method" : "X-API-Token",
+    "status" : 200
+  }, {
+    "body" : "{\"status\":\"ok\",\"service\":\"ZuluMonitor\",\"instance\":\"audit-zulu\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:17.0514493\",\"providers\":1,\"tokenRequired\":true}",
+    "path" : "token_probe",
+    "method" : "Bearer",
+    "status" : 200
+  }, {
+    "body" : "{\"status\":\"ok\",\"service\":\"ZuluMonitor\",\"instance\":\"audit-zulu\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:17.0554497\",\"providers\":1,\"tokenRequired\":true}",
+    "path" : "token_probe",
+    "method" : "query",
+    "status" : 200
+  }, {
+    "body" : "",
+    "path" : "token_probe",
+    "method" : "OPTIONS",
+    "status" : 204
+  }, {
+    "body" : "{\"error\":\"Ungültiger oder fehlender API-Token (X-API-Token, Bearer oder ?token=)\"}",
+    "path" : "token_probe",
+    "method" : "POST",
+    "status" : 401
+  } ],
+  "zulu_repeated_pages" : {
+    "unique_trade_ids" : 1,
+    "rows" : 3
+  },
+  "pelican_cached_stats_fresh_trades_dd" : {
+    "aligned_dd" : 4.0,
+    "stale_return_pct" : 10,
+    "fresh_return_pct" : 20,
+    "stale_dd" : 2.2222222222222223,
+    "final_realised_pnl" : 200
+  },
+  "PelicanTrading_endpoint_matrix" : [ {
+    "body" : "{\"status\":\"ok\",\"service\":\"PelicanTrading\",\"instance\":\"audit-pelican\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:17.0985554\",\"providers\":1,\"tokenRequired\":false}",
+    "path" : "/health",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"total\":1,\"count\":1,\"offset\":0,\"items\":[{\"signalId\":\"970301\",\"version\":\"pelican\",\"signalName\":\"Synthetic Pelican\",\"subscribers\":1,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":\"2026-10-16T15:36:17.078962500Z\",\"currencyCode\":\"USD\",\"currencyNote\":\"\",\"weeks\":55,\"risk\":\"\",\"rowColor\":null,\"url\":\"https://pelican.copy-trade.io/strategy/970301\",\"links\":{\"history\":\"/api/v1/providers/970301/pelican/history\",\"trades\":\"/api/v1/providers/970301/pelican/trades\",\"tradesCsv\":\"/api/v1/providers/970301/pelican/trades.csv\",\"metrics\":\"/api/v1/providers/970301/pelican/metrics\",\"reports\":\"/api/v1/providers/970301/pelican/reports\"}}]}",
+    "path" : "/providers",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"total\":2,\"count\":2,\"offset\":0,\"items\":[{\"signalId\":\"970301\",\"version\":\"pelican\",\"signalName\":\"Synthetic Pelican\",\"subscribers\":1,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":\"2026-10-16T15:36:17.078962500Z\",\"currencyCode\":\"USD\",\"currencyNote\":\"\",\"weeks\":55,\"risk\":\"\",\"rowColor\":null,\"url\":\"https://pelican.copy-trade.io/strategy/970301\",\"links\":{\"history\":\"/api/v1/providers/970301/pelican/history\",\"trades\":\"/api/v1/providers/970301/pelican/trades\",\"tradesCsv\":\"/api/v1/providers/970301/pelican/trades.csv\",\"metrics\":\"/api/v1/providers/970301/pelican/metrics\",\"reports\":\"/api/v1/providers/970301/pelican/reports\"}},{\"signalId\":\"970302\",\"version\":\"pelican\",\"signalName\":\"Synthetic zero\",\"subscribers\":0,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":null,\"currencyCode\":\"USD\",\"currencyNote\":\"\",\"weeks\":null,\"risk\":\"\",\"rowColor\":null,\"url\":\"https://pelican.copy-trade.io/strategy/970302\",\"links\":{\"history\":\"/api/v1/providers/970302/pelican/history\",\"trades\":\"/api/v1/providers/970302/pelican/trades\",\"tradesCsv\":\"/api/v1/providers/970302/pelican/trades.csv\",\"metrics\":\"/api/v1/providers/970302/pelican/metrics\",\"reports\":\"/api/v1/providers/970302/pelican/reports\"}}]}",
+    "path" : "/providers?minSubscribers=0",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"total\":1,\"count\":0,\"offset\":1,\"items\":[]}",
+    "path" : "/providers?limit=1&offset=1",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"error\":\"Interner Fehler: fromIndex = -2147482649\"}",
+    "path" : "/providers?offset=2147483647",
+    "method" : "GET",
+    "status" : 500
+  }, {
+    "body" : "{\"count\":1,\"items\":[{\"signalId\":\"970301\",\"version\":\"pelican\",\"signalName\":\"Synthetic Pelican\",\"subscribers\":1,\"latestChange\":null,\"weekChange\":null,\"monthChange\":null,\"lastUpdated\":\"2026-10-16T15:36:17.078962500Z\",\"currencyCode\":\"USD\",\"currencyNote\":\"\",\"weeks\":55,\"risk\":\"\",\"rowColor\":null,\"url\":\"https://pelican.copy-trade.io/strategy/970301\",\"links\":{\"history\":\"/api/v1/providers/970301/pelican/history\",\"trades\":\"/api/v1/providers/970301/pelican/trades\",\"tradesCsv\":\"/api/v1/providers/970301/pelican/trades.csv\",\"metrics\":\"/api/v1/providers/970301/pelican/metrics\",\"reports\":\"/api/v1/providers/970301/pelican/reports\"}}]}",
+    "path" : "/providers/970301",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"count\":0,\"points\":[]}",
+    "path" : "/providers/970301/pelican/history",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"signalId\":\"970301\",\"version\":\"pelican\",\"metrics\":{\"Balance\":null,\"Equity\":null,\"Subscribers\":1,\"EquityDrawdown\":null,\"MaxDDGraphic\":null,\"TradeEqDrawdownPct\":null,\"Average3MonthProfit\":null,\"Trades\":1,\"Wins\":0,\"Losses\":0,\"MinTradesPerMonth\":null,\"MaxTradesPerMonth\":null,\"MarketsCount\":null,\"TopMarkets\":\"\",\"CopiersAum\":null,\"CopiersProfitYear\":null,\"CopiersProfitMonth\":null,\"Leverage\":null,\"Weeks\":55,\"Broker\":\"audit\",\"Fee\":0.0,\"Currency\":\"USD\",\"CurrencyRateScope\":\"snapshot_metrics_only\",\"CurrencyRateOfflineFallback\":false,\"CurrencyRateRetrievedAt\":null,\"TradesStored\":1,\"CompletenessNote\":\"Trades/Wins/Losses sind Plattformaggregate, TradesStored zaehlt verifizierte lokale CSV-Zeilen. Unterschiede beweisen weder Trunkierung noch fehlende Trades; auch Gleichheit beweist keine vollstaendige Lebenszeithistorie.\",\"CurrencyRateDate\":null,\"UsdNormalization\":{\"status\":\"ok\",\"providerCurrency\":\"USD\",\"sourceCurrencies\":[\"USD\"],\"sourceCurrency\":\"USD\",\"targetCurrency\":\"USD\",\"method\":\"fixed_usd_usc\",\"dateBasis\":\"exported_source_close_date\",\"source\":\"USD unchanged; USC fixed /100\",\"maxWalkbackDays\":10,\"fieldsScaled\":[\"RealisedProfit\"],\"tradesStored\":1,\"note\":\"Je Trade CurrencyCode, sonst Providerwaehrung; USD unveraendert, USC genau einmal /100. EZB-Tagesreferenz, kein Ausfuehrungskurs. Preise und Lots unveraendert. Gespeicherte Anzahl beweist keine vollstaendige API-Lebenszeithistorie.\",\"rates\":[{\"sourceCurrency\":\"USD\",\"tradeCloseDate\":\"2026-09-21\",\"rateDate\":null,\"usdPerStoredPnlUnit\":1.0,\"source\":\"USD: keine Umrechnung\"}]},\"InitialDepositVirtual\":10000.0,\"InitialDepositVirtualNote\":\"Annahme (10000 USD), kein Plattformwert — InitialDeposit bewusst nicht gesetzt\"}}",
+    "path" : "/providers/970301/pelican/metrics",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"signalId\":\"970301\",\"version\":\"pelican\",\"header\":\"﻿Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\",\"count\":1,\"rows\":[[\"2026.09.21 10:00:00\",\"Buy\",\"0.1\",\"EURUSD\",\"1.1\",\"0.1\",\"2026.09.21 11:00:00\",\"1.2\",\"0\",\"\",\"-25\"]],\"href\":\"/api/v1/providers/970301/pelican/trades.csv\"}",
+    "path" : "/providers/970301/pelican/trades",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "﻿Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n2026.09.21 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.09.21 11:00:00;1.2;0;;-25\n",
+    "path" : "/providers/970301/pelican/trades.csv",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"signalId\":970301,\"version\":\"pelican\",\"count\":1,\"items\":[{\"name\":\"bericht_970301_audit.md\",\"sizeBytes\":22,\"lastModified\":\"2026-10-16T15:36:17.083550600Z\",\"href\":\"/api/v1/providers/970301/pelican/reports/bericht_970301_audit.md\"}]}",
+    "path" : "/providers/970301/pelican/reports",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"error\":\"Unbekannte Version „wrong“ — dieser Dienst kennt nur „pelican“.\"}",
+    "path" : "/providers/970301/wrong/metrics",
+    "method" : "GET",
+    "status" : 404
+  }, {
+    "body" : "{\"error\":\"Provider 999999999 unbekannt.\"}",
+    "path" : "/providers/999999999/pelican/metrics",
+    "method" : "GET",
+    "status" : 404
+  }, {
+    "body" : "{\"jobId\":\"synthetic-job\",\"state\":\"running\",\"phase\":\"katalog\",\"done\":0,\"total\":1,\"message\":\"audit running\",\"startedAt\":\"2026-10-16T17:36:17\",\"finishedAt\":null,\"ergebnis\":{\"signaleGeliefert\":null,\"tradelistenNeu\":null,\"tradelistenAktualisiert\":null,\"tradelistenFehler\":0,\"tradelistenAbgebrochen\":false,\"katalogUebersprungen\":false,\"datenstand\":null,\"hinweise\":[]},\"error\":null}",
+    "path" : "/update/status",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"jobId\":\"synthetic-job\",\"status\":\"gestartet\",\"bereitsLaufend\":false}",
+    "path" : "/update",
+    "method" : "POST",
+    "status" : 202
+  }, {
+    "body" : "Synthetic audit report",
+    "path" : "/reports/{whitelisted_name}",
+    "method" : "GET",
+    "status" : 200
+  }, {
+    "body" : "{\"error\":\"Unbekannter Pfad.\"}",
+    "path" : "/reports/{encoded_traversal}",
+    "method" : "GET",
+    "status" : 404
+  }, {
+    "body" : "{\"error\":\"Ungültiger oder fehlender API-Token (X-API-Token, Bearer oder ?token=)\"}",
+    "path" : "token_probe",
+    "method" : "missing",
+    "status" : 401
+  }, {
+    "body" : "{\"status\":\"ok\",\"service\":\"PelicanTrading\",\"instance\":\"audit-pelican\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:17.2103527\",\"providers\":1,\"tokenRequired\":true}",
+    "path" : "token_probe",
+    "method" : "X-API-Token",
+    "status" : 200
+  }, {
+    "body" : "{\"status\":\"ok\",\"service\":\"PelicanTrading\",\"instance\":\"audit-pelican\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:17.2133523\",\"providers\":1,\"tokenRequired\":true}",
+    "path" : "token_probe",
+    "method" : "Bearer",
+    "status" : 200
+  }, {
+    "body" : "{\"status\":\"ok\",\"service\":\"PelicanTrading\",\"instance\":\"audit-pelican\",\"apiVersion\":\"v1\",\"uptimeSeconds\":0,\"serverTime\":\"2026-10-16T17:36:17.2173519\",\"providers\":1,\"tokenRequired\":true}",
+    "path" : "token_probe",
+    "method" : "query",
+    "status" : 200
+  }, {
+    "body" : "",
+    "path" : "token_probe",
+    "method" : "OPTIONS",
+    "status" : 204
+  }, {
+    "body" : "{\"error\":\"Ungültiger oder fehlender API-Token (X-API-Token, Bearer oder ?token=)\"}",
+    "path" : "token_probe",
+    "method" : "POST",
+    "status" : 401
+  } ],
+  "pelican_nonempty_wrong_schema_catalogue" : {
+    "parsed_rows" : 0,
+    "exception" : false,
+    "received_rows" : 1
+  },
+  "pelican_missing_pnl_export" : {
+    "status" : 404,
+    "body" : "{\"error\":\"Tradeexport nicht freigegeben: Tradeliste enthaelt unvollstaendige/ungueltige Positionen; erneut laden.\"}"
+  },
+  "vantage_runner_failed_download" : {
+    "attempts" : 1,
+    "status" : {
+      "jobId" : "audit-failure",
+      "state" : "done",
+      "phase" : "tradelisten",
+      "done" : 1,
+      "total" : 1,
+      "message" : "Tradelisten: 0 neu, 0 unverändert, 0 übersprungen, 1 Fehler",
+      "startedAt" : "2026-10-16T17:36:17",
+      "finishedAt" : "2026-10-16T17:36:17",
+      "ergebnis" : {
+        "signaleGeliefert" : 1,
+        "tradelistenNeu" : 0,
+        "tradelistenAktualisiert" : 0,
+        "katalogUebersprungen" : false,
+        "datenstand" : "2026-10-16T17:36:17",
+        "hinweise" : [ "1 Tradelisten-Downloads fehlgeschlagen (Details: data/vantagemonitor.log)" ]
+      },
+      "error" : null
+    }
+  },
+  "vantage_runner_old_verified_cache_skip" : {
+    "attempts" : 0,
+    "status" : {
+      "jobId" : "audit-skip",
+      "state" : "done",
+      "phase" : "tradelisten",
+      "done" : 1,
+      "total" : 1,
+      "message" : "Tradelisten: 0 neu, 1 übersprungen, 0 Fehler",
+      "startedAt" : "2026-10-16T17:36:17",
+      "finishedAt" : "2026-10-16T17:36:17",
+      "ergebnis" : {
+        "signaleGeliefert" : 1,
+        "tradelistenNeu" : 0,
+        "tradelistenAktualisiert" : 0,
+        "katalogUebersprungen" : false,
+        "datenstand" : "2026-10-16T17:36:17",
+        "hinweise" : [ ]
+      },
+      "error" : null
+    }
+  },
+  "zulumonitor_runner_failed_download" : {
+    "attempts" : 1,
+    "status" : {
+      "jobId" : "audit-failure",
+      "state" : "done",
+      "phase" : "tradelisten",
+      "done" : 1,
+      "total" : 1,
+      "message" : "Tradelisten: 0 neu, 0 übersprungen, 1 Fehler",
+      "startedAt" : "2026-10-16T17:36:17",
+      "finishedAt" : "2026-10-16T17:36:17",
+      "ergebnis" : {
+        "signaleGeliefert" : 1,
+        "tradelistenNeu" : 0,
+        "tradelistenAktualisiert" : 0,
+        "katalogUebersprungen" : false,
+        "datenstand" : "2026-10-16T17:36:17",
+        "hinweise" : [ "1 Tradelisten-Downloads fehlgeschlagen (Details: data/zulumonitor.log)" ]
+      },
+      "error" : null
+    }
+  },
+  "zulumonitor_runner_old_verified_cache_skip" : {
+    "attempts" : 0,
+    "status" : {
+      "jobId" : "audit-skip",
+      "state" : "done",
+      "phase" : "tradelisten",
+      "done" : 1,
+      "total" : 1,
+      "message" : "Tradelisten: 0 neu, 1 übersprungen, 0 Fehler",
+      "startedAt" : "2026-10-16T17:36:17",
+      "finishedAt" : "2026-10-16T17:36:17",
+      "ergebnis" : {
+        "signaleGeliefert" : 1,
+        "tradelistenNeu" : 0,
+        "tradelistenAktualisiert" : 0,
+        "katalogUebersprungen" : false,
+        "datenstand" : "2026-10-16T17:36:17",
+        "hinweise" : [ ]
+      },
+      "error" : null
+    }
+  }
+}

@@ -1,0 +1,2 @@
+﻿Login;SourceId;Name;Strategie;Plattform;YieldProzent;ProfitUsd;MaxDrawdownProzent;Deals;BalanceUsd;Abonnenten;NeueAbonnenten;Hebel;MinEinlageUsd;Startdatum;KommissionProzent;Wochen;MaxDrawdownGesamtProzent;YieldZeitraumMonate
+101;synthetic;Synthetic;;mt5;0.0;0.0;0.0;0;1000.0;2;0;0;0.0;;0.0;0;;0

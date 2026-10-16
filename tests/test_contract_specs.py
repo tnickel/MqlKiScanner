@@ -309,9 +309,11 @@ def test_robo_monitor_mql4_und_mql5_version_fallen_auf_roboforex_zurueck():
     nicht. 'mql5' allein bleibt mehrdeutig (auch MqlDownloader-Direkt) —
     erst das Quellen-Kuerzel entscheidet."""
     from mqlkiscanner import ingest
-    # version mql4 ist eindeutig RoboMonitor -> RoboForex
+    # mql4 ist eine Plattformversion, kein Brokerbeweis (auch MqlDownloader).
     assert ingest.metrics_zu_stats(
-        {"metrics": {}, "version": "mql4"})["broker_server"] == "roboforex"
+        {"metrics": {}, "version": "mql4"})["broker_server"] is None
+    assert ingest.metrics_zu_stats(
+        {"metrics": {}, "version": "mql4"}, quelle_kuerzel='robo')["broker_server"] == 'roboforex'
     # version mql5 bleibt ohne Kuerzel unentschieden (MqlDownloader-Direkt!)
     assert ingest.metrics_zu_stats(
         {"metrics": {}, "version": "mql5"})["broker_server"] is None

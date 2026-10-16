@@ -79,7 +79,8 @@ def _llm_entscheidung(lage: dict, settings: dict, lauf_id: int,
         return None
     modell = settings.get("agenten_dirigent_modell", rollen.STANDARD_MODELL)
     max_tokens = int(settings.get("agenten_dirigent_max_tokens", 2048))
-    budget_rest = max(0, lage["tagesbudget_tokens"] - lage["tokens_heute"])
+    budget_rest = max(0, min(lage["tagesbudget_tokens"] - lage["tokens_heute"],
+                             lage['monatsbudget_tokens'] - lage['tokens_monat']))
     client = llm_client.GlmClient(
         model_stufe1=settings.get("model_stufe1", config.MODEL_STUFE1),
         model_stufe2=settings.get("model_stufe2", config.MODEL_STUFE2),
@@ -92,10 +93,12 @@ def _llm_entscheidung(lage: dict, settings: dict, lauf_id: int,
             detail={"grund": "Kein GLM-Key gesetzt — LLM-Entscheidung entfällt.",
                     "modell": modell})
         return None
+    from . import budget
+    budget.attach(client, settings, lauf_id, 'dirigent')
     if budget_rest <= 0:
         journal.schritt_protokollieren(
             lauf_id, "dirigent", "llm_entscheidung", status="skipped",
-            detail={"grund": "Tagesbudget erschöpft.", "modell": modell})
+            detail={"grund": "Tages- oder Monatsbudget erschöpft.", "modell": modell})
         return None
     zeitplan = {"phase": "A", "takt_dirigent": lage["start_zeit"],
                 "erkenntnisse": "Phase A: nur Planung und Protokoll"}
@@ -113,6 +116,7 @@ def _llm_entscheidung(lage: dict, settings: dict, lauf_id: int,
         journal.schritt_protokollieren(
             lauf_id, "dirigent", "llm_entscheidung", status="fehler",
             prompt=prompt, modell=modell, tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
+            budget_ledger=bool(meta.get("agent_budget_ledger")),
             dauer_s=round(_time.monotonic() - beginn, 1),
             detail={"fehler": str(exc)})
         log(f"  Dirigent-LLM-Entscheidung fehlgeschlagen: {exc}")
@@ -122,6 +126,7 @@ def _llm_entscheidung(lage: dict, settings: dict, lauf_id: int,
         lauf_id, "dirigent", "llm_entscheidung", prompt=prompt, antwort=antwort,
         modell=modell, tokens=meta.get("total_tokens",
                                        client.usage.total_tokens) or 0,
+        budget_ledger=bool(meta.get("agent_budget_ledger")),
         dauer_s=meta.get("dauer_s", round(_time.monotonic() - beginn, 1)),
         detail={"filter": entscheidung})
     return entscheidung
@@ -206,6 +211,8 @@ def tageslauf(quelle: str = "daemon", log=print) -> dict:
         resultat = "Wochenende: Forex-Märkte geschlossen — System im Ruhezustand."
     elif lage.get("tokens_heute", 0) >= lage.get("tagesbudget_tokens", 500_000):
         resultat = "Tagesbudget erreicht: Modell-Aufrufe bis morgen pausiert."
+    elif lage.get('tokens_monat',0) >= lage.get('monatsbudget_tokens',5_000_000):
+        resultat = 'Monatsbudget erreicht: Modell-Aufrufe bis zum nächsten Monat pausiert.'
     else:
         resultat = "Regelbetrieb freigegeben: Keine offenen Aufgaben, alle Agentenrollen einsatzbereit."
 

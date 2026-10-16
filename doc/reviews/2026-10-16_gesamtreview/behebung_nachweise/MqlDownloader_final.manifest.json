@@ -1,0 +1,8 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\MqlDownloader",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\dependabot_mql_2026-10-16\\MqlDownloader_final",
+  "head": "eedd328dafcc1ccd678ca63e4a3da8c0d98e2824",
+  "overlay_sha256": {
+    "pom.xml": "dda0cd9588187ae4d5f768d0c38ee2a8fbf10a4221a6e8f8c6b07236bb268782"
+  }
+}

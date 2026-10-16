@@ -669,5 +669,5 @@ def studie(parsed, kurse, startkapital: float,
         "positionsbasis": "geschlossene Exportpositionen; aktuell offene fehlen",
         "konto_studie": konto_diagnostik(
             parsed, punkte, bars_je_symbol, offsets, basis, broker=broker,
-            zeitbasis=zeitbasis),
+            zeitbasis=zeitbasis, punkte_enthalten_kapitalfluesse=True),
     }

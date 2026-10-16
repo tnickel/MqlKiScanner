@@ -859,6 +859,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             fx = _usd_faktor(res["quote"], tag, punkt, s)
             if fx is None:
                 kurs_da = False
+                kurs_da_betrachtet = False
                 fx_fehlt = True
                 continue
             floating += pnl_quote * fx
@@ -881,8 +882,12 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         # Schlussverlust, B1-Fix 29.09., muss messbar bleiben).
         # Realisiert laeuft kumulativ weiter, spaeter vollstaendige Punkte
         # bleiben korrekt; die DD-Messung ueberspringt die Luecke.
+        # Eine erlaubte Teilmessung enthält das bekannte Floating auch dann,
+        # wenn ein vollständig unbetrachtbares Symbol zeitgleich offen ist.
+        # Echte Kurs-/FX-Lücken der betrachtbaren Symbole bleiben Lücken.
+        messpunkt = kurs_da or (unbetrachtbar_aktiv and kurs_da_betrachtet)
         curve.append((punkt, startkapital + realisiert + flows_kumulativ + floating,
-                      kurs_da, flow_delta))
+                      messpunkt, flow_delta))
         # Abbruch ERST NACH dem Anhängen: Der letzte Punkt (alles realisiert,
         # nichts mehr offen) trägt den Endkontostand — exakt dort entsteht der
         # finale Verlust. Der frühere break davor ließ echte Schlussverluste

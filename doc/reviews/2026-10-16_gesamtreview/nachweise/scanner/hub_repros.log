@@ -1,0 +1,11 @@
+MT4 Downloader without Broker => roboforex
+.Monthly exhausted: plan=budget_pause, model calls= 1
+.Requested requested-job, polled different-job => fertig
+.Unknown provider allocated 100%, warnings= []
+.Yellow allocation retained: [{'name': 'Yellow Provider', 'gewicht_pct': 100.0, 'rolle': 'Kern'}]
+.Changed lastModified, same size => old PDF retained
+.Two writers: A published B bytes, B raised FileNotFoundError
+.Composite identity missing; collision safely rejected, second provider unavailable
+.100000 recorded workflow-analysis tokens => agent day/month counters both 0
+.
+9 passed in 0.74s

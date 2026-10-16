@@ -198,14 +198,15 @@ def _llm_lage(kennzahlen: dict, symbole: list[str], settings: dict,
     """LLM-Kurzfassung der Marktlage; None = übersprungen/fehlgeschlagen."""
     modell = settings.get("agenten_markt_modell", rollen.STANDARD_MODELL)
     max_tokens = int(settings.get("agenten_markt_max_tokens", 4096))
-    budget_rest = max(0, int(settings.get("agenten_tagesbudget_tokens",
-                                          500_000)) - journal.tokens_heute())
+    from . import budget
+    budget_rest = budget.remaining(settings)
     client = llm_client.GlmClient(
         model_stufe1=settings.get("model_stufe1", config.MODEL_STUFE1),
         model_stufe2=settings.get("model_stufe2", config.MODEL_STUFE2),
         max_total_tokens=budget_rest or 1,
         base_url=settings.get("glm_base_url") or None,
     )
+    budget.attach(client, settings, lauf_id, 'markt')
     if not client.has_key:
         journal.schritt_protokollieren(
             lauf_id, "markt", "llm_lage", status="skipped",
@@ -230,6 +231,7 @@ def _llm_lage(kennzahlen: dict, symbole: list[str], settings: dict,
         journal.schritt_protokollieren(
             lauf_id, "markt", "llm_lage", status="fehler", prompt=prompt,
             modell=modell, tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
+            budget_ledger=bool(meta.get("agent_budget_ledger")),
             dauer_s=round(_time.monotonic() - beginn, 1),
             detail={"fehler": str(exc)})
         log(f"  Markt-LLM fehlgeschlagen: {exc}")
@@ -238,6 +240,7 @@ def _llm_lage(kennzahlen: dict, symbole: list[str], settings: dict,
         lauf_id, "markt", "llm_lage", prompt=prompt, antwort=antwort,
         modell=modell, tokens=meta.get("total_tokens",
                                        client.usage.total_tokens) or 0,
+        budget_ledger=bool(meta.get("agent_budget_ledger")),
         dauer_s=meta.get("dauer_s"), detail={"symbole": symbole})
     return antwort
 

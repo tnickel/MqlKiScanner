@@ -1,0 +1,66 @@
+{
+  "PelicanTrading": {
+    "trade_count": 1,
+    "net_profit": -25.0,
+    "directions": [
+      "Buy"
+    ],
+    "symbols": [
+      "EURUSD"
+    ],
+    "commission": [
+      0.0
+    ],
+    "swap": [
+      0.0
+    ]
+  },
+  "vantage": {
+    "trade_count": 1,
+    "net_profit": 0.0,
+    "directions": [
+      "Sell"
+    ],
+    "symbols": [
+      "EURUSD"
+    ],
+    "commission": [
+      0.0
+    ],
+    "swap": [
+      0.0
+    ]
+  },
+  "zulumonitor": {
+    "trade_count": 1,
+    "net_profit": 0.0,
+    "directions": [
+      "Sell"
+    ],
+    "symbols": [
+      "EURUSD"
+    ],
+    "commission": [
+      0.0
+    ],
+    "swap": [
+      0.0
+    ]
+  },
+  "vantage_failed_update_in_scanner": {
+    "status": "fertig",
+    "tradelisten_fehler": 0,
+    "tradelisten_abgebrochen": false,
+    "hinweise": [
+      "1 Tradelisten-Downloads fehlgeschlagen (Details: data/vantagemonitor.log)"
+    ]
+  },
+  "zulumonitor_failed_update_in_scanner": {
+    "status": "fertig",
+    "tradelisten_fehler": 0,
+    "tradelisten_abgebrochen": false,
+    "hinweise": [
+      "1 Tradelisten-Downloads fehlgeschlagen (Details: data/zulumonitor.log)"
+    ]
+  }
+}

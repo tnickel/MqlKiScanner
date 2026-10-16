@@ -49,7 +49,8 @@ def analyze(path: str, stress_move: float | None = None,
     if kursanbieter is not None:
         forensics["equity_rekonstruktion"] = equity_rekonstruktion.rekonstruiere(
             parsed, kursanbieter,
-            startkapital=float(forensics["drawdown"].get("startkapital") or 0.0),
+            startkapital=float(forensics["drawdown"].get(
+                "startkapital_raw", forensics["drawdown"].get("startkapital")) or 0.0),
             broker=broker)
     report = {
         "source": str(path),

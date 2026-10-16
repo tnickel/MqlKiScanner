@@ -68,8 +68,8 @@ def profil_erstellen(signal_id: int, signal_name: str, signal_url: str,
                 detail={"grund": grund, "signal": signal_name})
         return {"erstellt": False, "grund": grund, "version": None}
 
-    budget_rest = max(0, int(settings.get("agenten_tagesbudget_tokens",
-                                          500_000)) - journal.tokens_heute())
+    from . import budget
+    budget_rest = budget.remaining(settings)
     client = llm_client.GlmClient(
         model_stufe1=settings.get("model_stufe1", config.MODEL_STUFE1),
         model_stufe2=settings.get("model_stufe2", config.MODEL_STUFE2),
@@ -77,6 +77,7 @@ def profil_erstellen(signal_id: int, signal_name: str, signal_url: str,
         base_url=settings.get("glm_base_url") or None,
         timeout=2400,  # große Prompts (Tiefenanalyse), glm-5.3 antwortet langsam
     )
+    budget.attach(client, settings, lauf_id, 'betreuer')
     if not client.has_key:
         grund = "Kein GLM-Key gesetzt — Destillation verschoben."
         if lauf_id:
@@ -110,6 +111,7 @@ def profil_erstellen(signal_id: int, signal_name: str, signal_url: str,
                 lauf_id, "betreuer", "profil_destillation", status="fehler",
                 prompt=prompt, modell=modell,
                 tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
+                budget_ledger=bool(meta.get("agent_budget_ledger")),
                 dauer_s=round(_time.monotonic() - beginn, 1),
                 detail={"fehler": str(exc), "signal": signal_name})
         log(f"  Destillation {signal_name} fehlgeschlagen: {exc}")
@@ -125,6 +127,7 @@ def profil_erstellen(signal_id: int, signal_name: str, signal_url: str,
             lauf_id, "betreuer", "profil_destillation", prompt=prompt,
             antwort=antwort, modell=modell,
             tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
+            budget_ledger=bool(meta.get("agent_budget_ledger")),
             dauer_s=meta.get("dauer_s"),
             detail={"signal": signal_name, "version": version,
                     "grundlage": grundlage})

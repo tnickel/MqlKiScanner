@@ -42,7 +42,7 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   Täglicher Betreuer derzeit nur MQL5, andere Quellen werden übersprungen.
 - **Maßgebliche Codeorte:** `pipeline.ampel_for`, `ScanResult.refresh_efficiency`,
   `config.DEFAULT_SETTINGS`, `portfolio_statistik.MIN_HISTORIE_MONATE` und
-  `analysis_version.FORENSICS_VERSION` (beim Abgleich 16). Produktive Settings
+  `analysis_version.FORENSICS_VERSION` (nach Gesamtreview-Fixes 17). Produktive Settings
   ausschließlich `config/app_settings.json`.
 
 ## Auftrag und Nutzer-Kriterien (fest)

@@ -167,6 +167,7 @@ def test_run_portfolio_reicht_statistik_an_prompt(tmp_path, monkeypatch):
         ertrag_monat_pct_forensik=8.0, martingale_flag=False,
         stop_evidence="none")
     ergebnis = pipe.run_portfolio([res], lambda _: None)
-    assert ergebnis["text"] == "Portfolio ok"
+    # Unstructured answers remain visible only as rejected audit material.
+    assert ergebnis['text'] == '' and 'Portfolio nicht freigegeben' in ergebnis['reason']
     assert "verlustmonate_cluster" in gefangen["stat"]
     assert "instrument_overlap" in gefangen["stat"]

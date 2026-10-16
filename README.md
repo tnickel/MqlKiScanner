@@ -15,6 +15,13 @@ die Integration bleibt vorerst zurückgestellt. **PelicanWinnerLooser ist ein
 eigenständiges Einzelprojekt und ebenfalls noch nicht in den Gesamtworkflow
 eingebunden**; eine Hub-Anbindung ist nicht implementiert.
 
+Die Korrekturen des [Gesamtreviews vom 16.10.2026](doc/reviews/2026-10-16_gesamtreview/BEHEBUNG.md)
+verwenden Forensik-Version 17. Ältere Befunde und Equity-Studien werden nicht
+als aktuelle Freigabe wiederverwendet. Vor einer neuen Auswahl müssen die
+geänderten Quellen neu gebaut und gestartet sowie betroffene Signale neu
+geladen und analysiert werden. Kapitalflüsse während offener Positionen
+erlauben ohne belegte Equity am Flusszeitpunkt keinen belastbaren Calmar.
+
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 [![License](https://img.shields.io/badge/license-see%20repo-lightgrey.svg)](#lizenz--hinweis)

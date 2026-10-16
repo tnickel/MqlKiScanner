@@ -142,7 +142,11 @@ def _reports_via_client(client: downloader_client.DownloaderClient,
             row = known.get((version, name))
             if (row is not None and Path(row["path"]).exists()
                     and row["size_bytes"] is not None and size is not None
-                    and int(row["size_bytes"]) == int(size)):
+                    and int(row["size_bytes"]) == int(size)
+                    and row.get('last_modified') is not None
+                    and item.get('lastModified') is not None
+                    and str(row['last_modified']) == str(item['lastModified'])
+                    and Path(row['path']).stat().st_size == int(size)):
                 continue
             target = (config.DOWNLOADER_DIR / str(signal_id) / "reports"
                       / version / name)

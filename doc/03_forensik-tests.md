@@ -179,7 +179,8 @@ den SL-Nachweis nicht nötig.
 Struktur-Dimension bleibt bei der Basis 3,0; nur `direct` senkt auf 2,0),
 keine Kandidaten-Sperre, in der Ampel-Matrix eine weiße Zelle
 („neutral (nicht übertragen)”). Kandidat entscheidet sich allein über
-Drawdown-Schranke, Score und Ertrag; das Urteil nennt den Stop-Kontext
+Drawdown-Schranke, Martingale/Ausschluss und belastbaren Jahres-Calmar;
+der Score ist Kontext, kein eigenständiges Gate. Das Urteil nennt den Stop-Kontext
 nur informativ („Stop bewiesen” / „teilweise belegt” / „SL nicht
 übertragen (neutral — KI schätzt ab)”). Eine vollständige Analyse ohne
 Stop-Nachweis bleibt eine vollständige Analyse; sie wird deshalb nicht
@@ -266,7 +267,9 @@ noch einen unvollständigen Export.
   erkennbar; NY-Session-Dominanz)
 - **Monats-Kurve:** negative Monate zählen; Regime-Abhängigkeit
   (Ausbruchssysteme: flache Monate normal)
-- **Kosten:** Commission + Swap vs. Bruttogewinn (über 10 % = Spread-Problem)
+- **Kosten:** Commission und Swap separat sowie im Verhältnis zum Bruttogewinn
+  ausweisen. Daraus lässt sich kein Spread-/Slippageproblem beweisen; dafür
+  sind eigene Preis-/Ausführungsdaten erforderlich.
 
 ## Scoring-Vorschlag (aus der Reihe, im Tool abbilden)
 

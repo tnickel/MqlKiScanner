@@ -105,7 +105,7 @@ def _basket_ladder_test(trades) -> dict:
                     "symbol": sym, "direction": direction,
                     "close": close_time.strftime("%Y-%m-%d %H:%M:%S"),
                     "ladder": [f"{v:.2f}" for v in vols],
-                    "net": round(sum(t.profit for t in legs), 2),
+                    "net": round(sum(t.net for t in legs), 2),
                 })
                 break
     return {

@@ -1,0 +1,68 @@
+{
+  "MqlDownloader": {
+    "tests": 105,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suite_files": 18
+  },
+  "roboforex": {
+    "tests": 147,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suite_files": 11
+  },
+  "PelicanTrading": {
+    "tests": 176,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suite_files": 25
+  },
+  "vantage": {
+    "tests": 49,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suite_files": 7
+  },
+  "zulumonitor": {
+    "tests": 107,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suite_files": 12
+  },
+  "SignalKiScanner": {
+    "tests": 1915,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 4,
+    "skip_reasons": [
+      {
+        "name": "test_alle_bekannten_original_archivzeilen_finanziell_vollstaendig",
+        "reason": "Optionaler lokaler Originalexport"
+      },
+      {
+        "name": "test_real_blocked_signal_fixture_parses",
+        "reason": "Lokaler Realexport-Regressionstest: privater Live-Cache fehlt; die synthetischen Export-Artefakt-Tests laufen unabhaengig davon."
+      },
+      {
+        "name": "test_ticketlose_lieferung_thg_wird_nicht_per_mengenheuristik_gekuerzt",
+        "reason": "Original-Lieferung nicht mehr im Cache"
+      },
+      {
+        "name": "test_night_scalper_realer_export_bleibt_299_positionen",
+        "reason": "Realer Night-Scalper-Snapshot nicht vorhanden"
+      }
+    ]
+  },
+  "Hub_reproductions": {
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "skip_reasons": []
+  }
+}

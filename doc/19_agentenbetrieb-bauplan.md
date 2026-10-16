@@ -9,6 +9,18 @@ ist vorbereitet, die Integration bleibt vorerst zurückgestellt. Der Pfeil
 im historischen Architekturdiagramm beschreibt daher keine aktive
 Produktivverbindung.
 
+**Review-Korrektur 16.10.2026:** Dirigent und Melder verwenden standardmäßig
+`glm-5.3-flash`, die übrigen Rollen `glm-5.3`; Einstellungen können dies ändern.
+Der Betreuer verarbeitet bislang MQL5-Signale. Agentenrollen und vom Agenten
+gestartete Scans teilen ein persistentes Tages-/Monatsbudget. Vor jedem
+HTTP-Versuch wird eine konservative Tokenobergrenze in SQLite reserviert;
+parallele Prozesse können denselben Rest nicht mehrfach vergeben. Unklare
+Transportkosten und nach einem Prozessabbruch offene Reservierungen werden
+nicht automatisch erstattet. Vollständige HTTP-Antworten einschließlich
+verworfener Retries stehen im Versuchsjournal; manuelle GUI-Scans behalten
+ihr eigenes Laufbudget. Diese aktuellen Regeln ersetzen die entsprechenden
+pauschalen Aussagen des ursprünglichen Bauplans unten.
+
 **Ursprünglicher Konzeptstand: beschlossen am 22.09.2026.**
 Entstanden aus drei Konzeptrunden (Recherche: Projekt, Datenbasis, PDF-Berichte,
 Backtester-Projekt `D:\AntiGravitySoftware\GitWorkspace\Backtester`).

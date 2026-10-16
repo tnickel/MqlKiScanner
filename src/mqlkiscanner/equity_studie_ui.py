@@ -35,8 +35,9 @@ _FARBE_FLOATING = "#d32f2f"
 
 
 def _cache_key(result) -> str:
+    from .analysis_version import FORENSICS_VERSION
     sha = getattr(result, "trades_sha256", "") or ""
-    return f"eqdd_studie_kontokosten_v11_{result.id}_{sha[:12] or 'nosha'}"
+    return f"eqdd_studie_v{FORENSICS_VERSION}_{result.id}_{sha[:12] or 'nosha'}"
 
 
 def berechne(result, progress) -> dict:

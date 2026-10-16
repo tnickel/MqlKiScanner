@@ -107,6 +107,7 @@ def load_export(path: str, plattform_positions: float | None = None, *,
     weder zeitabhaengige Kennzahlen noch Equity/DD/Urteile gerechnet werden.
     Volumen, Zahlen und Zeitstempelformat bleiben weiterhin strikt.
     """
+    path = str(path)
     if path.lower().endswith(".json"):
         return _load_json_excerpt(path)
 
@@ -162,9 +163,9 @@ def load_export(path: str, plattform_positions: float | None = None, *,
             # (Beleg: Signal 2271995, Zeilen 222/391 — kein Typ, Volumen, Symbol
             # oder Geldwert). Solche Zeilen tragen keine analytische Information
             # und werden uebersprungen; Inhalt ohne Typ bleibt ein lauter Fehler.
-            trade_fields = ([2, 3, 4, 7, 8, profit_idx] if fmt == "mt4_orderbook"
-                            else [2, 3, 4, 6, 7, profit_idx])
-            if any(row[idx].strip() for idx in trade_fields):
+            # Ein reiner MT4-Kommentarrest ist Metadaten, kein Geldwert.
+            payload = row[2:-1] if fmt == "mt4_orderbook" else row[2:]
+            if any(cell.strip() for cell in payload):
                 raise ValueError(f"{path}: Zeile {line}: Datensatz ohne Typ "
                                  f"mit Inhalt (defekte Zeile)")
             continue

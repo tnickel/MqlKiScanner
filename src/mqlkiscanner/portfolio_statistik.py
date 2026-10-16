@@ -14,16 +14,18 @@ blieb unsichtbar. Dieses Modul liefert die Maschinen-Fakten, die KI deutet:
 - Instrument-Overlap: Paare mit hohem Symbol-Überlappung sind Klumpenrisiko
   selbst bei niedriger Korrelation (gleiche Werkstatt, gleiche Instrumente).
 
-Basis der Monatsrenditen ist die virtuelle Kurve der Forensik
-(Startkapital = tatsächlich verwendete Kapitalbasis, Monats-PnL / Balance
-am Monatsanfang) — dieselbe Konvention wie Drawdown-Trading-Kurve und
-Review-Nachrechnung.
+Basis sind realisierte Nettoereignisse auf der tatsächlich verwendeten
+Kapitalbasis. Spätere Nettoflüsse teilen die Kurve nur bei im Export
+flachem Positionsbestand in TWR-Unterperioden. Bei offenen Positionen
+am Flow fehlt die Preflow-Equity; dann wird keine Rendite freigegeben.
 """
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from pathlib import Path
 
+from . import config
 from .parser import load_export
 
 JAHR_TAGE = 365.2425
@@ -36,6 +38,8 @@ MIN_HISTORIE_MONATE = 3.0
 
 
 def _positiv_endlich(wert) -> float | None:
+    if isinstance(wert, bool):
+        return None
     try:
         zahl = float(wert)
     except (TypeError, ValueError, OverflowError):
@@ -50,6 +54,24 @@ def _teilfaktor(start: float, pnl: list[float]) -> float | None:
         return (start + gewinn) / start
     # Leeres Konto (z. B. nach Vollauszahlung): nur ohne PnL definiert.
     return 1.0 if gewinn == 0 else None
+
+
+def _kapitalfluesse(parsed, erste):
+    """Ein Nettofluss je Exportzeitstempel; keine erfundene Reihenfolge."""
+    gruppen = defaultdict(list)
+    for flow in parsed.balances:
+        if flow.time > erste:
+            gruppen[flow.time].append(float(flow.amount))
+    return [(zeit, betrag) for zeit, werte in sorted(gruppen.items())
+            if (betrag := math.fsum(werte)) != 0.0]
+
+
+def _flows_mit_unbelegter_equity(parsed, erste, letzte):
+    # Close-PnL gilt vor dem Flow, neue Opens derselben Sekunde danach.
+    # Zwischen Open und Close enthält der Export keinen Marktwert am Flow.
+    return [(zeit, betrag) for zeit, betrag in _kapitalfluesse(parsed, erste)
+            if zeit <= letzte and any(t.open_time < zeit < t.close_time
+                                      for t in parsed.trades)]
 
 
 def _monatsserie(parsed, basis: float) -> dict[str, float]:
@@ -69,9 +91,14 @@ def _monatsserie(parsed, basis: float) -> dict[str, float]:
     Unterperiode (Faktor = Stand vor Fluss ÷ Stand bei Periodenbeginn),
     danach wird er gebucht. Die Monatsrendite ist das Produkt der
     Unterperioden-Faktoren des Monats − 1. Ohne Fluesse ist das exakt
-    Monats-PnL ÷ Stand am Monatsanfang (bisheriges Verhalten)."""
+    Monats-PnL ÷ Stand am Monatsanfang (bisheriges Verhalten).
+    Freigabe nur ohne offene Exportposition beim Flow; andernfalls liefert
+    die CSV keinen belegten Unterperioden-Endwert und das Ergebnis bleibt leer.
+    """
     erste = min(t.open_time for t in parsed.trades)
     letzte = max(t.close_time for t in parsed.trades)
+    if _flows_mit_unbelegter_equity(parsed, erste, letzte):
+        return {}  # Closing-Balance ist bei offenen Positionen keine Flow-Equity.
     if any(c.time < erste or c.time > letzte for c in getattr(parsed, "costs", [])):
         return {}  # Kostenfenster ist nicht durch die Handelslaufzeit gedeckt.
     von = erste.year * 12 + erste.month - 1
@@ -80,10 +107,7 @@ def _monatsserie(parsed, basis: float) -> dict[str, float]:
     # gleichem Zeitstempel zaehlt der Trade noch zur alten Unterperiode.
     ereignisse: list[tuple] = [(t.close_time, 0, float(t.net)) for t in parsed.trades]
     ereignisse += [(c.time, 0, float(c.amount)) for c in getattr(parsed, "costs", []) if c.time >= erste]
-    for b in getattr(parsed, "balances", []):
-        if b.time <= erste:
-            continue  # vor dem ersten Open: bereits Teil der Startbasis
-        ereignisse.append((b.time, 1, float(b.amount)))
+    ereignisse += [(zeit, 1, betrag) for zeit, betrag in _kapitalfluesse(parsed, erste)]
     ereignisse.sort(key=lambda e: (e[0], e[1]))
     je_monat: dict[int, list[tuple[int, float]]] = {}
     for zeit, art, betrag in ereignisse:
@@ -185,7 +209,7 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
     Virtuelle Netto-Kurve auf der verwendeten Kapitalbasis. Zeitbasis ist
     die gesamte Dauer vom ersten Open bis zum letzten Close, einschliesslich
     Monaten ohne Trades; ein Jahr hat 365,2425 Tage, ein Monat 1/12
-    davon. End/Start kommt direkt aus dem UNGERUNDETEN Gesamtnetto:
+    davon. Ohne spätere Flows kommt End/Start aus dem UNGERUNDETEN Gesamtnetto:
       - ertrag_monat_geom_pct: GEOMETRISCHES Monatsmittel (zinseszins-wahr,
         wachsender Kontostand als Nenner; Nutzer-Regel 01.10.)
       - cagr_jahr_pct: echter Jahres-CAGR ((End/Start)^(1/Jahre) - 1)
@@ -197,9 +221,12 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
     Ohne Equity-DD bleibt nur RetDD unbekannt, die Gewinnmessung erhalten.
     Alle Ergebniswerte bleiben ungerundet, damit 0,999... nicht die
     RetDD-Mindestschwelle 1,0 passiert. Ohne Kapitalfluesse nach Start ist
-    die Kurve identisch real/virtuell; MIT Flows verkettet der Zaehler die
-    TWR-Monatsrenditen der realen Kurve — derselbe Kurventyp wie der
-    Max-Equity-DD (Copilot-Review 05.10. abends, Hoch 1).
+    die Kurve identisch real/virtuell. MIT Flows ist eine TWR nur freigegeben,
+    wenn bei jedem Flow keine Exportposition offen ist: dann ist innerhalb
+    dieser Positionsbasis Balance=Equity. Aktuell offene Positionen können
+    im Export fehlen; ein tatsächliches Gesamtkonto wird damit nicht bewiesen.
+    Offene Positionen benötigen eine gesondert belegte Preflow-Equity;
+    die geschlossene CSV alleine liefert sie nicht.
     """
     if not trades_pfad or not Path(trades_pfad).exists():
         return None
@@ -224,12 +251,13 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
         "effizienz_status": "rendite_nicht_berechenbar",
         "rendite_basis": "virtuelle_trade_netto_kurve",
         "retdd_basis": "uebergebener_max_equity_dd_pct",
+        "positionsbasis": "geschlossene Exportpositionen; aktuell offene können fehlen",
         "dd_max_equity_pct": dd,
         "zeit_von": erste.isoformat(), "zeit_bis": letzte.isoformat(),
         "dauer_monate": monate, "dauer_jahre": jahre,
         "kalender_monate": (letzte.year - erste.year) * 12 + letzte.month - erste.month + 1,
         "netto_gesamt_usd": None, "endkapital_virtuell_usd": None,
-        "kapitalfluesse_nach_start": sum(b.time > erste for b in parsed.balances),
+        "kapitalfluesse_nach_start": len(_kapitalfluesse(parsed, erste)),
         "basis_hinweis": "Geometrische Trade-Netto-Rendite auf der Kurve "
                          "ohne Kapitalfluesse; bei Fluessen nach Start wird "
                          "stattdessen TWR auf der realen Kurve gerechnet",
@@ -245,8 +273,19 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
                 "Separate Kontokosten ausserhalb des Trade-Zeitfensters; "
                 "Netto vollstaendig, geometrische Rendite nicht freigegeben")
             return ergebnis
-        if (monate <= 0 or not math.isfinite(monate)
-                or endkapital <= 0 or not math.isfinite(endkapital)):
+        if monate <= 0 or not math.isfinite(monate):
+            return ergebnis
+        unbelegte_flows = _flows_mit_unbelegter_equity(parsed, erste, letzte)
+        if unbelegte_flows:
+            ergebnis.update({
+                "effizienz_status": "kapitalfluss_equity_unbelegt",
+                "rendite_basis": "preflow_equity_unbelegt",
+                "kapitalfluesse_mit_offenen_positionen": len(unbelegte_flows),
+                "basis_hinweis": (
+                    "Kapitalfluss bei offenen Positionen: Equity unmittelbar vor "
+                    "dem Flow ist aus geschlossenen Trades nicht belegt. Keine "
+                    "Balance-Näherung als Equity-TWR oder Calmar freigegeben."),
+            })
             return ergebnis
         kapitalfluesse = ergebnis["kapitalfluesse_nach_start"]
         if kapitalfluesse:
@@ -271,13 +310,16 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
                 cagr_pct = math.expm1(log_faktor / jahre) * 100.0
                 ergebnis["rendite_basis"] = "twr_reale_kurve_monatsverkettung"
                 ergebnis["basis_hinweis"] = (
-                    "TWR auf der realen Kontokurve (Einzahlungen erhoehen den "
-                    "Nenner ab ihrem Zeitpunkt, zaehlen nicht als Rendite) — "
-                    "konsistent zum Max-Equity-DD auf derselben Kurve; "
-                    "zeitgenaue Unterperioden je Kapitalfluss")
+                    "TWR mit zeitgenauen Unterperioden je Netto-Kapitalfluss. "
+                    "Bei jedem Flow sind keine Exportpositionen offen; innerhalb "
+                    "dieser Positionsbasis entspricht Balance der Equity. "
+                    "Aktuell offene Positionen können im Export fehlen. "
+                    "Einzahlungen sind kein Ertrag.")
             else:
                 return ergebnis
         else:
+            if endkapital <= 0 or not math.isfinite(endkapital):
+                return ergebnis
             relativer_gewinn = (endkapital - basis) / basis
             log_faktor = (math.log1p(relativer_gewinn)
                           if math.isfinite(relativer_gewinn) and relativer_gewinn > -1
@@ -315,7 +357,7 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
     return ergebnis
 
 
-def statistik(results: list) -> dict:
+def statistik(results: list, settings: dict | None = None) -> dict:
     """Code-Befund für den Portfolio-Prompt aus den 🟢/🟡-Ergebnissen.
 
     results: ScanResult-Liste (nur live/forensik-vollständig erwartet, aber
@@ -415,9 +457,11 @@ def statistik(results: list) -> dict:
             "Werkstatt, gleiche Instrumente). "
             "(4) RetDD je Signal (retdd_monat/retdd_jahr) — priorisiere "
             "Effizienz: gleiche Rendite bei halbem Drawdown ist doppelt so "
-            "gut. Mindestqualität ist 1,0 je Prozent DD (Nutzer-Regel "
-            "02.10.: retdd=1 minimum) — Signale mit retdd_monat < 1,0 "
-            "nicht empfehlen, auch wenn Einzelkriterien grün sind."),
+            "gut. Mindestqualität ist Jahres-Calmar >= "
+            f"{config.min_calmar_jahr(settings):g} (CAGR / gemessener Equity-DD). "
+            "Monats-RetDD ist eine Zusatzkennzahl ohne eigenes Mindest-Gate. "
+            "Unbelegte Preflow-Equity und zu kurze Historie erlauben keine "
+            "belastbare Effizienzempfehlung."),
         "signale": zeilen,
         "verlustmonate_cluster": cluster,
         "gemeinsames_fenster": fenster,

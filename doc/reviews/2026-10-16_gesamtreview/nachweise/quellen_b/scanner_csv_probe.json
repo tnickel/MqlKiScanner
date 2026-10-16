@@ -1,0 +1,66 @@
+{
+  "normal_mql4.csv": {
+    "format": "mt4_orderbook",
+    "trades": 1,
+    "net": 97.0,
+    "positions": [
+      {
+        "volume": 0.1,
+        "holding_hours": 24.0,
+        "entry_price": 1.1,
+        "exit_price": 1.11,
+        "profit": 100.0,
+        "commission": -2.0,
+        "swap": -1.0
+      }
+    ]
+  },
+  "normal_mql5.csv": {
+    "format": "positions",
+    "trades": 1,
+    "net": 97.0,
+    "positions": [
+      {
+        "volume": 0.1,
+        "holding_hours": 24.0,
+        "entry_price": 1.1,
+        "exit_price": 1.11,
+        "profit": 100.0,
+        "commission": -2.0,
+        "swap": -1.0
+      }
+    ]
+  },
+  "partial_trades.csv": {
+    "format": "positions",
+    "trades": 1,
+    "net": 25.0,
+    "positions": [
+      {
+        "volume": 10.0,
+        "holding_hours": 1.0,
+        "entry_price": 1.1,
+        "exit_price": 1.11,
+        "profit": 25.0,
+        "commission": 0.0,
+        "swap": 0.0
+      }
+    ]
+  },
+  "orphan_trades.csv": {
+    "format": "positions",
+    "trades": 1,
+    "net": -25.0,
+    "positions": [
+      {
+        "volume": 1.0,
+        "holding_hours": 0.0,
+        "entry_price": 1.11,
+        "exit_price": 1.11,
+        "profit": -25.0,
+        "commission": 0.0,
+        "swap": 0.0
+      }
+    ]
+  }
+}

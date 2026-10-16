@@ -43,6 +43,10 @@ def test_preopen_cost_once_and_external_deposit_wins():
 
 def test_monthly_costs_reduce_twr_and_do_not_neutralize():
     p=example();p.balances=[BalanceRow(START+timedelta(hours=1),1000)]
+    # Der Flow muss bei belegbar flachem Konto liegen. Eine frühere Dummy-
+    # Position verankert das Zeitfenster; die kostenpflichtige öffnet danach.
+    p.trades[0].open_time=START+timedelta(hours=1,seconds=1)
+    p.trades.insert(0,Trade(START,START+timedelta(minutes=30),'Buy',.01,'XAUUSD',2000,2000,0))
     assert ps._monatsserie(p,1000)['2026-01']==pytest.approx(-.6)
 
 def test_cost_outside_trade_window_blocks_annualized_return(tmp_path):

@@ -1,0 +1,23 @@
+{
+  "base_head": "eedd328dafcc1ccd678ca63e4a3da8c0d98e2824",
+  "pom_sha256": "dda0cd9588187ae4d5f768d0c38ee2a8fbf10a4221a6e8f8c6b07236bb268782",
+  "distribution_sha256": "52bc25182d6d89895b451368d65d67c322aa374f9a26172746d131fb32533884",
+  "artifact_versions": {
+    "META-INF/maven/io.github.bonigarcia/webdrivermanager/pom.properties": "artifactId=webdrivermanager\ngroupId=io.github.bonigarcia\nversion=6.1.0",
+    "META-INF/maven/org.apache.logging.log4j/log4j-api/pom.properties": "artifactId=log4j-api\ngroupId=org.apache.logging.log4j\nversion=2.25.5",
+    "META-INF/maven/org.apache.logging.log4j/log4j-core/pom.properties": "artifactId=log4j-core\ngroupId=org.apache.logging.log4j\nversion=2.25.5",
+    "META-INF/maven/org.jsoup/jsoup/pom.properties": "artifactId=jsoup\ngroupId=org.jsoup\nversion=1.23.2"
+  },
+  "base_class_major_counts": {
+    "51": 600,
+    "52": 12941,
+    "50": 1396,
+    "49": 2956,
+    "55": 3993,
+    "45": 549,
+    "46": 1
+  },
+  "highest_base_major": 55,
+  "java11_class_version_compatible": true,
+  "limitation": "Class version compatibility is necessary, not a full Java 11 execution test; tests ran on JDK 25. Multi-release alternatives excluded."
+}

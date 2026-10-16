@@ -1,0 +1,5 @@
+# Ausschließlich freigegebene synthetische Reviewbelege und Testlogs.
+!nachweise/
+!nachweise/**
+!behebung_nachweise/
+!behebung_nachweise/**

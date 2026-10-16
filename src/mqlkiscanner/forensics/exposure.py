@@ -64,6 +64,16 @@ _UNIT_LABEL = {"METAL": "USD Kursbewegung", "INDEX": "Punkte",
                "FX": "Preiseinheiten"}
 
 
+def _positive_number(value, label: str) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{label} muss endlich und positiv sein") from exc
+    if isinstance(value, bool) or not math.isfinite(number) or number <= 0:
+        raise ValueError(f"{label} muss endlich und positiv sein")
+    return number
+
+
 def _resolve_symbol(symbol: str, broker: str | None = None) -> dict | None:
     """Aufgeloester Kontrakt je Symbol oder None (kein belegter Kontrakt).
 
@@ -73,17 +83,21 @@ def _resolve_symbol(symbol: str, broker: str | None = None) -> dict | None:
     spec = spec_for(symbol, broker=broker)
     sclass = symbol_class(symbol)
     if spec is not None and spec.get("contract_size") is not None:
+        factor = _positive_number(spec["contract_size"], "Kontraktgröße")
         pip = fx_pip_size(symbol)
         if spec.get("stress_move_pct") is not None:
+            _positive_number(spec["stress_move_pct"], "Prozentuale Schockbewegung")
             move = None  # Erst ein offener Entry-Preis bestimmt Preiseinheiten.
         elif spec.get("stress_move") is not None:
-            move = float(spec["stress_move"])
+            move = _positive_number(spec["stress_move"], "Schockbewegung")
         elif pip is not None:
             move = 500 * pip
         else:
-            move = STRESS_MOVE_BY_CLASS.get(sclass, 0.0)
+            move = STRESS_MOVE_BY_CLASS.get(sclass)
+            if move is None:
+                raise ValueError(f"Schockbewegung für {symbol!r} nicht belegt")
         return {
-            "factor": float(spec["contract_size"]),
+            "factor": factor,
             "quote": str(spec.get("quote_currency") or "USD").upper(),
             "move": move,
             "move_pct": spec.get("stress_move_pct"),
@@ -118,12 +132,10 @@ def _stress_move(symbol: str, override: float | None = None,
                  broker: str | None = None,
                  reference_price: float | None = None) -> float | None:
     if override is not None:
-        return override
+        return _positive_number(override, "Schockbewegung")
     spec = spec_for(symbol, broker=broker)
     if spec and spec.get("stress_move_pct") is not None:
-        percent = float(spec["stress_move_pct"])
-        if not math.isfinite(percent) or percent <= 0:
-            raise ValueError("Prozentuale Schockbewegung muss endlich und positiv sein")
+        percent = _positive_number(spec["stress_move_pct"], "Prozentuale Schockbewegung")
         if reference_price is None:
             return None
         if not math.isfinite(reference_price) or reference_price <= 0:
@@ -147,6 +159,7 @@ def shock_usd(net_lots: float, move: float, symbol: str,
     Kein belegter Kontrakt: Klasse UNKNOWN -> harter Fehler; bekannte Klasse
     ohne Faktor (fremder Index) -> None, wie bei fehlender USD-Umrechnung.
     """
+    move = _positive_number(move, "Schockbewegung")
     resolved = _resolve_symbol(symbol, broker)
     if resolved is None:
         if symbol_class(symbol) == "UNKNOWN":
@@ -183,10 +196,14 @@ def _portfolio_shock(net_by_symbol: dict[str, float],
             amount = None
         else:
             native = abs(net) * move * resolved["factor"]
+            if not math.isfinite(native) or native < 0:
+                raise ValueError(f"Schockbetrag für {sym!r} ist nicht endlich und nichtnegativ")
             if resolved["quote"] == "USD":
                 amount = native
             else:
                 fx = fx_rates.usd_per(resolved["quote"], when.date()) if when else None
+                if fx and (not math.isfinite(fx["rate"]) or fx["rate"] <= 0):
+                    fx = None
                 amount = native * fx["rate"] if fx else None
                 if fx is None and fx_state is not None:
                     fx_state["complete"] = False
@@ -195,6 +212,8 @@ def _portfolio_shock(net_by_symbol: dict[str, float],
             complete = False
         else:
             total += amount
+            if not math.isfinite(total):
+                raise ValueError("Gesamtschock ist nicht endlich")
         if abs(net) >= dominant_abs:
             dominant_abs = abs(net)
             dominant = sym

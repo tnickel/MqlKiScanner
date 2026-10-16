@@ -129,9 +129,14 @@ def build_portfolio_prompt(eintraege_json: str, kriterien: str,
         llm_prompts.load_prompt("portfolio"),
         ("{kandidaten_json}", "{kriterien}", "{portfolio_statistik}"),
         "portfolio")
-    return fill_prompt(template, {"{kandidaten_json}": eintraege_json,
+    result = fill_prompt(template, {"{kandidaten_json}": eintraege_json,
                                   "{kriterien}": kriterien,
                                   "{portfolio_statistik}": statistik_json})
+    return result + ("\n\nVerbindlicher Identitätsvertrag: Gewichte ausschließlich bekannte grüne "
+                     "Kandidaten. Formatiere jede Allokation als "
+                     "`- [QUELLE:ID] NAME — GEWICHT % — Rolle`; QUELLE und ID müssen "
+                     "exakt aus kandidat.quelle (leer bedeutet mql5) und kandidat.id stammen. "
+                     "Keine erfundenen Kandidaten, keine doppelte Gewichtung.\n")
 
 
 def build_tiefenanalyse_prompt(result, trades_json: str) -> str:

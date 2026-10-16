@@ -255,6 +255,12 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
             time.sleep(poll_s)
             continue
         state = str(info.get("state") or "").lower()
+        status_job_id = str(info.get("jobId") or "")
+        if z['job_id'] and status_job_id and status_job_id != z['job_id']:
+            grund = (f"Status gehört zu anderem Update-Job ({status_job_id}); "
+                     f"erwartet {z['job_id']} — kein Erfolgsnachweis.")
+            _melde(grund, status=FEHLER, fehler=grund)
+            break
         phase = str(info.get("phase") or "")
         try:
             done = int(info.get("done") or 0)

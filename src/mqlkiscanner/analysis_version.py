@@ -27,4 +27,6 @@ Bei Änderungen an Pflichtprüfungen oder Bewertungsregeln erhöhen: Live-Befund
 # Quellen-Signale ändern sich dadurch. Alter Bestand: neu scannen.
 # 16: Separate Charge/Commission-Buchungen belasten alle Ergebnis- und
 # Kontokurven; niemals als externer Flow neutralisieren. Neu scannen.
-FORENSICS_VERSION = 16
+# 17: Teilmessung erhält bekannte Floatings, Flow-Rendite wird ohne belegte
+# Preflow-Equity nicht als Equity-TWR freigegeben, Roh-DD/Kosten/FX korrigiert.
+FORENSICS_VERSION = 17

@@ -54,7 +54,9 @@ Reihenfolge in `secrets_store.py`: Umgebung → `.env` →
 - **Vorbereitete REST-API für MqlRealmonitor:** Die produktive Integration
   ist vorerst zurückgestellt. Die Scanner-Schnittstelle lauscht bewusst
   nur auf `127.0.0.1:8611`
-  (kein Fernzugriff), rein lesend, bewertet nie neu. Optionaler Token über
+  (kein Fernzugriff), ohne schreibende HTTP-Endpunkte. Ampel und Urteil werden
+  aus gespeicherter Forensik mit aktuellen Einstellungen abgeleitet; fehlende
+  PDF-Dateien können materialisiert werden. Optionaler Token über
   Env `MQLKISCANNER_REST_TOKEN` / secrets_store; Client sendet Header
   `X-User-Key` (Vergleich mit `hmac.compare_digest`). Der Token wird als
   Headerwert übertragen; der konstante Vergleich verschlüsselt ihn nicht.
@@ -63,8 +65,9 @@ Reihenfolge in `secrets_store.py`: Umgebung → `.env` →
   oder Repo (wird per `tests/test_secrets_hygiene.py` bewacht).
 - Sämtliche Abgleich-/Sync-Pfade (Downloader Station 6, Tradeserver-Sync,
   REST-API, Ampel-Verlauf) schreiben **nie** Bewertungen um — Ampeln,
-  Urteile und Scores ändert ausschließlich die Engine innerhalb eines
-  Scan-Laufs.
+  Urteile und Scores werden nicht in die Fachtabellen zurückgeschrieben.
+  Die Ergebnis-/REST-Ansicht klassifiziert gespeicherte Evidenz dennoch nach
+  den aktuell eingestellten Grenzen neu; neue Forensik erfordert einen Scan.
 
 ## Öffentliches GitHub
 

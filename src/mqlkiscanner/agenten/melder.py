@@ -198,14 +198,15 @@ def _llm_digest(ereignisse: dict, settings: dict, lauf_id: int,
                 log) -> str | None:
     modell = settings.get("agenten_melder_modell", rollen.STANDARD_MODELL)
     max_tokens = int(settings.get("agenten_melder_max_tokens", 4096))
-    budget_rest = max(0, int(settings.get("agenten_tagesbudget_tokens",
-                                          500_000)) - journal.tokens_heute())
+    from . import budget
+    budget_rest = budget.remaining(settings)
     client = llm_client.GlmClient(
         model_stufe1=settings.get("model_stufe1", config.MODEL_STUFE1),
         model_stufe2=settings.get("model_stufe2", config.MODEL_STUFE2),
         max_total_tokens=budget_rest or 1,
         base_url=settings.get("glm_base_url") or None,
     )
+    budget.attach(client, settings, lauf_id, 'melder')
     if not client.has_key or budget_rest <= 0:
         journal.schritt_protokollieren(
             lauf_id, "melder", "llm_digest", status="skipped",
@@ -227,6 +228,7 @@ def _llm_digest(ereignisse: dict, settings: dict, lauf_id: int,
         journal.schritt_protokollieren(
             lauf_id, "melder", "llm_digest", status="fehler", prompt=prompt,
             modell=modell, tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
+            budget_ledger=bool(meta.get("agent_budget_ledger")),
             dauer_s=round(_time.monotonic() - beginn, 1),
             detail={"fehler": str(exc)})
         log(f"  Melder-LLM fehlgeschlagen: {exc}")
@@ -235,6 +237,7 @@ def _llm_digest(ereignisse: dict, settings: dict, lauf_id: int,
         lauf_id, "melder", "llm_digest", prompt=prompt, antwort=antwort,
         modell=modell, tokens=meta.get("total_tokens",
                                        client.usage.total_tokens) or 0,
+        budget_ledger=bool(meta.get("agent_budget_ledger")),
         dauer_s=meta.get("dauer_s"))
     return antwort
 

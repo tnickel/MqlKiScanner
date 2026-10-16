@@ -171,6 +171,8 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
     """Die Stationen der Scan-Seite, headless: Listen → Kandidaten →
     Auswahl → Forensik → KI-Berichte → Portfolio."""
     pipe = pipeline.ScanPipeline(settings, quelle=modus)
+    from . import budget
+    budget.attach(pipe.llm, settings, lauf_id, 'dirigent')
     start_ts = time.time()
 
     def _f(station: str, done: int, total: int, detail: str = "") -> None:

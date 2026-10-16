@@ -90,7 +90,7 @@ def test_changed_csv_separates_old_recommendation_from_current_result_and_portfo
     changed.gesamtbericht, changed.kurzfassung = old_text, "Empfehlung"
     changed.berichte_basis = first.berichte_basis
     pipe.llm.chat.reset_mock()
-    assert pipe.run_portfolio([changed], lambda _: None)["text"]
+    assert not pipe.run_portfolio([changed], lambda _: None)["text"]
     prompt = pipe.llm.chat.call_args.args[0]
     assert old_text not in prompt
     assert '"gesamtbericht": "(nicht erstellt)"' in prompt

@@ -74,6 +74,8 @@ class GlmClient:
         # Call reserviert und nach der Abrechnung freigegeben; die Summe aus
         # verbrauchten + reservierten Tokens haelt das Budget hart ein.
         self._inflight_tokens = 0
+        self.agent_budget_settings = None
+        self.agent_budget_context = (None, 'agent')
 
     @property
     def has_key(self) -> bool:
@@ -95,9 +97,10 @@ class GlmClient:
         """
         model = model or (self.model_stufe1 if stufe == 1 else self.model_stufe2)
         # Konservative Reservierung: Antwort-Limit plus Prompt-Obergrenze
-        # (Bytes/3 deckt bytebasierte Tokenizer nach oben ab). Muss VOR dem
+        # (UTF-8-Bytes plus Systemtext und Framing). Muss VOR dem
         # Budget-Check stehen, sonst buchen parallele Calls gemeinsam über.
-        reservierung = max_tokens + len(prompt.encode("utf-8")) // 3 + 1024
+        reservierung = (max_tokens + len(prompt.encode("utf-8"))
+                        + len(system.encode('utf-8')) + 1024)
         with self._lock:
             if self.usage.total_tokens + self._inflight_tokens + reservierung \
                     > self.max_total_tokens:
@@ -126,9 +129,13 @@ class GlmClient:
                 # Pro HTTP-Aufruf genau eine Wiederholung, dann ein LlmError.
                 for transport_attempt in range(2):
                     try:
-                        r = requests.post(f"{self.base_url}/chat/completions",
-                                          headers=self._headers(), data=json.dumps(body),
-                                          timeout=self.timeout)
+                        if self.agent_budget_settings is not None:
+                            from ..agenten import budget
+                            r = budget.post(self, body, self._headers(), meta_out)
+                        else:
+                            r = requests.post(f"{self.base_url}/chat/completions",
+                                              headers=self._headers(), data=json.dumps(body),
+                                              timeout=self.timeout)
                         break
                     except requests.RequestException as exc:
                         if transport_attempt:
@@ -186,6 +193,7 @@ class GlmClient:
                 usage = data.get("usage", {})
                 call_meta = {
                     "model": model,
+                    "agent_budget_ledger": self.agent_budget_settings is not None,
                     # total_tokens = Kosten DIESES Calls (M3, Review T1/2 29.09.):
                     #usage.total_tokens ist der kumulierte Lauf-Zahler und darf
                     # fuer store_analysis/Journal nicht verwendet werden.
@@ -227,7 +235,8 @@ class GlmClient:
                         verworfene_tokens += int(usage.get("total_tokens", 0))
                         max_tokens = min(max_tokens * 2, 262_144)
                         neue_reservierung = (max_tokens
-                                             + len(prompt.encode("utf-8")) // 3
+                                             + len(prompt.encode("utf-8"))
+                                             + len(system.encode('utf-8'))
                                              + 1024)
                         with self._lock:
                             if (self.usage.total_tokens

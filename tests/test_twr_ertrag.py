@@ -198,13 +198,14 @@ def test_einzahlung_wirkt_ab_ihrem_zeitpunkt_nicht_ab_monatsanfang(tmp_path):
 
 
 def test_flusszweig_nutzt_exakte_spanne_wie_zweig_ohne_fluss(tmp_path):
-    """Mittel 3: Ein Nullfluss erzwingt den TWR-Zweig; das Ergebnis muss
-    dem Zweig ohne Fluss gleichen (vorher Kalendermonate statt Spanne)."""
+    """Ein Nullfluss ist kein Kapitalereignis; Zeitbasis und Rendite bleiben
+    exakt dieselben wie ohne die zusätzliche neutrale Exportzeile."""
     ohne = effizienz_kennzahlen(_csv_pfad(tmp_path, _halbjahr([])), 1000.0, 20.0)
     mit = effizienz_kennzahlen(_csv_pfad(
         tmp_path, _halbjahr([_fluss_am("2026.03.15", 0.0)])), 1000.0, 20.0)
     assert ohne["rendite_basis"] == "virtuelle_trade_netto_kurve"
-    assert mit["rendite_basis"] == "twr_reale_kurve_monatsverkettung"
+    assert mit["rendite_basis"] == "virtuelle_trade_netto_kurve"
+    assert mit["kapitalfluesse_nach_start"] == 0
     assert mit["ertrag_monat_geom_pct"] == pytest.approx(ohne["ertrag_monat_geom_pct"], rel=1e-9)
     assert mit["cagr_jahr_pct"] == pytest.approx(ohne["cagr_jahr_pct"], rel=1e-9)
 

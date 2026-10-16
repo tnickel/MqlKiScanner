@@ -1,0 +1,181 @@
+{
+  "repository": "roboforex",
+  "headBefore": "42b268641ad370ccae7841b6a478f9745cb57bd3",
+  "overlay": [
+    {
+      "path": "ANLEITUNG_DEALS.md",
+      "liveSha256": "1a0976422fd4ef80827a7783be75b0353246bc0d9ee4aee1eaa034353884746e",
+      "snapshotSha256": "1a0976422fd4ef80827a7783be75b0353246bc0d9ee4aee1eaa034353884746e"
+    },
+    {
+      "path": "README.md",
+      "liveSha256": "e717122f5d14a4d795167749cf68f9d11571fcb5864e8ac72429c75e7199b57d",
+      "snapshotSha256": "e717122f5d14a4d795167749cf68f9d11571fcb5864e8ac72429c75e7199b57d"
+    },
+    {
+      "path": "run.bat",
+      "liveSha256": "8c52c6a65027e3ec44536922b8abd8acecfb635b774ea19b8246a966f91d7634",
+      "snapshotSha256": "8c52c6a65027e3ec44536922b8abd8acecfb635b774ea19b8246a966f91d7634"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/RoboMonitorApp.java",
+      "liveSha256": "8a809763c3bb407cc9645e91ac6cad2b7703de8c19fa200f0c02e3db5624ab41",
+      "snapshotSha256": "8a809763c3bb407cc9645e91ac6cad2b7703de8c19fa200f0c02e3db5624ab41"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/api/RoboForexClient.java",
+      "liveSha256": "c3de83b253ad65130b377e89f5406d75078bffa1fcf17381ceecad203de912b7",
+      "snapshotSha256": "c3de83b253ad65130b377e89f5406d75078bffa1fcf17381ceecad203de912b7"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/deals/DealValidation.java",
+      "liveSha256": "344e612b6c302265070cce6ce34fd9daf441519e0a8a6290622bb997db006bbb",
+      "snapshotSha256": "344e612b6c302265070cce6ce34fd9daf441519e0a8a6290622bb997db006bbb"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/deals/TradeAggregator.java",
+      "liveSha256": "780590f4a7e329b4c9b09f159b1809e95615918d3d09b5d8efc0b7fe9f4769fa",
+      "snapshotSha256": "780590f4a7e329b4c9b09f159b1809e95615918d3d09b5d8efc0b7fe9f4769fa"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/model/EquityKurve.java",
+      "liveSha256": "7617da7d8db3274dde6cd9ace4a677558749168ad0f65391e5669e9be6048a6e",
+      "snapshotSha256": "7617da7d8db3274dde6cd9ace4a677558749168ad0f65391e5669e9be6048a6e"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/rest/RestApiConfig.java",
+      "liveSha256": "ccaf92ba92cbf560954420f35da1b654daf2b2a8899a1fba1a178a029d090c31",
+      "snapshotSha256": "ccaf92ba92cbf560954420f35da1b654daf2b2a8899a1fba1a178a029d090c31"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/rest/RestApiServer.java",
+      "liveSha256": "240dfd196974d2be71c6c84c3bc9403f91a54be43e576a7a72de6de08373958f",
+      "snapshotSha256": "240dfd196974d2be71c6c84c3bc9403f91a54be43e576a7a72de6de08373958f"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/store/DataStore.java",
+      "liveSha256": "b6d48b1dfe07a516949da100f70eed82b58dde41f0a428c3055d52970c81c946",
+      "snapshotSha256": "b6d48b1dfe07a516949da100f70eed82b58dde41f0a428c3055d52970c81c946"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/store/DealStore.java",
+      "liveSha256": "7ede8d47220d1735db50d9ab2e0ac1ef013c0d47ab1010ed0b1f0eca4f315b92",
+      "snapshotSha256": "7ede8d47220d1735db50d9ab2e0ac1ef013c0d47ab1010ed0b1f0eca4f315b92"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/store/FileTransactions.java",
+      "liveSha256": "8ee91d6262895f64ee8ffea993f4c9a8ecc76a1592248d9b3e5fe23308c12c77",
+      "snapshotSha256": "8ee91d6262895f64ee8ffea993f4c9a8ecc76a1592248d9b3e5fe23308c12c77"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/update/UpdateJob.java",
+      "liveSha256": "4223f3496d072f031371d3f4703b2fe48f32a9ca8aaef0a2a60cc17a2e92d19f",
+      "snapshotSha256": "4223f3496d072f031371d3f4703b2fe48f32a9ca8aaef0a2a60cc17a2e92d19f"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/update/UpdateJobRunner.java",
+      "liveSha256": "298f148fd261c53ccab35a6edffa0c7e1ac4fcd3e9e75d7f021065428ec8b15c",
+      "snapshotSha256": "298f148fd261c53ccab35a6edffa0c7e1ac4fcd3e9e75d7f021065428ec8b15c"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/CoreRegressionTest.java",
+      "liveSha256": "8e5be9c8857323e9d8bdabe3ef857e3760a79af5940c65c4f9c7d16e7f52371b",
+      "snapshotSha256": "8e5be9c8857323e9d8bdabe3ef857e3760a79af5940c65c4f9c7d16e7f52371b"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/DealStoreTest.java",
+      "liveSha256": "abad18fb765e8819e57b4afdee56ecae3799ea66464d7769abd01228a4a34778",
+      "snapshotSha256": "abad18fb765e8819e57b4afdee56ecae3799ea66464d7769abd01228a4a34778"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/RestApiServerTest.java",
+      "liveSha256": "d794349667443b202551611a0393bfc0a67fd5c9858d0ac205f7c90c53343acb",
+      "snapshotSha256": "d794349667443b202551611a0393bfc0a67fd5c9858d0ac205f7c90c53343acb"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/ReviewDataIntegrityTest.java",
+      "liveSha256": "107cb6c6f34b8aae991343a9c52a87de273bbb3da55b01b64aabe06e4c666e1b",
+      "snapshotSha256": "107cb6c6f34b8aae991343a9c52a87de273bbb3da55b01b64aabe06e4c666e1b"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/TradelistenPersistenzTest.java",
+      "liveSha256": "b0a0cc75a1bf7344599cc38d63f3b66c40ddb54189946857c415e1c1760b1a67",
+      "snapshotSha256": "b0a0cc75a1bf7344599cc38d63f3b66c40ddb54189946857c415e1c1760b1a67"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/UpdateJobStufe0Test.java",
+      "liveSha256": "bd07de7e82ca8eeff84bfbd16b54468bec017d9a9aa403ec5cbcd52c80010610",
+      "snapshotSha256": "bd07de7e82ca8eeff84bfbd16b54468bec017d9a9aa403ec5cbcd52c80010610"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/deals/TradeAggregatorTest.java",
+      "liveSha256": "bd037a54a2cdbd430fd2adad19c6219d5c65a2fe805f7ecd00edbe2db73f3b74",
+      "snapshotSha256": "bd037a54a2cdbd430fd2adad19c6219d5c65a2fe805f7ecd00edbe2db73f3b74"
+    }
+  ],
+  "snapshotFiles": {
+    ".gitignore": "8969efe6a5feb7d5926b1b7c0cfa994a348f4da9da607f290eeedfccc419f206",
+    "ANLEITUNG_DEALS.md": "1a0976422fd4ef80827a7783be75b0353246bc0d9ee4aee1eaa034353884746e",
+    "CODE_REVIEW_4_HANDOFF.md": "9886162028def5e9af419f7a8f68562459ae21d27905317c740e92af477bd094",
+    "download_deals.py": "7f11d14db91c1e1da9a7e37d6c4359bac124bc8dbca82fecc69c595516d84f4e",
+    "download_rating.py": "cc04355f2ff7ada01ba91b18033e7f2cfc1453091f4b640e82c3393e41315cd6",
+    "download_traders.py": "4158e3eeb16f8c1abe85bbdd3c8c1265f2fa4e9db78b2b5fbcc9160cdf298a3a",
+    "export_rating_csv.py": "cf0041adf1776300b8e9cccd3e2080f71fc261e3b91f9fb692b464119b8e61a7",
+    "patch_kopier.py": "3aad4cd55b589f608fc2c19b5bc3549304484caf93ec79f907b887b7f0008270",
+    "pom.xml": "cf3847c0e4eeee7a6b96f9d1206b5196297ab089d1df0af27666a677a55e294d",
+    "README.md": "e717122f5d14a4d795167749cf68f9d11571fcb5864e8ac72429c75e7199b57d",
+    "refresh_balance.py": "2683e4d5962fbc3c87f81750f0eed94a3e3ad144a05885dfdc730f9b99344a97",
+    "run.bat": "8c52c6a65027e3ec44536922b8abd8acecfb635b774ea19b8246a966f91d7634",
+    "UI_KONVENTIONEN.md": "0dfa79aa535362e49bff8310f3a6965fea539a27805fd97264255515aa598f4c",
+    "src/main/java/de/robomonitor/AbonnentenStatistikDialog.java": "3b700b88a87112614f8b8bb961d496a5f9b8afdd4088c633bb021f6f7af9c2bb",
+    "src/main/java/de/robomonitor/RoboMonitorApp.java": "8a809763c3bb407cc9645e91ac6cad2b7703de8c19fa200f0c02e3db5624ab41",
+    "src/main/java/de/robomonitor/SignalOverviewWindow.java": "4b0ded9bd47357df912f192deacc9431c3fc644e8ed95a0d078e9e8288157842",
+    "src/main/java/de/robomonitor/api/RoboForexClient.java": "c3de83b253ad65130b377e89f5406d75078bffa1fcf17381ceecad203de912b7",
+    "src/main/java/de/robomonitor/config/Ampel.java": "d62ba2f4a2164206c815ff681302ee47c6d0ced7f8e2b02c3a5e7d9243d9849b",
+    "src/main/java/de/robomonitor/config/LlmSettings.java": "884261e843406a48881903b2be15d2136f036520ac0f20eadc86e4be16b8f983",
+    "src/main/java/de/robomonitor/config/SignalFilter.java": "b6df0981ce11f05449cdbf8f431db09c1e53e8ad27d1d68c124becc5b51022a6",
+    "src/main/java/de/robomonitor/deals/DealStatistik.java": "a96f1f23c2c887abef387153850b68567b234a025050495270465e665578353a",
+    "src/main/java/de/robomonitor/deals/DealValidation.java": "344e612b6c302265070cce6ce34fd9daf441519e0a8a6290622bb997db006bbb",
+    "src/main/java/de/robomonitor/deals/TradeAggregator.java": "780590f4a7e329b4c9b09f159b1809e95615918d3d09b5d8efc0b7fe9f4769fa",
+    "src/main/java/de/robomonitor/llm/GlmClient.java": "d66bd9e5d1fec5bff4cfc936de1da3a12e0683669da4654a584d962739f09d2f",
+    "src/main/java/de/robomonitor/model/DailyRecord.java": "464f194fe50c30eec75221f62f4059152d9c389cc89f51e62756092c06bcc381",
+    "src/main/java/de/robomonitor/model/Deal.java": "9097e1964f5715ff0a7057dd4892dd12174568a3b14e8e544f93bea7dae53211",
+    "src/main/java/de/robomonitor/model/EquityDrawdown.java": "3f931ab5cb6bcc9cb43b9219260735eb6c83b3d8db37498bdb2157e017162553",
+    "src/main/java/de/robomonitor/model/EquityKurve.java": "7617da7d8db3274dde6cd9ace4a677558749168ad0f65391e5669e9be6048a6e",
+    "src/main/java/de/robomonitor/model/SignalAccount.java": "bde03c40ae5a2fb86664161f15898c03929554b004c62fdad4a7eaf6c8297dac",
+    "src/main/java/de/robomonitor/model/SymbolStat.java": "966d43443ce6a65ab6cb89b33c68f10d496a886c922e86d315e6f75d70804af7",
+    "src/main/java/de/robomonitor/model/Trade.java": "f9004f17865355862fce536aa5f7204fe8120e5f7a7d466035372c22262cafad",
+    "src/main/java/de/robomonitor/report/PdfRenderer.java": "15bbb4c18e8ad7189bf9154bce797454c8b9b96152f8d7f121e73691b2a000b3",
+    "src/main/java/de/robomonitor/report/ReportService.java": "259bbee77a2823b8656698fe125e4fd35297872fdda7aa8242ff94ba499ad9b9",
+    "src/main/java/de/robomonitor/report/SignalPayloadBuilder.java": "3a205fe8ecfc85b889d5d44cea2944bcb117d9fc4371ee2c1660de8153d99526",
+    "src/main/java/de/robomonitor/rest/RestApiConfig.java": "ccaf92ba92cbf560954420f35da1b654daf2b2a8899a1fba1a178a029d090c31",
+    "src/main/java/de/robomonitor/rest/RestApiServer.java": "240dfd196974d2be71c6c84c3bc9403f91a54be43e576a7a72de6de08373958f",
+    "src/main/java/de/robomonitor/rest/UpdateStarter.java": "8d41c0ba8938a07620a0a7d4b9fda5af980d9c77e3ef5babd14c7c8ae55a5eb9",
+    "src/main/java/de/robomonitor/store/DataStore.java": "b6d48b1dfe07a516949da100f70eed82b58dde41f0a428c3055d52970c81c946",
+    "src/main/java/de/robomonitor/store/DealStore.java": "7ede8d47220d1735db50d9ab2e0ac1ef013c0d47ab1010ed0b1f0eca4f315b92",
+    "src/main/java/de/robomonitor/store/FileTransactions.java": "8ee91d6262895f64ee8ffea993f4c9a8ecc76a1592248d9b3e5fe23308c12c77",
+    "src/main/java/de/robomonitor/store/LlmReportStore.java": "0d6231fb95cc963cb04228e0f16880196e01678172dd4e7db30003e6898c439e",
+    "src/main/java/de/robomonitor/store/SubscriberDb.java": "37f0bde3c01b70bb5f139b04dbc6b0d0e3611948deabcab64144d7364ef2705b",
+    "src/main/java/de/robomonitor/store/UiPrefs.java": "e04a98bd3ed2a146bd8a96700af2da3fd28ea52308e6a60a34199b1fe0285330",
+    "src/main/java/de/robomonitor/update/UpdateJob.java": "4223f3496d072f031371d3f4703b2fe48f32a9ca8aaef0a2a60cc17a2e92d19f",
+    "src/main/java/de/robomonitor/update/UpdateJobRunner.java": "298f148fd261c53ccab35a6edffa0c7e1ac4fcd3e9e75d7f021065428ec8b15c",
+    "src/test/java/de/robomonitor/ClosingDdDealsTest.java": "c08ae4a802cbb64bee2cda053a09fa770d96a71b91b04e31e140f0a039bfd730",
+    "src/test/java/de/robomonitor/CoreRegressionTest.java": "8e5be9c8857323e9d8bdabe3ef857e3760a79af5940c65c4f9c7d16e7f52371b",
+    "src/test/java/de/robomonitor/DealStoreTest.java": "abad18fb765e8819e57b4afdee56ecae3799ea66464d7769abd01228a4a34778",
+    "src/test/java/de/robomonitor/HeadlessBatchDownload.java": "8cc711ac28cfcc8193bc6462bece5f4f84a1c375e80a08890fff84464d532010",
+    "src/test/java/de/robomonitor/HeadlessDealsCheck.java": "cef98c4bc203bea020df7037a8cf0bd3b7ba7c84c7c23f70e98037695f98d05c",
+    "src/test/java/de/robomonitor/HeadlessDealsLive.java": "a642dc12200675867002747fe281be83930ad6a922ca3143a8f39b91f74d9004",
+    "src/test/java/de/robomonitor/HeadlessPromptDump.java": "a60927ebec7de5583830b7932189390997b0aaf2de1484ab43034960e73dd80f",
+    "src/test/java/de/robomonitor/HeadlessReportTest.java": "bfd308de20d0aa5a520f102fa35cab221ce134249aa10f901996871c5e946c64",
+    "src/test/java/de/robomonitor/HeadlessSmokeTest.java": "c15a2074b64d06023d5bb147a4359a0e60c1546593438480bd88e258ccef66b6",
+    "src/test/java/de/robomonitor/LlmSettingsTest.java": "bdf59070a7ba35451faaf39fb3f310447d2715f315403b880c65a2094bf91046",
+    "src/test/java/de/robomonitor/RestApiServerTest.java": "d794349667443b202551611a0393bfc0a67fd5c9858d0ac205f7c90c53343acb",
+    "src/test/java/de/robomonitor/ReviewDataIntegrityTest.java": "107cb6c6f34b8aae991343a9c52a87de273bbb3da55b01b64aabe06e4c666e1b",
+    "src/test/java/de/robomonitor/SignalFilterTest.java": "e7d094f7001143e328a5246db26f2995ae731d7f121e83e8ff5a30545475ffc6",
+    "src/test/java/de/robomonitor/SubscriberDbTest.java": "32e54bea7258b4a56cb926a888966d512254033c52fdfa76c988f308bc184547",
+    "src/test/java/de/robomonitor/TradelistenPersistenzTest.java": "b0a0cc75a1bf7344599cc38d63f3b66c40ddb54189946857c415e1c1760b1a67",
+    "src/test/java/de/robomonitor/UpdateJobStufe0Test.java": "bd07de7e82ca8eeff84bfbd16b54468bec017d9a9aa403ec5cbcd52c80010610",
+    "src/test/java/de/robomonitor/deals/TradeAggregatorTest.java": "bd037a54a2cdbd430fd2adad19c6219d5c65a2fe805f7ecd00edbe2db73f3b74",
+    "src/test/java/de/robomonitor/store/UiPrefsTest.java": "1e3f7e9e959b93d1833596b5a81bcd0ee03678ccc57a692361e2673f43e6e35c"
+  }
+}

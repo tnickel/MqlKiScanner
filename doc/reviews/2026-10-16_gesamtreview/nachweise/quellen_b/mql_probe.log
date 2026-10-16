@@ -1,0 +1,28 @@
+NOT JSON -> {}
+{"target":1.5,"tradelisten":"false"} -> {target=1}
+{"target":99999999999999999999999} -> java.lang.NumberFormatException: For input string: "99999999999999999999999"
+{"tradelisten":false} -> {tradelisten=false}
+update status serialized={"jobId":"synthetic","state":"done","phase":"","done":0,"total":0,"message":"","startedAt":"2026-10-16T17:38:27","finishedAt":"2026-10-16T17:38:27","ergebnis":"{signaleGeliefert=2, tradelistenNeu=null, tradelistenAktualisiert=null, katalogUebersprungen=false, datenstand=2026-01-01T12:00:00, hinweise=[synthetic warning]}","error":null}
+Okt. 16, 2026 5:38:27 PM utils.HtmlDatabase getMonthlyProfitPercentages
+WARNUNG: Keine Monatsdetails f�r D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\gesamt_review_2026-10-16\quellen_b\mql_probe_data\conversion\Synthetic_101_root.html gefunden
+Okt. 16, 2026 5:38:27 PM calculators.MPDDCalculator calculateAverageMonthlyProfit
+WARNUNG: Keine monatlichen Profite f�r D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\gesamt_review_2026-10-16\quellen_b\mql_probe_data\conversion\Synthetic_101_root.html gefunden
+17:38:27.422 [main] ERROR utils.DataExtractor - Equity Drawdown konnte nicht extrahiert werden für Datei: D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\gesamt_review_2026-10-16\quellen_b\mql_probe_data\conversion\Synthetic_101_root.html
+17:38:27.424 [main] ERROR utils.DataExtractor - Fehler beim Extrahieren des Equity Drawdown für D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\gesamt_review_2026-10-16\quellen_b\mql_probe_data\conversion\Synthetic_101_root.html: Equity Drawdown konnte nicht extrahiert werden für Datei: D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\gesamt_review_2026-10-16\quellen_b\mql_probe_data\conversion\Synthetic_101_root.html
+java.lang.RuntimeException: Equity Drawdown konnte nicht extrahiert werden für Datei: D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\gesamt_review_2026-10-16\quellen_b\mql_probe_data\conversion\Synthetic_101_root.html
+	at utils.DataExtractor.getEquityDrawdown(DataExtractor.java:255) [classes/:?]
+	at utils.HtmlParser.getEquityDrawdown(HtmlParser.java:45) [classes/:?]
+	at utils.HtmlDatabase.getEquityDrawdown(HtmlDatabase.java:67) [classes/:?]
+	at calculators.MPDDCalculator.getEquityDrawdown(MPDDCalculator.java:168) [classes/:?]
+	at calculators.MPDDCalculator.calculateMPDD(MPDDCalculator.java:57) [classes/:?]
+	at calculators.MPDDCalculator.calculate3MPDD(MPDDCalculator.java:36) [classes/:?]
+	at converter.HtmlConverter.calculate3MPDD(HtmlConverter.java:279) [classes/:?]
+	at converter.HtmlConverter.convertHtmlFile(HtmlConverter.java:168) [classes/:?]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]
+	at rest.ReviewMqlProbe.main(ReviewMqlProbe.java:31) [probe_classes_mql/:?]
+Okt. 16, 2026 5:38:27 PM utils.HtmlDatabase getEquityDrawdown
+WARNUNG: Could not get equity drawdown for D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\gesamt_review_2026-10-16\quellen_b\mql_probe_data\conversion\Synthetic_101_root.html: Fehler beim Extrahieren des Equity Drawdown f�r D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\gesamt_review_2026-10-16\quellen_b\mql_probe_data\conversion\Synthetic_101_root.html: Equity Drawdown konnte nicht extrahiert werden f�r Datei: D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\gesamt_review_2026-10-16\quellen_b\mql_probe_data\conversion\Synthetic_101_root.html
+missing monthly data after conversion: html=false, csv=false, txt=false
+normal MT5 JSON header=[Time, Type, Volume, Symbol, Price, Volume, Time, Price, Commission, Swap, Profit], row={Time=2026.01.02 12:00:00, Type=Buy, Volume=0.1, Symbol=EURUSD, Price=1.11, Commission=-2, Swap=-1, Profit=100}
+no Alpha_101.csv, unrelated AlphaOther_999.csv only -> recent=true

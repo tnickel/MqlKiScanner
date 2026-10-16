@@ -35,6 +35,10 @@ nicht eingebunden; eine Hub-Anbindung ist nicht implementiert.
 
 ## Reviews
 
+- [Gesamtreview vom 16.10.2026](reviews/2026-10-16_gesamtreview/REVIEW.md)
+  dokumentiert die damaligen Gegenbeispiele; der
+  [Behebungsnachweis](reviews/2026-10-16_gesamtreview/BEHEBUNG.md) ordnet
+  Korrekturen, Regressionstests und verbleibende Grenzen zu.
 - `reviews/` enthält datierte Reviews und Rohbelege, unter anderem den
   Workspace-Review vom 04.10. und Broker-/Exportprüfungen vom 10.10.
   Ihr Datum ist kein Nachweis eines heutigen Testlaufs.

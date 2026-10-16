@@ -21,9 +21,11 @@ from __future__ import annotations
 import bisect
 import csv as _csv
 import io
+import math
 import os
 import re
 import time
+import tempfile
 import zipfile
 from datetime import date, timedelta
 
@@ -64,7 +66,7 @@ def _datei_letzter_kurstag(path) -> date | None:
         return None
 
 
-def _parse_csv(text: str) -> dict[str, tuple[list[str], list[float]]]:
+def _parse_csv(text: str, *, strict: bool = False) -> dict[str, tuple[list[str], list[float]]]:
     """ECB-CSV -> {waehrung: (aufsteigende Tage, Kurse)}.
 
     Die offizielle Datei beginnt mit dem NEUESTEN Tag; hier wird je Waehrung
@@ -73,11 +75,20 @@ def _parse_csv(text: str) -> dict[str, tuple[list[str], list[float]]]:
     reader = _csv.reader(io.StringIO(text))
     header = next(reader, None) or []
     currencies = [h.strip().upper() for h in header[1:]]
+    if strict and (not header or header[0].strip().casefold() != "date" or "USD" not in currencies):
+        raise ValueError("ECB-CSV benötigt Date- und USD-Spalte")
     table: dict[str, list[tuple[str, float]]] = {}
     for row in reader:
         if not row or not row[0].strip():
             continue
         day = row[0].strip()
+        try:
+            if date.fromisoformat(day).isoformat() != day:
+                raise ValueError("kein ISO-Datum")
+        except ValueError:
+            if strict:
+                raise ValueError(f"Ungültiges ECB-Kursdatum: {day}")
+            continue
         for cur, cell in zip(currencies, row[1:]):
             if not cur:
                 continue
@@ -87,8 +98,12 @@ def _parse_csv(text: str) -> dict[str, tuple[list[str], list[float]]]:
             try:
                 rate = float(cell)
             except ValueError:
+                if strict:
+                    raise ValueError(f"Ungültiger ECB-Kurs für {cur} am {day}")
                 continue
-            if rate <= 0:
+            if not math.isfinite(rate) or rate <= 0:
+                if strict:
+                    raise ValueError(f"ECB-Kurs muss endlich und positiv sein: {cur} am {day}")
                 continue
             table.setdefault(cur, []).append((day, rate))
     ordered: dict[str, tuple[list[str], list[float]]] = {}
@@ -126,6 +141,7 @@ def _refresh(max_age_days: float = REFRESH_DAYS, force: bool = False) -> None:
             (time.time() - path.stat().st_mtime) < max_age_days * 86400:
         return
     _DOWNLOAD_TRIED = True
+    temporary = None
     try:
         response = requests.get(ECB_HISTORY_URL, timeout=60)
         response.raise_for_status()
@@ -133,14 +149,25 @@ def _refresh(max_age_days: float = REFRESH_DAYS, force: bool = False) -> None:
             member = next(n for n in archive.namelist()
                           if n.lower().endswith(".csv"))
             payload = archive.read(member)
+        table = _parse_csv(payload.decode("utf-8-sig"), strict=True)
+        if not table.get("USD"):
+            raise ValueError("ECB-CSV enthält keine gültigen USD-Kurse")
         config.FX_RATES_DIR.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_suffix(".tmp")
-        temporary.write_bytes(payload)
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=path.name + ".",
+                                         suffix=".tmp", delete=False) as stream:
+            temporary = stream.name
+            stream.write(payload)
         os.replace(temporary, path)
         _TABLE.clear()
     except Exception:
         # Bewusst verschluckt: Kurse sind optional, der Befund meldet es.
         pass
+    finally:
+        if temporary is not None:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
 
 
 def load() -> dict[str, tuple[list[str], list[float]]]:
@@ -210,11 +237,19 @@ def usd_per(currency: str, when: date) -> dict | None:
     if idx < 0:
         return None
     rate_date, ccy_per_eur = series[0][idx], series[1][idx]
-    if (when - date.fromisoformat(rate_date)).days > MAX_WALKBACK_DAYS:
+    try:
+        lag = (when - date.fromisoformat(rate_date)).days
+    except ValueError:
+        return None
+    if lag < 0 or lag > MAX_WALKBACK_DAYS or not math.isfinite(ccy_per_eur) or ccy_per_eur <= 0:
         return None
     if currency == "EUR":
         return {"rate": ccy_per_eur, "date": rate_date}
     usd_idx = bisect.bisect_right(usd_series[0], rate_date) - 1
     if usd_idx < 0 or usd_series[0][usd_idx] != rate_date:
         return None
-    return {"rate": usd_series[1][usd_idx] / ccy_per_eur, "date": rate_date}
+    usd_rate = usd_series[1][usd_idx]
+    if not math.isfinite(usd_rate) or usd_rate <= 0:
+        return None
+    rate = usd_rate / ccy_per_eur
+    return {"rate": rate, "date": rate_date} if math.isfinite(rate) and rate > 0 else None

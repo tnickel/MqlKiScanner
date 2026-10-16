@@ -29,7 +29,9 @@ Pipeline (pipeline.py) — Katalog/Crawl → Trades → Forensik → Score/Ampel
                         Ampel-Verlauf (ampel_verlauf/ampel_wechsel)
 Nebenläufig: rest_api.py — schreibgeschützter HTTP-Server (127.0.0.1:8611)
 als Vorbereitung für MqlRealmonitor; Integration zurückgestellt.
-Liest die DB, bewertet nie neu.
+Liest gespeicherte Forensik und leitet Ampel/Urteil mit aktuellen Einstellungen
+neu ab; kein neuer Trade-/Kursabruf und keine neue Forensik. Fehlende Bericht-PDFs
+können beim Laden materialisiert werden.
 Nebenläufig (Phasen A–E): agenten/ — autonomer LLM-Daemon als
 eigener Prozess (python -m mqlkiscanner.agenten): Dirigent-Tageslauf,
 Scheduler mit Herzschlag/Stopp, Journal (agenten_laeufe/schritte/

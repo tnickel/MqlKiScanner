@@ -20,6 +20,9 @@ import hashlib
 import json
 import os
 import re
+import tempfile
+import threading
+from functools import wraps
 
 from pathlib import Path
 
@@ -28,6 +31,21 @@ from . import config, db, downloader_client, quellen
 _PLATTFORM = {"mql4": "mt4", "mql5": "mt5", "pelican": "pelican",
               "vantage": "vantage", "zulu": "zulu"}
 _KUERZEL_SICHER = re.compile(r"[^A-Za-z0-9_\-]")
+_ARTEFAKT_LOCKS: dict[tuple, threading.RLock] = {}
+_ARTEFAKT_LOCKS_GUARD = threading.Lock()
+
+
+def _serialisiere_artefakt(fn):
+    """Coordinate each artifact's file and DB entry across threads/clients."""
+    @wraps(fn)
+    def wrapped(quelle, signal_id, version, *args, **kwargs):
+        key = (str(config.DATA_DIR.resolve()), int(quelle['id']),
+               int(signal_id), str(version), fn.__name__)
+        with _ARTEFAKT_LOCKS_GUARD:
+            lock = _ARTEFAKT_LOCKS.setdefault(key, threading.RLock())
+        with lock:
+            return fn(quelle, signal_id, version, *args, **kwargs)
+    return wrapped
 
 
 def _version_sicher(version: str) -> str:
@@ -69,8 +87,9 @@ def hole_katalog(quelle: dict, *, client: downloader_client.DownloaderClient | N
 def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
     """Katalog-Items → Kandidaten im Pipeline-Format (crawler-Kompatibel).
 
-    `wochen` ist unbekannt (None) — der Wochen-Vorfilter lässt None bewusst
-    durch. `quelle_kuerzel`/`quelle_id`/`quelle_version` steuern später den
+    `wochen` ist ohne Quellbeleg unbekannt (None) — der Wochen-Vorfilter
+    lehnt das regulär ab; Fix-IDs können den Vorfilter umgehen.
+    `quelle_kuerzel`/`quelle_id`/`quelle_version` steuern später den
     Trade-Bezug aus dem Quellen-Cache statt über den MQL5-Exporter.
     """
     out = []
@@ -82,7 +101,7 @@ def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
         version = str(item.get("version") or "").strip()
         # PelicanTrading liefert das Signalalter (weeks) mit — dann greift der
         # Wochen-Vorfilter erstmals auch für Quellen-Signale; MQL5-Kataloge
-        # kennen es nicht (None lässt den Filter bewusst durch).
+        # kennen es nicht (ohne Altersbeleg regulär kein Kandidat).
         wochen = item.get("weeks")
         try:
             wochen = float(wochen) if wochen is not None else None
@@ -141,6 +160,7 @@ def kandidaten_aus_quellen(log=None) -> list[dict]:
     return out
 
 
+@_serialisiere_artefakt
 def hole_trades(quelle: dict, signal_id: int, version: str, *,
                 client: downloader_client.DownloaderClient | None = None) -> tuple[str, bool]:
     """Trades-CSV holen und SHA-gespiegelt cachen. Rückgabe (Pfad, geändert).
@@ -194,6 +214,7 @@ def hole_trades(quelle: dict, signal_id: int, version: str, *,
     return str(pfad), True
 
 
+@_serialisiere_artefakt
 def hole_metrics(quelle: dict, signal_id: int, version: str, *,
                  client: downloader_client.DownloaderClient | None = None) -> dict:
     """Metrics-Antwort holen und cachen; Rückgabe ist das gecachte JSON.
@@ -253,10 +274,12 @@ def _atomar_schreiben(pfad: Path, daten: bytes) -> None:
     write_bytes + DB-Eintrag waren nicht atomar; ein Abbruch dazwischen
     hinterließ eine halbierte Datei als mögliche Forensik-Grundlage.
     tmp + replace (gleiche Partition) macht den Pfad nur mit vollständigen
-    Bytes sichtbar; die tmp-Datei trägt die PID, gegen Kollisionen
-    paralleler Schreiber."""
+    Bytes sichtbar. Eindeutige Tempdateien und die artefaktbezogene Sperre
+    koordinieren parallele Threads inklusive DB-Vermerk."""
     pfad.parent.mkdir(parents=True, exist_ok=True)
-    tmp = pfad.with_name(f"{pfad.name}.{os.getpid()}.tmp")
+    fd, name = tempfile.mkstemp(prefix=pfad.name + '.', suffix='.tmp', dir=pfad.parent)
+    os.close(fd)
+    tmp = Path(name)
     try:
         tmp.write_bytes(daten)
         os.replace(tmp, pfad)
@@ -312,7 +335,6 @@ QUELLEN_BROKER_FALLBACK = {
     "vantage": "vantage",
     "vant": "vantage",
     "robo": "roboforex",
-    "mql4": "roboforex",
     "zulu": "zulu",
 }
 
@@ -348,6 +370,8 @@ def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None) ->
         "quelle_trades_total_available": metrics.get("TradesTotalAvailable"),
         "quelle_trades_stored": _zahl(metrics.get("TradesStored")),
         "quelle_trades_completeness_note": str(metrics.get("CompletenessNote") or ""),
+        "quelle_trade_history_complete": metrics.get("TradeHistoryComplete"),
+        "quelle_trade_history_quality_reasons": metrics.get("TradeHistoryQualityReasons") or [],
         # Source aggregates are evidence for retrying an empty cache, not
         # proof of the number of exported positions (e.g. capped histories).
         # Keep them separate from parser.plattform_positions / stats.trades.
@@ -373,8 +397,8 @@ def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None) ->
         # greifen weiterhin).
         "broker_server": (metrics.get("Broker")
                           or QUELLEN_BROKER_FALLBACK.get(
-                              str(antwort.get("version") or "").lower())
+                              str(quelle_kuerzel or "").strip().lower())
                           or QUELLEN_BROKER_FALLBACK.get(
-                              str(quelle_kuerzel or "").strip().lower())),
+                              str(antwort.get("version") or "").lower())),
         "stats_quelle": "datenquelle_metrics",
     }

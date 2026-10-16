@@ -21,11 +21,14 @@ from .exposure import _resolve_symbol
 
 def diagnostik(parsed, punkte: list[dict], bars_je_symbol: dict[str, list[dict]],
                offsets: dict[str, int], startkapital: float,
-               broker: str | None = None, *, zeitbasis=None) -> dict:
+               broker: str | None = None, *, zeitbasis=None,
+               punkte_enthalten_kapitalfluesse: bool = False) -> dict:
     """Konto-Kurve + kapitalflussneutraler Index (Startwert 1).
 
-``punkte.t`` ist Epoch im Broker-Raum; ``equity`` ist virtuelle Equity
-ohne spaetere Flows. ``offsets`` verschiebt Broker-Zeit in den jeweiligen
+``punkte.t`` ist Epoch im Broker-Raum; ``equity`` ist standardmäßig virtuelle
+Equity ohne spätere Flows. Bei ``punkte_enthalten_kapitalfluesse=True``
+enthält sie bereits das reale Konto und darf Flows nicht nochmals erhalten.
+``offsets`` verschiebt Broker-Zeit in den jeweiligen
 Kursdaten-Raum. ``bars.time`` bezeichnet den Anfang einer H1-Bar.
 
 Bei unbekannter Flow-Equity ist die Anteilzahl ab diesem Flow unbekannt;
@@ -154,6 +157,8 @@ beim Flow machen auch eine vollstaendige Rechnung unzuverlaessig.
     for zeit, _betrag in flows:
         if zeit > letzte_messung and zeit >= letzter_schluss:
             virtual = basis + _realisiert(zeit)
+            if punkte_enthalten_kapitalfluesse:
+                virtual += math.fsum(amount for flow_time, amount in flows if flow_time <= zeit)
             messpunkte.append({"t": zeit, "equity": virtual,
                                "realisiert": virtual, "floating": 0.0, "messpunkt": True})
     if min(int(p["t"]) for p in messpunkte) > first_open:
@@ -197,7 +202,8 @@ beim Flow machen auch eine vollstaendige Rechnung unzuverlaessig.
         messpunkt = (p.get("messpunkt") is not False and wert is not None
                      and math.isfinite(wert)
                      and ("floating" not in p or p["floating"] is not None))
-        actual_equity = float(wert) + kum_flows if messpunkt else None
+        actual_equity = (float(wert) + (0.0 if punkte_enthalten_kapitalfluesse else kum_flows)
+                         if messpunkt else None)
         account_balance = basis + _realisiert(zeit) + kum_flows
         if not messpunkt:
             messluecke = True

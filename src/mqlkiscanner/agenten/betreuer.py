@@ -121,8 +121,8 @@ def _llm_einordnung(signal_id: int, signal_name: str, profil_text: str,
     """LLM-Prüfung gegen das Profil; None = übersprungen/fehlgeschlagen."""
     modell = settings.get("agenten_betreuer_modell", rollen.STANDARD_MODELL)
     max_tokens = int(settings.get("agenten_betreuer_max_tokens", 8192))
-    budget_rest = max(0, int(settings.get("agenten_tagesbudget_tokens",
-                                          500_000)) - journal.tokens_heute())
+    from . import budget
+    budget_rest = budget.remaining(settings)
     client = llm_client.GlmClient(
         model_stufe1=settings.get("model_stufe1", config.MODEL_STUFE1),
         model_stufe2=settings.get("model_stufe2", config.MODEL_STUFE2),
@@ -130,6 +130,7 @@ def _llm_einordnung(signal_id: int, signal_name: str, profil_text: str,
         base_url=settings.get("glm_base_url") or None,
         timeout=2400,
     )
+    budget.attach(client, settings, lauf_id, 'betreuer')
     if not client.has_key:
         journal.schritt_protokollieren(
             lauf_id, "betreuer", "llm_pruefung", status="skipped",
@@ -155,6 +156,7 @@ def _llm_einordnung(signal_id: int, signal_name: str, profil_text: str,
         journal.schritt_protokollieren(
             lauf_id, "betreuer", "llm_pruefung", status="fehler",
             prompt=prompt, modell=modell, tokens=meta.get("total_tokens", client.usage.total_tokens) or 0,
+            budget_ledger=bool(meta.get("agent_budget_ledger")),
             dauer_s=round(_time.monotonic() - beginn, 1),
             detail={"fehler": str(exc), "signal": signal_name})
         return None
@@ -162,6 +164,7 @@ def _llm_einordnung(signal_id: int, signal_name: str, profil_text: str,
         lauf_id, "betreuer", "llm_pruefung", prompt=prompt, antwort=antwort,
         modell=modell, tokens=meta.get("total_tokens",
                                        client.usage.total_tokens) or 0,
+        budget_ledger=bool(meta.get("agent_budget_ledger")),
         dauer_s=meta.get("dauer_s"), detail={"signal": signal_name})
     return antwort, schritt
 

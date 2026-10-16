@@ -12,6 +12,7 @@ Kernprinzipien:
 from __future__ import annotations
 
 import re
+import math
 
 
 _URTEIL_RE = re.compile(
@@ -23,7 +24,7 @@ _FALLBACK_URTEIL_RE = re.compile(
 )
 
 _PORTFOLIO_ROW_RE = re.compile(
-    r"^\s*[-*]\s+(?P<name>.+?)\s+[—–\-]+\s+(?P<pct>\d+(?:[.,]\d+)?)\s*%\s+[—–\-]+\s+(?P<rolle>.+?)\s*$",
+    r"^\s*[-*]\s+(?P<name>.+?)\s+[—–\-]+\s+(?P<pct>[+-]?\d+(?:[.,]\d+)?)\s*%\s+[—–\-]+\s+(?P<rolle>.+?)\s*$",
     re.MULTILINE,
 )
 
@@ -100,6 +101,8 @@ def validate_and_sanitize_verdict(
 def parse_and_validate_portfolio(
     portfolio_text: str,
     cand_ampeln: dict[str, str] | None = None,
+    *, cand_ids: dict[str, tuple[str, str]] | None = None,
+    ambiguous_names: set[str] | None = None,
 ) -> dict:
     """Parst Allokationszeilen `- NAME — GEWICHT % — Rolle` und validiert sie.
 
@@ -109,7 +112,8 @@ def parse_and_validate_portfolio(
     warnungen: list[str] = []
 
     if not portfolio_text:
-        return {"allokationen": [], "summe_gewicht": 0.0, "warnungen": ["Kein Portfolio-Text vorhanden."]}
+        return {"allokationen": [], "summe_gewicht": 0.0,
+                "warnungen": ["Kein Portfolio-Text vorhanden."], 'valid': False}
 
     for m in _PORTFOLIO_ROW_RE.finditer(portfolio_text):
         name = m.group("name").strip().strip("*")
@@ -125,21 +129,54 @@ def parse_and_validate_portfolio(
             "rolle": rolle,
         })
 
+    # Never publish allocation-looking lines that bypass the strict parser.
+    for line in portfolio_text.splitlines():
+        if re.match(r'^\s*[-*]\s+', line) and '%' in line and not _PORTFOLIO_ROW_RE.fullmatch(line):
+            warnungen.append(f"Nicht prüfbare Allokationszeile: {line.strip()}")
+
+    for a in allokationen:
+        if not math.isfinite(a['gewicht_pct']) or not 0 <= a['gewicht_pct'] <= 100:
+            warnungen.append(f"Ungültiges Gewicht für '{a['name']}'.")
+
     summe = sum(a["gewicht_pct"] for a in allokationen)
 
     # 1. Pruefung: Nicht-Gruene Signale gewichtet?
-    if cand_ampeln:
+    if cand_ampeln is not None:
         # Normalisierter Match
         lookup = {k.strip().lower(): (k, v) for k, v in cand_ampeln.items()}
+        seen = set()
         for a in allokationen:
-            key = a["name"].lower()
-            if key in lookup:
-                orig_name, ampel = lookup[key]
-                if ampel != "🟢" and a["gewicht_pct"] > 0:
-                    warnungen.append(
-                        f"Signal '{orig_name}' hat Ampel {ampel}, wurde aber mit "
-                        f"{a['gewicht_pct']} % gewichtet (nur 🟢-Kandidaten erlaubt)."
-                    )
+            key = a["name"].strip().lower()
+            identity = re.match(r'^\[([A-Za-z0-9_-]+:\d+)\]\s*(.*)$', a['name'])
+            if identity:
+                token, supplied_name = identity.groups()
+                match = (cand_ids or {}).get(token)
+                if match and supplied_name.strip().casefold() == match[0].strip().casefold():
+                    a['signal_key'] = token
+                    a['name'] = match[0]
+                    key = match[0].strip().lower()
+                    ampel = match[1]
+                else:
+                    warnungen.append(f"Unbekannte oder widersprüchliche Signalidentität '{token}'.")
+                    continue
+                known = True
+            else:
+                known = key in lookup and key not in (ambiguous_names or set())
+                ampel = lookup[key][1] if known else None
+                identities = [token for token, (name, _) in (cand_ids or {}).items()
+                              if name.strip().lower() == key]
+                if known and len(identities) == 1:
+                    a['signal_key'] = identities[0]
+            if not known:
+                warnungen.append(f"Signal '{a['name']}' ist unbekannt oder mehrdeutig; keine Freigabe.")
+                continue
+            unique = a.get('signal_key', key)
+            if unique in seen:
+                warnungen.append(f"Signal '{a['name']}' wurde mehrfach gewichtet.")
+            seen.add(unique)
+            if ampel != '🟢' and a['gewicht_pct'] > 0:
+                warnungen.append(f"Signal '{a['name']}' hat Ampel {ampel}, wurde aber mit "
+                                  f"{a['gewicht_pct']} % gewichtet (nur 🟢-Kandidaten erlaubt).")
 
     # 2. Pruefung: Gesamtsumme
     if allokationen:
@@ -156,4 +193,5 @@ def parse_and_validate_portfolio(
         "allokationen": allokationen,
         "summe_gewicht": round(summe, 2),
         "warnungen": warnungen,
+        "valid": not warnungen,
     }

@@ -24,7 +24,8 @@ class FakeLlm:
 
     def chat(self, prompt, **kwargs):
         self.calls.append((prompt, kwargs))
-        return "Kurzfassung: Mischung aus A und B. PORTFOLIO_TEST_BERICHT"
+        return ("Kurzfassung: Mischung aus A und B. PORTFOLIO_TEST_BERICHT\n"
+                "- [mql5:111] A — 50 % — Kern\n- [mql5:222] B — 50 % — Ergänzung")
 
 
 def _pipe_with_llm(fake):
@@ -34,7 +35,9 @@ def _pipe_with_llm(fake):
     return pipe
 
 
-def test_run_portfolio_sends_all_reports_and_stores_analysis():
+def test_run_portfolio_sends_all_reports_and_stores_analysis(monkeypatch):
+    # This verifies transport/persistence of already classified results.
+    monkeypatch.setattr(pipeline, 'refresh_report_verdict', lambda *a: None)
     fake = FakeLlm()
     pipe = _pipe_with_llm(fake)
     results = [

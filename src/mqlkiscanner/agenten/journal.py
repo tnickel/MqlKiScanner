@@ -18,6 +18,7 @@ kein UPDATE auf Chronik-Zeilen, kein DELETE.
 from __future__ import annotations
 
 import json
+import sqlite3
 from datetime import datetime, timedelta
 
 from .. import db
@@ -60,6 +61,7 @@ CREATE TABLE IF NOT EXISTS agenten_schritte (
     antwort     TEXT,
     modell      TEXT,
     tokens      INTEGER,
+    budget_ledger INTEGER NOT NULL DEFAULT 0,
     dauer_s     REAL,
     detail_json TEXT
 );
@@ -97,6 +99,15 @@ def init_journal() -> None:
                 conn.execute("ALTER TABLE agenten_laeufe ADD COLUMN resultat TEXT")
             except Exception:
                 pass
+        step_cols = {r["name"] for r in conn.execute("PRAGMA table_info(agenten_schritte)")}
+        if "budget_ledger" not in step_cols:
+            try:
+                conn.execute("ALTER TABLE agenten_schritte ADD COLUMN budget_ledger INTEGER NOT NULL DEFAULT 0")
+            except sqlite3.OperationalError:
+                # Gleichzeitige Initialisierung darf die bereits erfolgreich
+                # migrierte Spalte akzeptieren, andere Fehler bleiben sichtbar.
+                if "budget_ledger" not in {r["name"] for r in conn.execute("PRAGMA table_info(agenten_schritte)")}:
+                    raise
 
 
 # Anzeige-Schwelle für aktive_rollen: ältere 'laeuft'-Einträge gelten als
@@ -331,17 +342,17 @@ def schritt_protokollieren(lauf_id: int, rolle: str, schritt: str, *,
                            status: str = "ok", prompt: str | None = None,
                            antwort: str | None = None, modell: str | None = None,
                            tokens: int = 0, dauer_s: float | None = None,
-                           detail: dict | None = None) -> int:
+                           detail: dict | None = None, budget_ledger: bool = False) -> int:
     """Ein Schritt im Protokoll — LLM-Aufrufe MIT vollem Prompt und Antwort."""
     init_journal()
     with db._connect() as conn:
         cursor = conn.execute(
             "INSERT INTO agenten_schritte "
             "(lauf_id, ts, rolle, schritt, status, prompt, antwort, modell, "
-            " tokens, dauer_s, detail_json) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            " tokens, dauer_s, detail_json, budget_ledger) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (lauf_id, _now(), rolle, schritt, status, prompt, antwort, modell,
              int(tokens), dauer_s,
-             json.dumps(detail or {}, ensure_ascii=False, default=str)))
+             json.dumps(detail or {}, ensure_ascii=False, default=str), int(bool(budget_ledger))))
         return int(cursor.lastrowid or 0)
 
 
@@ -390,22 +401,14 @@ def schritt_lesen(schritt_id: int) -> dict | None:
 def tokens_heute() -> int:
     """Summe der Token aller LLM-Schritte heute (Agenten-Budget, doc/19 §10)."""
     init_journal()
-    with db._connect() as conn:
-        row = conn.execute(
-            "SELECT COALESCE(SUM(tokens),0) AS n FROM agenten_schritte "
-            "WHERE tokens IS NOT NULL AND ts LIKE ? AND prompt IS NOT NULL",
-            (_heute() + "%",)).fetchone()
-    return int(row["n"] if row else 0)
+    from . import budget
+    return budget.spent(_heute())
 
 
 def tokens_monat() -> int:
     init_journal()
-    with db._connect() as conn:
-        row = conn.execute(
-            "SELECT COALESCE(SUM(tokens),0) AS n FROM agenten_schritte "
-            "WHERE tokens IS NOT NULL AND ts LIKE ? AND prompt IS NOT NULL",
-            (_monat() + "%",)).fetchone()
-    return int(row["n"] if row else 0)
+    from . import budget
+    return budget.spent(_monat())
 
 
 # ── Meldungen (Postfach, Phase D) ─────────────────────────────────

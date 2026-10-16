@@ -341,9 +341,11 @@ class ScanResult:
             return (isinstance(wert, (int, float)) and not isinstance(wert, bool)
                     and math.isfinite(wert))
 
-        if self.forensik_stale or not endlich(self.ertrag_monat_geom_pct):
+        flow_equity_unbelegt = (self.effizienz_befund.get("effizienz_status")
+                                == "kapitalfluss_equity_unbelegt")
+        if self.forensik_stale or flow_equity_unbelegt or not endlich(self.ertrag_monat_geom_pct):
             self.ertrag_monat_geom_pct = None
-        if self.forensik_stale or not endlich(self.cagr_jahr_pct):
+        if self.forensik_stale or flow_equity_unbelegt or not endlich(self.cagr_jahr_pct):
             self.cagr_jahr_pct = None
         # Nutzer-Regel 05.10. (Mindesthistorie): Unter 3 Monaten Trade-Spanne
         # ist kein belastbarer RetDD/Calmar — der Produzent (effizienz_
@@ -386,6 +388,7 @@ class ScanResult:
             self.retdd_jahr_vorbehalt = None
             self.retdd_vorbehalt_grund = ""
         status = ("veraltet" if self.forensik_stale else
+                  "kapitalfluss_equity_unbelegt" if flow_equity_unbelegt else
                   "historie_zu_kurz" if historie_zu_kurz else
                   "rendite_nicht_berechenbar" if self.ertrag_monat_geom_pct is None else
                   "ohne_equity_dd" if dd is None else
@@ -409,9 +412,10 @@ class ScanResult:
             "formel_monat": "ertrag_monat_geom_pct / dd_max_equity_pct",
             "formel_jahr": "cagr_jahr_pct / dd_max_equity_pct",
             "vergleichbarkeit": (
-                "Rendite auf virtueller Trade-Netto-Kurve; Kurs-Equity ebenfalls virtuell. "
-                "Monitor-Basis und Zeitraum können abweichen; keine belegte echte "
-                "Konto-Effizienz bei abweichenden Kapitalflüssen/Zeiträumen."),
+                "Trade-Netto-Rendite auf verwendeter Kapitalbasis; spätere Flows "
+                "nur ohne offene Exportposition am Flow. Kurs-DD "
+                "enthält reale Flows nach Projektregel. Zeitraum, Teilmessung "
+                "und virtuelle Kapitalannahmen begrenzen die Vergleichbarkeit."),
         }
 
     @property
@@ -1198,14 +1202,14 @@ def report_basis_for(result: ScanResult, settings: dict) -> str | None:
     forensics = json.loads(_forensik_json(result))
     forensics["martingale_evidenz"] = result.martingale_evidenz or []
     content = {
-        "format": 1, "version": result.forensik_version,
+        "format": 2, "version": result.forensik_version,
         "implementation_version": FORENSICS_VERSION,
         "forensics_complete": result.forensik_vorhanden,
         "csv_sha256": csv_hash, "facts": facts, "forensics": forensics,
         "exclusion": next((entry for entry in config.load_known_signals().get("ausgeschlossen", [])
                            if entry["id"] == result.id), None),
         "criteria": {key: settings.get(key, config.DEFAULT_SETTINGS[key])
-                     for key in ("schranke_eq_dd_pct", "min_ertrag_pct_monat")},
+                     for key in ("schranke_eq_dd_pct", "min_ertrag_pct_monat", "min_calmar_jahr")},
     }
 
     def canonical(value):
@@ -1565,6 +1569,10 @@ class ScanPipeline:
                 stats = ingest.metrics_zu_stats(
                     ingest.hole_metrics(quelle_row, res.id, quelle_version),
                     quelle_kuerzel=str(quelle_row["kuerzel"]))
+                if stats.get('quelle_trade_history_complete') is False:
+                    reasons = stats.get('quelle_trade_history_quality_reasons') or []
+                    raise ValueError('Quelle meldet unvollständige Positionshistorie: '
+                                     + '; '.join(map(str, reasons)))
             else:
                 log("Kennzahlen-Seite laden (mql5) …")
                 stats = signal_stats.fetch_signal_stats(session, res.id)
@@ -1589,7 +1597,13 @@ class ScanPipeline:
                     alt_stats = json.loads(alt_row.get("stats_json") or "{}")
                 except ValueError:
                     alt_stats = {}
-                res.broker_server = alt_stats.get("broker_server") or None
+                old_broker = alt_stats.get('broker_server') or None
+                old_ambiguous_mt4 = (quelle_row is not None
+                    and quelle_version == 'mql4' and quelle_row['kuerzel'] == 'mql5'
+                    and str(old_broker).lower() == 'roboforex'
+                    and alt_stats.get('forensik_version') != FORENSICS_VERSION)
+                # Do not perpetuate the old platform→broker mistake through DB fallback.
+                res.broker_server = None if old_ambiguous_mt4 else old_broker
             # Webseiten-Kapitalbasis (kann negativ sein — eigene rote Regel).
             # Quellen-Signale: erst mit Downloader-Lieferung von InitialDeposit
             # (doc/20 §4) — bis dahin ehrlich None.
@@ -1717,11 +1731,12 @@ class ScanPipeline:
                 # echte CSV-Einzahlung schlaegt jede Injektion — nur diese Quelle
                 # darf die "virtuell"-Kennzeichnung steuern (Live-Urteil, DB,
                 # Prompt-JSON; siehe _kennezeichne_virtuelle_kapitalbasis).
-                res.kapitalbasis_verwendet_usd = fx["drawdown"].get("startkapital")
+                res.kapitalbasis_verwendet_usd = fx["drawdown"].get(
+                    "startkapital_raw", fx["drawdown"].get("startkapital"))
                 res.kapitalbasis_verwendet_quelle = fx["drawdown"].get("startkapital_quelle") or ""
                 td = fx["drawdown"]["trading_dd"]
                 # Risiko-/Ampel-% = max. relativer DD; USD-Anker bleibt dd_usd.
-                res.trading_dd_pct = td.get("dd_pct_max_rel", td.get("dd_pct"))
+                res.trading_dd_pct = scoring._trading_dd_for_risk(td)
                 res.trading_dd_usd = td["dd_usd"]
                 res.winrate_pct = st.get("winrate_pct")
                 res.max_verlustserie = st.get("max_consecutive_losses")
@@ -1814,7 +1829,7 @@ class ScanPipeline:
                 # Selbstauskunft mit fremder Kapitalbasis.
                 dd_befund = fx["drawdown"]
                 netto_gesamt = dd_befund.get("net_total")
-                startkapital = dd_befund.get("startkapital")
+                startkapital = dd_befund.get("startkapital_raw", dd_befund.get("startkapital"))
                 span_wochen = float(st.get("span_weeks") or 0)
                 if (netto_gesamt is not None and startkapital
                         and startkapital > 0 and span_wochen > 0):
@@ -1971,7 +1986,8 @@ class ScanPipeline:
                     "symbole": res.symbole,
                     # Kapitalbasis samt Herkunft (Audit-Snapshot)
                     "kapitalbasis": {
-                        "usd": fx["drawdown"].get("startkapital"),
+                        "usd": fx["drawdown"].get(
+                            "startkapital_raw", fx["drawdown"].get("startkapital")),
                         "quelle": fx["drawdown"].get("startkapital_quelle"),
                         "end_balance_real": fx["drawdown"].get("end_balance_real"),
                         "webseite_balance_usd": stats.get("balance_usd"),
@@ -2131,7 +2147,7 @@ class ScanPipeline:
         # Code-Befund — Verlustmonat-Cluster (gemeinsame Schocks),
         # Historie-Tiefe/gemeinsames Fenster und Instrument-Overlap.
         # Code rechnet, KI deutet (Design-Regel 1).
-        pstat = portfolio_statistik.statistik(jobs)
+        pstat = portfolio_statistik.statistik(jobs, self.settings)
         n_cluster = len(pstat["verlustmonate_cluster"])
         n_klumpen = len(pstat["instrument_overlap"])
         log(f"Portfolio-Statistik (Code-Befund): {n_cluster} Verlustmonat-"
@@ -2165,6 +2181,25 @@ class ScanPipeline:
             if on_progress:
                 on_progress(0, total, f"Fehler: {exc}")
             return {"text": "", "reason": str(exc)}
+        from .llm.verdict_check import parse_and_validate_portfolio
+        cand_ampeln = {r.name: r.ampel for r in jobs}
+        cand_ids = {f'{r.quelle or "mql5"}:{r.id}': (r.name, r.ampel) for r in jobs}
+        names = [r.name.strip().lower() for r in jobs]
+        ambiguous = {name for name in names if names.count(name) > 1}
+        p_check = parse_and_validate_portfolio(text, cand_ampeln,
+                                              cand_ids=cand_ids, ambiguous_names=ambiguous)
+        if p_check['warnungen']:
+            reason = 'Portfolio nicht freigegeben: ' + '; '.join(p_check['warnungen'])
+            log(reason)
+            try:
+                db.store_analysis(self.PORTFOLIO_ANALYSIS_ID, 'portfolio_ungueltig', model_strong,
+                                  meta.get('total_tokens', 0), text)
+            except Exception as exc:
+                log(f'Ungültige Modellantwort nicht archiviert: {exc}')
+            if on_progress:
+                on_progress(0, total, reason)
+            return {'text': '', 'reason': reason, 'raw_answer': text,
+                    'allokation_warnungen': p_check['warnungen'], 'allokationen': []}
         storage_error = ""
         try:
             db.store_analysis(self.PORTFOLIO_ANALYSIS_ID, "portfolio", model_strong,
@@ -2173,12 +2208,6 @@ class ScanPipeline:
         except Exception as exc:  # DB-Fehler darf den Bericht nicht verlieren
             storage_error = f"Portfolio nicht in Datenbank gespeichert: {type(exc).__name__}: {exc}"
             log(f"  {storage_error}")
-        from .llm.verdict_check import parse_and_validate_portfolio
-        cand_ampeln = {r.name: r.ampel for r in jobs}
-        p_check = parse_and_validate_portfolio(text, cand_ampeln)
-        if p_check["warnungen"]:
-            for w in p_check["warnungen"]:
-                log(f"  [Portfolio-Validierung] {w}")
         log(f"  ✓ Portfolio-Vorschlag fertig: {meta.get('zeichen', '?')} Zeichen "
             f"in {meta.get('dauer_s', '?')}s — gesamt bisher: "
             f"{self.llm.usage.total_tokens:,} Tokens")
@@ -2239,8 +2268,7 @@ class ScanPipeline:
                 wochen=st.get("span_weeks"),
                 pf=st.get("profit_factor_csv"),
                 forensik_vorhanden=True,
-                trading_dd_pct=(fx["drawdown"]["trading_dd"].get("dd_pct_max_rel")
-                                or fx["drawdown"]["trading_dd"]["dd_pct"]),
+                trading_dd_pct=scoring._trading_dd_for_risk(fx["drawdown"]["trading_dd"]),
                 trading_dd_usd=fx["drawdown"]["trading_dd"]["dd_usd"],
                 winrate_pct=st.get("winrate_pct"),
                 identische_tradezeilen=st.get("identische_tradezeilen", 0),
@@ -2261,7 +2289,8 @@ class ScanPipeline:
             r.stop_nachweis = _stop_evidence_text(stops)
             r.stop_evidence = stops.get("stop_evidence")
             r.stop_befund = stops
-            r.kapitalbasis_verwendet_usd = fx["drawdown"].get("startkapital")
+            r.kapitalbasis_verwendet_usd = fx["drawdown"].get(
+                "startkapital_raw", fx["drawdown"].get("startkapital"))
             r.kapitalbasis_verwendet_quelle = fx["drawdown"].get("startkapital_quelle") or ""
             eff = portfolio_statistik.effizienz_kennzahlen(
                 path, r.kapitalbasis_verwendet_usd, r.max_drawdown_equity_pct,

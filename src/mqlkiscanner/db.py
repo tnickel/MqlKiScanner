@@ -205,6 +205,7 @@ CREATE TABLE IF NOT EXISTS equity_studien (
     dd_usd      REAL,
     basislos    INTEGER,
     virtuell    INTEGER,
+    forensics_version INTEGER NOT NULL DEFAULT 0,
     updated_at  TEXT
 );
 """
@@ -241,6 +242,8 @@ def init_db() -> None:
         conn.executescript(_SCHEMA)
         # Serialize the additive migration across simultaneous page/worker starts.
         conn.execute("BEGIN IMMEDIATE")
+        if 'forensics_version' not in {row['name'] for row in conn.execute('PRAGMA table_info(equity_studien)')}:
+            conn.execute('ALTER TABLE equity_studien ADD COLUMN forensics_version INTEGER NOT NULL DEFAULT 0')
         if "basis" not in {row["name"] for row in conn.execute("PRAGMA table_info(analyses)")}:
             conn.execute("ALTER TABLE analyses ADD COLUMN basis TEXT")
         # Multi-Source-Hub (doc/20): Herkunfts-Kürzel je Signal. Bestand ist
@@ -893,34 +896,37 @@ def store_equity_studie(signal_id: int, trades_sha: str, report: dict, *,
     das Laden TrueRetDD. dd_usd ist basis-unabhängig und existiert auch bei
     kapitalbasielosen Signalen (basislos=True → kein % speichern).
     """
+    from .analysis_version import FORENSICS_VERSION
     init_db()
     with _connect() as conn:
         conn.execute(
             """INSERT INTO equity_studien (signal_id, trades_sha, json,
                cagr_jahr_pct, ertrag_monat_geom_pct, dd_usd, basislos, virtuell,
-               updated_at)
-               VALUES (?,?,?,?,?,?,?,?,?)
+               updated_at, forensics_version)
+               VALUES (?,?,?,?,?,?,?,?,?,?)
                ON CONFLICT(signal_id) DO UPDATE SET
                  trades_sha=excluded.trades_sha, json=excluded.json,
                  cagr_jahr_pct=excluded.cagr_jahr_pct,
                  ertrag_monat_geom_pct=excluded.ertrag_monat_geom_pct,
                  dd_usd=excluded.dd_usd, basislos=excluded.basislos,
-                 virtuell=excluded.virtuell, updated_at=excluded.updated_at""",
+                 virtuell=excluded.virtuell, updated_at=excluded.updated_at,
+                 forensics_version=excluded.forensics_version""",
             (int(signal_id), trades_sha,
              json.dumps(report, ensure_ascii=False, sort_keys=True, default=str),
              cagr_jahr_pct, ertrag_monat_geom_pct, dd_usd,
-             1 if basislos else 0, 1 if virtuell else 0, _now()))
+             1 if basislos else 0, 1 if virtuell else 0, _now(), FORENSICS_VERSION))
 
 
 def get_equity_studie(signal_id: int) -> dict | None:
     """Studien-Zeile je Signal (dict mit geparstem json) oder None."""
+    from .analysis_version import FORENSICS_VERSION
     init_db()
     with _connect() as conn:
         row = conn.execute(
             "SELECT signal_id, trades_sha, json, cagr_jahr_pct, "
             "ertrag_monat_geom_pct, dd_usd, basislos, virtuell, updated_at "
-            "FROM equity_studien WHERE signal_id=?",
-            (int(signal_id),)).fetchone()
+            "FROM equity_studien WHERE signal_id=? AND forensics_version=?",
+            (int(signal_id), FORENSICS_VERSION)).fetchone()
     if row is None:
         return None
     daten = dict(row)
@@ -933,12 +939,13 @@ def get_equity_studie(signal_id: int) -> dict | None:
 
 def list_equity_studien() -> dict[int, dict]:
     """Alle Studien als {signal_id: zeile} — für das Befüllen der Tabellen."""
+    from .analysis_version import FORENSICS_VERSION
     init_db()
     with _connect() as conn:
         rows = conn.execute(
             "SELECT signal_id, trades_sha, json, cagr_jahr_pct, "
             "ertrag_monat_geom_pct, dd_usd, basislos, virtuell, updated_at "
-            "FROM equity_studien").fetchall()
+            "FROM equity_studien WHERE forensics_version=?", (FORENSICS_VERSION,)).fetchall()
     out: dict[int, dict] = {}
     for row in rows:
         daten = dict(row)

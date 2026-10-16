@@ -1,0 +1,2 @@
+writes=320, failures=96, exceptionTypes=[AccessDeniedException, NoSuchFileException]
+finalLoadedRows=1
