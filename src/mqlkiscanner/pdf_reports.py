@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import html
+import json
 import os
 import re
 import tempfile
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from functools import lru_cache
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
@@ -377,17 +379,13 @@ def report_storage_path(
     return base / "signale" / signal / version / _STORED_FILENAMES[report.kind]
 
 
-def persist_report_pdf(
-    report: PdfReport,
-    *,
-    snapshot: str = "",
-    root: Path | None = None,
-) -> Path:
-    """Render and atomically persist one report, replacing stale bytes if needed."""
-    path = report_storage_path(report, snapshot=snapshot, root=root)
-    payload = render_report_pdf(report)
-    if path.is_file() and path.read_bytes() == payload:
-        return path
+@lru_cache(maxsize=1)
+def _renderer_fingerprint() -> str:
+    # Invalidate stored render metadata when the renderer or ReportLab changes.
+    return sha256(Path(__file__).read_bytes() + str(reportlab.Version).encode()).hexdigest()
+
+
+def _atomic_write(path: Path, payload: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
@@ -399,11 +397,44 @@ def persist_report_pdf(
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
-    except OSError as exc:
-        raise PdfRenderError(f"PDF konnte nicht unter {path} gespeichert werden: {exc}") from exc
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+
+
+def persist_report_pdf(
+    report: PdfReport,
+    *,
+    snapshot: str = "",
+    root: Path | None = None,
+) -> Path:
+    """Reuse a verified current PDF; render only missing or changed reports."""
+    path = report_storage_path(report, snapshot=snapshot, root=root)
+    metadata_path = path.with_suffix(".pdf.cache.json")
+    input_hash = sha256(json.dumps(
+        {"report": asdict(report), "renderer": _renderer_fingerprint()},
+        sort_keys=True, ensure_ascii=False,
+    ).encode("utf-8")).hexdigest()
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        if (metadata.get("input_sha256") == input_hash
+                and metadata.get("pdf_sha256") == sha256(path.read_bytes()).hexdigest()):
+            return path
+    except (OSError, ValueError, AttributeError):
+        pass  # Legacy files, missing files or damaged metadata are repaired below.
+    payload = render_report_pdf(report)
+    try:
+        if not path.is_file() or path.read_bytes() != payload:
+            _atomic_write(path, payload)
+    except OSError as exc:
+        raise PdfRenderError(f"PDF konnte nicht unter {path} gespeichert werden: {exc}") from exc
+    try:
+        _atomic_write(metadata_path, json.dumps({
+            "input_sha256": input_hash,
+            "pdf_sha256": sha256(payload).hexdigest(),
+        }).encode("utf-8"))
+    except OSError:
+        pass  # The PDF remains usable even if optional cache metadata cannot be saved.
     return path
 
 

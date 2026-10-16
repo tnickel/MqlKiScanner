@@ -208,6 +208,11 @@ class ScanResult:
     retdd_virtuell_jahr: float | None = None
     retdd_virtuell_monat: float | None = None
     true_dd_basis_virtuell: bool = False
+    true_dd_virtuell_vorbehalt: bool = False
+    true_dd_virtuell_grund: str = ""
+    studie_anzeige_dd_pct: float | None = None
+    studie_anzeige_vorbehalt: bool = False
+    studie_anzeige_grund: str = ""
     kapitalbasis_verwendet_quelle: str = ""
     broker_server: str | None = None
     symbole: str = ""               # gehandelte Assets ("XAUUSD, US30, ...")
@@ -471,12 +476,17 @@ def _equity_rekon_grund(reko: dict) -> str:
     return grund
 
 
-def results_from_db(settings: dict | None = None) -> list[ScanResult]:
+def results_from_db(settings: dict | None = None, *, catalog_rows=None,
+                    studien=None, materialize_pdfs: bool = True,
+                    progress=None) -> list[ScanResult]:
     """Alle in der SQLite-DB gespeicherten Signale als ScanResult-Liste."""
     settings = {**config.load_settings(), **(settings or {})}
     results: list[ScanResult] = []
-    _studien_cache = db.list_equity_studien()
-    for row in db.list_catalog():
+    _studien_cache = db.list_equity_studien() if studien is None else studien
+    rows = db.list_catalog() if catalog_rows is None else catalog_rows
+    if progress:
+        progress(0, len(rows))
+    for row in rows:
         stats = row.get("stats") or {}
         f = row.get("forensik") or {}
         if not isinstance(f, dict):
@@ -508,7 +518,13 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
                            and peak.get("shock_pct_max") is not None)
         # Unvollstaendige Teilergebnisse sind bekannt-begruendet, nicht "veraltet".
         version_stale = bool(f) and not version_current and vollstaendig
-        forensik_stale = forensik_stale or version_stale
+        aktueller_sha = row.get("trades_sha256") or ""
+        # Legacy ohne gebundenen Befund-SHA ist bei vorhandenem Trade-Export
+        # keine nachgewiesene Uebereinstimmung. Zeitstempel in Sekunden koennen
+        # einen separaten Import nicht von einem atomaren Vollscan unterscheiden.
+        trades_stale = bool(f) and bool(aktueller_sha) and (
+            not f.get("trades_sha256") or f["trades_sha256"] != aktueller_sha)
+        forensik_stale = forensik_stale or version_stale or trades_stale
         res = ScanResult(
             id=int(row["signal_id"]),
             source_kind="demo" if row.get("platform") == "CSV" else "live",
@@ -607,6 +623,16 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
             tiefenanalyse_model=row.get("tiefe_model") or "",
             fehler=last_fehler or "",
         )
+        if trades_stale:
+            # Auch rohe Anzeige-/USD-Kanaele duerfen keinen Befund eines
+            # anderen Exports zeigen. Eine separat SHA-passende Studie darf
+            # die Vorstufenanzeige anschliessend weiterhin ergaenzen.
+            res.equity_dd_rekonstruiert_pct = None
+            res.equity_dd_rekonstruiert_usd = None
+            res.equity_dd_rekon_roh_pct = None
+            res.true_dd_usd = None
+            res.equity_rekon_status = "veraltet"
+            res.equity_rekon_grund = "Workflow-Forensik nicht an aktuellen Trade-SHA gebunden"
         # Batch-Equity-Studien („Lücken füllen", Nutzer 08.10.2026) — nur
         # wo die Forensik KEINE Equity-Messung hat; Forensik gewinnt immer.
         studie_anwenden(res, _studien_cache)
@@ -629,7 +655,7 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
                 res.monitor_trade_eq_dd_pct) > limit
         if res.gesamtbericht:
             res.kurzfassung = _extract_kurzfassung(res.gesamtbericht)
-        if any((res.trade_analyse, res.risiko_analyse, res.gesamtbericht,
+        if materialize_pdfs and any((res.trade_analyse, res.risiko_analyse, res.gesamtbericht,
                 res.tiefenanalyse)):
             try:
                 from .pdf_reports import materialize_result_pdfs
@@ -640,7 +666,9 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
         if forensik_stale and last_fehler:
             res.urteil = f"Fehler (Forensik veraltet): {last_fehler}"
         elif forensik_stale:
-            res.urteil = "Forensik veraltet oder unvollständig — erneute Prüfung erforderlich."
+            res.urteil = ("Forensik passt nicht nachweislich zum aktuellen Trade-Export — erneute Prüfung erforderlich."
+                          if trades_stale else
+                          "Forensik veraltet oder unvollständig — erneute Prüfung erforderlich.")
         restore_current_reports(res, settings)
         # Virtuelle Kapitalbasis dauerhaft im Urteil kennzeichnen (auch nach
         # App-Neustart). Zentrale, idempotente Kennzeichnung — restore/refresh
@@ -666,6 +694,8 @@ def results_from_db(settings: dict | None = None) -> list[ScanResult]:
                 f" · Calmar ≈ {res.retdd_jahr_vorbehalt:.2f}{monat} "
                 "(Vorbehalt: Kursmessung unzuverlässig)")
         results.append(res)
+        if progress:
+            progress(len(results), len(rows))
     return results
 
 
@@ -683,6 +713,23 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
     studie = studien.get(int(res.id))
     if studie is None:
         return
+    # Unabhaengige, SHA-exakte Studie darf die Tabelle fuellen, waehrend
+    # eine alte Engine-Batterie weiterhin fuer Ampel/Score gesperrt bleibt.
+    # Keine Uebertragung in bewertende Forensikfelder dieses Sonderwegs.
+    sha = studie.get("trades_sha") or ""
+    report = studie.get("report") or {}
+    if (res.forensik_stale and sha and sha == res.trades_sha256
+            and not studie.get("basislos") and not studie.get("virtuell")):
+        dd = report.get("equity_dd_pct_raw", report.get("equity_dd_pct"))
+        if isinstance(dd, (int, float)) and not isinstance(dd, bool) and math.isfinite(dd) and dd >= 0:
+            res.studie_anzeige_dd_pct = dd
+            res.studie_anzeige_vorbehalt = (not bool(report.get("verlaesslich"))
+                                           or bool(report.get("teilmessung")))
+            res.studie_anzeige_grund = (report.get("teilmessung_hinweis")
+                                       or report.get("grund") or "Unabhaengige H1-Studie")
+            res.true_dd_usd = studie.get("dd_usd")
+    if res.forensik_stale and not studie.get("virtuell"):
+        return
     if (res.max_drawdown_equity_pct is not None
             or res.equity_dd_rekon_roh_pct is not None):
         return
@@ -690,20 +737,38 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
     if sha and res.trades_sha256 and sha != res.trades_sha256:
         return  # neue Trade-Lieferung — Studie veraltet, wird neu gerechnet
     report = studie.get("report") or {}
+    teil_hinweis = ""
+    if report.get("teilmessung"):
+        teil_hinweis = report.get("teilmessung_hinweis") or (
+            "Teilmessung ohne " + ", ".join(report.get("symbole_nicht_betrachtet") or [])
+            + " — DD kann unterschätzt sein.")
+    # Diagnose bleibt auch ohne berechenbaren DD sichtbar.
+    res.equity_rekon_gmt_h = report.get("gmt_offset_h")
+    res.equity_rekon_status = report.get("status") or ""
+    res.equity_rekon_grund = teil_hinweis or report.get("grund") or ""
+    res.equity_rekon_abdeckung_pct = report.get("abdeckung_pct")
+    res.equity_rekon_methodik = report.get("methodik") or ""
+    res.equity_rekon_zeitbasis = report.get("zeitbasis") or {}
+    res.equity_rekon_ohne_kurse = report.get("symbole_ohne_kurse") or []
+    res.equity_rekon_ohne_kontrakt = report.get("symbole_ohne_kontrakt") or []
     res.true_dd_usd = studie.get("dd_usd")
     if studie.get("virtuell"):
         # Virtuelle 10k-Basis: Prozente NUR als Anzeige in separaten Feldern —
         # equity_dd_rekonstruiert_pct bleibt frei (Schranke/Ampel unberührt).
-        dd = report.get("equity_dd_pct")
+        dd = report.get("equity_dd_pct_raw")
         if dd is None:
-            dd = report.get("equity_dd_pct_raw")
+            dd = report.get("equity_dd_pct")
         res.true_dd_virtuell_pct = dd
         res.true_dd_basis_virtuell = True
+        res.true_dd_virtuell_vorbehalt = (not bool(report.get("verlaesslich"))
+                                        or bool(teil_hinweis))
+        res.true_dd_virtuell_grund = (teil_hinweis or report.get("grund") or report.get("status")
+                                    or "Kursmessung nicht bestanden")
         cagr = studie.get("cagr_jahr_pct")
         geom = studie.get("ertrag_monat_geom_pct")
-        if dd:
-            res.retdd_virtuell_jahr = (cagr / dd if cagr else None)
-            res.retdd_virtuell_monat = (geom / dd if geom else None)
+        if dd is not None and dd > 0:
+            res.retdd_virtuell_jahr = (cagr / dd if cagr is not None else None)
+            res.retdd_virtuell_monat = (geom / dd if geom is not None else None)
         return
     if studie.get("basislos"):
         return  # alte nur-USD-Studien (werden als virtuell neu gerechnet)
@@ -711,16 +776,8 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
     if roh is None:
         return
     res.equity_dd_rekon_roh_pct = roh
-    res.equity_rekon_gmt_h = report.get("gmt_offset_h")
-    res.equity_rekon_status = report.get("status") or ""
-    res.equity_rekon_grund = report.get("grund") or ""
-    res.equity_rekon_abdeckung_pct = report.get("abdeckung_pct")
-    res.equity_rekon_methodik = report.get("methodik") or ""
-    res.equity_rekon_zeitbasis = report.get("zeitbasis") or {}
-    res.equity_rekon_ohne_kurse = report.get("symbole_ohne_kurse") or []
-    res.equity_rekon_ohne_kontrakt = report.get("symbole_ohne_kontrakt") or []
-    if report.get("verlaesslich") and report.get("equity_dd_pct") is not None:
-        res.equity_dd_rekonstruiert_pct = report.get("equity_dd_pct")
+    if report.get("verlaesslich") and roh is not None:
+        res.equity_dd_rekonstruiert_pct = roh
         res.equity_dd_rekonstruiert_usd = report.get("equity_dd_usd")
     # TrueRetDD-Familie aus der Studien-Kennzahlenbasis (dieselbe Formel wie
     # refresh_efficiency — dort ist der Produzent effizienz_kennzahlen):
@@ -1486,6 +1543,11 @@ class ScanPipeline:
                          wochen=cand.get("wochen"), growth_pct=cand.get("growth_pct"),
                          quelle=str(cand.get("quelle_kuerzel") or ""))
         try:
+            # Auch der erste headless Lauf braucht das Schema vor dem
+            # lesenden Broker-Fallback. Ein fehlendes Schema darf keinen
+            # Exportversuch verbrauchen; echte DB-Fehler bleiben im
+            # vorhandenen Fehler-/Retrypfad dieser Einzelpruefung.
+            db.init_db()
             quelle_row = None
             quelle_version = None
             if cand.get("quelle_kuerzel"):
@@ -1836,6 +1898,12 @@ class ScanPipeline:
                 "kapitalbasis_virtual_usd": stats.get("kapitalbasis_virtual_usd"),
                 # Monitor-Closing-DD (Audit-Snapshot, KI-Kontext)
                 "monitor_trade_eq_dd_pct": stats.get("monitor_trade_eq_dd_pct"),
+                # Quellenhistorie transparent ueber Neustarts erhalten;
+                # reine Hinweise, keine weitere Scoring-/Risikoschranke.
+                "quelle_trades_gekappt": stats.get("quelle_trades_gekappt"),
+                "quelle_trades_total_available": stats.get("quelle_trades_total_available"),
+                "quelle_trades_stored": stats.get("quelle_trades_stored"),
+                "quelle_trades_completeness_note": stats.get("quelle_trades_completeness_note"),
             }
             if res.fehler and not res.forensik_vorhanden:
                 stats_payload["last_fehler"] = res.fehler

@@ -56,6 +56,8 @@ def analyze(path: str, stress_move: float | None = None,
         "source_format": parsed.source_format,
         "n_pendings": len(parsed.pendings),
         "n_balances": len(parsed.balances),
+        "n_account_costs": len(parsed.costs),
+        "neutrale_hedge_metazeilen": parsed.neutrale_hedge_metazeilen,
         "stats": stats.compute(parsed),
         "forensics": forensics,
     }

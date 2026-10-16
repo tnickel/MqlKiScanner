@@ -76,12 +76,13 @@ def test_luecken_sammeln_trennt_belegt_luecke_und_rechenbar(tmp_path):
 
 
 def test_luecken_sammeln_gueltige_studie_ist_keine_luecke_mehr():
-    res = pipeline.ScanResult(id=9, name="Hat Studie", quelle="vant", trades_path="")
+    res = pipeline.ScanResult(id=9, name="Hat Studie", quelle="vant",
+                              trades_path="", trades_sha256="passend")
     # Gültig = SHA passt UND ein Drawdown-Wert existiert. Eine Studie ohne
     # dd (z. B. "Kursdaten fehlen") ist KEINE gefüllte Lücke mehr (09.10.).
-    studien = {9: {"trades_sha": "", "dd_usd": 5.0, "basislos": 0,
+    studien = {9: {"trades_sha": "passend", "dd_usd": 5.0, "basislos": 0,
                    "cagr_jahr_pct": None, "ertrag_monat_geom_pct": None,
-                   "report": {"equity_dd_pct": 7.5}}}
+                   "report": {"equity_dd_pct": 7.5, "verlaesslich": True}}}
     leere_studie = {9: {"trades_sha": "", "basislos": 0, "report": {}}}
     jobs_leer, erledigt_leer = studien_batch.luecken_sammeln(
         [res], leere_studie, trades_nachladen=False)
@@ -102,6 +103,43 @@ def test_luecken_sammeln_gueltige_studie_ist_keine_luecke_mehr():
 
 
 # --------------------------------- Rechenkern mit Fake-Kursen (kein Terminal)
+@pytest.mark.parametrize('report,study_sha,trade_sha', [
+    ({'equity_dd_pct_raw': 3.0, 'verlaesslich': False, 'status': 'unvollstaendig'}, 's', 's'),
+    ({'equity_dd_pct': 3.0}, 's', 's'),
+    ({'equity_dd_pct': 3.0, 'verlaesslich': True}, '', 's'),
+    ({'equity_dd_pct': 3.0, 'verlaesslich': True}, 's', ''),
+    ({'equity_dd_pct': float('nan'), 'verlaesslich': True}, 's', 's'),
+])
+def test_luecken_sammeln_vorbehalt_oder_unbelegte_studie_bleibt_job(
+        report, study_sha, trade_sha):
+    res = pipeline.ScanResult(id=42, name='Unvollständig',
+        trades_path='cached.csv', trades_sha256=trade_sha,
+        equity_dd_rekon_roh_pct=3.0)
+    studien = {42: dict(trades_sha=study_sha, basislos=False, virtuell=True,
+                        report=report)}
+    jobs, erledigt = studien_batch.luecken_sammeln(
+        [res], studien, trades_nachladen=False)
+    assert jobs == [res] and erledigt == 0
+
+
+def test_luecken_sammeln_verlaessliche_virtuelle_studie_schliesst_luecke():
+    res = pipeline.ScanResult(id=42, name='Gemessen',
+        trades_path='cached.csv', trades_sha256='s')
+    studie = dict(trades_sha='s', basislos=False, virtuell=True,
+                  report=dict(equity_dd_pct=3.0, verlaesslich=True))
+    jobs, erledigt = studien_batch.luecken_sammeln(
+        [res], {42: studie}, trades_nachladen=False)
+    assert jobs == [] and erledigt == 1
+
+
+def test_luecken_sammeln_rohwert_allein_ist_keine_belastbare_messung():
+    res = pipeline.ScanResult(id=42, name='Rohwert', trades_path='cached.csv',
+        equity_dd_rekon_roh_pct=3.0, monitor_trade_eq_dd_pct=2.0)
+    jobs, erledigt = studien_batch.luecken_sammeln(
+        [res], {}, trades_nachladen=False)
+    assert jobs == [res] and erledigt == 0
+
+
 def test_rechne_ein_signal_mit_basis_persistiert_studie(tmp_path, monkeypatch):
     csv_pfad = _csv(tmp_path / "t5.csv")
     res = pipeline.ScanResult(id=5, name="Mit Basis", quelle="vant", trades_path=csv_pfad,
@@ -259,12 +297,12 @@ def test_seite_zeigt_batch_button_panel_und_usd_spalte(tmp_path, monkeypatch):
     probe = pipeline.ScanResult(id=31, name="Mit Studie", quelle="vant",
                                 trades_path=csv_pfad)
     pipeline.studie_anwenden(probe, {31: db.get_equity_studie(31)})
-    monkeypatch.setattr(pipeline, "results_from_db", lambda: [probe])
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kwargs: [probe])
     monkeypatch.setattr(db, "list_catalog", lambda: [])
     monkeypatch.setattr(db, "katalog_sync_status",
                         lambda: {"vant": {"gelaufen_am": "2026-10-08", "anzahl": 1,
                                           "fehler": None}})
-    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda: ([], {}))
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kwargs: ([], {}))
     aufrufe = []
     monkeypatch.setattr(studien_batch, "starten",
                         lambda resultate, nur_luecken=True, trades_nachladen=True:
@@ -290,3 +328,89 @@ def test_seite_zeigt_batch_button_panel_und_usd_spalte(tmp_path, monkeypatch):
     at.run()
     assert not at.exception, at.exception
     assert aufrufe == [(True, True)]
+
+
+@pytest.mark.parametrize('signal_id,stored_broker,expected', [
+    (910001, None, 'vantage'),
+    (910002, 'RoboForex-Pro', 'RoboForex-Pro'),
+])
+def test_batch_nutzt_broker_aus_aufgeloesten_metrics_ohne_id_sonderfall(
+        tmp_path, monkeypatch, signal_id, stored_broker, expected):
+    from mqlkiscanner.forensics import equity_rekonstruktion
+    result = pipeline.ScanResult(id=signal_id, quelle='vant',
+        trades_path=_csv(tmp_path / 'resolved.csv'), trades_sha256='current',
+        broker_server=stored_broker)
+    monkeypatch.setattr(studien_batch.katalog, 'metrics_stats',
+        lambda r: {'initial_deposit_usd': 20000.0, 'broker_server': 'vantage'})
+    captured = {}
+    def reconstruct(parsed, provider, capital, *, broker=None):
+        captured.update(capital=capital, broker=broker)
+        return {'status': 'skipped', 'grund': 'Testkursanbieter'}
+    monkeypatch.setattr(equity_rekonstruktion, 'rekonstruiere', reconstruct)
+    studien_batch._rechne_ein_signal(result, {'skipped_gruende': []}, _FakeKurse(), False)
+    assert captured == {'capital': 20000.0, 'broker': expected}
+    assert not db.get_equity_studie(signal_id)['virtuell']
+
+
+@pytest.mark.parametrize('stats,einzahlung,erwartete_basis,virtuell', [
+    ({'kapitalbasis_virtual_usd': 10000}, None, 10000, True),
+    ({'kapitalbasis_virtual_usd': 10000, 'initial_deposit_usd': 20000}, None, 20000, False),
+    ({'kapitalbasis_virtual_usd': 10000}, 5000, 5000, False),
+    ({}, 5000, 5000, False),
+    ({}, None, 10000, True),
+])
+def test_batch_markiert_tatsaechliche_kapitalbasis_nach_csv_kaskade(
+        tmp_path, monkeypatch, stats, einzahlung, erwartete_basis, virtuell):
+    from mqlkiscanner.forensics import equity_rekonstruktion
+    path = Path(_csv(tmp_path / 'basis.csv'))
+    if einzahlung is not None:
+        balance = [''] * 11
+        balance[0], balance[1], balance[10] = '2026.01.01 00:00:00', 'Balance', str(einzahlung)
+        content = path.read_text(encoding='utf-8-sig')
+        path.write_text(content.replace(KOPF, KOPF+';'.join(balance)+'\n', 1), encoding='utf-8-sig')
+    monkeypatch.setattr(studien_batch.katalog, 'metrics_stats', lambda _: dict(stats))
+    captured = {}
+    def reconstruct(parsed, provider, capital, *, broker=None):
+        captured['capital'] = capital
+        return {'status': 'ok', 'verlaesslich': True, 'equity_dd_pct': 10,
+                'equity_dd_pct_raw': 10, 'equity_dd_usd': capital*.1}
+    monkeypatch.setattr(equity_rekonstruktion, 'rekonstruiere', reconstruct)
+    result = pipeline.ScanResult(id=919191, quelle='pelik', trades_path=str(path), trades_sha256='same')
+    assert studien_batch._rechne_ein_signal(result, {'skipped_gruende': []}, _FakeKurse(), False)
+    assert captured['capital'] == erwartete_basis
+    saved = db.get_equity_studie(result.id)
+    assert bool(saved['virtuell']) is virtuell
+    pipeline.studie_anwenden(result, {result.id: saved})
+    if virtuell:
+        assert result.equity_dd_rekonstruiert_pct is None
+        assert result.true_dd_virtuell_pct == 10
+    else:
+        assert result.equity_dd_rekonstruiert_pct == 10
+
+
+@pytest.mark.parametrize('stats,seitenbasis,einzahlung,erwartete_basis,virtuell', [
+    ({}, 20000, None, 20000, False),
+    ({}, 20000, 5000, 5000, False),
+    ({'initial_deposit_usd': 30000}, 20000, None, 30000, False),
+    *[({}, invalid, None, 10000, True) for invalid in (None, 0, -1, float('nan'), float('inf'), True)],
+])
+def test_direkte_mql5_seitenbasis_nur_positiv_und_nach_cached_metrics(
+        tmp_path, monkeypatch, stats, seitenbasis, einzahlung, erwartete_basis, virtuell):
+    from mqlkiscanner.forensics import equity_rekonstruktion
+    path = Path(_csv(tmp_path / 'mql5_basis.csv'))
+    if einzahlung is not None:
+        row = [''] * 11
+        row[0], row[1], row[10] = '2026.01.01 00:00:00', 'Balance', str(einzahlung)
+        content = path.read_text(encoding='utf-8-sig')
+        path.write_text(content.replace(KOPF, KOPF+';'.join(row)+'\n', 1), encoding='utf-8-sig')
+    monkeypatch.setattr(studien_batch.katalog, 'metrics_stats', lambda _: dict(stats))
+    captured = {}
+    def reconstruct(parsed, provider, capital, *, broker=None):
+        captured['capital'] = capital
+        return {'status': 'skipped', 'grund': 'Testkursanbieter'}
+    monkeypatch.setattr(equity_rekonstruktion, 'rekonstruiere', reconstruct)
+    result = pipeline.ScanResult(id=919192, quelle='mql5', trades_path=str(path),
+                                 trades_sha256='same', kapitalbasis_usd=seitenbasis)
+    studien_batch._rechne_ein_signal(result, {'skipped_gruende': []}, _FakeKurse(), False)
+    assert captured['capital'] == erwartete_basis
+    assert bool(db.get_equity_studie(result.id)['virtuell']) is virtuell

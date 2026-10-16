@@ -17,41 +17,70 @@ Laufprinzip:
   (katalog.lade_signal_daten, SHA-geprüfter Cache).
 - Fortschritt in einem plain dict (control): fertig/gesamt/aktuell/Ø-Dauer/
   Restzeit-Schätzung + Abbruch-Flag (geprüft zwischen zwei Signalen).
-- Basislose Signale (keine belegbare Kapitalbasis, z. B. Vantage ohne
-  Einzahlungszeilen) bekommen bewusst KEINEN %-Drawdown, nur True-DD USD.
+- Fehlt eine belegte Kapitalbasis, wird die vereinbarte virtuelle
+  10.000-USD-Basis verwendet und ausdrücklich als Annahme markiert.
+  Ungültige echte Kapitaldaten werden dadurch nicht repariert.
 """
 from __future__ import annotations
 
 import time
+import math
 from collections import deque
 from pathlib import Path
 
 from . import config, db, katalog, pipeline, scan_worker, signal_statistik
 
 
+def _neu_aufloesbare_kontrakte(res, studie: dict | None) -> bool:
+    """Nur vormals ausgeschlossene Instrumente am ORIGINAL-Broker pruefen.
+
+    Das Kursreferenzterminal belegt keine Kontraktgroesse des Signalanbieters.
+    Ohne dessen Identitaet bleibt eine bestehende Teilmessung unveraendert.
+    """
+    from .forensics.exposure import _resolve_symbol
+
+    report = (studie or {}).get("report") or {}
+    fehlend = report.get("symbole_ohne_kontrakt")
+    if not isinstance(fehlend, (list, tuple)):
+        return False
+    symbole = [s.strip() for s in fehlend if isinstance(s, str) and s.strip()]
+    if not symbole:
+        return False
+    broker = report.get("original_broker") or getattr(res, "broker_server", None)
+    if not isinstance(broker, str) or not broker.strip():
+        broker = katalog.metrics_stats(res).get("broker_server")
+    if not isinstance(broker, str) or not broker.strip():
+        return False
+    return any(_resolve_symbol(symbol, broker) is not None for symbol in symbole)
+
+
 def luecken_sammeln(resultate: list, studien: dict, *,
                      trades_nachladen: bool) -> tuple[list, int]:
     """(Jobs, bereits_erledigt) — Jobs = Signale, die gerechnet werden wollen.
 
-    Lücke = keine Equity-Messung am Resultat UND (nur_luecken) keine
-    gültige Studie in der DB. Signale ohne jeden Trade-Bezug und ohne
+    Lücke = keine belastbare Equity-Messung am Resultat UND (nur_luecken)
+    keine verlässliche, SHA-passende Studie in der DB. Rohmessungen mit
+    Vorbehalt schließen die Lücke nicht. Signale ohne jeden Trade-Bezug und ohne
     Quellen-Referenz sind nicht rechenbar und werden bereits hier
     aussortiert (Zähler „ohne Quelle“ im Batch-Protokoll).
     """
     jobs: list = []
     erledigt = 0
     for res in resultate:
-        hat_messung = (getattr(res, "max_drawdown_equity_pct", None) is not None
-                       or getattr(res, "equity_dd_rekon_roh_pct", None) is not None)
-        if hat_messung:
+        studie = studien.get(int(res.id))
+        spec_nachmessung = _neu_aufloesbare_kontrakte(res, studie)
+        hat_messung = getattr(res, "max_drawdown_equity_pct", None) is not None
+        if hat_messung and not spec_nachmessung:
             erledigt += 1
             continue
-        studie = studien.get(int(res.id))
         if studie is not None:
             sha = studie.get("trades_sha") or ""
             report = studie.get("report") or {}
-            hat_dd = (report.get("equity_dd_pct") is not None
-                      or report.get("equity_dd_pct_raw") is not None)
+            dd = report.get("equity_dd_pct")
+            if dd is None:
+                dd = report.get("equity_dd_pct_raw")
+            hat_dd = (isinstance(dd, (int, float)) and not isinstance(dd, bool)
+                      and math.isfinite(dd) and dd >= 0)
             # Alte nur-USD-Studien (basislos) zählen NICHT als erledigt —
             # sie werden als virtuelle neu gerechnet. Und: Eine Studie mit
             # passendem SHA aber OHNE Drawdown-Wert (Status skipped/
@@ -60,9 +89,11 @@ def luecken_sammeln(resultate: list, studien: dict, *,
             # "belegt", obwohl sie nie eine Messung geliefert haben
             # (Live-Fund 09.10.: Finisher hielt ~700 Kursdaten-Fehler für
             # erledigt).
-            if studie.get("basislos") or not hat_dd:
+            if (studie.get("basislos") or not hat_dd
+                    or report.get("verlaesslich") is not True):
                 pass
-            elif not sha or not res.trades_sha256 or sha == res.trades_sha256:
+            elif (sha and res.trades_sha256 and sha == res.trades_sha256
+                  and not spec_nachmessung):
                 erledigt += 1          # gültige Studie mit Messung vorhanden
                 continue
         ref = katalog.quellen_referenz(res)
@@ -184,6 +215,143 @@ def _laufe(jobs: list, control: dict, settings: dict,
         control["restzeit_s"] = 0
 
 
+class _AktuellerFeed:
+    """Nur der aktuelle Feed; verhindert gemischte Bars beim Vergleich."""
+
+    def __init__(self, anbieter):
+        self.anbieter = anbieter
+
+    @property
+    def terminal_pfad(self):
+        return getattr(self.anbieter, "terminal_pfad", None)
+
+    @property
+    def terminal_herkunft(self):
+        return getattr(self.anbieter, "terminal_herkunft", {})
+
+    def hole_h1(self, *args, **kwargs):
+        return self.anbieter.hole_h1(*args, **kwargs)
+
+
+def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
+    """Auch Teilhistorie oder unbrauchbare Zeitbasis an weiteren Brokern pruefen.
+
+    Der bisherige Symbolfallback bleibt der erste Versuch. Liefert er keine
+    bestandene Messung, werden weitere Terminals als ganze, getrennte Feeds
+    verglichen. Kein Zusammenkleben ihrer Zeitreihen, kein Auffuellen von Bars.
+    """
+    from .forensics import equity_rekonstruktion
+
+    versuche = []
+    best = None
+    erster_fehler = None
+
+    def qualitaet(report):
+        dd = report.get("equity_dd_pct_raw", report.get("equity_dd_pct"))
+        messbar = (isinstance(dd, (int, float)) and not isinstance(dd, bool)
+                   and math.isfinite(dd) and dd >= 0)
+        abdeckung = report.get("abdeckung_pct_raw", report.get("abdeckung_pct"))
+        if (not isinstance(abdeckung, (int, float)) or isinstance(abdeckung, bool)
+                or not math.isfinite(abdeckung) or abdeckung < 0):
+            abdeckung = 0
+        return (report.get("verlaesslich") is True and messbar, messbar,
+                abdeckung, not bool(report.get("fx_luecke")), dd if messbar else 0)
+
+    def erfasst(report, modus):
+        feed = getattr(anbieter, "terminal_pfad", None)
+        report = dict(report)
+        report["kursdaten_terminal"] = feed
+        report["original_broker"] = broker
+        versuch = {"terminal": feed, "modus": modus, "status": report.get("status"),
+                   "verlaesslich": report.get("verlaesslich", False),
+                   "abdeckung_pct": report.get("abdeckung_pct"),
+                   "grund": report.get("grund")}
+        # Nur im Bericht bestaetigte, aktuell angefragte Handelssymbole:
+        # alte Provenienz-Eintraege des langlebigen Anbieters aussparen.
+        symbole = {t.symbol.strip().upper() for t in getattr(parsed, "trades", [])
+                   if getattr(t, "symbol", None)}
+        bestaetigt = {str(s).strip().upper() for s in (report.get("symbole_mit_kursen") or [])}
+        herkunft = getattr(anbieter, "terminal_herkunft", {})
+        mapping = {s: herkunft[s] for s in sorted(symbole & bestaetigt) if s in herkunft}
+        if mapping:
+            versuch["symbol_feeds"] = mapping
+        versuche.append(versuch)
+        return report
+
+    def fehler(error, status):
+        nonlocal erster_fehler
+        if erster_fehler is None:
+            erster_fehler = error
+        versuche.append({"terminal": getattr(anbieter, "terminal_pfad", None),
+                        "status": status, "grund": f"{type(error).__name__}: {error}"})
+
+    def reset():
+        if (getattr(anbieter, "terminal_idx", 0) != 0
+                and hasattr(anbieter, "zurueck_zum_ersten_terminal")):
+            try:
+                ok, grund = anbieter.zurueck_zum_ersten_terminal()
+                if not ok:
+                    versuche.append({"terminal": getattr(anbieter, "terminal_pfad", None),
+                                    "status": "reset_fehlgeschlagen", "grund": grund})
+            except Exception as error:
+                fehler(error, "reset_fehlgeschlagen")
+
+    def feed_identitaet():
+        return (getattr(anbieter, "terminal_idx", None),
+                getattr(anbieter, "terminal_pfad", None))
+
+    try:
+        try:
+            best = erfasst(equity_rekonstruktion.rekonstruiere(
+                parsed, anbieter, kapital, broker=broker), "symbol_fallback")
+        except Exception as error:
+            fehler(error, "berechnung_fehlgeschlagen")
+        if best is None or not qualitaet(best)[0]:
+            # Auch nach einem Fehler innerhalb des ersten Symbolfallbacks
+            # die weiteren Feeds von Quelle0 aus getrennt versuchen.
+            reset()
+        besucht = {feed_identitaet()}
+        while ((best is None or not qualitaet(best)[0])
+               and hasattr(anbieter, "hat_weiteren_terminal")
+               and anbieter.hat_weiteren_terminal()):
+            try:
+                ok, grund = anbieter.wechsle_terminal()
+            except Exception as error:
+                fehler(error, "verbindung_fehlgeschlagen")
+                ok, grund = False, None
+            identitaet = feed_identitaet()
+            if identitaet in besucht:
+                versuche.append({"terminal": getattr(anbieter, "terminal_pfad", None),
+                                "status": "kein_feed_fortschritt",
+                                "grund": "Terminalwechsel hat keine neue Quelle erreicht"})
+                break
+            besucht.add(identitaet)
+            if not ok:
+                if grund is not None:
+                    versuche.append({"terminal": getattr(anbieter, "terminal_pfad", None),
+                                    "status": "verbindung_fehlgeschlagen", "grund": grund})
+                continue
+            try:
+                kandidat = erfasst(equity_rekonstruktion.rekonstruiere(
+                    parsed, _AktuellerFeed(anbieter), kapital, broker=broker), "einzelfeed")
+            except Exception as error:
+                fehler(error, "berechnung_fehlgeschlagen")
+                continue
+            if best is None or qualitaet(kandidat) > qualitaet(best):
+                best = kandidat
+    except Exception as error:
+        fehler(error, "feed_fallback_fehlgeschlagen")
+    finally:
+        reset()
+    if best is None:
+        if erster_fehler is not None:
+            raise erster_fehler
+        raise RuntimeError("Keine Kursdatenquelle lieferte einen Rekonstruktionsbericht")
+    best["kursdaten_versuche"] = versuche
+    return best
+
+
+
 def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
     """Ein Signal: Trades sicherstellen → Statistik → Equity-Reko → persistieren.
     Rückgabe True = Studie gespeichert, False = übersprungen (mit Grund in
@@ -209,25 +377,73 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
     #    dieselbe Konvention wie beim PelicanMonitor. Virtuelle Werte gehen
     #    NIE in die Workflow-Schranken (studie_anwenden trennt das).
     stats = katalog.metrics_stats(res)
-    virtuell_basis = not (stats.get("initial_deposit_usd")
-                          or stats.get("kapitalbasis_virtual_usd"))
-    if virtuell_basis:
+    parsed = parser.load_export(res.trades_path,
+                                plattform_positions=stats.get("trades"))
+    erwartete_historie = any(
+        isinstance(wert, (int, float)) and not isinstance(wert, bool)
+        and math.isfinite(wert) and wert > 0
+        for wert in (stats.get("quelle_trades_anzahl"),
+                     stats.get("quelle_gewinne_anzahl"),
+                     stats.get("quelle_verluste_anzahl"), stats.get("trades")))
+    if (not parsed.trades and trades_nachladen
+            and erwartete_historie
+            and katalog.quellen_referenz(res)):
+        # Eine Header-Datei beweist keinen vollstaendigen Download, wenn
+        # die Quelle abgeschlossene Trades meldet. Genau ein Refresh je
+        # Signal/Batch, ueber denselben Quellen-/SHA-Pfad wie beim Erstladen.
+        pfad, _ = katalog.lade_signal_daten(res)
+        res.trades_path = pfad
+        artefakt = db.get_quellen_artefakt(int(res.quelle_id), int(res.id),
+                                           str(res.quelle_version or ""), "trades")
+        res.trades_sha256 = (artefakt or {}).get("sha256") or ""
+        stats = katalog.metrics_stats(res)
+        parsed = parser.load_export(res.trades_path,
+                                    plattform_positions=stats.get("trades"))
+    seitenbasis = getattr(res, "kapitalbasis_usd", None)
+    if (stats.get("initial_deposit_usd") is None
+            and isinstance(seitenbasis, (int, float)) and not isinstance(seitenbasis, bool)
+            and math.isfinite(seitenbasis) and seitenbasis > 0):
+        stats["initial_deposit_usd"] = seitenbasis
+    if not (stats.get("initial_deposit_usd") or stats.get("kapitalbasis_virtual_usd")):
         stats["kapitalbasis_virtual_usd"] = 10_000.0
     statistik = signal_statistik.berechne(res.trades_path, stats) or {}
+    # Die TATSAECHLICH verwendete Quelle entscheidet: Quellenannahmen sind
+    # ebenfalls virtuell, echte CSV-Einzahlungen schlagen jeden Fallback.
+    virtuell_basis = (statistik.get("kapitalbasis_quelle")
+                      == pipeline.KAPITALBASIS_QUELLE_VIRTUELL)
     res.trades_sha256 = res.trades_sha256 or ""
     startkapital = statistik.get("kapitalbasis_usd")
     cagr = statistik.get("cagr_jahr_pct")
     geom = statistik.get("ertrag_monat_geom_pct")
 
-    parsed = parser.load_export(res.trades_path,
-                                plattform_positions=stats.get("trades"))
-    broker = getattr(res, "broker_server", None) or None
+    vorher = db.get_equity_studie(int(res.id)) or {}
+    alter_report = vorher.get("report") or {}
+    alter_broker = (alter_report.get("original_broker")
+                   if res.trades_sha256 and vorher.get("trades_sha") == res.trades_sha256
+                   else None)
+    broker = (getattr(res, "broker_server", None) or stats.get("broker_server")
+              or alter_broker or None)
     # Mit (echter ODER virtueller) Basis: volle Equity-Reko mit Prozenten —
     # virtuelle Studien flaggt der Store separat (Anzeige gekennzeichnet,
     # Workflow-Schranken bleiben unberührt).
     if startkapital:
-        report = equity_rekonstruktion.rekonstruiere(
-            parsed, anbieter, float(startkapital), broker=broker)
+        report = _rekonstruiere_mit_feed_fallback(
+            parsed, anbieter, float(startkapital), broker)
+        alter_dd = alter_report.get("equity_dd_pct")
+        if alter_dd is None:
+            alter_dd = alter_report.get("equity_dd_pct_raw")
+        if (report.get("verlaesslich") is not True
+                and alter_report.get("verlaesslich") is True
+                and not vorher.get("basislos")
+                and res.trades_sha256
+                and vorher.get("trades_sha") == res.trades_sha256
+                and isinstance(alter_dd, (int, float)) and not isinstance(alter_dd, bool)
+                and math.isfinite(alter_dd) and alter_dd >= 0):
+            control.setdefault("skipped_gruende", []).append(
+                f"#{res.id} {getattr(res, 'name', '')}: Nachmessung nicht belastbar; "
+                "bestehende SHA-passende verlaessliche Studie bleibt erhalten — "
+                + str(report.get("grund") or report.get("status") or "ohne Freigabe"))
+            return False
         db.store_equity_studie(int(res.id), res.trades_sha256, report,
                                cagr_jahr_pct=cagr,
                                ertrag_monat_geom_pct=geom,

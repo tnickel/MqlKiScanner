@@ -151,6 +151,57 @@ def status_zeichen(pruefung: dict | None) -> str:
     return {"green": "🟢", "orange": "🟡", "red": "🔴"}.get(farbe, "⚪")
 
 
+# ── Anbieter-URL je Signal (Nutzer-Fall 16.10.2026) ────────────────────
+# Ältere Katalog-Stände enthalten Platzhalter statt Detail-Seiten (Pelican
+# nur die Startseite, CopyFX nur die Rating-Übersicht) und app_ui baute
+# pauschal mql5-Links — ein Pelican-Algo öffnete so die MQL5-Seite. Diese
+# Stelle baut je Quelle die richtige Detail-URL: gespeicherte URL nur
+# übernehmen, wenn sie nicht ein bekannter Platzhalter ist, sonst aus der
+# Signal-ID ableiten. (RoboForex braucht sourceId/login — beides kennt nur
+# der Monitor; dort liefert RestApiServer die Detail-URL, bis dahin bleibt
+# die Rating-Übersicht als brauchbarer Ersatz.)
+_PLATZHALTER = {
+    "pelik": ("https://pelican.copy-trade.io",),
+    "robo": ("https://roboforex.com/copy-trading/rating",
+             "https://www.roboforex.com/copy-trading/rating"),
+}
+
+
+def _ist_platzhalter(kuerzel: str, url: str) -> bool:
+    """True, wenn die URL nur auf die Anbieter-Übersicht führt (kein Signal)."""
+    ohne_slash = url.rstrip("/")
+    return ohne_slash in _PLATZHALTER.get(kuerzel, ())
+
+
+def oeffnen_url(kuerzel: str, signal_id: int, gespeichert: str = "") -> str:
+    """Detail-URL eines Signals beim jeweiligen Anbieter (↗-Spalte).
+
+    Reihenfolge: signal-spezifische gespeicherte URL gewinnt; bekannte
+    Platzhalter und leere URLs werden je Quelle aus der ID neu gebaut
+    (Muster wie in den Monitoren: PelicanMonitorApp.SIGNAL_URL_MUSTER,
+    Vantage discoverDetail, ZuluTrade /trader/{id}, MQL5 /signals/{id}).
+    Unbekannte Quelle ohne brauchbare URL → gespeicherter Wert oder "".
+    """
+    url = str(gespeichert or "").strip()
+    k = str(kuerzel or "mql5").strip()
+    if url and not _ist_platzhalter(k, url):
+        return url
+    try:
+        sid = int(signal_id)
+    except (TypeError, ValueError):
+        return url
+    if k in ("", "mql5"):
+        return url or f"https://www.mql5.com/en/signals/{sid}"
+    if k == "pelik":
+        return f"https://pelican.copy-trade.io/strategy/{sid}"
+    if k == "zulu":
+        return f"https://www.zulutrade.com/trader/{sid}"
+    if k == "vant":
+        return (f"https://secure.vantagemarkets.com/copyTrading/visitor/"
+                f"discover/discoverDetail?strategyId={sid}&mode=visitor")
+    return url
+
+
 def kennung_konflikte() -> dict[str, list[str]]:
     """Melden zwei aktive Quellen dieselbe Downloader-Instanz-Kennung?
 

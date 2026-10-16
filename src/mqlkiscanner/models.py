@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
+import math
 
 
 @dataclass
@@ -57,11 +58,35 @@ class BalanceRow:
 
 
 @dataclass
+class AccountCostRow:
+    """Separate Kontokosten/-erstattungen, KEIN externer Kapitalfluss."""
+    time: datetime
+    amount: float
+    kind: str
+
+
+@dataclass
 class PendingOrder:
     """Pending-Order (Buy/Sell Stop/Limit) — nur Orderbuch-Format."""
     time: datetime
     order_type: str
     comment: str = ""
+
+
+@dataclass
+class ArchivedPnlAggregate:
+    """Original-Monatsaggregat: Finanzbetrag, keine einzelne Position."""
+    period_start: datetime
+    period_end: datetime
+    volume: float
+    profit: float
+    commission: float
+    swap: float
+    source_line: int
+
+    @property
+    def net(self) -> float:
+        return math.fsum((self.profit, self.commission, self.swap))
 
 
 @dataclass
@@ -75,6 +100,19 @@ class ParsedExport:
     # Legacy-Auditfeld; ticketlose CSV-Zeilen werden seit 03.10. erhalten.
     duplikate_entfernt: int = 0
     identische_tradezeilen: int = 0  # Hinweis, kein Identitaets-/Duplikatbeweis
+    neutrale_hedge_metazeilen: int = 0  # belegte MT4-Close-by-Verwaltungsereignisse
+    costs: list[AccountCostRow] = field(default_factory=list)
+    # Nur Finanzlesemodus: kein belegter individueller Realisierungszeitpunkt.
+    archived_pnl_aggregates: list[ArchivedPnlAggregate] = field(default_factory=list)
+
+    def realized_events(self) -> list[tuple[datetime, float]]:
+        """Alle realisierten Ergebnisse; separate Buchungen nie deduplizieren."""
+        return sorted([(t.close_time, t.net) for t in self.trades]
+                      + [(c.time, c.amount) for c in self.costs], key=lambda e: e[0])
+
+    @property
+    def net_total(self) -> float:
+        return math.fsum(amount for _, amount in self.realized_events())
 
     @property
     def has_orderbook(self) -> bool:

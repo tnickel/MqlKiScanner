@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
@@ -77,9 +78,51 @@ with st.container(horizontal=True, vertical_alignment='center'):
                    + (f" — Stand {max((w.get('gelaufen_am') or '')[:16] for w in sync_status.values())}"
                       if sync_status else ''))
 
-gescannte = [r for r in pipeline.results_from_db()
+_lade_start = time.monotonic()
+_lade_status = st.empty()
+_lade_balken = st.empty()
+
+
+def _lade_phase(text: str):
+    """Reale Arbeit zählen; Restzeit gilt nur für die laufende Phase."""
+    phase_start = time.monotonic()
+    letzte_anzeige = 0.0
+    _lade_balken.empty()
+    _lade_status.caption(f'{text} · vergangen {phase_start - _lade_start:.1f} s '
+                         '· Restzeit noch unbekannt')
+
+    def fortschritt(fertig: int, gesamt: int):
+        nonlocal letzte_anzeige
+        jetzt = time.monotonic()
+        if fertig != gesamt and fertig and jetzt - letzte_anzeige < 0.2:
+            return
+        letzte_anzeige = jetzt
+        rest = ((jetzt - phase_start) / fertig * (gesamt - fertig)
+                if fertig else None)
+        rest_text = f'≈ {rest:.1f} s' if rest is not None else 'unbekannt'
+        _lade_status.caption(
+            f'{text}: {fertig}/{gesamt} · vergangen {jetzt - _lade_start:.1f} s '
+            f'· Rest dieser Phase {rest_text} (Schätzung)')
+        _lade_balken.progress(fertig / gesamt if gesamt else 1.0)
+    return fortschritt
+
+
+_lade_phase('Gespeicherte Signale und Studien aus der Datenbank lesen')
+_katalog_rows = db.list_catalog()
+_studien = db.list_equity_studien()
+_quellen_katalog = db.katalog_list()
+_quellen_rows = db.list_quellen()
+_quellen_artefakte = db.list_quellen_artefakte()
+gescannte = [r for r in pipeline.results_from_db(
+                catalog_rows=_katalog_rows, studien=_studien,
+                materialize_pdfs=False,
+                progress=_lade_phase('Workflow-Signale aufbereiten'))
              if getattr(r, 'source_kind', 'live') == 'live']
-katalog_resultate, katalog_stats = katalog.katalog_resultate()
+katalog_resultate, katalog_stats = katalog.katalog_resultate(
+    gescannt={int(r['signal_id']) for r in _katalog_rows}, studien=_studien,
+    katalog_rows=_quellen_katalog, quellen_rows=_quellen_rows,
+    artefakte=_quellen_artefakte,
+    progress=_lade_phase('Lokalen Client-Katalog aufbereiten'))
 alle = gescannte + katalog_resultate
 
 if not alle:
@@ -88,16 +131,28 @@ if not alle:
             'starten.', icon=':material/info:')
     st.stop()
 
-stats_je_id = {zeile['signal_id']: (zeile.get('stats') or {})
-               for zeile in db.list_catalog()}
+stats_je_id = katalog.workflow_stats_bulk(
+    gescannte, {zeile['signal_id']: (zeile.get('stats') or {})
+               for zeile in _katalog_rows},
+    katalog_rows=_quellen_katalog, quellen_rows=_quellen_rows,
+    artefakte=_quellen_artefakte)
 stats_je_id.update(katalog_stats)
 # Virtuelle Studien (Batch, 08.10.): die 10k-Annahme in die Vorstufen-
 # Statistik koppeln — so rechnet Gewinn %/M und Trading-DD % sinnvoll statt
 # verzerrt ohne Basis (klar als „Basis: virtuell" gekennzeichnet).
-for _sid, _studie in db.list_equity_studien().items():
-    if _studie.get('virtuell'):
-        stats_je_id.setdefault(int(_sid), {}).setdefault(
-            'kapitalbasis_virtual_usd', 10_000.0)
+for _resultat in alle:
+    _studie = _studien.get(int(_resultat.id)) or {}
+    _studien_sha = _studie.get('trades_sha') or ''
+    _trades_sha = getattr(_resultat, 'trades_sha256', '') or ''
+    if (_studie.get('virtuell') and _studien_sha and _trades_sha
+            and _studien_sha == _trades_sha):
+        _basis_stats = stats_je_id.setdefault(int(_resultat.id), {})
+        # Gespeicherte Workflow-Stats enthalten oft explizit None:
+        # setdefault würde dann die virtuelle Studienbasis NICHT ergänzen.
+        # Eine echte oder bereits gesetzte Basis bleibt maßgeblich.
+        if (_basis_stats.get('initial_deposit_usd') is None
+                and _basis_stats.get('kapitalbasis_virtual_usd') is None):
+            _basis_stats['kapitalbasis_virtual_usd'] = 10_000.0
 
 with st.container(horizontal=True):
     suche = st.text_input('🔍 Suchen — Name oder Signal-ID',
@@ -130,7 +185,8 @@ with st.container(horizontal=True):
 
 
 @st.cache_data(persist='disk', show_spinner=False)
-def _statistik_cached(trades_pfad: str, sha: str, stats_json: str) -> dict | None:
+def _statistik_cached(trades_pfad: str, sha: str, stats_json: str,
+                      rechenversion: str) -> dict | None:
     return signal_statistik.berechne(trades_pfad, json.loads(stats_json or '{}'))
 
 
@@ -144,7 +200,8 @@ def _statistik_fuer(result) -> dict | None:
     # Re-Download im Disk-Cache veraltet (Scan-Snapshots sind unveränderlich,
     # Katalog-Nachladungen nicht).
     return _statistik_cached(pfad, getattr(result, 'trades_sha256', '') or '',
-                             json.dumps(rohstats, sort_keys=True, default=str))
+                             json.dumps(rohstats, sort_keys=True, default=str),
+                             '2026-10-10-twr-saldo-ulp-finanzteilstatistik-kontokosten-archiv-v4')
 
 
 suche_cf = (suche or '').strip().casefold()
@@ -279,14 +336,20 @@ if not sichtbar:
     st.info('Kein Signal passt zu diesem Filter.', icon=':material/filter_alt:')
     st.stop()
 
-with st.spinner('Statistiken aus dem Trade-Cache rechnen (einmalig — danach gecacht) …'):
-    paare = [(r, _statistik_fuer(r)) for r in sichtbar]
+_statistik_progress = _lade_phase('Statistiken aus dem Trade-Cache laden / rechnen')
+_statistik_progress(0, len(sichtbar))
+paare = []
+for _nr, r in enumerate(sichtbar, 1):
+    paare.append((r, _statistik_fuer(r)))
+    _statistik_progress(_nr, len(sichtbar))
 
 
 def _prozent(titel: str, breite: int = 86, help: str | None = None):
     return st.column_config.NumberColumn(titel, width=breite, format='%.2f',
                                          help=help)
-df = pd.DataFrame([tabellen_zeile(r, s, markierungen, kommentare)
+_lade_phase('Tabelle und CSV aufbereiten')
+_fix_ids = tabellen_ui._fix_ids()
+df = pd.DataFrame([tabellen_zeile(r, s, markierungen, kommentare, fix_ids=_fix_ids)
                        for r, s in paare])
 # Zahlen-Spalten strikt numerisch: None → NaN → LEERE Zelle statt „None“-
 # Text (Nutzer 08.10.2026: kompakte, lesbare Tabelle). Runden einmalig hier —
@@ -307,6 +370,16 @@ def _mark_stil(zeile):
         return [''] * len(zeile)
     return [f'background-color: {_MARK_BG[farbe]}'] * len(zeile)
 _gestylt = _gestylt.apply(_mark_stil, axis=1)
+
+
+def _virtueller_vorbehalt_stil(zeile):
+    if 'Vorbehalt:' in str(zeile.get('Messstatus', '')):
+        return ['color: #fb923c'] * len(zeile)
+    return [''] * len(zeile)
+
+
+_gestylt = _gestylt.apply(_virtueller_vorbehalt_stil, axis=1,
+                        subset=['True-DD USD', 'RetDD/Monat', 'Messstatus'])
 for _paar in (('True-DD %', 'True-DD ≈'),
               ('TrueRetDD', 'TrueRetDD ≈')):
     # Belastbar gemessen normal, vorbehaltlich orange (Marker in der
@@ -398,8 +471,11 @@ st.dataframe(
                  '(30-Tage-Fenster je Client) — nicht unabhängig geprüft'),
         'Geom. %/M': _prozent(
             'Geom. %/M',
-            help='Geometrisches Monatsmittel der EIGENEN virtuellen Kurve '
-                 '(zinseszins-wahr); entfällt ohne belegbare Kapitalbasis'),
+            help='Geometrisches Monatsmittel der EIGENEN Kurve '
+                 '(zinseszins-wahr). Basis „virtuell“ bedeutet die explizite '
+                 '10.000-USD-Annahme, keine belegte Kontorendite. Entfällt '
+                 'ohne positive Kapitalbasis, bei nichtpositivem Endkapital '
+                 'oder ohne positive Messdauer.'),
         'TrueRetDD': st.column_config.NumberColumn(
             'TrueRetDD', width=70, format='%.2f',
             help='ECHTER Jahres-Calmar: CAGR ÷ '
@@ -421,21 +497,36 @@ st.dataframe(
                  'Monatsrendite ÷ Max-Drawdown % '
                  '(Equity inkl. Floating) — '
                  'Anzeigewert, entscheidet nicht '
-                 'mehr (Calmar-Gate seit 05.10.)'),
-        'PF': _prozent('PF', 60),
-        'Win %': st.column_config.NumberColumn('Win %', width=58, format='%.1f'),
-        'Trades': st.column_config.NumberColumn('Trades', width=64, format='%.0f'),
+                 'mehr (Calmar-Gate seit 05.10.). Ohne positive '
+                 'Equity-DD-Messung bleibt das Verhältnis undefiniert.'),
+        'PF': _prozent('PF', 60, help='Summe positiver Trade-Profits ÷ Betrag '
+                     'negativer Trade-Profits im Export. Ohne Verluste ist '
+                     'der Nenner null; die Zelle bleibt undefiniert.'),
+        'Win %': st.column_config.NumberColumn('Win %', width=58, format='%.1f',
+                     help='Anteil profitabler Trades im lesbaren Export; '
+                          'keine ungeprüfte Plattformangabe.'),
+        'Trades': st.column_config.NumberColumn('Trades', width=64, format='%.0f',
+                     help='Tatsächlich geparste Trades im lokalen Export. '
+                          'Ohne Export unbekannt; ohne lesbare Trades null.'),
         'Basis': st.column_config.TextColumn('Basis', width=64, help='Kapitalbasis: CSV = '
                                  'Einzahlungen im Export · Seite = Signalseite '
                                  '„Initial Deposit“ · implizit = Web-Balance − '
                                  'Trade-Netto · virtuell = 10.000-USD-Annahme'),
         'Forensik': st.column_config.TextColumn('Forensik', width=62),
+        'Messstatus': st.column_config.TextColumn(
+            'Messstatus', width=220,
+            help='Basis und Qualität der gespeicherten Kursmessung. Virtuell '
+                 'bedeutet 10.000-USD-Modellkapital, keine nachgewiesene '
+                 'Kontobasis. Vorbehalt nennt den konkreten Grund für eine '
+                 'unvollständige oder gescheiterte Messung.'),
     })
 
 csv = df.to_csv(index=False, sep=';').encode('utf-8-sig')
 st.download_button('Gefilterte Tabelle als CSV', csv, 'alle-signale.csv',
                    'text/csv', key='alle_signale_download',
                    icon=':material/download:')
+_lade_balken.empty()
+_lade_status.caption(f'Übersicht geladen in {time.monotonic() - _lade_start:.1f} s')
 
 def _ausgewaehlte_zeile(schluessel: str) -> int | None:
     """Zeilenauswahl der Tabelle lesen — als DataframeState ODER als dict.

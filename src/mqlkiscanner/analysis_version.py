@@ -25,4 +25,6 @@ Bei Änderungen an Pflichtprüfungen oder Bewertungsregeln erhöhen: Live-Befund
 # =1000 Barrel, ES-Future 50 USD/Punkt …) griffen nicht. Jetzt greift
 # zusätzlich das Quellen-Kürzel (robo→RoboForex). Schock-/Equity-Werte der
 # Quellen-Signale ändern sich dadurch. Alter Bestand: neu scannen.
-FORENSICS_VERSION = 15
+# 16: Separate Charge/Commission-Buchungen belasten alle Ergebnis- und
+# Kontokurven; niemals als externer Flow neutralisieren. Neu scannen.
+FORENSICS_VERSION = 16

@@ -377,6 +377,12 @@ def store_trade_file(signal_id: int, path: str, *, _connection=None) -> str:
 
 def store_forensik(signal_id: int, report: dict, *, _connection=None) -> None:
     with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
+        # Der Befund gehoert zu genau diesem Trade-Snapshot. Ein spaeterer
+        # Import darf seine Messwerte nicht auf einen anderen Export uebertragen.
+        report = dict(report)
+        trade = conn.execute("SELECT sha256 FROM trade_files WHERE signal_id=?",
+                             (signal_id,)).fetchone()
+        report.setdefault("trades_sha256", trade["sha256"] if trade else "")
         conn.execute(
             """INSERT INTO forensik (signal_id, json, updated_at) VALUES (?,?,?)
                ON CONFLICT(signal_id) DO UPDATE SET json=excluded.json,
@@ -956,6 +962,17 @@ def store_quellen_artefakt(quelle_id: int, signal_id: int, version: str, art: st
                  fetched_at=excluded.fetched_at""",
             (int(quelle_id), int(signal_id), str(version), str(art),
              str(sha256), str(path), _now()))
+
+
+def list_quellen_artefakte() -> dict[tuple[int, int, str, str], dict]:
+    """Artefakt-Index für Katalogansichten mit einer einzigen DB-Abfrage."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT quelle_id, signal_id, version, art, sha256, path, fetched_at "
+            "FROM quellen_artefakte").fetchall()
+    return {(int(r["quelle_id"]), int(r["signal_id"]), r["version"], r["art"]):
+            dict(r) for r in rows}
 
 
 def get_quellen_artefakt(quelle_id: int, signal_id: int, version: str,

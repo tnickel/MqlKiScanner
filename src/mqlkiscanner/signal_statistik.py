@@ -54,12 +54,11 @@ def kapitalbasis_kaskade(trades_pfad: str, stats: dict,
 
 
 def _monats_usd(parsed) -> dict[str, float]:
-    """Netto je Kalendermonat (Close-Zeit) — Rohbasis der Balkengrafik."""
-    monate: dict[str, float] = {}
-    for trade in parsed.trades:
-        schluessel = trade.close_time.strftime("%Y-%m")
-        monate[schluessel] = monate.get(schluessel, 0.0) + trade.net
-    return monate
+    """Realisierter Netto inkl. separat gebuchter Kosten je Kalendermonat."""
+    monate: dict[str, list[float]] = {}
+    for zeit, netto in parsed.realized_events():
+        monate.setdefault(zeit.strftime("%Y-%m"), []).append(netto)
+    return {monat: math.fsum(betraege) for monat, betraege in monate.items()}
 
 
 # Haltezeit-Buckets (Nutzer-Wunsch 05.10.2026: „Scalper abschätzen, wie
@@ -170,6 +169,9 @@ def _kurve(parsed, startkapital: float) -> list[list]:
     erste_open = min((t.open_time for t in parsed.trades), default=None)
     ereignisse = [(t.close_time, t.net, 0.0) for t in parsed.trades]
     if erste_open is not None:
+        # Frühere Kosten sind bereits im Drawdown-Startsaldo. Kosten ab
+        # erstem Open sind Rendite, nie zu neutralisierende Kapitalflüsse.
+        ereignisse += [(c.time, c.amount, 0.0) for c in parsed.costs if c.time >= erste_open]
         ereignisse += [(b.time, b.amount, b.amount) for b in getattr(parsed, "balances", [])
                        if b.time > erste_open]
     stand = float(startkapital)
@@ -188,16 +190,74 @@ def berechne(trades_pfad: str | None, stats: dict | None) -> dict | None:
     ungerundet außer dort, wo die wiederverwendeten Funktionen runden.
     """
     stats = stats or {}
+    quellenhinweise = {feld: stats.get(feld) for feld in (
+        'quelle_trades_gekappt', 'quelle_trades_total_available',
+        'quelle_trades_stored', 'quelle_trades_completeness_note')}
     if not trades_pfad or not Path(trades_pfad).exists():
         return None
     plattform_positions = stats.get("trades")
     try:
         parsed = load_export(trades_pfad, plattform_positions=plattform_positions)
     except Exception as exc:  # Vorstufe darf nie brechen — Fehler benennen
-        return {"fehler": f"Trade-Datei nicht lesbar ({type(exc).__name__}: {exc})",
+        try:
+            finanziell = load_export(trades_pfad,
+                                     plattform_positions=plattform_positions,
+                                     nur_finanzdaten=True)
+        except Exception:
+            finanziell = None
+        if finanziell is not None:
+            if finanziell.archived_pnl_aggregates:
+                aggregate_net = math.fsum(a.net for a in finanziell.archived_pnl_aggregates)
+                return {
+                    **quellenhinweise,
+                    'fehler': f'{len(finanziell.archived_pnl_aggregates)} Original-Archivaggregate; '
+                              'nur realisiertes Netto einschließlich Einzeltrades und Kosten belegbar. '
+                              'Vollständige Tradezahl, PF, Winrate, Rendite und Drawdown unbekannt.',
+                    'teilstatistik_finanzdaten': True,
+                    'archivaggregate_anzahl': len(finanziell.archived_pnl_aggregates),
+                    'archivaggregate_netto_usd': aggregate_net,
+                    'einzeltrades_verifiziert': len(finanziell.trades),
+                    'kapitalbasis_ok': False,
+                    'trades': None, 'wins': None, 'losses': None,
+                    'winrate_pct': None, 'profit_faktor': None,
+                    'netto_gesamt_usd': math.fsum((finanziell.net_total, aggregate_net)),
+                    'kontokosten_anzahl': len(finanziell.costs),
+                    'kontokosten_usd': math.fsum(c.amount for c in finanziell.costs),
+                }
+            negative = [t for t in finanziell.trades if t.close_time < t.open_time]
+            if negative:
+                # Alle finanziell validen Trades bleiben enthalten. Keine
+                # Zeitkorrektur, keine Kurve, keine Basis-/DD-Freigabe.
+                grund = stats_mod.compute(finanziell)
+                return {
+                    **quellenhinweise,
+                    'fehler': f'{len(negative)} '
+                              + ('Trade schließt' if len(negative) == 1 else 'Trades schließen')
+                              + ' vor dem Open; '
+                              'nur zeitunabhängige Finanzstatistik, keine '
+                              'Rendite-/Drawdown-/Haltedauermessung',
+                    'teilstatistik_finanzdaten': True,
+                    'negative_zeitintervalle': len(negative),
+                    'kapitalbasis_ok': False,
+                    'trades': grund['trades'],
+                    'wins': grund['wins'], 'losses': grund['losses'],
+                    'winrate_pct': grund['winrate_pct'],
+                    'profit_faktor': grund['profit_factor_csv'],
+                    'netto_gesamt_usd': finanziell.net_total,
+                    'kontokosten_anzahl': len(finanziell.costs),
+                    'kontokosten_usd': math.fsum(c.amount for c in finanziell.costs),
+                    'duplikate_entfernt': grund['duplikate_entfernt'],
+                    'identische_tradezeilen': grund['identische_tradezeilen'],
+                }
+        return {**quellenhinweise,
+                "fehler": f"Trade-Datei nicht lesbar ({type(exc).__name__}: {exc})",
                 "trades": 0, "kapitalbasis_ok": False}
     if not parsed.trades:
-        return {"fehler": "keine Trades im Export", "trades": 0,
+        return {**quellenhinweise, "fehler": "keine Trades im Export", "trades": 0,
+                "netto_gesamt_usd": parsed.net_total,
+                "kontokosten_anzahl": len(parsed.costs),
+                "kontokosten_usd": math.fsum(c.amount for c in parsed.costs),
+                "monate_usd": _monats_usd(parsed),
                 "kapitalbasis_ok": False}
 
     basis, basis_quelle = kapitalbasis_kaskade(
@@ -210,7 +270,9 @@ def berechne(trades_pfad: str | None, stats: dict | None) -> dict | None:
     trading_dd = dd.get("trading_dd") or {}
 
     grund = stats_mod.compute(parsed)
-    netto = math.fsum(t.net for t in parsed.trades)
+    netto = parsed.net_total
+    erste_open = min(t.open_time for t in parsed.trades)
+    vor_start_kosten = math.fsum(c.amount for c in parsed.costs if c.time < erste_open)
     eff = None
     monate_pct: dict[str, float] = {}
     kurve: list[list] = []
@@ -227,6 +289,7 @@ def berechne(trades_pfad: str | None, stats: dict | None) -> dict | None:
 
     marti = martingale.run(parsed)
     return {
+        **quellenhinweise,
         "fehler": None,
         "trades": grund.get("trades", 0),
         "duplikate_entfernt": grund.get("duplikate_entfernt", 0),
@@ -235,8 +298,12 @@ def berechne(trades_pfad: str | None, stats: dict | None) -> dict | None:
         "kapitalbasis_usd": float(startkapital) if basis_ok else None,
         "kapitalbasis_quelle": dd.get("startkapital_quelle") or basis_quelle or "",
         "netto_gesamt_usd": netto,
-        "endstand_virtuell_usd": float(startkapital) + netto if basis_ok else None,
+        "kontokosten_anzahl": len(parsed.costs),
+        "kontokosten_usd": math.fsum(c.amount for c in parsed.costs),
+        "endstand_virtuell_usd": float(startkapital) + netto - vor_start_kosten if basis_ok else None,
         "ertrag_monat_geom_pct": (eff or {}).get("ertrag_monat_geom_pct"),
+        "rendite_hinweis": ((eff or {}).get("basis_hinweis")
+                            if (eff or {}).get("kontokosten_zeitfenster_unbelegt") else None),
         "cagr_jahr_pct": (eff or {}).get("cagr_jahr_pct"),
         "dauer_monate": (eff or {}).get("dauer_monate"),
         "kalender_monate": (eff or {}).get("kalender_monate"),

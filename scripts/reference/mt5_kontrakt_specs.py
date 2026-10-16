@@ -32,8 +32,9 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from mqlkiscanner import config                      # noqa: E402
+from mqlkiscanner.kursdaten import KursDaten          # noqa: E402
 from mqlkiscanner.agenten.marktdata import (         # noqa: E402
-    terminal_beenden, terminal_laueft)
+    terminal_beenden)
 from mqlkiscanner.symbols import (                   # noqa: E402
     alias_fuer_symbol, normalize_symbol)
 
@@ -51,21 +52,14 @@ ERLAUBTE_MT5_AUFRUFE = frozenset((
 
 
 def _verbinden(mt5, pfad: str) -> tuple[bool, str]:
-    """Terminal verbinden; portabler Selbststart, wenn es nicht laeuft."""
-    settings = config.load_settings()
-    laeuft = terminal_laueft(pfad)
-    if not laeuft and not settings.get("markt_start_erlauben", False):
-        return False, "laeuft nicht, Selbststart nicht erlaubt (markt_start_erlauben)"
-    if not Path(pfad).exists():
-        return False, "Pfad existiert nicht"
-    ok = bool(mt5.initialize(pfad, portable=not laeuft))
+    """Derselbe geprüfte Portable-Start wie die produktiven Kursabfragen."""
+    anbieter = KursDaten({**config.load_settings(), "kursdaten_terminals": [pfad]})
+    ok, grund = anbieter.starten()
     if not ok:
-        fehler = str(mt5.last_error())
-        mt5.shutdown()
-        return False, f"initialize fehlgeschlagen: {fehler}"
+        return False, grund
     info = mt5.terminal_info()
     broker = getattr(info, "company", "?") if info else "?"
-    return True, (f"{broker} (portabel gestartet)" if not laeuft else f"{broker} (Attach)")
+    return True, f"{broker} ({grund})"
 
 
 def _kandidaten(symbol: str, terminal_pfad: str) -> list[str]:
@@ -76,7 +70,7 @@ def _kandidaten(symbol: str, terminal_pfad: str) -> list[str]:
         kandidaten.append(normalisiert)
     alias = alias_fuer_symbol(symbol, terminal_pfad,
                               config.load_settings().get("symbol_aliases"))
-    if alias and alias.upper() not in [k.upper() for k in kandidaten]:
+    if alias and alias not in kandidaten:
         kandidaten.append(alias)
     return kandidaten
 
@@ -145,6 +139,11 @@ def main() -> int:
                 treffer = mt5.symbols_get(group=f"*{teil}*")
                 namen = sorted({s.name for s in (treffer or ())})[:25]
                 terminal_daten[f"suche:{teil}"] = namen
+                # Record exact discovered variants as evidence, including
+                # suffixes and cash/future distinctions; never infer an alias.
+                for name in namen:
+                    terminal_daten.setdefault(
+                        f"suche_spec:{name}", _symbol_lesen(mt5, name, terminal_pfad))
                 print(f"  Suche *{teil}*: {len(namen)} Treffer "
                       f"{namen[:12]}{' …' if len(namen) > 12 else ''}")
         finally:

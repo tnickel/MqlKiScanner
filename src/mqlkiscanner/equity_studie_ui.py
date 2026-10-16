@@ -11,6 +11,7 @@ bleiben verbindlich und unverändert.
 from __future__ import annotations
 
 import datetime as dt
+import math
 from pathlib import Path
 
 import plotly.graph_objects as go
@@ -35,7 +36,7 @@ _FARBE_FLOATING = "#d32f2f"
 
 def _cache_key(result) -> str:
     sha = getattr(result, "trades_sha256", "") or ""
-    return f"eqdd_studie_zeitbasis_v10_{result.id}_{sha[:12] or 'nosha'}"
+    return f"eqdd_studie_kontokosten_v11_{result.id}_{sha[:12] or 'nosha'}"
 
 
 def berechne(result, progress) -> dict:
@@ -64,6 +65,11 @@ def berechne(result, progress) -> dict:
     # Pipeline tatsächlich verwendete Basis aus dem Forensik-Snapshot).
     extern = getattr(result, "kapitalbasis_verwendet_usd", None) \
         or getattr(result, "kapitalbasis_usd", None)
+    if getattr(result, "kapitalbasis_verwendet_usd", None) is not None and parsed.trades:
+        # Verwendete Basis ist bereits der Netto-Startsaldo. drawdown.run
+        # erwartet dagegen die externe Basis VOR separaten Kontokosten.
+        erste = min(t.open_time for t in parsed.trades)
+        extern -= math.fsum(c.amount for c in parsed.costs if c.time < erste)
     quelle = getattr(result, "kapitalbasis_verwendet_quelle", "") \
         or "signalseite_initial_deposit"
     dd = drawdown.run(parsed, kapitalbasis_usd=extern, kapitalbasis_quelle=quelle)

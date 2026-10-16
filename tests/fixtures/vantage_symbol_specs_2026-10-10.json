@@ -1,0 +1,54 @@
+{
+  "_meta": {
+    "datum": "2026-10-10",
+    "herkunft": "Historischer Vantage-MT5-symbol_info-Snapshot; extrahiert aus dem lokalen Rohbeleg vantage_restspecs_live_2026-10-10.json.",
+    "umfang": "Nur Instrumentname, contract_size und gewinnwaehrung; keine Konto-, Trade-, Login- oder Terminaldaten.",
+    "hinweis": "Dokumentierter damaliger Spec-Snapshot, kein aktueller Live-Nachweis."
+  },
+  "Vantage": {
+    "UK100": {
+      "contract_size": 1,
+      "gewinnwaehrung": "GBP"
+    },
+    "US2000": {
+      "contract_size": 1,
+      "gewinnwaehrung": "USD"
+    },
+    "EU50": {
+      "contract_size": 1,
+      "gewinnwaehrung": "EUR"
+    },
+    "LTCUSD": {
+      "contract_size": 100,
+      "gewinnwaehrung": "USD"
+    },
+    "BNBUSD": {
+      "contract_size": 10,
+      "gewinnwaehrung": "USD"
+    },
+    "LYFT": {
+      "contract_size": 1,
+      "gewinnwaehrung": "USD"
+    },
+    "NFLX": {
+      "contract_size": 1,
+      "gewinnwaehrung": "USD"
+    },
+    "PINS": {
+      "contract_size": 1,
+      "gewinnwaehrung": "USD"
+    },
+    "SPCE": {
+      "contract_size": 1,
+      "gewinnwaehrung": "USD"
+    },
+    "TTD": {
+      "contract_size": 1,
+      "gewinnwaehrung": "USD"
+    },
+    "ORCL": {
+      "contract_size": 1,
+      "gewinnwaehrung": "USD"
+    }
+  }
+}

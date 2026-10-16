@@ -44,6 +44,23 @@ def pid_lebt(pid: int) -> bool:
         return False
 
 
+def studien_verbessert(vor: dict, nach: dict) -> int:
+    """Fachlichen Fortschritt zaehlen; vorhandene Zeilen koennen besser werden."""
+    def qualitaet(studie):
+        import math
+        report = studie.get("report") or {}
+        dd = report.get("equity_dd_pct_raw", report.get("equity_dd_pct"))
+        messbar = (isinstance(dd, (int, float)) and not isinstance(dd, bool)
+                   and math.isfinite(dd) and dd >= 0)
+        return (bool(report.get("verlaesslich") and messbar), messbar,
+                report.get("abdeckung_pct_raw", report.get("abdeckung_pct")) or 0,
+                not bool(report.get("fx_luecke")))
+    return sum(1 for sid, studie in nach.items()
+               if sid not in vor or qualitaet(studie) > qualitaet(vor[sid])
+               or (studie.get("trades_sha") and
+                   studie.get("trades_sha") != vor[sid].get("trades_sha")))
+
+
 def main() -> None:
     from mqlkiscanner import db, katalog, pipeline, studien_batch
 
@@ -56,12 +73,16 @@ def main() -> None:
     runde = 0
     while runde < 12:                      # Sicherheitsdeckel
         runde += 1
-        resultate = [r for r in pipeline.results_from_db()
-                     if getattr(r, "source_kind", "live") == "live"]
-        kat_res, _ = katalog.katalog_resultate()
-        vor = len(db.list_equity_studien())
+        rows = db.list_catalog()
+        studien_vorher = db.list_equity_studien()
+        resultate = [r for r in pipeline.results_from_db(
+            catalog_rows=rows, studien=studien_vorher, materialize_pdfs=False)
+            if getattr(r, "source_kind", "live") == "live"]
+        kat_res, _ = katalog.katalog_resultate(
+            gescannt={row["signal_id"] for row in rows}, studien=studien_vorher)
+        vor = len(studien_vorher)
         jobs, erledigt = studien_batch.luecken_sammeln(
-            resultate + kat_res, db.list_equity_studien(), trades_nachladen=True)
+            resultate + kat_res, studien_vorher, trades_nachladen=True)
         if not jobs:
             log(f"Runde {runde}: keine Lücken mehr — ZIEL ERREICHT "
                 f"({erledigt} belegt).")
@@ -72,19 +93,21 @@ def main() -> None:
             run = studien_batch.starten(resultate + kat_res,
                                         nur_luecken=True, trades_nachladen=True)
             if run is None:
-                log("  Lock belegt (UI/Scan aktiv) — warte 120 s.")
-                time.sleep(120)
+                log("  Lock belegt (UI/Scan aktiv) — warte 60 s.")
+                time.sleep(60)
         run.thread.join()
-        nach = len(db.list_equity_studien())
+        studien_nachher = db.list_equity_studien()
+        nach = len(studien_nachher)
+        verbessert = studien_verbessert(studien_vorher, studien_nachher)
         c = run.control
         log(f"Runde {runde} fertig: {c.get('gerechnet')} gerechnet · "
             f"{c.get('uebersprungen')} übersprungen · {len(c.get('fehler') or [])} Fehler · "
-            f"Studien {vor} → {nach}")
+            f"Studien {vor} → {nach} · {verbessert} verbessert")
         for z in (c.get("fehler") or [])[:10]:
             log("  FEHLER " + z[:140])
         for z in (c.get("skipped_gruende") or [])[:5]:
             log("  SKIP " + z[:140])
-        if nach <= vor:
+        if not verbessert:
             log("Keine Verbesserung mehr — Finisher beendet.")
             break
     log("Finisher-Ende.")

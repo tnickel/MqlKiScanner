@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 import streamlit as st
-from mqlkiscanner import config, db, downloader_client, downloader_sync, fix_signale, llm_runner
+from mqlkiscanner import config, db, downloader_client, downloader_sync, fix_signale, llm_runner, quellen
 from mqlkiscanner import regelwerk
 from mqlkiscanner.ampel_matrix import KRITERIEN, LABELS, kriterien_matrix
 from mqlkiscanner.pdf_reports import (
@@ -342,7 +342,10 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
         st.info("Noch keine Ergebnisse — erst einen Scan starten oder die "
                 "Verifikations-Datensaetze laden.")
         return None
-    df["Link"] = [f"https://www.mql5.com/en/signals/{r.id}" if r.id else "" for r in results]
+    # Je Quelle die richtige Anbieter-URL (Nutzer-Fall 16.10.2026: Pelican-
+    # Algo öffnete pauschal die MQL5-Seite) — kein mql5-Hardcode mehr.
+    df["Link"] = [quellen.oeffnen_url(r.quelle, r.id, getattr(r, "url", ""))
+                  for r in results]
     docs_counts = db.downloader_report_counts([r.id for r in results])
     abo = downloader_sync.abo_bilanz(
         [r.id for r in results],
@@ -766,7 +769,7 @@ def _render_dl_history(result) -> None:
     punkte = db.get_history(result.id)
     if not punkte:
         st.info("Noch kein Abonnenten-Verlauf gespeichert. "
-                "„Nutzer-Verlauf aktualisieren“ lädt ihn aus dem MqlDownloader.")
+                "„Nutzer-Verlauf aktualisieren“ lädt ihn aus den Datenquellen.")
         return
     df = pd.DataFrame(punkte)
     df["ts"] = pd.to_datetime(df["ts"], errors="coerce")
@@ -794,7 +797,7 @@ def _render_dl_reports(result) -> None:
     berichte = db.list_downloader_reports(result.id)
     if not berichte:
         st.info("Noch keine Testreport-PDFs gespiegelt. „Testberichte aktualisieren“ "
-                "lädt sie aus dem MqlDownloader.")
+                "lädt sie aus den Datenquellen.")
         return
     for index, item in enumerate(berichte):
         key = f"dl_pdf_{result.id}_{item['version']}_{index}"
@@ -807,7 +810,7 @@ def _render_dl_reports(result) -> None:
             key=key, icon=":material/picture_as_pdf:")
         groesse = (f"{item['size_bytes'] / 1024:.0f} kB"
                    if item.get("size_bytes") else "Größe unbekannt")
-        stand = f" · Stand im Downloader: {item['last_modified']}" if item.get("last_modified") else ""
+        stand = f" · Stand in der Quelle: {item['last_modified']}" if item.get("last_modified") else ""
         actions.caption(f"{item['version']} · {groesse}{stand}")
         actions.download_button(
             "PDF speichern",
@@ -826,19 +829,18 @@ def _render_dl_reports(result) -> None:
 
 
 def render_downloader_section(result) -> None:
-    """Abonnenten-Verlauf + Testreport-PDFs aus dem MqlDownloader (REST, lesend)."""
+    """Abonnenten-Verlauf + Testreport-PDFs aus aktiven REST-Datenquellen."""
     if not getattr(result, "id", 0):
         return
     section_header(
-        "MqlDownloader",
-        "Abonnenten-Verlauf und Testreport-PDFs aus dem lokalen Downloader-Netzwerkdienst.",
+        "Datenquellen",
+        "Abonnenten-Verlauf und Testreport-PDFs aus den konfigurierten REST-Quellen.",
         help_key="downloader_section",
     )
-    settings = config.load_settings()
-    if not str(settings.get("downloader_base_url") or "").strip():
-        st.info("Der MqlDownloader ist nicht angebunden. Base-URL im Admin-Bereich "
-                "unter „MqlDownloader“ hinterlegen — danach lassen sich hier "
-                "Abonnenten-Verlauf und Testreport-PDFs je Signal laden.",
+    if not downloader_sync.konfiguriert():
+        st.info("Keine aktive Datenquelle konfiguriert. Im Admin-Bereich unter "
+                "„Datenquellen“ eine Quelle anlegen oder aktivieren — danach "
+                "lassen sich hier Abonnenten-Verlauf und Testreport-PDFs je Signal laden.",
                 icon=":material/settings_ethernet:")
         return
     with st.container(border=True):

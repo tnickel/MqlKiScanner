@@ -14,12 +14,15 @@ Fallstricke, die hier behandelt werden:
 from __future__ import annotations
 
 import csv
+import calendar
 import json
 import math
+import re
 from datetime import datetime
 from typing import Optional
 
-from .models import BalanceRow, PendingOrder, ParsedExport, Trade
+from .models import (AccountCostRow, ArchivedPnlAggregate, BalanceRow,
+                     PendingOrder, ParsedExport, Trade)
 
 TIME_FMT = "%Y.%m.%d %H:%M:%S"
 FILLED_TYPES = ("Buy", "Sell")
@@ -83,7 +86,8 @@ def _is_mt4_summary_row(row: list[str], fmt: str) -> bool:
     return not (row[4].strip() or row[7].strip())
 
 
-def load_export(path: str, plattform_positions: float | None = None) -> ParsedExport:
+def load_export(path: str, plattform_positions: float | None = None, *,
+                nur_finanzdaten: bool = False) -> ParsedExport:
     """Laedt einen MQL5-Trade-Export (CSV, beide Formate) bzw. ein JSON-Excerpt.
 
     plattform_positions: von der Signalseite gemeldete Anzahl Positionen
@@ -97,6 +101,11 @@ def load_export(path: str, plattform_positions: float | None = None) -> ParsedEx
     Vorkommen bleibt. Deckt sie sich MIT allen Rohzeilen, ist alles echt.
     Jede andere (oder fehlende) Zahl beweist nichts — dann bleiben alle
     Zeilen erhalten und identische_tradezeilen zaehlt sie als Hinweis.
+
+    nur_finanzdaten ist ausschliesslich fuer die unabhaengige UI-Teilstatistik:
+    negative Zeitintervalle bleiben unveraendert erhalten. Daraus duerfen
+    weder zeitabhaengige Kennzahlen noch Equity/DD/Urteile gerechnet werden.
+    Volumen, Zahlen und Zeitstempelformat bleiben weiterhin strikt.
     """
     if path.lower().endswith(".json"):
         return _load_json_excerpt(path)
@@ -166,6 +175,19 @@ def load_export(path: str, plattform_positions: float | None = None) -> ParsedEx
             # Profit-Spalte = Gesamtsumme. Kein Trade — sonst verfaelscht die
             # Summe als Riesen-Trade jede Statistik.
             continue
+        if row_type in ("Charge", "Commission"):
+            money_columns = (9, 10, 11) if fmt == "mt4_orderbook" else (8, 9, 10)
+            allowed = {0, 1, *money_columns}
+            if fmt == "mt4_orderbook":
+                allowed.add(12)
+            if (not row[0].strip() or not any(row[i].strip() for i in money_columns)
+                    or any(cell.strip() for i, cell in enumerate(row) if i not in allowed)):
+                raise ValueError(f"{path}: Zeile {line}: ungueltige separate Kostenbuchung")
+            result.costs.append(AccountCostRow(
+                time=parse_time(row[0]),
+                amount=math.fsum(parse_number(row[i]) or 0.0 for i in money_columns),
+                kind=row_type))
+            continue
         # B6 (Intensiv-Review): MT4-History kennt neben Balance/Credit den
         # Datensatztyp 'Correction' (Broker-Korrektur, Betrag in der Profit-
         # Spalte; Beleg: Signal 2268766, "unbekannter Datensatztyp 'Correction'").
@@ -173,6 +195,22 @@ def load_export(path: str, plattform_positions: float | None = None) -> ParsedEx
         if row_type not in (*FILLED_TYPES, *PENDING_TYPES,
                             "Balance", "Credit", "Correction"):
             raise ValueError(f"{path}: Zeile {line}: unbekannter Datensatztyp {row_type!r}")
+        if (nur_finanzdaten and fmt == "mt4_orderbook" and row_type in FILLED_TYPES
+                and row[3].strip() == "archived"):
+            # Belegtes MT4-Monatsformat, kein Ersatz fuer einzelne Trades.
+            opened, closed = parse_time(row[0]), parse_time(row[7])
+            volume = parse_number(row[2])
+            last_day = calendar.monthrange(opened.year, opened.month)[1]
+            monthly = (opened.day == 1 and opened.hour == opened.minute == opened.second == 0
+                       and closed == opened.replace(day=last_day, hour=23, minute=59, second=59))
+            if (not monthly or volume is None or volume <= 0 or not row[11].strip()
+                    or any(row[i].strip() for i in (4, 5, 6, 8, 12))):
+                raise ValueError(f"{path}: Zeile {line}: unbelegtes Archivaggregatformat")
+            result.archived_pnl_aggregates.append(ArchivedPnlAggregate(
+                period_start=opened, period_end=closed, volume=volume,
+                profit=parse_number(row[11]), commission=parse_number(row[9]) or 0.0,
+                swap=parse_number(row[10]) or 0.0, source_line=line))
+            continue
         required = [0, 1]
         if row_type in FILLED_TYPES:
             required += [2, 3, 4, 7, 8, profit_idx] if fmt == "mt4_orderbook" else [2, 3, 4, 6, 7, profit_idx]
@@ -202,7 +240,19 @@ def load_export(path: str, plattform_positions: float | None = None) -> ParsedEx
                     commission=float(_row_number(row, 8) or 0.0),
                     swap=float(_row_number(row, 9) or 0.0),
                 )
-            if trade.volume <= 0 or trade.close_time < trade.open_time:
+            # MT4 erzeugt beim Aufloesen einer Hedge-Verknuepfung auch reine
+            # Verwaltungszeilen. Nur die exakt belegte, finanziell neutrale
+            # Form ist kein Trade; andere Nullvolumen bleiben harte Fehler.
+            if (fmt == "mt4_orderbook" and trade.volume == 0
+                    and trade.close_time >= trade.open_time
+                    and trade.entry_price == trade.exit_price
+                    and trade.entry_price is not None and trade.entry_price > 0
+                    and trade.profit == trade.commission == trade.swap == 0
+                    and re.fullmatch(r"close hedge by #\d+", trade.comment, re.I)):
+                result.neutrale_hedge_metazeilen += 1
+                continue
+            if trade.volume <= 0 or (trade.close_time < trade.open_time
+                                     and not nur_finanzdaten):
                 raise ValueError(f"{path}: Zeile {line}: ungueltiges Volumen oder Handelszeitraum")
             schluessel = tuple(zelle.strip() for zelle in row)
             if schluessel in tradezeilen:
@@ -225,7 +275,8 @@ def load_export(path: str, plattform_positions: float | None = None) -> ParsedEx
     # vorkommen entspricht, ist die Doppellieferung bewiesen — dann bleibt
     # jedes erste Vorkommen. Entspricht sie der Rohzahl (Night-Scalper-
     # Konstellation) oder irgendeiner anderen Zahl, bleibt alles erhalten.
-    if plattform_positions is not None and result.identische_tradezeilen:
+    if (plattform_positions is not None and result.identische_tradezeilen
+            and not result.archived_pnl_aggregates):
         anzahl = None
         if isinstance(plattform_positions, (int, float)) \
                 and not isinstance(plattform_positions, bool):
@@ -247,6 +298,11 @@ def load_export(path: str, plattform_positions: float | None = None) -> ParsedEx
                 behalten.append(trade)
             result.trades = behalten
             result.duplikate_entfernt = result.identische_tradezeilen
+    if result.archived_pnl_aggregates:
+        if any(a.period_start <= t.close_time <= a.period_end
+               for a in result.archived_pnl_aggregates for t in result.trades):
+            raise ValueError(f"{path}: Archivaggregate und Einzeltrades im selben "
+                             "Abschlusszeitraum — Doppelzaehlung nicht ausgeschlossen")
     return result
 
 

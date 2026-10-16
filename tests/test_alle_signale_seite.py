@@ -56,7 +56,7 @@ def _probe_ohne_trades() -> pipeline.ScanResult:
 def test_seite_rendert_mit_zwei_signalen(tmp_path, monkeypatch):
     csv_pfad = _csv(tmp_path / "trades_42.csv")
     proben = [_probe_mit_trades(csv_pfad), _probe_ohne_trades()]
-    monkeypatch.setattr(pipeline, "results_from_db", lambda: proben)
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kwargs: proben)
     monkeypatch.setattr(db, "list_catalog", lambda: [
         {"signal_id": 42, "stats": {"balance_usd": 10_000.0}},
         {"signal_id": 7, "stats": {}},
@@ -72,8 +72,8 @@ def test_seite_rendert_mit_zwei_signalen(tmp_path, monkeypatch):
 
 
 def test_seite_leer_ohne_signale(monkeypatch):
-    monkeypatch.setattr(pipeline, "results_from_db", lambda: [])
-    monkeypatch.setattr(db, "list_catalog", lambda: [])
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kwargs: [])
+    monkeypatch.setattr(db, "list_catalog", lambda **kwargs: [])
     at = AppTest.from_file(str(SEITE), default_timeout=60)
     at.run()
     assert not at.exception, at.exception
@@ -83,7 +83,7 @@ def test_seite_leer_ohne_signale(monkeypatch):
 def test_filter_nur_mit_trades(tmp_path, monkeypatch):
     csv_pfad = _csv(tmp_path / "trades_42.csv")
     proben = [_probe_mit_trades(csv_pfad), _probe_ohne_trades()]
-    monkeypatch.setattr(pipeline, "results_from_db", lambda: proben)
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kwargs: proben)
     monkeypatch.setattr(db, "list_catalog", lambda: [
         {"signal_id": 42, "stats": {"balance_usd": 10_000.0}},
         {"signal_id": 7, "stats": {}},
@@ -107,14 +107,14 @@ def _katalog_probe_mit_quelle() -> pipeline.ScanResult:
 
 def _katalog_seite(monkeypatch, proben, katalog_resultate, katalog_stats=None):
     """AppTest mit gescannten Proben + gepatchtem Katalog (ohne Netz)."""
-    monkeypatch.setattr(pipeline, "results_from_db", lambda: proben)
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kwargs: proben)
     monkeypatch.setattr(db, "list_catalog", lambda: [
         {"signal_id": r.id, "stats": {"balance_usd": 10_000.0}} for r in proben])
     monkeypatch.setattr(db, "katalog_sync_status",
                         lambda: {"vant": {"gelaufen_am": "2026-10-08 15:00:00",
                                           "anzahl": 104, "fehler": None}})
     monkeypatch.setattr(katalog_mod, "katalog_resultate",
-                        lambda: (katalog_resultate, katalog_stats or {}))
+                        lambda **kwargs: (katalog_resultate, katalog_stats or {}))
     at = AppTest.from_file(str(SEITE), default_timeout=60)
     at.run()
     return at
@@ -205,9 +205,9 @@ def test_erster_start_laedt_katalog_automatisch(tmp_path, monkeypatch):
     monkeypatch.setattr(db, "katalog_sync_status", lambda: (
         {} if not aufrufe else
         {"vant": {"gelaufen_am": "2026-10-08 15:00:00", "anzahl": 1, "fehler": None}}))
-    monkeypatch.setattr(pipeline, "results_from_db", lambda: [_probe_mit_trades(csv_pfad)])
-    monkeypatch.setattr(db, "list_catalog", lambda: [])
-    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda: ([], {}))
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kwargs: [_probe_mit_trades(csv_pfad)])
+    monkeypatch.setattr(db, "list_catalog", lambda **kwargs: [])
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kwargs: ([], {}))
     at = AppTest.from_file(str(SEITE), default_timeout=60)
     at.run()
     assert not at.exception, at.exception
@@ -455,12 +455,12 @@ def test_seite_markiert_zeile_und_filtert(tmp_path, monkeypatch):
     proben = [_probe_mit_trades(csv_pfad),            # id 42
               pipeline.ScanResult(id=43, name="Zweites", quelle="robo",
                                   wochen=40.0, abonnenten=10.0, trades_path="")]
-    monkeypatch.setattr(pipeline, "results_from_db", lambda: proben)
-    monkeypatch.setattr(db, "list_catalog", lambda: [])
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kwargs: proben)
+    monkeypatch.setattr(db, "list_catalog", lambda **kwargs: [])
     monkeypatch.setattr(db, "katalog_sync_status",
                         lambda: {"robo": {"gelaufen_am": "2026-10-08",
                                           "anzahl": 2, "fehler": None}})
-    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda: ([], {}))
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kwargs: ([], {}))
 
     at = AppTest.from_file(str(SEITE), default_timeout=120)
     at.run()

@@ -17,7 +17,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 
-from . import signal_statistik
+from . import quellen, signal_statistik
 from .forensics import drawdown
 
 # Farbwelt wie Equity-Studie (dunkles Theme verträgt diese Töne am besten).
@@ -63,6 +63,24 @@ def basis_kuerzel(quelle: str | None) -> str:
     return BASIS_KUERZEL.get(quelle or "", "—")
 
 
+def _historie_hinweis(statistik: dict) -> str:
+    hinweise = []
+    if statistik.get('quelle_trades_gekappt') in (True, 1, 'true', 'True'):
+        text = 'Historie gekappt'
+        stored = statistik.get('quelle_trades_stored')
+        total = statistik.get('quelle_trades_total_available')
+        if stored is not None:
+            text += f' ({stored} Trades gespeichert'
+            text += f', {total} insgesamt verfügbar)' if total is not None else ')'
+        elif total is not None:
+            text += f' ({total} Trades insgesamt verfügbar)'
+        hinweise.append(text + ' — Kennzahlen beziehen sich auf den gelieferten Export')
+    note = str(statistik.get('quelle_trades_completeness_note') or '').strip()
+    if note:
+        hinweise.append('Quellenhinweis zur Historie: ' + note)
+    return ' · '.join(hinweise)
+
+
 # Nutzer-Markierungen (Nutzer 08.10.2026): Farbe → Emoji in der Tabellen-
 # spalte „Mark." + dezente Zeilenfärbung über den Styler der Seite.
 MARKIERUNG_EMOJI = {"gruen": "🟩", "gelb": "🟨", "orange": "🟧"}
@@ -70,7 +88,7 @@ MARKIERUNG_EMOJI = {"gruen": "🟩", "gelb": "🟨", "orange": "🟧"}
 
 def tabellen_zeile(result, statistik: dict | None,
                    markierungen: dict | None = None,
-                   kommentare: dict | None = None) -> dict:
+                   kommentare: dict | None = None, *, fix_ids: set | None = None) -> dict:
     """Eine Tabellenzeile (reine Funktion) — Katalog- und Vorstufenwerte.
 
     Spaltenschlüssel sind bewusst KURZ (Nutzer 08.10.2026: kompakte Tabelle,
@@ -80,20 +98,54 @@ def tabellen_zeile(result, statistik: dict | None,
     je Spalte über den Help-Text in der column_config der Seite.
     """
     statistik = statistik or {}
+    nur_finanzdaten = bool(statistik.get('teilstatistik_finanzdaten'))
     markierungen = markierungen or {}
     farbe = markierungen.get(getattr(result, "id", None))
     kommentare = kommentare or {}
     hat_kommentar = bool((kommentare.get(getattr(result, "id", None)) or "").strip())
-    return {
+    virtuell = getattr(result, "true_dd_basis_virtuell", False)
+    vorbehalt = virtuell and getattr(result, "true_dd_virtuell_vorbehalt", False)
+    studie_dd = getattr(result, 'studie_anzeige_dd_pct', None)
+    studie_vorbehalt = studie_dd is not None and getattr(result, 'studie_anzeige_vorbehalt', False)
+    messstatus = ""
+    if virtuell:
+        messstatus = "10.000 USD virtuell · " + (
+            "Vorbehalt: " + getattr(result, "true_dd_virtuell_grund", "")
+            if vorbehalt else "Kursmessung bestanden")
+    elif getattr(result, "equity_rekon_grund", ""):
+        messstatus = result.equity_rekon_grund
+    elif not getattr(result, "trades_path", ""):
+        messstatus = "Trade-Datei fehlt"
+    if nur_finanzdaten:
+        messstatus += ' · Teilstatistik: ' + statistik.get('fehler', '')
+    elif statistik.get('fehler'):
+        messstatus += ' · Statistik: ' + str(statistik['fehler'])
+    if statistik.get('rendite_hinweis'):
+        messstatus += ' · ' + str(statistik['rendite_hinweis'])
+    if studie_dd is not None:
+        messstatus += ' · Unabhängige H1-Studie; Workflow-Forensik veraltet · ' + (
+            getattr(result, 'studie_anzeige_grund', '') if studie_vorbehalt else 'Kursmessung bestanden')
+    historie = _historie_hinweis(statistik)
+    if historie:
+        messstatus += ' · ' + historie
+    if (statistik.get("kapitalbasis_ok")
+            and statistik.get("endstand_virtuell_usd") is not None
+            and statistik["endstand_virtuell_usd"] <= 0):
+        messstatus += " · Rendite nicht berechenbar: Endkapital ≤ 0"
+    zeile = {
         "Mark.": MARKIERUNG_EMOJI.get(farbe or "", ""),
         "Komm.": "📋" if hat_kommentar else "",
         "Ampel": getattr(result, "ampel", "") or "—",
-        "Fix": "📌 FIX" if getattr(result, "id", None) in _fix_ids() else "",
+        "Fix": "📌 FIX" if getattr(result, "id", None) in (
+            _fix_ids() if fix_ids is None else fix_ids) else "",
         "Name": getattr(result, "name", "") or str(getattr(result, "id", "")),
         # Klickbarer Link zur Original-Signalseite beim Broker (Nutzer
-        # 08.10.2026) — URL kommt aus Client-Katalog bzw. Scan; die Seite
+        # 08.10.2026) — je Quelle die richtige Detail-URL (Platzhalter wie
+        # die Pelican-Startseite werden aus der ID neu gebaut); die Seite
         # rendert sie als schmale ↗-Spalte (LinkColumn).
-        "Link": (getattr(result, "url", "") or "")[:500],
+        "Link": quellen.oeffnen_url(
+            getattr(result, "quelle", ""), getattr(result, "id", None),
+            getattr(result, "url", ""))[:500],
         "Quelle": getattr(result, "quelle", "mql5") or "mql5",
         "Herkunft": getattr(result, "herkunft", "Workflow") or "Workflow",
         "Plattform": getattr(result, "platform", "") or "",
@@ -109,6 +161,7 @@ def tabellen_zeile(result, statistik: dict | None,
                       if getattr(result, "true_max_drawdown_pct", None) is not None
                       else getattr(result, "true_dd_virtuell_pct", None)),
         "True-DD ≈": (
+            getattr(result, "true_dd_virtuell_pct", None) if vorbehalt else
             getattr(result, "equity_dd_rekon_roh_pct", None)
             if getattr(result, "max_drawdown_equity_pct", None) is None
             else None),
@@ -125,21 +178,41 @@ def tabellen_zeile(result, statistik: dict | None,
         "TrueRetDD": (getattr(result, "true_retdd_jahr", None)
                       if getattr(result, "true_retdd_jahr", None) is not None
                       else getattr(result, "retdd_virtuell_jahr", None)),
-        "TrueRetDD ≈": getattr(result, "retdd_jahr_vorbehalt", None),
-        "RetDD/Monat": getattr(result, "true_retdd_monat", None),
+        "TrueRetDD ≈": (getattr(result, "retdd_virtuell_jahr", None) if vorbehalt
+                         else getattr(result, "retdd_jahr_vorbehalt", None)),
+        "RetDD/Monat": (getattr(result, "true_retdd_monat", None)
+                        if getattr(result, "true_retdd_monat", None) is not None
+                        else getattr(result, "retdd_virtuell_monat", None)),
         "PF": statistik.get("profit_faktor"),
         "Win %": statistik.get("winrate_pct"),
         "Trades": statistik.get("trades"),
         "Basis": basis_kuerzel(statistik.get("kapitalbasis_quelle"))
         if statistik.get("kapitalbasis_ok") else "—",
         "Forensik": "✓" if getattr(result, "forensik_vorhanden", False) else "—",
+        "Messstatus": messstatus.strip(" ·"),
     }
+    if studie_dd is not None:
+        zeile['True-DD %'] = studie_dd
+        zeile['True-DD ≈'] = studie_dd if studie_vorbehalt else None
+        # Eigenstaendige Anzeige aus aktueller CSV-Vorstufe. Die Engine-
+        # Effizienz bleibt stale und damit fuer Auswahl/Gruen gesperrt.
+        lang_genug = (statistik.get('dauer_monate') or 0) >= 3
+        geom = statistik.get('ertrag_monat_geom_pct')
+        cagr = statistik.get('cagr_jahr_pct')
+        zeile['RetDD/Monat'] = geom / studie_dd if lang_genug and studie_dd > 0 and geom is not None else None
+        zeile['TrueRetDD'] = cagr / studie_dd if lang_genug and studie_dd > 0 and cagr is not None else None
+        zeile['TrueRetDD ≈'] = zeile['TrueRetDD'] if studie_vorbehalt else None
+    if nur_finanzdaten:
+        for spalte in ('Trading-DD %', 'True-DD %', 'True-DD ≈', 'True-DD USD',
+                       'Geom. %/M', 'TrueRetDD', 'TrueRetDD ≈', 'RetDD/Monat'):
+            zeile[spalte] = None
+    return zeile
 
 
 # Spalten mit Textinhalten — alles andere wird auf der Seite numerisch
 # konvertiert (None → NaN → leere Zelle statt „None“-Text in der Tabelle).
 TEXT_SPALTEN = {"Mark.", "Komm.", "Ampel", "Fix", "Name", "Link", "Quelle",
-                "Herkunft", "Plattform", "Basis", "Forensik"}
+                "Herkunft", "Plattform", "Basis", "Forensik", "Messstatus"}
 
 
 def _fix_ids() -> set:
@@ -282,7 +355,9 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
     """
     statistik = statistik or {}
     name = getattr(auswahl, "name", "") or f"#{getattr(auswahl, 'id', '?')}"
-    url = getattr(auswahl, "url", "") or ""
+    url = quellen.oeffnen_url(
+        getattr(auswahl, "quelle", ""), getattr(auswahl, "id", None),
+        getattr(auswahl, "url", ""))
     st.subheader(f"{getattr(auswahl, 'ampel', '')} {name}".strip())
     zeile = f"#{getattr(auswahl, 'id', '?')} · Quelle {getattr(auswahl, 'quelle', 'mql5') or 'mql5'}"
     broker = getattr(auswahl, "broker_server", None)
@@ -292,9 +367,21 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
     if url:
         st.page_link(url, label="Signal beim Anbieter öffnen", icon=":material/open_in_new:")
 
+    historie = _historie_hinweis(statistik)
+    if historie:
+        st.warning(historie, icon=':material/history:')
+
     if statistik.get("fehler"):
-        st.warning(f"Statistik nicht berechenbar: {statistik['fehler']}",
+        teilmessung = bool(statistik.get('teilstatistik_finanzdaten'))
+        st.warning(('Teilstatistik: ' if teilmessung else 'Statistik nicht berechenbar: ')
+                   + statistik['fehler'],
                    icon=":material/warning:")
+        if teilmessung:
+            karten = st.columns(4)
+            for karte, titel, wert in zip(karten, ('Trades', 'Win %', 'PF', 'Netto USD'),
+                    (statistik.get('trades'), statistik.get('winrate_pct'),
+                     statistik.get('profit_faktor'), statistik.get('netto_gesamt_usd'))):
+                karte.metric(titel, _de(wert, 0 if titel == 'Trades' else 2))
         return
 
     st.info(

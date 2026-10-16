@@ -7,6 +7,7 @@ Analyse-Reihe in doc/01_analysen-verlauf.md zitiert.
 from __future__ import annotations
 
 import statistics
+import math
 from collections import Counter, defaultdict
 from datetime import date, timedelta
 
@@ -16,8 +17,17 @@ from .lot_format import lot_histogram
 
 def compute(parsed: ParsedExport) -> dict:
     trades = parsed.trades
+    monthly_amounts: dict[str, list[float]] = defaultdict(list)
+    for time, amount in parsed.realized_events():
+        monthly_amounts[time.strftime("%Y-%m")].append(amount)
+    monthly_close = {month: math.fsum(amounts) for month, amounts in monthly_amounts.items()}
+    negative_months = sorted(m for m, v in monthly_close.items() if v < 0)
+    costs = {"kontokosten_anzahl": len(parsed.costs),
+             "kontokosten_usd": round(math.fsum(c.amount for c in parsed.costs), 2)}
     if not trades:
-        return {"trades": 0}
+        return {"trades": 0, "trades_anzahl": 0, "net": round(parsed.net_total, 2),
+                **costs, "monthly_net_by_close": {m: round(v, 2) for m, v in sorted(monthly_close.items())},
+                "negative_months_close": negative_months}
 
     seq_close = sorted(trades, key=lambda t: t.close_time)
     wins = [t for t in trades if t.profit > 0]
@@ -25,7 +35,7 @@ def compute(parsed: ParsedExport) -> dict:
     losses = [t for t in trades if t.profit < 0]
     gross_profit = sum(t.profit for t in wins)
     gross_loss = sum(t.profit for t in losses)
-    net = sum(t.net for t in trades)
+    net = parsed.net_total
 
     span_days = (max(t.close_time for t in trades) - min(t.open_time for t in trades)).days
 
@@ -54,11 +64,6 @@ def compute(parsed: ParsedExport) -> dict:
         key = t.open_time.date().isoformat()
         by_day_pnl[key] += t.profit
         by_day_cnt[key] += 1
-
-    monthly_close: dict[str, float] = defaultdict(float)
-    for t in trades:
-        monthly_close[t.close_time.strftime("%Y-%m")] += t.net
-    negative_months = sorted(m for m, v in monthly_close.items() if v < 0)
 
     hours = Counter(t.open_time.hour for t in trades)
 
@@ -90,6 +95,7 @@ def compute(parsed: ParsedExport) -> dict:
         "losses": len(losses),
         "winrate_pct": round(len(wins) / len(trades) * 100, 1),
         "net": round(net, 2),
+        **costs,
         "commission": round(sum(t.commission for t in trades), 2),
         "swap": round(sum(t.swap for t in trades), 2),
         "gross_profit": round(gross_profit, 2),
@@ -124,10 +130,12 @@ def compute(parsed: ParsedExport) -> dict:
 
 
 def month_table_by_open(parsed: ParsedExport) -> dict[str, float]:
-    """Monatsnetto nach Open-Zeit (Alternative in den Referenzskripten genutzt)."""
+    """Trades nach Open-Zeit, separate Kosten nach ihrem Buchungszeitpunkt."""
     monthly: dict[str, float] = defaultdict(float)
     for t in parsed.trades:
         monthly[t.open_time.strftime("%Y-%m")] += t.net
+    for cost in parsed.costs:
+        monthly[cost.time.strftime("%Y-%m")] += cost.amount
     return {m: round(v, 2) for m, v in sorted(monthly.items())}
 
 
@@ -158,8 +166,10 @@ def full_month_keys(first_open, last_close) -> set[str]:
 def negative_months_full(parsed: ParsedExport) -> list[str]:
     """Negative Monate, nur voll abgedeckte Monate gezaehlt (Plattform-Tabelle)."""
     monthly: dict[str, float] = defaultdict(float)
-    for t in parsed.trades:
-        monthly[t.close_time.strftime("%Y-%m")] += t.net
+    for time, amount in parsed.realized_events():
+        monthly[time.strftime("%Y-%m")] += amount
+    if not parsed.trades:
+        return []
     full = full_month_keys(min(t.open_time for t in parsed.trades),
                            max(t.close_time for t in parsed.trades))
     return sorted(m for m, v in monthly.items() if v < 0 and m in full)

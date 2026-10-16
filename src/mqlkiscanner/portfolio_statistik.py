@@ -72,11 +72,14 @@ def _monatsserie(parsed, basis: float) -> dict[str, float]:
     Monats-PnL ÷ Stand am Monatsanfang (bisheriges Verhalten)."""
     erste = min(t.open_time for t in parsed.trades)
     letzte = max(t.close_time for t in parsed.trades)
+    if any(c.time < erste or c.time > letzte for c in getattr(parsed, "costs", [])):
+        return {}  # Kostenfenster ist nicht durch die Handelslaufzeit gedeckt.
     von = erste.year * 12 + erste.month - 1
     bis = letzte.year * 12 + letzte.month - 1
     # (zeit, art, betrag); art 0 = Trade-Close, 1 = Kapitalfluss — bei
     # gleichem Zeitstempel zaehlt der Trade noch zur alten Unterperiode.
     ereignisse: list[tuple] = [(t.close_time, 0, float(t.net)) for t in parsed.trades]
+    ereignisse += [(c.time, 0, float(c.amount)) for c in getattr(parsed, "costs", []) if c.time >= erste]
     for b in getattr(parsed, "balances", []):
         if b.time <= erste:
             continue  # vor dem ersten Open: bereits Teil der Startbasis
@@ -88,6 +91,19 @@ def _monatsserie(parsed, basis: float) -> dict[str, float]:
 
     renditen = {}
     stand = basis
+    saldo_fehlerbudget = 0.0
+
+    def kontostand(start, pnl, fluss=0.0):
+        # Nur Rundungsreste der tatsaechlichen Gleitkommaoperationen auf
+        # null setzen, keine feste Geldtoleranz. Das Budget waechst mit
+        # den verarbeiteten Betraegen und ihrer jeweiligen ULP-Skala.
+        # ATong: Vollauszahlung 1500.05 hinterliess zuvor -2.7e-11 USD.
+        nonlocal saldo_fehlerbudget
+        betraege = [start, *pnl, fluss]
+        saldo = math.fsum(betraege)
+        saldo_fehlerbudget += math.fsum(math.ulp(wert) for wert in betraege) * 2
+        return 0.0 if abs(saldo) <= saldo_fehlerbudget else saldo
+
     for monat in range(von, bis + 1):
         faktor = 1.0
         start = stand
@@ -104,7 +120,7 @@ def _monatsserie(parsed, basis: float) -> dict[str, float]:
             if teil is None:
                 return {}  # PnL ohne positiven Nenner: Rendite undefiniert.
             faktor *= teil
-            stand = start + math.fsum(pnl) + betrag
+            stand = kontostand(start, pnl, betrag)
             if not math.isfinite(stand) or stand < 0:
                 return {}  # Auszahlung über den Kontostand: Daten widersprüchlich.
             start, pnl = stand, []
@@ -113,7 +129,7 @@ def _monatsserie(parsed, basis: float) -> dict[str, float]:
             return {}
         faktor *= teil
         gewinn = math.fsum(pnl)
-        stand = start + gewinn
+        stand = kontostand(start, pnl)
         jahr, index = divmod(monat, 12)
         if mit_fluss:
             rendite = (faktor - 1.0) * 100.0
@@ -219,10 +235,16 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
                          "stattdessen TWR auf der realen Kurve gerechnet",
     }
     try:
-        netto = math.fsum(t.net for t in parsed.trades)
-        endkapital = basis + netto
+        netto = parsed.net_total
+        endkapital = basis + netto - math.fsum(c.amount for c in getattr(parsed, "costs", []) if c.time < erste)
         ergebnis["netto_gesamt_usd"] = netto
         ergebnis["endkapital_virtuell_usd"] = endkapital
+        if any(c.time < erste or c.time > letzte for c in getattr(parsed, "costs", [])):
+            ergebnis["kontokosten_zeitfenster_unbelegt"] = True
+            ergebnis["basis_hinweis"] = (
+                "Separate Kontokosten ausserhalb des Trade-Zeitfensters; "
+                "Netto vollstaendig, geometrische Rendite nicht freigegeben")
+            return ergebnis
         if (monate <= 0 or not math.isfinite(monate)
                 or endkapital <= 0 or not math.isfinite(endkapital)):
             return ergebnis
@@ -256,7 +278,7 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
             else:
                 return ergebnis
         else:
-            relativer_gewinn = netto / basis
+            relativer_gewinn = (endkapital - basis) / basis
             log_faktor = (math.log1p(relativer_gewinn)
                           if math.isfinite(relativer_gewinn) and relativer_gewinn > -1
                           else math.log(endkapital) - math.log(basis))

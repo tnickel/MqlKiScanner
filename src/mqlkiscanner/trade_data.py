@@ -87,8 +87,8 @@ def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
 
     # --- Monatskurve (Netto je Close-Monat)
     monthly: dict[str, float] = defaultdict(float)
-    for t in trades:
-        monthly[t.close_time.strftime("%Y-%m")] += t.net
+    for zeit, netto in parsed.realized_events():
+        monthly[zeit.strftime("%Y-%m")] += netto
 
     # --- Pro Symbol
     per_symbol = []
@@ -144,7 +144,9 @@ def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
             "zeitraum": f"{by_open[0].open_time:%Y-%m-%d} bis {by_close[-1].close_time:%Y-%m-%d}",
             "wins": len(wins), "losses": len(losses),
             "winrate_pct": round(len(wins) / len(trades) * 100, 1),
-            "netto_gesamt": round(sum(t.net for t in trades), 2),
+            "netto_gesamt": round(parsed.net_total, 2),
+            "kontokosten_anzahl": len(parsed.costs),
+            "kontokosten_usd": round(sum(c.amount for c in parsed.costs), 2),
             "avg_win": round(statistics.mean(t.profit for t in wins), 2) if wins else None,
             "avg_loss": round(statistics.mean(t.profit for t in losses), 2) if losses else None,
             "halt_h_median": round(statistics.median(durs), 2),

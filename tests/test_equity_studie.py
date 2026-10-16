@@ -346,6 +346,48 @@ def test_terminal_fallback_wird_zurueckgesetzt():
     assert fake.zurueck >= 1, "zurueck_zum_ersten_terminal wurde nie gerufen"
 
 
+def test_studie_erreicht_drittes_terminal_und_beendet_fallback():
+    start = dt.datetime(2026, 1, 1)
+    bars = _bars("XAUUSD", start, 24)
+    trades = [_trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+                     start + dt.timedelta(hours=2), 2007.0, 2014.0)]
+    fake = _MultiTerminalKurse({}, {})
+    fake.quellen.append({"XAUUSD": bars})
+    erg = studie(_parsed(trades), fake, 1000, gmt_offset_h=0)
+    assert erg["punkte"], erg
+    assert fake.wechsel == 2
+    assert fake.terminal_idx == 0
+
+
+def test_studie_ohne_kurse_beendet_fallback_nach_letztem_terminal():
+    start = dt.datetime(2026, 1, 1)
+    trades = [_trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+                     start + dt.timedelta(hours=2), 2007.0, 2014.0)]
+    fake = _MultiTerminalKurse({}, {})
+    fake.quellen.append({})
+    erg = studie(_parsed(trades), fake, 1000)
+    assert erg["status"] == "skipped"
+    assert fake.wechsel == 2
+    assert fake.terminal_idx == 0
+
+
+def test_studie_fehlgeschlagener_terminalwechsel_wird_nicht_wiederholt():
+    start = dt.datetime(2026, 1, 1)
+    trades = [_trade("XAUUSD", "buy", start + dt.timedelta(hours=1),
+                     start + dt.timedelta(hours=2), 2007.0, 2014.0)]
+    fake = _MultiTerminalKurse({}, {})
+
+    def scheitert():
+        fake.wechsel += 1
+        assert fake.wechsel == 1, "Fehlgeschlagener Wechsel darf nicht endlos wiederholt werden"
+        return False, "nicht verbunden"
+
+    fake.wechsle_terminal = scheitert
+    erg = studie(_parsed(trades), fake, 1000)
+    assert erg["status"] == "skipped"
+    assert fake.wechsel == 1
+
+
 def test_alle_kurse_fehlend_ist_skipped_mit_namen():
     start = dt.datetime(2026, 1, 1)
     trades = [_trade("EURUSD", "buy", start + dt.timedelta(hours=1),

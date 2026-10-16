@@ -17,7 +17,9 @@ Equity-Studie (realer Drawdown) für JEDES gemeldete Signal laufen.
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import math
 from pathlib import Path
 
 from . import db, downloader_client, ingest, pipeline, quellen
@@ -95,7 +97,8 @@ def sync(log=None, *, kuerzel: str | None = None) -> dict:
     return summary
 
 
-def katalog_resultate() -> tuple[list, dict]:
+def katalog_resultate(*, gescannt=None, studien=None, progress=None,
+                     katalog_rows=None, quellen_rows=None, artefakte=None) -> tuple[list, dict]:
     """Katalogzeilen als leichtgewichtige ScanResults für die Übersicht.
 
     Gescannte Signale (signals-Tabelle) GEWINNEN — sie sind hier dedupliert
@@ -107,12 +110,19 @@ def katalog_resultate() -> tuple[list, dict]:
     per Button nachladen. Rückgabe (resultate, stats_je_id).
     """
     db.init_db()
-    gescannt = db.known_signal_ids()
-    quellen_nach_kuerzel = {str(q["kuerzel"]): q for q in db.list_quellen()}
+    gescannt = db.known_signal_ids() if gescannt is None else gescannt
+    quellen_nach_kuerzel = {str(q["kuerzel"]): q for q in
+                          (db.list_quellen() if quellen_rows is None else quellen_rows)}
     resultate: list = []
     stats_je_id: dict[int, dict] = {}
     gesehen: set[int] = set()
-    for zeile in db.katalog_list():
+    zeilen = db.katalog_list() if katalog_rows is None else katalog_rows
+    artefakte = db.list_quellen_artefakte() if artefakte is None else artefakte
+    if progress:
+        progress(0, len(zeilen))
+    for nr, zeile in enumerate(zeilen, 1):
+        if progress:
+            progress(nr - 1, len(zeilen))
         signal_id = int(zeile["signal_id"])
         kuerzel = str(zeile.get("quelle") or "")
         if signal_id in gescannt or signal_id in gesehen:
@@ -133,22 +143,14 @@ def katalog_resultate() -> tuple[list, dict]:
         if quelle is not None and version:
             res.quelle_id = int(quelle["id"])
             res.quelle_version = version
-            trades = db.get_quellen_artefakt(int(quelle["id"]), signal_id,
-                                             version, "trades")
+            trades = artefakte.get((int(quelle["id"]), signal_id, version, "trades"))
             if trades and trades.get("path") and Path(trades["path"]).exists():
                 res.trades_path = str(trades["path"])
                 res.trades_sha256 = trades.get("sha256") or ""
-                metrics = db.get_quellen_artefakt(int(quelle["id"]), signal_id,
-                                                  version, "metrics")
+                metrics = artefakte.get((int(quelle["id"]), signal_id, version, "metrics"))
                 if metrics and metrics.get("path") \
                         and Path(metrics["path"]).exists():
-                    try:
-                        stats = ingest.metrics_zu_stats(
-                            json.loads(Path(metrics["path"]).read_text(
-                                encoding="utf-8")),
-                            quelle_kuerzel=kuerzel)
-                    except (OSError, ValueError):
-                        stats = {}
+                    stats = _metrics_aus_artefakt(res, version, metrics)
                     stats_je_id[signal_id] = stats
                     res.dd_equity_pct = stats.get("dd_equity_pct")
                     res.ertrag_monat_pct = stats.get("monthly_growth_pct")
@@ -157,30 +159,112 @@ def katalog_resultate() -> tuple[list, dict]:
     # Batch-Equity-Studien („Lücken füllen", Nutzer 08.10.2026): True-DD,
     # TrueRetDD-Familie und True-DD USD in die Katalog-Zeilen mappen —
     # Forensik gibt es hier nicht, die Studie gewinnt immer (SHA-geschützt).
-    studien = db.list_equity_studien()
+    studien = db.list_equity_studien() if studien is None else studien
     for res in resultate:
         pipeline.studie_anwenden(res, studien)
+    if progress:
+        progress(len(zeilen), len(zeilen))
     return resultate, stats_je_id
 
 
 def metrics_stats(result) -> dict:
-    """Gecachte Kennzahlen eines Katalog-Signals als Stats-Formular (leer ohne
-    Cache/Fehler) — für Statistik- und Batch-Berechnungen ohne Scan."""
-    quelle_id = getattr(result, "quelle_id", None)
-    if not quelle_id:
+    """Gecachte Quellen-Kennzahlen als Stats-Formular (leer ohne Cache/Fehler).
+
+    Workflow-Zeilen tragen oft nur das Quellen-Kuerzel. Wie beim Nachladen
+    wird dann die genaue Quelle/Version aus ihrem Katalogeintrag aufgeloest.
+    Kein Ersatz durch andere Quellen oder widersprechende Plattformversionen.
+    """
+    ref = quellen_referenz(result)
+    if ref is None:
+        return {}
+    quelle_id, version = ref
+    bekannte_version = str(getattr(result, "quelle_version", "") or "")
+    platform = str(getattr(result, "platform", "") or "").casefold()
+    if not version or (bekannte_version and bekannte_version != version):
+        return {}
+    if platform and ingest._PLATTFORM.get(version, platform) != platform:
         return {}
     artefakt = db.get_quellen_artefakt(int(quelle_id), int(result.id),
-                                       str(getattr(result, "quelle_version", "") or ""),
-                                       "metrics")
+                                       version, "metrics")
+    return _metrics_aus_artefakt(result, version, artefakt)
+
+
+def _metrics_aus_artefakt(result, version, artefakt) -> dict:
+    """Exakte Identitaet und registrierte Bytes pruefen, ohne DB-Zugriff."""
     if not artefakt or not artefakt.get("path") \
             or not Path(artefakt["path"]).exists():
         return {}
     try:
+        inhalt = Path(artefakt["path"]).read_bytes()
+        if artefakt.get("sha256") != hashlib.sha256(inhalt).hexdigest():
+            return {}
+        antwort = json.loads(inhalt.decode("utf-8"))
+        if not isinstance(antwort, dict):
+            return {}
+        if antwort.get("version") and str(antwort["version"]) != version:
+            return {}
+        if antwort.get("signalId") is not None \
+                and int(antwort["signalId"]) != int(result.id):
+            return {}
         return ingest.metrics_zu_stats(
-            json.loads(Path(artefakt["path"]).read_text(encoding="utf-8")),
+            antwort,
             quelle_kuerzel=str(getattr(result, "quelle", "") or ""))
-    except (OSError, ValueError):
+    except (OSError, TypeError, ValueError):
         return {}
+
+
+def workflow_stats_bulk(resultate, workflow_stats, *, katalog_rows=None,
+                        quellen_rows=None, artefakte=None) -> dict:
+    """Frische Quellenstats nur auf identischem Trade-Snapshot ergaenzen.
+
+    Katalogmetadaten duerfen aktuell sein. Rechenbasis und Positionsanzahl
+    duerfen dagegen nie aus einem neueren/fremden Export stammen. Diese
+    Anzeige aktualisiert weder Workflow-Urteil noch gespeicherte Studien.
+    """
+    zeilen = db.katalog_list() if katalog_rows is None else katalog_rows
+    quellen_rows = db.list_quellen() if quellen_rows is None else quellen_rows
+    artefakte = db.list_quellen_artefakte() if artefakte is None else artefakte
+    katalog_index = {(str(z['quelle']), int(z['signal_id'])): z for z in zeilen}
+    quellen_index = {str(q['kuerzel']): int(q['id']) for q in quellen_rows}
+    out = {int(sid): dict(stats or {}) for sid, stats in workflow_stats.items()}
+    for res in resultate:
+        kuerzel = str(res.quelle or '')
+        zeile = katalog_index.get((kuerzel, int(res.id)))
+        qid = quellen_index.get(kuerzel)
+        if zeile is None or qid is None:
+            continue
+        version = str(zeile.get('version') or '')
+        if (not version or (res.quelle_id and int(res.quelle_id) != qid)
+                or (res.quelle_version and res.quelle_version != version)
+                or (res.platform and ingest._PLATTFORM.get(version) != res.platform.casefold())):
+            continue
+        for feld in ('wochen', 'abonnenten'):
+            if zeile.get(feld) is not None:
+                setattr(res, feld, zeile[feld])
+        trades = artefakte.get((qid, int(res.id), version, 'trades')) or {}
+        sha = getattr(res, 'trades_sha256', '') or ''
+        if not sha or trades.get('sha256') != sha:
+            continue
+        try:
+            # Cachepfade sind ueberschreibbar; registrierter SHA allein reicht nicht.
+            pfade = {str(trades.get('path') or ''), str(res.trades_path or '')}
+            if any(not pfad or hashlib.sha256(Path(pfad).read_bytes()).hexdigest() != sha
+                   for pfad in pfade):
+                continue
+        except OSError:
+            continue
+        frisch = _metrics_aus_artefakt(
+            res, version, artefakte.get((qid, int(res.id), version, 'metrics')))
+        bisher = out.setdefault(int(res.id), {})
+        for feld, wert in frisch.items():
+            if feld == 'initial_deposit_usd' and (
+                    not isinstance(wert, (int, float)) or isinstance(wert, bool)
+                    or not math.isfinite(wert) or wert <= 0):
+                continue
+            if wert is not None and (feld != 'initial_deposit_usd'
+                                     or bisher.get(feld) is None):
+                bisher[feld] = wert
+    return out
 
 
 def quellen_referenz(result) -> tuple[int, str] | None:

@@ -49,6 +49,66 @@ def test_lokaler_shift_null_eins_null_entspricht_einheitlicher_referenz():
     assert parsed.trades[6].profit == normal.trades[6].profit
 
 
+def _breiter_lokaler_gewinner():
+    parsed, bars = _daten((0, 0), (10, 10))
+    grenze = er._epoch(START + dt.timedelta(days=7))
+    for bar in bars["XAUUSD"]:
+        if bar["time"] >= grenze:
+            bar["low"] -= 17
+    # Ein einzelner Preis spricht fuer+1; alle anderen passen zu0 UND+1.
+    parsed.trades[10].entry_price += 17
+    return parsed, bars
+
+
+def test_weiter_90_prozent_kompatibler_bekannter_shift_wechselt_nicht_fuer_eine_probe():
+    parsed, bars = _breiter_lokaler_gewinner()
+    model = er.Zeitbasis(parsed.trades, bars, 0)
+    week = model.perioden[1]
+    assert week["offset_s"] == 0
+    assert week["status"] == "bekannter_shift_weiter_preiskompatibel"
+    assert week["bekannter_trefferquote"] == .95
+    assert week["lokal_beste_gmt_h"] == [1]
+    assert model.unsichere_trade_ereignisse == 1
+    assert not model._trade_sicher[id(parsed.trades[10])]
+    assert model.monoton
+    assert "90%" in model.metadata()["belegregel"]
+
+
+def test_ohne_bekannte_basis_gewinnt_eindeutiger_lokaler_shift():
+    parsed, bars = _breiter_lokaler_gewinner()
+    # Nur die zweite Woche: der unbekannte globale Startwert darf nicht
+    # unter Berufung auf Kompatibilitaet zum bekannten Shift werden.
+    trades = parsed.trades[10:]
+    model = er.Zeitbasis(trades, bars, None)
+    assert model.global_belegt is False
+    assert model.perioden[0]["offset_s"] == 3600
+    assert model.perioden[0]["status"] == "lokal_preisbelegt"
+    assert model.perioden[0]["bekannter_gmt_h"] is None
+
+
+def test_weit_abweichender_preis_bleibt_trotz_kompatiblem_shift_harte_sperre():
+    parsed, bars = _breiter_lokaler_gewinner()
+    parsed.trades[11].entry_price *= 2
+    model = er.Zeitbasis(parsed.trades, bars, 0)
+    assert model.weit_draussen_ereignisse >= 1
+    assert model.verlaesslich is False
+
+
+def test_echter_widersprochener_shift_bleibt_wechsel_mit_offener_grenze():
+    parsed, bars = _daten((0, 1), (6, 6))
+    model = er.Zeitbasis(parsed.trades, bars, 0)
+    assert model.perioden[1]["bekannter_trefferquote"] < .9
+    assert model.perioden[1]["offset_s"] == 3600
+    assert model.mehrdeutige_intervalle
+
+
+def test_duenne_erste_woche_ohne_globale_basis_wird_nicht_als_belegt_erfunden():
+    parsed, bars = _daten((0, 1), (1, 6))
+    model = er.Zeitbasis(parsed.trades, bars, None)
+    assert model.perioden[0]["belegt"] is False
+    assert model._trade_sicher[id(parsed.trades[0])] is False
+
+
 def test_global_unzureichend_aber_beide_lokalen_phasen_eindeutig():
     parsed, bars = _daten((0, 1), (5, 5))
     assert er.ermittle_gmt_offset(parsed.trades, bars)["offset_s"] is None
@@ -144,8 +204,15 @@ def test_nichtmonotone_abbildung_mit_close_vor_open_wird_geskippt():
     assert result["status"] == "skipped"
     assert "monoton" in result["grund"]
     assert result["zeitbasis"]["monoton"] is False
+    beispiel = result["zeitbasis"]["nichtmonotones_beispiel"]
+    assert beispiel["vorher"]["csvzeit"] < beispiel["nachher"]["csvzeit"]
+    assert beispiel["vorher"]["referenzzeit"] > beispiel["nachher"]["referenzzeit"]
+    assert beispiel["umkehr_s"] > 0
+    assert beispiel["vorher"]["csvzeit"] in result["grund"]
+    assert beispiel["nachher"]["referenzzeit"] in result["grund"]
     study = equity_studie.studie(parsed, kursdaten.FakeKursDaten(bars), 10000)
     assert study["status"] == "skipped"
+    assert study["grund"] == result["grund"]
 
 
 def test_fehlende_bars_verkleinern_gmt_checknenner_nicht():

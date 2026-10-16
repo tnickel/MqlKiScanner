@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
 
-from mqlkiscanner import client_updates, config, db, downloader_sync, fix_signale, pipeline, quellen, scan_state, scan_worker, secrets_store
+from mqlkiscanner import client_updates, config, db, downloader_sync, fix_signale, pipeline, quellen, scan_state, scan_worker, secrets_store, verbindungs_monitor
 from mqlkiscanner.station_dialoge import (
     STATES, _dialog_ergebnisse, _probleme_dialog, registriere_station_host,
 )
@@ -411,32 +411,43 @@ def _live_status() -> None:
 
 has_login = bool(secrets_store.get_secret("mql5_user") and secrets_store.get_secret("mql5_pass"))
 has_llm = bool(secrets_store.get_secret("glm_api_key"))
-dl_status = downloader_sync.verbindungs_status(timeout=3.0)
+
 with st.container(border=True, key="scan_control_panel"):
     with st.container(horizontal=True, gap="small"):
         st.badge("MQL5 bereit" if has_login else "MQL5-Zugang fehlt",
                  icon=":material/lock:", color="green" if has_login else "orange")
         st.badge("KI-Berichte aktiv" if has_llm else "KI optional",
                  icon=":material/psychology:", color="green" if has_llm else "gray")
-        mql_quelle = next((q for q in dl_status.get("quellen", [])
-                           if q["kuerzel"] == "mql5"), None)
-        if mql_quelle is None:
-            st.badge("Downloader nicht konfiguriert", icon=":material/sync:",
-                     color="gray")
-        else:
-            st.badge("Downloader verbunden" if mql_quelle["ok"]
-                     else "Downloader offline",
-                     icon=":material/sync:" if mql_quelle["ok"]
-                     else ":material/sync_disabled:",
-                     color="green" if mql_quelle["ok"] else "red")
-        for q in dl_status.get("quellen", []):
-            if q["kuerzel"] == "mql5":
-                continue  # oben als „Downloader" gezeigt
-            st.badge(f"{q['name']} verbunden" if q["ok"]
-                     else f"{q['name']} offline",
-                     icon=":material/sync:" if q["ok"]
-                     else ":material/sync_disabled:",
-                     color="green" if q["ok"] else "red")
+        @st.fragment(run_every=2.0)
+        def _quellen_status_anzeigen():
+            snapshot = verbindungs_monitor.zustand()
+            if snapshot["fehler"]:
+                st.badge("Quellenprüfung wird erneut versucht", color="orange",
+                         icon=":material/sync_problem:")
+            if not snapshot["geladen"]:
+                st.badge("Datenquellen werden geprüft", color="gray",
+                         icon=":material/sync:")
+                return
+            quellen_status = [v for v in snapshot["verbindungen"] if v["art"] == "quelle"]
+            if not any(v["name"] == "Downloader" for v in quellen_status):
+                st.badge("Downloader nicht konfiguriert", icon=":material/sync:",
+                         color="gray")
+            for v in quellen_status:
+                e = v["ergebnis"]
+                if e is None:
+                    st.badge(f"{v['name']} wird geprüft", color="gray",
+                             icon=":material/sync:")
+                    continue
+                eingeschraenkt = e.get("eingeschraenkt", False)
+                ok = e["ok"] and not eingeschraenkt
+                text = "verbunden" if ok else (
+                    "Token erforderlich" if eingeschraenkt else "offline")
+                suffix = " · wird geprüft" if v["prueft"] else ""
+                st.badge(f"{v['name']} {text}{suffix}",
+                         icon=":material/sync:" if ok else ":material/sync_disabled:",
+                         color="green" if ok else ("orange" if eingeschraenkt else "red"))
+
+        _quellen_status_anzeigen()
     start_zeile = st.columns([1.15, 1.15, 1], gap="small", vertical_alignment="center")
     with start_zeile[0]:
         start = action_button(

@@ -288,6 +288,13 @@ def _zahl(wert):
         return None
 
 
+def _anzahl(wert):
+    """Source counts must be finite, non-negative whole numbers."""
+    import math
+    zahl = _zahl(wert)
+    return int(zahl) if zahl is not None and math.isfinite(zahl) and zahl >= 0 and zahl.is_integer() else None
+
+
 # Broker-Fallback je Quellen-Version (06.10.2026): Monitore, die in metrics
 # KEIN "Broker"-Feld liefern (Vantage/Zulu), handeln an der Börse ihres
 # Anbieters — Vantage-Copy-API-Konten laufen bei Vantage, CopyFX bei
@@ -339,6 +346,14 @@ def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None) ->
         # (TradesTruncated / TradesTotalAvailable). Nur Hinweis, kein Malus.
         "quelle_trades_gekappt": metrics.get("TradesTruncated"),
         "quelle_trades_total_available": metrics.get("TradesTotalAvailable"),
+        "quelle_trades_stored": _zahl(metrics.get("TradesStored")),
+        "quelle_trades_completeness_note": str(metrics.get("CompletenessNote") or ""),
+        # Source aggregates are evidence for retrying an empty cache, not
+        # proof of the number of exported positions (e.g. capped histories).
+        # Keep them separate from parser.plattform_positions / stats.trades.
+        "quelle_trades_anzahl": _anzahl(metrics.get("Trades")),
+        "quelle_gewinne_anzahl": _anzahl(metrics.get("Wins")),
+        "quelle_verluste_anzahl": _anzahl(metrics.get("Losses")),
         "balance_usd": _zahl(metrics.get("Balance")),
         # Vom Datenquellen-Monitor aus der VOLLEN Trade-Kurve nachgemessener
         # Max-EQ-DD (TradeEqDrawdownPct) — unabhängige Zweitmessung neben dem

@@ -135,6 +135,48 @@ def test_persist_replaces_stale_bytes_for_same_report_path(tmp_path):
     assert "Zweite Fassung" in _text(same_path.read_bytes())
 
 
+def test_unchanged_pdf_is_reused_without_rendering(tmp_path, monkeypatch):
+    from mqlkiscanner import pdf_reports
+    report = PdfReport("gesamtbericht", "Unverändert", 42, "Signal")
+    path = persist_report_pdf(report, snapshot="same", root=tmp_path)
+    before = path.stat().st_mtime_ns
+
+    def forbidden_render(*args, **kwargs):
+        raise AssertionError("An unchanged PDF must not be rendered again")
+
+    monkeypatch.setattr(pdf_reports, "render_report_pdf", forbidden_render)
+    assert persist_report_pdf(report, snapshot="same", root=tmp_path) == path
+    assert path.stat().st_mtime_ns == before
+
+
+@pytest.mark.parametrize("damage", ["pdf", "metadata", "missing", "renderer"])
+def test_pdf_cache_repairs_damage_and_invalidates_renderer(tmp_path, monkeypatch, damage):
+    from mqlkiscanner import pdf_reports
+    report = PdfReport("gesamtbericht", "Intakter Bericht", 42, "Signal")
+    path = persist_report_pdf(report, snapshot="same", root=tmp_path)
+    expected = path.read_bytes()
+    if damage == "pdf":
+        path.write_bytes(b"broken")
+    elif damage == "metadata":
+        path.with_suffix(".pdf.cache.json").write_text("broken", encoding="utf-8")
+    elif damage == "missing":
+        path.unlink()
+    else:
+        monkeypatch.setattr(pdf_reports, "_renderer_fingerprint", lambda: "new renderer")
+    calls = []
+    render = pdf_reports.render_report_pdf
+
+    def counted(report):
+        calls.append(report)
+        return render(report)
+
+    monkeypatch.setattr(pdf_reports, "render_report_pdf", counted)
+    assert persist_report_pdf(report, snapshot="same", root=tmp_path).read_bytes() == expected
+    assert len(calls) == 1
+    persist_report_pdf(report, snapshot="same", root=tmp_path)
+    assert len(calls) == 1
+
+
 def test_save_run_materializes_all_available_pdfs():
     result = pipeline.ScanResult(
         id=77, name="Persistiert", trades_sha256="b" * 64,

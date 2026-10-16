@@ -29,6 +29,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import os
+import subprocess
 import time
 
 from .agenten.marktdata import broker_symbol, terminal_beenden, terminal_laueft
@@ -92,17 +94,45 @@ class KursDaten:
             import MetaTrader5 as mt5
         except ImportError as exc:
             return False, f"MetaTrader5-Paket nicht verfügbar: {exc}"
-        pfad = self.terminal_pfad if Path(self.terminal_pfad).exists() else None
-        verbunden = bool(mt5.initialize(pfad, portable=self._selbststart)) if pfad \
-            else bool(mt5.initialize())
-        if not verbunden:
-            fehler = str(mt5.last_error())
+        return self._terminal_portabel(mt5, lief_schon)
+
+    def _terminal_portabel(self, mt5, lief_schon: bool) -> tuple[bool, str]:
+        """Alle Kurs-Terminals brauchen /portable und ihre lokale Datenablage."""
+        exe = Path(self.terminal_pfad).resolve()
+        name = exe.parent.name
+        if not exe.is_file():
+            return False, f"{name}-Terminalpfad existiert nicht — kein automatisches Ausweichterminal."
+
+        def fehler(grund):
             mt5.shutdown()
             terminal_beenden(self.terminal_pfad)
-            return False, f"MT5-Verbindung fehlgeschlagen: {fehler}"
-        self._mt5 = mt5
-        self._aktiv = True
-        return True, ("portabel selbstgestartet" if self._selbststart else "Attach")
+            return False, grund
+
+        try:
+            if not lief_schon:
+                subprocess.Popen([str(exe), "/portable"], cwd=str(exe.parent),
+                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            if not mt5.initialize(str(exe), portable=True):
+                return fehler(f"{name}-MT5-Verbindung fehlgeschlagen: {mt5.last_error()}")
+            erwartet = os.path.normcase(os.path.realpath(str(exe.parent)))
+            for versuch in range(16):
+                info = mt5.terminal_info()
+                datenpfad = getattr(info, "data_path", "") if info else ""
+                if datenpfad and os.path.normcase(os.path.realpath(datenpfad)) != erwartet:
+                    return fehler(f"{name} verwendet eine andere Datenablage statt des portablen "
+                                  "Terminalordners — keine Kursmessung; betroffene Instanz beendet.")
+                if datenpfad and bool(getattr(info, "connected", False)):
+                    self._mt5 = mt5
+                    self._aktiv = True
+                    return True, ("portabel selbstgestartet; Datenpfad geprüft, verbunden"
+                                  if not lief_schon else
+                                  "portabel verbunden; Datenpfad geprüft")
+                if versuch < 15:
+                    time.sleep(1.0)
+            return fehler(f"{name}-Terminal nach 15 s nicht verbunden oder portabler Datenpfad "
+                          "nicht belegbar — keine Kursmessung.")
+        except (OSError, RuntimeError) as exc:
+            return fehler(f"{name}-Portable-Start fehlgeschlagen: {type(exc).__name__}")
 
     def beenden(self) -> None:
         if self._mt5 is not None and self._aktiv:
@@ -170,9 +200,16 @@ class KursDaten:
         """
         if not self._aktiv or self._mt5 is None:
             return None
-        key = f"{symbol}|{von_epoch}|{bis_epoch}|{gmt_offset_s}"
+        # Jeder Feed hat eine eigene Historie/Zeitbasis. Ein vorhandener
+        # Teilbestand von Quelle 0 darf einen Abruf von Quelle 1 nicht
+        # durch einen scheinbaren Cache-Treffer verhindern.
+        terminal_key = os.path.normcase(os.path.realpath(self.terminal_pfad))
+        key = f"{terminal_key}|{symbol}|{von_epoch}|{bis_epoch}|{gmt_offset_s}"
         if key in self._cache:
-            return self._cache[key]
+            bars = self._cache[key]
+            if bars:
+                self.terminal_herkunft[symbol.upper().strip()] = self.terminal_pfad
+            return bars
         mt5 = self._mt5
         normalisiert = normalize_symbol(symbol)
         am_broker = broker_symbol(symbol, self.settings)
@@ -183,7 +220,8 @@ class KursDaten:
         # bei ActiveTrades GER40; USOIL heisst bei Tickmill XTIUSD).
         alias = alias_fuer_symbol(symbol, self.terminal_pfad,
                                   self.settings.get("symbol_aliases"))
-        if alias and alias.upper() not in [k.upper() for k in kandidaten]:
+        # MT5 unterscheidet DJ30FT (CSV) und DJ30ft (Terminal).
+        if alias and alias not in kandidaten:
             kandidaten.append(alias)
         gewaehlt = None
         for kandidat in kandidaten:
@@ -202,24 +240,27 @@ class KursDaten:
         # MT5 laedt Historie ON DEMAND vom Server: der ERSTE Abruf kann nur
         # den bereits lokalen Teil liefern und den Download anstossen (real
         # 05.10.: GBPJPY endete mitten im Fenster, der zweite Abruf brachte
-        # alles — trotz Max Bars = Unlimited). Erneut abfragen, solange das
-        # Ergebnis WAECHST und das angefragte Fenster (mit Wochenend-
-        # Toleranz) noch nicht erreicht ist; ein Teilergebnis vergiftet
-        # sonst den Lauf-Cache der ganzen Pipeline.
+        # alles — trotz Max Bars = Unlimited). Auch ein leerer Erstabruf
+        # kann den Download erst anstossen. Maximal dreimal nachfragen;
+        # sobald ein Teilbestand nicht mehr waechst, behalten wir diesen.
+        # Ist das angefragte Fenster (mit Wochenend-Toleranz) erreicht,
+        # ist kein weiterer Abruf erforderlich.
         ziel_bis = int(bis.timestamp())
         ziel_von = int(von.timestamp())
         for _versuch in range(3):
-            if rates is None or len(rates) == 0:
-                break
-            fertig = (int(rates[-1]["time"]) + 3600 >= ziel_bis - 3 * 86400
+            anzahl = len(rates) if rates is not None else 0
+            fertig = (anzahl > 0
+                      and int(rates[-1]["time"]) + 3600 >= ziel_bis - 3 * 86400
                       and int(rates[0]["time"]) <= ziel_von + 3 * 86400)
             if fertig:
                 break
             time.sleep(2.0)
             weitere = mt5.copy_rates_range(gewaehlt, mt5.TIMEFRAME_H1, von, bis)
-            if weitere is None or len(weitere) <= len(rates):
+            weitere_anzahl = len(weitere) if weitere is not None else 0
+            if anzahl > 0 and weitere_anzahl <= anzahl:
                 break
-            rates = weitere
+            if weitere_anzahl > 0:
+                rates = weitere
         if rates is None or len(rates) == 0:
             self._cache[key] = None
             return None

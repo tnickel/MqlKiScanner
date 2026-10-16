@@ -36,6 +36,8 @@ from .forensics.equity_rekonstruktion import (
     _epoch,
     ermittle_gmt_offset,
     Zeitbasis,
+    H1UsdUmrechnung,
+    _aktive_marktpausen,
 )
 from .forensics.exposure import _resolve_symbol
 from .forensics.equity_kapitalfluesse import diagnostik as konto_diagnostik
@@ -254,31 +256,34 @@ def studie(parsed, kurse, startkapital: float,
 
     # Kurse je Symbol (weitestes Fenster deckt alle GMT-Kandidaten ab — ein
     # Abruf je Symbol, das Raster wird daraus abgeleitet).
+    umrechnung = H1UsdUmrechnung(kurse, fenster_von, fenster_bis, broker, _resolve_symbol)
     bars_je_symbol: dict[str, list[dict]] = {}
     ohne_kurse: list[str] = []
     for i, s in enumerate(symbole):
         _p(0.15 + 0.55 * i / max(1, len(symbole)),
            f"Kurse laden ({i + 1}/{len(symbole)}): {s}")
-        bars = kurse.hole_h1(s, fenster_von, fenster_bis)
+        bars = umrechnung.hole_handelsbars(s)
         if bars:
             bars_je_symbol[s] = bars
         else:
             ohne_kurse.append(s)
 
-    # Nutzer-Wunsch 05.10.: ZWEITE Kursdatenquelle (MetaTrader) als Fallback
-    # für Symbole, die die primäre Quelle nicht liefert. MT5-Python ist pro
-    # Prozess ein Singleton — sequentiell wechseln, nur fehlende neu laden.
-    if ohne_kurse and hasattr(kurse, 'hat_weiteren_terminal')             and kurse.hat_weiteren_terminal():
+    # Alle konfigurierten Terminals versuchen, wie die Workflow-Reko.
+    # MT5-Python ist pro Prozess ein Singleton: sequentiell wechseln und
+    # nur fehlende Symbole laden. Ein fehlgeschlagener Wechsel beendet
+    # den Fallback, damit derselbe Terminal nicht endlos versucht wird.
+    while ohne_kurse and hasattr(kurse, 'hat_weiteren_terminal') and kurse.hat_weiteren_terminal():
         ok, msg = kurse.wechsle_terminal()
-        if ok:
-            noch_offen = []
-            for s in ohne_kurse:
-                bars = kurse.hole_h1(s, fenster_von, fenster_bis)
-                if bars:
-                    bars_je_symbol[s] = bars
-                else:
-                    noch_offen.append(s)
-            ohne_kurse = noch_offen
+        if not ok:
+            break
+        noch_offen = []
+        for s in ohne_kurse:
+            bars = umrechnung.hole_handelsbars(s)
+            if bars:
+                bars_je_symbol[s] = bars
+            else:
+                noch_offen.append(s)
+        ohne_kurse = noch_offen
     # Fallback-Wechsel nicht kleben lassen (siehe equity_rekonstruktion):
     # zurück auf Quelle 0, damit Folge-Aufrufe am richtigen Terminal landen.
     if hasattr(kurse, 'zurueck_zum_ersten_terminal')             and getattr(kurse, 'terminal_idx', 0) != 0:
@@ -338,7 +343,7 @@ def studie(parsed, kurse, startkapital: float,
                  Zeitbasis(trades, bars_je_symbol, median_offset,
                            manuell=gmt_offset_h is not None))
     if not zeitbasis.monoton:
-        return {"status": "skipped", "grund": "Zeitabbildung nicht monoton/eindeutig",
+        return {"status": "skipped", "grund": zeitbasis.nichtmonoton_grund,
                 "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {},
                 "zeitbasis": zeitbasis.metadata()}
     gemeinsame_zeitbasis = len(set(offsets.values())) == 1
@@ -372,8 +377,14 @@ def studie(parsed, kurse, startkapital: float,
                             for b in bars} for s, bars in bars_je_symbol.items()}
 
     schliessungen = sorted(
-        ((_epoch(t.close_time) + _shift(t), t.net) for t in trades),
+        [(_epoch(t.close_time) + _shift(t), t.net) for t in trades]
+        + [(_epoch(c.time) + median_offset, c.amount) for c in getattr(parsed, "costs", [])
+           if _epoch(c.time) + median_offset >= erste],
         key=lambda x: x[0])
+    raster = sorted(set(raster) | {_epoch(c.time) + median_offset for c in getattr(parsed, "costs", [])
+                                   if _epoch(c.time) + median_offset >= erste
+        and not any(_epoch(t.open_time) + _shift(t) <= _epoch(c.time) + median_offset
+                    < _epoch(t.close_time) + _shift(t) for t in trades)})
     # Nutzer-Regel 05.10.2026: reale Kontokurve — Kontobewegungen NACH dem
     # ersten Trade bleiben in der Kurve (Einzahlung => Lots wachsen => DD
     # wächst). Auszahlungen senken den Peak (kein Drawdown). Flows vor dem
@@ -390,17 +401,8 @@ def studie(parsed, kurse, startkapital: float,
           _epoch(t.close_time) + _shift(t), t) for t in trades),
         key=lambda x: (x[0], x[1]))
 
-    fx_cache: dict[tuple[str, dt.date], float | None] = {}
     fx_fehlt = False
-
-    def _usd_faktor(quote: str, tag: dt.date) -> float | None:
-        if quote == "USD":
-            return 1.0
-        key = (quote, tag)
-        if key not in fx_cache:
-            kurs = fx_rates.usd_per(quote, tag)
-            fx_cache[key] = kurs["rate"] if kurs else None
-        return fx_cache[key]
+    _usd_faktor = umrechnung.faktor
 
     _p(0.78, "Equity-Kurve je Stunde rechnen …")
     basis = float(startkapital or 0.0)
@@ -431,23 +433,13 @@ def studie(parsed, kurse, startkapital: float,
     punkte_ohne_kurs = 0
 
     aktiv_laut_zeit: set[int] = set()
+    aktiv_je_symbol: dict[str, set[int]] = {}
     for _offen, _ende, _t in offen_sort:
-        aktiv_laut_zeit.update(range((_offen // 3600 + 1) * 3600, _ende, 3600))
-    bar_stunden: set[int] = {r for r in raster}
-    pausen: set[int] = set()
-    if aktiv_laut_zeit and bar_stunden:
-        stunde, luecke = min(aktiv_laut_zeit), []
-        endstunde = max(aktiv_laut_zeit)
-        while stunde <= endstunde:
-            if stunde in bar_stunden:
-                if len(luecke) >= MARKTPAUSE_MIN_H:
-                    pausen.update(luecke)
-                luecke = []
-            elif stunde in aktiv_laut_zeit:
-                luecke.append(stunde)
-            stunde += 3600
-        if len(luecke) >= MARKTPAUSE_MIN_H:
-            pausen.update(luecke)
+        stunden = set(range((_offen // 3600 + 1) * 3600, _ende, 3600))
+        aktiv_laut_zeit.update(stunden)
+        aktiv_je_symbol.setdefault(_t.symbol.strip().upper(), set()).update(stunden)
+    bar_stunden: set[int] = set(raster)
+    pausen, pausen_belege = _aktive_marktpausen(aktiv_je_symbol, closes_je_symbol)
 
     # Stunden mit offener Position, aber ohne Bar (und keine Marktpause):
     # als LÜCKEN-PUNKTE ins Raster nehmen — die Equity-Spur reißt an der
@@ -500,13 +492,13 @@ def studie(parsed, kurse, startkapital: float,
             res = aufgeloest[s]
             richtung = 1.0 if t.direction.lower() == "buy" else -1.0
             pnl_quote = richtung * t.volume * res["factor"] * (close - t.entry_price)
-            fx = _usd_faktor(res["quote"], tag)
+            fx = _usd_faktor(res["quote"], tag, punkt, s)
             if fx is None:
                 kurs_da = False
                 fx_fehlt = True
                 continue
             floating += pnl_quote * fx
-        if aktiv:
+        if aktiv and punkt not in pausen:
             if kurs_da:
                 punkte_mit_kurs += 1
             else:
@@ -628,6 +620,10 @@ def studie(parsed, kurse, startkapital: float,
         "floating_max_usd": round(floating_max, 2),
         "unterwasser_tage_max": round(unter_wasser_max_h / 24.0, 1),
         "abdeckung_pct": round(abdeckung * 100.0, 1),
+        "abdeckung_pct_raw": abdeckung * 100.0,
+        "marktpausen": {"heuristik": "symbolweise >=20h zwischen realen H1-Bars; alle aktiven Symbole pausiert",
+                        "ausgenommene_aktive_stunden": len(pausen),
+                        "belege": pausen_belege},
         "rasterpunkte": len(punkte),
         "messpunkte": punkte_mit_kurs,
         "punkte_mit_luecke": punkte_ohne_kurs,
@@ -646,6 +642,8 @@ def studie(parsed, kurse, startkapital: float,
             if b.time > min(t.open_time for t in trades)),
     }
 
+    if umrechnung.h1_cache:
+        kennzahlen["fx_umrechnungen"] = umrechnung.provenienz()
     _p(1.0, "fertig")
     return {
         "status": "ok",

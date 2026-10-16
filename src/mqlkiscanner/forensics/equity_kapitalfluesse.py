@@ -50,7 +50,9 @@ beim Flow machen auch eine vollstaendige Rechnung unzuverlaessig.
                 if zeitbasis_unsicher else "keine positive Kapital-/Trade-/Kurvenbasis")}
 
     first_open = min(_epoch(t.open_time) for t in trades)
-    closes = sorted((_epoch(t.close_time), t.net) for t in trades)
+    closes = sorted([(_epoch(t.close_time), t.net) for t in trades]
+                    + [(_epoch(c.time), c.amount) for c in getattr(parsed, "costs", [])
+                       if _epoch(c.time) >= first_open])
     # Die Basis enthaelt bereits die Kontobewegungen bis zum Handelsbeginn.
     # Buchungen gleicher Sekunde bilden ein Ereignis ohne erfundene Reihenfolge.
     flows = [(zeit, math.fsum(b.amount for b in gruppe))

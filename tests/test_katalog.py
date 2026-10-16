@@ -281,6 +281,226 @@ def test_katalog_resultate_scan_gewinnt_dedup_und_artefakte(tmp_path):
     assert stats[8]["dd_equity_pct"] == pytest.approx(9.10)
 
 
+# ----------------------------------------------------------- metrics_stats
+def _metrics_cache(tmp_path, quelle_id, signal_id, version, *, deposit=25000):
+    _artefakt(quelle_id, signal_id, version, "metrics",
+              tmp_path / f"{quelle_id}_{signal_id}_{version}_metrics.json",
+              json.dumps({"signalId": str(signal_id), "version": version,
+                          "metrics": {"InitialDeposit": deposit,
+                                      "Broker": "Provider-Live"}}).encode("utf-8"))
+
+
+@pytest.mark.parametrize('initial,erwartet', [(None, 25000), (500, 500), (0, 0), (-5, -5)])
+def test_workflow_bulk_basis_prioritaet_ohne_db_einzelabfragen(
+        tmp_path, monkeypatch, initial, erwartet):
+    qid = db.add_quelle('vant', 'Monitor', 'http://localhost:8092')
+    db.katalog_upsert_many('vant', [dict(signal_id=41, version='vantage',
+                                      platform='vantage', wochen=20, abonnenten=3)])
+    _metrics_cache(tmp_path, qid, 41, 'vantage')
+    pfad = tmp_path / 'trades.csv'
+    _artefakt(qid, 41, 'vantage', 'trades', pfad, b'unchanged snapshot')
+    artefakte = db.list_quellen_artefakte()
+    res = katalog.pipeline.ScanResult(id=41, quelle='vant', platform='vantage',
+        trades_path=str(pfad), trades_sha256=hashlib.sha256(pfad.read_bytes()).hexdigest())
+    def verboten(*args, **kwargs):
+        raise AssertionError('Bulk-Snapshots brauchen keine weitere DB-Abfrage')
+    rows, quellen = db.katalog_list(), db.list_quellen()
+    for name in ('katalog_list', 'list_quellen', 'list_quellen_artefakte',
+                 'get_quellen_artefakt'):
+        monkeypatch.setattr(db, name, verboten)
+    alt = {41: dict(initial_deposit_usd=initial, kapitalbasis_virtual_usd=10000)}
+    neu = katalog.workflow_stats_bulk([res], alt, katalog_rows=rows,
+                                     quellen_rows=quellen, artefakte=artefakte)
+    assert neu[41]['initial_deposit_usd'] == erwartet
+    assert neu[41]['broker_server'] == 'Provider-Live'
+    assert alt[41]['initial_deposit_usd'] == initial
+    assert res.wochen == 20 and res.abonnenten == 3
+
+
+@pytest.mark.parametrize('stoerung', ['trade_sha', 'trade_bytes', 'metrics_bytes',
+                                    'source', 'version', 'platform'])
+def test_workflow_bulk_keine_fremden_oder_veraenderten_stats(tmp_path, stoerung):
+    qid = db.add_quelle('vant', 'Monitor', 'http://localhost:8092')
+    db.katalog_upsert_many('vant', [dict(signal_id=42, version='vantage', wochen=22)])
+    _metrics_cache(tmp_path, qid, 42, 'vantage')
+    pfad = tmp_path / 'trades.csv'
+    _artefakt(qid, 42, 'vantage', 'trades', pfad, b'snapshot')
+    artefakte = db.list_quellen_artefakte()
+    res = katalog.pipeline.ScanResult(id=42, quelle='vant', platform='vantage',
+        trades_path=str(pfad), trades_sha256=hashlib.sha256(pfad.read_bytes()).hexdigest())
+    if stoerung == 'trade_sha':
+        res.trades_sha256 = 'other'
+    elif stoerung == 'trade_bytes':
+        pfad.write_bytes(b'changed')
+    elif stoerung == 'metrics_bytes':
+        Path(artefakte[(qid, 42, 'vantage', 'metrics')]['path']).write_text('{}')
+    elif stoerung == 'source':
+        res.quelle_id = qid + 1
+    elif stoerung == 'version':
+        res.quelle_version = 'mql5'
+    else:
+        res.platform = 'mt5'
+    alt = {42: {'initial_deposit_usd': None}}
+    assert katalog.workflow_stats_bulk([res], alt) == alt
+
+
+@pytest.mark.parametrize('csv_flow,initial,basis,quelle', [
+    (False, None, 10000, 'virtuelle_annahme'),
+    (False, 500, 500, 'signalseite_initial_deposit'),
+    (True, 500, 200, 'csv_einzahlungen'),
+])
+def test_workflow_frische_virtualbasis_respektiert_initial_und_csv(
+        tmp_path, csv_flow, initial, basis, quelle):
+    from mqlkiscanner import signal_statistik
+    qid = db.add_quelle('vant', 'Monitor', 'http://localhost:8092')
+    db.katalog_upsert_many('vant', [dict(signal_id=43, version='vantage')])
+    metrics = {'signalId': 43, 'version': 'vantage',
+               'metrics': {'InitialDepositVirtual': 10000}}
+    _artefakt(qid, 43, 'vantage', 'metrics', tmp_path / 'metrics.json',
+              json.dumps(metrics).encode())
+    csv = 'Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n'
+    if csv_flow:
+        csv += '2026.01.01 00:00:00;Balance;;;;;;;;;200\n'
+    csv += '2026.01.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.02.05 10:05:00;1.11;0;0;50\n'
+    pfad = tmp_path / 'trades.csv'
+    _artefakt(qid, 43, 'vantage', 'trades', pfad, csv.encode())
+    res = katalog.pipeline.ScanResult(id=43, quelle='vant', platform='vantage',
+        trades_path=str(pfad), trades_sha256=hashlib.sha256(pfad.read_bytes()).hexdigest())
+    stats = katalog.workflow_stats_bulk([res], {43: dict(initial_deposit_usd=initial)})
+    result = signal_statistik.berechne(str(pfad), stats[43])
+    assert result['kapitalbasis_usd'] == basis
+    assert result['kapitalbasis_quelle'] == quelle
+    assert result['ertrag_monat_geom_pct'] is not None
+    # Ein Gewinn ohne Verlust liefert kein definiertes PF; kein Equity-DD
+    # wurde gemessen, deshalb bleibt auch RetDD unbekannt.
+    assert result['profit_faktor'] is None
+    assert result['winrate_pct'] == 100 and result['trades'] == 1
+    from mqlkiscanner.alle_signale_ui import tabellen_zeile
+    assert tabellen_zeile(res, result, fix_ids=set())['RetDD/Monat'] is None
+
+
+@pytest.mark.parametrize('deposit', [0, -1, float('nan'), float('inf')])
+def test_workflow_bulk_unbrauchbare_neue_initialbasis_wird_nicht_echt(tmp_path, deposit):
+    qid = db.add_quelle('vant', 'Monitor', 'http://localhost:8092')
+    db.katalog_upsert_many('vant', [dict(signal_id=44, version='vantage')])
+    _metrics_cache(tmp_path, qid, 44, 'vantage', deposit=deposit)
+    pfad = tmp_path / 'trades.csv'
+    _artefakt(qid, 44, 'vantage', 'trades', pfad, b'snapshot')
+    res = katalog.pipeline.ScanResult(id=44, quelle='vant', platform='vantage',
+        trades_path=str(pfad), trades_sha256=hashlib.sha256(pfad.read_bytes()).hexdigest())
+    stats = katalog.workflow_stats_bulk([res], {44: {'initial_deposit_usd': None}})
+    assert stats[44]['initial_deposit_usd'] is None
+
+
+@pytest.mark.parametrize("signal_id,kuerzel,version,platform", [
+    (941001, "vant", "vantage", "vantage"),
+    (941002, "robo", "mql4", "mt4"),
+    (941009, "mql5", "mql4", "MT4"),  # Direktworkflow schreibt Grossbuchstaben.
+])
+def test_metrics_stats_workflow_ohne_quelle_id_nutzt_echte_basis(
+        tmp_path, signal_id, kuerzel, version, platform):
+    quelle_id = db.add_quelle(kuerzel, "Monitor", "http://localhost:8092")
+    db.katalog_upsert_many(kuerzel, [
+        {"signal_id": signal_id, "version": version, "platform": platform}])
+    _metrics_cache(tmp_path, quelle_id, signal_id, version)
+    result = katalog.pipeline.ScanResult(
+        id=signal_id, quelle=kuerzel, platform=platform, quelle_id=None)
+
+    stats = katalog.metrics_stats(result)
+
+    assert stats["initial_deposit_usd"] == 25000
+    assert stats["kapitalbasis_virtual_usd"] is None
+    assert stats["broker_server"] == "Provider-Live"
+    assert result.quelle_id is None  # Lesen veraendert die Workflow-Zeile nicht.
+
+
+def test_metrics_stats_workflow_nimmt_keine_fremde_quelle(tmp_path):
+    db.add_quelle("vant", "Vantage", "http://localhost:8092")
+    andere_id = db.add_quelle("anderer", "Anderer Monitor", "http://localhost:8093")
+    db.katalog_upsert_many("vant", [{"signal_id": 941003, "version": "vantage"}])
+    db.katalog_upsert_many("anderer", [{"signal_id": 941003, "version": "vantage"}])
+    _metrics_cache(tmp_path, andere_id, 941003, "vantage", deposit=99999)
+    result = katalog.pipeline.ScanResult(id=941003, quelle="vant", platform="vantage")
+
+    assert katalog.metrics_stats(result) == {}
+
+
+@pytest.mark.parametrize("cache_version,result_version,platform", [
+    ("mql5", "", "mt4"),       # Nur die andere Cache-Version vorhanden.
+    ("mql4", "mql5", "mt4"),  # Explizite Workflow-Version widerspricht Katalog.
+    ("mql4", "", "mt5"),      # Workflow-Plattform widerspricht Katalog-Version.
+])
+def test_metrics_stats_workflow_nimmt_keine_andere_version(
+        tmp_path, cache_version, result_version, platform):
+    quelle_id = db.add_quelle("robo", "Robo", "http://localhost:8091")
+    db.katalog_upsert_many("robo", [{"signal_id": 941004, "version": "mql4"}])
+    _metrics_cache(tmp_path, quelle_id, 941004, cache_version)
+    result = katalog.pipeline.ScanResult(
+        id=941004, quelle="robo", platform=platform, quelle_version=result_version)
+
+    assert katalog.metrics_stats(result) == {}
+
+
+def test_metrics_stats_workflow_ohne_passende_katalogreferenz_bleibt_leer(tmp_path):
+    quelle_id = db.add_quelle("vant", "Vantage", "http://localhost:8092")
+    _metrics_cache(tmp_path, quelle_id, 941005, "vantage")
+    result = katalog.pipeline.ScanResult(id=941005, quelle="vant", platform="vantage")
+
+    assert katalog.metrics_stats(result) == {}
+
+
+def test_metrics_stats_mit_referenz_braucht_keine_kataloginventur(tmp_path, monkeypatch):
+    quelle_id = db.add_quelle("vant", "Vantage", "http://localhost:8092")
+    _metrics_cache(tmp_path, quelle_id, 941006, "vantage")
+    result = katalog.pipeline.ScanResult(
+        id=941006, quelle="vant", platform="vantage",
+        quelle_id=quelle_id, quelle_version="vantage")
+
+    def _unerwartete_inventur(*args, **kwargs):
+        raise AssertionError("Bekannte Referenz braucht keine Kataloginventur")
+
+    monkeypatch.setattr(db, "katalog_list", _unerwartete_inventur)
+    monkeypatch.setattr(db, "list_quellen", _unerwartete_inventur)
+    assert katalog.metrics_stats(result)["initial_deposit_usd"] == 25000
+
+
+@pytest.mark.parametrize("stoerung", ["inhalt_geaendert", "sha_fehlt"])
+def test_metrics_stats_verwendet_nur_sha_geprueften_cache(tmp_path, stoerung):
+    quelle_id = db.add_quelle("vant", "Vantage", "http://localhost:8092")
+    _metrics_cache(tmp_path, quelle_id, 941007, "vantage")
+    artefakt = db.get_quellen_artefakt(quelle_id, 941007, "vantage", "metrics")
+    if stoerung == "inhalt_geaendert":
+        # Weiterhin gueltiges JSON, aber nicht der registrierte Inhalt.
+        pfad = Path(artefakt["path"])
+        pfad.write_bytes(pfad.read_bytes().replace(b"25000", b"99000"))
+    else:
+        db.store_quellen_artefakt(quelle_id, 941007, "vantage", "metrics",
+                                  "", artefakt["path"])
+    result = katalog.pipeline.ScanResult(
+        id=941007, quelle="vant", platform="vantage",
+        quelle_id=quelle_id, quelle_version="vantage")
+
+    assert katalog.metrics_stats(result) == {}
+
+
+@pytest.mark.parametrize("falsches_feld,wert", [
+    ("signalId", "941999"), ("version", "mql5"),
+])
+def test_metrics_stats_verweigert_widersprechende_payload_identitaet(
+        tmp_path, falsches_feld, wert):
+    quelle_id = db.add_quelle("vant", "Vantage", "http://localhost:8092")
+    antwort = {"signalId": "941008", "version": "vantage",
+               "metrics": {"InitialDeposit": 25000}}
+    antwort[falsches_feld] = wert
+    _artefakt(quelle_id, 941008, "vantage", "metrics",
+              tmp_path / "falsch.json", json.dumps(antwort).encode("utf-8"))
+    result = katalog.pipeline.ScanResult(
+        id=941008, quelle="vant", platform="vantage",
+        quelle_id=quelle_id, quelle_version="vantage")
+
+    assert katalog.metrics_stats(result) == {}
+
+
 # ------------------------------------------------------- lade_signal_daten
 def test_lade_signal_daten_holt_trades_und_toleriert_metrics_ausfall(monkeypatch):
     quelle_id = db.add_quelle("vant", "VantageMonitor", "http://localhost:8092")

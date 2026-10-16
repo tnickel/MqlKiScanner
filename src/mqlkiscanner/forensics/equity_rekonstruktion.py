@@ -24,8 +24,10 @@ from __future__ import annotations
 import datetime as dt
 import math
 import copy
+import os
 
 from .. import fx_rates
+from ..symbols import normalize_symbol
 from .exposure import _resolve_symbol
 
 # Kandidaten-Shifts: ganze Stunden, wie Forex-Serverzeiten üblich.
@@ -130,6 +132,7 @@ class Zeitbasis:
         erste = _wochenbeginn(min(_epoch(t.open_time) for t in trades))
         letzte = _wochenbeginn(max(_epoch(t.close_time) for t in trades)) + 7 * 86400
         previous = self.global_offset_s
+        previous_belegt = self.global_belegt
         for von in range(erste, letzte, 7 * 86400):
             lokal = gruppen.get(von, [])
             counts, _ = _preis_scores(lokal, bars_je_symbol, maps)
@@ -138,11 +141,22 @@ class Zeitbasis:
             quote = best / len(lokal) if lokal else None
             stark = (len(lokal) >= GMT_LOKAL_MIN_PROBEN and len(kandidaten) == 1
                      and quote >= GMT_LOKAL_MIN_TREFFER)
+            bekannte_quote = counts[previous] / len(lokal) if lokal else None
+            bekannten_behalten = (previous_belegt and stark
+                                  and next(iter(kandidaten)) != previous
+                                  and bekannte_quote >= GMT_LOKAL_MIN_TREFFER)
             belegt = self.global_belegt
             shift = self.global_offset_s
             status = "global_kompatibel"
             if manuell:
                 status = "manuell"
+                belegt = True
+            elif bekannten_behalten:
+                # Ein etwas besserer Wochengewinner widerlegt keinen
+                # bereits belegten, weiterhin >=90% kompatiblen Shift.
+                # Einzelne Nichttreffer werden unten weiterhin Luecken.
+                shift = previous
+                status = "bekannter_shift_weiter_preiskompatibel"
                 belegt = True
             elif stark:
                 shift = next(iter(kandidaten))
@@ -159,7 +173,7 @@ class Zeitbasis:
                 # bleibt. Massenhafte Nichttreffer (< 90 %) erben (siehe
                 # unten) statt zu verwerfen.
                 belegt = True
-            elif lokal or previous != self.global_offset_s:
+            elif lokal or previous_belegt or previous != self.global_offset_s:
                 # Nutzer-Regel 03.10.: „GMT merken — nicht ermittelbar heißt
                 # LETZTEN BEKANNTEN nehmen, das reicht." Wochen, die ihren
                 # Versatz nicht selbst belegen können (dünn, mehrdeutig oder
@@ -175,19 +189,46 @@ class Zeitbasis:
                 status = ("geerbt_letzter_bekannter"
                           if previous != self.global_offset_s else
                           "global_kompatibel")
-                belegt = True
+                belegt = previous_belegt
             self.perioden.append({"von_t": von, "bis_t": von + 7 * 86400,
                                   "offset_s": shift, "belegt": belegt,
                                   "preisproben": len(lokal), "trefferquote": quote,
+                                  "bekannter_gmt_h": previous // 3600 if previous_belegt else None,
+                                  "bekannter_trefferquote": bekannte_quote if previous_belegt else None,
+                                  "lokal_beste_gmt_h": sorted(s // 3600 for s in kandidaten),
                                   "status": status})
             previous = shift
+            previous_belegt = belegt
         self.variable = len({p["offset_s"] for p in self.perioden}) > 1
         events = sorted({_epoch(zeit) for t in trades
                          for zeit in (t.open_time, t.close_time)})
         mapped = [self.nach_referenz(zeit) for zeit in events]
         self.monoton = all(a <= b for a, b in zip(mapped, mapped[1:]))
+        self.nichtmonotones_beispiel = None
+        self.nichtmonoton_grund = "Zeitabbildung nicht monoton/eindeutig"
         if not self.monoton:
             self.gruende.append("Ereignisabbildung nicht monoton/eindeutig")
+            for i, (a, b) in enumerate(zip(mapped, mapped[1:])):
+                if a <= b:
+                    continue
+                def beschreibe(original, referenz):
+                    return {
+                        "csvzeit": dt.datetime.fromtimestamp(original, dt.timezone.utc).replace(tzinfo=None).isoformat(),
+                        "offset_s": self.periode(original)["offset_s"],
+                        "referenzzeit": dt.datetime.fromtimestamp(referenz, dt.timezone.utc).replace(tzinfo=None).isoformat(),
+                    }
+                vorher = beschreibe(events[i], a)
+                nachher = beschreibe(events[i + 1], b)
+                self.nichtmonotones_beispiel = {
+                    "vorher": vorher, "nachher": nachher,
+                    "umkehr_s": a - b,
+                }
+                self.nichtmonoton_grund += (
+                    f": CSV {vorher['csvzeit']} ({vorher['offset_s'] / 3600:+g} h)"
+                    f" -> {vorher['referenzzeit']}; danach CSV {nachher['csvzeit']}"
+                    f" ({nachher['offset_s'] / 3600:+g} h) -> {nachher['referenzzeit']}"
+                    f"; Reihenfolge um {a - b} Sekunden umgekehrt")
+                break
         self.mehrdeutige_intervalle = []
         for links, rechts in zip(self.perioden, self.perioden[1:]):
             a = links["bis_t"] + links["offset_s"]
@@ -314,6 +355,12 @@ class Zeitbasis:
             neu.time = dt.datetime.fromtimestamp(
                 self.nach_referenz(_epoch(b.time)), dt.timezone.utc).replace(tzinfo=None)
             result.balances.append(neu)
+        result.costs = []
+        for c in getattr(parsed, "costs", []):
+            neu = copy.copy(c)
+            neu.time = dt.datetime.fromtimestamp(
+                self.nach_referenz(_epoch(c.time)), dt.timezone.utc).replace(tzinfo=None)
+            result.costs.append(neu)
         return result
 
     def metadata(self):
@@ -324,9 +371,13 @@ class Zeitbasis:
             "global_belegt": self.global_belegt,
             "verlaesslich": self.verlaesslich,
             "monoton": self.monoton,
+            "nichtmonotones_beispiel": self.nichtmonotones_beispiel,
             "offene_wechsel_annahmen": self.offene_wechsel_annahmen,
             "unsichere_innenperioden": self.unsichere_innenperioden,
             "annahme": "Kalenderwochengrenzen sind Modellgrenzen, kein exakter DST-Beleg",
+            "belegregel": "Bekannten Shift bei eigener lokaler Trefferquote >=90% beibehalten; "
+                          "neuer Shift braucht mindestens 3 Proben, eindeutigen Gewinner und >=90%. "
+                          "Ohne bekannte Basis kein Kompatibilitaetsbeleg; Einzelereignisse bleiben geprueft.",
             "unsichere_trade_ereignisse": self.unsichere_trade_ereignisse,
             "gruende": list(dict.fromkeys(self.gruende)),
             "perioden": [{"von_t": p["von_t"], "bis_t": p["bis_t"],
@@ -334,6 +385,9 @@ class Zeitbasis:
                            "bis": dt.datetime.fromtimestamp(p["bis_t"], dt.timezone.utc).isoformat(),
                            "gmt_h": p["offset_s"] // 3600, "belegt": p["belegt"],
                            "preisproben": p["preisproben"],
+                           "bekannter_gmt_h": p["bekannter_gmt_h"],
+                           "bekannter_trefferquote": p["bekannter_trefferquote"],
+                           "lokal_beste_gmt_h": p["lokal_beste_gmt_h"],
                            "trefferquote": round(p["trefferquote"], 3)
                                if p["trefferquote"] is not None else None,
                            "status": p["status"]} for p in self.perioden],
@@ -351,6 +405,122 @@ def _bar_index(bars: list[dict]) -> tuple[list[int], dict[int, dict]]:
     return zeiten, mappe
 
 
+def _aktive_marktpausen(aktiv_je_symbol, closes_je_symbol):
+    """Bestehende >=20h-Heuristik, begrenzt durch reale Bars je Symbol.
+
+    Eine Stunde wird nur ausgenommen, wenn ALLE dort offenen Symbole
+    pausieren. Fremde 24/7-Bars belegen keine Handelszeit fuer Gold.
+    Lange Datenloecher und echte Handelspausen bleiben ohne Sessiondaten
+    prinzipiell ununterscheidbar; kurze/ungegrenzte Loecher bleiben drin.
+    """
+    aktiv_gesamt, nicht_pausiert = set(), set()
+    belege = []
+    for symbol, aktiv in aktiv_je_symbol.items():
+        aktiv_gesamt.update(aktiv)
+        symbol_pausen = set()
+        punkte = sorted(closes_je_symbol.get(symbol, {}))
+        for vorher, nachher in zip(punkte, punkte[1:]):
+            if nachher - vorher < (MARKTPAUSE_MIN_H + 1) * 3600:
+                continue
+            betroffen = aktiv.intersection(range(vorher + 3600, nachher, 3600))
+            if betroffen:
+                symbol_pausen.update(betroffen)
+                belege.append({"symbol": symbol, "bar_ende_vorher": vorher,
+                               "bar_ende_nachher": nachher,
+                               "aktive_pausenstunden": len(betroffen)})
+        nicht_pausiert.update(aktiv - symbol_pausen)
+    pausen = aktiv_gesamt - nicht_pausiert
+    for beleg in belege:
+        beleg["ausgenommene_aktive_stunden"] = len(
+            pausen & aktiv_je_symbol[beleg["symbol"]]
+            & set(range(beleg["bar_ende_vorher"] + 3600,
+                        beleg["bar_ende_nachher"], 3600)))
+    return pausen, belege
+
+
+class H1UsdUmrechnung:
+    """Gemeinsamer Kursloader/Faktor fuer Workflow und manuelle Studie.
+
+    EZB-Kurse behalten ihren Tagescache. Direkte Crypto-Kurse gelten nur
+    fuer denselben belegten Feed und exakt denselben H1-Bar-Endpunkt.
+    Der USDCNH-Kehrwert stammt ausschliesslich aus der eigenen Handelsbar.
+    """
+
+    def __init__(self, kurse, von, bis, broker=None, resolve_symbol=None):
+        self.kurse, self.von, self.bis = kurse, von, bis
+        self.broker = broker
+        self.resolve_symbol = resolve_symbol or _resolve_symbol
+        self.closes, self.fx_closes, self.feeds = {}, {}, {}
+        self.tages_cache, self.h1_cache, self.quotes = {}, {}, {}
+
+    @staticmethod
+    def _feed_key(value):
+        return os.path.normcase(os.path.realpath(str(value))) if value else ""
+
+    @staticmethod
+    def _closes(bars):
+        return {(b["time"] // 3600 + 1) * 3600: b["close"] for b in bars}
+
+    def hole_handelsbars(self, symbol):
+        bars = self.kurse.hole_h1(symbol, self.von, self.bis)
+        if not bars:
+            return bars
+        self.closes[symbol] = self._closes(bars)
+        spec = self.resolve_symbol(symbol, self.broker)
+        if spec is None or spec["quote"] not in {"BCH", "ETH"}:
+            return bars
+        fx_symbol = spec["quote"] + "USD"
+        feed = self._feed_key(getattr(self.kurse, "terminal_pfad", None))
+        herkunft = getattr(self.kurse, "terminal_herkunft", {})
+        if not feed or self._feed_key(herkunft.get(symbol)) != feed:
+            return bars
+        fx_bars = self.kurse.hole_h1(fx_symbol, self.von, self.bis)
+        herkunft = getattr(self.kurse, "terminal_herkunft", {})
+        if (fx_bars and self._feed_key(getattr(self.kurse, "terminal_pfad", None)) == feed
+                and self._feed_key(herkunft.get(symbol)) == feed
+                and self._feed_key(herkunft.get(fx_symbol)) == feed):
+            self.fx_closes[symbol] = self._closes(fx_bars)
+            self.feeds[symbol] = str(getattr(self.kurse, "terminal_pfad"))
+        return bars
+
+    def faktor(self, quote, tag, punkt, symbol):
+        if quote == "USD":
+            return 1.0
+        key = (quote, tag)
+        if key not in self.tages_cache:
+            kurs = fx_rates.usd_per(quote, tag)
+            self.tages_cache[key] = kurs["rate"] if kurs else None
+        if self.tages_cache[key] is not None:
+            return self.tages_cache[key]
+        intraday_key = (symbol, punkt)
+        if intraday_key in self.h1_cache:
+            return self.h1_cache[intraday_key]
+        rate = None
+        if quote == "CNH" and normalize_symbol(symbol) == "USDCNH":
+            close = self.closes.get(symbol, {}).get(punkt)
+            if (isinstance(close, (int, float)) and not isinstance(close, bool)
+                    and math.isfinite(close) and close > 0):
+                rate = 1.0 / close
+        elif quote in {"BCH", "ETH"}:
+            rate = self.fx_closes.get(symbol, {}).get(punkt)
+        if (isinstance(rate, (int, float)) and not isinstance(rate, bool)
+                and math.isfinite(rate) and rate > 0):
+            self.h1_cache[intraday_key] = rate
+            self.quotes[symbol] = quote
+            return rate
+        return None
+
+    def provenienz(self):
+        return [{"instrument": s, "quote": quote, "ziel": "USD",
+                 "formel": ("1 / USDCNH-H1-Close (CNH je USD)" if quote == "CNH"
+                            else f"{quote}USD-H1-Close (USD je {quote})"),
+                 "feed": "Handelsbars desselben Symbols" if quote == "CNH" else self.feeds[s],
+                 "umrechnungssymbol": s if quote == "CNH" else quote + "USD",
+                 "zeitbasis": "exakt gleicher H1-Bar-Endpunkt wie Floating-Kurs",
+                 "verfuegbare_zeitpunkte": sorted(p for symbol, p in self.h1_cache if symbol == s)}
+                for s, quote in sorted(self.quotes.items())]
+
+
 def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
                         max_proben: int = 60) -> dict:
     """Shift Signal-Broker → Referenz-Terminal per Preisabgleich.
@@ -359,8 +529,9 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
     symbol. Rückgabe {"offset_s", "trefferquote", "proben"} — offset_s None,
     wenn unter GMT_MIN_TREFFER.
     """
-    proben = [t for t in trades
+    alle_proben = [t for t in trades
               if t.entry_price and t.exit_price and t.open_time and t.close_time]
+    proben = alle_proben
     if len(proben) > max_proben:
         schritt = len(proben) / max_proben
         proben = [proben[int(i * schritt)] for i in range(max_proben)]
@@ -371,10 +542,27 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
     counts, _maps = _preis_scores(events, bars_je_symbol)
     quotes = {shift: count / len(events) if events else 0.0
               for shift, count in counts.items()}
+    vollpruefung = False
+    if len(proben) < len(alle_proben):
+        beste_stichprobe = max(quotes.values(), default=0.0)
+        plateau_stichprobe = [s for s, q in quotes.items()
+                             if q >= beste_stichprobe - 1e-9]
+        if beste_stichprobe < GMT_MIN_TREFFER or len(plateau_stichprobe) > 1:
+            # Eine kleine Stichprobe darf diskriminierende Ereignisse
+            # nicht auslassen. Alle vorhandenen Preise nachpruefen;
+            # Schwelle und Eindeutigkeitsanforderung bleiben identisch.
+            proben = alle_proben
+            events = _preisproben(proben)
+            counts, _ = _preis_scores(events, bars_je_symbol, _maps)
+            quotes = {shift: count / len(events) if events else 0.0
+                      for shift, count in counts.items()}
+            vollpruefung = True
+    belege = {"proben": len(proben), "preisereignisse": len(events),
+              "vollpruefung_nach_stichprobe": vollpruefung}
     if not quotes or max(quotes.values()) < GMT_MIN_TREFFER:
         return {"offset_s": None,
                 "trefferquote": round(max(quotes.values()), 3) if quotes else 0.0,
-                "proben": len(proben)}
+                **belege}
     beste = max(quotes.values())
     # Plateau-Prüfung (Review 29.09.): Erreichen MEHRERE Shifts dieselbe beste
     # Quote, ist der Versatz nicht eindeutig bestimmbar — breite H1-Bänder
@@ -386,10 +574,10 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
     plateau = sorted(s for s, q in quotes.items() if q >= beste - 1e-9)
     if len(plateau) > 1:
         return {"offset_s": None, "trefferquote": round(beste, 3),
-                "plateau_h": [s // 3600 for s in plateau], "proben": len(proben)}
+                "plateau_h": [s // 3600 for s in plateau], **belege}
     bester_shift = plateau[0]
     return {"offset_s": bester_shift, "trefferquote": round(beste, 3),
-            "proben": len(proben)}
+            **belege}
 
 
 def rekonstruiere(parsed, kurse, startkapital: float,
@@ -422,8 +610,11 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     fenster_von = von + min(GMT_KANDIDATEN_S)
     fenster_bis = bis + max(GMT_KANDIDATEN_S)
     fehlende_symbole: list[str] = []
+    umrechnung = H1UsdUmrechnung(kurse, fenster_von, fenster_bis, broker)
+    _hole_handelsbars = umrechnung.hole_handelsbars
+
     for s in symbole:
-        bars = kurse.hole_h1(s, fenster_von, fenster_bis)
+        bars = _hole_handelsbars(s)
         if bars:
             bars_je_symbol[s] = bars
         else:
@@ -432,10 +623,10 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # Nutzer-Wunsch 05.10.: ZWEITE Kursdatenquelle (MetaTrader) als Fallback.
     # MT5-Python ist pro Prozess ein Singleton — erst ALLE Symbole von der
     # primaeren Quelle laden, dann Terminal wechseln und NUR die fehlenden
-    # Symbole erneut versuchen. Der Auto-GMT-Preisabgleich je Symbol stellt
-    # den korrekten Zeitversatz DESSEN Feeds sicher (jeder MT5-Broker hat
-    # seinen eigenen Server-Zeitversatz; die Kurse eines Symbols kommen
-    # konsistent aus EINEM Feed — kein Mischbestand).
+    # Symbole erneut versuchen. Die Bars eines Symbols bleiben aus EINEM
+    # Feed. Gemeinsamer Preisabgleich und lokale Zeitbasis muessen die
+    # Zuordnung danach belegen; verschiedene Feeds garantieren keinen
+    # gemeinsamen Zeitversatz und koennen unzuverlaessig bleiben.
     # Nutzer-Logik 08.10.2026: SO LANGE durch die Quellen/Broker probieren,
     # bis die Kurse da sind — nicht nur ein einziger Fallback. Jede Quelle
     # (Terminal) hat ein anderes Symbol-Angebot (Tickmill: FX-Kreuze +
@@ -447,7 +638,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             break
         noch_fehlend = []
         for s in fehlende_symbole:
-            bars = kurse.hole_h1(s, fenster_von, fenster_bis)
+            bars = _hole_handelsbars(s)
             if bars:
                 bars_je_symbol[s] = bars
             else:
@@ -488,6 +679,10 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         if symbole_ohne_kontrakt:
             detail.append(f"Kontrakt unbelegt: {', '.join(symbole_ohne_kontrakt[:5])}")
         return {"test": "equity_rekonstruktion", "status": "skipped",
+                "verlaesslich": False,
+                "symbole_ohne_kurse": sorted(fehlende_symbole),
+                "symbole_ohne_kontrakt": sorted(symbole_ohne_kontrakt),
+                "trades_gesamt": len(trades), "trades_genutzt": len(nutzbare),
                 "grund": f"Kursdaten fehlen für {fehlend} "
                          f"von {len(trades)} Trades ({' · '.join(detail)})"}
 
@@ -515,7 +710,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
 
     if not zeitbasis.monoton:
         return {"test": "equity_rekonstruktion", "status": "skipped",
-                "verlaesslich": False, "grund": "Zeitabbildung nicht monoton/eindeutig",
+                "verlaesslich": False, "grund": zeitbasis.nichtmonoton_grund,
                 "zeitbasis": zeitbasis.metadata()}
     original_offset = zeitbasis.global_offset_s
     offset = original_offset
@@ -546,8 +741,17 @@ def rekonstruiere(parsed, kurse, startkapital: float,
 
     # Realisierte PnL kumulieren (Close-Zeit + Offset im Terminal-Raum).
     schliessungen = sorted(
-        ((_epoch(t.close_time) + offset, t.net) for t in trades),
+        [(_epoch(t.close_time) + offset, t.net) for t in trades]
+        + [(_epoch(c.time) + offset, c.amount) for c in getattr(parsed, "costs", [])
+           if _epoch(c.time) + offset >= anfang],
         key=lambda x: x[0])
+    # Kosten bei sicher flachem Konto sind ohne Kurse messbar. Bei offenen
+    # Trades bleibt das unveraenderte H1-Raster: kein Kurs wird vorgezogen;
+    # der naechste Rasterpunkt enthaelt das realisierte Kostenergebnis.
+    raster = sorted(set(raster) | {_epoch(c.time) + offset
+        for c in getattr(parsed, "costs", []) if _epoch(c.time) + offset >= anfang
+        and not any(_epoch(t.open_time) + offset <= _epoch(c.time) + offset
+                    < _epoch(t.close_time) + offset for t in trades)})
 
     # ALLE Positionen fuer den Aktivstatus verwenden. Fehlende Kurse
     # verhindern eine Floating-Messung, aber nie die Realisierung ihres
@@ -563,17 +767,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
           _epoch(t.close_time) + offset, t) for t in trades),
         key=lambda x: (x[0], x[1]))
 
-    fx_cache: dict[tuple[str, dt.date], float | None] = {}
     fx_fehlt = False
-
-    def _usd_faktor(quote: str, tag: dt.date) -> float | None:
-        if quote == "USD":
-            return 1.0
-        key = (quote, tag)
-        if key not in fx_cache:
-            kurs = fx_rates.usd_per(quote, tag)
-            fx_cache[key] = kurs["rate"] if kurs else None
-        return fx_cache[key]
+    _usd_faktor = umrechnung.faktor
 
     # Expliziter Anker vor dem ersten Handelsereignis: auch ein erster
     # Floating-Verlust darf nicht selbst zum Anfangshoch werden.
@@ -603,32 +798,18 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # vorhandenen Bar-Stunden bestehen — sonst verschwinden Datenlöcher
     # still aus der Rechnung (Probe: 8 offene Stunden, 3 mit Bars -> 100 %).
     # Nenner: jede volle Stunde, in der laut Trade-Zeiten eine Position
-    # aktiv wäre, MINUS erkannte Marktpausen (globale Bar-Luecken >= 20 h,
+    # aktiv wäre, MINUS erkannte Marktpausen (symbolweise Bar-Luecken >= 20 h,
     # klassisch Wochenende/Feiertag — solche Stunden sind keine Datenlücke).
     aktiv_laut_zeit: set[int] = set()
     aktiv_laut_zeit_betrachtet: set[int] = set()
+    aktiv_je_symbol: dict[str, set[int]] = {}
     for _offen, _ende, _t in offen_sort:
         _stunden = set(range((_offen // 3600 + 1) * 3600, _ende, 3600))
         aktiv_laut_zeit.update(_stunden)
+        aktiv_je_symbol.setdefault(_t.symbol.strip().upper(), set()).update(_stunden)
         if _t.symbol.strip().upper() in closes_je_symbol                 and _t.symbol.strip().upper() in aufgeloest:
             aktiv_laut_zeit_betrachtet.update(_stunden)
-    bar_stunden: set[int] = set(raster)
-    pausen: set[int] = set()
-    if aktiv_laut_zeit and bar_stunden:
-        erste = min(aktiv_laut_zeit)
-        letzte = max(aktiv_laut_zeit)
-        stunde = erste
-        luecke: list[int] = []
-        while stunde <= letzte:
-            if stunde in bar_stunden:
-                if len(luecke) >= MARKTPAUSE_MIN_H:
-                    pausen.update(luecke)
-                luecke = []
-            elif stunde in aktiv_laut_zeit:
-                luecke.append(stunde)
-            stunde += 3600
-        if len(luecke) >= MARKTPAUSE_MIN_H:
-            pausen.update(luecke)
+    pausen, pausen_belege = _aktive_marktpausen(aktiv_je_symbol, closes_je_symbol)
 
     for punkt in raster:
         while schliess_idx < len(schliessungen) and schliessungen[schliess_idx][0] <= punkt:
@@ -675,13 +856,13 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             res = aufgeloest[s]
             richtung = 1.0 if t.direction.lower() == "buy" else -1.0
             pnl_quote = richtung * t.volume * res["factor"] * (close - t.entry_price)
-            fx = _usd_faktor(res["quote"], tag)
+            fx = _usd_faktor(res["quote"], tag, punkt, s)
             if fx is None:
                 kurs_da = False
                 fx_fehlt = True
                 continue
             floating += pnl_quote * fx
-        if aktiv:
+        if aktiv and punkt not in pausen:
             if kurs_da:
                 punkte_mit_kurs += 1
             else:
@@ -769,7 +950,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
 
     offen_gesamt = punkte_mit_kurs + punkte_ohne_kurs
     # F5: Nenner = aktive Stunden laut Trade-Zeiten abzueglich Marktpausen
-    # (globale Bar-Luecken >= MARKTPAUSE_MIN_H). Der bisherige Nenner
+    # (bounded Bar-Luecken >= MARKTPAUSE_MIN_H fuer alle aktiven Symbole).
+    # Der bisherige Nenner
     # (Bar-Stunden mit Aktivitaet) liess Datenloecher still verschwinden.
     soll_stunden = len(aktiv_laut_zeit) - len(pausen & aktiv_laut_zeit)
     if soll_stunden > 0 and soll_stunden > offen_gesamt:
@@ -810,6 +992,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
                    "ok_teilmessung" if teilmessung else "unvollstaendig"),
         "gmt_offset_h": original_offset // 3600,
         "gmt_trefferquote": gmt["trefferquote"],
+        "gmt_pruefung": dict(gmt),
         "zeitbasis": zeitbasis.metadata(),
         # Bewertungs-/RetDD-Nenner ohne Anzeige-Rundung: 10,004 % darf
         # nicht als 10,00 % eine Effizienz von 10,001/10,00 >= 1 erzeugen.
@@ -819,6 +1002,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         "equity_dd_pct_max_rel": round(dd_pct_max, 2),
         "equity_dd_usd": round(dd_usd, 2),
         "abdeckung_pct": round(abdeckung * 100, 1),
+        "abdeckung_pct_raw": abdeckung * 100,
         "rasterpunkte": len(curve),
         "verlaesslich": verlaesslich,
         "symbole_mit_kursen": sorted(bars_je_symbol),
@@ -836,6 +1020,9 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         "trades_ohne_h1_floating_messpunkt": sum(
             (_offen // 3600 + 1) * 3600 >= _schluss
             for _offen, _schluss, _trade in offen_sort),
+        "marktpausen": {"heuristik": "symbolweise >=20h zwischen realen H1-Bars; alle aktiven Symbole pausiert",
+                        "ausgenommene_aktive_stunden": len(pausen),
+                        "belege": pausen_belege},
     }
     if teilmessung:
         ergebnis["teilmessung"] = True
@@ -845,6 +1032,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
             "Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht "
             "betrachtet: " + ", ".join(symbole_nicht_betrachtet)
             + " — DD kann unterschätzt sein.")
+    if umrechnung.h1_cache:
+        ergebnis["fx_umrechnungen"] = umrechnung.provenienz()
     if fehlende_symbole:
         ergebnis["symbole_ohne_kurse"] = fehlende_symbole
     if symbole_ohne_kontrakt:
@@ -854,7 +1043,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     if not verlaesslich:
         gruende = []
         if abdeckung < SCHRANKE_MIN_ABDECKUNG:
-            gruende.append(f"Abdeckung {abdeckung:.0%} < {SCHRANKE_MIN_ABDECKUNG:.0%}")
+            gruende.append(f"Abdeckung < {SCHRANKE_MIN_ABDECKUNG:.0%} "
+                           f"(gerundet {abdeckung:.1%})")
         if fx_fehlt:
             gruende.append("EZB-Kurslücke")
         if not trades_vollstaendig:

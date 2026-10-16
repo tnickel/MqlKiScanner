@@ -11,6 +11,8 @@ from __future__ import annotations
 import datetime as dt
 from types import SimpleNamespace
 
+import pytest
+
 from mqlkiscanner import config, kursdaten
 
 START = dt.datetime(2026, 1, 5, tzinfo=dt.timezone.utc)
@@ -67,6 +69,84 @@ def test_vollstaendiges_ergebnis_ohne_zweitabruf(monkeypatch):
     assert stand["n"] == 1  # fertig beim ersten Mal -> kein Retry
 
 
+@pytest.mark.parametrize("erstes", [None, []])
+def test_leerer_erstabruf_laesst_historie_nachladen(monkeypatch, erstes):
+    monkeypatch.setattr(kursdaten.time, "sleep", lambda s: None)
+    s0 = int(START.timestamp())
+    voll = [_bar(s0 + i * 3600) for i in range(200)]
+    abrufe = iter([erstes, voll])
+    anzahl = []
+
+    def laden(*args):
+        anzahl.append(1)
+        return next(abrufe)
+
+    kd = kursdaten.KursDaten({})
+    kd._aktiv = True
+    kd._mt5 = SimpleNamespace(symbol_select=lambda *a: True,
+                              TIMEFRAME_H1=1, copy_rates_range=laden)
+    assert len(kd.hole_h1("EURUSD", s0, s0 + 200 * 3600)) == 200
+    assert len(anzahl) == 2
+
+
+def test_dauerhaft_leerer_abruf_hat_maximal_drei_wiederholungen(monkeypatch):
+    monkeypatch.setattr(kursdaten.time, "sleep", lambda s: None)
+    s0 = int(START.timestamp())
+    anzahl = []
+
+    def laden(*args):
+        anzahl.append(1)
+        return None if len(anzahl) % 2 else []
+
+    kd = kursdaten.KursDaten({})
+    kd._aktiv = True
+    kd._mt5 = SimpleNamespace(symbol_select=lambda *a: True,
+                              TIMEFRAME_H1=1, copy_rates_range=laden)
+    assert kd.hole_h1("EURUSD", s0, s0 + 200 * 3600) is None
+    assert len(anzahl) == 4  # Erstabruf + drei begrenzte Nachladeversuche
+
+
+def test_teilhistorie_bleibt_bei_leerem_nachladen_erhalten(monkeypatch):
+    monkeypatch.setattr(kursdaten.time, "sleep", lambda s: None)
+    s0 = int(START.timestamp())
+    teil = [_bar(s0 + i * 3600) for i in range(40)]
+    abrufe = iter([teil, None])
+    kd = kursdaten.KursDaten({})
+    kd._aktiv = True
+    kd._mt5 = SimpleNamespace(symbol_select=lambda *a: True,
+                              TIMEFRAME_H1=1,
+                              copy_rates_range=lambda *a: next(abrufe))
+    assert len(kd.hole_h1("EURUSD", s0, s0 + 200 * 3600)) == 40
+
+
+def test_cache_trennt_broker_und_stellt_herkunft_beim_rueckwechsel_wieder_her(monkeypatch):
+    monkeypatch.setattr(kursdaten.time, "sleep", lambda s: None)
+    s0 = int(START.timestamp())
+    kd = kursdaten.KursDaten({})
+    kd._aktiv = True
+    abrufe = []
+
+    def laden(*args):
+        abrufe.append(kd.terminal_pfad)
+        bar = _bar(s0)
+        bar["close"] = 1.1 if kd.terminal_pfad == TICKMILL_PFAD else 1.2
+        return [bar]
+
+    kd._mt5 = SimpleNamespace(symbol_select=lambda *a: True,
+                              TIMEFRAME_H1=1, copy_rates_range=laden)
+    kd.terminal_pfad = TICKMILL_PFAD
+    erste = kd.hole_h1("EURUSD", s0, s0 + 3600)
+    kd.terminal_pfad = VANTAGE_PFAD
+    zweite = kd.hole_h1("EURUSD", s0, s0 + 3600)
+    assert erste[0]["close"] == 1.1
+    assert zweite[0]["close"] == 1.2
+    assert kd.terminal_herkunft["EURUSD"] == VANTAGE_PFAD
+    kd.terminal_pfad = TICKMILL_PFAD
+    assert kd.hole_h1("EURUSD", s0, s0 + 3600) is erste
+    assert kd.terminal_herkunft["EURUSD"] == TICKMILL_PFAD
+    assert abrufe == [TICKMILL_PFAD, VANTAGE_PFAD]
+
+
 # ── Vantage als dritte Kursdatenquelle (Nutzer-Wunsch 08.10.2026) ─────────
 def test_vantage_ist_dritte_standard_kursdatenquelle():
     r"""C:\Forex\Mt5\Vantage gehört zu den Standard-Terminals — der Nutzer
@@ -103,16 +183,17 @@ def test_vantage_symbol_ersetzungen_suffix_und_namen():
     assert alias_fuer_symbol("US500", TICKMILL_PFAD) is None
 
 
-def test_hole_h1_probiert_vantage_alias_nach_exakt_fehlschlag(monkeypatch):
+@pytest.mark.parametrize("symbol", ["XAUUSD", "XAUAUD", "XAUEUR", "XAUJPY"])
+def test_hole_h1_probiert_vantage_alias_nach_exakt_fehlschlag(monkeypatch, symbol):
     """Am Vantage-Terminal scheitert XAUUSD (plain existiert nicht); der
     Alias XAUUSD+ wird als Kandidat gewählt und liefert die Bars."""
     monkeypatch.setattr(kursdaten.time, "sleep", lambda s: None)
     s0 = int(START.timestamp())
     gewaehlt = {}
 
-    def select(symbol, flag):
-        if symbol == "XAUUSD+":
-            gewaehlt["symbol"] = symbol
+    def select(kandidat, flag):
+        if kandidat == symbol + "+":
+            gewaehlt["symbol"] = kandidat
             return True
         return False
 
@@ -124,7 +205,46 @@ def test_hole_h1_probiert_vantage_alias_nach_exakt_fehlschlag(monkeypatch):
     kd.terminal_pfad = VANTAGE_PFAD
     kd._aktiv = True
     kd._mt5 = mt5
-    bars = kd.hole_h1("XAUUSD", s0, s0 + 3600)
+    bars = kd.hole_h1(symbol, s0, s0 + 3600)
     assert bars and bars[0]["time"] == s0
-    assert gewaehlt["symbol"] == "XAUUSD+"
-    assert kd.suffix_annahmen["XAUUSD"] == "XAUUSD+"
+    assert gewaehlt["symbol"] == symbol + "+"
+    assert kd.suffix_annahmen[symbol] == symbol + "+"
+
+
+@pytest.mark.parametrize("symbol", ["XAUAUD", "XAUEUR", "XAUJPY"])
+def test_goldkreuz_plus_alias_nur_fuer_vantage(symbol):
+    from mqlkiscanner.symbols import alias_fuer_symbol
+    assert alias_fuer_symbol(symbol, VANTAGE_PFAD) == symbol + "+"
+    assert alias_fuer_symbol(symbol, TICKMILL_PFAD) is None
+    assert alias_fuer_symbol(symbol, r"C:\Forex\Mt5\ActiveTrades003\terminal64.exe") is None
+    assert alias_fuer_symbol(symbol, r"C:\Forex\Mt5\AndererBroker\terminal64.exe") is None
+    assert alias_fuer_symbol("EURUSD", VANTAGE_PFAD) == "EURUSD+"
+
+
+@pytest.mark.parametrize("symbol,terminal_name", [
+    ("GBPAUD", "GBPAUD+"), ("NZDCAD", "NZDCAD+"),
+    ("NZDCHF", "NZDCHF+"), ("USDCHF", "USDCHF+"),
+    ("DJ30FT", "DJ30ft"), ("NAS100FT", "NAS100ft"),
+])
+def test_vantage_belegte_forex_und_case_sensitive_futures(symbol, terminal_name):
+    from mqlkiscanner.symbols import alias_fuer_symbol
+    assert alias_fuer_symbol(symbol, VANTAGE_PFAD) == terminal_name
+    selected = []
+    def select(candidate, flag):
+        selected.append(candidate)
+        return candidate == terminal_name
+    epoch = int(START.timestamp())
+    kd = kursdaten.KursDaten({})
+    kd.terminal_pfad = VANTAGE_PFAD
+    kd._aktiv = True
+    kd._mt5 = SimpleNamespace(
+        symbol_select=select, TIMEFRAME_H1=1,
+        copy_rates_range=lambda s, tf, von, bis: [_bar(epoch)])
+    assert kd.hole_h1(symbol, epoch, epoch + 3600)
+    assert terminal_name in selected
+    assert kd.suffix_annahmen[symbol] == terminal_name
+    # Broker-spezifische FX-Suffixe dürfen andere Terminals nicht ändern.
+    if not symbol.endswith("FT"):
+        assert alias_fuer_symbol(symbol, TICKMILL_PFAD) is None
+    assert alias_fuer_symbol("DJ30", VANTAGE_PFAD) is None
+    assert alias_fuer_symbol("BTCUSD", VANTAGE_PFAD) is None

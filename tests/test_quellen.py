@@ -860,3 +860,48 @@ def test_cache_datei_wird_atomar_geschrieben(monkeypatch):
     assert not list(ziel_pfad["pfad"].parent.glob("*.tmp"))
     assert not ziel_pfad["pfad"].exists() or \
         ziel_pfad["pfad"].read_bytes() != MINI_CSV[: len(MINI_CSV) // 2]
+
+
+# --------------------------------------------------------------- Anbieter-URL
+# Nutzer-Fall 16.10.2026: Pelican-Algos öffneten pauschal die MQL5-Seite —
+# quellen.oeffnen_url baut je Quelle die richtige Detail-URL und erkennt
+# Platzhalter (Startseite/Rating-Übersicht) aus alten Katalog-Ständen.
+
+def test_oeffnen_url_mql5_aus_id():
+    assert quellen.oeffnen_url("mql5", 2072334, "") == \
+        "https://www.mql5.com/en/signals/2072334"
+
+
+def test_oeffnen_url_pelican_platzhalter_wird_neu_gebaut():
+    # Alter Katalog-Stand: nur die Startseite gespeichert
+    assert quellen.oeffnen_url("pelik", 2072334,
+                               "https://pelican.copy-trade.io") == \
+        "https://pelican.copy-trade.io/strategy/2072334"
+
+
+def test_oeffnen_url_vantage_und_zulu_spezifisch_bleiben_erhalten():
+    vant = ("https://secure.vantagemarkets.com/copyTrading/visitor/discover/"
+            "discoverDetail?strategyId=213166&mode=visitor")
+    assert quellen.oeffnen_url("vant", 213166, vant) == vant
+    zulu = "https://www.zulutrade.com/trader/430525"
+    assert quellen.oeffnen_url("zulu", 430525, zulu) == zulu
+    # Und ohne gespeicherte URL aus der ID gebaut:
+    assert quellen.oeffnen_url("zulu", 430525, "") == zulu
+    assert quellen.oeffnen_url("vant", 213166, "") == vant
+
+
+def test_oeffnen_url_robo_ohne_sourceid_liefert_uebersicht_als_ersatz():
+    # Der Scanner kennt nur den Login (signal_id), nicht die sourceId —
+    # die Detail-URL liefert der RoboMonitor; bis dahin die Übersicht.
+    rating = "https://roboforex.com/copy-trading/rating/"
+    assert quellen.oeffnen_url("robo", 12345, rating) == rating
+    # Neuere Stände (nach RoboMonitor-Update) enthalten die Detail-URL:
+    detail = "https://roboforex.com/copy-trading/rating/abc/12345"
+    assert quellen.oeffnen_url("robo", 12345, detail) == detail
+
+
+def test_oeffnen_url_unbekannte_quelle_und_kaputte_ids():
+    assert quellen.oeffnen_url("xyz", 5, "https://beispiel.tld/s/5") == \
+        "https://beispiel.tld/s/5"
+    assert quellen.oeffnen_url("mql5", None, "") == ""
+    assert quellen.oeffnen_url("pelik", "keine-zahl", "") == ""

@@ -10,12 +10,72 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 
 from mqlkiscanner import symbols
 from mqlkiscanner.forensics import exposure
 from mqlkiscanner.models import BalanceRow, ParsedExport, Trade
+
+
+@pytest.mark.parametrize("name,factor,quote", [
+    ("BTCETH", 1, "ETH"), ("BTCJPY", 1, "JPY"),
+    ("CRVUSD", 1000, "USD"), ("DOGUSD", 10000, "USD"),
+    ("HBARUSD", 10000, "USD"), ("HK50", 1, "HKD"),
+    ("TRUMPUSD", 100, "USD"), ("UNIUSD", 100, "USD"),
+    ("XAUUSD247", 1, "USD"),
+])
+def test_masterhong_live_specs_native_quote_and_broker_scope(monkeypatch, name, factor, quote):
+    from mqlkiscanner import config
+    root = Path(__file__).resolve().parents[1]
+    monkeypatch.setattr(config, "CONTRACT_SPECS_FILE", root / "data" / "contract_specs.json")
+    evidence = json.loads((root / "doc" / "reviews" /
+        "vantage_masterhong_kontrakte_2026-10-10.json").read_text(encoding="utf-8"))["specs"][name]
+    for symbol in (name, name + "+"):
+        spec = symbols.spec_for(symbol, broker="Vantage International Group Limited")
+        assert spec["contract_size"] == factor == evidence["trade_contract_size"]
+        assert spec["quote_currency"] == quote == evidence["currency_profit"]
+        assert spec["cross_broker"] is False
+        assert spec["brokers"] == ["vantage"]
+        assert "vantage_masterhong_kontrakte_2026-10-10.json" in spec["source"]
+        resolved = exposure._resolve_symbol(symbol, broker="Vantage")
+        assert resolved["factor"] == factor
+        assert resolved["quote"] == quote
+        if quote != "USD":
+            assert exposure.shock_usd(1, 50, symbol, broker="Vantage") is None
+        for broker in (None, "Tickmill", "ActivTrades", "AndererBroker"):
+            assert symbols.spec_for(symbol, broker=broker) is None
+    if name == "XAUUSD247":
+        assert exposure.shock_usd(1, 50, name, broker="Vantage") == 50
+        assert exposure._resolve_symbol("XAUUSD", broker="Vantage")["factor"] == 100
+    elif name not in ("HK50",):
+        assert "Szenario, keine Brokerspec" in spec["note"]
+
+
+@pytest.mark.parametrize("symbol,quote", [("XAUAUD", "AUD"), ("XAUEUR", "EUR"),
+                                         ("XAUJPY", "JPY")])
+def test_belegte_vantage_goldkreuz_specs_nur_fuer_diesen_broker(monkeypatch, symbol, quote):
+    from mqlkiscanner import config
+    monkeypatch.setattr(config, "CONTRACT_SPECS_FILE",
+                        Path(__file__).resolve().parents[1] / "data" / "contract_specs.json")
+    for name in (symbol, symbol + "+"):
+        spec = symbols.spec_for(name, broker="Vantage International Group Limited")
+        assert spec["contract_size"] == 100
+        assert spec["quote_currency"] == quote
+        assert spec["cross_broker"] is False
+        assert spec["retrieved"] == "2026-10-10"
+        resolved = exposure._resolve_symbol(name, broker="Vantage")
+        assert resolved["factor"] == 100
+        assert resolved["quote"] == quote
+        assert exposure.shock_usd(1, 50, name, broker="Vantage") is None
+        for anderer in (None, "Tickmill", "AndererBroker"):
+            fremd = symbols.spec_for(name, broker=anderer)
+            if symbol == "XAUEUR":
+                # Bestehende brokerübergreifende EUR-Spec bleibt gültig.
+                assert fremd["cross_broker"] is True
+            else:
+                assert fremd is None
 
 
 def schreibe_specs(tmp_path: object, symbole: dict) -> None:

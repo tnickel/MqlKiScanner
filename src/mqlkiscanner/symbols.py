@@ -166,24 +166,35 @@ def _broker_matches(entry: dict, broker: str | None) -> bool:
 # XTIUSD/BRENT; Gold als SUFFIX-Falle XAUUSD+ (plain XAUUSD existiert dort
 # NICHT — XAUUSD.crp ist nur Kursumrechnung, XAUUSD247 ein 1-Unzen-Kontrakt).
 SYMBOL_ALIASE_DEFAULT = {
-    "DE40":  {"activetrades003": "GER40", "vantage": "GER40"},
-    "GER40": {"tickmilllifemql5": "DE40"},
-    "WTI":   {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT",
+    "DE40":  {"activetrades003": "Ger40", "vantage": "GER40"},
+    "GER40": {"tickmilllifemql5": "DE40", "activetrades003": "Ger40"},
+    "WTI":   {"tickmilllifemql5": "XTIUSD", "activetrades003": "LCrude",
               "vantage": "USOUSD"},
-    "USOIL": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT",
+    "USOIL": {"tickmilllifemql5": "XTIUSD", "activetrades003": "LCrude",
               "vantage": "USOUSD"},
     "XTIUSD": {"vantage": "USOUSD"},
-    "BRENT": {"vantage": "UKOUSD"},
-    "XAUUSD": {"vantage": "XAUUSD+"},
-    "NAS100": {"tickmilllifemql5": "USTEC"},
-    "US100": {"tickmilllifemql5": "USTEC", "vantage": "NAS100"},
-    "USTEC": {"vantage": "NAS100"},
+    "BRENT": {"vantage": "UKOUSD", "activetrades003": "Brent"},
+    "XAUUSD": {"vantage": "XAUUSD+", "activetrades003": "GOLD"},
+    # Lokales Vantage-Symbolinventar 08.10.2026 (tmp/mt5_kontrakt_specs_
+    # 20261008_0714.json): Goldkreuze tragen ebenfalls das Plus-Suffix.
+    "XAUAUD": {"vantage": "XAUAUD+"},
+    "XAUEUR": {"vantage": "XAUEUR+"},
+    "XAUJPY": {"vantage": "XAUJPY+"},
+    "NAS100": {"tickmilllifemql5": "USTEC", "activetrades003": "UsaTec"},
+    "US100": {"tickmilllifemql5": "USTEC", "vantage": "NAS100",
+              "activetrades003": "UsaTec"},
+    "USTEC": {"vantage": "NAS100", "activetrades003": "UsaTec"},
     "NASUSD": {"tickmilllifemql5": "USTEC", "vantage": "NAS100"},
-    "SPX500": {"tickmilllifemql5": "US500"},
-    "US500": {"vantage": "SP500"},
+    "SPX500": {"tickmilllifemql5": "US500", "activetrades003": "Usa500"},
+    "US500": {"vantage": "SP500", "activetrades003": "Usa500"},
+    "SP500": {"activetrades003": "Usa500"},
+    "DJ30": {"activetrades003": "UsaInd"},
+    "US30": {"activetrades003": "UsaInd"},
+    "HK50": {"activetrades003": "HKInd"},
+    "CHINA50": {"activetrades003": "ChinaA50"},
     "US500CASH": {"tickmilllifemql5": "US500"},
     "GER30CASH": {"tickmilllifemql5": "DE40"},
-    "GER40-FUTURE": {"tickmilllifemql5": "DE40", "activetrades003": "GER40"},
+    "GER40-FUTURE": {"tickmilllifemql5": "DE40", "activetrades003": "Ger40"},
     "US100-FUTURE": {"tickmilllifemql5": "USTEC", "vantage": "NAS100ft"},
     "US500-FUTURE": {"tickmilllifemql5": "US500"},
     "US30-FUTURE": {"tickmilllifemql5": "US30"},
@@ -192,14 +203,14 @@ SYMBOL_ALIASE_DEFAULT = {
     # Vantage-FT-Indizes (Nutzer-Hinweis 08.10.: „GER40FT = GER40") —
     # Kursdaten-Alias auf die Tickmill-Referenznamen; Kontrakt-Sizes stehen
     # beweisbasiert in contract_specs.json (Trade-Rueckrechnung).
-    "GER40FT": {"tickmilllifemql5": "DE40", "activetrades003": "GER40"},
+    "GER40FT": {"tickmilllifemql5": "DE40", "activetrades003": "Ger40"},
     "DJ30FT": {"tickmilllifemql5": "US30"},
     "NAS100FT": {"tickmilllifemql5": "USTEC"},
     "SP500FT": {"tickmilllifemql5": "US500"},
     "JPN225FT": {"tickmilllifemql5": "JP225"},
-    "HK50FT": {"tickmilllifemql5": "HK50"},
+    "HK50FT": {"tickmilllifemql5": "HK50", "activetrades003": "HKInd"},
     "UK100FT": {"tickmilllifemql5": "UK100"},
-    "CL-OIL": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
+    "CL-OIL": {"tickmilllifemql5": "XTIUSD", "activetrades003": "LCrude"},
     # RoboForex-CASH-Indizes (Punkt-Präfix-Schreibweise, live 09.10. in
     # Skip-Gründen gesehen) — Kurs-Alias auf die Tickmill-Referenznamen.
     ".US30CASH": {"tickmilllifemql5": "US30"},
@@ -209,8 +220,36 @@ SYMBOL_ALIASE_DEFAULT = {
     ".JP225CASH": {"tickmilllifemql5": "JP225"},
     ".UK100CASH": {"tickmilllifemql5": "UK100"},
     ".HK50CASH": {"tickmilllifemql5": "HK50"},
-    "WT": {"tickmilllifemql5": "XTIUSD", "activetrades003": "BRENT"},
+    "WT": {"tickmilllifemql5": "XTIUSD", "activetrades003": "LCrude"},
 }
+
+# ActivTrades, portables Live-Terminal 10.10.2026:
+# doc/reviews/activtrades_instrumentnamen_2026-10-10.json.
+# MT5-Namen sind case-sensitiv. LCrude ist Light Crude Oil Spot,
+# Brent ein anderer Rohstoff; WTI darf niemals auf Brent ausweichen.
+# Die bestehenden FT→Cash-Aliase (u. a. HK50FT) sind Kursreferenzen,
+# keine Behauptung gleicher Handelskontrakte. hole_h1 protokolliert die
+# Ersetzung in suffix_annahmen; die Signal-Kontraktspezifikation bleibt separat.
+
+# Live-Inventar des portablen Vantage-Terminals, 10.10.2026:
+# doc/reviews/mt5_vantage_symbolnamen_2026-10-10.json. Nur belegte
+# Forex+-Namen ergänzen; Aktien, Indizes und Krypto haben andere Namen.
+for _fx in (
+    "EURNOK EURSEK USDMXN USDZAR AUDCAD AUDCHF AUDJPY AUDUSD CADCHF CADJPY "
+    "CHFJPY EURAUD EURCAD EURCHF EURGBP EURJPY EURUSD GBPAUD GBPCAD GBPCHF "
+    "GBPJPY GBPUSD USDCAD USDCHF USDJPY EURCZK EURDKK EURHUF EURPLN EURTRY "
+    "USDBRL USDCLP USDCOP USDCZK USDDKK USDHUF USDIDR USDINR USDKRW USDPLN "
+    "USDTHB USDTRY USDTWD AUDCNH AUDNZD AUDSGD CHFSGD EURNZD EURSGD GBPNZD "
+    "GBPSGD NZDCAD NZDCHF NZDJPY NZDSGD NZDUSD SGDJPY USDCNH USDHKD USDNOK "
+    "USDSEK USDSGD USDILS"
+).split():
+    SYMBOL_ALIASE_DEFAULT.setdefault(_fx, {})["vantage"] = _fx + "+"
+
+# MT5-Namen sind case-sensitiv: der CSV-Name DJ30FT ist nicht DJ30ft.
+for _future in (
+    "DJ30 FRA40 GER40 NAS100 SP500 UK100 CHINA50 HK50 JPN225 UKOUSD"
+).split():
+    SYMBOL_ALIASE_DEFAULT.setdefault(_future + "FT", {})["vantage"] = _future + "ft"
 
 
 def terminal_key(terminal_pfad: str) -> str:

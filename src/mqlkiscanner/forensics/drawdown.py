@@ -143,16 +143,19 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
             and kapitalbasis_usd > 0):
         injected = float(kapitalbasis_usd)
         startkapital_quelle = kapitalbasis_quelle or "extern"
-    startkapital = deposits_start + injected
+    kosten_vor_start = math.fsum(c.amount for c in getattr(parsed, "costs", []) if c.time < first_open)
+    startkapital = deposits_start + injected + kosten_vor_start
     deposits_total = sum(b.amount for b in balances if b.amount > 0)
     withdrawals_total = sum(b.amount for b in balances if b.amount < 0)
 
-    trading_points = [(t.close_time, t.net) for t in sorted(trades, key=lambda t: t.close_time)]
+    # Nur Kosten VOR dem ersten Open stecken bereits im Startsaldo.
+    trading_points = [(t.close_time, t.net) for t in trades] + [
+        (c.time, c.amount) for c in getattr(parsed, "costs", []) if c.time >= first_open]
     trading_virtuell = _max_drawdown(trading_points, startkapital)
 
     # Balance-Kurve: CSV-Buchungen buchen sich selbst; die injizierte Basis
     # ist keine Zeile und geht deshalb als Startwert ein.
-    balance_points = [(b.time, b.amount) for b in balances] + trading_points
+    balance_points = [(b.time, b.amount) for b in balances] + parsed.realized_events()
     balance_points.sort(key=lambda p: p[0])
     balance = _max_drawdown(balance_points, injected)
 
@@ -168,12 +171,14 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
         kurve = "virtuell_ohne_flows"
 
     flows_total = deposits_total + withdrawals_total
-    net_total = sum(t.net for t in trades)
+    net_total = parsed.net_total
     return {
         "test": "drawdown",
         "start_capital": round(deposits_start, 2),
         "startkapital": round(startkapital, 2),
         "startkapital_quelle": startkapital_quelle,
+        "kontokosten_vor_start_usd": kosten_vor_start,
+        "kontokosten_usd": math.fsum(c.amount for c in getattr(parsed, "costs", [])),
         "deposits_total": round(deposits_total, 2),
         "withdrawals_total": round(withdrawals_total, 2),
         "flows_total": round(flows_total, 2),

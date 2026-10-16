@@ -59,7 +59,7 @@ def test_fehlender_gmt_ist_keine_format_exception():
 
 def test_studien_cache_verwendet_neue_methodikversion():
     result = pipeline.ScanResult(id=2349227, trades_sha256="a" * 64)
-    assert _cache_key(result) == "eqdd_studie_zeitbasis_v10_2349227_aaaaaaaaaaaa"
+    assert _cache_key(result) == "eqdd_studie_kontokosten_v11_2349227_aaaaaaaaaaaa"
     assert not _cache_key(result).startswith("eqdd_studie_h1_ende_v2_")
 
 
