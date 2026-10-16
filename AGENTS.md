@@ -7,15 +7,53 @@ wurde (Ursprungs-Session: `sess_ff799a20-8b9b-4b1b-b605-0826e01ceffa` — bei
 Bedarf mit ReadSessionContext referenzierbar; zusätzlich liegt alles Wesentliche
 in `doc/` und `data/` dieses Projekts).
 
+## Aktueller Status (Dokumentationsabgleich 16.10.2026)
+
+Dieser Block und die aktuellen Design-Regeln ordnen die datierten
+Umsetzungsnotizen unten ein. Frühere Testzahlen, Bewertungen und inzwischen
+abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
+
+- **MqlRealmonitor ist noch nicht in den Gesamtworkflow eingebunden.**
+  REST-Server im Scanner und Client-Code im Monitor sind vorbereitet;
+  die Integration bleibt vorerst zurückgestellt (Nutzerentscheidung
+  16.10.2026). Vorhandener Code und gemeinsames Starten sind kein Nachweis
+  abgeschlossener Integration. Diese Integration vorerst nicht weiter umsetzen.
+- **PelicanWinnerLooser** ist ein eigenständiges Einzelprojekt und ebenfalls
+  noch nicht in den Gesamtworkflow eingebunden; keine implementierte Hub-Anbindung.
+- **Grün-Gate:** harte Regeln (Ausschlussliste, Martingale, DD-Schranke;
+  Default 30 %) plus Jahres-Calmar `retdd_jahr >= min_calmar_jahr`
+  (Default 3,0). Mindestens drei Monate Trade-Historie. Absolute Monats-
+  Ertragshürde standardmäßig aus (`min_ertrag_pct_monat=0`). Fehlender
+  SL-Nachweis neutral; Risiko-Score kein eigenständiges Grün-Gate.
+- **Calmar-Nenner:** ausschließlich belastbare eigene H1-Equity-Messung
+  einschließlich Floating. Monitor-`TradeEqDrawdownPct` ist Closing-DD,
+  bleibt ein Kanal der harten Schranke, aber kein Calmar-Nenner.
+  Orange Vorbehaltswerte erlauben kein Grün. H1-Bar-Schlüsse belegen
+  keine vollständigen Intrabar-Tiefs.
+- **Stufe 0** ist für GUI- und autonome Scans implementiert: aktive Quellen
+  parallel per POST aktualisieren, Status vor dem Scan abwarten (doc/23).
+- **Offen:** vollständige Composite-Identität `(quelle, signal_id)` in der
+  zentralen Signaltabelle; Quellenkollisionen werden derzeit abgewehrt.
+  Täglicher Betreuer derzeit nur MQL5, andere Quellen werden übersprungen.
+- **Maßgebliche Codeorte:** `pipeline.ampel_for`, `ScanResult.refresh_efficiency`,
+  `config.DEFAULT_SETTINGS`, `portfolio_statistik.MIN_HISTORIE_MONATE` und
+  `analysis_version.FORENSICS_VERSION` (beim Abgleich 16). Produktive Settings
+  ausschließlich `config/app_settings.json`.
+
 ## Auftrag und Nutzer-Kriterien (fest)
 
 Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 
 - **Risiko VOR Ertrag.** Harte Drawdown-Schranke: 30 % max.
-- Ertrag muss trotzdem stimmen: über 5 %/Monat.
-- Kernfrage je Signal: Ist der Schutz (Stop-Loss) **bewiesen** oder nur behauptet?
+- Effizienz muss stimmen: Jahres-Calmar auf belastbarem Equity-DD mindestens
+  konfigurierte Schwelle (Default 3,0); frühere Pflicht >5 %/Monat ist abgelöst.
+- Stop-Evidenz untersuchen; fehlender Nachweis ist neutral und keine Grün-Sperre.
 
-## Aktuelles Ergebnis der Analyse-Reihe (Stand 04.09.2026)
+## Historische Ergebnisse der Analyse-Reihe (04.09.2026, mit Nachträgen)
+
+Die folgenden damaligen Empfehlungen sind keine aktuellen Freigaben. Es gelten
+die aktuellen Code-Regeln und neue Scan-Befunde; insbesondere ist die alte
+KiraCat-Duo-Empfehlung durch den direkt folgenden Nachtrag überholt.
 
 **Korrektur KiraCat (03.10.2026):** Die alte Duo-Empfehlung ist fuer KiraCat
 ueberholt: aktuell Plattform-EQ-DD 34,95 % und rote 30-%-Schranke. 7,9/8,14 %
@@ -31,7 +69,7 @@ BAR-ENDE; alle exportierten Trades bleiben im realisierten Netto enthalten,
 auch wenn ihre Kursdaten fehlen. Forensik-Version 8 erzwingt Neupruefung
 alter Befunde. Review: `../waste/drawdown_2026-10-03/review.md`.
 
-- **Empfehlung (Duo):** Gold Spike (MT4 #2349227 / MT5 #2375480, Risikoträger)
+- **Damals empfohlener Duo-Vorschlag (überholt):** Gold Spike (MT4 #2349227 / MT5 #2375480, Risikoträger)
   + KiraCat (#2342895, Ertragsträger).
 - Gold Reaper (#2265877): solide Strategie, aber nur als EA-Kauf sinnvoll
   (8/14 Reviews: fehlgeschlagene Kopien).
@@ -96,22 +134,24 @@ alter Befunde. Review: `../waste/drawdown_2026-10-03/review.md`.
 
 ## Design-Regeln (aus der Reihe gelernt — Ursachen in doc/01)
 
-**Ertrag/RetDD (Nutzer-Regel 03.10.2026):** Tabelle zeigt eigene geometrische
-`Gewinn %/Monat` und `RetDD` neben dem farbigen gemessenen Max-Equity-DD.
-RetDD = geometrische Monatsrendite / gemessener Max-Equity-DD (valide
-H1-/Monitor-Messung, hoechste davon). NIEMALS geschlossene Trades,
-Balance-DD oder Plattform-Selbstauskunft als Ersatznenner. Ohne positive
-Equity-Messung bleibt RetDD unbekannt und kein Gruen. Gewinn bleibt bei
-fehlendem Equity-DD messbar. Monatsrendite aus ungerundetem End/Start und
-echter Zeitspanne erster Open bis letzter Close; Jahr 365,2425 Tage,
-Monat = Jahr/12. Leermonate nicht aus der Laufzeit herauskuerzen; Auswahl
-prueft ungerundete Werte (0,9995 ist NICHT >=1). Ertragskriterium jetzt
-eigene geometrische Rendite >= konfigurierte Monatsschwelle statt linearem
-B2-/Plattformwert; RetDD >=1 bleibt fest. Harte Risiko-Schranke weiterhin
-konservatives Maximum aller fuenf DD-Werte; guter RetDD hebt sie nie auf.
-KI erhaelt Codewerte, Zeit-/Kapitalbasis, Messstatus und aktuelle Kriterien;
-historische Rendite ist keine Prognose. Forensik-Version 9; alte Befunde
-neu scannen. Review im Archiv `../waste/retdd_equity_2026-10-03/`.
+**Ertrag/RetDD/Calmar (aktuelle Regel, Abgleich 16.10.2026):**
+`retdd_monat` = geometrische Monatsrendite / gemessener Max-Equity-DD;
+`retdd_jahr` = Jahres-CAGR / gemessener Max-Equity-DD. Seit 05.10. entscheidet
+der JAHRES-Calmar gegen `min_calmar_jahr` (Default 3,0), nicht mehr die frühere
+Monatsschwelle 1,0. TrueRetDD zeigt den Jahreswert. Nenner nur belastbare
+eigene H1-Messung einschließlich Floating, niemals Monitor-Closing-DD,
+geschlossene Trades, Balance-DD oder Plattform-Selbstauskunft. Ohne positive
+Equity-Messung kein belastbarer Calmar und kein Grün. Unter drei Monaten
+Trade-Historie bleibt die Effizienz unbestimmbar; orange Vorbehaltswerte
+erlauben kein Grün. Die absolute Monats-Ertragshürde ist standardmäßig aus,
+kann aber konfiguriert werden. Gewinn bleibt bei fehlendem Equity-DD messbar.
+Die Rendite verwendet die echte Zeitspanne und bei Kapitalflüssen TWR-
+Unterperioden; Jahr 365,2425 Tage, Monat = Jahr/12. Leermonate nicht kürzen,
+Auswahl mit ungerundeten Werten. Die harte Risiko-Schranke bleibt das
+konservative Maximum aller fünf DD-Kanäle; gute Effizienz hebt sie nie auf.
+KI erhält Codewerte, Zeit-/Kapitalbasis, Messstatus und aktuelle Kriterien.
+Historische Rendite ist keine Prognose. Änderungen der fachlichen Bewertung
+werden über `analysis_version.FORENSICS_VERSION` versioniert.
 
 1. **Code rechnet ALLE Zahlen; das LLM bekommt nur fertige Befunde als JSON**
    und formuliert/liefert Interpretation. LLM rechnet nie selbst
@@ -192,7 +232,12 @@ neu scannen. Review im Archiv `../waste/retdd_equity_2026-10-03/`.
 - `tests/` — pytest (898 Tests grün; LLM-Regressionstests opt-in via
   `pytest -m llm`, echte Modellaufrufe)
 
-## Umsetzungsstand (Stand 22.09.2026)
+## Historische Umsetzungsnotizen (ab 22.09.2026)
+
+Chronik mit späteren Korrekturen: Die Einträge beschreiben ihren jeweiligen
+Zeitpunkt. Für heutige Entscheidungen den aktuellen Statusblock und die
+Design-Regeln oben verwenden; insbesondere alte RetDD-/SL-/Ertragsregeln und
+die damalige MqlRealmonitor-Einordnung nicht als aktuellen Auftrag behandeln.
 
 Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
 

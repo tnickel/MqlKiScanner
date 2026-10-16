@@ -1,0 +1,965 @@
+{
+  "date": "2026-10-10",
+  "mode": "read-only SQLite URI mode=ro; offline cached broker bars, no MT5 calls, no production writes",
+  "counts_saved_studies_all_sources": {
+    "open_transition": 193,
+    "prices_contracts": 173,
+    "nonmonotone": 17,
+    "reliable": 752,
+    "other_time_basis": 45,
+    "other_coverage": 84,
+    "gmt_unknown": 33
+  },
+  "limits": "time_basis_reliable is NOT complete equity measurement reliability; unchanged unrounded95% coverage, FX, contract and outlier guards must pass separately",
+  "selection_rule": "Retain independently known shift if it itself matches>=90% local price events; a competing winner without contradiction does not establish a time transition. New shift still needs>=3 independent events, unique winner,>=90%. No DD/RetDD used.",
+  "full_sample_rule": "When a60-trade sample is ambiguous or below60%, retry all independent price events. Same60% global minimum and unique best offset required.",
+  "observations": [
+    {
+      "signal_id": 538344,
+      "csv": "data\\trade_snapshots\\9478e521c32c743e0e28295afb6a5e36d246611e12dff0772b7c29eb08fc54b0.csv",
+      "csv_sha256": "9478e521c32c743e0e28295afb6a5e36d246611e12dff0772b7c29eb08fc54b0",
+      "cache_file": "tmp\\abdeckungsdiagnose_Vantage_cache.json",
+      "bar_symbols": [
+        "AUDJPY",
+        "AUDNZD",
+        "BTCUSD",
+        "EURAUD",
+        "EURCHF",
+        "EURGBP",
+        "EURJPY",
+        "GBPCHF",
+        "UKOUSD",
+        "USDCAD",
+        "USDJPY",
+        "USDMXN",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 3600,
+        "trefferquote": 0.983,
+        "proben": 60,
+        "preisereignisse": 119,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": false,
+        "open_transition_assumptions": 80,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 18,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 17,
+        "offsets_h": [
+          1
+        ],
+        "known_compatible_periods": [
+          {
+            "from": 1782086400,
+            "chosen_offset_h": 1,
+            "known_hit_ratio": 0.9565217391304348,
+            "local_best_h": [
+              2
+            ]
+          },
+          {
+            "from": 1784505600,
+            "chosen_offset_h": 1,
+            "known_hit_ratio": 0.9705882352941176,
+            "local_best_h": [
+              2
+            ]
+          },
+          {
+            "from": 1787529600,
+            "chosen_offset_h": 1,
+            "known_hit_ratio": 0.9642857142857143,
+            "local_best_h": [
+              2
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "signal_id": 1096166,
+      "csv": "data\\trade_snapshots\\4ca63341384d12b37af0674355ab94548f227a0a468dc3c168e70b566ac134da.csv",
+      "csv_sha256": "4ca63341384d12b37af0674355ab94548f227a0a468dc3c168e70b566ac134da",
+      "cache_file": "tmp\\abdeckungsdiagnose_Vantage_cache.json",
+      "bar_symbols": [
+        "ADBE",
+        "BCHUSD",
+        "BOEING",
+        "BTCUSD",
+        "BYND",
+        "COIN",
+        "CRM",
+        "ETHBCH",
+        "ETHUSD",
+        "GBPAUD",
+        "GIS",
+        "HKTECH",
+        "MSFT",
+        "NAS100",
+        "NVIDIA.24H",
+        "NZDCAD",
+        "NZDCHF",
+        "PG",
+        "PYPL",
+        "RBLX",
+        "SHOP",
+        "SNAP",
+        "SOLUSD",
+        "SPCX.24H",
+        "USDCAD",
+        "USDCHF",
+        "USDCNH",
+        "USDJPY",
+        "USDSEK",
+        "USDSGD"
+      ],
+      "global_detection": {
+        "offset_s": 3600,
+        "trefferquote": 0.842,
+        "proben": 60,
+        "preisereignisse": 114,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 50,
+        "far_outlier_events": 5,
+        "uncertain_event_counter": 11,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 50,
+        "far_outlier_events": 5,
+        "uncertain_event_counter": 11,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 178177,
+      "csv": "data\\trade_snapshots\\ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv",
+      "csv_sha256": "ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84",
+      "cache_file": "tmp\\abdeckungsdiagnose_Vantage_cache.json",
+      "bar_symbols": [
+        "BTCUSD",
+        "CHINA50",
+        "CL-OIL",
+        "DJ30",
+        "DJ30FT",
+        "ETHUSD",
+        "GER40FT",
+        "HK50FT",
+        "JPN225FT",
+        "NAS100FT",
+        "SP500FT",
+        "UK100FT",
+        "USDCNH",
+        "VIX",
+        "XAGUSD",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 3600,
+        "trefferquote": 0.917,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 56,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 43,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 56,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 43,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 954691,
+      "csv": "data\\trade_snapshots\\990922d4e109ff5328db4b2ab63d7353326e9367abf163e6e77c5630d564977e.csv",
+      "csv_sha256": "990922d4e109ff5328db4b2ab63d7353326e9367abf163e6e77c5630d564977e",
+      "cache_file": "tmp\\abdeckungsdiagnose_Vantage_cache.json",
+      "bar_symbols": [
+        "EURCAD",
+        "EURGBP",
+        "EURJPY",
+        "EURNZD",
+        "EURUSD",
+        "NAS100",
+        "NZDUSD",
+        "SP500",
+        "USDCAD",
+        "USDCHF",
+        "USDJPY",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 3600,
+        "trefferquote": 0.992,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 27,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 2,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 26,
+        "offsets_h": [
+          1
+        ],
+        "known_compatible_periods": [
+          {
+            "from": 1773014400,
+            "chosen_offset_h": 1,
+            "known_hit_ratio": 0.9107142857142857,
+            "local_best_h": [
+              2
+            ]
+          },
+          {
+            "from": 1773619200,
+            "chosen_offset_h": 1,
+            "known_hit_ratio": 0.9014084507042254,
+            "local_best_h": [
+              2
+            ]
+          },
+          {
+            "from": 1774224000,
+            "chosen_offset_h": 1,
+            "known_hit_ratio": 0.92,
+            "local_best_h": [
+              2
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "signal_id": 998837,
+      "csv": "data\\trade_snapshots\\216531af0ba08d2d84211fadd185e5f6b0275696208bdfd0be771b6080854856.csv",
+      "csv_sha256": "216531af0ba08d2d84211fadd185e5f6b0275696208bdfd0be771b6080854856",
+      "cache_file": "tmp\\abdeckungsdiagnose_Vantage_cache.json",
+      "bar_symbols": [
+        "BTCUSD",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 3600,
+        "trefferquote": 0.975,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 0,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 0,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 1052261,
+      "csv": "data\\trade_snapshots\\7d469814c849347d54b47c6f0c33f3b17489246958e421760e8b8acaa6ee3a5c.csv",
+      "csv_sha256": "7d469814c849347d54b47c6f0c33f3b17489246958e421760e8b8acaa6ee3a5c",
+      "cache_file": "tmp\\abdeckungsdiagnose_Vantage_cache.json",
+      "bar_symbols": [
+        "AUDUSD",
+        "BTCUSD",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 3600,
+        "trefferquote": 0.933,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 0,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 2,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": [
+          {
+            "from": 1773014400,
+            "chosen_offset_h": 1,
+            "known_hit_ratio": 0.9310344827586207,
+            "local_best_h": [
+              2
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "signal_id": 538344,
+      "csv": "data\\trade_snapshots\\9478e521c32c743e0e28295afb6a5e36d246611e12dff0772b7c29eb08fc54b0.csv",
+      "csv_sha256": "9478e521c32c743e0e28295afb6a5e36d246611e12dff0772b7c29eb08fc54b0",
+      "cache_file": "tmp\\abdeckungsdiagnose_ActiveTrades003_cache.json",
+      "bar_symbols": [
+        "AUDJPY",
+        "AUDNZD",
+        "BTCUSD",
+        "EURAUD",
+        "EURCHF",
+        "EURGBP",
+        "EURJPY",
+        "GBPCHF",
+        "USDCAD",
+        "USDJPY",
+        "USDMXN",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 0,
+        "trefferquote": 0.966,
+        "proben": 60,
+        "preisereignisse": 119,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": false,
+        "open_transition_assumptions": 62,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 41,
+        "offsets_h": [
+          0,
+          1
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 43,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": [
+          {
+            "from": 1782086400,
+            "chosen_offset_h": 0,
+            "known_hit_ratio": 0.9565217391304348,
+            "local_best_h": [
+              1
+            ]
+          },
+          {
+            "from": 1784505600,
+            "chosen_offset_h": 0,
+            "known_hit_ratio": 0.9705882352941176,
+            "local_best_h": [
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "signal_id": 1096166,
+      "csv": "data\\trade_snapshots\\4ca63341384d12b37af0674355ab94548f227a0a468dc3c168e70b566ac134da.csv",
+      "csv_sha256": "4ca63341384d12b37af0674355ab94548f227a0a468dc3c168e70b566ac134da",
+      "cache_file": "tmp\\abdeckungsdiagnose_ActiveTrades003_cache.json",
+      "bar_symbols": [
+        "BTCUSD",
+        "ETHUSD",
+        "GBPAUD",
+        "NAS100",
+        "NZDCAD",
+        "NZDCHF",
+        "SOLUSD",
+        "USDCAD",
+        "USDCHF",
+        "USDCNH",
+        "USDJPY",
+        "USDSEK",
+        "USDSGD"
+      ],
+      "global_detection": {
+        "offset_s": null,
+        "trefferquote": 0.437,
+        "proben": 193,
+        "preisereignisse": 334,
+        "vollpruefung_nach_stichprobe": true
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 231,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 340,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 178177,
+      "csv": "data\\trade_snapshots\\ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv",
+      "csv_sha256": "ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84",
+      "cache_file": "tmp\\abdeckungsdiagnose_ActiveTrades003_cache.json",
+      "bar_symbols": [
+        "BTCUSD",
+        "CHINA50",
+        "CL-OIL",
+        "DJ30",
+        "ETHUSD",
+        "GER40FT",
+        "HK50FT",
+        "USDCNH",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 0,
+        "trefferquote": 0.675,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 11,
+        "uncertain_event_counter": 694,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 11,
+        "uncertain_event_counter": 694,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 954691,
+      "csv": "data\\trade_snapshots\\990922d4e109ff5328db4b2ab63d7353326e9367abf163e6e77c5630d564977e.csv",
+      "csv_sha256": "990922d4e109ff5328db4b2ab63d7353326e9367abf163e6e77c5630d564977e",
+      "cache_file": "tmp\\abdeckungsdiagnose_ActiveTrades003_cache.json",
+      "bar_symbols": [
+        "EURCAD",
+        "EURGBP",
+        "EURJPY",
+        "EURNZD",
+        "EURUSD",
+        "NAS100",
+        "NZDUSD",
+        "SP500",
+        "USDCAD",
+        "USDCHF",
+        "USDJPY",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 0,
+        "trefferquote": 1.0,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 3,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 3,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 998837,
+      "csv": "data\\trade_snapshots\\216531af0ba08d2d84211fadd185e5f6b0275696208bdfd0be771b6080854856.csv",
+      "csv_sha256": "216531af0ba08d2d84211fadd185e5f6b0275696208bdfd0be771b6080854856",
+      "cache_file": "tmp\\abdeckungsdiagnose_ActiveTrades003_cache.json",
+      "bar_symbols": [
+        "BTCUSD",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 0,
+        "trefferquote": 1.0,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 0,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 0,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 1052261,
+      "csv": "data\\trade_snapshots\\7d469814c849347d54b47c6f0c33f3b17489246958e421760e8b8acaa6ee3a5c.csv",
+      "csv_sha256": "7d469814c849347d54b47c6f0c33f3b17489246958e421760e8b8acaa6ee3a5c",
+      "cache_file": "tmp\\abdeckungsdiagnose_ActiveTrades003_cache.json",
+      "bar_symbols": [
+        "AUDUSD",
+        "BTCUSD",
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": 0,
+        "trefferquote": 1.0,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 0,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 0,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 1378066,
+      "csv": "data\\quellen\\vant\\vantage_1378066_trades.csv",
+      "csv_sha256": "997adaa0c97dcb45b2838eab777d5a1c8b676b9810f19e5d116c07cbdc1b5f0b",
+      "cache_file": "tmp\\goal_broker_caches\\TickmillLifeMql5_1378066.json",
+      "bar_symbols": [
+        "BTCUSD",
+        "ETHUSD",
+        "EURUSD"
+      ],
+      "global_detection": {
+        "offset_s": null,
+        "trefferquote": 1.0,
+        "plateau_h": [
+          -1,
+          1
+        ],
+        "proben": 40,
+        "preisereignisse": 74,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 6,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 86,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 1535524,
+      "csv": "data\\quellen\\vant\\vantage_1535524_trades.csv",
+      "csv_sha256": "807e5908db1c229fc13801b44eeb8e2b7dd4c67a7ad215576f8ca968cff53886",
+      "cache_file": "tmp\\goal_broker_caches\\TickmillLifeMql5_1535524.json",
+      "bar_symbols": [
+        "XAUUSD"
+      ],
+      "global_detection": {
+        "offset_s": null,
+        "trefferquote": 1.0,
+        "plateau_h": [
+          1,
+          2
+        ],
+        "proben": 11,
+        "preisereignisse": 16,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 18,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 40,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 1536627,
+      "csv": "data\\quellen\\vant\\vantage_1536627_trades.csv",
+      "csv_sha256": "85dc55a863bfa05559bdef2e6e4164ca3ce50d69e390db7b8fae1e9dc726c981",
+      "cache_file": "tmp\\goal_broker_caches\\TickmillLifeMql5_1536627.json",
+      "bar_symbols": [
+        "EURCAD",
+        "EURGBP",
+        "EURUSD"
+      ],
+      "global_detection": {
+        "offset_s": null,
+        "trefferquote": 1.0,
+        "plateau_h": [
+          1,
+          2
+        ],
+        "proben": 5,
+        "preisereignisse": 10,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 2,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 12,
+        "offsets_h": [
+          0
+        ],
+        "known_compatible_periods": []
+      }
+    },
+    {
+      "signal_id": 213166,
+      "csv": "data\\quellen\\vant\\vantage_213166_trades.csv",
+      "csv_sha256": "b84abb73e04808991a7e6f17da3839cc7b7b1bac8e43b83e664f4213bfadba20",
+      "cache_file": "tmp\\goal_broker_caches\\TickmillLifeMql5_213166.json",
+      "bar_symbols": [
+        "BTCUSD",
+        "ETHUSD",
+        "EURJPY",
+        "XAGUSD"
+      ],
+      "global_detection": {
+        "offset_s": 3600,
+        "trefferquote": 0.992,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 9,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 0,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": true,
+        "monotone": true,
+        "open_transition_assumptions": 0,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 60,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": [
+          {
+            "from": 1762128000,
+            "chosen_offset_h": 2,
+            "known_hit_ratio": 0.975609756097561,
+            "local_best_h": [
+              1
+            ]
+          },
+          {
+            "from": 1762732800,
+            "chosen_offset_h": 2,
+            "known_hit_ratio": 0.9858156028368794,
+            "local_best_h": [
+              1
+            ]
+          },
+          {
+            "from": 1763337600,
+            "chosen_offset_h": 2,
+            "known_hit_ratio": 0.9618055555555556,
+            "local_best_h": [
+              1
+            ]
+          },
+          {
+            "from": 1763942400,
+            "chosen_offset_h": 2,
+            "known_hit_ratio": 0.9753521126760564,
+            "local_best_h": [
+              1
+            ]
+          },
+          {
+            "from": 1764547200,
+            "chosen_offset_h": 2,
+            "known_hit_ratio": 0.9767441860465116,
+            "local_best_h": [
+              1
+            ]
+          },
+          {
+            "from": 1765152000,
+            "chosen_offset_h": 2,
+            "known_hit_ratio": 0.975,
+            "local_best_h": [
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "signal_id": 401041,
+      "csv": "data\\trade_snapshots\\1cc5badd9b2d14f2e6653e4da39b9752dfe1191ea17d317b44da4304b3e66273.csv",
+      "csv_sha256": "1cc5badd9b2d14f2e6653e4da39b9752dfe1191ea17d317b44da4304b3e66273",
+      "cache_file": "tmp\\goal_broker_caches\\TickmillLifeMql5_401041.json",
+      "bar_symbols": [
+        "AUDCAD",
+        "EURUSD",
+        "USDCAD"
+      ],
+      "global_detection": {
+        "offset_s": 3600,
+        "trefferquote": 0.983,
+        "proben": 60,
+        "preisereignisse": 120,
+        "vollpruefung_nach_stichprobe": false
+      },
+      "previous_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 14,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 14,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": []
+      },
+      "new_selection": {
+        "time_basis_reliable": false,
+        "monotone": true,
+        "open_transition_assumptions": 10,
+        "far_outlier_events": 0,
+        "uncertain_event_counter": 17,
+        "offsets_h": [
+          1,
+          2
+        ],
+        "known_compatible_periods": [
+          {
+            "from": 1647216000,
+            "chosen_offset_h": 1,
+            "known_hit_ratio": 0.9444444444444444,
+            "local_best_h": [
+              2
+            ]
+          },
+          {
+            "from": 1773014400,
+            "chosen_offset_h": 1,
+            "known_hit_ratio": 0.9090909090909091,
+            "local_best_h": [
+              2
+            ]
+          },
+          {
+            "from": 1776038400,
+            "chosen_offset_h": 2,
+            "known_hit_ratio": 0.9444444444444444,
+            "local_best_h": [
+              1
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

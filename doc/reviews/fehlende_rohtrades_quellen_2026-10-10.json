@@ -1,0 +1,372 @@
+{
+  "as_of": "2026-10-10T19:09:13.721646+00:00",
+  "scanner_production_db_written": false,
+  "mt5_called": false,
+  "mql": {
+    "original_provenance": "tmp/source_trade_probe_20261010/mql_original_provenance.json",
+    "original_records": [
+      {
+        "id": 2360068,
+        "version": "mql5",
+        "export_kind": "positions",
+        "fetched_at": "2026-10-10T18:25:23.620144+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2360068/export/positions",
+        "csv_sha256": "9a64a060db8d5e9cf8a02164eba60c9fea012bf8a1eaab02f70f0a72803fc0e9",
+        "html_source_url": "https://www.mql5.com/de/signals/2360068",
+        "html_sha256": "973c89a8e5ec8f95213b5b756928bace463cbac40c18c6e3e26d1bfe6ca14787",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql5/Recovery2360068_2360068.csv"
+      },
+      {
+        "id": 2271995,
+        "version": "mql5",
+        "export_kind": "positions",
+        "fetched_at": "2026-10-10T18:25:43.814120+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2271995/export/positions",
+        "csv_sha256": "006fa1adb1e8ef4043fa06d7e4943dd103c5ed002c686046cbdc7b000af8fbf9",
+        "html_source_url": "https://www.mql5.com/de/signals/2271995",
+        "html_sha256": "dffee13057eccbec1e5094e29ce81d067d51f3821d934d6801b7f22e10f24f38",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql5/Recovery2271995_2271995.csv"
+      },
+      {
+        "id": 1784430,
+        "version": "mql4",
+        "export_kind": "history",
+        "fetched_at": "2026-10-10T18:26:05.246915+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/1784430/export/history",
+        "csv_sha256": "370f696a7d3c45c5559dd034fccb9ae69a35164c29c5057c221a8ef8e5328083",
+        "html_source_url": "https://www.mql5.com/de/signals/1784430",
+        "html_sha256": "ef8c8433d43e8b5de5640862864d6428d3663d45dc07f9eb602562963e7db3e2",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql4/Recovery1784430_1784430.csv"
+      },
+      {
+        "id": 2142461,
+        "version": "mql4",
+        "export_kind": "history",
+        "fetched_at": "2026-10-10T18:26:25.845575+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2142461/export/history",
+        "csv_sha256": "41fd3845c419345fdb82a6d9dc2e2483cee70f9ad5690dc98ec5af9e93028d39",
+        "html_source_url": "https://www.mql5.com/de/signals/2142461",
+        "html_sha256": "ba1b84fcab851833ed7a0b72fc328175813c872d4516da85dcb43b84432ef91d",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql4/Recovery2142461_2142461.csv"
+      },
+      {
+        "id": 2172246,
+        "version": "mql4",
+        "export_kind": "history",
+        "fetched_at": "2026-10-10T18:26:47.395547+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2172246/export/history",
+        "csv_sha256": "67b37f5ef6461fa2d4694ad1390711896205fa3de3d772804e35384ccfa2cb61",
+        "html_source_url": "https://www.mql5.com/de/signals/2172246",
+        "html_sha256": "0bc6f3c895412033ee8c52d163e0398135664deb84fdcaaf1b7b159b70de4670",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql4/Recovery2172246_2172246.csv"
+      },
+      {
+        "id": 2282234,
+        "version": "mql4",
+        "export_kind": "history",
+        "fetched_at": "2026-10-10T18:27:08.069645+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2282234/export/history",
+        "csv_sha256": "a3f399cb5ad4cf9c216644a7433f21271f9afa28cbf5df4a6ba3542d9424ca6f",
+        "html_source_url": "https://www.mql5.com/de/signals/2282234",
+        "html_sha256": "348b50e0acdde68e42b2de72d71789f4b00856f88bb8a5fc2da5985c8724df1b",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql4/Recovery2282234_2282234.csv"
+      },
+      {
+        "id": 2312950,
+        "version": "mql4",
+        "export_kind": "history",
+        "fetched_at": "2026-10-10T18:27:29.490066+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2312950/export/history",
+        "csv_sha256": "b8cac59689697f2013ab8f8dadc131b6513c3f6eb608036eb5f890e9bc3794a4",
+        "html_source_url": "https://www.mql5.com/de/signals/2312950",
+        "html_sha256": "2a2c842ea8331f919cebebe3e6dca558358a85c62b047d14fab881fcf5b0b106",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql4/Recovery2312950_2312950.csv"
+      },
+      {
+        "id": 2325779,
+        "version": "mql5",
+        "export_kind": "positions",
+        "fetched_at": "2026-10-10T18:27:50.189033+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2325779/export/positions",
+        "csv_sha256": "97f70cf80cf60b93cc4555133126b63e2e8365a62ba54ee08dd226151d3cc230",
+        "html_source_url": "https://www.mql5.com/de/signals/2325779",
+        "html_sha256": "67447fe77743dc4f0180be983f1f7b23a65348b91451fd7e624f1c64603a50a8",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql5/Recovery2325779_2325779.csv"
+      },
+      {
+        "id": 2349577,
+        "version": "mql5",
+        "export_kind": "positions",
+        "fetched_at": "2026-10-10T18:28:11.134087+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2349577/export/positions",
+        "csv_sha256": "5d22482ce32c8fdddcaa2e6b2738246a35a53a2a2a32b6a4d68466601ba118b6",
+        "html_source_url": "https://www.mql5.com/de/signals/2349577",
+        "html_sha256": "eebbfdb97eddb3034b7830175a640b9481b2e61ea8bb2c8da7e9f3940a063ef1",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql5/Recovery2349577_2349577.csv"
+      },
+      {
+        "id": 2351061,
+        "version": "mql5",
+        "export_kind": "positions",
+        "fetched_at": "2026-10-10T18:28:31.974505+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2351061/export/positions",
+        "csv_sha256": "6d9dff76b584bf758231cc3e9db160106fa52bda8520d9a4ca75b26f799b1739",
+        "html_source_url": "https://www.mql5.com/de/signals/2351061",
+        "html_sha256": "5a50718c39cb6694f733422adb55b6362f322e5077e5943d1a491ca8359dc93a",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql5/Recovery2351061_2351061.csv"
+      },
+      {
+        "id": 2361280,
+        "version": "mql5",
+        "export_kind": "positions",
+        "fetched_at": "2026-10-10T18:28:53.254817+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2361280/export/positions",
+        "csv_sha256": "ce6796b9bb13145a582b1893910a589c2953b5c4df078a99907c6f42e8fa6307",
+        "html_source_url": "https://www.mql5.com/de/signals/2361280",
+        "html_sha256": "c8cc58eb663318e72f7a3546de773882b8bd750b0148845973257a7b37752f5d",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql5/Recovery2361280_2361280.csv"
+      },
+      {
+        "id": 2361784,
+        "version": "mql5",
+        "export_kind": "positions",
+        "fetched_at": "2026-10-10T18:29:14.830249+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2361784/export/positions",
+        "csv_sha256": "62b2dad7fe4904b86c55bff44889711ddb80c72bdf8dc312d40b062273b6e94f",
+        "html_source_url": "https://www.mql5.com/de/signals/2361784",
+        "html_sha256": "235d119cec1fa21dafa05540d3f62000339f463f2e05501dba575d6dc576e4a6",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql5/Recovery2361784_2361784.csv"
+      },
+      {
+        "id": 2361936,
+        "version": "mql5",
+        "export_kind": "positions",
+        "fetched_at": "2026-10-10T18:29:35.619892+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2361936/export/positions",
+        "csv_sha256": "80dc2e602b2e23fdf82fa3a1a31172817d1f8ccbc0f920e18f72c9caa6dc42f6",
+        "html_source_url": "https://www.mql5.com/de/signals/2361936",
+        "html_sha256": "6cfe1448e2c187109c4220fc99eb73d3d316eb2e82d2bce8e10697d7cc7e0bb3",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql5/Recovery2361936_2361936.csv"
+      },
+      {
+        "id": 2362400,
+        "version": "mql5",
+        "export_kind": "positions",
+        "fetched_at": "2026-10-10T18:29:56.221637+00:00",
+        "csv_source_url": "https://www.mql5.com/en/signals/2362400/export/positions",
+        "csv_sha256": "29f3c2d9106c82be8c4f3166f68499881ac5a4581a4cf8ff4addd1bf2f60d308",
+        "html_source_url": "https://www.mql5.com/de/signals/2362400",
+        "html_sha256": "2b4bec48f8346a061a46698f8b87ed1bebeabca4ce34624a25e452786a420d9f",
+        "normal_source_csv": "C:/Forex/MqlAnalyzer/download/mql5/Recovery2362400_2362400.csv"
+      }
+    ],
+    "rest_exports": "tmp/mql_remote_exports_goal_20261010",
+    "checks": [
+      {
+        "id": "2360068",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "9a64a060db8d5e9cf8a02164eba60c9fea012bf8a1eaab02f70f0a72803fc0e9",
+        "sha_matches": true
+      },
+      {
+        "id": "2271995",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "006fa1adb1e8ef4043fa06d7e4943dd103c5ed002c686046cbdc7b000af8fbf9",
+        "sha_matches": true
+      },
+      {
+        "id": "1784430",
+        "version": "mql4",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "370f696a7d3c45c5559dd034fccb9ae69a35164c29c5057c221a8ef8e5328083",
+        "sha_matches": true
+      },
+      {
+        "id": "2142461",
+        "version": "mql4",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "41fd3845c419345fdb82a6d9dc2e2483cee70f9ad5690dc98ec5af9e93028d39",
+        "sha_matches": true
+      },
+      {
+        "id": "2172246",
+        "version": "mql4",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "67b37f5ef6461fa2d4694ad1390711896205fa3de3d772804e35384ccfa2cb61",
+        "sha_matches": true
+      },
+      {
+        "id": "2282234",
+        "version": "mql4",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "a3f399cb5ad4cf9c216644a7433f21271f9afa28cbf5df4a6ba3542d9424ca6f",
+        "sha_matches": true
+      },
+      {
+        "id": "2312950",
+        "version": "mql4",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "b8cac59689697f2013ab8f8dadc131b6513c3f6eb608036eb5f890e9bc3794a4",
+        "sha_matches": true
+      },
+      {
+        "id": "2325779",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "97f70cf80cf60b93cc4555133126b63e2e8365a62ba54ee08dd226151d3cc230",
+        "sha_matches": true
+      },
+      {
+        "id": "2349577",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "5d22482ce32c8fdddcaa2e6b2738246a35a53a2a2a32b6a4d68466601ba118b6",
+        "sha_matches": true
+      },
+      {
+        "id": "2351061",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "6d9dff76b584bf758231cc3e9db160106fa52bda8520d9a4ca75b26f799b1739",
+        "sha_matches": true
+      },
+      {
+        "id": "2361280",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "ce6796b9bb13145a582b1893910a589c2953b5c4df078a99907c6f42e8fa6307",
+        "sha_matches": true
+      },
+      {
+        "id": "2361784",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "62b2dad7fe4904b86c55bff44889711ddb80c72bdf8dc312d40b062273b6e94f",
+        "sha_matches": true
+      },
+      {
+        "id": "2361936",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "80dc2e602b2e23fdf82fa3a1a31172817d1f8ccbc0f920e18f72c9caa6dc42f6",
+        "sha_matches": true
+      },
+      {
+        "id": "2362400",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200,
+        "original_sha256": "29f3c2d9106c82be8c4f3166f68499881ac5a4581a4cf8ff4addd1bf2f60d308",
+        "sha_matches": true
+      }
+    ],
+    "normal_source_path": "C:/Forex/MqlAnalyzer/download/{mql4,mql5}"
+  },
+  "pelican": {
+    "login": {
+      "engine": "Chrome headless normal form",
+      "credentials_present": true,
+      "api_verified": true,
+      "email_valid": true,
+      "returned_to_app": true,
+      "callback_error": false,
+      "challenge_detected": false,
+      "api_status": 200,
+      "browser_closed": true
+    },
+    "targets": 163,
+    "targets_with_dated_evidence": 160,
+    "targets_without_dated_evidence": [
+      {
+        "id": 2064608,
+        "positive_history": false,
+        "failure": "NoValidInceptionOrDatedHistory"
+      },
+      {
+        "id": 2053531,
+        "positive_history": false,
+        "failure": "NoValidInceptionOrDatedHistory"
+      },
+      {
+        "id": 2000436,
+        "positive_history": false,
+        "failure": "NoValidInceptionOrDatedHistory"
+      }
+    ],
+    "closed_requests_planned": 3618,
+    "throttle_ms": 400,
+    "finished": 163,
+    "successful": 156,
+    "trades_recovered": 113880,
+    "failures": [
+      {
+        "id": 2097770,
+        "count": 0,
+        "failure": "EmptyHistoryContradictsPositiveSourceAggregates"
+      },
+      {
+        "id": 2000036,
+        "count": 0,
+        "failure": "EmptyHistoryContradictsPositiveSourceAggregates"
+      },
+      {
+        "id": 2001116,
+        "count": 0,
+        "failure": "EmptyHistoryContradictsPositiveSourceAggregates"
+      },
+      {
+        "id": 2001115,
+        "count": 0,
+        "failure": "EmptyHistoryContradictsPositiveSourceAggregates"
+      },
+      {
+        "id": 2064608,
+        "failure": "NoValidInceptionOrDatedHistory"
+      },
+      {
+        "id": 2053531,
+        "failure": "NoValidInceptionOrDatedHistory"
+      },
+      {
+        "id": 2000436,
+        "failure": "NoValidInceptionOrDatedHistory"
+      }
+    ],
+    "rest_export_count": 163,
+    "rest200_count": 156,
+    "progress_results": "tmp/pelican_exports_goal_20261010/results.json",
+    "backup_before_raw_replacement": "tmp/pelican_exports_goal_20261010/before",
+    "full_source_test_count": 100,
+    "source_test_errors": 0
+  },
+  "zulu": {
+    "id": 426712,
+    "blocked_reason": "Public history records lack dateOpen/dateClosed/priceOpen/priceClosed; existing adapter rejects invalid schema",
+    "evidence": "tmp/source_trade_probe_20261010/zulu_schema_summary.json"
+  },
+  "robo": {
+    "ids": [
+      93128696,
+      93019895,
+      93156209
+    ],
+    "platform": "rst",
+    "blocked_reason": "Existing Members adapter supports only MT4/MT5; official StocksTrader API requires separate authenticated trading-account token, no documented anonymous foreign-provider trade access found",
+    "official_api_access": "https://help.stockstrader.com/en/support/solutions/articles/33000290140-how-to-gain-access-to-the-api"
+  }
+}

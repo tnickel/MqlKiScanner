@@ -1,5 +1,15 @@
 # Roadmap: Build-Plan für MqlKiScanner
 
+**Einordnung am 16.10.2026:** Historischer Build-Plan mit datierten
+Ergänzungen. Die folgenden Testzahlen sind damalige Prüfergebnisse, keine
+Bestätigung des heutigen Arbeitsstands. Multi-Source-Ingest und Stufe 0
+„Clients aktualisieren“ sind implementiert (doc/20 und doc/23);
+MqlRealmonitor ist trotz vorbereiteter REST-Schnittstelle noch nicht
+produktiv eingebunden, seine Integration bleibt vorerst zurückgestellt.
+Die aktuellen Bewertungsregeln stehen in doc/03 und doc/07: keine absolute
+Monatshürde im Default, Jahres-Calmar mindestens 3,0 bei mindestens drei
+Monaten Historie; fehlender SL-Nachweis neutral, Score kein Grün-Gate.
+
 **Status (Stand 20.09.2026): Phasen 0–4 abgeschlossen, Engine verifiziert,
 634 Tests grün (`pytest` ohne LLM-Marker).** Offen sind nur noch Teile von
 Phase 5 (Betrieb). Dieser Plan dokumentiert den Build-Weg; die Haken

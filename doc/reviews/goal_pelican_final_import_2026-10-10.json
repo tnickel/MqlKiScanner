@@ -1,0 +1,14 @@
+{
+  "imported_csvs": 632,
+  "trades": 319243,
+  "changed_csvs": 200,
+  "verified_sha_count": 632,
+  "zero_histories": 6,
+  "errors": [],
+  "recovery": "Original evidence preserved; two remaining records imported under separate backup after Windows evidence-write error",
+  "evidence_labels": [
+    "pelican_historical_final",
+    "pelican_historical_tail",
+    "pelican_archived_final"
+  ]
+}

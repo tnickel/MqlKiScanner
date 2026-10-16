@@ -1,0 +1,37 @@
+{
+  "results": [
+    {
+      "folder": "pelican_archived_exports_goal_20261010",
+      "id": 2059824,
+      "status": 200,
+      "trades": 937,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_archived_exports_goal_20261010",
+      "id": 2063644,
+      "status": 200,
+      "trades": 5541,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_archived_exports_goal_20261010",
+      "id": 2074606,
+      "status": 200,
+      "trades": 1682,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_archived_exports_goal_20261010",
+      "id": 2084818,
+      "status": 200,
+      "trades": 753,
+      "costs": 0
+    }
+  ],
+  "folders": {
+    "pelican_archived_exports_goal_20261010": {
+      "valid": 4
+    }
+  }
+}

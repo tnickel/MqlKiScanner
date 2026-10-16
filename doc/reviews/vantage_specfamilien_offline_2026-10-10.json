@@ -1,0 +1,1160 @@
+{
+  "read_only": true,
+  "live_calls": false,
+  "no_contract_inference_applied": true,
+  "warning": "PnL/Volumen/Preisdifferenz ist ein Plausibilitaetsbeleg, keine alleinige Vertragsgroesse. Source-Profit kann netto und gerundet sein; keine Doppel-Konvertierung USD-normalisierter Exporte. GBP/EUR-Quote ist nur Kandidat fuer Offline-Pruefung und muss gegen Originalbroker-Symbolinfo bestaetigt werden. EZB ausschliesslich lokale Kursdatei, kein Download.",
+  "symbols": {
+    "UK100": {
+      "symbol": "UK100",
+      "quote_assumption_for_check_only": "GBP",
+      "signals": [
+        {
+          "id": 730974,
+          "name": "mision 52 semanas",
+          "trade_count": 3,
+          "usable_reverse_samples": 3,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_730974_trades.csv",
+          "sha256": "7655b3b9de4f278c84de98818bb2dda62750a5a20c3557145441727bf02d48aa",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.3320817324484755,
+          "median_effective_factor_quote": 0.9958739263725878,
+          "examples": [
+            {
+              "open": "2026-03-05T15:52:13",
+              "close": "2026-03-05T18:31:51",
+              "direction": "Buy",
+              "lots": 0.2,
+              "entry": 10514.01,
+              "exit": 10399.49,
+              "csv_profit_usd": -30.51,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3320817324484755,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3361702127659574,
+              "fx_cached_date": "2026-03-05",
+              "effective_factor_quote": 0.9969401500808655
+            },
+            {
+              "open": "2026-08-05T10:16:40",
+              "close": "2026-08-05T10:23:36",
+              "direction": "Buy",
+              "lots": 0.2,
+              "entry": 10908.41,
+              "exit": 10898.39,
+              "csv_profit_usd": -2.69,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3423153692614185,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3478768082127859,
+              "fx_cached_date": "2026-08-05",
+              "effective_factor_quote": 0.9958739263725878
+            },
+            {
+              "open": "2026-08-06T09:17:09",
+              "close": "2026-08-06T09:56:03",
+              "direction": "Sell",
+              "lots": 0.3,
+              "entry": 10926.04,
+              "exit": 10925.91,
+              "csv_profit_usd": 0.05,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.2820512820412364,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3467125605273904,
+              "fx_cached_date": "2026-08-06",
+              "effective_factor_quote": 0.9519858354474456
+            }
+          ]
+        },
+        {
+          "id": 692325,
+          "name": "Sonrch",
+          "trade_count": 5,
+          "usable_reverse_samples": 5,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_692325_trades.csv",
+          "sha256": "be46ec64c0c40d4299e5c773066f3e718ad86ac58f6a013040cae4208a62e32f",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.3257575757560411,
+          "median_effective_factor_quote": 0.9976622968925392,
+          "examples": [
+            {
+              "open": "2025-10-08T09:58:45",
+              "close": "2025-10-09T08:09:56",
+              "direction": "Buy",
+              "lots": 1.4,
+              "entry": 9531.21,
+              "exit": 9538.79,
+              "csv_profit_usd": 14.21,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.339050131925813,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3372106414833584,
+              "fx_cached_date": "2025-10-09",
+              "effective_factor_quote": 1.0013756175619528
+            },
+            {
+              "open": "2025-10-22T08:33:43",
+              "close": "2025-10-27T08:15:30",
+              "direction": "Buy",
+              "lots": 0.4,
+              "entry": 9481.51,
+              "exit": 9666.89,
+              "csv_profit_usd": 98.74,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3315891681950642,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3347093223254214,
+              "fx_cached_date": "2025-10-27",
+              "effective_factor_quote": 0.9976622968925392
+            },
+            {
+              "open": "2025-11-05T12:59:12",
+              "close": "2025-11-06T09:17:06",
+              "direction": "Buy",
+              "lots": 1.0,
+              "entry": 9729.28,
+              "exit": 9787.26,
+              "csv_profit_usd": 75.73,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3061400482925245,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3095265130010219,
+              "fx_cached_date": "2025-11-06",
+              "effective_factor_quote": 0.9974139777431946
+            }
+          ]
+        },
+        {
+          "id": 949108,
+          "name": "ALPHA INDEX",
+          "trade_count": 2,
+          "usable_reverse_samples": 2,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_949108_trades.csv",
+          "sha256": "1ab3dcf51e773cde22c4166618f485322c137a44c4e2759a330e3a3bc93588cc",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.3558060225279527,
+          "median_effective_factor_quote": 1.00061560101754,
+          "examples": [
+            {
+              "open": "2026-02-25T20:45:57",
+              "close": "2026-02-26T00:46:02",
+              "direction": "Buy",
+              "lots": 1.0,
+              "entry": 10830.75,
+              "exit": 10807.35,
+              "csv_profit_usd": -31.73,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3559829059829271,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.354971900447299,
+              "fx_cached_date": "2026-02-26",
+              "effective_factor_quote": 1.0007461450199036
+            },
+            {
+              "open": "2026-02-25T20:45:46",
+              "close": "2026-02-26T00:46:06",
+              "direction": "Sell",
+              "lots": 2.0,
+              "entry": 10829.05,
+              "exit": 10813.95,
+              "csv_profit_usd": 40.94,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3556291390729782,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.354971900447299,
+              "fx_cached_date": "2026-02-26",
+              "effective_factor_quote": 1.0004850570151766
+            }
+          ]
+        },
+        {
+          "id": 1180627,
+          "name": "look forward",
+          "trade_count": 1,
+          "usable_reverse_samples": 0,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1180627_trades.csv",
+          "sha256": "6e330918b3bed0a971bf0a6fbe0fa7e2393dd3eed16c14b27529397a265aa9cf",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": null,
+          "median_effective_factor_quote": null,
+          "examples": []
+        },
+        {
+          "id": 1383075,
+          "name": "Printdolla L2",
+          "trade_count": 1,
+          "usable_reverse_samples": 1,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1383075_trades.csv",
+          "sha256": "d6345125a541ef2f38a2e5a4fba4509f490f21fb4d9d6285b632e6b71f38c959",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.3506155303030374,
+          "median_effective_factor_quote": 1.0004737207703167,
+          "examples": [
+            {
+              "open": "2026-08-11T12:22:42",
+              "close": "2026-08-11T12:51:16",
+              "direction": "Sell",
+              "lots": 0.6,
+              "entry": 10866.36,
+              "exit": 10880.44,
+              "csv_profit_usd": -11.41,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3506155303030374,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3499760186235858,
+              "fx_cached_date": "2026-08-11",
+              "effective_factor_quote": 1.0004737207703167
+            }
+          ]
+        },
+        {
+          "id": 1525859,
+          "name": "Madsdaytrading",
+          "trade_count": 3,
+          "usable_reverse_samples": 3,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1525859_trades.csv",
+          "sha256": "2789ad30051fd998adf308ac74f23aeced39f7929d27c34943a11c9ac38ccfc4",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.3249999999981923,
+          "median_effective_factor_quote": 0.9981337325627956,
+          "examples": [
+            {
+              "open": "2026-10-05T09:09:11",
+              "close": "2026-10-05T09:09:48",
+              "direction": "Sell",
+              "lots": 10.0,
+              "entry": 10499.35,
+              "exit": 10493.05,
+              "csv_profit_usd": 83.25,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3214285714283425,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3224740321057602,
+              "fx_cached_date": "2026-10-05",
+              "effective_factor_quote": 0.9992094660068651
+            },
+            {
+              "open": "2026-10-06T12:48:55",
+              "close": "2026-10-06T12:49:52",
+              "direction": "Buy",
+              "lots": 10.0,
+              "entry": 10560.05,
+              "exit": 10560.85,
+              "csv_profit_usd": 10.6,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3249999999981923,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3276390197926484,
+              "fx_cached_date": "2026-10-06",
+              "effective_factor_quote": 0.9980122459831978
+            },
+            {
+              "open": "2026-10-07T09:12:18",
+              "close": "2026-10-07T09:13:03",
+              "direction": "Sell",
+              "lots": 10.0,
+              "entry": 10500.7,
+              "exit": 10499.15,
+              "csv_profit_usd": 20.54,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3251612903216474,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3276390197926484,
+              "fx_cached_date": "2026-10-06",
+              "effective_factor_quote": 0.9981337325627956
+            }
+          ]
+        },
+        {
+          "id": 1108245,
+          "name": "BangkokFXTrader",
+          "trade_count": 10,
+          "usable_reverse_samples": 10,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1108245_trades.csv",
+          "sha256": "b558920be007fef02929904760036d24fb83381cceb00166b0fb4495a5a071ce",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.35473090277809,
+          "median_effective_factor_quote": 1.0013237685585845,
+          "examples": [
+            {
+              "open": "2026-08-27T09:24:33",
+              "close": "2026-08-27T09:33:09",
+              "direction": "Sell",
+              "lots": 1.0,
+              "entry": 10829.05,
+              "exit": 10825.25,
+              "csv_profit_usd": 5.16,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3578947368423653,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3581758805691626,
+              "fx_cached_date": "2026-08-27",
+              "effective_factor_quote": 0.999792999028462
+            },
+            {
+              "open": "2026-08-27T12:05:48",
+              "close": "2026-08-27T12:27:31",
+              "direction": "Sell",
+              "lots": 1.0,
+              "entry": 10823.55,
+              "exit": 10821.75,
+              "csv_profit_usd": 2.44,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3555555555561034,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3581758805691626,
+              "fx_cached_date": "2026-08-27",
+              "effective_factor_quote": 0.9980707027340515
+            },
+            {
+              "open": "2026-08-27T12:02:20",
+              "close": "2026-08-27T12:27:35",
+              "direction": "Sell",
+              "lots": 1.0,
+              "entry": 10823.55,
+              "exit": 10821.75,
+              "csv_profit_usd": 2.44,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.3555555555561034,
+              "fx_quote_candidate": "GBP",
+              "fx_rate_usd_per_quote_cached": 1.3581758805691626,
+              "fx_cached_date": "2026-08-27",
+              "effective_factor_quote": 0.9980707027340515
+            }
+          ]
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 24,
+        "median": 1.3507997150620557,
+        "min": 1.2820512820412364,
+        "max": 1.3619047619057056,
+        "quartiles": [
+          1.325310361680246,
+          1.3507997150620557,
+          1.3555555555561034
+        ]
+      },
+      "quote_factors_summary": {
+        "n": 24,
+        "median": 1.0001076446332242,
+        "min": 0.9519858354474456,
+        "max": 1.0027455069626037,
+        "quartiles": [
+          0.9977497841652039,
+          1.0001076446332242,
+          1.0013229263889452
+        ]
+      },
+      "current_vantage_spec": null,
+      "total_trades": 25
+    },
+    "EU50": {
+      "symbol": "EU50",
+      "quote_assumption_for_check_only": "EUR",
+      "signals": [
+        {
+          "id": 1444416,
+          "name": "yeld",
+          "trade_count": 1,
+          "usable_reverse_samples": 0,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1444416_trades.csv",
+          "sha256": "5fb93fdbdb935bc45f74c20212e3cff48901647bb88280648e2ae82dd62287cb",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": null,
+          "median_effective_factor_quote": null,
+          "examples": []
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 0,
+        "median": null,
+        "min": null,
+        "max": null,
+        "quartiles": null
+      },
+      "quote_factors_summary": {
+        "n": 0,
+        "median": null,
+        "min": null,
+        "max": null,
+        "quartiles": null
+      },
+      "current_vantage_spec": null,
+      "total_trades": 1
+    },
+    "US2000": {
+      "symbol": "US2000",
+      "quote_assumption_for_check_only": "USD",
+      "signals": [
+        {
+          "id": 949108,
+          "name": "ALPHA INDEX",
+          "trade_count": 16,
+          "usable_reverse_samples": 16,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_949108_trades.csv",
+          "sha256": "1ab3dcf51e773cde22c4166618f485322c137a44c4e2759a330e3a3bc93588cc",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 0.9999999999999984,
+          "median_effective_factor_quote": 0.9999999999999984,
+          "examples": [
+            {
+              "open": "2026-02-05T19:49:43",
+              "close": "2026-02-06T10:25:43",
+              "direction": "Buy",
+              "lots": 2.2,
+              "entry": 2585.16,
+              "exit": 2599.43,
+              "csv_profit_usd": 31.39,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 0.9998725871185589,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-02-06",
+              "effective_factor_quote": 0.9998725871185589
+            },
+            {
+              "open": "2026-02-25T15:42:45",
+              "close": "2026-02-25T17:58:49",
+              "direction": "Sell",
+              "lots": 2.0,
+              "entry": 2650.09,
+              "exit": 2662.76,
+              "csv_profit_usd": -25.34,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 0.9999999999999942,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-02-25",
+              "effective_factor_quote": 0.9999999999999942
+            },
+            {
+              "open": "2026-02-25T15:42:19",
+              "close": "2026-02-25T18:06:42",
+              "direction": "Buy",
+              "lots": 4.5,
+              "entry": 2650.46,
+              "exit": 2660.69,
+              "csv_profit_usd": 46.04,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.000108613011837,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-02-25",
+              "effective_factor_quote": 1.000108613011837
+            }
+          ]
+        },
+        {
+          "id": 1180627,
+          "name": "look forward",
+          "trade_count": 2,
+          "usable_reverse_samples": 0,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1180627_trades.csv",
+          "sha256": "6e330918b3bed0a971bf0a6fbe0fa7e2393dd3eed16c14b27529397a265aa9cf",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": null,
+          "median_effective_factor_quote": null,
+          "examples": []
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 16,
+        "median": 0.9999999999999984,
+        "min": 0.9988518943743434,
+        "max": 1.000108613011837,
+        "quartiles": [
+          0.9999999999999308,
+          0.9999999999999984,
+          1.0000000000000038
+        ]
+      },
+      "quote_factors_summary": {
+        "n": 16,
+        "median": 0.9999999999999984,
+        "min": 0.9988518943743434,
+        "max": 1.000108613011837,
+        "quartiles": [
+          0.9999999999999308,
+          0.9999999999999984,
+          1.0000000000000038
+        ]
+      },
+      "current_vantage_spec": null,
+      "total_trades": 18
+    },
+    "BNBUSD": {
+      "symbol": "BNBUSD",
+      "quote_assumption_for_check_only": "USD",
+      "signals": [
+        {
+          "id": 762452,
+          "name": "Eagles Invest",
+          "trade_count": 2,
+          "usable_reverse_samples": 2,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_762452_trades.csv",
+          "sha256": "9eecde901e91f4d53499d7944368d4fe516891e47f89785db6f40af1aaae47fa",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 9.999999999998884,
+          "median_effective_factor_quote": 9.999999999998884,
+          "examples": [
+            {
+              "open": "2025-11-11T09:44:28",
+              "close": "2025-11-12T13:38:14",
+              "direction": "Sell",
+              "lots": 0.15,
+              "entry": 973.69,
+              "exit": 973.29,
+              "csv_profit_usd": 0.6,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 9.999999999997726,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2025-11-12",
+              "effective_factor_quote": 9.999999999997726
+            },
+            {
+              "open": "2025-11-11T09:44:34",
+              "close": "2025-11-13T03:04:23",
+              "direction": "Sell",
+              "lots": 0.15,
+              "entry": 973.77,
+              "exit": 957.95,
+              "csv_profit_usd": 23.73,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 10.00000000000004,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2025-11-13",
+              "effective_factor_quote": 10.00000000000004
+            }
+          ]
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 2,
+        "median": 9.999999999998884,
+        "min": 9.999999999997726,
+        "max": 10.00000000000004,
+        "quartiles": [
+          9.999999999997147,
+          9.999999999998884,
+          10.00000000000062
+        ]
+      },
+      "quote_factors_summary": {
+        "n": 2,
+        "median": 9.999999999998884,
+        "min": 9.999999999997726,
+        "max": 10.00000000000004,
+        "quartiles": [
+          9.999999999997147,
+          9.999999999998884,
+          10.00000000000062
+        ]
+      },
+      "current_vantage_spec": null,
+      "total_trades": 2
+    },
+    "TTD": {
+      "symbol": "TTD",
+      "quote_assumption_for_check_only": "USD",
+      "signals": [
+        {
+          "id": 1180627,
+          "name": "look forward",
+          "trade_count": 1,
+          "usable_reverse_samples": 1,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1180627_trades.csv",
+          "sha256": "6e330918b3bed0a971bf0a6fbe0fa7e2393dd3eed16c14b27529397a265aa9cf",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.0000556513996326,
+          "median_effective_factor_quote": 1.0000556513996326,
+          "examples": [
+            {
+              "open": "2026-04-21T15:49:59",
+              "close": "2026-08-21T20:34:13",
+              "direction": "Buy",
+              "lots": 1.7,
+              "entry": 23.77,
+              "exit": 13.2,
+              "csv_profit_usd": -17.97,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.0000556513996326,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-08-21",
+              "effective_factor_quote": 1.0000556513996326
+            }
+          ]
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 1,
+        "median": 1.0000556513996326,
+        "min": 1.0000556513996326,
+        "max": 1.0000556513996326,
+        "quartiles": null
+      },
+      "quote_factors_summary": {
+        "n": 1,
+        "median": 1.0000556513996326,
+        "min": 1.0000556513996326,
+        "max": 1.0000556513996326,
+        "quartiles": null
+      },
+      "current_vantage_spec": null,
+      "total_trades": 1
+    },
+    "SPCE": {
+      "symbol": "SPCE",
+      "quote_assumption_for_check_only": "USD",
+      "signals": [
+        {
+          "id": 1180627,
+          "name": "look forward",
+          "trade_count": 1,
+          "usable_reverse_samples": 1,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1180627_trades.csv",
+          "sha256": "6e330918b3bed0a971bf0a6fbe0fa7e2393dd3eed16c14b27529397a265aa9cf",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.0,
+          "median_effective_factor_quote": 1.0,
+          "examples": [
+            {
+              "open": "2026-04-23T18:00:45",
+              "close": "2026-08-21T20:34:31",
+              "direction": "Buy",
+              "lots": 5.8,
+              "entry": 2.83,
+              "exit": 3.08,
+              "csv_profit_usd": 1.45,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.0,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-08-21",
+              "effective_factor_quote": 1.0
+            }
+          ]
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 1,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0,
+        "quartiles": null
+      },
+      "quote_factors_summary": {
+        "n": 1,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0,
+        "quartiles": null
+      },
+      "current_vantage_spec": null,
+      "total_trades": 1
+    },
+    "ORCL": {
+      "symbol": "ORCL",
+      "quote_assumption_for_check_only": "USD",
+      "signals": [
+        {
+          "id": 1444416,
+          "name": "yeld",
+          "trade_count": 1,
+          "usable_reverse_samples": 0,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1444416_trades.csv",
+          "sha256": "5fb93fdbdb935bc45f74c20212e3cff48901647bb88280648e2ae82dd62287cb",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": null,
+          "median_effective_factor_quote": null,
+          "examples": []
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 0,
+        "median": null,
+        "min": null,
+        "max": null,
+        "quartiles": null
+      },
+      "quote_factors_summary": {
+        "n": 0,
+        "median": null,
+        "min": null,
+        "max": null,
+        "quartiles": null
+      },
+      "current_vantage_spec": null,
+      "total_trades": 1
+    },
+    "LTCUSD": {
+      "symbol": "LTCUSD",
+      "quote_assumption_for_check_only": "USD",
+      "signals": [],
+      "usd_factors_summary": {
+        "n": 0,
+        "median": null,
+        "min": null,
+        "max": null,
+        "quartiles": null
+      },
+      "quote_factors_summary": {
+        "n": 0,
+        "median": null,
+        "min": null,
+        "max": null,
+        "quartiles": null
+      },
+      "current_vantage_spec": null,
+      "total_trades": 0
+    },
+    "NFLX": {
+      "symbol": "NFLX",
+      "quote_assumption_for_check_only": "USD",
+      "signals": [
+        {
+          "id": 1180627,
+          "name": "look forward",
+          "trade_count": 1,
+          "usable_reverse_samples": 1,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1180627_trades.csv",
+          "sha256": "6e330918b3bed0a971bf0a6fbe0fa7e2393dd3eed16c14b27529397a265aa9cf",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 0.9985041136873593,
+          "median_effective_factor_quote": 0.9985041136873593,
+          "examples": [
+            {
+              "open": "2026-04-23T17:59:39",
+              "close": "2026-08-21T20:34:25",
+              "direction": "Buy",
+              "lots": 0.2,
+              "entry": 93.09,
+              "exit": 79.72,
+              "csv_profit_usd": -2.67,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 0.9985041136873593,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-08-21",
+              "effective_factor_quote": 0.9985041136873593
+            }
+          ]
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 1,
+        "median": 0.9985041136873593,
+        "min": 0.9985041136873593,
+        "max": 0.9985041136873593,
+        "quartiles": null
+      },
+      "quote_factors_summary": {
+        "n": 1,
+        "median": 0.9985041136873593,
+        "min": 0.9985041136873593,
+        "max": 0.9985041136873593,
+        "quartiles": null
+      },
+      "current_vantage_spec": null,
+      "total_trades": 1
+    },
+    "PINS": {
+      "symbol": "PINS",
+      "quote_assumption_for_check_only": "USD",
+      "signals": [
+        {
+          "id": 1180627,
+          "name": "look forward",
+          "trade_count": 1,
+          "usable_reverse_samples": 1,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1180627_trades.csv",
+          "sha256": "6e330918b3bed0a971bf0a6fbe0fa7e2393dd3eed16c14b27529397a265aa9cf",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.000722543352601,
+          "median_effective_factor_quote": 1.000722543352601,
+          "examples": [
+            {
+              "open": "2026-04-23T18:00:06",
+              "close": "2026-08-21T20:34:28",
+              "direction": "Buy",
+              "lots": 0.8,
+              "entry": 19.86,
+              "exit": 23.32,
+              "csv_profit_usd": 2.77,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.000722543352601,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-08-21",
+              "effective_factor_quote": 1.000722543352601
+            }
+          ]
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 1,
+        "median": 1.000722543352601,
+        "min": 1.000722543352601,
+        "max": 1.000722543352601,
+        "quartiles": null
+      },
+      "quote_factors_summary": {
+        "n": 1,
+        "median": 1.000722543352601,
+        "min": 1.000722543352601,
+        "max": 1.000722543352601,
+        "quartiles": null
+      },
+      "current_vantage_spec": null,
+      "total_trades": 1
+    },
+    "LYFT": {
+      "symbol": "LYFT",
+      "quote_assumption_for_check_only": "USD",
+      "signals": [
+        {
+          "id": 1180627,
+          "name": "look forward",
+          "trade_count": 3,
+          "usable_reverse_samples": 3,
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\vant\\vantage_1180627_trades.csv",
+          "sha256": "6e330918b3bed0a971bf0a6fbe0fa7e2393dd3eed16c14b27529397a265aa9cf",
+          "source_money_metadata": {
+            "Currency": "USD"
+          },
+          "median_effective_factor_usd": 1.0000000000000002,
+          "median_effective_factor_quote": 1.0000000000000002,
+          "examples": [
+            {
+              "open": "2026-05-12T18:21:39",
+              "close": "2026-08-21T20:33:59",
+              "direction": "Buy",
+              "lots": 0.7,
+              "entry": 13.68,
+              "exit": 17.38,
+              "csv_profit_usd": 2.59,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.0000000000000002,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-08-21",
+              "effective_factor_quote": 1.0000000000000002
+            },
+            {
+              "open": "2026-04-21T15:48:56",
+              "close": "2026-08-21T20:34:09",
+              "direction": "Buy",
+              "lots": 2.0,
+              "entry": 14.9,
+              "exit": 17.38,
+              "csv_profit_usd": 4.96,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 1.0000000000000004,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-08-21",
+              "effective_factor_quote": 1.0000000000000004
+            },
+            {
+              "open": "2026-04-23T17:59:19",
+              "close": "2026-08-21T20:34:21",
+              "direction": "Buy",
+              "lots": 0.7,
+              "entry": 14.22,
+              "exit": 17.38,
+              "csv_profit_usd": 2.21,
+              "csv_commission_usd": 0.0,
+              "csv_swap_usd": 0.0,
+              "effective_factor_usd": 0.9990958408679933,
+              "fx_quote_candidate": "USD",
+              "fx_rate_usd_per_quote_cached": 1.0,
+              "fx_cached_date": "2026-08-21",
+              "effective_factor_quote": 0.9990958408679933
+            }
+          ]
+        }
+      ],
+      "usd_factors_summary": {
+        "n": 3,
+        "median": 1.0000000000000002,
+        "min": 0.9990958408679933,
+        "max": 1.0000000000000004,
+        "quartiles": [
+          0.9990958408679933,
+          1.0000000000000002,
+          1.0000000000000004
+        ]
+      },
+      "quote_factors_summary": {
+        "n": 3,
+        "median": 1.0000000000000002,
+        "min": 0.9990958408679933,
+        "max": 1.0000000000000004,
+        "quartiles": [
+          0.9990958408679933,
+          1.0000000000000002,
+          1.0000000000000004
+        ]
+      },
+      "current_vantage_spec": null,
+      "total_trades": 3
+    }
+  },
+  "nachmessung_live_spec_implementierung": {
+    "evidence": "doc/reviews/vantage_restspecs_live_2026-10-10.json",
+    "specfile_sha256": "5ac0989466f49a92bbc9f49e1fd3cea840db94779b239cb22f8892f79848cb34",
+    "tests": "57 gezielte Tests gruen (restspecs, contract_specs, percent_exposure)",
+    "no_database_writes": true,
+    "no_extra_aliases": true,
+    "symbols": {
+      "UK100": {
+        "contract_size": 1.0,
+        "quote_currency": "GBP",
+        "class": "INDEX",
+        "unit_label": "GBP Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "UK100"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.UK100: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move": 500.0,
+        "note": "Exaktes Cash-Instrument (UK 100 Cash). Keine FT-/Future-Aliaszuordnung. stress_move=500 Punkte ist das editierbare Klassen-Szenario, keine Brokerspezifikation. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+      },
+      "EU50": {
+        "contract_size": 1.0,
+        "quote_currency": "EUR",
+        "class": "INDEX",
+        "unit_label": "EUR Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "EU50"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.EU50: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move": 500.0,
+        "note": "Exaktes Cash-Instrument (EUSTX50 Cash). Keine FT-/Future-Aliaszuordnung. stress_move=500 Punkte ist das editierbare Klassen-Szenario, keine Brokerspezifikation."
+      },
+      "US2000": {
+        "contract_size": 1.0,
+        "quote_currency": "USD",
+        "class": "INDEX",
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "US2000"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.US2000: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move": 500.0,
+        "note": "Exaktes Cash-Instrument (US SMALL CAP 2000 - CASH). Keine FT-/Future-Aliaszuordnung. stress_move=500 Punkte ist das editierbare Klassen-Szenario, keine Brokerspezifikation. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+      },
+      "BNBUSD": {
+        "contract_size": 10.0,
+        "quote_currency": "USD",
+        "class": "CRYPTO",
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "BNBUSD"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.BNBUSD: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move_pct": 10.0,
+        "note": "Exaktes Instrument (Binance Coin). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+      },
+      "TTD": {
+        "contract_size": 1.0,
+        "quote_currency": "USD",
+        "class": "EQUITY_CFD",
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "TTD"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.TTD: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move_pct": 10.0,
+        "note": "Exaktes Instrument (The Trade Desk Inc - Class A). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+      },
+      "SPCE": {
+        "contract_size": 1.0,
+        "quote_currency": "USD",
+        "class": "EQUITY_CFD",
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "SPCE"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.SPCE: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move_pct": 10.0,
+        "note": "Exaktes Instrument (VIRGIN GALACTIC HOLDINGS INC). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+      },
+      "ORCL": {
+        "contract_size": 1.0,
+        "quote_currency": "USD",
+        "class": "EQUITY_CFD",
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "ORCL"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.ORCL: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move_pct": 10.0,
+        "note": "Exaktes Instrument (ORACLE CORP). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise."
+      },
+      "LTCUSD": {
+        "contract_size": 100.0,
+        "quote_currency": "USD",
+        "class": "CRYPTO",
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "LTCUSD"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.LTCUSD: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move_pct": 10.0,
+        "note": "Exaktes Instrument (Litecoin). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise."
+      },
+      "NFLX": {
+        "contract_size": 1.0,
+        "quote_currency": "USD",
+        "class": "EQUITY_CFD",
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "NFLX"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.NFLX: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move_pct": 10.0,
+        "note": "Exaktes Instrument (NETFLIX INC). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+      },
+      "PINS": {
+        "contract_size": 1.0,
+        "quote_currency": "USD",
+        "class": "EQUITY_CFD",
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "PINS"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.PINS: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move_pct": 10.0,
+        "note": "Exaktes Instrument (Pinterest Inc - Class A). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+      },
+      "LYFT": {
+        "contract_size": 1.0,
+        "quote_currency": "USD",
+        "class": "EQUITY_CFD",
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "LYFT"
+        ],
+        "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.LYFT: contract_size, gewinnwaehrung).",
+        "retrieved": "2026-10-10",
+        "stress_move_pct": 10.0,
+        "note": "Exaktes Instrument (Lyft Inc). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+      }
+    }
+  }
+}

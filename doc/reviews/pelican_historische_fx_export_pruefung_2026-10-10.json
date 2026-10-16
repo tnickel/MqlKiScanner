@@ -1,0 +1,112 @@
+{
+  "sets": 636,
+  "statuses": {
+    "(200, 200)": 628,
+    "(404, 200)": 4,
+    "(404, 404)": 4
+  },
+  "fxRateMetadataChecked": 31483,
+  "failures": [
+    {
+      "id": "2000036",
+      "status": 404,
+      "reason": {
+        "error": "Provider 2000036: Leere Tradeliste widerspricht positiven Trades/Wins/Losses; erneut laden."
+      }
+    },
+    {
+      "id": "2001115",
+      "status": 404,
+      "reason": {
+        "error": "Provider 2001115: Leere Tradeliste widerspricht positiven Trades/Wins/Losses; erneut laden."
+      }
+    },
+    {
+      "id": "2001116",
+      "status": 404,
+      "reason": {
+        "error": "Provider 2001116: Leere Tradeliste widerspricht positiven Trades/Wins/Losses; erneut laden."
+      }
+    },
+    {
+      "id": "2059824",
+      "status": 404,
+      "reason": {
+        "error": "Provider 2059824 unbekannt."
+      }
+    },
+    {
+      "id": "2063644",
+      "status": 404,
+      "reason": {
+        "error": "Provider 2063644 unbekannt."
+      }
+    },
+    {
+      "id": "2074606",
+      "status": 404,
+      "reason": {
+        "error": "Provider 2074606 unbekannt."
+      }
+    },
+    {
+      "id": "2084818",
+      "status": 404,
+      "reason": {
+        "error": "Provider 2084818 unbekannt."
+      }
+    },
+    {
+      "id": "2097770",
+      "status": 404,
+      "reason": {
+        "error": "Provider 2097770: Leere Tradeliste widerspricht positiven Trades/Wins/Losses; erneut laden."
+      }
+    }
+  ],
+  "archiveOnlyIds": [
+    {
+      "id": 2059824,
+      "sha256": "2d53423a23c20750729cd080b01cc286b1df77572f7b1b25d8597a449c15c2ec",
+      "metaCount": 937,
+      "rowCurrencies": {
+        "USD": 937
+      },
+      "allRowsHaveTradeIdCurrencyAndDates": true,
+      "providerMetadataFound": false
+    },
+    {
+      "id": 2063644,
+      "sha256": "a79e4a5e68b232207a162a88d0a4c695f4d4e5db0d6c36261d93b9fcc8dffdc5",
+      "metaCount": 5541,
+      "rowCurrencies": {
+        "USD": 5541
+      },
+      "allRowsHaveTradeIdCurrencyAndDates": true,
+      "providerMetadataFound": false
+    },
+    {
+      "id": 2074606,
+      "sha256": "76844d3ba2225898852274a09880ce04d14c51eab180f96171ee17ce3468453e",
+      "metaCount": 1682,
+      "rowCurrencies": {
+        "USD": 1682
+      },
+      "allRowsHaveTradeIdCurrencyAndDates": true,
+      "providerMetadataFound": false
+    },
+    {
+      "id": 2084818,
+      "sha256": "65554fc80e8ed03acd7b60ade736ce499245aff1c5121cf031109b319fbad97e",
+      "metaCount": 753,
+      "rowCurrencies": {
+        "USD": 753
+      },
+      "allRowsHaveTradeIdCurrencyAndDates": true,
+      "providerMetadataFound": false
+    }
+  ],
+  "inputAndOutputSha256Verified": true,
+  "strictOffline": true,
+  "manifestSha256": "e88a86749f3422360e5e06787d20fd061058fec4645642a340f89399e20db7ae"
+}

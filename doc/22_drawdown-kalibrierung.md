@@ -1,5 +1,11 @@
 # Drawdown-Kalibrierung an drei MQL-Signalen — 03.10.2026
 
+**Historischer Messbericht:** Die folgenden Werte und Testzahlen gelten für
+die damaligen Exporte und Berechnungsregeln. Seit 05.10. berücksichtigt die
+Drawdown-Hauptkurve reale Kapitalflüsse mit Peak-Anpassung bei Auszahlungen;
+der Jahres-Calmar ersetzt die frühere Monats-RetDD-Schwelle. Dieser Bericht
+ist kein aktueller Scan- oder Testnachweis. Aktuelle Regeln: doc/03 und doc/08.
+
 Eine zufällige Nähe zweier Prozentwerte ist kein Nachweis gleicher
 Berechnungen. Zeitraum, Kontobewegungen, Trade-Vollständigkeit,
 Kurszeitzuordnung und Drawdown-Definition müssen zusammenpassen.

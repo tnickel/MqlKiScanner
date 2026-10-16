@@ -1,0 +1,26 @@
+[
+  {
+    "id": 2100319,
+    "http_status": 200,
+    "imported": true,
+    "trades": 26,
+    "currency": "USD",
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": false,
+    "financial_only": false,
+    "metrics_imported": true
+  },
+  {
+    "id": 2100348,
+    "http_status": 200,
+    "imported": true,
+    "trades": 59,
+    "currency": "USD",
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": false,
+    "financial_only": false,
+    "metrics_imported": true
+  }
+]

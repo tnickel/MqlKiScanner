@@ -1,0 +1,104 @@
+{
+  "read_only": true,
+  "source_snapshot": "doc\\reviews\\goal_parser_skips_2026-10-10.json",
+  "nachmessung": [
+    {
+      "id": 1719023,
+      "name": "GenX Multistrategies",
+      "trades": 3889,
+      "neutrale_hedge_metazeilen": 2,
+      "kontokosten_anzahl": 0,
+      "kontokosten_usd": 0.0,
+      "netto_alle_buchungen_usd": 3736.8900000000003,
+      "kosten_ausserhalb_tradefenster": 0,
+      "default_strict_parser": "ok",
+      "write_db": false
+    },
+    {
+      "id": 1887334,
+      "name": "Niguru GBP",
+      "trades": 2001,
+      "neutrale_hedge_metazeilen": 542,
+      "kontokosten_anzahl": 0,
+      "kontokosten_usd": 0.0,
+      "netto_alle_buchungen_usd": 1566.48,
+      "kosten_ausserhalb_tradefenster": 0,
+      "default_strict_parser": "ok",
+      "write_db": false
+    },
+    {
+      "id": 2275715,
+      "name": "MAHIGAN",
+      "trades": 1906,
+      "neutrale_hedge_metazeilen": 0,
+      "kontokosten_anzahl": 46,
+      "kontokosten_usd": -42.09,
+      "netto_alle_buchungen_usd": 886.4499999999999,
+      "kosten_ausserhalb_tradefenster": 0,
+      "default_strict_parser": "ok",
+      "write_db": false,
+      "erste_kostenbuchung": "2026-05-19T04:15:55",
+      "letzte_kostenbuchung": "2026-10-02T04:52:40",
+      "drawdown_kapitalbasis_kaskade_diagnose": {
+        "startkapital": 300.0,
+        "startkapital_quelle": "csv_einzahlungen",
+        "net_total": 886.45,
+        "flows_total": 686.72,
+        "end_balance_real": 1573.17,
+        "trading_dd": {
+          "dd_usd": 28.91,
+          "dd_pct": 3.05,
+          "dd_pct_max_rel": 3.05,
+          "dd_date": "2025-09-02",
+          "dd_date_max_rel": "2025-09-02",
+          "end_balance": 1573.17,
+          "peak_balance": 1573.17
+        }
+      }
+    },
+    {
+      "id": 2350766,
+      "name": "Ten Percent",
+      "trades": 165,
+      "neutrale_hedge_metazeilen": 0,
+      "kontokosten_anzahl": 21,
+      "kontokosten_usd": -2.1,
+      "netto_alle_buchungen_usd": 321.76,
+      "kosten_ausserhalb_tradefenster": 0,
+      "default_strict_parser": "ok",
+      "write_db": false,
+      "erste_kostenbuchung": "2026-06-25T00:03:21",
+      "letzte_kostenbuchung": "2026-06-29T00:03:26",
+      "drawdown_kapitalbasis_kaskade_diagnose": {
+        "startkapital": 100.0,
+        "startkapital_quelle": "csv_einzahlungen",
+        "net_total": 321.76,
+        "flows_total": 100.0,
+        "end_balance_real": 421.76,
+        "trading_dd": {
+          "dd_usd": 79.45,
+          "dd_pct": 29.48,
+          "dd_pct_max_rel": 29.48,
+          "dd_date": "2026-06-29",
+          "dd_date_max_rel": "2026-06-29",
+          "end_balance": 421.76,
+          "peak_balance": 421.76
+        }
+      }
+    },
+    {
+      "id": 2379670,
+      "name": "EURUSD Algo Trading",
+      "trades": 1827,
+      "neutrale_hedge_metazeilen": 1,
+      "kontokosten_anzahl": 0,
+      "kontokosten_usd": 0.0,
+      "netto_alle_buchungen_usd": 1286.48,
+      "kosten_ausserhalb_tradefenster": 0,
+      "default_strict_parser": "ok",
+      "write_db": false
+    }
+  ],
+  "semantikquelle": "https://www.mql5.com/en/docs/constants/tradingconstants/dealproperties",
+  "forensik_version": 16
+}

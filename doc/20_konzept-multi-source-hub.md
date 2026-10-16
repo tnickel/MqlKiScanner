@@ -1,7 +1,21 @@
 # 20 — Konzept: Multi-Source-Hub (Signale über Datenquellen-REST)
 
-Stand: 27.09.2026. Status: **in Umsetzung, Stufe 1** (MqlDownloader als erste
-Datenquelle). Nutzer-Entscheidungen von 27.09.2026 sind als solche markiert.
+**Aktueller Status (16.10.2026):** Quellen-Registry und Ingest für
+MqlDownloader, PelicanTrading, RoboForex, Vantage und ZuluTrade sind
+implementiert; Stufe 0 aktualisiert aktive Clients vor Quellen-Scans
+(doc/23). Der MQL5-Direktweg ist weiterhin vorhanden. Die vollständige
+Composite-Identität `(quelle, signal_id)` ist noch offen; Kollisionen werden
+abgewehrt, nicht durchgehend als getrennte Signale gespeichert.
+MqlRealmonitor ist noch nicht produktiv integriert. Die REST-Schnittstelle
+ist vorbereitet, die Integration bleibt vorerst zurückgestellt.
+
+**Historisches Konzept vom 27.09.2026 mit datierten Ergänzungen.**
+Ursprüngliche Stufen und damalige Kapitalbasis-/Ertragsregeln unten sind
+Planungs- bzw. Änderungsverlauf. Aktuell gelten die Regeln aus doc/03 und
+doc/07: absolute Monatshürde im Default aus, Jahres-Calmar ≥3,0 bei
+mindestens drei Monaten Historie; nur freigegebene Kurs-Equity-Messung als
+Calmar-Nenner, kein Monitor-Closing-DD. Die implizite Kapitalbasis
+`Web-Balance − Trade-Netto` ist seit 05.10. entfernt.
 
 ## 1. Zielbild
 
@@ -352,6 +366,6 @@ nicht umgestellt wird.
 - Ampel/Score/Urteil kommen weiter ausschließlich aus der Engine — Quellen
   liefern Daten, nie Bewertungen.
 - Downloader-Abgleich (Verlauf, PDFs) bewertet nie neu.
-- REST-API (:8611) für den MqlRealMonitor bleibt schreibgeschützt; das
-  `quelle`-Feld kommt abwärtskompatibel hinzu.
+- Vorbereitete REST-API (:8611) für MqlRealmonitor bleibt schreibgeschützt;
+  `quelle` ist enthalten. Die produktive Integration ist zurückgestellt.
 - Tradeserver-Sync, PDF-Berichte, Ampel-Verlauf, Agenten-Postfach unverändert.

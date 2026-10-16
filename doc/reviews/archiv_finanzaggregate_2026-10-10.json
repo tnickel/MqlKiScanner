@@ -1,0 +1,60 @@
+{
+  "read_only_files": true,
+  "database_access": false,
+  "network_access": false,
+  "mt5_access": false,
+  "scope": "Alle lokalen Quellen-Trade-CSVs nach explizitem archived-Symbol durchsucht; keine Aussage ueber derzeit nicht heruntergeladene Exporte.",
+  "standard_parser_stays_strict": true,
+  "evidence": [
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\quellen\\mql5\\mql4_2336904_trades.csv",
+      "sha256": "42c8efd8082bc7e6af51c9ed80c13ebebaf066ade0a1dab47e6b1b6444a5e8cf",
+      "original_individual_trades": 2173,
+      "archive_aggregates": 5,
+      "archive_net_usd": 347.03000000000003,
+      "individual_and_separate_cost_net_usd": 5051.03,
+      "total_realized_net_usd": 5398.0599999999995,
+      "full_trade_count": null,
+      "full_profit_factor": null,
+      "full_winrate_pct": null,
+      "basis_or_dd_released": false,
+      "aggregate_rows": [
+        {
+          "line": 2217,
+          "start": "2025-10-01T00:00:00",
+          "end": "2025-10-31T23:59:59",
+          "volume": 1.75,
+          "net": 26.78
+        },
+        {
+          "line": 2218,
+          "start": "2025-10-01T00:00:00",
+          "end": "2025-10-31T23:59:59",
+          "volume": 1.69,
+          "net": -1.9
+        },
+        {
+          "line": 2219,
+          "start": "2025-10-01T00:00:00",
+          "end": "2025-10-31T23:59:59",
+          "volume": 3.27,
+          "net": 198.87
+        },
+        {
+          "line": 2220,
+          "start": "2025-10-01T00:00:00",
+          "end": "2025-10-31T23:59:59",
+          "volume": 2.42,
+          "net": 40.03
+        },
+        {
+          "line": 2221,
+          "start": "2025-10-01T00:00:00",
+          "end": "2025-10-31T23:59:59",
+          "volume": 2.5,
+          "net": 83.25
+        }
+      ]
+    }
+  ]
+}

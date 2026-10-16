@@ -1,0 +1,131 @@
+{
+  "measurements": [
+    {
+      "id": 1096166,
+      "name": "the best one",
+      "broker": "ActiveTrades003",
+      "status": "skipped",
+      "reliable": null,
+      "coverage": null,
+      "dd_pct": null,
+      "reason": "Kursdaten fehlen für 109 von 193 Trades (Kurse: ADBE, BOEING, BYND, COIN, CRM)",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 3.197
+    },
+    {
+      "id": 954691,
+      "name": "TRADE EASY 4YOU 2",
+      "broker": "ActiveTrades003",
+      "status": "unvollstaendig",
+      "reliable": false,
+      "coverage": 95.0,
+      "dd_pct": 16.886995339637025,
+      "reason": "Abdeckung 95.0% < 95%",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 4.601
+    },
+    {
+      "id": 538344,
+      "name": "Rebounds",
+      "broker": "ActiveTrades003",
+      "status": "skipped",
+      "reliable": false,
+      "coverage": null,
+      "dd_pct": null,
+      "reason": "Zeitabbildung nicht monoton/eindeutig",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 0.337
+    },
+    {
+      "id": 178177,
+      "name": "Rohan Gupta 40000121",
+      "broker": "ActiveTrades003",
+      "status": "skipped",
+      "reliable": null,
+      "coverage": null,
+      "dd_pct": null,
+      "reason": "Kursdaten fehlen für 267 von 1091 Trades (Kurse: DJ30FT, JPN225FT, NAS100FT, SP500FT, UK100FT)",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 13.349
+    },
+    {
+      "id": 998837,
+      "name": "Bet with Akedang",
+      "broker": "ActiveTrades003",
+      "status": "unvollstaendig",
+      "reliable": false,
+      "coverage": 86.4,
+      "dd_pct": 250.8143804048415,
+      "reason": "Abdeckung 86.4% < 95%",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 0.09
+    },
+    {
+      "id": 1052261,
+      "name": "Bullions",
+      "broker": "ActiveTrades003",
+      "status": "unvollstaendig",
+      "reliable": false,
+      "coverage": 90.3,
+      "dd_pct": 4.3228288225062546,
+      "reason": "Abdeckung 90.3% < 95%",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 0.109
+    }
+  ],
+  "updates": [
+    {
+      "id": 1096166,
+      "name": "the best one",
+      "previous_coverage": 6.1,
+      "previous_dd": 0.1789436844808897,
+      "action": "kept_previous_study"
+    },
+    {
+      "id": 954691,
+      "name": "TRADE EASY 4YOU 2",
+      "previous_coverage": 94.5,
+      "previous_dd": 16.7593364805072,
+      "action": "study_updated",
+      "broker": "ActiveTrades003",
+      "coverage": 95.0,
+      "dd_pct": 16.886995339637025,
+      "reliable": false,
+      "reason": "Abdeckung 95.0% < 95%"
+    },
+    {
+      "id": 538344,
+      "name": "Rebounds",
+      "previous_coverage": null,
+      "previous_dd": null,
+      "action": "kept_previous_study"
+    },
+    {
+      "id": 178177,
+      "name": "Rohan Gupta 40000121",
+      "previous_coverage": 50.8,
+      "previous_dd": 129.9529301062176,
+      "action": "kept_previous_study"
+    },
+    {
+      "id": 998837,
+      "name": "Bet with Akedang",
+      "previous_coverage": 86.4,
+      "previous_dd": 249.774105381507,
+      "action": "kept_previous_study"
+    },
+    {
+      "id": 1052261,
+      "name": "Bullions",
+      "previous_coverage": 90.3,
+      "previous_dd": 4.307264488037166,
+      "action": "kept_previous_study"
+    }
+  ]
+}

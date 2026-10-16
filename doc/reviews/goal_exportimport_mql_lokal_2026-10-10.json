@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1760039,
+    "http_status": 200,
+    "imported": true,
+    "trades": 12161,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": false,
+    "financial_only": false
+  },
+  {
+    "id": 2268766,
+    "http_status": 200,
+    "imported": true,
+    "trades": 7012,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": false,
+    "financial_only": false
+  },
+  {
+    "id": 2349577,
+    "http_status": 200,
+    "imported": true,
+    "trades": 106,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2361280,
+    "http_status": 200,
+    "imported": true,
+    "trades": 197,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2386274,
+    "http_status": 200,
+    "imported": true,
+    "trades": 206,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": false,
+    "financial_only": false
+  },
+  {
+    "id": 840474,
+    "http_status": 200,
+    "imported": true,
+    "trades": 9208,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": false,
+    "financial_only": false
+  }
+]

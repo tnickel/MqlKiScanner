@@ -1,0 +1,80 @@
+{
+ "Vantage": {
+  "XAUAUD": {
+   "symbol": "XAUAUD+",
+   "beschreibung": "Gold vs Australian Dollar",
+   "contract_size": 100.0,
+   "gewinnwaehrung": "AUD",
+   "basiswaehrung": "AUD",
+   "volume_min": 0.01,
+   "volume_step": 0.01,
+   "tick_size": 0.01,
+   "tick_value": 0.623421963155762,
+   "digits": 2
+  },
+  "XAUEUR": {
+   "symbol": "XAUEUR+",
+   "beschreibung": "Gold / Euro",
+   "contract_size": 100.0,
+   "gewinnwaehrung": "EUR",
+   "basiswaehrung": "EUR",
+   "volume_min": 0.01,
+   "volume_step": 0.01,
+   "tick_size": 0.01,
+   "tick_value": 1.0,
+   "digits": 2
+  },
+  "XAUJPY": {
+   "symbol": "XAUJPY+",
+   "beschreibung": "Gold vs Japanese Yen",
+   "contract_size": 100.0,
+   "gewinnwaehrung": "JPY",
+   "basiswaehrung": "JPY",
+   "volume_min": 0.01,
+   "volume_step": 0.01,
+   "tick_size": 1.0,
+   "tick_value": 0.5638504217601155,
+   "digits": 0
+  },
+  "DJ30": {
+   "symbol": "DJ30",
+   "beschreibung": "Dow Jones Index Cash CFD (USD)",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "SP500": {
+   "symbol": "SP500",
+   "beschreibung": "S&P Index Cash CFD (USD)",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "DJ30FT": {
+   "symbol": "DJ30ft",
+   "beschreibung": "DJ30 Future",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche:DJ30": [
+   "DJ30",
+   "DJ30ft"
+  ]
+ }
+}

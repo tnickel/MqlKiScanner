@@ -1,0 +1,909 @@
+[
+  {
+    "id": 1096166,
+    "name": "the best one",
+    "updated": true,
+    "reliable": false,
+    "coverage": 6.2,
+    "dd_pct": 0.1789436844808897,
+    "reason": "Abdeckung < 95% (gerundet 6.2%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 11 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 954691,
+    "name": "TRADE EASY 4YOU 2",
+    "updated": false,
+    "reliable": false,
+    "coverage": 94.6,
+    "dd_pct": 16.7593364805072,
+    "reason": "Abdeckung < 95% (gerundet 94.6%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 538344,
+    "name": "Rebounds",
+    "updated": false,
+    "reliable": false,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Zeitabbildung nicht monoton/eindeutig: CSV 2026-07-26T23:09:49 (+2 h) -> 2026-07-27T01:09:49; danach CSV 2026-07-27T00:00:00 (+1 h) -> 2026-07-27T01:00:00; Reihenfolge um 589 Sekunden umgekehrt"
+  },
+  {
+    "id": 178177,
+    "name": "Rohan Gupta 40000121",
+    "updated": true,
+    "reliable": false,
+    "coverage": 64.1,
+    "dd_pct": 129.9529301062176,
+    "reason": "Abdeckung < 95% (gerundet 64.1%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 43 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 998837,
+    "name": "Bet with Akedang",
+    "updated": true,
+    "reliable": true,
+    "coverage": 96.8,
+    "dd_pct": 249.774105381507,
+    "reason": null
+  },
+  {
+    "id": 1052261,
+    "name": "Bullions",
+    "updated": false,
+    "reliable": false,
+    "coverage": 90.3,
+    "dd_pct": 4.307264488037166,
+    "reason": "Abdeckung < 95% (gerundet 90.3%)"
+  },
+  {
+    "id": 761137,
+    "name": "SMC safety",
+    "updated": true,
+    "reliable": true,
+    "coverage": 95.9,
+    "dd_pct": 417.201495358339,
+    "reason": null
+  },
+  {
+    "id": 1441423,
+    "name": "Safe Capital 10K",
+    "updated": true,
+    "reliable": true,
+    "coverage": 98.7,
+    "dd_pct": 258.0341408956487,
+    "reason": null
+  },
+  {
+    "id": 892011,
+    "name": "EZSignals Team",
+    "updated": false,
+    "reliable": false,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Zeitabbildung nicht monoton/eindeutig: CSV 2026-07-26T23:41:05 (+2 h) -> 2026-07-27T01:41:05; danach CSV 2026-07-27T00:00:11 (+1 h) -> 2026-07-27T01:00:11; Reihenfolge um 2454 Sekunden umgekehrt"
+  },
+  {
+    "id": 1393802,
+    "name": "Jinn Crow",
+    "updated": true,
+    "reliable": true,
+    "coverage": 98.8,
+    "dd_pct": 21.63329339755096,
+    "reason": null
+  },
+  {
+    "id": 1392457,
+    "name": "Jinn Grey",
+    "updated": true,
+    "reliable": true,
+    "coverage": 98.7,
+    "dd_pct": 7.4977697069598905,
+    "reason": null
+  },
+  {
+    "id": 1171681,
+    "name": "Lenna",
+    "updated": false,
+    "reliable": false,
+    "coverage": 70.0,
+    "dd_pct": 35.003865331724505,
+    "reason": "Abdeckung < 95% (gerundet 70.0%) · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 120 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 964392,
+    "name": "MEDUSAMYTHFUNDS",
+    "updated": true,
+    "reliable": false,
+    "coverage": 99.6,
+    "dd_pct": 2.0863280812492184,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 1 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1536627,
+    "name": "Smart Money Lab",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (+1 h, +2 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 376760,
+    "name": "Jessi",
+    "updated": true,
+    "reliable": false,
+    "coverage": 45.7,
+    "dd_pct": 56.10683580975968,
+    "reason": "Abdeckung < 95% (gerundet 45.7%) · Kursdaten fehlen für 35 von 896 Trades · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 193 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1554860,
+    "name": "NVT99V3",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (-4 h, +1 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 470115,
+    "name": "MM Trading Expert",
+    "updated": true,
+    "reliable": true,
+    "coverage": 97.0,
+    "dd_pct": 23.65081763602391,
+    "reason": null
+  },
+  {
+    "id": 614789,
+    "name": "DUBAI BANKS",
+    "updated": true,
+    "reliable": true,
+    "coverage": 99.2,
+    "dd_pct": 0.2194378437365215,
+    "reason": null
+  },
+  {
+    "id": 1232663,
+    "name": "500 x SP",
+    "updated": true,
+    "reliable": true,
+    "coverage": 96.0,
+    "dd_pct": 4.551612500834043,
+    "reason": null
+  },
+  {
+    "id": 947199,
+    "name": "Farmed Hedge Yield",
+    "updated": true,
+    "reliable": false,
+    "coverage": 98.2,
+    "dd_pct": 3.8727576681062317,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 3 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1482461,
+    "name": "Steady Sentinel Algo",
+    "updated": true,
+    "reliable": true,
+    "coverage": 96.4,
+    "dd_pct": 303.00869999999827,
+    "reason": null
+  },
+  {
+    "id": 1062072,
+    "name": "Eknoor Mind Skills ",
+    "updated": true,
+    "reliable": true,
+    "coverage": 96.5,
+    "dd_pct": 2.8273219581040445,
+    "reason": null
+  },
+  {
+    "id": 1112056,
+    "name": "Minh Hang Laikep",
+    "updated": true,
+    "reliable": false,
+    "coverage": 96.1,
+    "dd_pct": 257.7445942588412,
+    "reason": "Kursdaten fehlen für 1 von 2000 Trades · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 59 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 698890,
+    "name": "Claris",
+    "updated": false,
+    "reliable": false,
+    "coverage": 93.6,
+    "dd_pct": 122.24519557024908,
+    "reason": "Abdeckung < 95% (gerundet 93.6%)"
+  },
+  {
+    "id": 640597,
+    "name": "SmartCopy Pro",
+    "updated": true,
+    "reliable": false,
+    "coverage": 92.5,
+    "dd_pct": 8.29279818872544,
+    "reason": "Abdeckung < 95% (gerundet 92.5%) · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 20 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1342194,
+    "name": "PrimeX Forex",
+    "updated": true,
+    "reliable": true,
+    "coverage": 99.0,
+    "dd_pct": 1.0162300470448442,
+    "reason": null
+  },
+  {
+    "id": 730974,
+    "name": "mision 52 semanas",
+    "updated": true,
+    "reliable": false,
+    "coverage": 97.1,
+    "dd_pct": 10.906095232267692,
+    "reason": "Kursdaten fehlen für 4 von 853 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+  },
+  {
+    "id": 1231244,
+    "name": "USLEGEND",
+    "updated": true,
+    "reliable": true,
+    "coverage": 97.5,
+    "dd_pct": 12.31559553444162,
+    "reason": null
+  },
+  {
+    "id": 997608,
+    "name": "Simplified SMC",
+    "updated": false,
+    "reliable": false,
+    "coverage": 96.5,
+    "dd_pct": 103.83486292009103,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 3 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 652261,
+    "name": "Cryptowanlanid Multi",
+    "updated": true,
+    "reliable": false,
+    "coverage": 100.0,
+    "dd_pct": 6.203711678801581,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 18 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1052267,
+    "name": "BoldX",
+    "updated": false,
+    "reliable": false,
+    "coverage": 85.0,
+    "dd_pct": 2.8426421246279574,
+    "reason": "Abdeckung < 95% (gerundet 85.0%)"
+  },
+  {
+    "id": 1018531,
+    "name": "Averon Strategy",
+    "updated": false,
+    "reliable": false,
+    "coverage": 99.3,
+    "dd_pct": 1.389104908031976,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 4 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1314055,
+    "name": "THE MONEY FACTORY",
+    "updated": true,
+    "reliable": false,
+    "coverage": 77.0,
+    "dd_pct": 3.0139484642599865,
+    "reason": "Abdeckung < 95% (gerundet 77.0%)"
+  },
+  {
+    "id": 1016708,
+    "name": "ImperialGoldCapital",
+    "updated": false,
+    "reliable": false,
+    "coverage": 87.2,
+    "dd_pct": 1.1773080409527503,
+    "reason": "Abdeckung < 95% (gerundet 87.2%)"
+  },
+  {
+    "id": 674970,
+    "name": "The Navigator",
+    "updated": true,
+    "reliable": false,
+    "coverage": 97.3,
+    "dd_pct": 4.484966911990423,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+  },
+  {
+    "id": 788869,
+    "name": "BOW GOLD EA",
+    "updated": true,
+    "reliable": false,
+    "coverage": 96.1,
+    "dd_pct": 577.825352112671,
+    "reason": "Kursdaten fehlen für 1 von 2000 Trades · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 17 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 887119,
+    "name": "Aurex Strategy",
+    "updated": false,
+    "reliable": false,
+    "coverage": 69.6,
+    "dd_pct": 0.7126117119168922,
+    "reason": "Abdeckung < 95% (gerundet 69.6%)"
+  },
+  {
+    "id": 925636,
+    "name": "Coletta",
+    "updated": false,
+    "reliable": false,
+    "coverage": 94.7,
+    "dd_pct": 36.32798241731193,
+    "reason": "Abdeckung < 95% (gerundet 94.7%)"
+  },
+  {
+    "id": 1316316,
+    "name": "The Forex Academy",
+    "updated": true,
+    "reliable": true,
+    "coverage": 91.9,
+    "dd_pct": 2.9093118699445917,
+    "reason": null
+  },
+  {
+    "id": 733488,
+    "name": "Cryptowanlanid KING",
+    "updated": false,
+    "reliable": false,
+    "coverage": 38.2,
+    "dd_pct": 3.3299943411366306,
+    "reason": "Abdeckung < 95% (gerundet 38.2%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 20 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1024338,
+    "name": "BitCore Momentum",
+    "updated": false,
+    "reliable": false,
+    "coverage": 94.8,
+    "dd_pct": 1.5937640359900898,
+    "reason": "Abdeckung < 95% (gerundet 94.8%)"
+  },
+  {
+    "id": 1295547,
+    "name": "Ansari007",
+    "updated": true,
+    "reliable": false,
+    "coverage": 76.4,
+    "dd_pct": 4.032364116779882,
+    "reason": "Abdeckung < 95% (gerundet 76.4%)"
+  },
+  {
+    "id": 213166,
+    "name": "bryanfxpower 40030212",
+    "updated": true,
+    "reliable": false,
+    "coverage": 100.0,
+    "dd_pct": 34.45736702117498,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+  },
+  {
+    "id": 622732,
+    "name": "No1    5to10 percent",
+    "updated": false,
+    "reliable": false,
+    "coverage": 87.4,
+    "dd_pct": 7.450411338926255,
+    "reason": "Abdeckung < 95% (gerundet 87.4%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 11 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 878996,
+    "name": "Setonio1",
+    "updated": false,
+    "reliable": false,
+    "coverage": 40.0,
+    "dd_pct": 21.143093529107233,
+    "reason": "Abdeckung < 95% (gerundet 40.0%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 24 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 982505,
+    "name": "Tradophile",
+    "updated": true,
+    "reliable": true,
+    "coverage": 96.8,
+    "dd_pct": 60.70298319684425,
+    "reason": null
+  },
+  {
+    "id": 1492136,
+    "name": "SterlingEdgeCapital",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (-2 h, -1 h, +0 h, +1 h, +2 h, +3 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 592310,
+    "name": "NQtrend_magic",
+    "updated": true,
+    "reliable": false,
+    "coverage": 93.4,
+    "dd_pct": 0.9150226818746721,
+    "reason": "Abdeckung < 95% (gerundet 93.4%)"
+  },
+  {
+    "id": 1517073,
+    "name": "GANH HE PHO WALL",
+    "updated": false,
+    "reliable": false,
+    "coverage": 99.3,
+    "dd_pct": 5.209297501658378,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 29 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 692325,
+    "name": "Sonrch",
+    "updated": true,
+    "reliable": false,
+    "coverage": 86.7,
+    "dd_pct": 12.950449689165676,
+    "reason": "Abdeckung < 95% (gerundet 86.7%) · Kursdaten fehlen für 14 von 279 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 21 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 762452,
+    "name": "Eagles Invest",
+    "updated": true,
+    "reliable": false,
+    "coverage": 72.2,
+    "dd_pct": 6.731834529861573,
+    "reason": "Abdeckung < 95% (gerundet 72.2%) · Kursdaten fehlen für 14 von 196 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 27 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 934533,
+    "name": "Dark Side",
+    "updated": true,
+    "reliable": false,
+    "coverage": 50.2,
+    "dd_pct": 53.6693172584907,
+    "reason": "Abdeckung < 95% (gerundet 50.2%) · Kursdaten fehlen für 2 von 1317 Trades · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 135 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1087584,
+    "name": "Chispita",
+    "updated": true,
+    "reliable": true,
+    "coverage": 95.2,
+    "dd_pct": 3.5192694871894297,
+    "reason": null
+  },
+  {
+    "id": 1535524,
+    "name": "Xau only 01",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (+1 h, +2 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 773842,
+    "name": "TRIANGLE 72",
+    "updated": true,
+    "reliable": false,
+    "coverage": 99.0,
+    "dd_pct": 5.401699961218667,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 3 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1052194,
+    "name": "ToroWave",
+    "updated": false,
+    "reliable": false,
+    "coverage": 86.4,
+    "dd_pct": 6.029875726022198,
+    "reason": "Abdeckung < 95% (gerundet 86.4%)"
+  },
+  {
+    "id": 746962,
+    "name": "BTCPRO",
+    "updated": true,
+    "reliable": false,
+    "coverage": 99.2,
+    "dd_pct": 17.00604262013733,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 24 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 949108,
+    "name": "ALPHA INDEX",
+    "updated": true,
+    "reliable": false,
+    "coverage": 74.0,
+    "dd_pct": 145.6995548853823,
+    "reason": "Abdeckung < 95% (gerundet 74.0%) · Kursdaten fehlen für 18 von 239 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+  },
+  {
+    "id": 1470017,
+    "name": "FX STRATEJI",
+    "updated": true,
+    "reliable": false,
+    "coverage": 95.7,
+    "dd_pct": 14.30886472176088,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1509284,
+    "name": "GONGMYEONG",
+    "updated": false,
+    "reliable": false,
+    "coverage": 94.0,
+    "dd_pct": 9.964186037603728,
+    "reason": "Abdeckung < 95% (gerundet 94.0%) · Kursdaten fehlen für 1 von 41 Trades"
+  },
+  {
+    "id": 1517694,
+    "name": "MetafundTrading",
+    "updated": false,
+    "reliable": false,
+    "coverage": 100.0,
+    "dd_pct": 1.180355580890251,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 7 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1208968,
+    "name": "Farmed Hedge Yield V",
+    "updated": true,
+    "reliable": true,
+    "coverage": 100.0,
+    "dd_pct": 2.020970417078117,
+    "reason": null
+  },
+  {
+    "id": 1334094,
+    "name": "testappAU6",
+    "skipped": [
+      "#1334094 testappAU6: keine Kapitalbasis — keine Trades im Export"
+    ]
+  },
+  {
+    "id": 1375303,
+    "name": "OV6 Capital",
+    "updated": false,
+    "reliable": false,
+    "coverage": 97.6,
+    "dd_pct": 243.0014110917011,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 7 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1383135,
+    "name": "CHAMP MARKET LABS",
+    "updated": true,
+    "reliable": true,
+    "coverage": 96.1,
+    "dd_pct": 8.337175599709997,
+    "reason": null
+  },
+  {
+    "id": 1488463,
+    "name": "tradewithrsv",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Kursdaten fehlen für 1593 von 1604 Trades (Kurse: FIXEDVOL100, FIXEDVOL20, FIXEDVOL40, FIXEDVOL60, FIXEDVOL80)"
+  },
+  {
+    "id": 303407,
+    "name": "Profit Consistent 99",
+    "updated": true,
+    "reliable": false,
+    "coverage": 59.4,
+    "dd_pct": 9.342519685039385,
+    "reason": "Abdeckung < 95% (gerundet 59.4%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 12 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 710142,
+    "name": "Copy Sniper trader",
+    "updated": true,
+    "reliable": true,
+    "coverage": 100.0,
+    "dd_pct": 5.630599999999995,
+    "reason": null
+  },
+  {
+    "id": 899541,
+    "name": "Evo 9",
+    "updated": false,
+    "reliable": false,
+    "coverage": 99.6,
+    "dd_pct": 5.281593972745855,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 1 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 954690,
+    "name": "KUBERFX",
+    "updated": false,
+    "reliable": false,
+    "coverage": 19.2,
+    "dd_pct": 49.49530774850226,
+    "reason": "Abdeckung < 95% (gerundet 19.2%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 56 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1052247,
+    "name": "NorthBridge Signals",
+    "updated": true,
+    "reliable": false,
+    "coverage": 89.2,
+    "dd_pct": 5.159847630201848,
+    "reason": "Abdeckung < 95% (gerundet 89.2%)"
+  },
+  {
+    "id": 1446569,
+    "name": "E Tiger",
+    "updated": false,
+    "reliable": false,
+    "coverage": 97.2,
+    "dd_pct": 25.711519845111354,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 60 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1458425,
+    "name": "Forex MSI BUY SELL",
+    "updated": false,
+    "reliable": false,
+    "coverage": 93.6,
+    "dd_pct": 9.546198547748284,
+    "reason": "Abdeckung < 95% (gerundet 93.6%)"
+  },
+  {
+    "id": 1495289,
+    "name": "Qwerty trade",
+    "updated": true,
+    "reliable": false,
+    "coverage": 84.0,
+    "dd_pct": 10.741939981233308,
+    "reason": "Abdeckung < 95% (gerundet 84.0%) · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 14 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 667699,
+    "name": "Espanolo Trades",
+    "updated": true,
+    "reliable": false,
+    "coverage": 95.0,
+    "dd_pct": 171.19095000000002,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 13 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 914443,
+    "name": "SK SMART TRADER",
+    "updated": true,
+    "reliable": false,
+    "coverage": 96.6,
+    "dd_pct": 720.1753000000002,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 998675,
+    "name": "Dream come True 68",
+    "updated": true,
+    "reliable": true,
+    "coverage": 99.8,
+    "dd_pct": 1.2287518954476413,
+    "reason": null
+  },
+  {
+    "id": 1067866,
+    "name": "BO Breakout",
+    "updated": true,
+    "reliable": false,
+    "coverage": 97.3,
+    "dd_pct": 223.85345745875983,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1180627,
+    "name": "look forward",
+    "updated": true,
+    "reliable": false,
+    "coverage": 18.4,
+    "dd_pct": 0.3615766456739496,
+    "reason": "Abdeckung < 95% (gerundet 18.4%) · Kursdaten fehlen für 11 von 83 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 3 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1309048,
+    "name": "cryptos4",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Kursdaten fehlen für 48 von 235 Trades (Kurse: ADAUSD.BC, ATMUSD.BC, AVAUSD.BC, BCHUSD.BC, DOTUSD.BC)"
+  },
+  {
+    "id": 1391063,
+    "name": "Patrickli4389",
+    "updated": false,
+    "reliable": false,
+    "coverage": 94.4,
+    "dd_pct": 91.82680445886756,
+    "reason": "Abdeckung < 95% (gerundet 94.4%)"
+  },
+  {
+    "id": 1414803,
+    "name": "SSFX MomentumEdge",
+    "updated": true,
+    "reliable": true,
+    "coverage": 99.8,
+    "dd_pct": 14.74785404564166,
+    "reason": null
+  },
+  {
+    "id": 1518201,
+    "name": "Goldenpips560",
+    "updated": false,
+    "reliable": false,
+    "coverage": 100.0,
+    "dd_pct": 8.088016733637904,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 1 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1090313,
+    "name": "TAVA 4 RP Full EA",
+    "updated": false,
+    "reliable": false,
+    "coverage": 97.6,
+    "dd_pct": 11.53248413695992,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 4 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1098839,
+    "name": "Cryptowanlanid Orion",
+    "updated": false,
+    "reliable": false,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Zeitabbildung nicht monoton/eindeutig: CSV 2026-03-29T23:16:08 (+2 h) -> 2026-03-30T01:16:08; danach CSV 2026-03-30T00:00:35 (+1 h) -> 2026-03-30T01:00:35; Reihenfolge um 933 Sekunden umgekehrt"
+  },
+  {
+    "id": 1444416,
+    "name": "yeld",
+    "updated": true,
+    "reliable": false,
+    "coverage": 79.9,
+    "dd_pct": 0.22773276518358018,
+    "reason": "Abdeckung < 95% (gerundet 79.9%) · Kursdaten fehlen für 4 von 51 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+  },
+  {
+    "id": 1545471,
+    "name": "yfx gold 50 pips ",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (+1 h, +2 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 1014197,
+    "name": "MSC GOLD STABLE PRO",
+    "updated": false,
+    "reliable": false,
+    "coverage": 72.0,
+    "dd_pct": 0.727197255300503,
+    "reason": "Abdeckung < 95% (gerundet 72.0%)"
+  },
+  {
+    "id": 1090761,
+    "name": "Money Makers GOLD ",
+    "updated": true,
+    "reliable": false,
+    "coverage": 74.8,
+    "dd_pct": 54.342310999999874,
+    "reason": "Abdeckung < 95% (gerundet 74.8%)"
+  },
+  {
+    "id": 1115994,
+    "name": "xGoldSync",
+    "updated": false,
+    "reliable": false,
+    "coverage": 96.3,
+    "dd_pct": 14.951105377719335,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1370253,
+    "name": "Sincro Vectorial",
+    "updated": false,
+    "reliable": false,
+    "coverage": 94.8,
+    "dd_pct": 23.3769646921535,
+    "reason": "Abdeckung < 95% (gerundet 94.8%)"
+  },
+  {
+    "id": 1373099,
+    "name": "MMT AMA Bot",
+    "updated": true,
+    "reliable": true,
+    "coverage": 96.5,
+    "dd_pct": 1347.14234765262,
+    "reason": null
+  },
+  {
+    "id": 1459165,
+    "name": "Momentum Masters",
+    "updated": true,
+    "reliable": false,
+    "coverage": 83.4,
+    "dd_pct": 38.41646553473559,
+    "reason": "Abdeckung < 95% (gerundet 83.4%)"
+  },
+  {
+    "id": 1378066,
+    "name": "AQEU",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (-1 h, +1 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 1531475,
+    "name": "WILD",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Kursdaten fehlen für 162 von 162 Trades (Kurse: FIXEDVOL100, FIXEDVOL20, FIXEDVOL40, FIXEDVOL80)"
+  },
+  {
+    "id": 1546400,
+    "name": "GEM Strategy",
+    "updated": true,
+    "reliable": true,
+    "coverage": 95.3,
+    "dd_pct": 3.0778701613686934,
+    "reason": null
+  },
+  {
+    "id": 1263873,
+    "name": "Ivan shadow 7722994",
+    "updated": false,
+    "reliable": false,
+    "coverage": 100.0,
+    "dd_pct": 3.7654114331820097,
+    "reason": "Kursdaten fehlen für 2 von 71 Trades · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 11 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1510917,
+    "name": "Poomp the mooscles",
+    "updated": false,
+    "reliable": false,
+    "coverage": 94.8,
+    "dd_pct": 3.6199095022624403,
+    "reason": "Abdeckung < 95% (gerundet 94.8%)"
+  },
+  {
+    "id": 1108245,
+    "name": "BangkokFXTrader",
+    "updated": true,
+    "reliable": false,
+    "coverage": 83.7,
+    "dd_pct": 132.54414823799763,
+    "reason": "Abdeckung < 95% (gerundet 83.7%) · Kursdaten fehlen für 10 von 2000 Trades"
+  },
+  {
+    "id": 1175097,
+    "name": "PIT8",
+    "updated": false,
+    "reliable": false,
+    "coverage": 99.8,
+    "dd_pct": 111.01411062057853,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 8 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1536342,
+    "name": "GOLD66",
+    "updated": false,
+    "reliable": false,
+    "coverage": 93.9,
+    "dd_pct": 0.5946139076329588,
+    "reason": "Abdeckung < 95% (gerundet 93.9%)"
+  }
+]

@@ -1,0 +1,181 @@
+[
+  {
+    "id": 1286742,
+    "name": "DINO Scalping",
+    "previous_status": "ok",
+    "previous_coverage": 96.9,
+    "action": "kept_existing_reliable_study"
+  },
+  {
+    "id": 1096166,
+    "name": "the best one",
+    "previous_status": "unvollstaendig",
+    "previous_coverage": 3.0,
+    "status": "unvollstaendig",
+    "reliable": false,
+    "coverage": 6.1,
+    "reason": "Abdeckung 6% < 95% · EZB-Kurslücke · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 11 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet",
+    "missing_prices": null,
+    "dd_pct": 0.1789436844808897,
+    "dd_usd": 17.91,
+    "action": "study_updated",
+    "seconds": 4.968
+  },
+  {
+    "id": 954691,
+    "name": "TRADE EASY 4YOU 2",
+    "previous_status": "unvollstaendig",
+    "previous_coverage": 31.5,
+    "status": "unvollstaendig",
+    "reliable": false,
+    "coverage": 94.5,
+    "reason": "Abdeckung 94.5% < 95% · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet",
+    "missing_prices": null,
+    "dd_pct": 16.7593364805072,
+    "dd_usd": 2041.31,
+    "action": "study_updated",
+    "seconds": 0.545,
+    "diagnostic_text_fixed": "Deckung mit Nachkommastelle statt auf ganze Prozent gerundet"
+  },
+  {
+    "id": 964411,
+    "name": "PHOENIXMYTHFUNDS",
+    "previous_status": "unvollstaendig",
+    "previous_coverage": 99.7,
+    "status": "unvollstaendig",
+    "reliable": false,
+    "coverage": 99.7,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet",
+    "missing_prices": null,
+    "dd_pct": 8.210396594087657,
+    "dd_usd": 837.68,
+    "action": "study_updated",
+    "seconds": 0.175
+  },
+  {
+    "id": 538344,
+    "name": "Rebounds",
+    "previous_status": "skipped",
+    "previous_coverage": null,
+    "status": "skipped",
+    "reliable": false,
+    "coverage": null,
+    "reason": "Zeitabbildung nicht monoton/eindeutig",
+    "missing_prices": null,
+    "dd_pct": null,
+    "dd_usd": null,
+    "action": "study_updated",
+    "seconds": 3.535
+  },
+  {
+    "id": 178177,
+    "name": "Rohan Gupta 40000121",
+    "previous_status": "unvollstaendig",
+    "previous_coverage": 18.1,
+    "status": "unvollstaendig",
+    "reliable": false,
+    "coverage": 50.2,
+    "reason": "Abdeckung 50% < 95% · EZB-Kurslücke · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 43 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet",
+    "missing_prices": null,
+    "dd_pct": 129.9529301062176,
+    "dd_usd": 23545.88,
+    "action": "study_updated",
+    "seconds": 36.583
+  },
+  {
+    "id": 1121175,
+    "name": "WanChaiTrendFX",
+    "previous_status": null,
+    "previous_coverage": null,
+    "action": "blocked_no_trade_export",
+    "reason": "DownloaderNotFound: Kontowährung „EUR“ wird (noch) nicht unterstützt — trades.csv nur für USD/USC-Konten (USC liefert USD-normalisierte Werte; die Forensik des Scanners rechnet USD; Umrechnung folgt)."
+  },
+  {
+    "id": 1024672,
+    "name": "GoldBitGrid",
+    "previous_status": "ok",
+    "previous_coverage": 95.6,
+    "action": "kept_existing_reliable_study"
+  },
+  {
+    "id": 805275,
+    "name": "LaoLong Forex",
+    "previous_status": "ok",
+    "previous_coverage": 96.9,
+    "action": "kept_existing_reliable_study"
+  },
+  {
+    "id": 504191,
+    "name": "Master Hong",
+    "previous_status": null,
+    "previous_coverage": null,
+    "action": "blocked_no_trade_export",
+    "reason": "DownloaderNotFound: Kontowährung „HKD“ wird (noch) nicht unterstützt — trades.csv nur für USD/USC-Konten (USC liefert USD-normalisierte Werte; die Forensik des Scanners rechnet USD; Umrechnung folgt)."
+  },
+  {
+    "id": 1121200,
+    "name": "HarbourFXPrime",
+    "previous_status": "unvollstaendig",
+    "previous_coverage": 22.1,
+    "status": "ok",
+    "reliable": true,
+    "coverage": 96.0,
+    "reason": null,
+    "missing_prices": null,
+    "dd_pct": 115.4366765461549,
+    "dd_usd": 39761.78,
+    "action": "study_updated",
+    "seconds": 0.194
+  },
+  {
+    "id": 1010186,
+    "name": "Lenore",
+    "previous_status": "ok",
+    "previous_coverage": 97.5,
+    "action": "kept_existing_reliable_study"
+  },
+  {
+    "id": 762414,
+    "name": "SHC Team V1",
+    "previous_status": "ok",
+    "previous_coverage": 100.0,
+    "action": "kept_existing_reliable_study"
+  },
+  {
+    "id": 998837,
+    "name": "Bet with Akedang",
+    "previous_status": "unvollstaendig",
+    "previous_coverage": 86.4,
+    "status": "unvollstaendig",
+    "reliable": false,
+    "coverage": 86.4,
+    "reason": "Abdeckung 86% < 95%",
+    "missing_prices": null,
+    "dd_pct": 249.774105381507,
+    "dd_usd": 175507.01,
+    "action": "study_updated",
+    "seconds": 0.111
+  },
+  {
+    "id": 776728,
+    "name": "FOMOx99",
+    "previous_status": "ok",
+    "previous_coverage": 100.0,
+    "action": "kept_existing_reliable_study"
+  },
+  {
+    "id": 1052261,
+    "name": "Bullions",
+    "previous_status": "unvollstaendig",
+    "previous_coverage": 90.3,
+    "status": "unvollstaendig",
+    "reliable": false,
+    "coverage": 90.3,
+    "reason": "Abdeckung 90% < 95%",
+    "missing_prices": null,
+    "dd_pct": 4.307264488037166,
+    "dd_usd": 456.62,
+    "action": "study_updated",
+    "seconds": 0.115
+  }
+]

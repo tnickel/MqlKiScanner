@@ -1,0 +1,31 @@
+{
+  "measurements": [
+    {
+      "id": 954691,
+      "name": "TRADE EASY 4YOU 2",
+      "broker": "ActiveTrades003",
+      "status": "unvollstaendig",
+      "reliable": false,
+      "coverage": 95.0,
+      "dd_pct": 16.886995339637025,
+      "reason": "Abdeckung < 95% (gerundet 95.0%)",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 0.557
+    }
+  ],
+  "updates": [
+    {
+      "id": 954691,
+      "name": "TRADE EASY 4YOU 2",
+      "previous_coverage": 95.0,
+      "previous_dd": 16.886995339637025,
+      "action": "study_updated",
+      "broker": "ActiveTrades003",
+      "coverage": 95.0,
+      "dd_pct": 16.886995339637025,
+      "reliable": false,
+      "reason": "Abdeckung < 95% (gerundet 95.0%)"
+    }
+  ]
+}

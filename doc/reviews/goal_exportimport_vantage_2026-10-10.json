@@ -1,0 +1,293 @@
+[
+  {
+    "id": 1038472,
+    "http_status": 200,
+    "imported": true,
+    "trades": 56,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1151130,
+    "http_status": 200,
+    "imported": true,
+    "trades": 275,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1159789,
+    "http_status": 404,
+    "skipped": "Keine erfolgreiche CSV-Antwort"
+  },
+  {
+    "id": 1196090,
+    "http_status": 200,
+    "imported": true,
+    "trades": 12862,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1210117,
+    "http_status": 200,
+    "imported": true,
+    "trades": 80,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1245823,
+    "http_status": 200,
+    "imported": true,
+    "trades": 548,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1247565,
+    "http_status": 200,
+    "imported": true,
+    "trades": 74,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1345621,
+    "http_status": 200,
+    "imported": true,
+    "trades": 40,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1355018,
+    "http_status": 200,
+    "imported": true,
+    "trades": 951,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1422970,
+    "http_status": 200,
+    "imported": true,
+    "trades": 4593,
+    "currency": "HKD",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1430436,
+    "http_status": 200,
+    "imported": true,
+    "trades": 141,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1462046,
+    "http_status": 200,
+    "imported": true,
+    "trades": 50,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1525495,
+    "http_status": 200,
+    "imported": true,
+    "trades": 139,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 1545031,
+    "http_status": 200,
+    "imported": true,
+    "trades": 48,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 487793,
+    "http_status": 200,
+    "imported": true,
+    "trades": 238,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 609751,
+    "http_status": 200,
+    "imported": true,
+    "trades": 1125,
+    "currency": "GBP",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 620637,
+    "http_status": 200,
+    "imported": true,
+    "trades": 3030,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 622123,
+    "http_status": 200,
+    "imported": true,
+    "trades": 497,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 627740,
+    "http_status": 200,
+    "imported": true,
+    "trades": 41,
+    "currency": "INR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 636987,
+    "http_status": 200,
+    "imported": true,
+    "trades": 802,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 759008,
+    "http_status": 200,
+    "imported": true,
+    "trades": 124,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 781145,
+    "http_status": 200,
+    "imported": true,
+    "trades": 105,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 791260,
+    "http_status": 200,
+    "imported": true,
+    "trades": 80,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 823566,
+    "http_status": 200,
+    "imported": true,
+    "trades": 7360,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 850146,
+    "http_status": 200,
+    "imported": true,
+    "trades": 436,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 850152,
+    "http_status": 200,
+    "imported": true,
+    "trades": 582,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 934024,
+    "http_status": 200,
+    "imported": true,
+    "trades": 66,
+    "currency": "EUR",
+    "truncated": false,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  }
+]

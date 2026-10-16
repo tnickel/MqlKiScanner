@@ -1,0 +1,1662 @@
+{
+  "results": [
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 332439,
+      "status": 200,
+      "trades": 9704,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 385732,
+      "status": 200,
+      "financial_only": true,
+      "trades": 10389,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 391858,
+      "status": 200,
+      "trades": 1865,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 399598,
+      "status": 200,
+      "trades": 2545,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 402995,
+      "status": 200,
+      "trades": 5717,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 402997,
+      "status": 200,
+      "trades": 7513,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 407191,
+      "status": 200,
+      "trades": 13317,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 407193,
+      "status": 200,
+      "trades": 16049,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 408444,
+      "status": 200,
+      "financial_only": true,
+      "trades": 12443,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 409148,
+      "status": 200,
+      "trades": 2614,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 410467,
+      "status": 200,
+      "trades": 7366,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 410470,
+      "status": 200,
+      "trades": 12773,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 412811,
+      "status": 200,
+      "trades": 854,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 417345,
+      "status": 200,
+      "trades": 2882,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 417743,
+      "status": 200,
+      "trades": 5015,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 418271,
+      "status": 200,
+      "trades": 6990,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 418318,
+      "status": 200,
+      "trades": 16232,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 418925,
+      "status": 200,
+      "trades": 1667,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 420458,
+      "status": 200,
+      "trades": 2474,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 420462,
+      "status": 200,
+      "trades": 16323,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 422828,
+      "status": 200,
+      "trades": 1472,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 423164,
+      "status": 200,
+      "trades": 597,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 423829,
+      "status": 200,
+      "trades": 4962,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 424309,
+      "status": 200,
+      "trades": 3837,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 424846,
+      "status": 200,
+      "trades": 669,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 424932,
+      "status": 200,
+      "trades": 4941,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 425245,
+      "status": 200,
+      "trades": 2927,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 425827,
+      "status": 200,
+      "trades": 1896,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 426089,
+      "status": 200,
+      "trades": 2613,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 426092,
+      "status": 200,
+      "trades": 6421,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 426132,
+      "status": 200,
+      "trades": 3622,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 426133,
+      "status": 200,
+      "trades": 6764,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 426652,
+      "status": 200,
+      "trades": 2351,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 426663,
+      "status": 200,
+      "trades": 3814,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 426683,
+      "status": 200,
+      "trades": 4833,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 427110,
+      "status": 200,
+      "trades": 14672,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 427983,
+      "status": 200,
+      "trades": 2054,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 428282,
+      "status": 200,
+      "trades": 215,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 428787,
+      "status": 200,
+      "trades": 1051,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 428956,
+      "status": 200,
+      "trades": 1640,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 428985,
+      "status": 200,
+      "trades": 131,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 429246,
+      "status": 200,
+      "trades": 2941,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 429446,
+      "status": 200,
+      "trades": 2226,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 429827,
+      "status": 200,
+      "trades": 13066,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 429834,
+      "status": 200,
+      "trades": 1243,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 430183,
+      "status": 200,
+      "trades": 1053,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 430236,
+      "status": 200,
+      "trades": 1450,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 430440,
+      "status": 200,
+      "trades": 421,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 430525,
+      "status": 200,
+      "trades": 11058,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 430543,
+      "status": 200,
+      "trades": 90,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 430568,
+      "status": 200,
+      "trades": 8893,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_fx_exports_goal_20261010",
+      "id": 430608,
+      "status": 200,
+      "financial_only": true,
+      "trades": 11107,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_zeit_exports_goal_20261010",
+      "id": 304366,
+      "status": 200,
+      "trades": 9250,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_zeit_exports_goal_20261010",
+      "id": 425666,
+      "status": 200,
+      "financial_only": true,
+      "trades": 4000,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_zeit_exports_goal_20261010",
+      "id": 426987,
+      "status": 200,
+      "financial_only": true,
+      "trades": 6431,
+      "costs": 0
+    },
+    {
+      "folder": "zulu_zeit_exports_goal_20261010",
+      "id": 430016,
+      "status": 200,
+      "financial_only": true,
+      "trades": 4091,
+      "costs": 0
+    },
+    {
+      "folder": "mql_exports_goal_20261010",
+      "id": 1760039,
+      "status": 200,
+      "trades": 12161,
+      "costs": 0
+    },
+    {
+      "folder": "mql_exports_goal_20261010",
+      "id": 2268766,
+      "status": 200,
+      "trades": 7012,
+      "costs": 0
+    },
+    {
+      "folder": "mql_exports_goal_20261010",
+      "id": 2349577,
+      "status": 200,
+      "trades": 106,
+      "costs": 0
+    },
+    {
+      "folder": "mql_exports_goal_20261010",
+      "id": 2361280,
+      "status": 200,
+      "trades": 197,
+      "costs": 0
+    },
+    {
+      "folder": "mql_exports_goal_20261010",
+      "id": 2386274,
+      "status": 200,
+      "trades": 206,
+      "costs": 0
+    },
+    {
+      "folder": "mql_exports_goal_20261010",
+      "id": 840474,
+      "status": 200,
+      "trades": 9208,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 1784430,
+      "status": 200,
+      "trades": 1672,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2142461,
+      "status": 200,
+      "trades": 1927,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2172246,
+      "status": 200,
+      "trades": 3234,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2271995,
+      "status": 200,
+      "trades": 2022,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2282234,
+      "status": 200,
+      "trades": 413,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2312950,
+      "status": 200,
+      "trades": 592,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2325779,
+      "status": 200,
+      "trades": 5658,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2349577,
+      "status": 200,
+      "trades": 354,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2351061,
+      "status": 200,
+      "trades": 731,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2360068,
+      "status": 200,
+      "trades": 1241,
+      "costs": 138
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2361280,
+      "status": 200,
+      "trades": 399,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2361784,
+      "status": 200,
+      "trades": 1710,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2361936,
+      "status": 200,
+      "trades": 530,
+      "costs": 0
+    },
+    {
+      "folder": "mql_remote_exports_goal_20261010",
+      "id": 2362400,
+      "status": 200,
+      "trades": 704,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1038472,
+      "status": 200,
+      "trades": 56,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1151130,
+      "status": 200,
+      "trades": 275,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1159789,
+      "status": 404
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1196090,
+      "status": 200,
+      "trades": 12862,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1210117,
+      "status": 200,
+      "trades": 80,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1245823,
+      "status": 200,
+      "trades": 548,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1247565,
+      "status": 200,
+      "trades": 74,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1345621,
+      "status": 200,
+      "trades": 40,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1355018,
+      "status": 200,
+      "trades": 951,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1422970,
+      "status": 200,
+      "trades": 4593,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1430436,
+      "status": 200,
+      "trades": 141,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1462046,
+      "status": 200,
+      "trades": 50,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1525495,
+      "status": 200,
+      "trades": 139,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 1545031,
+      "status": 200,
+      "trades": 48,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 487793,
+      "status": 200,
+      "trades": 238,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 609751,
+      "status": 200,
+      "trades": 1125,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 620637,
+      "status": 200,
+      "trades": 3030,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 622123,
+      "status": 200,
+      "trades": 497,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 627740,
+      "status": 200,
+      "trades": 41,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 636987,
+      "status": 200,
+      "trades": 802,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 759008,
+      "status": 200,
+      "trades": 124,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 781145,
+      "status": 200,
+      "trades": 105,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 791260,
+      "status": 200,
+      "trades": 80,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 823566,
+      "status": 200,
+      "trades": 7360,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 850146,
+      "status": 200,
+      "trades": 436,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 850152,
+      "status": 200,
+      "trades": 582,
+      "costs": 0
+    },
+    {
+      "folder": "vantage_fx_exports_goal_20261010",
+      "id": 934024,
+      "status": 200,
+      "trades": 66,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2000184,
+      "status": 200,
+      "trades": 188,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2000466,
+      "status": 200,
+      "trades": 1312,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2000504,
+      "status": 200,
+      "trades": 122,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2000587,
+      "status": 200,
+      "trades": 1157,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2000638,
+      "status": 200,
+      "trades": 0,
+      "costs": 0,
+      "verified_zero_history": true
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2000655,
+      "status": 200,
+      "trades": 997,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2000810,
+      "status": 200,
+      "trades": 495,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2001217,
+      "status": 200,
+      "trades": 1,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2001220,
+      "status": 200,
+      "trades": 1579,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2002010,
+      "status": 200,
+      "trades": 645,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2003495,
+      "status": 200,
+      "trades": 293,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2003623,
+      "status": 200,
+      "trades": 1169,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2003870,
+      "status": 200,
+      "trades": 670,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2003940,
+      "status": 200,
+      "trades": 88,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2004000,
+      "status": 200,
+      "trades": 185,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2004877,
+      "status": 200,
+      "trades": 1290,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2005187,
+      "status": 200,
+      "trades": 159,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2005521,
+      "status": 200,
+      "trades": 6,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2005593,
+      "status": 200,
+      "trades": 6,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2005940,
+      "status": 200,
+      "trades": 72,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2006112,
+      "status": 200,
+      "trades": 75,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2006345,
+      "status": 200,
+      "trades": 901,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2006692,
+      "status": 200,
+      "trades": 632,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2007497,
+      "status": 200,
+      "trades": 254,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2008349,
+      "status": 200,
+      "trades": 318,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2008758,
+      "status": 200,
+      "trades": 260,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2009328,
+      "status": 200,
+      "trades": 1867,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2010425,
+      "status": 200,
+      "trades": 637,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2012056,
+      "status": 200,
+      "trades": 41,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2012265,
+      "status": 200,
+      "trades": 430,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2013138,
+      "status": 200,
+      "trades": 577,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2013384,
+      "status": 200,
+      "trades": 8,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2014253,
+      "status": 200,
+      "trades": 1381,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2016761,
+      "status": 200,
+      "trades": 244,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2017621,
+      "status": 200,
+      "trades": 87,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2017892,
+      "status": 200,
+      "trades": 951,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2018031,
+      "status": 200,
+      "trades": 11,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2018072,
+      "status": 200,
+      "trades": 426,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2019203,
+      "status": 200,
+      "trades": 521,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2019615,
+      "status": 200,
+      "trades": 632,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2019667,
+      "status": 200,
+      "trades": 1671,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2019919,
+      "status": 200,
+      "trades": 120,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2019924,
+      "status": 200,
+      "trades": 838,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2020001,
+      "status": 200,
+      "trades": 879,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2020465,
+      "status": 200,
+      "trades": 34,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2020495,
+      "status": 200,
+      "trades": 49,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2020834,
+      "status": 200,
+      "trades": 21,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2020876,
+      "status": 200,
+      "trades": 1726,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2021001,
+      "status": 200,
+      "trades": 9,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2021569,
+      "status": 200,
+      "trades": 371,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2021768,
+      "status": 200,
+      "trades": 156,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2021948,
+      "status": 200,
+      "trades": 166,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2022758,
+      "status": 200,
+      "trades": 1194,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2022970,
+      "status": 200,
+      "trades": 292,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2024714,
+      "status": 200,
+      "trades": 212,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2026496,
+      "status": 200,
+      "trades": 94,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2026843,
+      "status": 200,
+      "trades": 75,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2027012,
+      "status": 200,
+      "trades": 1418,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2027533,
+      "status": 200,
+      "trades": 59,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2028213,
+      "status": 200,
+      "trades": 39,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2028633,
+      "status": 200,
+      "trades": 165,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2030138,
+      "status": 200,
+      "trades": 144,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2030847,
+      "status": 200,
+      "trades": 388,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2031323,
+      "status": 200,
+      "trades": 53,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2031751,
+      "status": 200,
+      "trades": 239,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2032665,
+      "status": 200,
+      "trades": 49,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2033039,
+      "status": 200,
+      "trades": 2659,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2033102,
+      "status": 200,
+      "trades": 243,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2033112,
+      "status": 200,
+      "trades": 6488,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2033126,
+      "status": 200,
+      "trades": 14086,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2033246,
+      "status": 200,
+      "trades": 114,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2033578,
+      "status": 200,
+      "trades": 43,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2033698,
+      "status": 200,
+      "trades": 93,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2035092,
+      "status": 200,
+      "trades": 534,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2035253,
+      "status": 200,
+      "trades": 458,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2035965,
+      "status": 200,
+      "trades": 31,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2036821,
+      "status": 200,
+      "trades": 220,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2036941,
+      "status": 200,
+      "trades": 668,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2037327,
+      "status": 200,
+      "trades": 126,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2039024,
+      "status": 200,
+      "trades": 51,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2042033,
+      "status": 200,
+      "trades": 120,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2042135,
+      "status": 200,
+      "trades": 202,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2042565,
+      "status": 200,
+      "trades": 491,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2044075,
+      "status": 200,
+      "trades": 338,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2044960,
+      "status": 200,
+      "trades": 223,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2046138,
+      "status": 200,
+      "trades": 491,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2046904,
+      "status": 200,
+      "trades": 110,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2049226,
+      "status": 200,
+      "trades": 1945,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2049681,
+      "status": 200,
+      "trades": 112,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2049782,
+      "status": 200,
+      "trades": 5,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2049978,
+      "status": 200,
+      "trades": 24,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2050209,
+      "status": 200,
+      "trades": 138,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2050866,
+      "status": 200,
+      "trades": 2344,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2051023,
+      "status": 200,
+      "trades": 150,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2051170,
+      "status": 200,
+      "trades": 15442,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2052304,
+      "status": 200,
+      "trades": 6,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2052663,
+      "status": 200,
+      "trades": 18,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2053690,
+      "status": 200,
+      "trades": 801,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2053912,
+      "status": 200,
+      "trades": 174,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2055526,
+      "status": 200,
+      "trades": 217,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2055528,
+      "status": 200,
+      "trades": 200,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2057825,
+      "status": 200,
+      "trades": 12,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2058591,
+      "status": 200,
+      "trades": 69,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2058985,
+      "status": 200,
+      "trades": 391,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2059050,
+      "status": 200,
+      "trades": 53,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2059599,
+      "status": 200,
+      "trades": 118,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2059786,
+      "status": 200,
+      "trades": 611,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2059848,
+      "status": 200,
+      "trades": 125,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2059901,
+      "status": 200,
+      "trades": 122,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2061827,
+      "status": 200,
+      "trades": 31,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2063824,
+      "status": 200,
+      "trades": 0,
+      "costs": 0,
+      "verified_zero_history": true
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2063882,
+      "status": 200,
+      "trades": 268,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2066521,
+      "status": 200,
+      "trades": 107,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2066529,
+      "status": 200,
+      "trades": 213,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2069541,
+      "status": 200,
+      "trades": 139,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2075092,
+      "status": 200,
+      "trades": 184,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2077736,
+      "status": 200,
+      "trades": 28,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2079092,
+      "status": 200,
+      "trades": 68,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2080162,
+      "status": 200,
+      "trades": 68,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2081607,
+      "status": 200,
+      "trades": 104,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2098251,
+      "status": 200,
+      "trades": 226,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2098657,
+      "status": 200,
+      "trades": 73,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2098662,
+      "status": 200,
+      "trades": 2,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2098816,
+      "status": 200,
+      "trades": 66,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2098858,
+      "status": 200,
+      "trades": 29,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2099301,
+      "status": 200,
+      "trades": 27,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2099355,
+      "status": 200,
+      "trades": 2,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2099617,
+      "status": 200,
+      "trades": 27,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2100001,
+      "status": 200,
+      "trades": 12,
+      "costs": 0
+    },
+    {
+      "folder": "pelican_exports_goal_20261010",
+      "id": 2100300,
+      "status": 200,
+      "trades": 474,
+      "costs": 0
+    }
+  ],
+  "folders": {
+    "zulu_fx_exports_goal_20261010": {
+      "valid": 52
+    },
+    "zulu_zeit_exports_goal_20261010": {
+      "valid": 4
+    },
+    "mql_exports_goal_20261010": {
+      "valid": 6
+    },
+    "mql_remote_exports_goal_20261010": {
+      "valid": 14
+    },
+    "vantage_fx_exports_goal_20261010": {
+      "valid": 26,
+      "not_exportable": 1
+    },
+    "pelican_exports_goal_20261010": {
+      "valid": 130
+    }
+  }
+}

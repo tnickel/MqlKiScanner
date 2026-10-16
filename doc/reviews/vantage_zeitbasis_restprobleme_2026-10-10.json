@@ -1,0 +1,3591 @@
+{
+  "date": "2026-10-10",
+  "mode": "offline, sqlite mode=ro; no MT5 calls, no production DB writes",
+  "h1_source": "tmp\\abdeckungsdiagnose_Vantage_cache.json",
+  "thresholds": {
+    "coverage_min": 0.95,
+    "local_min_probes": 3,
+    "local_min_hit_ratio": 0.9,
+    "global_min_hit_ratio": 0.6,
+    "price_relative_tolerance": 0.001,
+    "hard_outlier_tolerance_factor": 10.0
+  },
+  "signals": [
+    {
+      "id": 538344,
+      "csv": "data\\trade_snapshots\\9478e521c32c743e0e28295afb6a5e36d246611e12dff0772b7c29eb08fc54b0.csv",
+      "saved_report": "tmp/abdeckungsdiagnose_Vantage_538344_report.json",
+      "status": "skipped",
+      "coverage_pct": null,
+      "reliable": false,
+      "time_diagnostic": {
+        "modus": "wochenweise",
+        "frame": "referenzkurszeit",
+        "global_gmt_h": 1,
+        "global_belegt": true,
+        "verlaesslich": false,
+        "monoton": false,
+        "nichtmonotones_beispiel": {
+          "vorher": {
+            "csvzeit": "2026-07-26T23:09:49",
+            "offset_s": 7200,
+            "referenzzeit": "2026-07-27T01:09:49"
+          },
+          "nachher": {
+            "csvzeit": "2026-07-27T00:00:00",
+            "offset_s": 3600,
+            "referenzzeit": "2026-07-27T01:00:00"
+          },
+          "umkehr_s": 589
+        },
+        "offene_wechsel_annahmen": 80,
+        "unsichere_innenperioden": 0,
+        "annahme": "Kalenderwochengrenzen sind Modellgrenzen, kein exakter DST-Beleg",
+        "unsichere_trade_ereignisse": 18,
+        "gruende": [
+          "Ereignisabbildung nicht monoton/eindeutig",
+          "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze",
+          "Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt",
+          "18 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+        ],
+        "perioden": [
+          {
+            "von_t": 1745193600,
+            "bis_t": 1745798400,
+            "von": "2025-04-21T00:00:00+00:00",
+            "bis": "2025-04-28T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 31,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1745798400,
+            "bis_t": 1746403200,
+            "von": "2025-04-28T00:00:00+00:00",
+            "bis": "2025-05-05T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 33,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1746403200,
+            "bis_t": 1747008000,
+            "von": "2025-05-05T00:00:00+00:00",
+            "bis": "2025-05-12T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 31,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1747008000,
+            "bis_t": 1747612800,
+            "von": "2025-05-12T00:00:00+00:00",
+            "bis": "2025-05-19T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 14,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1747612800,
+            "bis_t": 1748217600,
+            "von": "2025-05-19T00:00:00+00:00",
+            "bis": "2025-05-26T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1748217600,
+            "bis_t": 1748822400,
+            "von": "2025-05-26T00:00:00+00:00",
+            "bis": "2025-06-02T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1748822400,
+            "bis_t": 1749427200,
+            "von": "2025-06-02T00:00:00+00:00",
+            "bis": "2025-06-09T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1749427200,
+            "bis_t": 1750032000,
+            "von": "2025-06-09T00:00:00+00:00",
+            "bis": "2025-06-16T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1750032000,
+            "bis_t": 1750636800,
+            "von": "2025-06-16T00:00:00+00:00",
+            "bis": "2025-06-23T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1750636800,
+            "bis_t": 1751241600,
+            "von": "2025-06-23T00:00:00+00:00",
+            "bis": "2025-06-30T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1751241600,
+            "bis_t": 1751846400,
+            "von": "2025-06-30T00:00:00+00:00",
+            "bis": "2025-07-07T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1751846400,
+            "bis_t": 1752451200,
+            "von": "2025-07-07T00:00:00+00:00",
+            "bis": "2025-07-14T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1752451200,
+            "bis_t": 1753056000,
+            "von": "2025-07-14T00:00:00+00:00",
+            "bis": "2025-07-21T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1753056000,
+            "bis_t": 1753660800,
+            "von": "2025-07-21T00:00:00+00:00",
+            "bis": "2025-07-28T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1753660800,
+            "bis_t": 1754265600,
+            "von": "2025-07-28T00:00:00+00:00",
+            "bis": "2025-08-04T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1754265600,
+            "bis_t": 1754870400,
+            "von": "2025-08-04T00:00:00+00:00",
+            "bis": "2025-08-11T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1754870400,
+            "bis_t": 1755475200,
+            "von": "2025-08-11T00:00:00+00:00",
+            "bis": "2025-08-18T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1755475200,
+            "bis_t": 1756080000,
+            "von": "2025-08-18T00:00:00+00:00",
+            "bis": "2025-08-25T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1756080000,
+            "bis_t": 1756684800,
+            "von": "2025-08-25T00:00:00+00:00",
+            "bis": "2025-09-01T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1756684800,
+            "bis_t": 1757289600,
+            "von": "2025-09-01T00:00:00+00:00",
+            "bis": "2025-09-08T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1757289600,
+            "bis_t": 1757894400,
+            "von": "2025-09-08T00:00:00+00:00",
+            "bis": "2025-09-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1757894400,
+            "bis_t": 1758499200,
+            "von": "2025-09-15T00:00:00+00:00",
+            "bis": "2025-09-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1758499200,
+            "bis_t": 1759104000,
+            "von": "2025-09-22T00:00:00+00:00",
+            "bis": "2025-09-29T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1759104000,
+            "bis_t": 1759708800,
+            "von": "2025-09-29T00:00:00+00:00",
+            "bis": "2025-10-06T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1759708800,
+            "bis_t": 1760313600,
+            "von": "2025-10-06T00:00:00+00:00",
+            "bis": "2025-10-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1760313600,
+            "bis_t": 1760918400,
+            "von": "2025-10-13T00:00:00+00:00",
+            "bis": "2025-10-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1760918400,
+            "bis_t": 1761523200,
+            "von": "2025-10-20T00:00:00+00:00",
+            "bis": "2025-10-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1761523200,
+            "bis_t": 1762128000,
+            "von": "2025-10-27T00:00:00+00:00",
+            "bis": "2025-11-03T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1762128000,
+            "bis_t": 1762732800,
+            "von": "2025-11-03T00:00:00+00:00",
+            "bis": "2025-11-10T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1762732800,
+            "bis_t": 1763337600,
+            "von": "2025-11-10T00:00:00+00:00",
+            "bis": "2025-11-17T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1763337600,
+            "bis_t": 1763942400,
+            "von": "2025-11-17T00:00:00+00:00",
+            "bis": "2025-11-24T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1763942400,
+            "bis_t": 1764547200,
+            "von": "2025-11-24T00:00:00+00:00",
+            "bis": "2025-12-01T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1764547200,
+            "bis_t": 1765152000,
+            "von": "2025-12-01T00:00:00+00:00",
+            "bis": "2025-12-08T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1765152000,
+            "bis_t": 1765756800,
+            "von": "2025-12-08T00:00:00+00:00",
+            "bis": "2025-12-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1765756800,
+            "bis_t": 1766361600,
+            "von": "2025-12-15T00:00:00+00:00",
+            "bis": "2025-12-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1766361600,
+            "bis_t": 1766966400,
+            "von": "2025-12-22T00:00:00+00:00",
+            "bis": "2025-12-29T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1766966400,
+            "bis_t": 1767571200,
+            "von": "2025-12-29T00:00:00+00:00",
+            "bis": "2026-01-05T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1767571200,
+            "bis_t": 1768176000,
+            "von": "2026-01-05T00:00:00+00:00",
+            "bis": "2026-01-12T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1768176000,
+            "bis_t": 1768780800,
+            "von": "2026-01-12T00:00:00+00:00",
+            "bis": "2026-01-19T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1768780800,
+            "bis_t": 1769385600,
+            "von": "2026-01-19T00:00:00+00:00",
+            "bis": "2026-01-26T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 13,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1769385600,
+            "bis_t": 1769990400,
+            "von": "2026-01-26T00:00:00+00:00",
+            "bis": "2026-02-02T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1769990400,
+            "bis_t": 1770595200,
+            "von": "2026-02-02T00:00:00+00:00",
+            "bis": "2026-02-09T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1770595200,
+            "bis_t": 1771200000,
+            "von": "2026-02-09T00:00:00+00:00",
+            "bis": "2026-02-16T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1771200000,
+            "bis_t": 1771804800,
+            "von": "2026-02-16T00:00:00+00:00",
+            "bis": "2026-02-23T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1771804800,
+            "bis_t": 1772409600,
+            "von": "2026-02-23T00:00:00+00:00",
+            "bis": "2026-03-02T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1772409600,
+            "bis_t": 1773014400,
+            "von": "2026-03-02T00:00:00+00:00",
+            "bis": "2026-03-09T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1773014400,
+            "bis_t": 1773619200,
+            "von": "2026-03-09T00:00:00+00:00",
+            "bis": "2026-03-16T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1773619200,
+            "bis_t": 1774224000,
+            "von": "2026-03-16T00:00:00+00:00",
+            "bis": "2026-03-23T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1774224000,
+            "bis_t": 1774828800,
+            "von": "2026-03-23T00:00:00+00:00",
+            "bis": "2026-03-30T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1774828800,
+            "bis_t": 1775433600,
+            "von": "2026-03-30T00:00:00+00:00",
+            "bis": "2026-04-06T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1775433600,
+            "bis_t": 1776038400,
+            "von": "2026-04-06T00:00:00+00:00",
+            "bis": "2026-04-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1776038400,
+            "bis_t": 1776643200,
+            "von": "2026-04-13T00:00:00+00:00",
+            "bis": "2026-04-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 32,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1776643200,
+            "bis_t": 1777248000,
+            "von": "2026-04-20T00:00:00+00:00",
+            "bis": "2026-04-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 44,
+            "trefferquote": 0.977,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1777248000,
+            "bis_t": 1777852800,
+            "von": "2026-04-27T00:00:00+00:00",
+            "bis": "2026-05-04T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 37,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1777852800,
+            "bis_t": 1778457600,
+            "von": "2026-05-04T00:00:00+00:00",
+            "bis": "2026-05-11T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 38,
+            "trefferquote": 0.947,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1778457600,
+            "bis_t": 1779062400,
+            "von": "2026-05-11T00:00:00+00:00",
+            "bis": "2026-05-18T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 48,
+            "trefferquote": 0.979,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1779062400,
+            "bis_t": 1779667200,
+            "von": "2026-05-18T00:00:00+00:00",
+            "bis": "2026-05-25T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 23,
+            "trefferquote": 0.957,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1779667200,
+            "bis_t": 1780272000,
+            "von": "2026-05-25T00:00:00+00:00",
+            "bis": "2026-06-01T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 37,
+            "trefferquote": 0.973,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1780272000,
+            "bis_t": 1780876800,
+            "von": "2026-06-01T00:00:00+00:00",
+            "bis": "2026-06-08T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 34,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1780876800,
+            "bis_t": 1781481600,
+            "von": "2026-06-08T00:00:00+00:00",
+            "bis": "2026-06-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 16,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1781481600,
+            "bis_t": 1782086400,
+            "von": "2026-06-15T00:00:00+00:00",
+            "bis": "2026-06-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 35,
+            "trefferquote": 0.971,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1782086400,
+            "bis_t": 1782691200,
+            "von": "2026-06-22T00:00:00+00:00",
+            "bis": "2026-06-29T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 23,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1782691200,
+            "bis_t": 1783296000,
+            "von": "2026-06-29T00:00:00+00:00",
+            "bis": "2026-07-06T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 33,
+            "trefferquote": 0.97,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1783296000,
+            "bis_t": 1783900800,
+            "von": "2026-07-06T00:00:00+00:00",
+            "bis": "2026-07-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 43,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1783900800,
+            "bis_t": 1784505600,
+            "von": "2026-07-13T00:00:00+00:00",
+            "bis": "2026-07-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 37,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1784505600,
+            "bis_t": 1785110400,
+            "von": "2026-07-20T00:00:00+00:00",
+            "bis": "2026-07-27T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 34,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1785110400,
+            "bis_t": 1785715200,
+            "von": "2026-07-27T00:00:00+00:00",
+            "bis": "2026-08-03T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 38,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1785715200,
+            "bis_t": 1786320000,
+            "von": "2026-08-03T00:00:00+00:00",
+            "bis": "2026-08-10T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 26,
+            "trefferquote": 0.923,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1786320000,
+            "bis_t": 1786924800,
+            "von": "2026-08-10T00:00:00+00:00",
+            "bis": "2026-08-17T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 29,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1786924800,
+            "bis_t": 1787529600,
+            "von": "2026-08-17T00:00:00+00:00",
+            "bis": "2026-08-24T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 32,
+            "trefferquote": 0.969,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1787529600,
+            "bis_t": 1788134400,
+            "von": "2026-08-24T00:00:00+00:00",
+            "bis": "2026-08-31T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 28,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1788134400,
+            "bis_t": 1788739200,
+            "von": "2026-08-31T00:00:00+00:00",
+            "bis": "2026-09-07T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 25,
+            "trefferquote": 0.96,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1788739200,
+            "bis_t": 1789344000,
+            "von": "2026-09-07T00:00:00+00:00",
+            "bis": "2026-09-14T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 29,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1789344000,
+            "bis_t": 1789948800,
+            "von": "2026-09-14T00:00:00+00:00",
+            "bis": "2026-09-21T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 31,
+            "trefferquote": 0.968,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1789948800,
+            "bis_t": 1790553600,
+            "von": "2026-09-21T00:00:00+00:00",
+            "bis": "2026-09-28T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 19,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1790553600,
+            "bis_t": 1791158400,
+            "von": "2026-09-28T00:00:00+00:00",
+            "bis": "2026-10-05T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 40,
+            "trefferquote": 0.975,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1791158400,
+            "bis_t": 1791763200,
+            "von": "2026-10-05T00:00:00+00:00",
+            "bis": "2026-10-12T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 19,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          }
+        ]
+      },
+      "transition_scores": [
+        {
+          "csv_boundary": 1782086400,
+          "csv_boundary_iso": "2026-06-22T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 23,
+          "previous_hits": 22,
+          "new_hits": 23,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 23
+            },
+            {
+              "offset_s": 3600,
+              "hits": 22
+            },
+            {
+              "offset_s": 10800,
+              "hits": 22
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1782691200,
+          "csv_boundary_iso": "2026-06-29T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 33,
+          "previous_hits": 31,
+          "new_hits": 32,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 32
+            },
+            {
+              "offset_s": 7200,
+              "hits": 31
+            },
+            {
+              "offset_s": 0,
+              "hits": 30
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1784505600,
+          "csv_boundary_iso": "2026-07-20T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 34,
+          "previous_hits": 33,
+          "new_hits": 34,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 34
+            },
+            {
+              "offset_s": 3600,
+              "hits": 33
+            },
+            {
+              "offset_s": 10800,
+              "hits": 33
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1785110400,
+          "csv_boundary_iso": "2026-07-27T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 38,
+          "previous_hits": 33,
+          "new_hits": 38,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 38
+            },
+            {
+              "offset_s": 0,
+              "hits": 36
+            },
+            {
+              "offset_s": 7200,
+              "hits": 33
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1787529600,
+          "csv_boundary_iso": "2026-08-24T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 28,
+          "previous_hits": 27,
+          "new_hits": 28,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 28
+            },
+            {
+              "offset_s": 3600,
+              "hits": 27
+            },
+            {
+              "offset_s": 10800,
+              "hits": 27
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1789344000,
+          "csv_boundary_iso": "2026-09-14T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 31,
+          "previous_hits": 27,
+          "new_hits": 30,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 30
+            },
+            {
+              "offset_s": 0,
+              "hits": 28
+            },
+            {
+              "offset_s": 7200,
+              "hits": 27
+            }
+          ]
+        }
+      ],
+      "csv_evidence": [
+        {
+          "line": 345,
+          "open": "2026.07.27 00:00:00",
+          "close": "2026.07.28 09:33:08",
+          "symbol": "GBPCHF",
+          "lots": 0.01,
+          "entry": 1.08954,
+          "exit": 1.09006
+        },
+        {
+          "line": 362,
+          "open": "2026.07.26 23:09:49",
+          "close": "2026.08.06 17:17:43",
+          "symbol": "GBPCHF",
+          "lots": 0.03,
+          "entry": 1.09063,
+          "exit": 1.09214
+        }
+      ]
+    },
+    {
+      "id": 1096166,
+      "csv": "data\\trade_snapshots\\4ca63341384d12b37af0674355ab94548f227a0a468dc3c168e70b566ac134da.csv",
+      "saved_report": "tmp/abdeckungsdiagnose_Vantage_1096166_report.json",
+      "status": "unvollstaendig",
+      "coverage_pct": 6.1,
+      "reliable": false,
+      "time_diagnostic": {
+        "modus": "wochenweise",
+        "frame": "referenzkurszeit",
+        "global_gmt_h": 1,
+        "global_belegt": true,
+        "verlaesslich": false,
+        "monoton": true,
+        "nichtmonotones_beispiel": null,
+        "offene_wechsel_annahmen": 50,
+        "unsichere_innenperioden": 0,
+        "annahme": "Kalenderwochengrenzen sind Modellgrenzen, kein exakter DST-Beleg",
+        "unsichere_trade_ereignisse": 11,
+        "gruende": [
+          "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze",
+          "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar)",
+          "Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt",
+          "11 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+        ],
+        "perioden": [
+          {
+            "von_t": 1774224000,
+            "bis_t": 1774828800,
+            "von": "2026-03-23T00:00:00+00:00",
+            "bis": "2026-03-30T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 90,
+            "trefferquote": 0.944,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1774828800,
+            "bis_t": 1775433600,
+            "von": "2026-03-30T00:00:00+00:00",
+            "bis": "2026-04-06T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 35,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1775433600,
+            "bis_t": 1776038400,
+            "von": "2026-04-06T00:00:00+00:00",
+            "bis": "2026-04-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 40,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1776038400,
+            "bis_t": 1776643200,
+            "von": "2026-04-13T00:00:00+00:00",
+            "bis": "2026-04-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 77,
+            "trefferquote": 0.974,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1776643200,
+            "bis_t": 1777248000,
+            "von": "2026-04-20T00:00:00+00:00",
+            "bis": "2026-04-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 14,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1777248000,
+            "bis_t": 1777852800,
+            "von": "2026-04-27T00:00:00+00:00",
+            "bis": "2026-05-04T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1777852800,
+            "bis_t": 1778457600,
+            "von": "2026-05-04T00:00:00+00:00",
+            "bis": "2026-05-11T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1778457600,
+            "bis_t": 1779062400,
+            "von": "2026-05-11T00:00:00+00:00",
+            "bis": "2026-05-18T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1779062400,
+            "bis_t": 1779667200,
+            "von": "2026-05-18T00:00:00+00:00",
+            "bis": "2026-05-25T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1779667200,
+            "bis_t": 1780272000,
+            "von": "2026-05-25T00:00:00+00:00",
+            "bis": "2026-06-01T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1780272000,
+            "bis_t": 1780876800,
+            "von": "2026-06-01T00:00:00+00:00",
+            "bis": "2026-06-08T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 3,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1780876800,
+            "bis_t": 1781481600,
+            "von": "2026-06-08T00:00:00+00:00",
+            "bis": "2026-06-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1781481600,
+            "bis_t": 1782086400,
+            "von": "2026-06-15T00:00:00+00:00",
+            "bis": "2026-06-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1782086400,
+            "bis_t": 1782691200,
+            "von": "2026-06-22T00:00:00+00:00",
+            "bis": "2026-06-29T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1782691200,
+            "bis_t": 1783296000,
+            "von": "2026-06-29T00:00:00+00:00",
+            "bis": "2026-07-06T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1783296000,
+            "bis_t": 1783900800,
+            "von": "2026-07-06T00:00:00+00:00",
+            "bis": "2026-07-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1783900800,
+            "bis_t": 1784505600,
+            "von": "2026-07-13T00:00:00+00:00",
+            "bis": "2026-07-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1784505600,
+            "bis_t": 1785110400,
+            "von": "2026-07-20T00:00:00+00:00",
+            "bis": "2026-07-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1785110400,
+            "bis_t": 1785715200,
+            "von": "2026-07-27T00:00:00+00:00",
+            "bis": "2026-08-03T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1785715200,
+            "bis_t": 1786320000,
+            "von": "2026-08-03T00:00:00+00:00",
+            "bis": "2026-08-10T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 8,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1786320000,
+            "bis_t": 1786924800,
+            "von": "2026-08-10T00:00:00+00:00",
+            "bis": "2026-08-17T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1786924800,
+            "bis_t": 1787529600,
+            "von": "2026-08-17T00:00:00+00:00",
+            "bis": "2026-08-24T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 20,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1787529600,
+            "bis_t": 1788134400,
+            "von": "2026-08-24T00:00:00+00:00",
+            "bis": "2026-08-31T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1788134400,
+            "bis_t": 1788739200,
+            "von": "2026-08-31T00:00:00+00:00",
+            "bis": "2026-09-07T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1788739200,
+            "bis_t": 1789344000,
+            "von": "2026-09-07T00:00:00+00:00",
+            "bis": "2026-09-14T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 23,
+            "trefferquote": 0.957,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1789344000,
+            "bis_t": 1789948800,
+            "von": "2026-09-14T00:00:00+00:00",
+            "bis": "2026-09-21T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1789948800,
+            "bis_t": 1790553600,
+            "von": "2026-09-21T00:00:00+00:00",
+            "bis": "2026-09-28T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          }
+        ]
+      },
+      "transition_scores": [
+        {
+          "csv_boundary": 1774224000,
+          "csv_boundary_iso": "2026-03-23T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 90,
+          "previous_hits": 48,
+          "new_hits": 85,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 85
+            },
+            {
+              "offset_s": 10800,
+              "hits": 68
+            },
+            {
+              "offset_s": 14400,
+              "hits": 49
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1774828800,
+          "csv_boundary_iso": "2026-03-30T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 35,
+          "previous_hits": 24,
+          "new_hits": 35,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 35
+            },
+            {
+              "offset_s": 7200,
+              "hits": 24
+            },
+            {
+              "offset_s": 0,
+              "hits": 19
+            }
+          ]
+        }
+      ],
+      "csv_evidence": [
+        {
+          "line": 34,
+          "open": "2026.03.27 21:22:20",
+          "close": "2026.03.30 05:05:49",
+          "symbol": "NAS100",
+          "lots": 0.1,
+          "entry": 23068.66,
+          "exit": 23100.55
+        },
+        {
+          "line": 127,
+          "open": "2026.03.25 18:43:09",
+          "close": "2026.04.17 16:11:35",
+          "symbol": "BYND",
+          "lots": 5.4,
+          "entry": 0.72,
+          "exit": 0.88
+        },
+        {
+          "line": 154,
+          "open": "2026.03.25 18:43:09",
+          "close": "2026.08.14 01:42:37",
+          "symbol": "BYND",
+          "lots": 2.4,
+          "entry": 0.72,
+          "exit": 0.42
+        },
+        {
+          "line": 155,
+          "open": "2026.03.25 18:43:09",
+          "close": "2026.08.19 16:34:10",
+          "symbol": "BYND",
+          "lots": 0.2,
+          "entry": 21.6,
+          "exit": 12.85
+        }
+      ],
+      "upstream_raw_cache": {
+        "path": "..\\vantage\\data\\trades\\trades_1096166.csv",
+        "rows": [
+          {
+            "line": 127,
+            "Eröffnet": "2026-03-25T18:43:09.375",
+            "Geschlossen": "2026-04-17T16:11:35.893",
+            "BasisSymbol": "BYND",
+            "Lots": "5.4",
+            "OpenPrice": "0.72",
+            "ClosePrice": "0.88",
+            "NettoPnlUsd": "0.86"
+          },
+          {
+            "line": 154,
+            "Eröffnet": "2026-03-25T18:43:09.375",
+            "Geschlossen": "2026-08-14T01:42:37.535",
+            "BasisSymbol": "BYND",
+            "Lots": "2.4",
+            "OpenPrice": "0.72",
+            "ClosePrice": "0.42",
+            "NettoPnlUsd": "-0.72"
+          },
+          {
+            "line": 155,
+            "Eröffnet": "2026-03-25T18:43:09.375",
+            "Geschlossen": "2026-08-19T16:34:10.273",
+            "BasisSymbol": "BYND",
+            "Lots": "0.2",
+            "OpenPrice": "21.6",
+            "ClosePrice": "12.85",
+            "NettoPnlUsd": "-1.75"
+          }
+        ],
+        "mixed_scale_already_present": true,
+        "entry_scale_ratio": 30.000000000000004,
+        "cause_of_scale_change": "unknown; no split correction inferred",
+        "exporter": "../vantage/src/main/java/de/vantagemonitor/rest/RestApiServer.java:486"
+      },
+      "bynd_h1_evidence": [
+        {
+          "event": "open",
+          "csv_time": "2026-03-25T18:43:09",
+          "offset_s": 7200,
+          "bar": {
+            "time": 1774468800,
+            "open": 19.5,
+            "high": 19.5,
+            "low": 19.2,
+            "close": 19.5
+          }
+        },
+        {
+          "event": "close",
+          "csv_time": "2026-04-17T16:11:35",
+          "offset_s": 3600,
+          "bar": {
+            "time": 1776445200,
+            "open": 26.4,
+            "high": 28.2,
+            "low": 25.8,
+            "close": 26.1
+          }
+        }
+      ]
+    },
+    {
+      "id": 178177,
+      "csv": "data\\trade_snapshots\\ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv",
+      "saved_report": "tmp/abdeckungsdiagnose_Vantage_178177_report.json",
+      "status": "unvollstaendig",
+      "coverage_pct": 50.8,
+      "reliable": false,
+      "time_diagnostic": {
+        "modus": "wochenweise",
+        "frame": "referenzkurszeit",
+        "global_gmt_h": 1,
+        "global_belegt": true,
+        "verlaesslich": false,
+        "monoton": true,
+        "nichtmonotones_beispiel": null,
+        "offene_wechsel_annahmen": 56,
+        "unsichere_innenperioden": 0,
+        "annahme": "Kalenderwochengrenzen sind Modellgrenzen, kein exakter DST-Beleg",
+        "unsichere_trade_ereignisse": 43,
+        "gruende": [
+          "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze",
+          "Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt",
+          "43 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+        ],
+        "perioden": [
+          {
+            "von_t": 1694995200,
+            "bis_t": 1695600000,
+            "von": "2023-09-18T00:00:00+00:00",
+            "bis": "2023-09-25T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1695600000,
+            "bis_t": 1696204800,
+            "von": "2023-09-25T00:00:00+00:00",
+            "bis": "2023-10-02T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 14,
+            "trefferquote": 0.929,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1696204800,
+            "bis_t": 1696809600,
+            "von": "2023-10-02T00:00:00+00:00",
+            "bis": "2023-10-09T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 29,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1696809600,
+            "bis_t": 1697414400,
+            "von": "2023-10-09T00:00:00+00:00",
+            "bis": "2023-10-16T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 9,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1697414400,
+            "bis_t": 1698019200,
+            "von": "2023-10-16T00:00:00+00:00",
+            "bis": "2023-10-23T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 29,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1698019200,
+            "bis_t": 1698624000,
+            "von": "2023-10-23T00:00:00+00:00",
+            "bis": "2023-10-30T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 22,
+            "trefferquote": 0.955,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1698624000,
+            "bis_t": 1699228800,
+            "von": "2023-10-30T00:00:00+00:00",
+            "bis": "2023-11-06T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 42,
+            "trefferquote": 0.976,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1699228800,
+            "bis_t": 1699833600,
+            "von": "2023-11-06T00:00:00+00:00",
+            "bis": "2023-11-13T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1699833600,
+            "bis_t": 1700438400,
+            "von": "2023-11-13T00:00:00+00:00",
+            "bis": "2023-11-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 21,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1700438400,
+            "bis_t": 1701043200,
+            "von": "2023-11-20T00:00:00+00:00",
+            "bis": "2023-11-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 40,
+            "trefferquote": 0.975,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1701043200,
+            "bis_t": 1701648000,
+            "von": "2023-11-27T00:00:00+00:00",
+            "bis": "2023-12-04T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 66,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1701648000,
+            "bis_t": 1702252800,
+            "von": "2023-12-04T00:00:00+00:00",
+            "bis": "2023-12-11T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 54,
+            "trefferquote": 0.981,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1702252800,
+            "bis_t": 1702857600,
+            "von": "2023-12-11T00:00:00+00:00",
+            "bis": "2023-12-18T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 20,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1702857600,
+            "bis_t": 1703462400,
+            "von": "2023-12-18T00:00:00+00:00",
+            "bis": "2023-12-25T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 12,
+            "trefferquote": 0.833,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1703462400,
+            "bis_t": 1704067200,
+            "von": "2023-12-25T00:00:00+00:00",
+            "bis": "2024-01-01T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 15,
+            "trefferquote": 0.8,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1704067200,
+            "bis_t": 1704672000,
+            "von": "2024-01-01T00:00:00+00:00",
+            "bis": "2024-01-08T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 6,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1704672000,
+            "bis_t": 1705276800,
+            "von": "2024-01-08T00:00:00+00:00",
+            "bis": "2024-01-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 11,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1705276800,
+            "bis_t": 1705881600,
+            "von": "2024-01-15T00:00:00+00:00",
+            "bis": "2024-01-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1705881600,
+            "bis_t": 1706486400,
+            "von": "2024-01-22T00:00:00+00:00",
+            "bis": "2024-01-29T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1706486400,
+            "bis_t": 1707091200,
+            "von": "2024-01-29T00:00:00+00:00",
+            "bis": "2024-02-05T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1707091200,
+            "bis_t": 1707696000,
+            "von": "2024-02-05T00:00:00+00:00",
+            "bis": "2024-02-12T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 14,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1707696000,
+            "bis_t": 1708300800,
+            "von": "2024-02-12T00:00:00+00:00",
+            "bis": "2024-02-19T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 17,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1708300800,
+            "bis_t": 1708905600,
+            "von": "2024-02-19T00:00:00+00:00",
+            "bis": "2024-02-26T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 3,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1708905600,
+            "bis_t": 1709510400,
+            "von": "2024-02-26T00:00:00+00:00",
+            "bis": "2024-03-04T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 14,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1709510400,
+            "bis_t": 1710115200,
+            "von": "2024-03-04T00:00:00+00:00",
+            "bis": "2024-03-11T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 76,
+            "trefferquote": 0.987,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1710115200,
+            "bis_t": 1710720000,
+            "von": "2024-03-11T00:00:00+00:00",
+            "bis": "2024-03-18T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 93,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1710720000,
+            "bis_t": 1711324800,
+            "von": "2024-03-18T00:00:00+00:00",
+            "bis": "2024-03-25T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 51,
+            "trefferquote": 0.961,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1711324800,
+            "bis_t": 1711929600,
+            "von": "2024-03-25T00:00:00+00:00",
+            "bis": "2024-04-01T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 34,
+            "trefferquote": 0.882,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1711929600,
+            "bis_t": 1712534400,
+            "von": "2024-04-01T00:00:00+00:00",
+            "bis": "2024-04-08T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 49,
+            "trefferquote": 0.959,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1712534400,
+            "bis_t": 1713139200,
+            "von": "2024-04-08T00:00:00+00:00",
+            "bis": "2024-04-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 22,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1713139200,
+            "bis_t": 1713744000,
+            "von": "2024-04-15T00:00:00+00:00",
+            "bis": "2024-04-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 14,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1713744000,
+            "bis_t": 1714348800,
+            "von": "2024-04-22T00:00:00+00:00",
+            "bis": "2024-04-29T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 17,
+            "trefferquote": 0.765,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1714348800,
+            "bis_t": 1714953600,
+            "von": "2024-04-29T00:00:00+00:00",
+            "bis": "2024-05-06T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 36,
+            "trefferquote": 0.972,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1714953600,
+            "bis_t": 1715558400,
+            "von": "2024-05-06T00:00:00+00:00",
+            "bis": "2024-05-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 7,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1715558400,
+            "bis_t": 1716163200,
+            "von": "2024-05-13T00:00:00+00:00",
+            "bis": "2024-05-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 30,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1716163200,
+            "bis_t": 1716768000,
+            "von": "2024-05-20T00:00:00+00:00",
+            "bis": "2024-05-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 30,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1716768000,
+            "bis_t": 1717372800,
+            "von": "2024-05-27T00:00:00+00:00",
+            "bis": "2024-06-03T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 21,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1717372800,
+            "bis_t": 1717977600,
+            "von": "2024-06-03T00:00:00+00:00",
+            "bis": "2024-06-10T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 23,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1717977600,
+            "bis_t": 1718582400,
+            "von": "2024-06-10T00:00:00+00:00",
+            "bis": "2024-06-17T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 18,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1718582400,
+            "bis_t": 1719187200,
+            "von": "2024-06-17T00:00:00+00:00",
+            "bis": "2024-06-24T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 12,
+            "trefferquote": 0.833,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1719187200,
+            "bis_t": 1719792000,
+            "von": "2024-06-24T00:00:00+00:00",
+            "bis": "2024-07-01T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 9,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1719792000,
+            "bis_t": 1720396800,
+            "von": "2024-07-01T00:00:00+00:00",
+            "bis": "2024-07-08T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 9,
+            "trefferquote": 0.889,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1720396800,
+            "bis_t": 1721001600,
+            "von": "2024-07-08T00:00:00+00:00",
+            "bis": "2024-07-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 13,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1721001600,
+            "bis_t": 1721606400,
+            "von": "2024-07-15T00:00:00+00:00",
+            "bis": "2024-07-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 17,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1721606400,
+            "bis_t": 1722211200,
+            "von": "2024-07-22T00:00:00+00:00",
+            "bis": "2024-07-29T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1722211200,
+            "bis_t": 1722816000,
+            "von": "2024-07-29T00:00:00+00:00",
+            "bis": "2024-08-05T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 25,
+            "trefferquote": 0.92,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1722816000,
+            "bis_t": 1723420800,
+            "von": "2024-08-05T00:00:00+00:00",
+            "bis": "2024-08-12T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1723420800,
+            "bis_t": 1724025600,
+            "von": "2024-08-12T00:00:00+00:00",
+            "bis": "2024-08-19T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 6,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1724025600,
+            "bis_t": 1724630400,
+            "von": "2024-08-19T00:00:00+00:00",
+            "bis": "2024-08-26T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 18,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1724630400,
+            "bis_t": 1725235200,
+            "von": "2024-08-26T00:00:00+00:00",
+            "bis": "2024-09-02T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1725235200,
+            "bis_t": 1725840000,
+            "von": "2024-09-02T00:00:00+00:00",
+            "bis": "2024-09-09T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 22,
+            "trefferquote": 0.955,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1725840000,
+            "bis_t": 1726444800,
+            "von": "2024-09-09T00:00:00+00:00",
+            "bis": "2024-09-16T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 8,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1726444800,
+            "bis_t": 1727049600,
+            "von": "2024-09-16T00:00:00+00:00",
+            "bis": "2024-09-23T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 26,
+            "trefferquote": 0.923,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1727049600,
+            "bis_t": 1727654400,
+            "von": "2024-09-23T00:00:00+00:00",
+            "bis": "2024-09-30T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 28,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1727654400,
+            "bis_t": 1728259200,
+            "von": "2024-09-30T00:00:00+00:00",
+            "bis": "2024-10-07T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 12,
+            "trefferquote": 0.917,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1728259200,
+            "bis_t": 1728864000,
+            "von": "2024-10-07T00:00:00+00:00",
+            "bis": "2024-10-14T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1728864000,
+            "bis_t": 1729468800,
+            "von": "2024-10-14T00:00:00+00:00",
+            "bis": "2024-10-21T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 19,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1729468800,
+            "bis_t": 1730073600,
+            "von": "2024-10-21T00:00:00+00:00",
+            "bis": "2024-10-28T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 22,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1730073600,
+            "bis_t": 1730678400,
+            "von": "2024-10-28T00:00:00+00:00",
+            "bis": "2024-11-04T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 12,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1730678400,
+            "bis_t": 1731283200,
+            "von": "2024-11-04T00:00:00+00:00",
+            "bis": "2024-11-11T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 12,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1731283200,
+            "bis_t": 1731888000,
+            "von": "2024-11-11T00:00:00+00:00",
+            "bis": "2024-11-18T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1731888000,
+            "bis_t": 1732492800,
+            "von": "2024-11-18T00:00:00+00:00",
+            "bis": "2024-11-25T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 17,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1732492800,
+            "bis_t": 1733097600,
+            "von": "2024-11-25T00:00:00+00:00",
+            "bis": "2024-12-02T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1733097600,
+            "bis_t": 1733702400,
+            "von": "2024-12-02T00:00:00+00:00",
+            "bis": "2024-12-09T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1733702400,
+            "bis_t": 1734307200,
+            "von": "2024-12-09T00:00:00+00:00",
+            "bis": "2024-12-16T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1734307200,
+            "bis_t": 1734912000,
+            "von": "2024-12-16T00:00:00+00:00",
+            "bis": "2024-12-23T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1734912000,
+            "bis_t": 1735516800,
+            "von": "2024-12-23T00:00:00+00:00",
+            "bis": "2024-12-30T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1735516800,
+            "bis_t": 1736121600,
+            "von": "2024-12-30T00:00:00+00:00",
+            "bis": "2025-01-06T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 8,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1736121600,
+            "bis_t": 1736726400,
+            "von": "2025-01-06T00:00:00+00:00",
+            "bis": "2025-01-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1736726400,
+            "bis_t": 1737331200,
+            "von": "2025-01-13T00:00:00+00:00",
+            "bis": "2025-01-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 18,
+            "trefferquote": 0.944,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1737331200,
+            "bis_t": 1737936000,
+            "von": "2025-01-20T00:00:00+00:00",
+            "bis": "2025-01-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 15,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1737936000,
+            "bis_t": 1738540800,
+            "von": "2025-01-27T00:00:00+00:00",
+            "bis": "2025-02-03T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 16,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1738540800,
+            "bis_t": 1739145600,
+            "von": "2025-02-03T00:00:00+00:00",
+            "bis": "2025-02-10T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 24,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1739145600,
+            "bis_t": 1739750400,
+            "von": "2025-02-10T00:00:00+00:00",
+            "bis": "2025-02-17T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 14,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1739750400,
+            "bis_t": 1740355200,
+            "von": "2025-02-17T00:00:00+00:00",
+            "bis": "2025-02-24T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 34,
+            "trefferquote": 0.971,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1740355200,
+            "bis_t": 1740960000,
+            "von": "2025-02-24T00:00:00+00:00",
+            "bis": "2025-03-03T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 79,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1740960000,
+            "bis_t": 1741564800,
+            "von": "2025-03-03T00:00:00+00:00",
+            "bis": "2025-03-10T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 44,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1741564800,
+            "bis_t": 1742169600,
+            "von": "2025-03-10T00:00:00+00:00",
+            "bis": "2025-03-17T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 30,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1742169600,
+            "bis_t": 1742774400,
+            "von": "2025-03-17T00:00:00+00:00",
+            "bis": "2025-03-24T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 9,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1742774400,
+            "bis_t": 1743379200,
+            "von": "2025-03-24T00:00:00+00:00",
+            "bis": "2025-03-31T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1743379200,
+            "bis_t": 1743984000,
+            "von": "2025-03-31T00:00:00+00:00",
+            "bis": "2025-04-07T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 11,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1743984000,
+            "bis_t": 1744588800,
+            "von": "2025-04-07T00:00:00+00:00",
+            "bis": "2025-04-14T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 17,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1744588800,
+            "bis_t": 1745193600,
+            "von": "2025-04-14T00:00:00+00:00",
+            "bis": "2025-04-21T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 8,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1745193600,
+            "bis_t": 1745798400,
+            "von": "2025-04-21T00:00:00+00:00",
+            "bis": "2025-04-28T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1745798400,
+            "bis_t": 1746403200,
+            "von": "2025-04-28T00:00:00+00:00",
+            "bis": "2025-05-05T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1746403200,
+            "bis_t": 1747008000,
+            "von": "2025-05-05T00:00:00+00:00",
+            "bis": "2025-05-12T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1747008000,
+            "bis_t": 1747612800,
+            "von": "2025-05-12T00:00:00+00:00",
+            "bis": "2025-05-19T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1747612800,
+            "bis_t": 1748217600,
+            "von": "2025-05-19T00:00:00+00:00",
+            "bis": "2025-05-26T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 9,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1748217600,
+            "bis_t": 1748822400,
+            "von": "2025-05-26T00:00:00+00:00",
+            "bis": "2025-06-02T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1748822400,
+            "bis_t": 1749427200,
+            "von": "2025-06-02T00:00:00+00:00",
+            "bis": "2025-06-09T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 3,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1749427200,
+            "bis_t": 1750032000,
+            "von": "2025-06-09T00:00:00+00:00",
+            "bis": "2025-06-16T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 8,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1750032000,
+            "bis_t": 1750636800,
+            "von": "2025-06-16T00:00:00+00:00",
+            "bis": "2025-06-23T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 7,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1750636800,
+            "bis_t": 1751241600,
+            "von": "2025-06-23T00:00:00+00:00",
+            "bis": "2025-06-30T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 7,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1751241600,
+            "bis_t": 1751846400,
+            "von": "2025-06-30T00:00:00+00:00",
+            "bis": "2025-07-07T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1751846400,
+            "bis_t": 1752451200,
+            "von": "2025-07-07T00:00:00+00:00",
+            "bis": "2025-07-14T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1752451200,
+            "bis_t": 1753056000,
+            "von": "2025-07-14T00:00:00+00:00",
+            "bis": "2025-07-21T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1753056000,
+            "bis_t": 1753660800,
+            "von": "2025-07-21T00:00:00+00:00",
+            "bis": "2025-07-28T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 3,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1753660800,
+            "bis_t": 1754265600,
+            "von": "2025-07-28T00:00:00+00:00",
+            "bis": "2025-08-04T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1754265600,
+            "bis_t": 1754870400,
+            "von": "2025-08-04T00:00:00+00:00",
+            "bis": "2025-08-11T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 3,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1754870400,
+            "bis_t": 1755475200,
+            "von": "2025-08-11T00:00:00+00:00",
+            "bis": "2025-08-18T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 3,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1755475200,
+            "bis_t": 1756080000,
+            "von": "2025-08-18T00:00:00+00:00",
+            "bis": "2025-08-25T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1756080000,
+            "bis_t": 1756684800,
+            "von": "2025-08-25T00:00:00+00:00",
+            "bis": "2025-09-01T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1756684800,
+            "bis_t": 1757289600,
+            "von": "2025-09-01T00:00:00+00:00",
+            "bis": "2025-09-08T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 8,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1757289600,
+            "bis_t": 1757894400,
+            "von": "2025-09-08T00:00:00+00:00",
+            "bis": "2025-09-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1757894400,
+            "bis_t": 1758499200,
+            "von": "2025-09-15T00:00:00+00:00",
+            "bis": "2025-09-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1758499200,
+            "bis_t": 1759104000,
+            "von": "2025-09-22T00:00:00+00:00",
+            "bis": "2025-09-29T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 8,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1759104000,
+            "bis_t": 1759708800,
+            "von": "2025-09-29T00:00:00+00:00",
+            "bis": "2025-10-06T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1759708800,
+            "bis_t": 1760313600,
+            "von": "2025-10-06T00:00:00+00:00",
+            "bis": "2025-10-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 21,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1760313600,
+            "bis_t": 1760918400,
+            "von": "2025-10-13T00:00:00+00:00",
+            "bis": "2025-10-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 28,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1760918400,
+            "bis_t": 1761523200,
+            "von": "2025-10-20T00:00:00+00:00",
+            "bis": "2025-10-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 14,
+            "trefferquote": 0.857,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1761523200,
+            "bis_t": 1762128000,
+            "von": "2025-10-27T00:00:00+00:00",
+            "bis": "2025-11-03T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 20,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1762128000,
+            "bis_t": 1762732800,
+            "von": "2025-11-03T00:00:00+00:00",
+            "bis": "2025-11-10T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1762732800,
+            "bis_t": 1763337600,
+            "von": "2025-11-10T00:00:00+00:00",
+            "bis": "2025-11-17T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1763337600,
+            "bis_t": 1763942400,
+            "von": "2025-11-17T00:00:00+00:00",
+            "bis": "2025-11-24T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1763942400,
+            "bis_t": 1764547200,
+            "von": "2025-11-24T00:00:00+00:00",
+            "bis": "2025-12-01T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 11,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1764547200,
+            "bis_t": 1765152000,
+            "von": "2025-12-01T00:00:00+00:00",
+            "bis": "2025-12-08T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1765152000,
+            "bis_t": 1765756800,
+            "von": "2025-12-08T00:00:00+00:00",
+            "bis": "2025-12-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 12,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1765756800,
+            "bis_t": 1766361600,
+            "von": "2025-12-15T00:00:00+00:00",
+            "bis": "2025-12-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 7,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1766361600,
+            "bis_t": 1766966400,
+            "von": "2025-12-22T00:00:00+00:00",
+            "bis": "2025-12-29T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1766966400,
+            "bis_t": 1767571200,
+            "von": "2025-12-29T00:00:00+00:00",
+            "bis": "2026-01-05T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 8,
+            "trefferquote": 0.875,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1767571200,
+            "bis_t": 1768176000,
+            "von": "2026-01-05T00:00:00+00:00",
+            "bis": "2026-01-12T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 8,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1768176000,
+            "bis_t": 1768780800,
+            "von": "2026-01-12T00:00:00+00:00",
+            "bis": "2026-01-19T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 24,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1768780800,
+            "bis_t": 1769385600,
+            "von": "2026-01-19T00:00:00+00:00",
+            "bis": "2026-01-26T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 29,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1769385600,
+            "bis_t": 1769990400,
+            "von": "2026-01-26T00:00:00+00:00",
+            "bis": "2026-02-02T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 45,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1769990400,
+            "bis_t": 1770595200,
+            "von": "2026-02-02T00:00:00+00:00",
+            "bis": "2026-02-09T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 9,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1770595200,
+            "bis_t": 1771200000,
+            "von": "2026-02-09T00:00:00+00:00",
+            "bis": "2026-02-16T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1771200000,
+            "bis_t": 1771804800,
+            "von": "2026-02-16T00:00:00+00:00",
+            "bis": "2026-02-23T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 7,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1771804800,
+            "bis_t": 1772409600,
+            "von": "2026-02-23T00:00:00+00:00",
+            "bis": "2026-03-02T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 17,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1772409600,
+            "bis_t": 1773014400,
+            "von": "2026-03-02T00:00:00+00:00",
+            "bis": "2026-03-09T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 29,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1773014400,
+            "bis_t": 1773619200,
+            "von": "2026-03-09T00:00:00+00:00",
+            "bis": "2026-03-16T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1773619200,
+            "bis_t": 1774224000,
+            "von": "2026-03-16T00:00:00+00:00",
+            "bis": "2026-03-23T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1774224000,
+            "bis_t": 1774828800,
+            "von": "2026-03-23T00:00:00+00:00",
+            "bis": "2026-03-30T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1774828800,
+            "bis_t": 1775433600,
+            "von": "2026-03-30T00:00:00+00:00",
+            "bis": "2026-04-06T00:00:00+00:00",
+            "gmt_h": 2,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "geerbt_letzter_bekannter"
+          },
+          {
+            "von_t": 1775433600,
+            "bis_t": 1776038400,
+            "von": "2026-04-06T00:00:00+00:00",
+            "bis": "2026-04-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 14,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1776038400,
+            "bis_t": 1776643200,
+            "von": "2026-04-13T00:00:00+00:00",
+            "bis": "2026-04-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 15,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1776643200,
+            "bis_t": 1777248000,
+            "von": "2026-04-20T00:00:00+00:00",
+            "bis": "2026-04-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1777248000,
+            "bis_t": 1777852800,
+            "von": "2026-04-27T00:00:00+00:00",
+            "bis": "2026-05-04T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1777852800,
+            "bis_t": 1778457600,
+            "von": "2026-05-04T00:00:00+00:00",
+            "bis": "2026-05-11T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1778457600,
+            "bis_t": 1779062400,
+            "von": "2026-05-11T00:00:00+00:00",
+            "bis": "2026-05-18T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1779062400,
+            "bis_t": 1779667200,
+            "von": "2026-05-18T00:00:00+00:00",
+            "bis": "2026-05-25T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1779667200,
+            "bis_t": 1780272000,
+            "von": "2026-05-25T00:00:00+00:00",
+            "bis": "2026-06-01T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1780272000,
+            "bis_t": 1780876800,
+            "von": "2026-06-01T00:00:00+00:00",
+            "bis": "2026-06-08T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 6,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1780876800,
+            "bis_t": 1781481600,
+            "von": "2026-06-08T00:00:00+00:00",
+            "bis": "2026-06-15T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1781481600,
+            "bis_t": 1782086400,
+            "von": "2026-06-15T00:00:00+00:00",
+            "bis": "2026-06-22T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 3,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1782086400,
+            "bis_t": 1782691200,
+            "von": "2026-06-22T00:00:00+00:00",
+            "bis": "2026-06-29T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 4,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1782691200,
+            "bis_t": 1783296000,
+            "von": "2026-06-29T00:00:00+00:00",
+            "bis": "2026-07-06T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1783296000,
+            "bis_t": 1783900800,
+            "von": "2026-07-06T00:00:00+00:00",
+            "bis": "2026-07-13T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1783900800,
+            "bis_t": 1784505600,
+            "von": "2026-07-13T00:00:00+00:00",
+            "bis": "2026-07-20T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 2,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1784505600,
+            "bis_t": 1785110400,
+            "von": "2026-07-20T00:00:00+00:00",
+            "bis": "2026-07-27T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 0,
+            "trefferquote": null,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1785110400,
+            "bis_t": 1785715200,
+            "von": "2026-07-27T00:00:00+00:00",
+            "bis": "2026-08-03T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1785715200,
+            "bis_t": 1786320000,
+            "von": "2026-08-03T00:00:00+00:00",
+            "bis": "2026-08-10T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 10,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1786320000,
+            "bis_t": 1786924800,
+            "von": "2026-08-10T00:00:00+00:00",
+            "bis": "2026-08-17T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 3,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1786924800,
+            "bis_t": 1787529600,
+            "von": "2026-08-17T00:00:00+00:00",
+            "bis": "2026-08-24T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 5,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1787529600,
+            "bis_t": 1788134400,
+            "von": "2026-08-24T00:00:00+00:00",
+            "bis": "2026-08-31T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          },
+          {
+            "von_t": 1788134400,
+            "bis_t": 1788739200,
+            "von": "2026-08-31T00:00:00+00:00",
+            "bis": "2026-09-07T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 7,
+            "trefferquote": 1.0,
+            "status": "lokal_preisbelegt"
+          },
+          {
+            "von_t": 1788739200,
+            "bis_t": 1789344000,
+            "von": "2026-09-07T00:00:00+00:00",
+            "bis": "2026-09-14T00:00:00+00:00",
+            "gmt_h": 1,
+            "belegt": true,
+            "preisproben": 1,
+            "trefferquote": 1.0,
+            "status": "global_kompatibel"
+          }
+        ]
+      },
+      "transition_scores": [
+        {
+          "csv_boundary": 1698624000,
+          "csv_boundary_iso": "2023-10-30T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 42,
+          "previous_hits": 21,
+          "new_hits": 41,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 41
+            },
+            {
+              "offset_s": 10800,
+              "hits": 35
+            },
+            {
+              "offset_s": 14400,
+              "hits": 23
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1699833600,
+          "csv_boundary_iso": "2023-11-13T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 21,
+          "previous_hits": 14,
+          "new_hits": 21,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 21
+            },
+            {
+              "offset_s": 0,
+              "hits": 17
+            },
+            {
+              "offset_s": 7200,
+              "hits": 14
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1710115200,
+          "csv_boundary_iso": "2024-03-11T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 93,
+          "previous_hits": 36,
+          "new_hits": 93,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 93
+            },
+            {
+              "offset_s": 10800,
+              "hits": 58
+            },
+            {
+              "offset_s": 14400,
+              "hits": 44
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1711929600,
+          "csv_boundary_iso": "2024-04-01T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 49,
+          "previous_hits": 35,
+          "new_hits": 47,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 47
+            },
+            {
+              "offset_s": 7200,
+              "hits": 35
+            },
+            {
+              "offset_s": 0,
+              "hits": 30
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1730073600,
+          "csv_boundary_iso": "2024-10-28T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 12,
+          "previous_hits": 6,
+          "new_hits": 12,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 12
+            },
+            {
+              "offset_s": 18000,
+              "hits": 8
+            },
+            {
+              "offset_s": 10800,
+              "hits": 7
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1730678400,
+          "csv_boundary_iso": "2024-11-04T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 12,
+          "previous_hits": 6,
+          "new_hits": 12,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 12
+            },
+            {
+              "offset_s": -14400,
+              "hits": 7
+            },
+            {
+              "offset_s": 10800,
+              "hits": 7
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1741564800,
+          "csv_boundary_iso": "2025-03-10T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 30,
+          "previous_hits": 12,
+          "new_hits": 30,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 30
+            },
+            {
+              "offset_s": 10800,
+              "hits": 22
+            },
+            {
+              "offset_s": 3600,
+              "hits": 12
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1743379200,
+          "csv_boundary_iso": "2025-03-31T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 11,
+          "previous_hits": 7,
+          "new_hits": 11,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 11
+            },
+            {
+              "offset_s": 7200,
+              "hits": 7
+            },
+            {
+              "offset_s": 0,
+              "hits": 5
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1761523200,
+          "csv_boundary_iso": "2025-10-27T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 20,
+          "previous_hits": 10,
+          "new_hits": 20,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 20
+            },
+            {
+              "offset_s": 10800,
+              "hits": 17
+            },
+            {
+              "offset_s": 14400,
+              "hits": 14
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1765152000,
+          "csv_boundary_iso": "2025-12-08T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 12,
+          "previous_hits": 10,
+          "new_hits": 12,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 12
+            },
+            {
+              "offset_s": 7200,
+              "hits": 10
+            },
+            {
+              "offset_s": 10800,
+              "hits": 8
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1773014400,
+          "csv_boundary_iso": "2026-03-09T00:00:00",
+          "previous_offset_s": 3600,
+          "new_offset_s": 7200,
+          "probes": 10,
+          "previous_hits": 4,
+          "new_hits": 10,
+          "top_candidates": [
+            {
+              "offset_s": 7200,
+              "hits": 10
+            },
+            {
+              "offset_s": 10800,
+              "hits": 7
+            },
+            {
+              "offset_s": 18000,
+              "hits": 5
+            }
+          ]
+        },
+        {
+          "csv_boundary": 1775433600,
+          "csv_boundary_iso": "2026-04-06T00:00:00",
+          "previous_offset_s": 7200,
+          "new_offset_s": 3600,
+          "probes": 14,
+          "previous_hits": 11,
+          "new_hits": 14,
+          "top_candidates": [
+            {
+              "offset_s": 3600,
+              "hits": 14
+            },
+            {
+              "offset_s": 7200,
+              "hits": 11
+            },
+            {
+              "offset_s": 46800,
+              "hits": 10
+            }
+          ]
+        }
+      ],
+      "csv_evidence": [
+        {
+          "line": 49,
+          "open": "2023.10.29 23:40:45",
+          "close": "2023.10.30 15:29:32",
+          "symbol": "XAUUSD",
+          "lots": 0.0999,
+          "entry": 2003.54,
+          "exit": 1998.98
+        },
+        {
+          "line": 50,
+          "open": "2023.10.27 03:48:25",
+          "close": "2023.10.31 06:45:36",
+          "symbol": "HK50ft",
+          "lots": 4.92,
+          "entry": 17238.77,
+          "exit": 17134.23
+        },
+        {
+          "line": 51,
+          "open": "2023.10.27 03:45:24",
+          "close": "2023.10.31 06:45:40",
+          "symbol": "HK50ft",
+          "lots": 4.92,
+          "entry": 17193.77,
+          "exit": 17135.23
+        }
+      ]
+    }
+  ]
+}

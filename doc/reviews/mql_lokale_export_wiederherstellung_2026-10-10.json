@@ -1,0 +1,213 @@
+{
+  "date": "2026-10-10",
+  "method": "Isolated MqlDownloader production REST against exact copies of existing correct-platform CSV+root.txt. Original HTTP bytes preserved. No credentials, external download, production DB/raw writes.",
+  "identity_fix": {
+    "files": [
+      "../MqlDownloader/src/rest/ProviderFiles.java",
+      "../MqlDownloader/tests/rest/ProviderFilesTest.java"
+    ],
+    "cause": "Digit-boundary matching selected another signals file when its free-form name contained the requested number. E.g. ID1 matched Anson_Account_1_2381807.csv. CSV/metrics now require extracted trailing ID; reports unaffected.",
+    "tests": 20
+  },
+  "exports": [
+    {
+      "id": 840474,
+      "version": "mql4",
+      "sources": [
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql4\\MySingalStart_2_840474.csv",
+          "sha256": "0eb406d5dac2ca33708b0bb09867ba138b8640136098ee10c69e7456944956da"
+        },
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql4\\MySingalStart_2_840474_root.txt",
+          "sha256": "10af29bfbb78102404df204f54a68f125768f7629e1ee6f932454a423886e0e7"
+        }
+      ],
+      "trades": 9208,
+      "csv_sha256": "0eb406d5dac2ca33708b0bb09867ba138b8640136098ee10c69e7456944956da",
+      "metrics_sha256": "11cc9256c8c90745744aa0cdcf6463dee5f81bbbdf21bd287f70f7adb060263e",
+      "source_bytes_equal": true,
+      "acceptance": {
+        "id": "840474",
+        "version": "mql4",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200
+      },
+      "metrics_version": "mql4"
+    },
+    {
+      "id": 1760039,
+      "version": "mql4",
+      "sources": [
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql4\\MySingalStart_3_1760039.csv",
+          "sha256": "17178cbd87846db48fa8165ba7e0815e4ab58b0c70529088d73d25ff8818a327"
+        },
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql4\\MySingalStart_3_1760039_root.txt",
+          "sha256": "5e01481e4e37dbb85c875626a9c692b2ff1afde192fb26be1b4daa01c3fd972b"
+        }
+      ],
+      "trades": 12161,
+      "csv_sha256": "17178cbd87846db48fa8165ba7e0815e4ab58b0c70529088d73d25ff8818a327",
+      "metrics_sha256": "634f47d00d8a603557403f755151748f248a60938ed702f8ffe7a44f220dcec1",
+      "source_bytes_equal": true,
+      "acceptance": {
+        "id": "1760039",
+        "version": "mql4",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200
+      },
+      "metrics_version": "mql4"
+    },
+    {
+      "id": 2268766,
+      "version": "mql5",
+      "sources": [
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql5\\Soma_PureGold_Indexes_and_Oil_2268766.csv",
+          "sha256": "a7960d5bcafe71deabc2c629f3d95a2f63a100092afa42c8a55c46af525be657"
+        },
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql5\\Soma_PureGold_Indexes_and_Oil_2268766_root.txt",
+          "sha256": "55b1f6bd6f27592f14eecb4c0f4e27fe00f6b19229e883bd7131c85827684fce"
+        }
+      ],
+      "trades": 7012,
+      "csv_sha256": "a7960d5bcafe71deabc2c629f3d95a2f63a100092afa42c8a55c46af525be657",
+      "metrics_sha256": "dd60d6705a95e2156c251ea6bc0506df991c86651f6d97cf5d04ba4833a174a2",
+      "source_bytes_equal": true,
+      "acceptance": {
+        "id": "2268766",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200
+      },
+      "metrics_version": "mql5"
+    },
+    {
+      "id": 2386274,
+      "version": "mql5",
+      "sources": [
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql5\\Basket_2386274.csv",
+          "sha256": "a19f17e43f076474585c6aa8cbc9136d2015c48570345a6810d8309dc4f796ea"
+        },
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql5\\Basket_2386274_root.txt",
+          "sha256": "c41050ffd68e02237a8f24ee3a50d3dc800ab36a5879ac024a88a5dcae99f692"
+        }
+      ],
+      "trades": 206,
+      "csv_sha256": "a19f17e43f076474585c6aa8cbc9136d2015c48570345a6810d8309dc4f796ea",
+      "metrics_sha256": "98b364b79a05619c30f10cc7fca42917f530e2effdd1ad441e0ccce9e29ab5a7",
+      "source_bytes_equal": true,
+      "acceptance": {
+        "id": "2386274",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200
+      },
+      "metrics_version": "mql5"
+    }
+  ],
+  "archive_exports": [
+    {
+      "id": 2349577,
+      "version": "mql5",
+      "platform_evidence": {
+        "html": "C:\\Forex\\MqlAnalyzer\\download\\mql4mql5_\\Make_You_Rich_2349577_root.html",
+        "sha256": "4819ad8823f482947ff02cc46e0b395697fb05f870d3e1e7da06bc736264d10e",
+        "matching_tag": "<div class=\"button button_white-and-green\" data-id=\"2349577\" data-name=\"Make You Rich\" data-mt=\"5\">"
+      },
+      "sources": [
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql4mql5_\\Make_You_Rich_2349577.csv",
+          "sha256": "a8ef2ffe161db53f708f2a1e619161841fe0e8ef9aa2617d2636a4ebecfc2d81"
+        },
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql4mql5_\\Make_You_Rich_2349577_root.txt",
+          "sha256": "ecad113e7d730fe6d3bb92ef73b56acfe25396d29c9c2c12da6afdaa2e78f4bd"
+        }
+      ],
+      "trades": 106,
+      "csv_sha256": "a8ef2ffe161db53f708f2a1e619161841fe0e8ef9aa2617d2636a4ebecfc2d81",
+      "metrics_sha256": "1820fcd73a9936cb8533f75cc6069a6549cdb6559da2e00ecfbaed5024bf0e82",
+      "source_bytes_equal": true,
+      "acceptance": {
+        "id": "2349577",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200
+      },
+      "metrics_version": "mql5"
+    },
+    {
+      "id": 2361280,
+      "version": "mql5",
+      "platform_evidence": {
+        "html": "C:\\Forex\\MqlAnalyzer\\download\\mql4mql5_\\You_Only_Live_Once_2361280_root.html",
+        "sha256": "b91e7616270c245f034569d9143ae443d1f654c79c2d215f9617be14b2efe8da",
+        "matching_tag": "<div class=\"button button_white-and-green\" data-id=\"2361280\" data-name=\"You Only Live Once\" data-mt=\"5\">"
+      },
+      "sources": [
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql4mql5_\\You_Only_Live_Once_2361280.csv",
+          "sha256": "a10576b3b1a34030408100cbb6471b111be51bfc83454f043b813e22ff58d805"
+        },
+        {
+          "path": "C:\\Forex\\MqlAnalyzer\\download\\mql4mql5_\\You_Only_Live_Once_2361280_root.txt",
+          "sha256": "23033e8ca4a1b68e34a8602b37842860d4ae89d94a081fb2df451fb89be21637"
+        }
+      ],
+      "trades": 197,
+      "csv_sha256": "a10576b3b1a34030408100cbb6471b111be51bfc83454f043b813e22ff58d805",
+      "metrics_sha256": "4d0716cb543493ce699ad505f3fef040fde0b4e60997ea2c77d9d4a781dc89f0",
+      "source_bytes_equal": true,
+      "acceptance": {
+        "id": "2361280",
+        "version": "mql5",
+        "trades.csvStatus": 200,
+        "metricsStatus": 200
+      },
+      "metrics_version": "mql5"
+    }
+  ],
+  "archive_method": "Only isolated copies into mql5; original archive left unchanged. Identity plus platform proven by same HTML tag data-id and data-mt, archived file hashes retained.",
+  "general_archive_resolver": {
+    "production_files": [
+      "../MqlDownloader/src/rest/ProviderFiles.java",
+      "../MqlDownloader/src/rest/RestApiServer.java"
+    ],
+    "tests": [
+      "../MqlDownloader/tests/rest/ProviderFilesTest.java",
+      "../MqlDownloader/tests/rest/RestApiServerTest.java"
+    ],
+    "rules": [
+      "exact trailing ID",
+      "same HTML element has matching data-id and data-mt",
+      "conflicting MT title or canonical signal ID rejects",
+      "platform-specific CSV header",
+      "ambiguous archives reject",
+      "normal cache preferred",
+      "archive metrics only from same CSV file set"
+    ],
+    "isolated_actual_archives": [
+      {
+        "id": 2349577,
+        "csv_http200": true,
+        "metrics_http200": true,
+        "csv_byte_identical": true,
+        "csv_sha256": "a8ef2ffe161db53f708f2a1e619161841fe0e8ef9aa2617d2636a4ebecfc2d81"
+      },
+      {
+        "id": 2361280,
+        "csv_http200": true,
+        "metrics_http200": true,
+        "csv_byte_identical": true,
+        "csv_sha256": "a10576b3b1a34030408100cbb6471b111be51bfc83454f043b813e22ff58d805"
+      }
+    ],
+    "independent_review": "all_signals_audit independently read ProviderFiles resolver: found normal-root-only metrics mixing with archive trades; fixed and regression added. After this specific fix, no further evidence-backed finding in the reviewed resolver. Scope excludes a complete standalone HTML/API security audit."
+  }
+}

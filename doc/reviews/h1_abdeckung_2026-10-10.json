@@ -1,0 +1,1762 @@
+{
+  "source": "reale CSVs data/quellen/vant + tmp/abdeckungsdiagnose_ActiveTrades003_cache.json; nur Offline-Reko ohne DB-Schreiboperationen/MT5",
+  "definition": "Anzahl vollstaendig gemessener aktiver H1-Stunden / erwartete aktive Stunden minus bounded >=20h-Pausen aller gleichzeitig aktiven Symbole",
+  "studies": [
+    {
+      "id": 998837,
+      "coverage": 96.80981595092024,
+      "expected_hours": 815,
+      "measured_hours": 789,
+      "missing_hours": 26,
+      "missing_hours_times": [
+        "2026-02-16 22:00:00+00:00",
+        "2026-02-16 23:00:00+00:00",
+        "2026-02-17 00:00:00+00:00",
+        "2026-02-19 00:00:00+00:00",
+        "2026-02-25 00:00:00+00:00",
+        "2026-03-16 23:00:00+00:00",
+        "2026-03-17 23:00:00+00:00",
+        "2026-03-18 23:00:00+00:00",
+        "2026-04-15 00:00:00+00:00",
+        "2026-04-16 00:00:00+00:00",
+        "2026-04-17 00:00:00+00:00",
+        "2026-04-21 00:00:00+00:00",
+        "2026-04-23 00:00:00+00:00",
+        "2026-04-30 00:00:00+00:00",
+        "2026-05-08 00:00:00+00:00",
+        "2026-05-12 00:00:00+00:00",
+        "2026-08-21 00:00:00+00:00",
+        "2026-08-26 00:00:00+00:00",
+        "2026-08-27 00:00:00+00:00",
+        "2026-08-28 00:00:00+00:00",
+        "2026-09-15 00:00:00+00:00",
+        "2026-09-16 00:00:00+00:00",
+        "2026-09-18 00:00:00+00:00",
+        "2026-09-22 00:00:00+00:00",
+        "2026-09-24 00:00:00+00:00",
+        "2026-09-25 00:00:00+00:00"
+      ],
+      "missing_symbol_position_hours": {
+        "XAUUSD": 101
+      },
+      "examples": [
+        {
+          "time": "2026-02-16 22:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-02-16 16:11:16",
+          "close": "2026-02-17 02:01:12"
+        },
+        {
+          "time": "2026-02-16 22:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-02-16 16:11:38",
+          "close": "2026-02-17 02:01:09"
+        },
+        {
+          "time": "2026-02-16 22:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-02-16 17:04:37",
+          "close": "2026-02-17 01:53:19"
+        },
+        {
+          "time": "2026-02-16 22:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-02-16 17:29:57",
+          "close": "2026-02-17 01:29:00"
+        },
+        {
+          "time": "2026-02-16 23:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-02-16 16:11:16",
+          "close": "2026-02-17 02:01:12"
+        },
+        {
+          "time": "2026-02-16 23:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-02-16 16:11:38",
+          "close": "2026-02-17 02:01:09"
+        },
+        {
+          "time": "2026-02-16 23:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-02-16 17:04:37",
+          "close": "2026-02-17 01:53:19"
+        },
+        {
+          "time": "2026-02-16 23:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-02-16 17:29:57",
+          "close": "2026-02-17 01:29:00"
+        }
+      ],
+      "no_h1_trades": 117,
+      "reliable": true,
+      "dd_pct_raw": 250.8143804048415,
+      "market_pauses": {
+        "heuristik": "symbolweise >=20h zwischen realen H1-Bars; alle aktiven Symbole pausiert",
+        "ausgenommene_aktive_stunden": 98,
+        "belege": [
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1773439200,
+            "bar_ende_nachher": 1773619200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-03-13T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-16T00:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1777071600,
+            "bar_ende_nachher": 1777251600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-04-24T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-27T01:00:00+00:00"
+          }
+        ]
+      },
+      "before": {
+        "coverage": 86.4184008762322,
+        "expected_hours": 913,
+        "measured_hours": 789,
+        "missing_hours": 124,
+        "trades_without_h1_point": 117
+      },
+      "broker_feed": "ActiveTrades003",
+      "trade_contract_broker": "vantage"
+    },
+    {
+      "id": 1052261,
+      "coverage": 90.29850746268657,
+      "expected_hours": 134,
+      "measured_hours": 121,
+      "missing_hours": 13,
+      "missing_hours_times": [
+        "2026-04-08 00:00:00+00:00",
+        "2026-04-15 00:00:00+00:00",
+        "2026-05-13 00:00:00+00:00",
+        "2026-06-30 00:00:00+00:00",
+        "2026-07-02 00:00:00+00:00",
+        "2026-07-08 00:00:00+00:00",
+        "2026-07-30 00:00:00+00:00",
+        "2026-08-04 00:00:00+00:00",
+        "2026-08-11 00:00:00+00:00",
+        "2026-09-03 00:00:00+00:00",
+        "2026-09-23 00:00:00+00:00",
+        "2026-09-30 00:00:00+00:00",
+        "2026-10-01 00:00:00+00:00"
+      ],
+      "missing_symbol_position_hours": {
+        "XAUUSD": 45
+      },
+      "examples": [
+        {
+          "time": "2026-04-08 00:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-04-07 22:31:34",
+          "close": "2026-04-08 00:01:00"
+        },
+        {
+          "time": "2026-04-15 00:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-04-14 22:48:00",
+          "close": "2026-04-15 00:03:00"
+        },
+        {
+          "time": "2026-05-13 00:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-05-12 22:54:00",
+          "close": "2026-05-13 00:01:00"
+        },
+        {
+          "time": "2026-06-30 00:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-06-29 21:03:08",
+          "close": "2026-06-30 02:08:46"
+        },
+        {
+          "time": "2026-07-02 00:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-07-01 21:00:08",
+          "close": "2026-07-02 00:47:00"
+        },
+        {
+          "time": "2026-07-02 00:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-07-01 22:31:41",
+          "close": "2026-07-02 00:47:00"
+        },
+        {
+          "time": "2026-07-02 00:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-07-01 22:35:38",
+          "close": "2026-07-02 00:47:00"
+        },
+        {
+          "time": "2026-07-02 00:00:00+00:00",
+          "symbol": "XAUUSD",
+          "open": "2026-07-01 22:39:37",
+          "close": "2026-07-02 00:47:00"
+        }
+      ],
+      "no_h1_trades": 332,
+      "reliable": false,
+      "dd_pct_raw": 4.3228288225062546,
+      "market_pauses": {
+        "heuristik": "symbolweise >=20h zwischen realen H1-Bars; alle aktiven Symbole pausiert",
+        "ausgenommene_aktive_stunden": 0,
+        "belege": []
+      },
+      "before": {
+        "coverage": 90.29850746268657,
+        "expected_hours": 134,
+        "measured_hours": 121,
+        "missing_hours": 13,
+        "trades_without_h1_point": 332
+      },
+      "broker_feed": "ActiveTrades003",
+      "trade_contract_broker": "vantage"
+    },
+    {
+      "id": 954691,
+      "coverage": 95.03478052290717,
+      "expected_hours": 4169,
+      "measured_hours": 3962,
+      "missing_hours": 207,
+      "missing_hours_times": [
+        "2026-02-05 00:00:00+00:00",
+        "2026-02-06 00:00:00+00:00",
+        "2026-02-10 00:00:00+00:00",
+        "2026-02-11 00:00:00+00:00",
+        "2026-02-12 00:00:00+00:00",
+        "2026-02-13 00:00:00+00:00",
+        "2026-02-16 00:00:00+00:00",
+        "2026-02-16 20:00:00+00:00",
+        "2026-02-16 21:00:00+00:00",
+        "2026-02-16 22:00:00+00:00",
+        "2026-02-16 23:00:00+00:00",
+        "2026-02-17 00:00:00+00:00",
+        "2026-02-18 00:00:00+00:00",
+        "2026-02-19 00:00:00+00:00",
+        "2026-02-20 00:00:00+00:00",
+        "2026-02-23 00:00:00+00:00",
+        "2026-02-24 00:00:00+00:00",
+        "2026-02-25 00:00:00+00:00",
+        "2026-02-26 00:00:00+00:00",
+        "2026-02-27 00:00:00+00:00",
+        "2026-03-02 00:00:00+00:00",
+        "2026-03-03 00:00:00+00:00",
+        "2026-03-04 00:00:00+00:00",
+        "2026-03-05 00:00:00+00:00",
+        "2026-03-06 00:00:00+00:00",
+        "2026-03-08 23:00:00+00:00",
+        "2026-03-09 23:00:00+00:00",
+        "2026-03-12 23:00:00+00:00",
+        "2026-03-15 23:00:00+00:00",
+        "2026-03-16 23:00:00+00:00",
+        "2026-03-17 23:00:00+00:00",
+        "2026-03-18 23:00:00+00:00",
+        "2026-03-19 23:00:00+00:00",
+        "2026-03-22 23:00:00+00:00",
+        "2026-03-23 23:00:00+00:00",
+        "2026-03-24 23:00:00+00:00",
+        "2026-03-25 23:00:00+00:00",
+        "2026-03-26 23:00:00+00:00",
+        "2026-03-30 00:00:00+00:00",
+        "2026-03-31 00:00:00+00:00",
+        "2026-04-01 00:00:00+00:00",
+        "2026-04-02 00:00:00+00:00",
+        "2026-04-03 00:00:00+00:00",
+        "2026-04-03 01:00:00+00:00",
+        "2026-04-03 02:00:00+00:00",
+        "2026-04-03 03:00:00+00:00",
+        "2026-04-03 04:00:00+00:00",
+        "2026-04-03 05:00:00+00:00",
+        "2026-04-03 06:00:00+00:00",
+        "2026-04-03 07:00:00+00:00",
+        "2026-04-03 08:00:00+00:00",
+        "2026-04-03 09:00:00+00:00",
+        "2026-04-03 10:00:00+00:00",
+        "2026-04-03 11:00:00+00:00",
+        "2026-04-03 12:00:00+00:00",
+        "2026-04-03 13:00:00+00:00",
+        "2026-04-03 14:00:00+00:00",
+        "2026-04-03 15:00:00+00:00",
+        "2026-04-03 16:00:00+00:00",
+        "2026-04-03 17:00:00+00:00",
+        "2026-04-03 18:00:00+00:00",
+        "2026-04-03 19:00:00+00:00",
+        "2026-04-03 20:00:00+00:00",
+        "2026-04-03 21:00:00+00:00",
+        "2026-04-03 22:00:00+00:00",
+        "2026-04-03 23:00:00+00:00",
+        "2026-04-06 00:00:00+00:00",
+        "2026-04-07 00:00:00+00:00",
+        "2026-04-08 00:00:00+00:00",
+        "2026-04-09 00:00:00+00:00",
+        "2026-04-10 00:00:00+00:00",
+        "2026-04-13 00:00:00+00:00",
+        "2026-04-14 00:00:00+00:00",
+        "2026-04-15 00:00:00+00:00",
+        "2026-04-16 00:00:00+00:00",
+        "2026-04-17 00:00:00+00:00",
+        "2026-04-20 00:00:00+00:00",
+        "2026-04-21 00:00:00+00:00",
+        "2026-04-22 00:00:00+00:00",
+        "2026-04-23 00:00:00+00:00",
+        "2026-04-24 00:00:00+00:00",
+        "2026-04-28 00:00:00+00:00",
+        "2026-04-29 00:00:00+00:00",
+        "2026-04-30 00:00:00+00:00",
+        "2026-05-01 00:00:00+00:00",
+        "2026-05-04 00:00:00+00:00",
+        "2026-05-05 00:00:00+00:00",
+        "2026-05-06 00:00:00+00:00",
+        "2026-05-07 00:00:00+00:00",
+        "2026-05-08 00:00:00+00:00",
+        "2026-05-12 00:00:00+00:00",
+        "2026-05-13 00:00:00+00:00",
+        "2026-05-14 00:00:00+00:00",
+        "2026-05-15 00:00:00+00:00",
+        "2026-05-18 00:00:00+00:00",
+        "2026-05-19 00:00:00+00:00",
+        "2026-05-20 00:00:00+00:00",
+        "2026-05-21 00:00:00+00:00",
+        "2026-05-22 00:00:00+00:00",
+        "2026-05-25 00:00:00+00:00",
+        "2026-05-25 20:00:00+00:00",
+        "2026-05-25 21:00:00+00:00",
+        "2026-05-25 22:00:00+00:00",
+        "2026-05-25 23:00:00+00:00",
+        "2026-05-26 00:00:00+00:00",
+        "2026-05-27 00:00:00+00:00",
+        "2026-05-28 00:00:00+00:00",
+        "2026-05-29 00:00:00+00:00",
+        "2026-06-03 00:00:00+00:00",
+        "2026-06-04 00:00:00+00:00",
+        "2026-06-05 00:00:00+00:00",
+        "2026-06-09 00:00:00+00:00",
+        "2026-06-10 00:00:00+00:00",
+        "2026-06-11 00:00:00+00:00",
+        "2026-06-12 00:00:00+00:00",
+        "2026-06-15 00:00:00+00:00",
+        "2026-06-16 00:00:00+00:00",
+        "2026-06-17 00:00:00+00:00",
+        "2026-06-18 00:00:00+00:00",
+        "2026-06-19 00:00:00+00:00",
+        "2026-06-19 20:00:00+00:00",
+        "2026-06-19 21:00:00+00:00",
+        "2026-06-19 22:00:00+00:00",
+        "2026-06-19 23:00:00+00:00",
+        "2026-06-22 00:00:00+00:00",
+        "2026-06-23 00:00:00+00:00",
+        "2026-06-24 00:00:00+00:00",
+        "2026-06-25 00:00:00+00:00",
+        "2026-06-26 00:00:00+00:00",
+        "2026-06-29 00:00:00+00:00",
+        "2026-06-30 00:00:00+00:00",
+        "2026-07-01 00:00:00+00:00",
+        "2026-07-02 00:00:00+00:00",
+        "2026-07-03 00:00:00+00:00",
+        "2026-07-03 20:00:00+00:00",
+        "2026-07-03 21:00:00+00:00",
+        "2026-07-03 22:00:00+00:00",
+        "2026-07-03 23:00:00+00:00",
+        "2026-07-06 00:00:00+00:00",
+        "2026-07-08 00:00:00+00:00",
+        "2026-07-09 00:00:00+00:00",
+        "2026-07-10 00:00:00+00:00",
+        "2026-07-13 00:00:00+00:00",
+        "2026-07-16 00:00:00+00:00",
+        "2026-07-17 00:00:00+00:00",
+        "2026-07-20 00:00:00+00:00",
+        "2026-07-21 00:00:00+00:00",
+        "2026-07-22 00:00:00+00:00",
+        "2026-07-23 00:00:00+00:00",
+        "2026-07-24 00:00:00+00:00",
+        "2026-07-27 00:00:00+00:00",
+        "2026-07-28 00:00:00+00:00",
+        "2026-07-29 00:00:00+00:00",
+        "2026-07-30 00:00:00+00:00",
+        "2026-07-31 00:00:00+00:00",
+        "2026-08-03 00:00:00+00:00",
+        "2026-08-04 00:00:00+00:00",
+        "2026-08-05 00:00:00+00:00",
+        "2026-08-06 00:00:00+00:00",
+        "2026-08-07 00:00:00+00:00",
+        "2026-08-10 00:00:00+00:00",
+        "2026-08-11 00:00:00+00:00",
+        "2026-08-12 00:00:00+00:00",
+        "2026-08-13 00:00:00+00:00",
+        "2026-08-14 00:00:00+00:00",
+        "2026-08-17 00:00:00+00:00",
+        "2026-08-18 00:00:00+00:00",
+        "2026-08-19 00:00:00+00:00",
+        "2026-08-20 00:00:00+00:00",
+        "2026-08-21 00:00:00+00:00",
+        "2026-08-24 00:00:00+00:00",
+        "2026-08-25 00:00:00+00:00",
+        "2026-08-26 00:00:00+00:00",
+        "2026-08-27 00:00:00+00:00",
+        "2026-08-28 00:00:00+00:00",
+        "2026-08-31 00:00:00+00:00",
+        "2026-09-01 00:00:00+00:00",
+        "2026-09-02 00:00:00+00:00",
+        "2026-09-03 00:00:00+00:00",
+        "2026-09-04 00:00:00+00:00",
+        "2026-09-07 00:00:00+00:00",
+        "2026-09-07 20:00:00+00:00",
+        "2026-09-07 21:00:00+00:00",
+        "2026-09-07 22:00:00+00:00",
+        "2026-09-07 23:00:00+00:00",
+        "2026-09-08 00:00:00+00:00",
+        "2026-09-09 00:00:00+00:00",
+        "2026-09-10 00:00:00+00:00",
+        "2026-09-11 00:00:00+00:00",
+        "2026-09-14 00:00:00+00:00",
+        "2026-09-15 00:00:00+00:00",
+        "2026-09-16 00:00:00+00:00",
+        "2026-09-17 00:00:00+00:00",
+        "2026-09-18 00:00:00+00:00",
+        "2026-09-21 00:00:00+00:00",
+        "2026-09-22 00:00:00+00:00",
+        "2026-09-23 00:00:00+00:00",
+        "2026-09-24 00:00:00+00:00",
+        "2026-09-25 00:00:00+00:00",
+        "2026-09-28 00:00:00+00:00",
+        "2026-09-29 00:00:00+00:00",
+        "2026-09-30 00:00:00+00:00",
+        "2026-10-01 00:00:00+00:00",
+        "2026-10-02 00:00:00+00:00",
+        "2026-10-05 00:00:00+00:00",
+        "2026-10-06 00:00:00+00:00",
+        "2026-10-07 00:00:00+00:00"
+      ],
+      "missing_symbol_position_hours": {
+        "NAS100": 574,
+        "XAUUSD": 109,
+        "SP500": 175
+      },
+      "examples": [
+        {
+          "time": "2026-02-05 00:00:00+00:00",
+          "symbol": "NAS100",
+          "open": "2026-02-04 21:00:02",
+          "close": "2026-02-09 11:01:05"
+        },
+        {
+          "time": "2026-02-06 00:00:00+00:00",
+          "symbol": "NAS100",
+          "open": "2026-02-04 21:00:02",
+          "close": "2026-02-09 11:01:05"
+        },
+        {
+          "time": "2026-02-06 00:00:00+00:00",
+          "symbol": "NAS100",
+          "open": "2026-02-05 00:00:04",
+          "close": "2026-02-09 11:01:05"
+        },
+        {
+          "time": "2026-02-06 00:00:00+00:00",
+          "symbol": "NAS100",
+          "open": "2026-02-05 18:00:06",
+          "close": "2026-02-09 11:01:05"
+        },
+        {
+          "time": "2026-02-10 00:00:00+00:00",
+          "symbol": "NAS100",
+          "open": "2026-02-09 11:01:05",
+          "close": "2026-02-11 13:00:02"
+        },
+        {
+          "time": "2026-02-11 00:00:00+00:00",
+          "symbol": "NAS100",
+          "open": "2026-02-09 11:01:05",
+          "close": "2026-02-11 13:00:02"
+        },
+        {
+          "time": "2026-02-11 00:00:00+00:00",
+          "symbol": "NAS100",
+          "open": "2026-02-10 18:00:02",
+          "close": "2026-02-11 13:00:02"
+        },
+        {
+          "time": "2026-02-11 00:00:00+00:00",
+          "symbol": "NAS100",
+          "open": "2026-02-10 20:00:03",
+          "close": "2026-02-11 13:00:02"
+        }
+      ],
+      "no_h1_trades": 28,
+      "reliable": true,
+      "dd_pct_raw": 16.886995339637025,
+      "market_pauses": {
+        "heuristik": "symbolweise >=20h zwischen realen H1-Bars; alle aktiven Symbole pausiert",
+        "ausgenommene_aktive_stunden": 1635,
+        "belege": [
+          {
+            "symbol": "NZDUSD",
+            "bar_ende_vorher": 1771023600,
+            "bar_ende_nachher": 1771200000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-13T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-02-16T00:00:00+00:00"
+          },
+          {
+            "symbol": "NZDUSD",
+            "bar_ende_vorher": 1772233200,
+            "bar_ende_nachher": 1772409600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-27T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-02T00:00:00+00:00"
+          },
+          {
+            "symbol": "NZDUSD",
+            "bar_ende_vorher": 1772838000,
+            "bar_ende_nachher": 1773010800,
+            "aktive_pausenstunden": 47,
+            "ausgenommene_aktive_stunden": 47,
+            "bar_ende_vorher_utc": "2026-03-06T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-08T23:00:00+00:00"
+          },
+          {
+            "symbol": "NZDUSD",
+            "bar_ende_vorher": 1774044000,
+            "bar_ende_nachher": 1774220400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-03-20T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-22T23:00:00+00:00"
+          },
+          {
+            "symbol": "NZDUSD",
+            "bar_ende_vorher": 1774648800,
+            "bar_ende_nachher": 1774828800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-03-27T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-30T00:00:00+00:00"
+          },
+          {
+            "symbol": "NZDUSD",
+            "bar_ende_vorher": 1779490800,
+            "bar_ende_nachher": 1779667200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-22T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-25T00:00:00+00:00"
+          },
+          {
+            "symbol": "NZDUSD",
+            "bar_ende_vorher": 1782514800,
+            "bar_ende_nachher": 1782691200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-26T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-29T00:00:00+00:00"
+          },
+          {
+            "symbol": "NZDUSD",
+            "bar_ende_vorher": 1784329200,
+            "bar_ende_nachher": 1784505600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-20T00:00:00+00:00"
+          },
+          {
+            "symbol": "NZDUSD",
+            "bar_ende_vorher": 1790982000,
+            "bar_ende_nachher": 1791158400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-10-02T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-10-05T00:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1770418800,
+            "bar_ende_nachher": 1770598800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-02-06T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-02-09T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1771023600,
+            "bar_ende_nachher": 1771203600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-13T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-02-16T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1771628400,
+            "bar_ende_nachher": 1771808400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-20T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-02-23T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1772233200,
+            "bar_ende_nachher": 1772413200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-27T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-02T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1772838000,
+            "bar_ende_nachher": 1773014400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 47,
+            "bar_ende_vorher_utc": "2026-03-06T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-09T00:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1773439200,
+            "bar_ende_nachher": 1773619200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-03-13T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-16T00:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1774044000,
+            "bar_ende_nachher": 1774224000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-03-20T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-23T00:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1774648800,
+            "bar_ende_nachher": 1774832400,
+            "aktive_pausenstunden": 50,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-03-27T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-30T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1775232000,
+            "bar_ende_nachher": 1775437200,
+            "aktive_pausenstunden": 56,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-03T16:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-06T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1775862000,
+            "bar_ende_nachher": 1776042000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-10T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-13T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1776466800,
+            "bar_ende_nachher": 1776646800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-20T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1777071600,
+            "bar_ende_nachher": 1777251600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-04-24T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-27T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1777676400,
+            "bar_ende_nachher": 1777856400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-01T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-04T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1778886000,
+            "bar_ende_nachher": 1779066000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-15T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-18T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1779490800,
+            "bar_ende_nachher": 1779670800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-22T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-25T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1781305200,
+            "bar_ende_nachher": 1781485200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-12T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-15T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1782514800,
+            "bar_ende_nachher": 1782694800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-26T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-29T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1783105200,
+            "bar_ende_nachher": 1783299600,
+            "aktive_pausenstunden": 53,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-03T19:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-06T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1783724400,
+            "bar_ende_nachher": 1783904400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-10T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-13T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1784329200,
+            "bar_ende_nachher": 1784509200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-20T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1784934000,
+            "bar_ende_nachher": 1785114000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-24T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-27T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1786143600,
+            "bar_ende_nachher": 1786323600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-07T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-10T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1786748400,
+            "bar_ende_nachher": 1786928400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-14T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-17T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1787353200,
+            "bar_ende_nachher": 1787533200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-21T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-24T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1787958000,
+            "bar_ende_nachher": 1788138000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-28T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-31T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1788562800,
+            "bar_ende_nachher": 1788742800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-04T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-07T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1789167600,
+            "bar_ende_nachher": 1789347600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-11T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-14T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1789772400,
+            "bar_ende_nachher": 1789952400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-18T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-21T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1790377200,
+            "bar_ende_nachher": 1790557200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-25T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-28T01:00:00+00:00"
+          },
+          {
+            "symbol": "NAS100",
+            "bar_ende_vorher": 1790982000,
+            "bar_ende_nachher": 1791162000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-10-02T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-10-05T01:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1771023600,
+            "bar_ende_nachher": 1771200000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-13T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-02-16T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1771628400,
+            "bar_ende_nachher": 1771804800,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-20T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-02-23T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1772233200,
+            "bar_ende_nachher": 1772409600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-27T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-02T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1772838000,
+            "bar_ende_nachher": 1773010800,
+            "aktive_pausenstunden": 47,
+            "ausgenommene_aktive_stunden": 47,
+            "bar_ende_vorher_utc": "2026-03-06T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-08T23:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1773439200,
+            "bar_ende_nachher": 1773615600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-03-13T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-15T23:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1774648800,
+            "bar_ende_nachher": 1774828800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-03-27T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-30T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1775862000,
+            "bar_ende_nachher": 1776038400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-10T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-13T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1776466800,
+            "bar_ende_nachher": 1776643200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-20T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1777676400,
+            "bar_ende_nachher": 1777852800,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-01T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-04T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1778886000,
+            "bar_ende_nachher": 1779062400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-15T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-18T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1779490800,
+            "bar_ende_nachher": 1779667200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-22T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-25T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1781910000,
+            "bar_ende_nachher": 1782086400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-19T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-22T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1783119600,
+            "bar_ende_nachher": 1783296000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-03T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-06T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1783724400,
+            "bar_ende_nachher": 1783900800,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-10T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-13T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1784329200,
+            "bar_ende_nachher": 1784505600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-20T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1784934000,
+            "bar_ende_nachher": 1785110400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-24T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-27T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1785538800,
+            "bar_ende_nachher": 1785715200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-31T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-03T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1786143600,
+            "bar_ende_nachher": 1786320000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-07T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-10T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1786748400,
+            "bar_ende_nachher": 1786924800,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-14T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-17T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1787353200,
+            "bar_ende_nachher": 1787529600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-21T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-24T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1787958000,
+            "bar_ende_nachher": 1788134400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-28T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-31T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1788562800,
+            "bar_ende_nachher": 1788739200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-04T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-07T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1789167600,
+            "bar_ende_nachher": 1789344000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-11T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-14T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1789772400,
+            "bar_ende_nachher": 1789948800,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-18T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-21T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURUSD",
+            "bar_ende_vorher": 1790377200,
+            "bar_ende_nachher": 1790553600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-25T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-28T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURJPY",
+            "bar_ende_vorher": 1772838000,
+            "bar_ende_nachher": 1773010800,
+            "aktive_pausenstunden": 47,
+            "ausgenommene_aktive_stunden": 47,
+            "bar_ende_vorher_utc": "2026-03-06T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-08T23:00:00+00:00"
+          },
+          {
+            "symbol": "EURJPY",
+            "bar_ende_vorher": 1773439200,
+            "bar_ende_nachher": 1773615600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-03-13T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-15T23:00:00+00:00"
+          },
+          {
+            "symbol": "EURJPY",
+            "bar_ende_vorher": 1779490800,
+            "bar_ende_nachher": 1779667200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-22T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-25T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURJPY",
+            "bar_ende_vorher": 1781305200,
+            "bar_ende_nachher": 1781481600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-12T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-15T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURJPY",
+            "bar_ende_vorher": 1782514800,
+            "bar_ende_nachher": 1782691200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-26T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-29T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1771023600,
+            "bar_ende_nachher": 1771200000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-13T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-02-16T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1772233200,
+            "bar_ende_nachher": 1772409600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-27T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-02T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1772838000,
+            "bar_ende_nachher": 1773010800,
+            "aktive_pausenstunden": 47,
+            "ausgenommene_aktive_stunden": 47,
+            "bar_ende_vorher_utc": "2026-03-06T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-08T23:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1777676400,
+            "bar_ende_nachher": 1777852800,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-01T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-04T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1779490800,
+            "bar_ende_nachher": 1779667200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-22T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-25T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1780095600,
+            "bar_ende_nachher": 1780272000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-29T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-01T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1781305200,
+            "bar_ende_nachher": 1781481600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-12T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-15T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1781910000,
+            "bar_ende_nachher": 1782086400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-19T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-22T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1782514800,
+            "bar_ende_nachher": 1782691200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-26T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-29T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1784329200,
+            "bar_ende_nachher": 1784505600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-20T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1784934000,
+            "bar_ende_nachher": 1785110400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-24T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-27T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1785538800,
+            "bar_ende_nachher": 1785715200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-31T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-03T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1786143600,
+            "bar_ende_nachher": 1786320000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-07T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-10T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1786748400,
+            "bar_ende_nachher": 1786924800,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-14T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-17T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1787353200,
+            "bar_ende_nachher": 1787529600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-21T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-24T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1787958000,
+            "bar_ende_nachher": 1788134400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-28T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-31T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1788562800,
+            "bar_ende_nachher": 1788739200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-04T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-07T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1789167600,
+            "bar_ende_nachher": 1789344000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-11T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-14T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDJPY",
+            "bar_ende_vorher": 1790982000,
+            "bar_ende_nachher": 1791158400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-10-02T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-10-05T00:00:00+00:00"
+          },
+          {
+            "symbol": "EURNZD",
+            "bar_ende_vorher": 1776466800,
+            "bar_ende_nachher": 1776643200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-20T00:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1771023600,
+            "bar_ende_nachher": 1771203600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-13T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-02-16T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1774044000,
+            "bar_ende_nachher": 1774224000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-03-20T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-23T00:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1774648800,
+            "bar_ende_nachher": 1774832400,
+            "aktive_pausenstunden": 50,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-03-27T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-30T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1775170800,
+            "bar_ende_nachher": 1775437200,
+            "aktive_pausenstunden": 73,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-02T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-06T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1776466800,
+            "bar_ende_nachher": 1776646800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-20T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1778281200,
+            "bar_ende_nachher": 1778461200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-05-08T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-11T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1786143600,
+            "bar_ende_nachher": 1786323600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-07T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-10T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1786748400,
+            "bar_ende_nachher": 1786928400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-14T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-17T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1787353200,
+            "bar_ende_nachher": 1787533200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-21T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-24T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1787958000,
+            "bar_ende_nachher": 1788138000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-28T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-31T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1788562800,
+            "bar_ende_nachher": 1788742800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-04T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-07T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1789167600,
+            "bar_ende_nachher": 1789347600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-11T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-14T01:00:00+00:00"
+          },
+          {
+            "symbol": "XAUUSD",
+            "bar_ende_vorher": 1790982000,
+            "bar_ende_nachher": 1791162000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-10-02T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-10-05T01:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1771023600,
+            "bar_ende_nachher": 1771200000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-13T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-02-16T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1772233200,
+            "bar_ende_nachher": 1772409600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-02-27T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-02T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1774044000,
+            "bar_ende_nachher": 1774220400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-03-20T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-22T23:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1774648800,
+            "bar_ende_nachher": 1774828800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-03-27T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-30T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1775257200,
+            "bar_ende_nachher": 1775433600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-03T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-06T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1775862000,
+            "bar_ende_nachher": 1776038400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-10T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-13T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1776466800,
+            "bar_ende_nachher": 1776643200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-20T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1782514800,
+            "bar_ende_nachher": 1782691200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-26T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-29T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1784329200,
+            "bar_ende_nachher": 1784505600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-20T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1784934000,
+            "bar_ende_nachher": 1785110400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-24T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-27T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1785538800,
+            "bar_ende_nachher": 1785715200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-31T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-03T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1786143600,
+            "bar_ende_nachher": 1786320000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-07T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-10T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1786748400,
+            "bar_ende_nachher": 1786924800,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-14T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-17T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1787353200,
+            "bar_ende_nachher": 1787529600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-21T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-24T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1787958000,
+            "bar_ende_nachher": 1788134400,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-28T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-31T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1788562800,
+            "bar_ende_nachher": 1788739200,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-04T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-07T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1789167600,
+            "bar_ende_nachher": 1789344000,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-11T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-14T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1789772400,
+            "bar_ende_nachher": 1789948800,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-18T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-21T00:00:00+00:00"
+          },
+          {
+            "symbol": "USDCHF",
+            "bar_ende_vorher": 1790377200,
+            "bar_ende_nachher": 1790553600,
+            "aktive_pausenstunden": 48,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-25T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-28T00:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1774044000,
+            "bar_ende_nachher": 1774224000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-03-20T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-23T00:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1774648800,
+            "bar_ende_nachher": 1774832400,
+            "aktive_pausenstunden": 50,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-03-27T22:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-03-30T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1776466800,
+            "bar_ende_nachher": 1776646800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-04-17T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-04-20T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1777676400,
+            "bar_ende_nachher": 1777856400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-05-01T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-04T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1778281200,
+            "bar_ende_nachher": 1778461200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 49,
+            "bar_ende_vorher_utc": "2026-05-08T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-05-11T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1781895600,
+            "bar_ende_nachher": 1782090000,
+            "aktive_pausenstunden": 53,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-19T19:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-22T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1782514800,
+            "bar_ende_nachher": 1782694800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-06-26T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-06-29T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1783724400,
+            "bar_ende_nachher": 1783904400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-10T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-13T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1784934000,
+            "bar_ende_nachher": 1785114000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-24T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-07-27T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1785538800,
+            "bar_ende_nachher": 1785718800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-07-31T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-03T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1786143600,
+            "bar_ende_nachher": 1786323600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-07T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-10T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1786748400,
+            "bar_ende_nachher": 1786928400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-14T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-17T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1787353200,
+            "bar_ende_nachher": 1787533200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-21T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-24T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1787958000,
+            "bar_ende_nachher": 1788138000,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-08-28T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-08-31T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1788562800,
+            "bar_ende_nachher": 1788742800,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-04T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-07T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1789167600,
+            "bar_ende_nachher": 1789347600,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-11T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-14T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1789772400,
+            "bar_ende_nachher": 1789952400,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-18T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-21T01:00:00+00:00"
+          },
+          {
+            "symbol": "SP500",
+            "bar_ende_vorher": 1790377200,
+            "bar_ende_nachher": 1790557200,
+            "aktive_pausenstunden": 49,
+            "ausgenommene_aktive_stunden": 48,
+            "bar_ende_vorher_utc": "2026-09-25T23:00:00+00:00",
+            "bar_ende_nachher_utc": "2026-09-28T01:00:00+00:00"
+          }
+        ]
+      },
+      "before": {
+        "coverage": 94.96644295302013,
+        "expected_hours": 4172,
+        "measured_hours": 3962,
+        "missing_hours": 210,
+        "trades_without_h1_point": 28
+      },
+      "broker_feed": "ActiveTrades003",
+      "trade_contract_broker": "vantage"
+    }
+  ]
+}

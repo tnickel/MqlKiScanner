@@ -1,0 +1,60 @@
+{
+  "measurements": [
+    {
+      "id": 2308093,
+      "name": "UpFuji MT4",
+      "quelle": "mql5",
+      "broker": "TickmillLifeMql5",
+      "status": "unvollstaendig",
+      "reliable": false,
+      "coverage": 99.5,
+      "dd_pct": 49.92340985949238,
+      "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 4 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 1.225
+    },
+    {
+      "id": 2308093,
+      "name": "UpFuji MT4",
+      "quelle": "mql5",
+      "broker": "ActiveTrades003",
+      "status": "ok",
+      "reliable": true,
+      "coverage": 100.0,
+      "dd_pct": 49.99984787286909,
+      "reason": null,
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 0.57
+    },
+    {
+      "id": 2308093,
+      "name": "UpFuji MT4",
+      "quelle": "mql5",
+      "broker": "Vantage",
+      "status": "unvollstaendig",
+      "reliable": false,
+      "coverage": 99.5,
+      "dd_pct": 49.89793052170021,
+      "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 6 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 1.045
+    }
+  ],
+  "updates": [
+    {
+      "id": 2308093,
+      "name": "UpFuji MT4",
+      "previous_coverage": 99.5,
+      "previous_dd": 2.6792642489281446,
+      "action": "study_updated",
+      "broker": "ActiveTrades003",
+      "coverage": 100.0,
+      "dd_pct": 49.99984787286909,
+      "reliable": true,
+      "reason": null
+    }
+  ]
+}

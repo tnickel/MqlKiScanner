@@ -2,6 +2,16 @@
 
 Einstieg für Menschen und Agenten. Alles Wesentliche liegt unter `doc/`.
 
+Dokumentationsabgleich: 16.10.2026. Für den aktuellen Aufbau zuerst
+[Megaprojekt-Architektur](21_megaprojekt-architektur.md) und
+[Hub-Architektur](08_architektur.md) lesen. Datierte Analysen, Konzepte und
+Testzahlen dokumentieren ihren jeweiligen damaligen Stand.
+
+**MqlRealmonitor ist noch nicht in den Gesamtworkflow eingebunden.**
+Schnittstellen sind vorbereitet; Integration bleibt vorerst zurückgestellt.
+PelicanWinnerLooser ist ein eigenständiges Einzelprojekt und ebenfalls noch
+nicht eingebunden; eine Hub-Anbindung ist nicht implementiert.
+
 ## Lesereihenfolge
 
 | # | Dokument | Inhalt |
@@ -15,23 +25,24 @@ Einstieg für Menschen und Agenten. Alles Wesentliche liegt unter `doc/`.
 | 6 | [`07_benutzerhandbuch.md`](07_benutzerhandbuch.md) | Bedienung der Streamlit-App (Scan-Modi, Wechsel-Protokoll, REST-API) |
 | 7 | [`08_architektur.md`](08_architektur.md) | Schichten, Datenfluss, Module |
 | 8 | [`09_sicherheit.md`](09_sicherheit.md) | Secrets, Rate-Limits, öffentliches Repo |
-| 9 | [`19_agentenbetrieb-bauplan.md`](19_agentenbetrieb-bauplan.md) | Bauplan autonomer Agentenbetrieb — 5 LLM-Rollen, Dossiers, MetaTrader-Kursdaten (Phase A–E **komplett umgesetzt** 22.09.2026; offen: Autostart, erster autonomer Monat) |
-| 10 | [`20_konzept-multi-source-hub.md`](20_konzept-multi-source-hub.md) | Konzept: Signale über beliebig viele Datenquellen-REST (Kürzel je Quelle, Connection-Ampel, `listen_modus`; **Stufe 1 umgesetzt** 27.09.2026; seit 30.09. u. a. implizite Kapitalbasis, Monitor-DD in der Schranke, metrics.Broker; offen: Stufen 2–4) |
-| 11 | [`21_megaprojekt-architektur.md`](21_megaprojekt-architektur.md) | **Gesamtdoku Megaprojekt**: alle 5 Quellen (MqlDownloader/Pelican/RoboForex/Vantage/Zulu) → Hub → MqlTradeMonitor/MqlRealmonitor — Diagramm, Protokoll, Ports, Testabdeckung, Ausbaustufen |
+| 9 | [`19_agentenbetrieb-bauplan.md`](19_agentenbetrieb-bauplan.md) | Bauplan und Umsetzungsstand des Agentenbetriebs; Phasen A–E implementiert, Daemon-Startskript vorhanden; erster vollständiger autonomer Monat noch nicht als aktuell nachgewiesen |
+| 10 | [`20_konzept-multi-source-hub.md`](20_konzept-multi-source-hub.md) | Quellen-REST, Registry, Ingest und Ausbau; Monitor-DD ist Closing-DD, kein Calmar-Nenner; vollständige Composite-Identität und Betreuer-Umstellung auf Quellen stehen aus |
+| 11 | [`21_megaprojekt-architektur.md`](21_megaprojekt-architektur.md) | **Gesamtdoku Megaprojekt**: 5 Quellen → Hub → MqlTradeMonitor; MqlRealmonitor und Einzelprojekt PelicanWinnerLooser noch nicht eingebunden |
 | 12 | [`22_drawdown-kalibrierung.md`](22_drawdown-kalibrierung.md) | Reale MT4-/MT5-Prüfung: MQL-DD-Definition, Zeiträume, wechselnde Kurszeiten und Erhaltung identischer Positionen |
+| 13 | [`23_stufe0-client-updates.md`](23_stufe0-client-updates.md) | Implementierte Stufe 0: Quellen vor GUI- und autonomen Scans parallel aktualisieren, Status und Login-Wartezustände |
 | — | [`../AGENTS.md`](../AGENTS.md) | Verbindliche Regeln für KI-Agenten (inkl. kompletter Umsetzungsstand) |
 | — | [`../SECURITY.md`](../SECURITY.md) | Kurzfassung für GitHub Security |
 
 ## Reviews
 
-- **Aktuell:** [`reviews/intensivreview_2026-09-29/`](reviews/intensivreview_2026-09-29/)
-  — End-to-End-Review des Ziellaufs 30.09. (Nachrechnung 9/9 cent-genau,
-  Befunde B1–B16) **mitsamt der umgesetzten Fixes vom 30.09.**; der
-  verständliche Änderungsreport liegt als PDF unter
-  `reports/MqlKiScanner_Aenderungsreport_2026-09-30.pdf`.
-- Frühere Reviews (Codereviews 05.–07.09., Einzelreviews 29.09.) sind
-  abgeschlossen und wurden am 30.09. ausgeräumt — ihr Inhalt lebt in den
-  Commit-Messages und der Git-Historie weiter.
+- `reviews/` enthält datierte Reviews und Rohbelege, unter anderem den
+  Workspace-Review vom 04.10. und Broker-/Exportprüfungen vom 10.10.
+  Ihr Datum ist kein Nachweis eines heutigen Testlaufs.
+- Der Intensiv-Review vom 29./30.09. liegt lokal im Workspace-Archiv
+  [`../../waste/intensivreview_2026-09-29/`](../../waste/intensivreview_2026-09-29/),
+  außerhalb des Scanner-Repositories. Das Archiv ist nicht Teil eines Git-Clones.
+  Der zugehörige PDF-Änderungsreport liegt weiterhin unter
+  [`reports/MqlKiScanner_Aenderungsreport_2026-09-30.pdf`](reports/MqlKiScanner_Aenderungsreport_2026-09-30.pdf).
 
 ## Schnellbefehle
 

@@ -1,0 +1,50 @@
+[
+  {
+    "id": 2059824,
+    "http_status": 200,
+    "imported": true,
+    "trades": 937,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": false,
+    "financial_only": false,
+    "metrics_imported": false
+  },
+  {
+    "id": 2063644,
+    "http_status": 200,
+    "imported": true,
+    "trades": 5541,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": false,
+    "financial_only": false,
+    "metrics_imported": false
+  },
+  {
+    "id": 2074606,
+    "http_status": 200,
+    "imported": true,
+    "trades": 1682,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": false,
+    "financial_only": false,
+    "metrics_imported": false
+  },
+  {
+    "id": 2084818,
+    "http_status": 200,
+    "imported": true,
+    "trades": 753,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": false,
+    "financial_only": false,
+    "metrics_imported": false
+  }
+]

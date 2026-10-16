@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-10",
+  "method": "Independent stdlib CSV arithmetic against unchanged native source files and official Scanner ECB historical table; exact row count, every exported PnL, unchanged prices/lots/symbols, metadata dates<=trade date/max10days. No production writes/network/MT5.",
+  "accepted_sets": 4,
+  "successful_sets": 4,
+  "trades_checked": 8913,
+  "issues": [],
+  "source_cache_sha256": "4fc5af11a6144a628181d6d217b49f3e7fa0b886c7a99cbd6aeb3de77d219bc3",
+  "rows": [
+    {
+      "id": 2059824,
+      "status": 200,
+      "raw_trades": 937,
+      "export_trades": 937,
+      "source_currency": "",
+      "net_usd": 106126.86,
+      "csv_sha256": "91e842a8a1127a564da2b4272d281f25078789b58fa60a15a54f428b01f6ff55",
+      "missing_raw_profit_count": 0,
+      "distinct_factors": 1,
+      "snapshot_balance_usd": null,
+      "snapshot_rate": null,
+      "snapshot_rate_date": null
+    },
+    {
+      "id": 2063644,
+      "status": 200,
+      "raw_trades": 5541,
+      "export_trades": 5541,
+      "source_currency": "",
+      "net_usd": 10140.81,
+      "csv_sha256": "a2c2e3555ec255c7b537781305ba573dedff21497916815d6a28365dfd3c806f",
+      "missing_raw_profit_count": 0,
+      "distinct_factors": 1,
+      "snapshot_balance_usd": null,
+      "snapshot_rate": null,
+      "snapshot_rate_date": null
+    },
+    {
+      "id": 2074606,
+      "status": 200,
+      "raw_trades": 1682,
+      "export_trades": 1682,
+      "source_currency": "",
+      "net_usd": 4198.04,
+      "csv_sha256": "7e04b782247ff0b7af8cb1e9ecfd3a97e538e9297a938b5ca0328b1079237d2c",
+      "missing_raw_profit_count": 0,
+      "distinct_factors": 1,
+      "snapshot_balance_usd": null,
+      "snapshot_rate": null,
+      "snapshot_rate_date": null
+    },
+    {
+      "id": 2084818,
+      "status": 200,
+      "raw_trades": 753,
+      "export_trades": 753,
+      "source_currency": "",
+      "net_usd": 848.47,
+      "csv_sha256": "20bdbfdef60adc549b8d3d4bdeed7fa9ceb583a211244ced8a7a505524a55f64",
+      "missing_raw_profit_count": 0,
+      "distinct_factors": 1,
+      "snapshot_balance_usd": null,
+      "snapshot_rate": null,
+      "snapshot_rate_date": null
+    }
+  ],
+  "strict_scanner_parser_and_original_rest_sha": [
+    {
+      "id": "2059824",
+      "trades_csv_status": 200,
+      "metrics_status": 404,
+      "strict_parser_trades": 937
+    },
+    {
+      "id": "2063644",
+      "trades_csv_status": 200,
+      "metrics_status": 404,
+      "strict_parser_trades": 5541
+    },
+    {
+      "id": "2074606",
+      "trades_csv_status": 200,
+      "metrics_status": 404,
+      "strict_parser_trades": 1682
+    },
+    {
+      "id": "2084818",
+      "trades_csv_status": 200,
+      "metrics_status": 404,
+      "strict_parser_trades": 753
+    }
+  ]
+}

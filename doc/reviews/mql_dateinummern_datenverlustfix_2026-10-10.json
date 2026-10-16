@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-10",
+  "cause": "FileUtils.correctFileNumbers used provider display basename as unique map key and REPLACE_EXISTING; several HTML IDs for one name selected the last enumerated ID, overwriting distinct CSV/TXT histories. Reproduced on isolated copies by startup_audit.",
+  "fix": [
+    "Only bijective basename-to-ID and ID-to-basename HTML filename mappings are eligible.",
+    "Multiple per-type CSV/TXT candidates sharing basename are preserved.",
+    "Existing target is blocked; Files.move without replacement also protects a concurrently created target."
+  ],
+  "tests": {
+    "tests": 105,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "maven_package": "exit0",
+  "artifacts": [
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\MqlDownloader\\target\\MqlDownloader-0.0.35-SNAPSHOT-jar-with-dependencies.jar",
+      "bytes": 57795684,
+      "sha256": "e1c6b7daf5843e170715a1dd698f984b4f9d15d821c15f356e8ad7b7724375ee"
+    },
+    {
+      "path": "C:\\Forex\\MqlAnalyzer\\bin\\MqlDownloaderApp.jar",
+      "bytes": 57795684,
+      "sha256": "e1c6b7daf5843e170715a1dd698f984b4f9d15d821c15f356e8ad7b7724375ee"
+    },
+    {
+      "path": "C:\\Forex\\MqlAnalyzer\\bin\\backups\\MqlDownloaderApp_before_fileutils_guard_goal_20261010.jar",
+      "bytes": 57794700,
+      "sha256": "762b3bcf7df1202315ae9a9aba966208e4f01894cc0d96a0eb1e20a52d8568f4"
+    }
+  ],
+  "backup_policy": "New distinct backup; earlier before_archive_fx_goal backup preserved. No app/UI/server restart.",
+  "independent_review": {
+    "agent": "startup_audit",
+    "finding_count": 0,
+    "scope": "Read-only FileUtils and7 new tests. Confirmed reproduced same-name/multiple-ID overwrite is prevented. Existing unique-basename wrong-ID correction policy still uses filenames, not CSV content identity; unchanged by this fix."
+  },
+  "source_files": [
+    "../MqlDownloader/src/utils/FileUtils.java",
+    "../MqlDownloader/tests/utils/FileUtilsTest.java",
+    "../MqlDownloader/README.md"
+  ],
+  "production_raw_files_changed": false
+}

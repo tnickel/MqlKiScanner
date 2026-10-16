@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-10",
+  "root_cause": "One snapshot EUR/USD rate fetched or cached once per provider was applied to all historical RealisedProfit, including trades years before the rate date.",
+  "method": "Each source row CurrencyCode and CloseTimestamp date, provider fallback only when row currency absent; last official ECB date<=source close date, max10 calendar days. USD unchanged, nativeUSC/100 exactlyonce. Batch fullECBtablecache.",
+  "currency_date_basis": "Date from exported source CloseTimestamp (LocalDateTime); no invented UTC rebasing. ECB daily reference, not an execution-time FX price or proof of intraday publication availability.",
+  "snapshot_scope": "Existing FxRates only snapshot metrics; CurrencyRateScope=snapshot_metrics_only, CurrencyRateDate exposed; trade normalization separately reports rates/dates/true source currencies.",
+  "tests": {
+    "tests": 116,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "mvn_package": "exit0",
+  "new_regressions": "8 historical-rate tests and4 REST integration tests; changing dates/differentIDs/EUR,GBP,HKD/USD,USC/weekend/noFuture/10daycap/cacheOffline/partialFXfailure404/snapshotindependent. Four archive tests: exact managed ID/SHA/count/header, every position finite and complete, explicit currency, USD/USC/EUR same historical adapter, absent FX/invalid row/foreign route blocked, provider path priority, no invented metrics.",
+  "code_sha256": {
+    "src/main/java/de/pelicanmonitor/rest/HistoricalFxRates.java": "5df9a00b1ca9cbfa0218df619a9f2c879cebf335ac4f6d5a3f3e5f0b5ac87f86",
+    "src/main/java/de/pelicanmonitor/rest/RestApiServer.java": "8ed855be945fdf7b39f8d70978fa8b66c639c0eb4eeefb25213704212f3072bb",
+    "src/main/java/de/pelicanmonitor/rest/FxRates.java": "dcfbea441caeca7a32432c05ab98ff74f7b419a099dc0f787c4e18bb9ffcf3fd",
+    "src/test/java/de/pelicanmonitor/HistoricalFxRatesTest.java": "003a89576bddbb18f94cde992b771d8c486f40313530111032f0c619b7c3b10d",
+    "src/test/java/de/pelicanmonitor/HistoricalTradeFxTest.java": "7889afe9a1c55257040d9e26269d599a082d1adac885316f83764d4186619eb5",
+    "src/test/java/de/pelicanmonitor/RestApiServerTest.java": "10860de091460da5ac0f83763c2f434c28b359a02cb9795880bba6fd95b9a04f"
+  },
+  "artifacts": [
+    {
+      "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\PelicanTrading\\target\\pelicanmonitor-1.5.0.jar",
+      "sha256": "55ff90a01f187b48ec258381b10d56c2e002028a532b3e1d9ef96c882405ba6f",
+      "bytes": 321555
+    }
+  ],
+  "normal_start": "run.bat -> mvn javafx:run; newly compiled code active at next normal start. No production UI/server started by this work.",
+  "scope_exclusions": [
+    "No SourceClient/Login/Provider/SignalStore edits by this agent.",
+    "No Scanner production DB writes or MT5 calls."
+  ],
+  "independent_review": {
+    "final_scanner_import": "READY/no findings: read-only sqlite URI mode=ro verified all632 CSV artifact SHA hashes against immutable Acceptance,319243 rows,632 original metrics responses/content/cacheSHA and37 Workflow snapshot/source/SHA bindings. Six empty exports explicitly have Trades=Wins=Losses=0. CSV-only archive does not import metrics404. Atomic bounded-retry evidence writer and corrected Matrixnew_data/rank guards reviewed. Full result: doc/reviews/pelican_final_import_unabhaengig_2026-10-10.json. No MT5/network/production DB writes.",
+    "historical_fx": "startup_audit bounded code/metadata/hash review: no financial defect, 31483 eligible FX dates; doc/reviews/pelican_historische_fx_export_pruefung_2026-10-10.json",
+    "all_csv_arithmetic": "628 successful regular exports/310330 trades; every PnL and unchanged prices/lots/symbols; no findings or missing source PnLs. doc/reviews/pelican_historische_exporte_finanzabnahme_2026-10-10.json",
+    "archive_schema": "startup_audit independently validated 8913 original archive rows: doc/reviews/pelican_archiv_trades_schema_2026-10-10.json",
+    "archive_code": {
+      "reviewer": "startup_audit",
+      "result": "No actionable findings in bounded read-only review of RestApiServer.archivedTrades, tradesCsv, tradeRateKey and archive regressions.",
+      "verified_guards": [
+        "Only parsed positive managed numeric ID and exact closed_ID.csv/.meta path; no filename search or fabricated Provider.",
+        "Source-store SHA/count check plus version=1, SHA of actual bytes, exact native 12-column header and final parsed row count.",
+        "Whole file rejected for invalid or duplicate TradeId, missing instrument/direction/currency, nonfinite or nonpositive quantity/prices, nonfinite PnL, invalid timestamps or close before open; nonempty archive required.",
+        "Explicit row currency required without Provider; same historical FX resolver, whole export fails if any FX rate is unavailable.",
+        "Current catalog Provider path takes precedence; foreign version rejected; unknown Provider metrics and JSON trades remain404."
+      ],
+      "regressions_reviewed": "HistoricalTradeFxTest archive tests cover USD/USC/EUR, catalog precedence, foreign version, missing FX, corrupt SHA/count/version/header, invalid complete-row fields, duplicate IDs and empty archive.",
+      "four_export_response_sha_verified": true,
+      "four_export_statuses": "All four CSV200 and metrics404; existing636 exports unchanged.",
+      "source_identity_limit": "CSV rows lack independent provider ID; identity remains the original managed SourceStore filename binding. SHA proves integrity rather than identity or lifetime completeness.",
+      "jar_sha256_verified": "55ff90a01f187b48ec258381b10d56c2e002028a532b3e1d9ef96c882405ba6f",
+      "review_scope": "Read-only code/response/hash review, no MT5, network or Scanner production DB writes. Documentation updated only."
+    }
+  },
+  "export_regeneration": {
+    "regular_folder": "tmp/pelican_historical_fx_exports_goal_20261010",
+    "regular_sets": 636,
+    "regular_csv_200": 628,
+    "regular_trades": 310330,
+    "archive_folder": "tmp/pelican_archived_exports_goal_20261010",
+    "archive_csv_200": 4,
+    "archive_trades": 8913,
+    "archive_metrics_status": 404,
+    "combined_visible_csv_200": 632,
+    "combined_trades": 319243,
+    "remaining_positive_aggregate_empty_ids": [
+      2000036,
+      2001115,
+      2001116,
+      2097770
+    ],
+    "both_folders_immutable": true
+  },
+  "excluded_stale_report_files": [
+    "TEST-de.pelicanmonitor.LoginAutomatLiveCheck.xml"
+  ],
+  "tests_note": "Counts include current package run only; preexisting07Oct live-login report is stale and was not executed by this build.",
+  "source_count_metadata": "Top-level TradesStored counts verified local CSV rows, CompletenessNote separates source aggregates without inferring truncation or complete lifetime coverage.",
+  "archive_policy": "Only exact managed closed_{id}.csv/.meta original source-store ID binding; SHA/count/versioned marker/exact header and every complete position with explicit row currency. No filename searching, aliases or fabricated Provider/metrics. CSV itself contains no independent provider ID: filename binding is inherited source provenance, SHA only proves integrity.",
+  "example_correction": {
+    "id": 2000016,
+    "trades": 2632,
+    "old_fixed_fx_net_usd": 438.3,
+    "new_historical_fx_net_usd": 412.66,
+    "delta_usd": -25.64,
+    "distinct_fx_factors": 395,
+    "snapshot_rate_date_unchanged": "2026-09-29"
+  }
+}

@@ -1,6 +1,15 @@
 # Bauplan: Autonomer Agentenbetrieb (LLM-Orchestrator)
 
-**Status: Konzept/Bauplan — beschlossen am 22.09.2026, noch nichts implementiert.**
+**Aktueller Status (16.10.2026):** Agentenbetrieb mit den Phasen A–E ist
+implementiert; die Abnahmen vom 22.09. stehen in Abschnitt 13. Der folgende
+Bauplan hält die damaligen Entscheidungen fest. Zusätzlich aktualisiert
+der autonome Scan inzwischen aktive REST-Quellen über Stufe 0 (doc/23).
+MqlRealmonitor ist noch nicht produktiv eingebunden; die REST-Schnittstelle
+ist vorbereitet, die Integration bleibt vorerst zurückgestellt. Der Pfeil
+im historischen Architekturdiagramm beschreibt daher keine aktive
+Produktivverbindung.
+
+**Ursprünglicher Konzeptstand: beschlossen am 22.09.2026.**
 Entstanden aus drei Konzeptrunden (Recherche: Projekt, Datenbasis, PDF-Berichte,
 Backtester-Projekt `D:\AntiGravitySoftware\GitWorkspace\Backtester`).
 

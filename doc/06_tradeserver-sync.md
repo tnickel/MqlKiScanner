@@ -3,6 +3,12 @@
 Stand: 20.09.2026 · Status: umgesetzt und getestet (Scanner 748 Tests grün,
 Tradeserver 56 Tests grün)
 
+**Dokumentation geprüft am 16.10.2026:** Die genannten Testzahlen sind
+historische Abnahmen, kein aktueller Testlauf. **MqlTradeMonitor** ist der
+hier beschriebene separate Tradeserver. **MqlRealmonitor** ist noch nicht
+produktiv eingebunden; seine vorbereitete Scanner-REST-Schnittstelle auf
+Port 8611 ist ein anderer Integrationspfad und bleibt vorerst zurückgestellt.
+
 ## 1. Ziel und Architektur
 
 Der MqlKiScanner bewertet MQL5-Signale forensisch (Ampel, Score, Urteil,
@@ -89,14 +95,23 @@ Felder `maxDrawdownEquityPct`, `ertragMonatGeomPct`, `cagrJahrPct`,
 `retddMonat`, `retddJahr` werden als ungerundete Zahlen oder `null`
 übertragen. Rundung erfolgt erst bei der Anzeige. `retddBasis` bezeichnet
 die Berechnungsbasis. `drawdownLimitPct`, `minReturnMonthlyPct` und
-`minRetddMonthly` liefern die aktuellen Scanner-Grenzwerte (RetDD ≥1).
+`minCalmarJahr` liefern die Scanner-Grenzwerte. Seit 05.10.2026 prüft Grün
+den Jahres-Calmar (Default ≥3,0), bei mindestens drei Monaten Trade-Historie;
+die absolute Monats-Ertragshürde ist im Default 0 (= deaktiviert).
+`minRetddMonthly: 1.0` wird nur als veraltetes Kompatibilitätsfeld für ältere
+Tradeserver-Versionen mitgesendet und ist kein aktuelles Grün-Kriterium.
 
-`maxDrawdownEquityPct` ist die gültige eigene Kurs-/Monitor-Messung
-inklusive Floating. `retddMonat` = eigene geometrische Gewinn-%/Monat
+`maxDrawdownEquityPct` ist die freigegebene eigene Kursmessung inklusive
+Floating. Der Closing-DD der Quellen-Monitore bleibt im Schranken-Kanal,
+dient aber nie als Calmar-/RetDD-Nenner. `retddMonat` = eigene geometrische
+Gewinn-%/Monat
 geteilt durch diesen Max-Equity-DD. Geschlossener Trading-DD und
 Plattform-Drawdowns dienen nie als Ersatznenner. Fehlende Messung oder
 DD=0 ergibt keinen RetDD; fehlende/veraltete Rendite ebenso wenig.
-`retddJahr` verwendet Jahres-CAGR, nicht zwölfmal den Monatswert.
+`retddJahr` verwendet Jahres-CAGR, nicht zwölfmal den Monatswert. Unter
+drei Monaten Trade-Historie bleiben beide Quotienten unbekannt. Bei
+Kapitalflüssen nach Handelsbeginn verwendet die Rendite zeitgenaue
+Unterperioden (TWR); Einzahlungen zählen nicht als Ertrag.
 
 Der MqlTradeMonitor speichert die Werte unverändert. Tabelle, Detail und
 Risiko-Ertrag-Diagramm verwenden die eigene Rendite und gemessene Equity;

@@ -1,0 +1,1492 @@
+{
+  "vantage_signals": 348,
+  "newly_filled_numeric_cells": 150,
+  "signals_with_new_numeric_values": 27,
+  "before": {
+    "kein_trade_export": 36,
+    "studie_verlaesslich": 204,
+    "studie_mit_vorbehalt": 78,
+    "keine_messung": 30
+  },
+  "after": {
+    "studie_mit_vorbehalt": 70,
+    "studie_verlaesslich": 239,
+    "keine_messung": 12,
+    "kein_trade_export": 27
+  },
+  "source": "Vergleich mit gesicherten Studien vor dieser Fortsetzung; neue Exporte waren vorher ohne Trade-Datei. Tabellenfunktionen auf beiden Seiten identisch.",
+  "limitations": "Messung nur H1-Schlusskurse; virtuelle 10.000-USD-Basis bleibt gekennzeichnet, Teilmessungen und unzuverlässige Messungen getrennt. Keine Ampel-Neubewertung.",
+  "signals": [
+    {
+      "id": 504191,
+      "name": "Master Hong",
+      "before": "kein_trade_export",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "Trading-DD %",
+        "True-DD %",
+        "True-DD USD",
+        "PF",
+        "Win %",
+        "Trades"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 66.4%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 6 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet · Rendite nicht berechenbar: Endkapital ≤ 0"
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "before": "kein_trade_export",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "Trading-DD %",
+        "True-DD %",
+        "True-DD USD",
+        "Geom. %/M",
+        "TrueRetDD",
+        "RetDD/Monat",
+        "PF",
+        "Win %",
+        "Trades"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 92.3%) · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 9 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 954691,
+      "name": "TRADE EASY 4YOU 2",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 998837,
+      "name": "Bet with Akedang",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 761137,
+      "name": "SMC safety",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1441423,
+      "name": "Safe Capital 10K",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1393802,
+      "name": "Jinn Crow",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1392457,
+      "name": "Jinn Grey",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1171681,
+      "name": "Lenna",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 70.0%) · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 120 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 1202431,
+      "name": "Strogo trade",
+      "before": "keine_messung",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 470115,
+      "name": "MM Trading Expert",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 614789,
+      "name": "DUBAI BANKS",
+      "before": "keine_messung",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1232663,
+      "name": "500 x SP",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "before": "kein_trade_export",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "Trading-DD %",
+        "True-DD %",
+        "True-DD USD",
+        "Geom. %/M",
+        "TrueRetDD",
+        "RetDD/Monat",
+        "PF",
+        "Win %",
+        "Trades"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1482461,
+      "name": "Steady Sentinel Algo",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1062072,
+      "name": "Eknoor Mind Skills ",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 640597,
+      "name": "SmartCopy Pro",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 92.5%) · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 20 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 1342194,
+      "name": "PrimeX Forex",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht betrachtet: XAUUSD247 — DD kann unterschätzt sein."
+    },
+    {
+      "id": 1231244,
+      "name": "USLEGEND",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht betrachtet: NIKKEI225 — DD kann unterschätzt sein."
+    },
+    {
+      "id": 1390982,
+      "name": "ALPHA BULLSTRIKE",
+      "before": "keine_messung",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "before": "kein_trade_export",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "Trading-DD %",
+        "True-DD %",
+        "True-DD USD",
+        "Geom. %/M",
+        "TrueRetDD",
+        "RetDD/Monat",
+        "PF",
+        "Win %",
+        "Trades"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "before": "kein_trade_export",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "Trading-DD %",
+        "True-DD %",
+        "True-DD USD",
+        "Geom. %/M",
+        "TrueRetDD",
+        "RetDD/Monat",
+        "PF",
+        "Win %",
+        "Trades"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 10 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 1316316,
+      "name": "The Forex Academy",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht betrachtet: FIXEDVOL100, FIXEDVOL20, FIXEDVOL80 — DD kann unterschätzt sein."
+    },
+    {
+      "id": 733488,
+      "name": "Cryptowanlanid KING",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 38.2%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 20 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 1295547,
+      "name": "Ansari007",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 76.4%)"
+    },
+    {
+      "id": 982505,
+      "name": "Tradophile",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1087584,
+      "name": "Chispita",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 949108,
+      "name": "ALPHA INDEX",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 74.0%) · Kursdaten fehlen für 18 von 239 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+    },
+    {
+      "id": 1400055,
+      "name": "Quantum Copy EVO",
+      "before": "keine_messung",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht betrachtet: FIXEDSTEP0.5 — DD kann unterschätzt sein."
+    },
+    {
+      "id": 1470017,
+      "name": "FX STRATEJI",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 569650,
+      "name": "Dynamic FX Synergy",
+      "before": "keine_messung",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1208968,
+      "name": "Farmed Hedge Yield V",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1383135,
+      "name": "CHAMP MARKET LABS",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 710142,
+      "name": "Copy Sniper trader",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht betrachtet: NIKKEI225 — DD kann unterschätzt sein."
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "before": "kein_trade_export",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "Trading-DD %",
+        "True-DD %",
+        "True-DD USD",
+        "Geom. %/M",
+        "TrueRetDD",
+        "RetDD/Monat",
+        "PF",
+        "Win %",
+        "Trades"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 998675,
+      "name": "Dream come True 68",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1067866,
+      "name": "BO Breakout",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 1180627,
+      "name": "look forward",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 18.4%) · Kursdaten fehlen für 11 von 83 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 3 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 1414803,
+      "name": "SSFX MomentumEdge",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1442054,
+      "name": "HMB MANAGEMENT",
+      "before": "keine_messung",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1444416,
+      "name": "yeld",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 79.9%) · Kursdaten fehlen für 4 von 51 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+    },
+    {
+      "id": 1530298,
+      "name": "Coach DJ",
+      "before": "keine_messung",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht betrachtet: FIXEDVOL80 — DD kann unterschätzt sein."
+    },
+    {
+      "id": 1373099,
+      "name": "MMT AMA Bot",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1546400,
+      "name": "GEM Strategy",
+      "before": "studie_mit_vorbehalt",
+      "after": "studie_verlaesslich",
+      "filled": [],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "before": "kein_trade_export",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "Trading-DD %",
+        "True-DD %",
+        "True-DD USD",
+        "Geom. %/M",
+        "TrueRetDD",
+        "RetDD/Monat",
+        "PF",
+        "Win %",
+        "Trades"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "before": "kein_trade_export",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "Trading-DD %",
+        "True-DD %",
+        "True-DD USD",
+        "Geom. %/M",
+        "TrueRetDD",
+        "RetDD/Monat",
+        "PF",
+        "Win %",
+        "Trades"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Abdeckung < 95% (gerundet 89.7%)"
+    },
+    {
+      "id": 1548500,
+      "name": "Chris Tao",
+      "before": "keine_messung",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Kursmessung bestanden"
+    },
+    {
+      "id": 1175097,
+      "name": "PIT8",
+      "before": "keine_messung",
+      "after": "studie_mit_vorbehalt",
+      "filled": [
+        "True-DD %",
+        "True-DD USD",
+        "TrueRetDD",
+        "RetDD/Monat"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 8 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "before": "kein_trade_export",
+      "after": "studie_verlaesslich",
+      "filled": [
+        "Trading-DD %",
+        "True-DD %",
+        "True-DD USD",
+        "Geom. %/M",
+        "TrueRetDD",
+        "RetDD/Monat",
+        "PF",
+        "Win %",
+        "Trades"
+      ],
+      "messstatus": "10.000 USD virtuell · Vorbehalt: Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht betrachtet: HK50 — DD kann unterschätzt sein."
+    }
+  ],
+  "cells": [
+    {
+      "id": 504191,
+      "name": "Master Hong",
+      "column": "Trading-DD %",
+      "value": 216.44
+    },
+    {
+      "id": 504191,
+      "name": "Master Hong",
+      "column": "True-DD %",
+      "value": 238.78821303715822
+    },
+    {
+      "id": 504191,
+      "name": "Master Hong",
+      "column": "True-DD USD",
+      "value": 122536.25
+    },
+    {
+      "id": 504191,
+      "name": "Master Hong",
+      "column": "PF",
+      "value": 0.92
+    },
+    {
+      "id": 504191,
+      "name": "Master Hong",
+      "column": "Win %",
+      "value": 95.2
+    },
+    {
+      "id": 504191,
+      "name": "Master Hong",
+      "column": "Trades",
+      "value": 1486
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "column": "Trading-DD %",
+      "value": 17.33
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "column": "True-DD %",
+      "value": 120.53999999999631
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "column": "True-DD USD",
+      "value": 46095.84
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "column": "Geom. %/M",
+      "value": 40.54357911174109
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "column": "TrueRetDD",
+      "value": 48.44248290166782
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "column": "RetDD/Monat",
+      "value": 0.33634958612694815
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "column": "PF",
+      "value": 2.85
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "column": "Win %",
+      "value": 75.3
+    },
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "column": "Trades",
+      "value": 1113
+    },
+    {
+      "id": 1171681,
+      "name": "Lenna",
+      "column": "True-DD %",
+      "value": 35.003865331724505
+    },
+    {
+      "id": 1171681,
+      "name": "Lenna",
+      "column": "True-DD USD",
+      "value": 6991.33
+    },
+    {
+      "id": 1171681,
+      "name": "Lenna",
+      "column": "TrueRetDD",
+      "value": 81.96434615719059
+    },
+    {
+      "id": 1171681,
+      "name": "Lenna",
+      "column": "RetDD/Monat",
+      "value": 0.9328510105392207
+    },
+    {
+      "id": 1202431,
+      "name": "Strogo trade",
+      "column": "True-DD %",
+      "value": 23.111281036428682
+    },
+    {
+      "id": 1202431,
+      "name": "Strogo trade",
+      "column": "True-DD USD",
+      "value": 2531.79
+    },
+    {
+      "id": 1202431,
+      "name": "Strogo trade",
+      "column": "TrueRetDD",
+      "value": 531666.7246019287
+    },
+    {
+      "id": 1202431,
+      "name": "Strogo trade",
+      "column": "RetDD/Monat",
+      "value": 7.16253213771386
+    },
+    {
+      "id": 614789,
+      "name": "DUBAI BANKS",
+      "column": "True-DD %",
+      "value": 0.2194378437365215
+    },
+    {
+      "id": 614789,
+      "name": "DUBAI BANKS",
+      "column": "True-DD USD",
+      "value": 22.2
+    },
+    {
+      "id": 614789,
+      "name": "DUBAI BANKS",
+      "column": "TrueRetDD",
+      "value": 7.315168425639348
+    },
+    {
+      "id": 614789,
+      "name": "DUBAI BANKS",
+      "column": "RetDD/Monat",
+      "value": 0.6051578545775892
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "column": "Trading-DD %",
+      "value": 0.15
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "column": "True-DD %",
+      "value": 2.1633098570237737
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "column": "True-DD USD",
+      "value": 222.13
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "column": "Geom. %/M",
+      "value": 4.146938942772135
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "column": "TrueRetDD",
+      "value": 29.047565216202557
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "column": "RetDD/Monat",
+      "value": 1.9169417313511377
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "column": "PF",
+      "value": 3.9
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "column": "Win %",
+      "value": 78.7
+    },
+    {
+      "id": 1493145,
+      "name": "TradeFlowGold",
+      "column": "Trades",
+      "value": 94
+    },
+    {
+      "id": 640597,
+      "name": "SmartCopy Pro",
+      "column": "True-DD %",
+      "value": 8.29279818872544
+    },
+    {
+      "id": 640597,
+      "name": "SmartCopy Pro",
+      "column": "True-DD USD",
+      "value": 856.35
+    },
+    {
+      "id": 640597,
+      "name": "SmartCopy Pro",
+      "column": "TrueRetDD",
+      "value": -0.17522440585690244
+    },
+    {
+      "id": 640597,
+      "name": "SmartCopy Pro",
+      "column": "RetDD/Monat",
+      "value": -0.014700196535390288
+    },
+    {
+      "id": 1390982,
+      "name": "ALPHA BULLSTRIKE",
+      "column": "True-DD %",
+      "value": 2.5302287017204517
+    },
+    {
+      "id": 1390982,
+      "name": "ALPHA BULLSTRIKE",
+      "column": "True-DD USD",
+      "value": 263.66
+    },
+    {
+      "id": 1390982,
+      "name": "ALPHA BULLSTRIKE",
+      "column": "TrueRetDD",
+      "value": 17.12341105098236
+    },
+    {
+      "id": 1390982,
+      "name": "ALPHA BULLSTRIKE",
+      "column": "RetDD/Monat",
+      "value": 1.203466814400027
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "column": "Trading-DD %",
+      "value": 1.1
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "column": "True-DD %",
+      "value": 1.0039101229375615
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "column": "True-DD USD",
+      "value": 101.13
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "column": "Geom. %/M",
+      "value": 8.623670589083531
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "column": "TrueRetDD",
+      "value": 169.17067048226974
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "column": "RetDD/Monat",
+      "value": 8.590082311202954
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "column": "PF",
+      "value": 4.05
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "column": "Win %",
+      "value": 92.7
+    },
+    {
+      "id": 1468275,
+      "name": "ZYRON BY NEXORA",
+      "column": "Trades",
+      "value": 82
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "column": "Trading-DD %",
+      "value": 0.0
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "column": "True-DD %",
+      "value": 124.40537272377266
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "column": "True-DD USD",
+      "value": 47350.26
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "column": "Geom. %/M",
+      "value": 16.16569855131567
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "column": "TrueRetDD",
+      "value": 4.050131394050756
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "column": "RetDD/Monat",
+      "value": 0.12994373311520624
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "column": "PF",
+      "value": 2.13
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "column": "Win %",
+      "value": 83.9
+    },
+    {
+      "id": 633149,
+      "name": "Pacman Smart CAD",
+      "column": "Trades",
+      "value": 809
+    },
+    {
+      "id": 733488,
+      "name": "Cryptowanlanid KING",
+      "column": "True-DD %",
+      "value": 3.3299943411366306
+    },
+    {
+      "id": 733488,
+      "name": "Cryptowanlanid KING",
+      "column": "True-DD USD",
+      "value": 350.27
+    },
+    {
+      "id": 733488,
+      "name": "Cryptowanlanid KING",
+      "column": "TrueRetDD",
+      "value": 3.10816120856437
+    },
+    {
+      "id": 733488,
+      "name": "Cryptowanlanid KING",
+      "column": "RetDD/Monat",
+      "value": 0.24748205926190392
+    },
+    {
+      "id": 1295547,
+      "name": "Ansari007",
+      "column": "True-DD %",
+      "value": 4.032364116779882
+    },
+    {
+      "id": 1295547,
+      "name": "Ansari007",
+      "column": "True-DD USD",
+      "value": 453.46
+    },
+    {
+      "id": 1295547,
+      "name": "Ansari007",
+      "column": "TrueRetDD",
+      "value": 20.35484351675484
+    },
+    {
+      "id": 1295547,
+      "name": "Ansari007",
+      "column": "RetDD/Monat",
+      "value": 1.2698945944575675
+    },
+    {
+      "id": 949108,
+      "name": "ALPHA INDEX",
+      "column": "True-DD %",
+      "value": 145.6995548853823
+    },
+    {
+      "id": 949108,
+      "name": "ALPHA INDEX",
+      "column": "True-DD USD",
+      "value": 19889.25
+    },
+    {
+      "id": 949108,
+      "name": "ALPHA INDEX",
+      "column": "TrueRetDD",
+      "value": -0.4737834047464256
+    },
+    {
+      "id": 949108,
+      "name": "ALPHA INDEX",
+      "column": "RetDD/Monat",
+      "value": -0.06387139113163659
+    },
+    {
+      "id": 1400055,
+      "name": "Quantum Copy EVO",
+      "column": "True-DD %",
+      "value": 0.27428707720287165
+    },
+    {
+      "id": 1400055,
+      "name": "Quantum Copy EVO",
+      "column": "True-DD USD",
+      "value": 27.6
+    },
+    {
+      "id": 1400055,
+      "name": "Quantum Copy EVO",
+      "column": "TrueRetDD",
+      "value": 16.25236469350728
+    },
+    {
+      "id": 1400055,
+      "name": "Quantum Copy EVO",
+      "column": "RetDD/Monat",
+      "value": 1.3274551986629368
+    },
+    {
+      "id": 1470017,
+      "name": "FX STRATEJI",
+      "column": "True-DD %",
+      "value": 14.30886472176088
+    },
+    {
+      "id": 1470017,
+      "name": "FX STRATEJI",
+      "column": "True-DD USD",
+      "value": 1595.18
+    },
+    {
+      "id": 1470017,
+      "name": "FX STRATEJI",
+      "column": "TrueRetDD",
+      "value": 57.4905838965074
+    },
+    {
+      "id": 1470017,
+      "name": "FX STRATEJI",
+      "column": "RetDD/Monat",
+      "value": 1.4216660727639494
+    },
+    {
+      "id": 569650,
+      "name": "Dynamic FX Synergy",
+      "column": "True-DD %",
+      "value": 2.005183290486152
+    },
+    {
+      "id": 569650,
+      "name": "Dynamic FX Synergy",
+      "column": "True-DD USD",
+      "value": 204.0
+    },
+    {
+      "id": 569650,
+      "name": "Dynamic FX Synergy",
+      "column": "TrueRetDD",
+      "value": 1.3565478881317372
+    },
+    {
+      "id": 569650,
+      "name": "Dynamic FX Synergy",
+      "column": "RetDD/Monat",
+      "value": 0.11166030609662551
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "column": "Trading-DD %",
+      "value": 5.03
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "column": "True-DD %",
+      "value": 5.033284323027528
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "column": "True-DD USD",
+      "value": 511.32
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "column": "Geom. %/M",
+      "value": 0.30017040478053153
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "column": "TrueRetDD",
+      "value": 0.7275788873748319
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "column": "RetDD/Monat",
+      "value": 0.0596370849560866
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "column": "PF",
+      "value": 1.04
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "column": "Win %",
+      "value": 67.7
+    },
+    {
+      "id": 1413609,
+      "name": "Gold Hunters FX",
+      "column": "Trades",
+      "value": 603
+    },
+    {
+      "id": 1067866,
+      "name": "BO Breakout",
+      "column": "True-DD %",
+      "value": 223.85345745875983
+    },
+    {
+      "id": 1067866,
+      "name": "BO Breakout",
+      "column": "True-DD USD",
+      "value": 110126.81
+    },
+    {
+      "id": 1067866,
+      "name": "BO Breakout",
+      "column": "TrueRetDD",
+      "value": 0.262050197672113
+    },
+    {
+      "id": 1067866,
+      "name": "BO Breakout",
+      "column": "RetDD/Monat",
+      "value": 0.01751859132814229
+    },
+    {
+      "id": 1180627,
+      "name": "look forward",
+      "column": "True-DD %",
+      "value": 0.3615766456739496
+    },
+    {
+      "id": 1180627,
+      "name": "look forward",
+      "column": "True-DD USD",
+      "value": 37.95
+    },
+    {
+      "id": 1180627,
+      "name": "look forward",
+      "column": "TrueRetDD",
+      "value": 31.716847395506402
+    },
+    {
+      "id": 1180627,
+      "name": "look forward",
+      "column": "RetDD/Monat",
+      "value": 2.5135430962315137
+    },
+    {
+      "id": 1442054,
+      "name": "HMB MANAGEMENT",
+      "column": "True-DD %",
+      "value": 3.478368528521912
+    },
+    {
+      "id": 1442054,
+      "name": "HMB MANAGEMENT",
+      "column": "True-DD USD",
+      "value": 357.91
+    },
+    {
+      "id": 1442054,
+      "name": "HMB MANAGEMENT",
+      "column": "TrueRetDD",
+      "value": 21.732545922547946
+    },
+    {
+      "id": 1442054,
+      "name": "HMB MANAGEMENT",
+      "column": "RetDD/Monat",
+      "value": 1.380962053101847
+    },
+    {
+      "id": 1444416,
+      "name": "yeld",
+      "column": "True-DD %",
+      "value": 0.22773276518358018
+    },
+    {
+      "id": 1444416,
+      "name": "yeld",
+      "column": "True-DD USD",
+      "value": 23.9
+    },
+    {
+      "id": 1444416,
+      "name": "yeld",
+      "column": "TrueRetDD",
+      "value": 48.402141379804725
+    },
+    {
+      "id": 1444416,
+      "name": "yeld",
+      "column": "RetDD/Monat",
+      "value": 3.8430234705277333
+    },
+    {
+      "id": 1530298,
+      "name": "Coach DJ",
+      "column": "True-DD %",
+      "value": 0.4349358929670539
+    },
+    {
+      "id": 1530298,
+      "name": "Coach DJ",
+      "column": "True-DD USD",
+      "value": 43.67
+    },
+    {
+      "id": 1530298,
+      "name": "Coach DJ",
+      "column": "TrueRetDD",
+      "value": 641.2494585315953
+    },
+    {
+      "id": 1530298,
+      "name": "Coach DJ",
+      "column": "RetDD/Monat",
+      "value": 26.993635199680522
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "column": "Trading-DD %",
+      "value": 13.29
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "column": "True-DD %",
+      "value": 11.520120035371532
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "column": "True-DD USD",
+      "value": 1293.23
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "column": "Geom. %/M",
+      "value": 5.267831572654377
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "column": "TrueRetDD",
+      "value": 7.39231928369568
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "column": "RetDD/Monat",
+      "value": 0.4572722815803964
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "column": "PF",
+      "value": 2.43
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "column": "Win %",
+      "value": 97.8
+    },
+    {
+      "id": 1284470,
+      "name": "Forex trading killer",
+      "column": "Trades",
+      "value": 1783
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "column": "Trading-DD %",
+      "value": 1.18
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "column": "True-DD %",
+      "value": 1.8015685134005817
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "column": "True-DD USD",
+      "value": 182.3
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "column": "Geom. %/M",
+      "value": 6.723155518826607
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "column": "TrueRetDD",
+      "value": 65.67899693973834
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "column": "RetDD/Monat",
+      "value": 3.731834492453578
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "column": "PF",
+      "value": 22.73
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "column": "Win %",
+      "value": 92.7
+    },
+    {
+      "id": 1541981,
+      "name": "BETTER CALL HORKOF",
+      "column": "Trades",
+      "value": 109
+    },
+    {
+      "id": 1548500,
+      "name": "Chris Tao",
+      "column": "True-DD %",
+      "value": 142.76132534324648
+    },
+    {
+      "id": 1548500,
+      "name": "Chris Tao",
+      "column": "True-DD USD",
+      "value": 27310.67
+    },
+    {
+      "id": 1548500,
+      "name": "Chris Tao",
+      "column": "TrueRetDD",
+      "value": 10.272667543682898
+    },
+    {
+      "id": 1548500,
+      "name": "Chris Tao",
+      "column": "RetDD/Monat",
+      "value": 0.18051388846073252
+    },
+    {
+      "id": 1175097,
+      "name": "PIT8",
+      "column": "True-DD %",
+      "value": 111.01411062057853
+    },
+    {
+      "id": 1175097,
+      "name": "PIT8",
+      "column": "True-DD USD",
+      "value": 71153.16
+    },
+    {
+      "id": 1175097,
+      "name": "PIT8",
+      "column": "TrueRetDD",
+      "value": 22.20220434372737
+    },
+    {
+      "id": 1175097,
+      "name": "PIT8",
+      "column": "RetDD/Monat",
+      "value": 0.27964934465260366
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "column": "Trading-DD %",
+      "value": 2.94
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "column": "True-DD %",
+      "value": 3.4736302991934793
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "column": "True-DD USD",
+      "value": 513.71
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "column": "Geom. %/M",
+      "value": 9.80048558141017
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "column": "TrueRetDD",
+      "value": 59.6147825712589
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "column": "RetDD/Monat",
+      "value": 2.821395697661229
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "column": "PF",
+      "value": 4.98
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "column": "Win %",
+      "value": 89.5
+    },
+    {
+      "id": 1533908,
+      "name": "55699",
+      "column": "Trades",
+      "value": 105
+    }
+  ]
+}

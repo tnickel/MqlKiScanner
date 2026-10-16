@@ -9,10 +9,13 @@
 | `data/mql5_cookies.json` | Session-Cookies = Login |
 | `data/chrome_profile/`, `data/chrome_profile_accounts/` | Browser-Profile mit Login-Zustand |
 | `data/*.db`, `data/trades/`, `data/trade_snapshots/`, `data/runs/` | lokale Scan-Artefakte einschließlich unveränderlicher CSV-Kopien |
-| `data/downloader/` | MqlDownloader-Spiegel: Abonnenten-Verläufe + analysierte PDFs (private Nutzerdaten, nie committen) |
+| `data/downloader/`, `data/quellen/` | Quellen-Spiegel und Caches: Abonnenten-Verläufe, Trade-Daten und PDFs (private Nutzerdaten, nie committen) |
 | `.streamlit/secrets.toml` | Streamlit-Secrets |
 
-Alle Einträge stehen in `.gitignore`. Vor jedem Push:
+Die aufgeführten Laufzeitdaten stehen in `.gitignore`. Lokale Deploy-Dateien
+können ebenfalls Zugangsdaten enthalten und dürfen nicht veröffentlicht
+werden; ihr konkreter Dateiname muss vor einem Push auf Ignore-Schutz
+geprüft werden. Vor jedem Push:
 
 ```bash
 git status
@@ -39,16 +42,22 @@ Reihenfolge in `secrets_store.py`: Umgebung → `.env` →
 
 ## LLM
 
-- Keine Credentials und keine Roh-Trade-CSVs im Prompt
-- Nur fertige Forensik-/Kennzahlen-JSONs
+- Keine Credentials oder Session-Cookies im Prompt
+- Der reguläre Workflow übergibt fertige Forensik-/Kennzahlen-JSONs und
+  aufbereitete Trade-Daten. Die manuell ausgelöste Tiefenanalyse erhält
+  ausdrücklich den vollständigen Trade-Datensatz als JSON. Trade-Daten
+  können damit an den konfigurierten LLM-Anbieter übertragen werden.
 - Token-Budget je Lauf konfigurierbar
 
 ## Lokale Dienste und REST
 
-- **REST-API (MqlRealMonitor):** lauscht bewusst nur auf `127.0.0.1:8611`
+- **Vorbereitete REST-API für MqlRealmonitor:** Die produktive Integration
+  ist vorerst zurückgestellt. Die Scanner-Schnittstelle lauscht bewusst
+  nur auf `127.0.0.1:8611`
   (kein Fernzugriff), rein lesend, bewertet nie neu. Optionaler Token über
   Env `MQLKISCANNER_REST_TOKEN` / secrets_store; Client sendet Header
-  `X-User-Key` (HMAC-Vergleich, nicht im Klartext).
+  `X-User-Key` (Vergleich mit `hmac.compare_digest`). Der Token wird als
+  Headerwert übertragen; der konstante Vergleich verschlüsselt ihn nicht.
 - **MqlDownloader / MqlTradeMonitor:** Token bzw. API-Key liegen nur im
   secrets_store bzw. als Env (`MQLDOWNLOADER_TOKEN`), nie in Einstellungen
   oder Repo (wird per `tests/test_secrets_hygiene.py` bewacht).

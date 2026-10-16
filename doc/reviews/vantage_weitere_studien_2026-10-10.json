@@ -1,0 +1,270 @@
+[
+  {
+    "id": 538344,
+    "name": "Rebounds",
+    "updated": false,
+    "reliable": false,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Zeitabbildung nicht monoton/eindeutig"
+  },
+  {
+    "id": 892011,
+    "name": "EZSignals Team",
+    "updated": false,
+    "reliable": false,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Zeitabbildung nicht monoton/eindeutig"
+  },
+  {
+    "id": 1171681,
+    "name": "Lenna",
+    "updated": true,
+    "reliable": false,
+    "coverage": 70.0,
+    "dd_pct": 35.003865331724505,
+    "reason": "Abdeckung < 95% (gerundet 70.0%) · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 120 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1536627,
+    "name": "Smart Money Lab",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (+1 h, +2 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 1202431,
+    "name": "Strogo trade",
+    "updated": true,
+    "reliable": true,
+    "coverage": 95.9,
+    "dd_pct": 23.111281036428682,
+    "reason": null
+  },
+  {
+    "id": 1554860,
+    "name": "NVT99V3",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (-4 h, +1 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 614789,
+    "name": "DUBAI BANKS",
+    "updated": true,
+    "reliable": false,
+    "coverage": 70.8,
+    "dd_pct": 0.2194378437365215,
+    "reason": "Abdeckung < 95% (gerundet 70.8%)"
+  },
+  {
+    "id": 640597,
+    "name": "SmartCopy Pro",
+    "updated": true,
+    "reliable": false,
+    "coverage": 76.0,
+    "dd_pct": 8.29279818872544,
+    "reason": "Abdeckung < 95% (gerundet 76.0%) · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 20 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1390982,
+    "name": "ALPHA BULLSTRIKE",
+    "updated": true,
+    "reliable": true,
+    "coverage": 97.9,
+    "dd_pct": 2.5302287017204517,
+    "reason": null
+  },
+  {
+    "id": 733488,
+    "name": "Cryptowanlanid KING",
+    "updated": true,
+    "reliable": false,
+    "coverage": 38.2,
+    "dd_pct": 3.3299943411366306,
+    "reason": "Abdeckung < 95% (gerundet 38.2%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 20 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1295547,
+    "name": "Ansari007",
+    "updated": true,
+    "reliable": false,
+    "coverage": 71.6,
+    "dd_pct": 4.032364116779882,
+    "reason": "Abdeckung < 95% (gerundet 71.6%)"
+  },
+  {
+    "id": 1492136,
+    "name": "SterlingEdgeCapital",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (-2 h, -1 h, +0 h, +1 h, +2 h, +3 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 1535524,
+    "name": "Xau only 01",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (+1 h, +2 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 949108,
+    "name": "ALPHA INDEX",
+    "updated": true,
+    "reliable": false,
+    "coverage": 73.9,
+    "dd_pct": 145.6995548853823,
+    "reason": "Abdeckung < 95% (gerundet 73.9%) · Kursdaten fehlen für 18 von 239 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+  },
+  {
+    "id": 1400055,
+    "name": "Quantum Copy EVO",
+    "updated": true,
+    "reliable": true,
+    "coverage": 100.0,
+    "dd_pct": 0.27428707720287165,
+    "reason": null
+  },
+  {
+    "id": 1470017,
+    "name": "FX STRATEJI",
+    "updated": true,
+    "reliable": false,
+    "coverage": 95.4,
+    "dd_pct": 14.30886472176088,
+    "reason": "Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 569650,
+    "name": "Dynamic FX Synergy",
+    "updated": true,
+    "reliable": true,
+    "coverage": 100.0,
+    "dd_pct": 2.005183290486152,
+    "reason": null
+  },
+  {
+    "id": 1334094,
+    "name": "testappAU6",
+    "skipped": [
+      "#1334094 testappAU6: keine Kapitalbasis — keine Trades im Export"
+    ]
+  },
+  {
+    "id": 1488463,
+    "name": "tradewithrsv",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Kursdaten fehlen für 1593 von 1604 Trades (Kurse: FIXEDVOL100, FIXEDVOL20, FIXEDVOL40, FIXEDVOL60, FIXEDVOL80)"
+  },
+  {
+    "id": 1067866,
+    "name": "BO Breakout",
+    "updated": true,
+    "reliable": false,
+    "coverage": 97.1,
+    "dd_pct": 223.85345745875983,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 2 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1180627,
+    "name": "look forward",
+    "updated": true,
+    "reliable": false,
+    "coverage": 17.8,
+    "dd_pct": 0.3615766456739496,
+    "reason": "Abdeckung < 95% (gerundet 17.8%) · Kursdaten fehlen für 11 von 83 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 3 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1309048,
+    "name": "cryptos4",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Kursdaten fehlen für 48 von 235 Trades (Kurse: ADAUSD.BC, ATMUSD.BC, AVAUSD.BC, BCHUSD.BC, DOTUSD.BC)"
+  },
+  {
+    "id": 1442054,
+    "name": "HMB MANAGEMENT",
+    "updated": true,
+    "reliable": true,
+    "coverage": 100.0,
+    "dd_pct": 3.478368528521912,
+    "reason": null
+  },
+  {
+    "id": 1444416,
+    "name": "yeld",
+    "updated": true,
+    "reliable": false,
+    "coverage": 56.5,
+    "dd_pct": 0.22773276518358018,
+    "reason": "Abdeckung < 95% (gerundet 56.5%) · Kursdaten fehlen für 4 von 51 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+  },
+  {
+    "id": 1530298,
+    "name": "Coach DJ",
+    "updated": true,
+    "reliable": true,
+    "coverage": 74.6,
+    "dd_pct": 0.4349358929670539,
+    "reason": null
+  },
+  {
+    "id": 1545471,
+    "name": "yfx gold 50 pips ",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (+1 h, +2 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 1378066,
+    "name": "AQEU",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Auto-GMT mehrdeutig — mehrere Offsets (-1 h, +1 h) treffen zu 100%; Zeitversatz nicht eindeutig bestimmbar."
+  },
+  {
+    "id": 1531475,
+    "name": "WILD",
+    "updated": false,
+    "reliable": null,
+    "coverage": null,
+    "dd_pct": null,
+    "reason": "Kursdaten fehlen für 162 von 162 Trades (Kurse: FIXEDVOL100, FIXEDVOL20, FIXEDVOL40, FIXEDVOL80)"
+  },
+  {
+    "id": 1548500,
+    "name": "Chris Tao",
+    "updated": true,
+    "reliable": true,
+    "coverage": 100.0,
+    "dd_pct": 142.76132534324648,
+    "reason": null
+  },
+  {
+    "id": 1175097,
+    "name": "PIT8",
+    "updated": true,
+    "reliable": false,
+    "coverage": 99.8,
+    "dd_pct": 111.01411062057853,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 8 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  }
+]

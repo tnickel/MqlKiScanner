@@ -1,0 +1,49 @@
+{
+  "result": "READY: no findings",
+  "mode": "sqlite URI mode=ro; no DB initialization, network or MT5",
+  "csv_artifact_shas_verified": 632,
+  "trade_rows": 319243,
+  "metrics_artifacts_verified": 632,
+  "workflow_snapshot_bindings_verified": 37,
+  "source_verified_zero_histories": [
+    {
+      "id": 2000436,
+      "Trades": 0,
+      "Wins": 0,
+      "Losses": 0
+    },
+    {
+      "id": 2000638,
+      "Trades": 0,
+      "Wins": 0,
+      "Losses": 0
+    },
+    {
+      "id": 2000786,
+      "Trades": 0,
+      "Wins": 0,
+      "Losses": 0
+    },
+    {
+      "id": 2053531,
+      "Trades": 0,
+      "Wins": 0,
+      "Losses": 0
+    },
+    {
+      "id": 2063824,
+      "Trades": 0,
+      "Wins": 0,
+      "Losses": 0
+    },
+    {
+      "id": 2064608,
+      "Trades": 0,
+      "Wins": 0,
+      "Losses": 0
+    }
+  ],
+  "archive_metrics404_not_imported_by_helper": true,
+  "helper_review": "Acceptance SHA verified; strict metrics status/ID/version/dict; CSV-only supported without fabricated metrics; header-only requires explicit source zero. Evidence saves temporary file then replace with three bounded retries. Matrix new_data independently forces target and strict finite/nonnegative reliable rank.",
+  "issues": []
+}

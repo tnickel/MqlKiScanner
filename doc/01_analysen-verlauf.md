@@ -4,6 +4,11 @@ Reihe von 6 Tiefenanalysen + 2 Marktscreenings (37 Signale gesamt),
 Sep. 2026, Workspace Allgemein (Origin-Session
 `sess_ff799a20-8b9b-4b1b-b605-0826e01ceffa`). PDF-Berichte: `doc/reports/`.
 
+**Historisches Analyseprotokoll:** Empfehlungen und Nachprüftermine beziehen
+sich auf die damalige Datenbasis. Sie sind keine aktuellen Freigaben oder
+Bestätigung laufender Automationen. Aktuelle Regeln und Integrationsstatus
+stehen in doc/08 und doc/21; der aktuelle Befund erfordert einen neuen Scan.
+
 **Korrektur 03.10.2026:** Die folgende KiraCat-Empfehlung und die spaetere
 Fussnote „real 7,9 % validiert“ sind historische Urteile, kein aktueller
 Equity-Nachweis. 7,9 % ist der virtuelle Closed-Trade-DD am groessten

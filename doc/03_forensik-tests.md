@@ -1,5 +1,22 @@
 # Forensik-Test-Batterie (Pflicht vor jedem positiven Urteil)
 
+**Aktuelle Bewertungsregeln (16.10.2026):** Grün erfordert vollständige
+Forensik, belegte eigene Rendite und Jahres-Calmar mindestens
+`min_calmar_jahr` (Default 3,0) bei mindestens drei Monaten Trade-Historie.
+Die absolute Monats-Ertragshürde ist mit `min_ertrag_pct_monat = 0`
+standardmäßig deaktiviert. Fehlender SL-Nachweis ist neutral; der
+Risiko-Score ist kein eigenes Grün-Gate. Die harte DD-Schranke bleibt
+konservativ das Maximum der fünf DD-Kanäle. Der Monitor-Kanal ist jedoch
+eine Closing-Kurve, kein historisch vollständiger Floating-Equity-DD, und
+darf den Calmar-Nenner nicht ersetzen. Dafür zählt ausschließlich eine
+freigegebene eigene Kurs-Equity-Messung. Fehlender/Null-DD, nur
+vorbehaltliche Messung oder zu kurze Historie ergeben keinen belastbaren
+Calmar und erlauben kein Grün.
+
+Die datierten Ergänzungen ab Test 5 dokumentieren den Änderungsverlauf.
+Die Abschnitte vom 30.09. und 03.10. enthalten inzwischen ersetzte Regeln;
+der aktuelle Stand steht zusätzlich im letzten Abschnitt dieser Datei.
+
 Diese Tests sind das Herzstück des Tools. Sie entstanden aus der
 Analyse-Reihe und haben dort u. a. ein verstecktes Martingale (FXtrading,
 EURNZD-Korb), einen versteckten Grid-Sleeve (KiraCat/NZDCAD) und ein
@@ -7,7 +24,7 @@ hohes Exposure-Risiko (Pure Gold 2000) aufgedeckt, das die
 Plattform-Kennzahlen verschwiegen.
 
 **Regel:** Ein Kandidat bekommt keine positive Einstufung, bevor alle
-vier Tests läuft und die Ergebnisse im Befund auftauchen — auch dann
+vier Tests gelaufen sind und die Ergebnisse im Befund auftauchen — auch dann
 nicht, wenn die Plattform-Kennzahlen gut aussehen.
 
 ---
@@ -192,6 +209,10 @@ Kontobewegungen bis zum ersten Einstieg (Einzahlungen minus bereits
 erfolgte Auszahlungen). Vor Handelsbeginn entnommenes Kapital steht für
 die Handelskurve nicht zur Verfügung.
 Kontobewegungen (Balance-Zeilen) an ihren Zeitpunkten einrechnen;
+Einzahlungen erhöhen den Stand; Auszahlungen senken den laufenden Peak
+(nie unter den aktuellen Stand) und erzeugen keinen Handelsverlust.
+Separate Gebühren-/Kommissionsbuchungen belasten das Ergebnis und sind
+keine neutralen Kapitalflüsse.
 zusätzlich eine "virtuelle" Kurve OHNE Ein-/Auszahlungen fahren
 (zeigt die Handelsleistung separat von der Kapitalentnahme).
 Peak-Tracking; max. (peak - balance), absolute und prozentual.
@@ -205,8 +226,9 @@ Bei identischen Zeitstempeln werden realisierte Nettoergebnisse gemeinsam
 gebucht. Die Sekundenauflösung belegt keine Reihenfolge innerhalb derselben
 Sekunde; aus der CSV-Zeilenfolge werden daher keine Zwischenhochs oder
 Zwischentiefs konstruiert. Die Balancekurve fasst Kontobewegungen und
-Abschlüsse desselben Zeitpunkts zusammen; die Tradingkurve berücksichtigt
-weiterhin nur Handelsresultate nach dem Startkapital.
+Abschlüsse desselben Zeitpunkts zusammen. Die Hauptkurve berücksichtigt
+auch spätere Kapitalflüsse mit der beschriebenen Peak-Anpassung; nur die
+zusätzliche virtuelle Vergleichskurve lässt diese Kapitalflüsse weg.
 
 Für Exposure gilt am gleichen Zeitpunkt die Reihenfolge: gemeinsame
 Kontobewegungen, alle Einstiege, alle Abschlüsse samt Nettoergebnis.
@@ -218,11 +240,14 @@ untersekündliche Risiko- und Kapitalspitzen bleiben aus diesen Daten unbekannt.
 **Konsistenzprüfung (Pflicht):**
 - Monatsnetto aus CSV gegen die Monats-Tabelle der Plattform
 - Rekonstruierter Balance-DD gegen den Plattformwert "By Balance:"
-- Deckung auf den Cent = Datenintegrität bestätigt
+- Deckung auf den Cent bei gleicher Basis und gleichem Zeitraum bestätigt
+  die Übereinstimmung dieses Vergleichs, keine vollständige Datenintegrität
   (galt in allen Analysen der Reihe: MSC 76,83 USD, Reaper 319,49 USD,
   Gold Spike 157,20 USD, KiraCat 2.117,70 USD — exakt)
 
-**Abweichung** = rote Flagge (Datenmanipulation oder unvollständiger Export).
+**Abweichung** verlangt Prüfung von Zeitraum, Kapitalbasis, Ein-/Auszahlungen,
+Kosten und Drawdown-Definition. Sie beweist allein weder Datenmanipulation
+noch einen unvollständigen Export.
 
 **Referenz:** alle `analyze_*.py` in `scripts/reference/`
 
@@ -283,8 +308,9 @@ belegt daher keinen tickgenauen maximalen Broker-DD (KiraCat-Pruefung 03.10.).
   verlässlich").
 - **Still ohne Terminal:** Ohne laufendes MT5-Terminal (und ohne
   markt_start_erlauben) entfällt die Prüfung kommentarlos — kein Malus.
-  Seit 03.10. gilt zusätzlich: Ohne andere belastbare Monitor-Equity-Messung
-  bleibt dann RetDD unbekannt; fehlender Effizienznachweis erlaubt kein Grün.
+  Aktuell bleibt ohne freigegebene eigene Kurs-Equity-Messung der Calmar
+  unbekannt; ein Monitor-Closing-DD ersetzt sie nicht. Fehlender
+  Effizienznachweis erlaubt kein Grün.
 - Setting: `equity_rekonstruktion` (Default an). Terminal-Lebenszyklus wie
   beim Markt-Beobachter (portabler Selbststart, Beenden nach dem Lauf).
 - Urteil nennt „Reko-EQ-DD X % (aus Kursen, GMT +N h)"; KI-Forensik-JSON
@@ -393,3 +419,40 @@ alte Befunde. Ein beobachteter DD aus unvollständigen Punkten ist kein
 verlässliches Gesamtmaximum und liefert keinen RetDD-Nenner. Die
 zusätzliche reale M1-Prüfung am jeweiligen Spitzentag verbessert die
 Floating-Nachmessung, ersetzt aber keine vollständige Tick-Historie.
+
+### Aktueller Stand nach den Änderungen vom 04.–10.10.2026
+
+Die frühere Bedingung `RetDD/Monat ≥1` ist durch **Jahres-Calmar ≥
+`min_calmar_jahr`** (Default 3,0) ersetzt. `retdd_jahr = CAGR / gemessener
+Max-Equity-DD`; `retdd_monat` bleibt eine Zusatzkennzahl. Unter drei Monaten
+Spanne vom ersten Open bis zum letzten Close liefert die Berechnung Status
+`historie_zu_kurz` und keinen RetDD/Calmar. Die Renditewerte können trotzdem
+zur Anzeige berechnet werden. Auswahlentscheidungen verwenden ungerundete
+Werte; ein orange angezeigter Vorbehaltswert gibt Grün nicht frei.
+
+Die eigenen geometrischen Monats-/Jahresrenditen verwenden die genaue
+Trade-Zeitspanne (Jahr = 365,2425 Tage, Monat = Jahr/12). Bei späteren
+Kapitalflüssen werden zeitgenaue Unterperioden verkettet (TWR): Einzahlungen
+erhöhen die Kapitalbasis ab ihrem Zeitpunkt, zählen aber nicht als Ertrag.
+Separate Kontokosten mindern die Rendite und werden nicht als Kapitalfluss
+neutralisiert. Die tatsächliche Kontokurve einschließlich Kapitalflüssen
+ist die Hauptbasis des Drawdowns; Auszahlungen erhalten eine entsprechende
+Peak-Anpassung. Die virtuelle Kurve bleibt als Diagnostik erhalten.
+
+CSV-Einzahlungen vor dem ersten Trade haben bei der Startkapitalermittlung
+Vorrang, danach ein geliefertes Initial Deposit; ohne Beleg bleibt nur ein
+ausdrücklich virtueller Fallback. Die frühere implizite Ableitung
+`Web-Balance − Trade-Netto` wird nicht mehr verwendet.
+
+`TradeEqDrawdownPct` der JavaFX-Quellen ist eine Closing-Kurve, eventuell
+ergänzt um einen aktuellen Floating-Endpunkt. Sie bleibt ein konservativer
+Kanal der harten DD-Schranke, aber kein historisch vollständiger Equity-DD
+und **kein Calmar-Nenner**. Dies korrigiert die frühere Beschreibung als
+floating-inclusive Monitor-Zweitmessung. Plattform- und Balance-DD sowie
+geschlossene Trading-DDs sind ebenfalls keine Ersatznenner.
+
+Maßgebliche Implementierung: `pipeline.ampel_for`,
+`ScanResult.max_drawdown_equity_pct` und `refresh_efficiency`,
+`config.DEFAULT_SETTINGS`, `portfolio_statistik.effizienz_kennzahlen`
+und `forensics.drawdown.run`. Forensik-Version aktuell **16**; die oben
+genannten Versionen 9 und 10 gehören zum historischen Änderungsverlauf.

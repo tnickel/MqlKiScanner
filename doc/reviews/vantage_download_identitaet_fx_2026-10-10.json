@@ -1,0 +1,581 @@
+{
+  "date": "2026-10-10",
+  "downloaded": 27,
+  "expected": 27,
+  "rows_total": 34345,
+  "duplicate_or_missing_ids": 0,
+  "fx_exports_checked": 27,
+  "issues": [],
+  "identities": [
+    {
+      "id": 1159789,
+      "rows": 2,
+      "api_total": 2,
+      "unique_api_ids": 2,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "844e7386c1a2ad133523e714d0184276d388d31327d5e4d38f68bd7c1f4f442b"
+    },
+    {
+      "id": 1345621,
+      "rows": 40,
+      "api_total": 40,
+      "unique_api_ids": 40,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "871a4c0ab51d170c3606b550f0a19a5b33b9b99bd195e644742dd8ca2ac34ad0"
+    },
+    {
+      "id": 627740,
+      "rows": 41,
+      "api_total": 41,
+      "unique_api_ids": 41,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "219fbf57c1d800e0315ee08585faf335d1281c06f0e4efe858868c233f08cd69"
+    },
+    {
+      "id": 1545031,
+      "rows": 48,
+      "api_total": 48,
+      "unique_api_ids": 48,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "4f0c531eb78e5ac134938a083f1f45d0268162a6c6c8f123cd12d331d7bee321"
+    },
+    {
+      "id": 1462046,
+      "rows": 50,
+      "api_total": 50,
+      "unique_api_ids": 50,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "2823dd8a161d3d793ac439987af16183778165fda81dfa8fcc7a91aa3adc7c10"
+    },
+    {
+      "id": 1038472,
+      "rows": 56,
+      "api_total": 56,
+      "unique_api_ids": 56,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "0ae1e2c0b1749d35158b7983fef13cf40c8bd2e16bb78f3fc1485a22b14eeaee"
+    },
+    {
+      "id": 934024,
+      "rows": 66,
+      "api_total": 66,
+      "unique_api_ids": 66,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "864947d9d8ded24e3913adc4e9008254eb7f463bcacf773841315b8df533094b"
+    },
+    {
+      "id": 1247565,
+      "rows": 74,
+      "api_total": 74,
+      "unique_api_ids": 74,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "6381fbc1844d2989e5894e2f0967085c169b9ee379d3a2f89c0d0351e86acce9"
+    },
+    {
+      "id": 1210117,
+      "rows": 80,
+      "api_total": 80,
+      "unique_api_ids": 80,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "db9089c91c78be9522043a5e40b5f81843965316d9c52666a8699ee6dc92506d"
+    },
+    {
+      "id": 791260,
+      "rows": 80,
+      "api_total": 80,
+      "unique_api_ids": 80,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "cd157ee4545cf2e26f22bfb27e15113e64de40294dbf0fdb1efe8ed0d8e4cfe2"
+    },
+    {
+      "id": 781145,
+      "rows": 105,
+      "api_total": 105,
+      "unique_api_ids": 105,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "7043e8c9917f779c6e539ad8d8c9badf7b05b31bdbc767acaee040dbeaee1737"
+    },
+    {
+      "id": 759008,
+      "rows": 124,
+      "api_total": 124,
+      "unique_api_ids": 124,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "9f87ad165f52c11ef4cc351b5d1a13daf68b3065e3b11ab7cb3cf88fe4c70421"
+    },
+    {
+      "id": 1525495,
+      "rows": 139,
+      "api_total": 139,
+      "unique_api_ids": 139,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "11028c37b0229a5575887a44c389bba8d9c173283a80412cf39b477ffaea09bd"
+    },
+    {
+      "id": 1430436,
+      "rows": 141,
+      "api_total": 141,
+      "unique_api_ids": 141,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "bd6dbdf83a20b528b721c53257ce1dbe1c6fe24a3d5d19d4c96254a193237c7a"
+    },
+    {
+      "id": 487793,
+      "rows": 238,
+      "api_total": 238,
+      "unique_api_ids": 238,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "a08c4f889e8e93b4d88614e106ab1680cd301e0b7a69ef98ef1f331bceaedd11"
+    },
+    {
+      "id": 1151130,
+      "rows": 275,
+      "api_total": 275,
+      "unique_api_ids": 275,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "19c429c441aefa2e466e28d1dc7e82d2e566ae4c8708b932dd0b6d08fc13e5c3"
+    },
+    {
+      "id": 850146,
+      "rows": 436,
+      "api_total": 436,
+      "unique_api_ids": 436,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "737438eff2fc05b33637ccfc21dcde2e49de386ea33e37c0dc17db23d7499de4"
+    },
+    {
+      "id": 622123,
+      "rows": 497,
+      "api_total": 497,
+      "unique_api_ids": 497,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "011657d09d7979d8b003b954bc06173b5caadddb50bd534a8126faa3a75bb546"
+    },
+    {
+      "id": 1245823,
+      "rows": 548,
+      "api_total": 548,
+      "unique_api_ids": 548,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "cd554351b2099d6457b6fbe5c6702a9c10bf3aec15a7985b6e95a42ddd52612e"
+    },
+    {
+      "id": 850152,
+      "rows": 582,
+      "api_total": 582,
+      "unique_api_ids": 582,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "ab20df143f4967882b4615ed8a7041a30ac4bae08cda609e99cd0818cd36a69d"
+    },
+    {
+      "id": 636987,
+      "rows": 802,
+      "api_total": 802,
+      "unique_api_ids": 802,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "0f8063b47ed30baa824979d13e1d4616b03db5c66c21253cbf335350245472d3"
+    },
+    {
+      "id": 1355018,
+      "rows": 951,
+      "api_total": 951,
+      "unique_api_ids": 951,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "0d170000fbd0ca5903e93715b00c32598b0505e90c6d3ff23e250e722b8835cf"
+    },
+    {
+      "id": 609751,
+      "rows": 1125,
+      "api_total": 1125,
+      "unique_api_ids": 1125,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "3cc104d95da86162423e5aad35d373bfe9f2c2dfd852f666d7c80db3642e65ff"
+    },
+    {
+      "id": 620637,
+      "rows": 3030,
+      "api_total": 3030,
+      "unique_api_ids": 3030,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "bdb928dce51b7805c000a3406264d25911cf67fd2321ce3880a7fa53f78bba0b"
+    },
+    {
+      "id": 1422970,
+      "rows": 4593,
+      "api_total": 4593,
+      "unique_api_ids": 4593,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "43957e5688a2d5b51441daa8f2e8bb7dd4ba88bf24e7538e562996888f8852cd"
+    },
+    {
+      "id": 823566,
+      "rows": 7360,
+      "api_total": 7360,
+      "unique_api_ids": 7360,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "78bcfcda377408e32a322f2c7da3351fab3e8bf7bd4b58a41da18b45a88d6038"
+    },
+    {
+      "id": 1196090,
+      "rows": 12862,
+      "api_total": 12862,
+      "unique_api_ids": 12862,
+      "missing_api_id": 0,
+      "duplicated_api_ids": 0,
+      "complete_count": true,
+      "raw_sha256": "593f893db5fe9127a0f03859962ebeab887f93ef21a6078fd523c78bc7dc07e4"
+    }
+  ],
+  "fx": [
+    {
+      "id": 1159789,
+      "currency": "USDT",
+      "status": "unavailable",
+      "method": null,
+      "rate_dates": 0,
+      "max_walkback_days_observed": null,
+      "trades_stored": 2,
+      "trades_total": 2,
+      "truncated": false
+    },
+    {
+      "id": 1345621,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 25,
+      "max_walkback_days_observed": 0,
+      "trades_stored": 40,
+      "trades_total": 40,
+      "truncated": false
+    },
+    {
+      "id": 627740,
+      "currency": "INR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 8,
+      "max_walkback_days_observed": 2,
+      "trades_stored": 41,
+      "trades_total": 41,
+      "truncated": false
+    },
+    {
+      "id": 1545031,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 5,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 48,
+      "trades_total": 48,
+      "truncated": false
+    },
+    {
+      "id": 1462046,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 15,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 50,
+      "trades_total": 50,
+      "truncated": false
+    },
+    {
+      "id": 1038472,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 34,
+      "max_walkback_days_observed": 0,
+      "trades_stored": 56,
+      "trades_total": 56,
+      "truncated": false
+    },
+    {
+      "id": 934024,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 37,
+      "max_walkback_days_observed": 1,
+      "trades_stored": 66,
+      "trades_total": 66,
+      "truncated": false
+    },
+    {
+      "id": 1247565,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 62,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 74,
+      "trades_total": 74,
+      "truncated": false
+    },
+    {
+      "id": 1210117,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 51,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 80,
+      "trades_total": 80,
+      "truncated": false
+    },
+    {
+      "id": 791260,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 53,
+      "max_walkback_days_observed": 0,
+      "trades_stored": 80,
+      "trades_total": 80,
+      "truncated": false
+    },
+    {
+      "id": 781145,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 66,
+      "max_walkback_days_observed": 0,
+      "trades_stored": 105,
+      "trades_total": 105,
+      "truncated": false
+    },
+    {
+      "id": 759008,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 73,
+      "max_walkback_days_observed": 0,
+      "trades_stored": 124,
+      "trades_total": 124,
+      "truncated": false
+    },
+    {
+      "id": 1525495,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 12,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 139,
+      "trades_total": 139,
+      "truncated": false
+    },
+    {
+      "id": 1430436,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 79,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 141,
+      "trades_total": 141,
+      "truncated": false
+    },
+    {
+      "id": 487793,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 169,
+      "max_walkback_days_observed": 4,
+      "trades_stored": 238,
+      "trades_total": 238,
+      "truncated": false
+    },
+    {
+      "id": 1151130,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 61,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 275,
+      "trades_total": 275,
+      "truncated": false
+    },
+    {
+      "id": 850146,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 91,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 436,
+      "trades_total": 436,
+      "truncated": false
+    },
+    {
+      "id": 622123,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 197,
+      "max_walkback_days_observed": 4,
+      "trades_stored": 497,
+      "trades_total": 497,
+      "truncated": false
+    },
+    {
+      "id": 1245823,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 123,
+      "max_walkback_days_observed": 4,
+      "trades_stored": 548,
+      "trades_total": 548,
+      "truncated": false
+    },
+    {
+      "id": 850152,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 135,
+      "max_walkback_days_observed": 4,
+      "trades_stored": 582,
+      "trades_total": 582,
+      "truncated": false
+    },
+    {
+      "id": 636987,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 184,
+      "max_walkback_days_observed": 2,
+      "trades_stored": 802,
+      "trades_total": 802,
+      "truncated": false
+    },
+    {
+      "id": 1355018,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 88,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 951,
+      "trades_total": 951,
+      "truncated": false
+    },
+    {
+      "id": 609751,
+      "currency": "GBP",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 101,
+      "max_walkback_days_observed": 2,
+      "trades_stored": 1125,
+      "trades_total": 1125,
+      "truncated": false
+    },
+    {
+      "id": 620637,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 202,
+      "max_walkback_days_observed": 4,
+      "trades_stored": 3030,
+      "trades_total": 3030,
+      "truncated": false
+    },
+    {
+      "id": 1422970,
+      "currency": "HKD",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 48,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 4593,
+      "trades_total": 4593,
+      "truncated": false
+    },
+    {
+      "id": 823566,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 202,
+      "max_walkback_days_observed": 4,
+      "trades_stored": 7360,
+      "trades_total": 7360,
+      "truncated": false
+    },
+    {
+      "id": 1196090,
+      "currency": "EUR",
+      "status": "ok",
+      "method": "historical_ecb_trade_close_date",
+      "rate_dates": 129,
+      "max_walkback_days_observed": 3,
+      "trades_stored": 12862,
+      "trades_total": 12862,
+      "truncated": false
+    }
+  ],
+  "limits": "API current totals, unique IDs and original raw snapshots checked; this cannot prove server-side completeness beyond the public API response."
+}

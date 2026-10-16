@@ -1,0 +1,156 @@
+[
+  {
+    "id": 1784430,
+    "http_status": 200,
+    "imported": true,
+    "trades": 1672,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2142461,
+    "http_status": 200,
+    "imported": true,
+    "trades": 1927,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2172246,
+    "http_status": 200,
+    "imported": true,
+    "trades": 3234,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2271995,
+    "http_status": 200,
+    "imported": true,
+    "trades": 2022,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2282234,
+    "http_status": 200,
+    "imported": true,
+    "trades": 413,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2312950,
+    "http_status": 200,
+    "imported": true,
+    "trades": 592,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2325779,
+    "http_status": 200,
+    "imported": true,
+    "trades": 5658,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2349577,
+    "http_status": 200,
+    "imported": true,
+    "trades": 354,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2351061,
+    "http_status": 200,
+    "imported": true,
+    "trades": 731,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2360068,
+    "http_status": 200,
+    "imported": true,
+    "trades": 1241,
+    "currency": null,
+    "truncated": null,
+    "workflow": true,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2361280,
+    "http_status": 200,
+    "imported": true,
+    "trades": 399,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2361784,
+    "http_status": 200,
+    "imported": true,
+    "trades": 1710,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2361936,
+    "http_status": 200,
+    "imported": true,
+    "trades": 530,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  },
+  {
+    "id": 2362400,
+    "http_status": 200,
+    "imported": true,
+    "trades": 704,
+    "currency": null,
+    "truncated": null,
+    "workflow": false,
+    "cache_changed": true,
+    "financial_only": false
+  }
+]

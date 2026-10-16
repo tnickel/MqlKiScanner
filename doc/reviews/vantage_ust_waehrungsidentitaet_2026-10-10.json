@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-10",
+  "signal_id": 1159789,
+  "raw_currency": "UST",
+  "identity_result": "Unresolved: raw API says UST; no Vantage primary source found proving UST means USDT. Official Vantage account terms mention USDT accounts, which is not proof of this code mapping.",
+  "raw_source": "tmp\\vantage_download_stage_goal_20261010\\1159789_raw_history.json",
+  "raw_sha256": "844e7386c1a2ad133523e714d0184276d388d31327d5e4d38f68bd7c1f4f442b",
+  "trades": [
+    {
+      "id": 620111945,
+      "tradeOrderId": 452711144,
+      "symbol": "ETHUSD.bc",
+      "baseSymbol": "ETHUSD.bc",
+      "tradeAction": "BUY",
+      "volume": "0.01000",
+      "openPrice": "1571.98000",
+      "closePrice": "1571.98000",
+      "closeNetPnl": "0.00",
+      "open_utc": "2026-06-06T07:10:03.259000+00:00",
+      "close_utc": "2026-06-06T07:41:07.055000+00:00"
+    },
+    {
+      "id": 620111946,
+      "tradeOrderId": 452711145,
+      "symbol": "ETHUSD.bc",
+      "baseSymbol": "ETHUSD.bc",
+      "tradeAction": "BUY",
+      "volume": "0.02000",
+      "openPrice": "1571.96000",
+      "closePrice": "1571.96000",
+      "closeNetPnl": "0.00",
+      "open_utc": "2026-06-06T07:10:04.440000+00:00",
+      "close_utc": "2026-06-06T07:41:07.086000+00:00"
+    }
+  ],
+  "market_feasibility": {
+    "product_verified": {
+      "id": "USDT-USD",
+      "base_currency": "USDT",
+      "quote_currency": "USD",
+      "display_name": "USDT-USD",
+      "status": "online",
+      "trading_disabled": false
+    },
+    "public_probe": [
+      {
+        "name": "coinbase_product",
+        "url": "https://api.exchange.coinbase.com/products/USDT-USD",
+        "status": 200,
+        "sha256": "d9aec6e775857172e6ad3c8f3af390b95af78dd4cb4d27dcc548fe899e15ea42",
+        "selected": {
+          "id": "USDT-USD",
+          "base_currency": "USDT",
+          "quote_currency": "USD",
+          "display_name": "USDT-USD",
+          "status": "online",
+          "trading_disabled": false
+        }
+      },
+      {
+        "name": "coinbase_daily",
+        "url": "https://api.exchange.coinbase.com/products/USDT-USD/candles?start=2026-06-05T00%3A00%3A00Z&end=2026-06-07T00%3A00%3A00Z&granularity=86400",
+        "status": 200,
+        "sha256": "f6798eed6ea0d7b8cbe94d66b90c94d97437bde0d65c1bf3e74c0be91d74e887",
+        "candles": [
+          [
+            1780790400,
+            0.99937,
+            1,
+            0.9996,
+            0.99961,
+            12763998.04
+          ],
+          [
+            1780704000,
+            0.99916,
+            0.99999,
+            0.99968,
+            0.99951,
+            11786444
+          ],
+          [
+            1780617600,
+            0.99852,
+            1,
+            0.99887,
+            0.99968,
+            61888766.88
+          ]
+        ]
+      }
+    ],
+    "candles_utc": [
+      {
+        "utc_start": "2026-06-07T00:00:00+00:00",
+        "low": 0.99937,
+        "high": 1,
+        "open": 0.9996,
+        "close": 0.99961,
+        "volume": 12763998.04
+      },
+      {
+        "utc_start": "2026-06-06T00:00:00+00:00",
+        "low": 0.99916,
+        "high": 0.99999,
+        "open": 0.99968,
+        "close": 0.99951,
+        "volume": 11786444
+      },
+      {
+        "utc_start": "2026-06-05T00:00:00+00:00",
+        "low": 0.99852,
+        "high": 1,
+        "open": 0.99887,
+        "close": 0.99968,
+        "volume": 61888766.88
+      }
+    ],
+    "documentation": "https://docs.cdp.coinbase.com/api-reference/exchange-api/rest-api/products/get-product-candles",
+    "rules": "Public GET grouped historical OHLCV; daily86400, max300candles, may omit no-tick intervals and include buckets before requested start. Need explicit timestamp filtering, cache+source/hash and bounded fetch. Use only candles completed by conversion instant to avoid lookahead. No1:1peg assumption.",
+    "conditional_rate_example": "For a proven USDT account closed2026-06-06T07:41Z, previous completed UTC-day candle2026-06-05 close0.99968USD/USDT is available; current-day full close0.99951 would use later ticks and is lookahead for an intraday close."
+  },
+  "production_code_changed": false,
+  "export_unchanged_404": true,
+  "safe_alternative_to_consider": "Both retained net amounts are exactly zero, invariant under every finite FX factor. A generic zero-only financial export could mathematically preserve zero without claiming currency identity or rate; separate product decision, no code implemented."
+}

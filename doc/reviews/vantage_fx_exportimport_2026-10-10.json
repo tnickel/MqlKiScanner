@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1121175,
+    "trades": 1113,
+    "currency": "EUR",
+    "workflow": true,
+    "cache_changed": true
+  },
+  {
+    "id": 1284470,
+    "trades": 1783,
+    "currency": "EUR",
+    "workflow": false,
+    "cache_changed": true
+  },
+  {
+    "id": 1413609,
+    "trades": 603,
+    "currency": "EUR",
+    "workflow": false,
+    "cache_changed": true
+  },
+  {
+    "id": 1468275,
+    "trades": 82,
+    "currency": "EUR",
+    "workflow": false,
+    "cache_changed": true
+  },
+  {
+    "id": 1493145,
+    "trades": 94,
+    "currency": "EUR",
+    "workflow": false,
+    "cache_changed": true
+  },
+  {
+    "id": 1533908,
+    "trades": 105,
+    "currency": "HKD",
+    "workflow": false,
+    "cache_changed": true
+  },
+  {
+    "id": 1541981,
+    "trades": 109,
+    "currency": "EUR",
+    "workflow": false,
+    "cache_changed": true
+  },
+  {
+    "id": 504191,
+    "trades": 1486,
+    "currency": "HKD",
+    "workflow": true,
+    "cache_changed": true
+  },
+  {
+    "id": 633149,
+    "trades": 809,
+    "currency": "EUR",
+    "workflow": false,
+    "cache_changed": true
+  }
+]

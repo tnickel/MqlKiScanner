@@ -1,7 +1,12 @@
 # Benutzerhandbuch — MqlKiScanner
 
-Streamlit-App zum Scannen und forensischen Bewerten von MQL5-Signalen
-(MT4 + MT5). **Risiko vor Ertrag.**
+Streamlit-App zum Scannen und forensischen Bewerten von Handelssignalen aus
+MqlDownloader, PelicanTrading, RoboForex, Vantage und ZuluTrade sowie optional
+direkt aus MQL5 (MT4 + MT5). **Risiko vor Ertrag.**
+
+Stand der aktuellen Anleitung: 16.10.2026. MqlRealmonitor ist noch nicht
+produktiv eingebunden; seine Schnittstellen sind vorbereitet, die Integration
+bleibt vorerst zurückgestellt. MqlTradeMonitor ist ein separates Projekt.
 
 ## 1. Installation
 
@@ -33,22 +38,27 @@ Niemals Zugangsdaten in den Code legen. Eine der Varianten:
 | MQL5-Benutzer | `MQL5_USER` |
 | MQL5-Passwort | `MQL5_PASS` |
 
-Ohne MQL5-Login: Testdaten-Modus mit `data/raw/` (Engine ohne Live-Abruf).
+Im Modus **Datenquellen** ist kein MQL5-Login im Scanner nötig; Anmeldung und
+Abruf übernimmt die jeweilige Quelle. Für den direkten MQL5-Abruf wird ein
+Login benötigt. Der Testdaten-Modus mit `data/raw/` läuft ohne Live-Abruf.
 Ohne GLM-Key: Scan und Forensik laufen, KI-Berichte entfallen.
 
 ## 3. Workflow (Scan-Seite)
 
 Die Scan-Seite hat **zwei Start-Buttons** mit gemeinsamem Stationen-Ablauf
-(Signale holen → Auswahl → Prüfen & speichern → KI-Bericht → Portfolio →
-Abgleich):
+(Clients aktualisieren → Signale holen → Auswahl → Prüfen & speichern →
+KI-Bericht → Portfolio → Abgleich):
 
 1. **Full-Scan** — der komplette Durchlauf über **alle** ausgewählten Signale:
-   holt Signallisten (MT4+MT5), filtert, exportiert Trades der Top-N, rechnet
-   Forensik, speichert in SQLite.
-2. **Gelb/Grün-Scan** — die regelmäßige Überwachungsrunde (z. B. monatlich):
+   holt Signallisten aus den konfigurierten Quellen bzw. direkt aus MQL5,
+   filtert, übernimmt Trades der Top-N je Quelle, rechnet Forensik und
+   speichert in SQLite.
+2. **Teilscan** (vormals Gelb/Grün-Scan) — die regelmäßige Überwachungsrunde:
    prüft **nur** Signale, deren letzte gespeicherte Bewertung 🟢 (Kandidat)
    oder 🟡 (Beobachtung) ist. Alle anderen Farben werden in diesem Lauf nicht
-   beachtet. Für jedes geprüfte Signal werden **immer alle KI-Stufen neu
+   beachtet. Definierte Fix-IDs sind zusätzlich immer im Scan-Scope; sie
+   umgehen keine Bewertungsregel. Für jedes geprüfte Signal werden
+   **immer alle KI-Stufen neu
    erzeugt** (Trade-Analyse, Risiko-Analyse, Gesamtbericht; danach der
    Portfolio-Vorschlag über die geprüften Signale) — unabhängig von den
    Toggles „Nur neue Signale", „Vorhandene Berichte neu erstellen" und
@@ -57,6 +67,14 @@ Abgleich):
    parallel, dann Gesamtbericht.
 4. Einstellungen: Listen-Seiten, Max. Signale gründlich prüfen (Standard 30),
    Mindestwochen, Abonnenten, Rate-Limits.
+
+**Stufe 0 „Clients aktualisieren“ ist implementiert:** Full- und Teilscan
+aktualisieren im Quellen-/Mischmodus zuerst die aktiven REST-Clients parallel
+(`stufe0_aktiv`, Standard an). Der Kreis „0“ zeigt Fortschritt und Protokoll.
+Bei komplettem Ausfall der Clients wird der Scan abgebrochen; einzelne
+Quellenfehler bleiben sichtbar. Im direkten MQL5-Modus sowie beim manuellen
+Start einzelner späterer Stationen entfällt Stufe 0. Details:
+[`23_stufe0-client-updates.md`](23_stufe0-client-updates.md).
 
 **Nur neue** begrenzt das erneute Laden und Prüfen bei MQL5. Die KI berücksichtigt
 weiterhin alle geeigneten Ergebnisse: passende vorhandene Berichte werden
@@ -72,41 +90,60 @@ zählen nicht in dieses Y hinein.
 
 | Symbol | Bedeutung |
 |---|---|
-| 🟢 | Kandidat (Forensik vollständig, Stop-Evidenz vorhanden, Score &lt; 5, Ertrag ok, kein Ausschluss oder Risikoflag) |
+| 🟢 | Kandidat (Forensik vollständig, eigene Rendite belegt, Jahres-Calmar mindestens konfigurierte Schwelle, harte Regeln bestanden) |
 | 🟡 | Beobachtung / kein Kandidat |
 | 🔴 | Schranke / Martingale / hartes Risiko |
 | ⛔ | Auf Ausschlussliste |
 | ⚪ | Vorprüfung oder Fehler (kein vollständiger Export) |
 
-Für Grün müssen alle Positionen einen SL im Orderbuch aufweisen oder es muss
-eine ausreichende statistische Stop-Signatur vorliegen. Ein fehlender oder
-nur teilweiser Stop-Nachweis ergibt höchstens Gelb, auch bei niedrigem Score
-und hohem Ertrag. Drawdown-Verstöße und Martingale bleiben Ablehnungsgründe.
+**Fehlender SL-Nachweis ist neutral:** Er sperrt Grün nicht und verursacht
+keinen Score-Malus. Ein belegter Stop entlastet; die KI kann fehlenden
+Stop-Schutz nur mit begründeter Verhaltensanalyse vermuten. Auch der
+Risiko-Score ist kein eigenes Grün-Gate mehr.
+
+Grün erfordert eine vollständige Forensik, eine belegte eigene geometrische
+Rendite und **Jahres-Calmar ≥ `min_calmar_jahr`** (Standard **3,0**).
+Calmar = Jahres-CAGR / gemessener Max-Equity-DD einschließlich Floating.
+Mindestens **3 Monate Trade-Historie** sind erforderlich. Fehlende oder nur
+vorbehaltliche Kursmessung, DD = 0 oder zu kurze Historie liefern keinen
+belastbaren Calmar und erlauben kein Grün. Der Monats-RetDD bleibt Anzeige,
+entscheidet aber nicht mehr. Die absolute Monats-Ertragshürde ist mit
+`min_ertrag_pct_monat = 0` standardmäßig deaktiviert und kann in den
+Einstellungen wieder gesetzt werden. Drawdown-Verstöße, nachgewiesene
+Martingale-Signatur und Ausschlussliste bleiben vorrangige Ablehnungsgründe.
 
 **Equity-Drawdown wird nachgemessen (28.09.2026):** Der vom Broker gemeldete
 „By Equity"-Drawdown ist eine Selbstauskunft. Mit laufendem MetaTrader-Terminal
 (oder bei aktiviertem portablen Selbststart) rekonstruiert der Scanner die
-Equie-Kurve aus den Trades und echten Kursen — inklusive der floating
+Equity-Kurve aus den Trades und echten Kursen — inklusive der floating
 Verluste offener Positionen („Reko-EQ-DD"). Der nötige Zeitversatz
 (GMT-Offset zwischen Signal-Broker und Terminal) wird automatisch per
 Preisabgleich ermittelt. Der Reko-EQ-DD geht bei belastbarer Abdeckung als
 weiterer Wert in die harte 30-%-Drawdown-Schranke ein; im Urteil steht dann
 „· Reko-EQ-DD X % (aus Kursen, GMT +N h)", und die KI-Berichte vergleichen
 gemeldeten vs. nachgemessenen Drawdown ausdrücklich. Ohne Terminal entfällt
-die Prüfung still — kein Signal wird dafür schlechter bewertet
+die Kursprüfung. Ohne andere freigegebene Kursmessung bleibt der Calmar
+unbelegt; dann ist Grün nicht möglich
 (Einstellung „equity_rekonstruktion", Standard an; Terminal-Politik wie beim
 Markt-Beobachter: einmal pro Scanlauf, danach beendet).
 
-**Schranke und Ertrag seit 30.09.2026 strenger/ehrlicher (Intensiv-Review):**
-Bei Signalen aus Datenquellen (z. B. Pelican) geht die floating-inclusive
-Zweitmessung des Monitors („Monitor-EQ-DD") als weiterer Wert in dieselbe
-harte 30-%-Schranke ein — ein grünes Signal mit Zweitmessung über 30 % gibt
-es damit nicht mehr. Das Ertrags-Kriterium (≥ 5 %/Monat) zählt die EIGENE
-Trade-Kurve auf der Kapitalbasis, gegen die auch Drawdown und Schock
-gerechnet werden; der von der Plattform gemeldete Ertrag steht daneben als
-Zusatzinformation. Und ohne echtes Startkapital wird die Basis bevorzugt
-aus „aktueller Kontostand minus erwirtschaftetem Gewinn“ abgeleitet
-(„Kapitalbasis implizit“) statt pauschal 10.000 USD anzunehmen.
+**Drawdown-Arten und Kapitalbasis:** Die harte Drawdown-Schranke
+(Standard 30 %) verwendet konservativ das Maximum aus Plattform-Equity-DD,
+Plattform-Balance-DD, eigenem Trading-DD, freigegebenem Kurs-Equity-DD und
+Monitor-DD. Die JavaFX-Quellen liefern unter `TradeEqDrawdownPct` eine
+Closing-Kurve, gegebenenfalls mit aktuellem Floating-Endpunkt; das ist keine
+historisch vollständige Equity-Messung. Dieser Wert bleibt im
+Schranken-Kanal, dient aber **niemals als Calmar-Nenner**.
+
+Startkapital stammt bevorzugt aus CSV-Kontobewegungen vor dem ersten Trade,
+sonst aus einem gelieferten Initial Deposit. Eine ausdrücklich virtuelle
+Annahme bleibt gekennzeichneter Fallback. Die frühere implizite Ableitung
+„Web-Balance minus Trade-Netto“ wird nicht mehr verwendet. Spätere
+Ein-/Auszahlungen bleiben in der Kontokurve; Auszahlungen werden am Peak
+berücksichtigt und zählen nicht als Handelsverlust. Bei späteren
+Kapitalflüssen wird die Rendite zeitgewichtet berechnet (TWR), damit
+Einzahlungen nicht als Gewinn zählen. Plattform-Rendite und linearer
+Startbasis-Ertrag bleiben Zusatzinformationen.
 
 ### Ampel-Verlauf und Wechsel-Protokoll
 
@@ -170,10 +207,10 @@ die Engine; der Ampel-Verlauf zeichnet das Engine-Ergebnis nur auf
 
 ### MqlDownloader: Nutzer-Verlauf und Testberichte
 
-Im **Admin-Bereich → MqlDownloader** wird die Base-URL des lokalen
+Im **Admin-Bereich → Datenquellen** wird die Base-URL des lokalen
 MqlDownloader-Dienstes konfiguriert (Standard `http://localhost:8089/api/v1`;
 `/api/v1` wird automatisch ergänzt, wenn nur Host:Port eingetragen ist) und
-optional ein API-Token hinterlegt. **Verbindung testen** führt einen
+optional ein API-Token hinterlegt. Der Verbindungstest führt einen
 Health-Check gegen `/health` aus und zeigt Provider-Anzahl und API-Version.
 
 Ist die Verbindung konfiguriert, erscheint in jeder Signal-Detailansicht der
@@ -188,9 +225,10 @@ Abschnitt **MqlDownloader**:
 
 Alles wird lokal gespiegelt (`data/downloader/{Signal-ID}` plus SQLite) und
 bleibt auch dann anzeigbar, wenn der Downloader gerade aus ist. Unveränderte
-PDFs werden beim erneuten Aktualisieren nicht erneut geladen. Tradelisten holt
-der Scanner bewusst **nicht** vom Downloader — die Engine arbeitet mit den
-eigenen, verifizierten MQL5-Exporten.
+PDFs werden beim erneuten Aktualisieren nicht erneut geladen. Dieser
+Abgleich überträgt nur Verlauf und PDFs und bewertet nie neu. Tradelisten
+übernimmt der Scan im Quellenmodus separat über den REST-Ingest; im
+MQL5-Direktmodus verwendet er die eigenen MQL5-Exporte.
 
 In der Ergebnistabelle zeigt die letzte Spalte **Dokumente** je Signal ein
 📄-Icon mit der Gesamtzahl aller PDFs des Signals — **eigene Berichte**
@@ -219,14 +257,12 @@ rechten oberen Bildschirmecke und nennt ein Stichwort, was gerade läuft —
 es bleibt sichtbar, auch wenn man weit nach unten scrollt, und verschwindet
 automatisch mit dem Ende der Arbeit.
 
-**Verbindungsstatus beim Start:** Beim Programmstart prüft der Scanner einmal,
-ob der MqlDownloader erreichbar ist, und zeigt das Ergebnis als Badge: grün
-**„Downloader verbunden"** (mit Provider-Anzahl und Prüfzeitpunkt) in der
-Sidebar unter „Systemstatus", auf der Scan-Seite und im Admin-Bereich. Ist der
-Dienst aus, erscheint rot **„Downloader offline"** mit Direktlink zu den
-Einstellungen; ohne Konfiguration grau „Downloader optional". Das Ergebnis
-wird 5 Minuten zwischengespeichert — Speichern im Admin-Bereich prüft sofort
-neu, ein Streamlit-Rerun löst keinen erneuten REST-Aufruf aus.
+**Verbindungsstatus:** Der Scanner prüft die aktiven Datenquellen und zeigt
+den zusammengefassten Status in der Oberfläche. Im Admin-Bereich erscheinen
+„Datenquellen verbunden“, „Datenquellen nicht erreichbar“ bzw.
+„Keine Datenquelle konfiguriert“. Einzelne Quellen besitzen dort eigene
+Verbindungstests. Die Ergebnisse werden bis zu fünf Minuten
+zwischengespeichert; ein erzwungener Verbindungstest prüft sofort neu.
 
 **Batch über alle Strategien:** Auf der Ergebnisseite startet der gelbe Button
 **„🟡 Erweiterte KI-Analyse für alle Strategien starten“** einen Hintergrund-Lauf
@@ -280,11 +316,13 @@ zeigt daraufhin die Kachel „🔬 MqlKiScanner“ samt eigener Seite
 secrets_store). Der Sync **bewertet nie neu**. Details und Ablaufdiagramm:
 [`06_tradeserver-sync.md`](06_tradeserver-sync.md).
 
-### REST-API für den MqlRealMonitor
+### Vorbereitete REST-API für MqlRealmonitor
 
-Für den MqlRealMonitor läuft ein **schreibgeschützter** REST-Server als
+Die Scanner-Seite stellt einen **schreibgeschützten** REST-Server als
 Daemon-Thread neben der Streamlit-App (Standard `http://127.0.0.1:8611`,
-bewusst nur localhost):
+bewusst nur localhost) bereit. **MqlRealmonitor ist noch nicht produktiv
+eingebunden; die Integration ist vorerst zurückgestellt.** Die folgenden
+Endpunkte beschreiben die vorbereitete Schnittstelle:
 
 | Endpunkt | Wirkung |
 |---|---|
@@ -293,8 +331,9 @@ bewusst nur localhost):
 
 Der Server liest ausschließlich die SQLite-Datenbank und **bewertet nie
 neu** — die Ampel wird exakt wie auf der Ergebnisseite aus den gespeicherten
-Werten abgeleitet. Es gibt keine Dauerverbindung: der Monitor fragt nur auf
-Knopfdruck ab. Auth optional über Header `X-User-Key` (Token via Env
+Werten und aktuellen Regeln abgeleitet, ohne Bewertungen zurückzuschreiben.
+Der vorbereitete Client-Pfad sieht Abrufe auf Knopfdruck vor. Auth optional
+über Header `X-User-Key` (Token via Env
 `MQLKISCANNER_REST_TOKEN` oder Admin-UI im secrets_store). Standalone ohne
 GUI: `python -m mqlkiscanner.rest_api`.
 

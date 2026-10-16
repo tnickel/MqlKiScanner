@@ -1,0 +1,81 @@
+{
+  "measurements": [
+    {
+      "id": 954691,
+      "name": "TRADE EASY 4YOU 2",
+      "broker": "ActiveTrades003",
+      "status": "ok",
+      "reliable": true,
+      "coverage": 95.0,
+      "dd_pct": 16.886995339637025,
+      "reason": null,
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 0.481
+    },
+    {
+      "id": 998837,
+      "name": "Bet with Akedang",
+      "broker": "ActiveTrades003",
+      "status": "ok",
+      "reliable": true,
+      "coverage": 96.8,
+      "dd_pct": 250.8143804048415,
+      "reason": null,
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 0.085
+    },
+    {
+      "id": 1052261,
+      "name": "Bullions",
+      "broker": "ActiveTrades003",
+      "status": "unvollstaendig",
+      "reliable": false,
+      "coverage": 90.3,
+      "dd_pct": 4.3228288225062546,
+      "reason": "Abdeckung < 95% (gerundet 90.3%)",
+      "fx_gap": false,
+      "fx_sources": null,
+      "seconds": 0.085
+    }
+  ],
+  "updates": [
+    {
+      "id": 954691,
+      "name": "TRADE EASY 4YOU 2",
+      "previous_coverage": 95.0,
+      "previous_dd": 16.886995339637025,
+      "action": "study_updated",
+      "broker": "ActiveTrades003",
+      "coverage": 95.0,
+      "dd_pct": 16.886995339637025,
+      "reliable": true,
+      "reason": null
+    },
+    {
+      "id": 998837,
+      "name": "Bet with Akedang",
+      "previous_coverage": 96.8,
+      "previous_dd": 249.774105381507,
+      "action": "study_updated",
+      "broker": "ActiveTrades003",
+      "coverage": 96.8,
+      "dd_pct": 250.8143804048415,
+      "reliable": true,
+      "reason": null
+    },
+    {
+      "id": 1052261,
+      "name": "Bullions",
+      "previous_coverage": 90.3,
+      "previous_dd": 4.307264488037166,
+      "action": "study_updated",
+      "broker": "ActiveTrades003",
+      "coverage": 90.3,
+      "dd_pct": 4.3228288225062546,
+      "reliable": false,
+      "reason": "Abdeckung < 95% (gerundet 90.3%)"
+    }
+  ]
+}

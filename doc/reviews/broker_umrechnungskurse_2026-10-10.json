@@ -1,0 +1,225 @@
+{
+  "TickmillLifeMql5": {
+    "connected": true,
+    "message": "portabel selbstgestartet; Datenpfad geprüft, verbunden",
+    "data_path": "C:\\Forex\\Mt5\\TickmillLifeMql5",
+    "instruments": {
+      "USDCNH": {
+        "inventory": [
+          "USDCNH"
+        ],
+        "selected": "USDCNH",
+        "quote": "CNH",
+        "base": "USD",
+        "description": "US Dollar vs Chinese Yuan",
+        "requested_start": "2025-12-23",
+        "requested_end": "2026-08-21",
+        "bars": 4101,
+        "first": 1766448000,
+        "last": 1787270400
+      },
+      "BCHUSD": {
+        "inventory": [
+          "BCHUSD"
+        ],
+        "selected": "BCHUSD",
+        "quote": "USD",
+        "base": "USD",
+        "description": "Bitcoin Cash",
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 119,
+        "first": 1774483200,
+        "last": 1774915200
+      },
+      "BTCBCH": {
+        "inventory": [],
+        "selected": "BTCBCH",
+        "quote": null,
+        "base": null,
+        "description": null,
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 0,
+        "first": null,
+        "last": null
+      },
+      "BTCUSD": {
+        "inventory": [
+          "BTCUSD"
+        ],
+        "selected": "BTCUSD",
+        "quote": "USD",
+        "base": "USD",
+        "description": "Bitcoin",
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 119,
+        "first": 1774483200,
+        "last": 1774915200
+      },
+      "ETHBCH": {
+        "inventory": [],
+        "selected": "ETHBCH",
+        "quote": null,
+        "base": null,
+        "description": null,
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 0,
+        "first": null,
+        "last": null
+      }
+    }
+  },
+  "ActiveTrades003": {
+    "connected": true,
+    "message": "portabel selbstgestartet; Datenpfad geprüft, verbunden",
+    "data_path": "C:\\Forex\\Mt5\\ActiveTrades003",
+    "instruments": {
+      "USDCNH": {
+        "inventory": [
+          "USDCNH"
+        ],
+        "selected": "USDCNH",
+        "quote": "CNH",
+        "base": "USD",
+        "description": "US Dollar vs Offshore Chinese Renminbi",
+        "requested_start": "2025-12-23",
+        "requested_end": "2026-08-21",
+        "bars": 3578,
+        "first": 1766455200,
+        "last": 1787263200
+      },
+      "BCHUSD": {
+        "inventory": [
+          "BCHUSD"
+        ],
+        "selected": "BCHUSD",
+        "quote": "USD",
+        "base": "USD",
+        "description": "Bitcoin Cash vs US Dollar",
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 72,
+        "first": 1774483200,
+        "last": 1774915200
+      },
+      "BTCBCH": {
+        "inventory": [],
+        "selected": "BTCBCH",
+        "quote": null,
+        "base": null,
+        "description": null,
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 0,
+        "first": null,
+        "last": null
+      },
+      "BTCUSD": {
+        "inventory": [
+          "BTCUSD"
+        ],
+        "selected": "BTCUSD",
+        "quote": "USD",
+        "base": "USD",
+        "description": "Bitcoin vs US Dollar",
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 110,
+        "first": 1774483200,
+        "last": 1774915200
+      },
+      "ETHBCH": {
+        "inventory": [],
+        "selected": "ETHBCH",
+        "quote": null,
+        "base": null,
+        "description": null,
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 0,
+        "first": null,
+        "last": null
+      }
+    }
+  },
+  "Vantage": {
+    "connected": true,
+    "message": "portabel selbstgestartet; Datenpfad geprüft, verbunden",
+    "data_path": "C:\\Forex\\Mt5\\Vantage",
+    "instruments": {
+      "USDCNH": {
+        "inventory": [
+          "USDCNH+"
+        ],
+        "selected": "USDCNH+",
+        "quote": "CNH",
+        "base": "USD",
+        "description": "US Dollar vs Chinese Yuan",
+        "requested_start": "2025-12-23",
+        "requested_end": "2026-08-21",
+        "bars": 4105,
+        "first": 1766448000,
+        "last": 1787270400
+      },
+      "BCHUSD": {
+        "inventory": [
+          "BCHUSD"
+        ],
+        "selected": "BCHUSD",
+        "quote": "USD",
+        "base": "BCH",
+        "description": "Bitcoin Cash",
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 121,
+        "first": 1774483200,
+        "last": 1774915200
+      },
+      "BTCBCH": {
+        "inventory": [
+          "BTCBCH"
+        ],
+        "selected": "BTCBCH",
+        "quote": "BCH",
+        "base": "BTC",
+        "description": "Bitcoin  vs Bitcoin Cash",
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 121,
+        "first": 1774483200,
+        "last": 1774915200
+      },
+      "BTCUSD": {
+        "inventory": [
+          "BTCUSD"
+        ],
+        "selected": "BTCUSD",
+        "quote": "USD",
+        "base": "BTC",
+        "description": "Bitcoin",
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 121,
+        "first": 1774483200,
+        "last": 1774915200
+      },
+      "ETHBCH": {
+        "inventory": [
+          "ETHBCH"
+        ],
+        "selected": "ETHBCH",
+        "quote": "BCH",
+        "base": "ETH",
+        "description": "Ethereum vs Bitcoin Cash",
+        "requested_start": "2026-03-26",
+        "requested_end": "2026-03-31",
+        "bars": 121,
+        "first": 1774483200,
+        "last": 1774915200
+      }
+    }
+  }
+}

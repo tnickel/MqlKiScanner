@@ -1,0 +1,83 @@
+[
+  {
+    "id": 504191,
+    "name": "Master Hong",
+    "updated": true,
+    "reliable": false,
+    "coverage": 32.9,
+    "dd_pct": 238.78821303715822,
+    "reason": "Abdeckung < 95% (gerundet 32.9%) · Kursdaten fehlen für 206 von 1486 Trades · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 6 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1121175,
+    "name": "WanChaiTrendFX",
+    "updated": true,
+    "reliable": false,
+    "coverage": 92.3,
+    "dd_pct": 120.53999999999631,
+    "reason": "Abdeckung < 95% (gerundet 92.3%) · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 9 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1493145,
+    "name": "TradeFlowGold",
+    "updated": true,
+    "reliable": true,
+    "coverage": 96.4,
+    "dd_pct": 2.1633098570237737,
+    "reason": null
+  },
+  {
+    "id": 1468275,
+    "name": "ZYRON BY NEXORA",
+    "updated": true,
+    "reliable": true,
+    "coverage": 100.0,
+    "dd_pct": 1.0039101229375615,
+    "reason": null
+  },
+  {
+    "id": 633149,
+    "name": "Pacman Smart CAD",
+    "updated": true,
+    "reliable": false,
+    "coverage": 96.0,
+    "dd_pct": 124.40537272377266,
+    "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 10 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+  },
+  {
+    "id": 1413609,
+    "name": "Gold Hunters FX",
+    "updated": true,
+    "reliable": true,
+    "coverage": 96.6,
+    "dd_pct": 5.033284323027528,
+    "reason": null
+  },
+  {
+    "id": 1284470,
+    "name": "Forex trading killer",
+    "updated": true,
+    "reliable": true,
+    "coverage": 100.0,
+    "dd_pct": 11.520120035371532,
+    "reason": null
+  },
+  {
+    "id": 1541981,
+    "name": "BETTER CALL HORKOF",
+    "updated": true,
+    "reliable": false,
+    "coverage": 89.7,
+    "dd_pct": 1.8015685134005817,
+    "reason": "Abdeckung < 95% (gerundet 89.7%)"
+  },
+  {
+    "id": 1533908,
+    "name": "55699",
+    "updated": true,
+    "reliable": true,
+    "coverage": 98.0,
+    "dd_pct": 3.4736302991934793,
+    "reason": null
+  }
+]

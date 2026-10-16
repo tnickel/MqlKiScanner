@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-10",
+  "scope": "Read-only independent review of account-cost consumers; stats.py and signal_statistik.py excluded from independent claim because this agent implemented them.",
+  "finding_count": 0,
+  "code_sha256": {
+    "src/mqlkiscanner/models.py": "537af02cac44b4d27585602ca0861da5a78de5c6556c6a6dcf4d3f8e14959e46",
+    "src/mqlkiscanner/parser.py": "97783431a42256036734ce1031320d8c5a998ac638db2046ccc991a3111d0835",
+    "src/mqlkiscanner/engine.py": "27a0aefe7df19240e27efa4a7e9d8b28f19837d2eab773c747adff502df03113",
+    "src/mqlkiscanner/forensics/drawdown.py": "b4d6179d958cace83766acf477f84b863cb038af03034df5f1c9409a983c482a",
+    "src/mqlkiscanner/forensics/exposure.py": "1e1cd1fc58f0bcddf9f3ab75c732404e92ac7ae13de2ecf3b97b22ec9bd50430",
+    "src/mqlkiscanner/forensics/equity_rekonstruktion.py": "59605fd7faf72af2220350d03f5096dd49bbea8db9f62d80c8cf8274c553eed2",
+    "src/mqlkiscanner/forensics/equity_kapitalfluesse.py": "0feb64ff5a22580ecbb4f46567ce9ed3fbfebfe8f2af307de55de67d99a4c83c",
+    "src/mqlkiscanner/equity_studie.py": "5f91dfe0c2b56740cbaee9125d2d7845bc6b3bbc58f8251a3a82dc7613711980",
+    "src/mqlkiscanner/equity_studie_ui.py": "dcd265348c24b1bba0b46142791a3509150aa17cdb91ce3c621f810a44443570",
+    "src/mqlkiscanner/portfolio_statistik.py": "0ed157b513ecb07279ed33cd99942075da5dcd11a459a76dde4ba881c84e5a81",
+    "src/mqlkiscanner/trade_data.py": "c3f4956fade5c06d09fb48e62799eaa993c86718c4ad75e9cf60190b9a451d9c"
+  },
+  "tests": {
+    "command": "pytest tests/test_account_costs_consumers.py tests/test_kontokosten_statistik.py tests/test_signal_statistik.py tests/test_signal_finanzteilstatistik.py",
+    "passed": 47
+  },
+  "runtime_probes": {
+    "missing_quote_and_post_trade_cost": {
+      "realized_expected": 978,
+      "automatic_h1_end": 978.0,
+      "manual_h1_end": 978.0,
+      "manual_reliable": false,
+      "note": "Missing quote keeps all realized money; floating coverage remains explicitly unreliable."
+    },
+    "capital_flow_after_cost": {
+      "flow_count": 1,
+      "equity_before_external_deposit": 988.0,
+      "end_account_balance": 1985.0
+    },
+    "engine_exposure": {
+      "net": -12.0,
+      "end_balance": 988.0,
+      "external_flows_total": 0,
+      "peak_positions": 1,
+      "shock_account": 990.0
+    }
+  },
+  "limitations": [
+    "Synthetic deterministic tests; no live MT5 calls or production writes.",
+    "Review found no evidence-backed remaining defect in reviewed consumer paths; this is not proof that all possible historical data are consistent."
+  ],
+  "separate_review_of_this_agents_implementation": {
+    "reviewer": "all_signals_audit",
+    "files": [
+      "src/mqlkiscanner/stats.py",
+      "src/mqlkiscanner/signal_statistik.py"
+    ],
+    "finding_count": 0,
+    "scope": "Limited independent read-only review: realized_events/net_total in monthly/total/partial statistics, trade PF/wins/count unchanged, pre-open costs booked exactly once. Reviewer reported67 real cost rows and126+195+61 related regression cases; no universal claim."
+  }
+}

@@ -1,7 +1,8 @@
 # Technik: MQL5-Datenquellen, Formate, Fallstricke
 
-Dokumentiert aus der forensischen Analyse-Reihe (Sept. 2026). Alles hier wurde
-in der Praxis gegen echte Signale getestet.
+Dokumentiert aus der forensischen Analyse-Reihe (Sept. 2026), mit späteren
+Ergänzungen. Abgleich mit lokalem Code: 16.10.2026; kein neuer Live-Test.
+Datierte Plattformbeobachtungen belegen nicht deren heutige Erreichbarkeit.
 
 ## 1. Endpunkte
 
@@ -23,11 +24,14 @@ MT4 nutzt `/export/history` (Orderbuch mit S/L, T/P, Comment). MT5 nutzt
 
 ## 2. Login-Session
 
-1. `GET /en/auth_login` → Formular (Felder: "Your login", Passwort-Feld
-   "Enter the password please", Button "Log in")
-2. POST der Credentials → Redirect auf `/en` = eingeloggt; Session-Cookie merken
-3. Export-Aufruf mit Cookie (`credentials: include` bzw. Cookie-Header)
-4. **Erfolgs-Check:** Antwort beginnt mit `Time;` (CSV-Header).
+1. Die aktuelle Implementierung prüft vorhandene Cookies und verwendet bei
+   Bedarf `browser_session.ensure_mql5_cookies` (Selenium-Browserlogin).
+   Ein einfacher HTTP-Formular-POST ist kein funktionierender Ersatz für die
+   vom Browser gesetzten JavaScript-Cookies.
+2. Die Browser-Session liefert Cookies an `Mql5Session`; Login und
+   Exportfähigkeit werden geprüft, ein Redirect allein genügt nicht.
+3. Export-Aufruf mit Cookie und Rate-Limit.
+4. **Erfolgs-Check:** Antwort beginnt nach optionalem UTF-8-BOM mit `Time;` (CSV-Header).
    Beginnt sie mit `<!DOCTYPE` und enthält "Log in" → Session weg, neu einloggen.
    (Dieser Fehler ist in der Reihe einmal passiert und kostete eine Analyse.)
 
@@ -44,6 +48,8 @@ Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit
   Einstiegspreis, Schluss-Lot, **Schluss-Zeit (Idx 6)**, **Schlusspreis (Idx 7)**,
   Commission (8), Swap (9), **Profit (10)**
 - `Type=Balance`-Zeilen: Kontobewegungen (Einzahlung/Auszahlung), Betrag in Spalte 10
+- Separate Gebühren-/Kommissionsbuchungen werden als Kontokosten behandelt,
+  nicht als neutrale Ein-/Auszahlung. Sie belasten Ergebnis und Kontokurven.
 - **Enthält KEINE S/L- und T/P-Spalten** — Stop-Nachweis hierüber nicht möglich
 - **Fallstricke:** Zahlen mit Tausendertrennzeichen-Leerzeichen ("1 403.03",
   "4 566.52") → Leerzeichen vor float() entfernen; manche Zeilen kürzer als
@@ -99,16 +105,18 @@ Drawdown-Sektion: "Absolute:", "Maximal:", "By Balance:", "By Equity:"
 Hebel (z. B. "1:500") steht als eigenständiges Element. Broker-Server oben im
 Kopfbereich (Muster `Servername-LiveNN`).
 
-**Achtung:** "By Equity:" = schwimmender DD, "By Balance:" = realisierter DD.
-Beide getrennt ausweisen — Grid-Systeme haben niedrigen Equity-DD in guten
-Phasen und brechen dann sprunghaft.
+**Achtung:** Plattform-"By Equity" und "By Balance" getrennt ausweisen.
+Bei den in doc/22 nachgemessenen MQL-Grafiken war die Floating-Definition
+offener Verlust / zeitgleiche Balance; sie ist nicht identisch mit dem
+eigenen Equity-Höchststand-Drawdown. Eine bloße Nähe der Prozentwerte
+belegt keine gleiche Berechnungsmethode.
 
 ## 5. Kontraktgrößen (für Exposure-Rechnung)
 
 | Symbol | 1 Lot | P&L je 1 USD/EUR Preisbewegung |
 |---|---|---|
 | XAUUSD | 100 oz | **100 USD** |
-| US30/Indizes | 1 Contract | 1 USD je Indexpunkt |
+| US30/Indizes | broker- und kontraktabhängig | Generischer Fallback 1 USD/Punkt ist keine universelle Kontraktgröße; belegte Broker-Specs haben Vorrang |
 | FX-Paare (NZDCAD etc.) | 100.000 Einheiten | ~10 USD je "Pip" (4. Dezimale), ~100 USD je 1 Cent |
 
 **Gold-Beispiel (der teure Lernpunkt der Reihe):** 2,66 Lots netto short
@@ -146,7 +154,9 @@ Tests: `tests/test_fx_rates.py`.
 
 - Ohne Login: letzte ~24 h der Historie verborgen, offene Positionen ohne Volumen
 - Monats-Tabellen (Growth % und absoluter Gewinn je Monat) sind der beste
-  Validierungsanker: Rekonstruktion aus CSV muss auf den Cent decken
+  Validierungsanker: Übereinstimmung setzt gleiche Zeiträume, Kapitalbasis,
+  Kosten und Kennzahlendefinition voraus. Eine Abweichung beweist allein
+  keine Datenmanipulation; Cent-Deckung belegt nur den jeweiligen Vergleich.
 - Reviews liegen unter `/reviews` und enthalten Nutzername, Datum, Text —
   wertvollste Quelle für Copy-Praxisprobleme (Slippage, Mapping, Mindestlot)
 - "What's new"-Reiter: Anbieter-Kommunikation (Drawdown-Updates, Regeländerungen)

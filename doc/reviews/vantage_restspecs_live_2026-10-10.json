@@ -1,0 +1,366 @@
+{
+ "Vantage": {
+  "UK100": {
+   "symbol": "UK100",
+   "beschreibung": "UK 100 Cash",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "GBP",
+   "basiswaehrung": "GBP",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.011811953697141506,
+   "digits": 2
+  },
+  "US2000": {
+   "symbol": "US2000",
+   "beschreibung": "US SMALL CAP 2000 - CASH",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.01,
+   "digits": 2
+  },
+  "EU50": {
+   "symbol": "EU50",
+   "beschreibung": "EUSTX50 Cash",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "EUR",
+   "basiswaehrung": "EUR",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.01,
+   "digits": 2
+  },
+  "LTCUSD": {
+   "symbol": "LTCUSD",
+   "beschreibung": "Litecoin",
+   "contract_size": 100.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "LTC",
+   "volume_min": 0.01,
+   "volume_step": 0.01,
+   "tick_size": 0.01,
+   "tick_value": 0.89268179464748,
+   "digits": 2
+  },
+  "BNBUSD": {
+   "symbol": "BNBUSD",
+   "beschreibung": "Binance Coin",
+   "contract_size": 10.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "BNB",
+   "volume_min": 0.01,
+   "volume_step": 0.01,
+   "tick_size": 0.01,
+   "tick_value": 0.089268179464748,
+   "digits": 2
+  },
+  "LYFT": {
+   "symbol": "LYFT",
+   "beschreibung": "Lyft Inc",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "NFLX": {
+   "symbol": "NFLX",
+   "beschreibung": "NETFLIX INC",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "PINS": {
+   "symbol": "PINS",
+   "beschreibung": "Pinterest Inc - Class A",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "SPCE": {
+   "symbol": "SPCE",
+   "beschreibung": "VIRGIN GALACTIC HOLDINGS INC",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "TTD": {
+   "symbol": "TTD",
+   "beschreibung": "The Trade Desk Inc - Class A",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "ORCL": {
+   "symbol": "ORCL",
+   "beschreibung": "ORACLE CORP",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche:UK100": [
+   "UK100",
+   "UK100ft"
+  ],
+  "suche_spec:UK100": {
+   "symbol": "UK100",
+   "beschreibung": "UK 100 Cash",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "GBP",
+   "basiswaehrung": "GBP",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.011811953697141506,
+   "digits": 2
+  },
+  "suche_spec:UK100ft": {
+   "symbol": "UK100ft",
+   "beschreibung": "UK100 Future",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "GBP",
+   "basiswaehrung": "GBP",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.011811953697141506,
+   "digits": 2
+  },
+  "suche:US2000": [
+   "US2000"
+  ],
+  "suche_spec:US2000": {
+   "symbol": "US2000",
+   "beschreibung": "US SMALL CAP 2000 - CASH",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.01,
+   "digits": 2
+  },
+  "suche:EU50": [
+   "EU50"
+  ],
+  "suche_spec:EU50": {
+   "symbol": "EU50",
+   "beschreibung": "EUSTX50 Cash",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "EUR",
+   "basiswaehrung": "EUR",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.01,
+   "digits": 2
+  },
+  "suche:LTCUSD": [
+   "LTCUSD"
+  ],
+  "suche_spec:LTCUSD": {
+   "symbol": "LTCUSD",
+   "beschreibung": "Litecoin",
+   "contract_size": 100.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "LTC",
+   "volume_min": 0.01,
+   "volume_step": 0.01,
+   "tick_size": 0.01,
+   "tick_value": 0.89268179464748,
+   "digits": 2
+  },
+  "suche:BNBUSD": [
+   "BNBUSD"
+  ],
+  "suche_spec:BNBUSD": {
+   "symbol": "BNBUSD",
+   "beschreibung": "Binance Coin",
+   "contract_size": 10.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "BNB",
+   "volume_min": 0.01,
+   "volume_step": 0.01,
+   "tick_size": 0.01,
+   "tick_value": 0.089268179464748,
+   "digits": 2
+  },
+  "suche:LYFT": [
+   "LYFT"
+  ],
+  "suche_spec:LYFT": {
+   "symbol": "LYFT",
+   "beschreibung": "Lyft Inc",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche:NFLX": [
+   "NFLX",
+   "NFLX.24H",
+   "NFLXUSD"
+  ],
+  "suche_spec:NFLX": {
+   "symbol": "NFLX",
+   "beschreibung": "NETFLIX INC",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche_spec:NFLX.24H": {
+   "symbol": "NFLX.24H",
+   "beschreibung": "NETFLIX INC-24Hours",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche_spec:NFLXUSD": {
+   "symbol": "NFLXUSD",
+   "beschreibung": "Netflix Inc",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 1.0,
+   "volume_step": 1.0,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche:PINS": [
+   "PINS"
+  ],
+  "suche_spec:PINS": {
+   "symbol": "PINS",
+   "beschreibung": "Pinterest Inc - Class A",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche:SPCE": [
+   "SPCE"
+  ],
+  "suche_spec:SPCE": {
+   "symbol": "SPCE",
+   "beschreibung": "VIRGIN GALACTIC HOLDINGS INC",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche:TTD": [
+   "TTD"
+  ],
+  "suche_spec:TTD": {
+   "symbol": "TTD",
+   "beschreibung": "The Trade Desk Inc - Class A",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche:ORCL": [
+   "ORCL",
+   "ORCL.24H",
+   "ORCLUSD"
+  ],
+  "suche_spec:ORCL": {
+   "symbol": "ORCL",
+   "beschreibung": "ORACLE CORP",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche_spec:ORCL.24H": {
+   "symbol": "ORCL.24H",
+   "beschreibung": "ORACLE CORP-24Hours",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 0.1,
+   "volume_step": 0.1,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  },
+  "suche_spec:ORCLUSD": {
+   "symbol": "ORCLUSD",
+   "beschreibung": "Oracle Corp",
+   "contract_size": 1.0,
+   "gewinnwaehrung": "USD",
+   "basiswaehrung": "USD",
+   "volume_min": 1.0,
+   "volume_step": 1.0,
+   "tick_size": 0.01,
+   "tick_value": 0.0089268179464748,
+   "digits": 2
+  }
+ }
+}

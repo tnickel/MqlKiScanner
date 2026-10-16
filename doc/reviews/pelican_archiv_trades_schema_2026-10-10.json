@@ -1,0 +1,31 @@
+{
+  "method": "SHA/count exact, nonempty unique TradeId, explicit Buy/Sell, nonempty instrument, finite positive quantity and prices, finite PnL, source timestamps year>1 and close>=open, explicit USD every row",
+  "rows": [
+    {
+      "id": 2059824,
+      "rows": 937,
+      "issues": [],
+      "sourceCsvSha256": "2d53423a23c20750729cd080b01cc286b1df77572f7b1b25d8597a449c15c2ec"
+    },
+    {
+      "id": 2063644,
+      "rows": 5541,
+      "issues": [],
+      "sourceCsvSha256": "a79e4a5e68b232207a162a88d0a4c695f4d4e5db0d6c36261d93b9fcc8dffdc5"
+    },
+    {
+      "id": 2074606,
+      "rows": 1682,
+      "issues": [],
+      "sourceCsvSha256": "76844d3ba2225898852274a09880ce04d14c51eab180f96171ee17ce3468453e"
+    },
+    {
+      "id": 2084818,
+      "rows": 753,
+      "issues": [],
+      "sourceCsvSha256": "65554fc80e8ed03acd7b60ade736ce499245aff1c5121cf031109b319fbad97e"
+    }
+  ],
+  "safeForCsvOnlyArchive": true,
+  "noProviderMetricsInferred": true
+}

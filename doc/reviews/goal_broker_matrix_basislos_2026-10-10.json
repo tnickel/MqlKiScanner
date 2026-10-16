@@ -1,0 +1,107 @@
+{
+  "version_sha": "528f3e20418af5088563abcc93c060a42221093e3cef432d3abb2d9d8a152adb",
+  "targets": 3,
+  "seconds": 68.1,
+  "measurements": [
+    {
+      "id": 37335069,
+      "name": "ScalpXAU",
+      "quelle": "robo",
+      "broker": "TickmillLifeMql5",
+      "index": 1,
+      "skipped": [
+        "#37335069 ScalpXAU: keine Kapitalbasis — Statistik ohne Basis"
+      ],
+      "seconds": 0.047
+    },
+    {
+      "id": 46154765,
+      "name": "starX",
+      "quelle": "robo",
+      "broker": "TickmillLifeMql5",
+      "index": 2,
+      "skipped": [
+        "#46154765 starX: keine Kapitalbasis — Statistik ohne Basis"
+      ],
+      "seconds": 0.047
+    },
+    {
+      "id": 46154766,
+      "name": "starX",
+      "quelle": "robo",
+      "broker": "TickmillLifeMql5",
+      "index": 3,
+      "skipped": [
+        "#46154766 starX: keine Kapitalbasis — Statistik ohne Basis"
+      ],
+      "seconds": 0.031
+    },
+    {
+      "id": 37335069,
+      "name": "ScalpXAU",
+      "quelle": "robo",
+      "broker": "ActiveTrades003",
+      "index": 1,
+      "skipped": [
+        "#37335069 ScalpXAU: keine Kapitalbasis — Statistik ohne Basis"
+      ],
+      "seconds": 0.047
+    },
+    {
+      "id": 46154765,
+      "name": "starX",
+      "quelle": "robo",
+      "broker": "ActiveTrades003",
+      "index": 2,
+      "skipped": [
+        "#46154765 starX: keine Kapitalbasis — Statistik ohne Basis"
+      ],
+      "seconds": 0.047
+    },
+    {
+      "id": 46154766,
+      "name": "starX",
+      "quelle": "robo",
+      "broker": "ActiveTrades003",
+      "index": 3,
+      "skipped": [
+        "#46154766 starX: keine Kapitalbasis — Statistik ohne Basis"
+      ],
+      "seconds": 0.031
+    },
+    {
+      "id": 37335069,
+      "name": "ScalpXAU",
+      "quelle": "robo",
+      "broker": "Vantage",
+      "index": 1,
+      "skipped": [
+        "#37335069 ScalpXAU: keine Kapitalbasis — Statistik ohne Basis"
+      ],
+      "seconds": 0.032
+    },
+    {
+      "id": 46154765,
+      "name": "starX",
+      "quelle": "robo",
+      "broker": "Vantage",
+      "index": 2,
+      "skipped": [
+        "#46154765 starX: keine Kapitalbasis — Statistik ohne Basis"
+      ],
+      "seconds": 0.047
+    },
+    {
+      "id": 46154766,
+      "name": "starX",
+      "quelle": "robo",
+      "broker": "Vantage",
+      "index": 3,
+      "skipped": [
+        "#46154766 starX: keine Kapitalbasis — Statistik ohne Basis"
+      ],
+      "seconds": 0.046
+    }
+  ],
+  "updates": []
+}

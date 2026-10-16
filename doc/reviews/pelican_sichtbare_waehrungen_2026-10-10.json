@@ -1,0 +1,4489 @@
+{
+  "visible_ids": 636,
+  "source_catalog_rows": 2263,
+  "currencies": {
+    "USD": 428,
+    "EUR": 124,
+    "GBP": 22,
+    "ZAR": 3,
+    "JPY": 30,
+    "AUD": 6,
+    "SGD": 10,
+    "PLN": 1,
+    "": 4,
+    "HKD": 2,
+    "USC": 5,
+    "CHF": 1
+  },
+  "cached_currencies": {
+    "USD": 428,
+    "EUR": 124,
+    "GBP": 22,
+    "ZAR": 3,
+    "JPY": 30,
+    "AUD": 6,
+    "SGD": 10,
+    "PLN": 1,
+    "": 4,
+    "HKD": 2,
+    "USC": 5,
+    "CHF": 1
+  },
+  "cache_exists": 636,
+  "meta_exists": 636,
+  "foreign_cached": 203,
+  "rows": [
+    {
+      "id": 2000015,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000016,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000028,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000036,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000184,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000434,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000436,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000442,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000444,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000466,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000476,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000494,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000504,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000529,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000539,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000562,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000587,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000612,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000638,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000655,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000675,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000676,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000713,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000717,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000754,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000759,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000786,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000810,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000815,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000838,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000876,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000892,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000912,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2000956,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001021,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001091,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001115,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001116,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001126,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001183,
+      "currency": "ZAR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001217,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001220,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001707,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001708,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001831,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001927,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001944,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2001983,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002010,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002211,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002236,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002284,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002286,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002780,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002801,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002854,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002857,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002866,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002875,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002879,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2002883,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2003495,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2003562,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2003623,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2003870,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2003940,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2004000,
+      "currency": "ZAR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2004341,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2004588,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2004877,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2004912,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2005187,
+      "currency": "AUD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2005205,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2005451,
+      "currency": "AUD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2005521,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2005593,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2005940,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2006086,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2006112,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2006345,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2006692,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2007213,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2007228,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2007229,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2007244,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2007497,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2007510,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2008349,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2008758,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2009328,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2009531,
+      "currency": "ZAR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2009616,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2010425,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2011413,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2011676,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2011892,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2012056,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2012062,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2012139,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2012265,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2012773,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2013138,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2013384,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2013395,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2013446,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2014074,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2014076,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2014253,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2014373,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2014536,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2014626,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2014698,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2014773,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2014939,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2015482,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2016702,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2016761,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2017130,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2017259,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2017323,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2017621,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2017892,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2018031,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2018072,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2018837,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2019075,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2019203,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2019409,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2019435,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2019615,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2019667,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2019919,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2019924,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2019984,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2020001,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2020465,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2020468,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2020495,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2020819,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2020834,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2020876,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2021001,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2021124,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2021339,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2021443,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2021569,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2021768,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2021948,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2022274,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2022413,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2022758,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2022770,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2022800,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2022970,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2023552,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2023944,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2024317,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2024591,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2024714,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2024974,
+      "currency": "AUD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2025526,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2025540,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2025567,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2026496,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2026604,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2026843,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2026879,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2027012,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2027296,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2027347,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2027533,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2027831,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2028213,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2028633,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2029309,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2030019,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2030138,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2030847,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2030922,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2030993,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2031323,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2031751,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2032562,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2032665,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2033039,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2033102,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2033112,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2033126,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2033246,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2033578,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2033698,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2035092,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2035253,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2035965,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2036821,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2036941,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2037327,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2039024,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2039057,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2040575,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2041033,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2041537,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2041912,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2041931,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2042033,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2042097,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2042135,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2042565,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2042683,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2042684,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2042692,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2042935,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2044032,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2044075,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2044791,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2044960,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2045688,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2045689,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2045736,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2045738,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2045740,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2046028,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2046138,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2046904,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2047336,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2048284,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2048285,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2049226,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2049351,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2049613,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2049681,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2049748,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2049782,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2049969,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2049978,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2050209,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2050223,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2050411,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2050866,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2050932,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2051023,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2051170,
+      "currency": "PLN",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2051409,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2052068,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2052304,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2052663,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2052727,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2052822,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2053240,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2053531,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2053570,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2053690,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2053912,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2054152,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2054437,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2054882,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2055196,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2055287,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2055456,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2055526,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2055528,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2055551,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2055583,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2055593,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2055760,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2056335,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2056587,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2056719,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2057049,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2057084,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2057594,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2057604,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2057825,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2058591,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2058985,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059050,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059072,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059114,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059368,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059556,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059599,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059765,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059782,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059786,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059824,
+      "currency": "",
+      "provider_present": false,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059848,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2059901,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2060141,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2060426,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2060872,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2061344,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2061827,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2062280,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2062494,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2063644,
+      "currency": "",
+      "provider_present": false,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2063818,
+      "currency": "AUD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2063824,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2063831,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2063882,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2064035,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2064471,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2064608,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2064854,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2065185,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2065270,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2065761,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2065810,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2065918,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2066030,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2066326,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2066521,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2066524,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2066529,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2066844,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2067274,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2067482,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2067921,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2067974,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2068377,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2068550,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2069034,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2069541,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2069597,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2069617,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2069758,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2069966,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2070484,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2070487,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2070967,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2071999,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2072014,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2072099,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2072177,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2072215,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2072231,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2072334,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2072699,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2073383,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2074224,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2074401,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2074407,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2074437,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2074606,
+      "currency": "",
+      "provider_present": false,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2074863,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2074880,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2074976,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2075016,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2075042,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2075092,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2075100,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2075340,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2075436,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2075752,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2075811,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2075886,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2076094,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2076276,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2076279,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2076281,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2076384,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2076949,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2077320,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2077472,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2077544,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2077736,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2077922,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2077949,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2078065,
+      "currency": "HKD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2078207,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2078566,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2078662,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2078672,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2078690,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2078826,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2078840,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2079092,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2079584,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2079591,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2079644,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2079732,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2079819,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2079918,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2080100,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2080140,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2080162,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2080191,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2080574,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2080986,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2081025,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2081300,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2081607,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2081797,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2081882,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2081978,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2082000,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2082134,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2082138,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2082370,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2082546,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2082582,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2082834,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2083009,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2083216,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2083253,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2083547,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2083558,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2083854,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2083973,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084032,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084078,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084245,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084301,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084307,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084416,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084655,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084775,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084818,
+      "currency": "",
+      "provider_present": false,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084823,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2084840,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085065,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085111,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085171,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085214,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085250,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085355,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085417,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085423,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085482,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085892,
+      "currency": "HKD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085932,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085950,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2085999,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086065,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086100,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086189,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086237,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086284,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086452,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086522,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086691,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086823,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2086933,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087175,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087184,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087212,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087213,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087214,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087216,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087331,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087484,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087714,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087736,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2087876,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088006,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088161,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088179,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088325,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088421,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088512,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088629,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088634,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088776,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088788,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088813,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2088932,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089306,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089415,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089437,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089493,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089517,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089528,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089553,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089609,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089814,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2089864,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2090094,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2090268,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2090399,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2090570,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2090695,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2090697,
+      "currency": "USC",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2090812,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2090838,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2090885,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091101,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091117,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091137,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091183,
+      "currency": "USC",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091369,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091390,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091391,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091412,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091413,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091542,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091967,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2091969,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092057,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092358,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092377,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092446,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092541,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092627,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092629,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092762,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092853,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2092969,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093090,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093423,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093425,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093464,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093535,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093710,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093738,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093830,
+      "currency": "AUD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093870,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093887,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2093983,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094372,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094402,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094513,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094523,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094601,
+      "currency": "JPY",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094604,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094607,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094661,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094735,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094777,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094781,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094792,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094835,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2094844,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2095044,
+      "currency": "USC",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2095239,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2095270,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2095316,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2095523,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2095543,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2095618,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2095649,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2095745,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096045,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096089,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096090,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096104,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096107,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096111,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096114,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096117,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096169,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096187,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096207,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096343,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096393,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096400,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096688,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096794,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096840,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2096867,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097052,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097189,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097229,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097313,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097330,
+      "currency": "USC",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097377,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097404,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097546,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097682,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097735,
+      "currency": "USC",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097770,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097783,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097799,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2097933,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098036,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098062,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098123,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098251,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098308,
+      "currency": "CHF",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098313,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098359,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098393,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098448,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098453,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098580,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098585,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098587,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098595,
+      "currency": "GBP",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098645,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098657,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098662,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098713,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098725,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098777,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098778,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098816,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098858,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098906,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2098929,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099103,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099159,
+      "currency": "AUD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099160,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099168,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099220,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099248,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099297,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099301,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099355,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099359,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099361,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099374,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099396,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099483,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099522,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099555,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099571,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099592,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099617,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099677,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099686,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099749,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099766,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099772,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099793,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099839,
+      "currency": "SGD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099848,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099865,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099904,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2099951,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2100001,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2100121,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2100126,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2100167,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2100300,
+      "currency": "EUR",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2100310,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2100318,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2100319,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    },
+    {
+      "id": 2100348,
+      "currency": "USD",
+      "provider_present": true,
+      "raw_cache_exists": true,
+      "meta_exists": true
+    }
+  ]
+}

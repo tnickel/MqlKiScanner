@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-10",
+  "repositories": [
+    {
+      "repo": "MqlDownloader",
+      "maven_package": "exit0",
+      "tests": {
+        "tests": 105,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "jars": [
+        {
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\MqlDownloader\\target\\MqlDownloader-0.0.34-SNAPSHOT-jar-with-dependencies.jar",
+          "sha256": "f2594c11eddecb483ac41e76b6106ce8d274953e17e8b50f9d13eeaac29084a0",
+          "bytes": 57781231
+        },
+        {
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\MqlDownloader\\target\\MqlDownloader-0.0.34-SNAPSHOT.jar",
+          "sha256": "ee73975bff9b3131d06a45593055dd3c62ede97a7905669aba320e821a8a9111",
+          "bytes": 264212
+        },
+        {
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\MqlDownloader\\target\\MqlDownloader-0.0.35-SNAPSHOT-jar-with-dependencies.jar",
+          "sha256": "e1c6b7daf5843e170715a1dd698f984b4f9d15d821c15f356e8ad7b7724375ee",
+          "bytes": 57795684
+        },
+        {
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\MqlDownloader\\target\\MqlDownloader-0.0.35-SNAPSHOT.jar",
+          "sha256": "1f486b516bc870edfa8eaf8576cb101360799139302212a1babb8e85ce5217ed",
+          "bytes": 278665
+        }
+      ]
+    },
+    {
+      "repo": "vantage",
+      "maven_package": "exit0",
+      "tests": {
+        "tests": 49,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0
+      },
+      "jars": [
+        {
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\vantage\\target\\vantagemonitor-1.2.0.jar",
+          "sha256": "b7ae8da228f404004d94c87673fa82031dd60577ee41c16d5bbe19e35b2ae043",
+          "bytes": 281995
+        }
+      ]
+    },
+    {
+      "repo": "zulumonitor",
+      "maven_package": "exit0",
+      "tests": {
+        "tests": 107,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0
+      },
+      "jars": [
+        {
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\zulumonitor\\target\\zulumonitor-1.2.0.jar",
+          "sha256": "03bc0b5fbbf689b54e24621b897d6b4ea690c50d29fc39e98e4066d7794f27b9",
+          "bytes": 348841
+        }
+      ]
+    },
+    {
+      "repo": "PelicanTrading",
+      "maven_package": "exit0",
+      "tests": {
+        "tests": 116,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "jars": [
+        {
+          "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\PelicanTrading\\target\\pelicanmonitor-1.5.0.jar",
+          "sha256": "55ff90a01f187b48ec258381b10d56c2e002028a532b3e1d9ef96c882405ba6f",
+          "bytes": 321555
+        }
+      ],
+      "stale_live_login_report_excluded": true
+    }
+  ],
+  "deployment": [
+    {
+      "path": "C:\\Forex\\MqlAnalyzer\\bin\\MqlDownloaderApp.jar",
+      "sha256": "e1c6b7daf5843e170715a1dd698f984b4f9d15d821c15f356e8ad7b7724375ee",
+      "bytes": 57795684
+    },
+    {
+      "path": "C:\\Forex\\MqlAnalyzer\\bin\\backups\\MqlDownloaderApp_before_archive_fx_goal_20261010.jar",
+      "sha256": "d8eea117630361a42226a845b2f6c675310a80440f640a2ac708e74bba28bbd2",
+      "bytes": 57780472
+    },
+    {
+      "path": "C:\\Forex\\MqlAnalyzer\\bin\\backups\\MqlDownloaderApp_before_fileutils_guard_goal_20261010.jar",
+      "bytes": 57794700,
+      "sha256": "762b3bcf7df1202315ae9a9aba966208e4f01894cc0d96a0eb1e20a52d8568f4"
+    }
+  ],
+  "deployed_equals_built": true,
+  "launchers": {
+    "vantage": "run.bat -> mvn javafx:run; compiled sources active on next normal run",
+    "zulumonitor": "run.bat -> mvn javafx:run; compiled sources active on next normal run",
+    "MqlDownloader": "start.bat -> mvn compile exec:java; local deployed C:/Forex/MqlAnalyzer/bin/MqlDownloaderApp.jar updated too",
+    "PelicanTrading": "run.bat -> mvn javafx:run; historical FX and strict archive CSV resolver active on next normal start. No production app started."
+  },
+  "production_app_started": false,
+  "network_deploy": false,
+  "last_mql_update": "FileUtils collision/data-loss guard; 105 tests green, standalone review mql_dateinummern_datenverlustfix_2026-10-10.json"
+}

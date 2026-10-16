@@ -5,6 +5,7 @@
    "contract_size = Einheiten je 1.00 Lot (MT5-Standardspec 'Contract Size').",
    "quote_currency = Gewinnwaehrung. Alles ausser USD bleibt ohne belegte historische Umrechnung im USD-Schock gesperrt (nur nativer Schockbetrag in der Quote-Waehrung).",
    "stress_move = Szenario-Bewegung in Preiseinheiten (bewusst konservativ gewaehlt, editierbar): Gold/EUR-Gold 50, Silber 3.0 (~10 %), BTC 5000 (~5 %), ETH 400 (~10 %), Oel 10 (~12 %), Indizes 500 Punkte (~3 %).",
+   "stress_move_pct = optionales Prozent-Szenario statt absoluter stress_move: je Snapshot Prozent des volumengewichteten Entry gerade offener Positionen desselben Symbols im jeweiligen Signal. Szenarioannahme, keine Brokerspec. Keine fremden Signalpreise, keine spaeteren Entries; ein expliziter absoluter Override gewinnt.",
    "cross_broker=true: Kontrakt ist brancheneinheitlich (z. B. 1 Lot BTC = 1 BTC ueberall) und gilt auch ohne Brokerangabe des Signals.",
    "cross_broker=false: Kontrakt ist brokerabhaengig und gilt nur fuer die gelisteten 'brokers' (Teilstring-Match, Gross-/Kleinschreibung egal). Der Grund: Oel ist der bekannte Fallstrick — Tickmill 1 Barrel je Lot, viele andere Broker 100 Barrel (Faktor 100!).",
    "aliases = weitere Broker-Namen fuer denselben Kontrakt (Matching nach Suffix-Bereinigung, 'USOUSD-ECN' -> 'USOUSD')."
@@ -66,6 +67,57 @@
    "source": "https://www.tickmill.com/instruments/xaueur",
    "retrieved": "2026-09-08",
    "note": "1 Lot = 100 Unzen Gold, in EUR quotiert. Wegen EUR-Quote bleibt der USD-Schock gesperrt (wie FX-Kreuze); der native Schockbetrag in EUR erscheint in den je-Symbol-Szenarien."
+  },
+  "XAUAUD_VANTAGE": {
+   "contract_size": 100.0,
+   "quote_currency": "AUD",
+   "class": "METAL",
+   "stress_move": 50.0,
+   "unit_label": "AUD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "XAUAUD",
+    "XAUAUD+"
+   ],
+   "source": "MT5 symbol_info am Vantage-Terminal 10.10.2026: XAUAUD+ 'Gold vs Australian Dollar', trade_contract_size=100, currency_profit=AUD; lesender Beleg doc/reviews/mt5_vantage_kontrakte_2026-10-10.json (scripts/reference/mt5_kontrakt_specs.py).",
+   "retrieved": "2026-10-10"
+  },
+  "XAUEUR_VANTAGE": {
+   "contract_size": 100.0,
+   "quote_currency": "EUR",
+   "class": "METAL",
+   "stress_move": 50.0,
+   "unit_label": "EUR Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "XAUEUR",
+    "XAUEUR+"
+   ],
+   "source": "MT5 symbol_info am Vantage-Terminal 10.10.2026: XAUEUR+ 'Gold / Euro', trade_contract_size=100, currency_profit=EUR; lesender Beleg doc/reviews/mt5_vantage_kontrakte_2026-10-10.json (scripts/reference/mt5_kontrakt_specs.py).",
+   "retrieved": "2026-10-10"
+  },
+  "XAUJPY_VANTAGE": {
+   "contract_size": 100.0,
+   "quote_currency": "JPY",
+   "class": "METAL",
+   "stress_move": 50.0,
+   "unit_label": "JPY Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "XAUJPY",
+    "XAUJPY+"
+   ],
+   "source": "MT5 symbol_info am Vantage-Terminal 10.10.2026: XAUJPY+ 'Gold vs Japanese Yen', trade_contract_size=100, currency_profit=JPY; lesender Beleg doc/reviews/mt5_vantage_kontrakte_2026-10-10.json (scripts/reference/mt5_kontrakt_specs.py).",
+   "retrieved": "2026-10-10"
   },
   "XTIUSD": {
    "contract_size": 1.0,
@@ -1139,6 +1191,159 @@
    "note": "Vantage-Index-CFD (FT-Namenskonvention). n=23/23 konsistent: 1000 USD je Indexpunkt. Kursdaten-Alias: VIX (Tickmill-Referenzterminal).",
    "class": "INDEX"
   },
+  "BTCETH_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "ETH",
+   "class": "CRYPTO",
+   "unit_label": "ETH Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "BTCETH"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_masterhong_kontrakte_2026-10-10.json (specs.BTCETH: trade_contract_size, currency_profit).",
+   "retrieved": "2026-10-10",
+   "note": "stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: je Snapshot 10% des volumengewichteten Entry der gerade offenen Positionen dieses Symbols im jeweiligen Signal. Keine Preisbasis eines anderen Signals. Native Gewinnwaehrung bleibt ETH. Historische ETH-USD-Umrechnung derzeit nicht belegt; kein USD-Faktor erfunden.",
+   "stress_move_pct": 10.0
+  },
+  "BTCJPY_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "JPY",
+   "class": "CRYPTO",
+   "unit_label": "JPY Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "BTCJPY"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_masterhong_kontrakte_2026-10-10.json (specs.BTCJPY: trade_contract_size, currency_profit).",
+   "retrieved": "2026-10-10",
+   "note": "stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: je Snapshot 10% des volumengewichteten Entry der gerade offenen Positionen dieses Symbols im jeweiligen Signal. Keine Preisbasis eines anderen Signals. Native Gewinnwaehrung bleibt JPY.",
+   "stress_move_pct": 10.0
+  },
+  "CRVUSD_VANTAGE": {
+   "contract_size": 1000.0,
+   "quote_currency": "USD",
+   "class": "CRYPTO",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "CRVUSD"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_masterhong_kontrakte_2026-10-10.json (specs.CRVUSD: trade_contract_size, currency_profit).",
+   "retrieved": "2026-10-10",
+   "note": "stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: je Snapshot 10% des volumengewichteten Entry der gerade offenen Positionen dieses Symbols im jeweiligen Signal. Keine Preisbasis eines anderen Signals. Native Gewinnwaehrung bleibt USD.",
+   "stress_move_pct": 10.0
+  },
+  "DOGUSD_VANTAGE": {
+   "contract_size": 10000.0,
+   "quote_currency": "USD",
+   "class": "CRYPTO",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "DOGUSD"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_masterhong_kontrakte_2026-10-10.json (specs.DOGUSD: trade_contract_size, currency_profit).",
+   "retrieved": "2026-10-10",
+   "note": "stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: je Snapshot 10% des volumengewichteten Entry der gerade offenen Positionen dieses Symbols im jeweiligen Signal. Keine Preisbasis eines anderen Signals. Native Gewinnwaehrung bleibt USD.",
+   "stress_move_pct": 10.0
+  },
+  "HBARUSD_VANTAGE": {
+   "contract_size": 10000.0,
+   "quote_currency": "USD",
+   "class": "CRYPTO",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "HBARUSD"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_masterhong_kontrakte_2026-10-10.json (specs.HBARUSD: trade_contract_size, currency_profit).",
+   "retrieved": "2026-10-10",
+   "note": "stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: je Snapshot 10% des volumengewichteten Entry der gerade offenen Positionen dieses Symbols im jeweiligen Signal. Keine Preisbasis eines anderen Signals. Native Gewinnwaehrung bleibt USD.",
+   "stress_move_pct": 10.0
+  },
+  "HK50_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "HKD",
+   "class": "INDEX",
+   "stress_move": 2000.0,
+   "unit_label": "HKD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "HK50"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_masterhong_kontrakte_2026-10-10.json (specs.HK50: trade_contract_size, currency_profit).",
+   "retrieved": "2026-10-10",
+   "note": "Cash-Index, 1 HKD je Punkt/Lot; kein USD- oder FT-Punktwert uebernommen. stress_move=2000 Punkte als Index-Szenario."
+  },
+  "TRUMPUSD_VANTAGE": {
+   "contract_size": 100.0,
+   "quote_currency": "USD",
+   "class": "CRYPTO",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "TRUMPUSD"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_masterhong_kontrakte_2026-10-10.json (specs.TRUMPUSD: trade_contract_size, currency_profit).",
+   "retrieved": "2026-10-10",
+   "note": "stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: je Snapshot 10% des volumengewichteten Entry der gerade offenen Positionen dieses Symbols im jeweiligen Signal. Keine Preisbasis eines anderen Signals. Native Gewinnwaehrung bleibt USD.",
+   "stress_move_pct": 10.0
+  },
+  "UNIUSD_VANTAGE": {
+   "contract_size": 100.0,
+   "quote_currency": "USD",
+   "class": "CRYPTO",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "UNIUSD"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_masterhong_kontrakte_2026-10-10.json (specs.UNIUSD: trade_contract_size, currency_profit).",
+   "retrieved": "2026-10-10",
+   "note": "stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: je Snapshot 10% des volumengewichteten Entry der gerade offenen Positionen dieses Symbols im jeweiligen Signal. Keine Preisbasis eines anderen Signals. Native Gewinnwaehrung bleibt USD.",
+   "stress_move_pct": 10.0
+  },
+  "XAUUSD247_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "METAL",
+   "stress_move": 50.0,
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "XAUUSD247"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_masterhong_kontrakte_2026-10-10.json (specs.XAUUSD247: trade_contract_size, currency_profit).",
+   "retrieved": "2026-10-10",
+   "note": "Eigenstaendiger 24/7-Kontrakt: 1 Einheit/Lot, KEIN Alias auf XAUUSD (100). stress_move=50 USD als Gold-Szenario."
+  },
   "NQZ23": {
    "contract_size": 20.0,
    "quote_currency": "USD",
@@ -1148,6 +1353,193 @@
    "source": "Trade-Rueckrechnung RoboForex-Signal Sonrch #73009362 (mql4-Trades, n=1): USD-PnL / ((Exit-Entry)*Richtung*Lots) = 20,00 — deckt sich exakt mit dem CME-Standard des E-mini NASDAQ-100-Futures (NQ, 20 USD je Indexpunkt).",
    "retrieved": "2026-10-09",
    "note": "NQZ23 = NASDAQ-100-Future Dezember-2023-Laufzeit. Kursdaten: bewusst OHNE Alias auf USTEC gelassen — Future- vs Cash-Niveau weicht (Basis/Carry), Preisproben wuerden scheitern; die Equity-Reko ueberspringt das Symbol ehrlich, die Exposure-Rechnung nutzt die Kontraktgroesse."
+  },
+  "UK100_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "GBP",
+   "class": "INDEX",
+   "unit_label": "GBP Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "UK100"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.UK100: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move": 500.0,
+   "note": "Exaktes Cash-Instrument (UK 100 Cash). Keine FT-/Future-Aliaszuordnung. stress_move=500 Punkte ist das editierbare Klassen-Szenario, keine Brokerspezifikation. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+  },
+  "US2000_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "INDEX",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "US2000"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.US2000: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move": 500.0,
+   "note": "Exaktes Cash-Instrument (US SMALL CAP 2000 - CASH). Keine FT-/Future-Aliaszuordnung. stress_move=500 Punkte ist das editierbare Klassen-Szenario, keine Brokerspezifikation. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+  },
+  "EU50_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "EUR",
+   "class": "INDEX",
+   "unit_label": "EUR Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "EU50"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.EU50: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move": 500.0,
+   "note": "Exaktes Cash-Instrument (EUSTX50 Cash). Keine FT-/Future-Aliaszuordnung. stress_move=500 Punkte ist das editierbare Klassen-Szenario, keine Brokerspezifikation."
+  },
+  "LTCUSD_VANTAGE": {
+   "contract_size": 100.0,
+   "quote_currency": "USD",
+   "class": "CRYPTO",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "LTCUSD"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.LTCUSD: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move_pct": 10.0,
+   "note": "Exaktes Instrument (Litecoin). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise."
+  },
+  "BNBUSD_VANTAGE": {
+   "contract_size": 10.0,
+   "quote_currency": "USD",
+   "class": "CRYPTO",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "BNBUSD"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.BNBUSD: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move_pct": 10.0,
+   "note": "Exaktes Instrument (Binance Coin). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+  },
+  "LYFT_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "EQUITY_CFD",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "LYFT"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.LYFT: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move_pct": 10.0,
+   "note": "Exaktes Instrument (Lyft Inc). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+  },
+  "NFLX_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "EQUITY_CFD",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "NFLX"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.NFLX: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move_pct": 10.0,
+   "note": "Exaktes Instrument (NETFLIX INC). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+  },
+  "PINS_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "EQUITY_CFD",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "PINS"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.PINS: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move_pct": 10.0,
+   "note": "Exaktes Instrument (Pinterest Inc - Class A). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+  },
+  "SPCE_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "EQUITY_CFD",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "SPCE"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.SPCE: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move_pct": 10.0,
+   "note": "Exaktes Instrument (VIRGIN GALACTIC HOLDINGS INC). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+  },
+  "TTD_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "EQUITY_CFD",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "TTD"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.TTD: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move_pct": 10.0,
+   "note": "Exaktes Instrument (The Trade Desk Inc - Class A). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise. Unabhaengiger PnL-Plausibilitaetsabgleich: doc/reviews/vantage_specfamilien_offline_2026-10-10.json; Original-Symbolinfo entscheidet Groesse und Quote."
+  },
+  "ORCL_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "USD",
+   "class": "EQUITY_CFD",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "ORCL"
+   ],
+   "source": "Portables Vantage-MT5 symbol_info am 10.10.2026: doc/reviews/vantage_restspecs_live_2026-10-10.json (Vantage.ORCL: contract_size, gewinnwaehrung).",
+   "retrieved": "2026-10-10",
+   "stress_move_pct": 10.0,
+   "note": "Exaktes Instrument (ORACLE CORP). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise."
   }
  }
 }

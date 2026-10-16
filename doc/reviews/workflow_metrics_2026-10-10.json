@@ -1,0 +1,1468 @@
+{
+  "workflow_signals": 194,
+  "missing": {
+    "before": {
+      "Geom. %/M": 30,
+      "RetDD/Monat": 76,
+      "Wochen": 8,
+      "PF": 25,
+      "Win %": 24,
+      "Trades": 20,
+      "Abonnenten": 5
+    },
+    "after": {
+      "Geom. %/M": 30,
+      "RetDD/Monat": 76,
+      "Wochen": 8,
+      "PF": 25,
+      "Win %": 24,
+      "Trades": 20,
+      "Abonnenten": 5
+    }
+  },
+  "changes": [
+    {
+      "id": 1121175,
+      "name": "WanChaiTrendFX",
+      "quelle": "vant",
+      "column": "Abonnenten",
+      "before": 1.0,
+      "after": 2.0
+    },
+    {
+      "id": 1121200,
+      "name": "HarbourFXPrime",
+      "quelle": "vant",
+      "column": "Abonnenten",
+      "before": 43.0,
+      "after": 50.0
+    },
+    {
+      "id": 1010186,
+      "name": "Lenore",
+      "quelle": "vant",
+      "column": "Abonnenten",
+      "before": 82.0,
+      "after": 83.0
+    }
+  ],
+  "blanks": [
+    {
+      "id": 504191,
+      "name": "Master Hong",
+      "quelle": "vant",
+      "column": "Geom. %/M",
+      "reason": "Endkapital nicht positiv"
+    },
+    {
+      "id": 504191,
+      "name": "Master Hong",
+      "quelle": "vant",
+      "column": "RetDD/Monat",
+      "reason": "Abdeckung < 95% (gerundet 66.4%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 6 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 2332746,
+      "name": "Lunar Express Mission 11M",
+      "quelle": "mql5",
+      "column": "Wochen",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 2086522,
+      "name": "Range Rocket Long",
+      "quelle": "pelik",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2082582,
+      "name": "Happy Trading",
+      "quelle": "pelik",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 538344,
+      "name": "Rebounds",
+      "quelle": "vant",
+      "column": "RetDD/Monat",
+      "reason": "Zeitabbildung nicht monoton/eindeutig: CSV 2026-07-26T23:09:49 (+2 h) -> 2026-07-27T01:09:49; danach CSV 2026-07-27T00:00:00 (+1 h) -> 2026-07-27T01:00:00; Reihenfolge um 589 Sekunden umgekehrt"
+    },
+    {
+      "id": 178177,
+      "name": "Rohan Gupta 40000121",
+      "quelle": "vant",
+      "column": "Geom. %/M",
+      "reason": "Endkapital nicht positiv"
+    },
+    {
+      "id": 178177,
+      "name": "Rohan Gupta 40000121",
+      "quelle": "vant",
+      "column": "RetDD/Monat",
+      "reason": "Abdeckung < 95% (gerundet 64.1%) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 43 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 47136529,
+      "name": "BUILDINGWEALTHINVESTMENTS",
+      "quelle": "robo",
+      "column": "RetDD/Monat",
+      "reason": "Zeitabbildung nicht monoton/eindeutig"
+    },
+    {
+      "id": 35098069,
+      "name": "MARCELMOURA",
+      "quelle": "robo",
+      "column": "RetDD/Monat",
+      "reason": "Zeitabbildung nicht monoton/eindeutig"
+    },
+    {
+      "id": 75033737,
+      "name": "MTD",
+      "quelle": "robo",
+      "column": "RetDD/Monat",
+      "reason": "Zeitabbildung nicht monoton/eindeutig"
+    },
+    {
+      "id": 75055830,
+      "name": "xOnLock",
+      "quelle": "robo",
+      "column": "RetDD/Monat",
+      "reason": "Zeitabbildung nicht monoton/eindeutig"
+    },
+    {
+      "id": 25002389,
+      "name": "ToTheMoonRobot",
+      "quelle": "robo",
+      "column": "RetDD/Monat",
+      "reason": "Zeitabbildung nicht monoton/eindeutig"
+    },
+    {
+      "id": 424362,
+      "name": "SONYFOREX36999",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Zeitabbildung nicht monoton/eindeutig"
+    },
+    {
+      "id": 417345,
+      "name": "Scalping breakout",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 417345,
+      "name": "Scalping breakout",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 417345,
+      "name": "Scalping breakout",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 417345,
+      "name": "Scalping breakout",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 417345,
+      "name": "Scalping breakout",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 430016,
+      "name": "TpTrading",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\3ce33d3cb9d3f2893da6d95b61be5c8e19c1214d36d5a4b5cf9652aec1256653.csv: Zeile 1677: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 430016,
+      "name": "TpTrading",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\3ce33d3cb9d3f2893da6d95b61be5c8e19c1214d36d5a4b5cf9652aec1256653.csv: Zeile 1677: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 430016,
+      "name": "TpTrading",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\3ce33d3cb9d3f2893da6d95b61be5c8e19c1214d36d5a4b5cf9652aec1256653.csv: Zeile 1677: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 430016,
+      "name": "TpTrading",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\3ce33d3cb9d3f2893da6d95b61be5c8e19c1214d36d5a4b5cf9652aec1256653.csv: Zeile 1677: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 426652,
+      "name": "SecureFX Trader Black Mt HR",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 426652,
+      "name": "SecureFX Trader Black Mt HR",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 426652,
+      "name": "SecureFX Trader Black Mt HR",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 426652,
+      "name": "SecureFX Trader Black Mt HR",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 426652,
+      "name": "SecureFX Trader Black Mt HR",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 407191,
+      "name": "AUDCAD NZDCAD 100PA",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 407191,
+      "name": "AUDCAD NZDCAD 100PA",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 407191,
+      "name": "AUDCAD NZDCAD 100PA",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 407191,
+      "name": "AUDCAD NZDCAD 100PA",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 407191,
+      "name": "AUDCAD NZDCAD 100PA",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 417743,
+      "name": "TOL LANGIT V10",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 417743,
+      "name": "TOL LANGIT V10",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 417743,
+      "name": "TOL LANGIT V10",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 417743,
+      "name": "TOL LANGIT V10",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 417743,
+      "name": "TOL LANGIT V10",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 426987,
+      "name": "Money Pile",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\9061b3f4c9b1e757fa21d484a85c27d12826147296b0936c0e0b3f20fd752d08.csv: Zeile 1440: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 426987,
+      "name": "Money Pile",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\9061b3f4c9b1e757fa21d484a85c27d12826147296b0936c0e0b3f20fd752d08.csv: Zeile 1440: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 426987,
+      "name": "Money Pile",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\9061b3f4c9b1e757fa21d484a85c27d12826147296b0936c0e0b3f20fd752d08.csv: Zeile 1440: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 426987,
+      "name": "Money Pile",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\9061b3f4c9b1e757fa21d484a85c27d12826147296b0936c0e0b3f20fd752d08.csv: Zeile 1440: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 412811,
+      "name": "AMOSTIL123",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 412811,
+      "name": "AMOSTIL123",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 412811,
+      "name": "AMOSTIL123",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 412811,
+      "name": "AMOSTIL123",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 412811,
+      "name": "AMOSTIL123",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 410467,
+      "name": "SKICMARKETS669",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 410467,
+      "name": "SKICMARKETS669",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 410467,
+      "name": "SKICMARKETS669",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 410467,
+      "name": "SKICMARKETS669",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 410467,
+      "name": "SKICMARKETS669",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 418271,
+      "name": "InvestLong",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 418271,
+      "name": "InvestLong",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 418271,
+      "name": "InvestLong",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 418271,
+      "name": "InvestLong",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 418271,
+      "name": "InvestLong",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 430525,
+      "name": "Carmine Quaranta real1",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 430525,
+      "name": "Carmine Quaranta real1",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 430525,
+      "name": "Carmine Quaranta real1",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 430525,
+      "name": "Carmine Quaranta real1",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 430525,
+      "name": "Carmine Quaranta real1",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424932,
+      "name": "SecureFX Trader Cradle",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424932,
+      "name": "SecureFX Trader Cradle",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424932,
+      "name": "SecureFX Trader Cradle",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424932,
+      "name": "SecureFX Trader Cradle",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424932,
+      "name": "SecureFX Trader Cradle",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 402995,
+      "name": "SKMT4IC2017",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 402995,
+      "name": "SKMT4IC2017",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 402995,
+      "name": "SKMT4IC2017",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 402995,
+      "name": "SKMT4IC2017",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 402995,
+      "name": "SKMT4IC2017",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2005451,
+      "name": "Mtrader Holy",
+      "quelle": "pelik",
+      "column": "RetDD/Monat",
+      "reason": "Kursdaten fehlen für 2225 von 2230 Trades (Kurse: MET.US, U.US · Kontrakt unbelegt: USOIL, COIN.US, TSLA.US)"
+    },
+    {
+      "id": 2084078,
+      "name": "COPIFY FX",
+      "quelle": "pelik",
+      "column": "RetDD/Monat",
+      "reason": "Kursdaten fehlen für 1 von 885 Trades · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 21 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet · Kurse fehlen: GBPAUD"
+    },
+    {
+      "id": 2000892,
+      "name": "Mtrader2",
+      "quelle": "pelik",
+      "column": "RetDD/Monat",
+      "reason": "Kursdaten fehlen für 1918 von 1927 Trades (Kurse: AAL.US, MET.US · Kontrakt unbelegt: USOIL, COIN.US, TSLA.US)"
+    },
+    {
+      "id": 2041912,
+      "name": "Sydney Sunrise",
+      "quelle": "pelik",
+      "column": "RetDD/Monat",
+      "reason": "Zeitabbildung nicht monoton/eindeutig"
+    },
+    {
+      "id": 2360068,
+      "name": "Harmonizer Extreme",
+      "quelle": "mql5",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2360068,
+      "name": "Harmonizer Extreme",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2360068,
+      "name": "Harmonizer Extreme",
+      "quelle": "mql5",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2360068,
+      "name": "Harmonizer Extreme",
+      "quelle": "mql5",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2360068,
+      "name": "Harmonizer Extreme",
+      "quelle": "mql5",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2379236,
+      "name": "EURUSD Night Scalper AI",
+      "quelle": "mql5",
+      "column": "PF",
+      "reason": "Kein negativer Trade-Profit: Nenner null, mathematisch undefiniert"
+    },
+    {
+      "id": 2327790,
+      "name": "ATong",
+      "quelle": "mql5",
+      "column": "Geom. %/M",
+      "reason": "Keine positive Messdauer oder Renditeindex nicht berechenbar"
+    },
+    {
+      "id": 2327790,
+      "name": "ATong",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2342895,
+      "name": "KiraCat",
+      "quelle": "mql5",
+      "column": "Wochen",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 2375480,
+      "name": "Gold Spike MT5",
+      "quelle": "mql5",
+      "column": "Wochen",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 2375343,
+      "name": "Multi EA Trading",
+      "quelle": "mql5",
+      "column": "Wochen",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 21411352,
+      "name": "FinancialFreedomFX",
+      "quelle": "robo",
+      "column": "Geom. %/M",
+      "reason": "Endkapital nicht positiv"
+    },
+    {
+      "id": 21411352,
+      "name": "FinancialFreedomFX",
+      "quelle": "robo",
+      "column": "RetDD/Monat",
+      "reason": "Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht betrachtet: ESU25 — DD kann unterschätzt sein."
+    },
+    {
+      "id": 776728,
+      "name": "FOMOx99",
+      "quelle": "vant",
+      "column": "Geom. %/M",
+      "reason": "Endkapital nicht positiv"
+    },
+    {
+      "id": 776728,
+      "name": "FOMOx99",
+      "quelle": "vant",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 425666,
+      "name": "Zix Power",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\bb66b199fe4414a1818c5564c95de6b5c9702a418e1851235198a87d39e659c7.csv: Zeile 1309: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 425666,
+      "name": "Zix Power",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\bb66b199fe4414a1818c5564c95de6b5c9702a418e1851235198a87d39e659c7.csv: Zeile 1309: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 425666,
+      "name": "Zix Power",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\bb66b199fe4414a1818c5564c95de6b5c9702a418e1851235198a87d39e659c7.csv: Zeile 1309: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 425666,
+      "name": "Zix Power",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\bb66b199fe4414a1818c5564c95de6b5c9702a418e1851235198a87d39e659c7.csv: Zeile 1309: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 427110,
+      "name": "ActInvest",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 427110,
+      "name": "ActInvest",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 427110,
+      "name": "ActInvest",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 427110,
+      "name": "ActInvest",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 427110,
+      "name": "ActInvest",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424309,
+      "name": "Mula Maker",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424309,
+      "name": "Mula Maker",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424309,
+      "name": "Mula Maker",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424309,
+      "name": "Mula Maker",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 424309,
+      "name": "Mula Maker",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 304366,
+      "name": "Signal Guide",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\b3de59560fe922a3432a30274d76a5654f3e96c2d0d47bc22511fc4f71e16cdb.csv: Zeile 321: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 304366,
+      "name": "Signal Guide",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\b3de59560fe922a3432a30274d76a5654f3e96c2d0d47bc22511fc4f71e16cdb.csv: Zeile 321: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 304366,
+      "name": "Signal Guide",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\b3de59560fe922a3432a30274d76a5654f3e96c2d0d47bc22511fc4f71e16cdb.csv: Zeile 321: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 304366,
+      "name": "Signal Guide",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei nicht lesbar (ValueError: D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\trade_snapshots\\b3de59560fe922a3432a30274d76a5654f3e96c2d0d47bc22511fc4f71e16cdb.csv: Zeile 321: ungueltiges Volumen oder Handelszeitraum)"
+    },
+    {
+      "id": 429446,
+      "name": "The Smart Bull Trader",
+      "quelle": "zulu",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 429446,
+      "name": "The Smart Bull Trader",
+      "quelle": "zulu",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 429446,
+      "name": "The Smart Bull Trader",
+      "quelle": "zulu",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 429446,
+      "name": "The Smart Bull Trader",
+      "quelle": "zulu",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 429446,
+      "name": "The Smart Bull Trader",
+      "quelle": "zulu",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2059824,
+      "name": "GOLD PRECISION SCALPER",
+      "quelle": "pelik",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2074606,
+      "name": "🟡👑 Aurum Elite",
+      "quelle": "pelik",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2084818,
+      "name": "AccurateCopier",
+      "quelle": "pelik",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2365401,
+      "name": "HedGinG GUCJ B",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2357156,
+      "name": "Farmed Hedge Yield VCopy",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Abdeckung 74% < 95%"
+    },
+    {
+      "id": 2308095,
+      "name": "UpFuji MT5",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2340704,
+      "name": "XAUUSD AND XAUEUR",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2354305,
+      "name": "Testing Plus",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Abdeckung 83% < 95% · Open-/Close-Preis passt nicht zur lokalen Referenzbar (weit außerhalb — Zeitachse nicht belastbar) · Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 28 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 2367606,
+      "name": "EUR Trader",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Abdeckung 75% < 95%"
+    },
+    {
+      "id": 2385675,
+      "name": "Meridian Extreme Risk Mode",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2367701,
+      "name": "LUBOTFX",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Abdeckung 72% < 95%"
+    },
+    {
+      "id": 2356872,
+      "name": "Smart Boss",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2359404,
+      "name": "Lucky Cat MT5",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2347343,
+      "name": "SERONGGA",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2371777,
+      "name": "AlgoForge",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Kursdaten fehlen für 5 von 549 Trades · Kurse fehlen: SPX500"
+    },
+    {
+      "id": 2356441,
+      "name": "FXtrading",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2304847,
+      "name": "MSC SuperGold Pro",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Abdeckung < 95% (gerundet 95.0%)"
+    },
+    {
+      "id": 2306053,
+      "name": "Kenni Trades Gold Breakout",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Kursdaten fehlen für 42 von 851 Trades · Kurse fehlen: NASUSD"
+    },
+    {
+      "id": 2231030,
+      "name": "MSC Gold Stable Pro",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2262642,
+      "name": "NoPain MT5",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2379208,
+      "name": "World PEACE Multi FX Algo",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt"
+    },
+    {
+      "id": 1496203,
+      "name": "SEA South East EA",
+      "quelle": "mql5",
+      "column": "Geom. %/M",
+      "reason": "Keine positive Kapitalbasis"
+    },
+    {
+      "id": 1496203,
+      "name": "SEA South East EA",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2280569,
+      "name": "MagicGW audcad L",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 11 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 2383310,
+      "name": "Low Risk Gold",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2364821,
+      "name": "Gold Whisperer Low Risk",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2364704,
+      "name": "MetaTrading2",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2364704,
+      "name": "MetaTrading2",
+      "quelle": "mql5",
+      "column": "Wochen",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 2364704,
+      "name": "MetaTrading2",
+      "quelle": "mql5",
+      "column": "Abonnenten",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 2362566,
+      "name": "Titan Gravity Strategy",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2362566,
+      "name": "Titan Gravity Strategy",
+      "quelle": "mql5",
+      "column": "Wochen",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 2362566,
+      "name": "Titan Gravity Strategy",
+      "quelle": "mql5",
+      "column": "Abonnenten",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 2023752,
+      "name": "NoStress MT5",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2023752,
+      "name": "NoStress MT5",
+      "quelle": "mql5",
+      "column": "Wochen",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 2023752,
+      "name": "NoStress MT5",
+      "quelle": "mql5",
+      "column": "Abonnenten",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 884935,
+      "name": "Relax EA",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 884935,
+      "name": "Relax EA",
+      "quelle": "mql5",
+      "column": "Wochen",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 884935,
+      "name": "Relax EA",
+      "quelle": "mql5",
+      "column": "Abonnenten",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    },
+    {
+      "id": 2320903,
+      "name": "GOLD BR",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2281256,
+      "name": "Turtle One",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Max-Drawdown nur aus Symbolen MIT Kursen berechnet; nicht betrachtet: GBPCAD — DD kann unterschätzt sein."
+    },
+    {
+      "id": 2271995,
+      "name": "Range Breakout EA Live",
+      "quelle": "mql5",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2271995,
+      "name": "Range Breakout EA Live",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2271995,
+      "name": "Range Breakout EA Live",
+      "quelle": "mql5",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2271995,
+      "name": "Range Breakout EA Live",
+      "quelle": "mql5",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2271995,
+      "name": "Range Breakout EA Live",
+      "quelle": "mql5",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2084890,
+      "name": "Goldtrade Pro ICM",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Keine positive passende Equity-DD-/Renditemessung"
+    },
+    {
+      "id": 2376393,
+      "name": "GUNS FX V2",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Abdeckung < 95% (gerundet 85.7%)"
+    },
+    {
+      "id": 2381247,
+      "name": "AgiFX 6",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Offene Position ueber nicht eindeutig belegter Zeitwechselgrenze · Lokale Zeitbasis nicht fuer alle Trade-Ereignisse belegt · 10 einzelne Preisereignisse knapp ausserhalb der Referenzbar (Spread/Ausreisser) — diese Stunden bleiben Lücken; die Abdeckungsregel entscheidet"
+    },
+    {
+      "id": 2386274,
+      "name": "Basket",
+      "quelle": "mql5",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2386274,
+      "name": "Basket",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2386274,
+      "name": "Basket",
+      "quelle": "mql5",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2386274,
+      "name": "Basket",
+      "quelle": "mql5",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2386274,
+      "name": "Basket",
+      "quelle": "mql5",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 840474,
+      "name": "MySingalStart 2",
+      "quelle": "mql5",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 840474,
+      "name": "MySingalStart 2",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 840474,
+      "name": "MySingalStart 2",
+      "quelle": "mql5",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 840474,
+      "name": "MySingalStart 2",
+      "quelle": "mql5",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 840474,
+      "name": "MySingalStart 2",
+      "quelle": "mql5",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1760039,
+      "name": "MySingalStart 3",
+      "quelle": "mql5",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1760039,
+      "name": "MySingalStart 3",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1760039,
+      "name": "MySingalStart 3",
+      "quelle": "mql5",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1760039,
+      "name": "MySingalStart 3",
+      "quelle": "mql5",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1760039,
+      "name": "MySingalStart 3",
+      "quelle": "mql5",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2268766,
+      "name": "Soma PureGold Indexes and Oil",
+      "quelle": "mql5",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2268766,
+      "name": "Soma PureGold Indexes and Oil",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2268766,
+      "name": "Soma PureGold Indexes and Oil",
+      "quelle": "mql5",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2268766,
+      "name": "Soma PureGold Indexes and Oil",
+      "quelle": "mql5",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 2268766,
+      "name": "Soma PureGold Indexes and Oil",
+      "quelle": "mql5",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1,
+      "name": "Test",
+      "quelle": "mql5",
+      "column": "Geom. %/M",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1,
+      "name": "Test",
+      "quelle": "mql5",
+      "column": "RetDD/Monat",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1,
+      "name": "Test",
+      "quelle": "mql5",
+      "column": "PF",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1,
+      "name": "Test",
+      "quelle": "mql5",
+      "column": "Win %",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1,
+      "name": "Test",
+      "quelle": "mql5",
+      "column": "Trades",
+      "reason": "Trade-Datei fehlt"
+    },
+    {
+      "id": 1,
+      "name": "Test",
+      "quelle": "mql5",
+      "column": "Abonnenten",
+      "reason": "Keine Angabe in passender Workflow-/Quellenidentitaet"
+    }
+  ],
+  "basis_changes": [],
+  "measurement": "read-only production DB; pure CSV statistics",
+  "nachmessung_twr_saldo": {
+    "measurement": "Nur zwei gezielte RO-CSV-Berechnungen; kein erneuter Vollbestandsscan/keine DB-Schreiboperation",
+    "targets": [
+      {
+        "id": 1496203,
+        "name": "SEA South East EA",
+        "after": {
+          "kapitalbasis_usd": null,
+          "kapitalbasis_quelle": "csv_einzahlungen",
+          "ertrag_monat_geom_pct": null,
+          "cagr_jahr_pct": null,
+          "kapitalfluesse_nach_start": null
+        },
+        "reason": "CSV-Kapital vor erstem Trade: 500 Einzahlung minus1000 Auszahlung=-500; historische Initialangabe ebenfalls negativ. Unbekannt bleibt korrekt."
+      },
+      {
+        "id": 2327790,
+        "name": "ATong",
+        "after": {
+          "kapitalbasis_usd": 2000.1,
+          "kapitalbasis_quelle": "csv_einzahlungen",
+          "ertrag_monat_geom_pct": 7.644814513401037,
+          "cagr_jahr_pct": 142.05684311572853,
+          "kapitalfluesse_nach_start": 81
+        },
+        "reason": "Floatrest nach Vollauszahlung, durch ULP-begrenzte Saldenrechnung korrigiert"
+      }
+    ],
+    "newly_filled_numeric_cells": 1,
+    "workflow_geom_missing_after_targeted_fix": 29,
+    "float_counterexample": {
+      "time": "2022-09-06 16:23:08",
+      "flow": -1500.05,
+      "before": 1500.049999999973,
+      "after": -2.7057467377744615e-11
+    }
+  },
+  "nachmessung_finanzteilstatistik": {
+    "measurement": "Drei vorhandene Workflow-CSVs lesend, keine DB-Schreiboperationen, Zeitwerte unveraendert",
+    "targets": [
+      {
+        "id": 425666,
+        "name": "Zix Power",
+        "result": {
+          "fehler": "5 Trades schließen vor dem Open; nur zeitunabhängige Finanzstatistik, keine Rendite-/Drawdown-/Haltedauermessung",
+          "teilstatistik_finanzdaten": true,
+          "negative_zeitintervalle": 5,
+          "kapitalbasis_ok": false,
+          "trades": 4000,
+          "wins": 2589,
+          "losses": 1403,
+          "winrate_pct": 64.7,
+          "profit_faktor": 1.04,
+          "netto_gesamt_usd": 1053.6799999999994,
+          "duplikate_entfernt": 0,
+          "identische_tradezeilen": 0
+        }
+      },
+      {
+        "id": 426987,
+        "name": "Money Pile",
+        "result": {
+          "fehler": "6 Trades schließen vor dem Open; nur zeitunabhängige Finanzstatistik, keine Rendite-/Drawdown-/Haltedauermessung",
+          "teilstatistik_finanzdaten": true,
+          "negative_zeitintervalle": 6,
+          "kapitalbasis_ok": false,
+          "trades": 6431,
+          "wins": 4954,
+          "losses": 1462,
+          "winrate_pct": 77.0,
+          "profit_faktor": 1.77,
+          "netto_gesamt_usd": 10592.07,
+          "duplikate_entfernt": 0,
+          "identische_tradezeilen": 0
+        }
+      },
+      {
+        "id": 430016,
+        "name": "TpTrading",
+        "result": {
+          "fehler": "1 Trade schließt vor dem Open; nur zeitunabhängige Finanzstatistik, keine Rendite-/Drawdown-/Haltedauermessung",
+          "teilstatistik_finanzdaten": true,
+          "negative_zeitintervalle": 1,
+          "kapitalbasis_ok": false,
+          "trades": 4091,
+          "wins": 2716,
+          "losses": 1372,
+          "winrate_pct": 66.4,
+          "profit_faktor": 1.38,
+          "netto_gesamt_usd": 22553.75,
+          "duplikate_entfernt": 0,
+          "identische_tradezeilen": 3
+        }
+      }
+    ],
+    "newly_filled_cells": 6,
+    "corrected_numeric_cells": 3,
+    "note": "PF und Win je3gefuellt; Trades zuvor0wegenParserfehler jetztvollstaendig. Geom/DD/RetDD bleiben gesperrt."
+  }
+}

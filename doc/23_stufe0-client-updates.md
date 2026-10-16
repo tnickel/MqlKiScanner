@@ -2,6 +2,16 @@
 
 Stand: 07.10.2026 · Status: **UMGESETZT** (gleicher Abend; Changelog §11)
 
+**Aktueller Geltungsbereich (16.10.2026):** Stufe 0 ist im GUI-Workflow und
+im autonomen Scan-Launcher implementiert. Sie läuft für die aktiven
+REST-Datenquellen bei Quellen-/Mischmodus und aktiviertem `stufe0_aktiv`
+(Standard an); im reinen MQL5-Direktmodus und bei manuellen Starts späterer
+Stationen entfällt sie. Die folgenden Problem-/Zielabschnitte beschreiben
+den Ausgangszustand und den ursprünglichen Plan; Umsetzung und Abweichungen
+stehen ab §11. MqlRealmonitor gehört nicht zu den fünf aktualisierten
+Datenquellen und ist noch nicht produktiv eingebunden; seine Integration
+bleibt vorerst zurückgestellt.
+
 ## 1. Problem und Ziel
 
 Der SignalKiScanner startet seinen Workflow (Full-Scan/Teilscan) mit dem
