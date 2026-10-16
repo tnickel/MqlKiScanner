@@ -160,7 +160,7 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
 
     for k in reihenfolge:
         gruppe = sorted(gruppen[k],
-                        key=lambda c: -(float(c.get("abonnenten") or 0)))
+                        key=lambda c: (-(float(c.get("abonnenten") or 0)), int(c["id"])))
         genommen_ids = {c.get("id") for c in gruppe[:limit]}
         if begruendung is not None:
             for rang, c in enumerate(gruppe, 1):

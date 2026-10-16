@@ -104,12 +104,12 @@ def test_llm_only_freshness_requires_at_least_one_saved_report(live_reports, mon
     assert at.session_state['scan_results'][0].trade_analyse == 'Fresh report'
 
 
-@pytest.mark.parametrize('freshness,expected', [(None, 'NEU'), ([], '')])
-def test_legacy_unknown_freshness_differs_from_explicit_empty(freshness, expected):
+@pytest.mark.parametrize('freshness,persisted,expected', [(None, False, ''), (None, True, 'NEU'), ([], True, '')])
+def test_legacy_unknown_freshness_needs_persistence_evidence(freshness, persisted, expected):
     db.init_db()
     db.upsert_signal(123, name='Example')
     at = start_page()
-    at.session_state['scan_results'] = [pipeline.ScanResult(id=123)]
+    at.session_state['scan_results'] = [pipeline.ScanResult(id=123, persisted_this_run=persisted)]
     at.session_state['refreshed_signal_ids'] = freshness
     at.switch_page('app_pages/ergebnisse.py').run()
     assert not at.exception

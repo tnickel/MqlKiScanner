@@ -117,6 +117,13 @@ Genutzt werden die bestehenden Endpunkte des MqlDownloader (Doku:
 | Abonnenten-Verlauf | `GET /providers/{id}/{version}/history` |
 | Testreport-PDFs | `GET /providers/{id}/{version}/reports` |
 
+**Aktueller Währungsvertrag (16.10.2026):** MqlDownloader liefert `Balance`
+und `trades.csv` in nativer Kontowährung, mit `metrics.Currency` als belegtem
+Code oder `unknown`. Alte Caches ohne Währungsfeld sind unbekannt. Der Scanner
+bewahrt native Beträge getrennt auf; ausschließlich belegtes USD darf in seine
+USD-Forensik und USD-Studien. Der gemeinsame REST-Typ ist kein Währungsnachweis.
+Pelican, Robo, Vantage und Zulu haben jeweils eigene USD-Exportverträge.
+
 ### 4a. PelicanTrading — zweite Börse (implementiert 27.09.2026)
 
 PelicanTrading (`SIGNALDOWNLOADER/PelicanTrading`, „PelicanMonitor”) spricht
@@ -255,14 +262,14 @@ Plattform-Durchreichung (`pelican`-Muster); Akzeptanz per Regressionstest
 | Thema | Vantage-Lage | Folge im Scanner |
 |---|---|---|
 | Trades | deal-genau, bereits positionell (Open+Close) | direkte Konvertierung |
-| Währung | USD direkt; **USC (US-Cent) serverseitig ÷100 nach USD normalisiert**; Drittwährung (EUR, GBP …) bleibt Kontowährung | trades.csv nur für USD/USC-Konten — sonst 404 + klarer Grund (Zulu-Muster, korrigiert 28.09.2026); `currencyCode` im Katalog zeigt die Währung |
+| Währung | USD direkt; USC beim Import ÷100; andere Währungen beim CSV-Export historisch nach USD | Ohne belegten historischen Kurs 404; `currencyCode` bleibt Originalwährung, `usdNormalization` dokumentiert die Umrechnung |
 | Symbole | Broker-Postfixe („XAUUSD.sc") | Server liefert Basis-Symbol (kontract_specs matchen) |
-| Ertrag | **gemessene 30-Tage-Rendite** | `Average3MonthProfit` ohne Herleitung |
-| Drawdown | nur Gesamt-DD | `EquityDrawdown` = |Gesamt-DD| |
+| Ertrag | Rankingrendite für API-Parameter `months=1` | Legacy-Feld `Average3MonthProfit`; `metricsWindow` weist `1_month` aus, kein belegtes 3-Monatsmittel und keine Zusage exakt30 Tage |
+| Drawdown | Fenster hängt vom vorhandenen Overview ab | `metricsWindow` und `ddSource` legen Gesamt-, 30-Tage- oder unbekannte Basis offen; Monitor-Closing-DD ersetzt keine Floating-Messung |
 | Abonnenten-Verlauf | kopierer.db: Tages-Snapshot je „Signale laden" (weekChange/monthChange im Katalog) | `/history` liefert Punkte; 7/30-Tage-Bilanz baut sich mit der Zeit auf |
 | Initial Deposit / Balance | nicht verfügbar (AumUsd = Kopierer-Kapital) | beide Regeln ruhen |
 | Stop-Nachweis | keine SL-Daten | „kein Nachweis" + Verhaltensanalyse (§2.1) |
-| Signalalter | `weeks` aus Monaten | Wochen-Vorfilter greift |
+| Signalalter | abgeschlossene Wochen seit ältestem belegtem Aktivitätstag | Ohne Tages-/Tradebeleg unbekannt; lokale Historie kann später als tatsächlicher Handelsbeginn anfangen |
 
 ### 4d. ZuluMonitor — fünfte Quelle (implementiert 27.09.2026)
 
@@ -276,8 +283,8 @@ Plattform-Durchreichung; Akzeptanz per Regressionstest
 |---|---|---|
 | Trades | positionell (Open+Close), nur verifizierte Downloads (.meta) | direkte Konvertierung |
 | Symbole | Paare mit Schrägstrich („EUR/USD") | Server liefert „EURUSD" |
-| Währung | Trader-Kontowährung gemischt (149/200 USD) | trades.csv nur USD-Konten (404 + Grund), currencyCode im Katalog |
-| Abonnenten-Historie | nicht verfügbar | history leer (7/30-Tage-Bilanz bleibt leer, kein Fehler) |
+| Währung | Trader-Kontowährung gemischt | CSV nach USD: USD unverändert, USC ÷100, sonst historischer FX-Kurs je Trade-Schlussdatum; ohne Beleg 404; `usdNormalization` dokumentiert die Basis |
+| Abonnenten-Historie | lokale Tages-Snapshots des Monitors | `/history` liefert vorhandene Bestände, ohne rückwirkend erfundene Plattformhistorie |
 | Drawdown | Gesamt-DD und Max-DD getrennt | EquityDrawdown = Gesamt-DD, MaxDDGraphic = Max-DD |
 | Ertrag | nur Gesamt-ROI | Average3MonthProfit hergeleitet (ROI/Laufzeit) |
 | Demo-Trader | gekennzeichnet | `demo:true` im Katalog, keine Vorauswahl |

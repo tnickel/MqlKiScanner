@@ -133,12 +133,13 @@ def normalize_ampel_filter(raw: str | None) -> set[str] | None:
     return result or None
 
 
-def signal_payload(results, ampel_filter: set[str] | None = None) -> dict:
+def signal_payload(results, ampel_filter: set[str] | None = None, *, settings: dict | None = None) -> dict:
     """ScanResult-Liste → REST-Payload (eine Zeile je Signal).
 
     Feldnamen folgen dem Tradeserver-Protokoll v1 (camelCase); `ampel`
     ist das ASCII-Kürzel, `ampelEmoji` das Original der Ergebnis-Ansicht.
     """
+    settings = config.load_settings() if settings is None else settings
     zeilen = []
     for r in results:
         kurz = ampel_ascii(getattr(r, "ampel", ""))
@@ -155,6 +156,8 @@ def signal_payload(results, ampel_filter: set[str] | None = None) -> dict:
             "score": r.score,
             "urteil": r.urteil or "",
             "kurzfassung": getattr(r, "kurzfassung", "") or "",
+            "berichtHinweis": getattr(r, "bericht_hinweis", "") or "",
+            "berichteBasis": getattr(r, "berichte_basis", "") or "",
             # R2 (Intensiv-Review 29./30.09.2026): Für Maschinen-Clients
             # erkennbar, wie frisch eine Ampel ist (KiraCat stand wochen-
             # alt unverändert im Katalog, ohne Alters-Hinweis).
@@ -165,6 +168,14 @@ def signal_payload(results, ampel_filter: set[str] | None = None) -> dict:
         "service": SERVICE_NAME,
         "generatedAt": datetime.now().isoformat(timespec="seconds"),
         "count": len(zeilen),
+        "ampelBasis": {
+            "mode": "stored_forensics_current_settings",
+            "effectiveSettings": {
+                "minCalmarJahr": config.min_calmar_jahr(settings),
+                "drawdownLimitPct": settings.get("schranke_eq_dd_pct", 30.0),
+                "minReturnMonthlyPct": settings.get("min_ertrag_pct_monat", 0.0),
+            },
+        },
         "signals": zeilen,
     }
 
@@ -204,7 +215,10 @@ class _RestApiHandler(BaseHTTPRequestHandler):
                 # NEU: Client-Kontakt für die Sidebar-Anzeige vermerken
                 # (erst nach bestandenem Token-Check)
                 notiere_client_zugriff()
-                payload = signal_payload(self.results_provider(), ampel_filter)
+                settings = config.load_settings()
+                results = (_results_aus_db(settings) if self.results_provider is _results_aus_db
+                           else self.results_provider())
+                payload = signal_payload(results, ampel_filter, settings=settings)
                 self._send_json(200, payload)
         except Exception as exc:  # Datenbank-/Lesefehler sauber melden
             log.exception("REST-Request fehlgeschlagen: %s", self.path)
@@ -243,9 +257,9 @@ def build_server(port: int = DEFAULT_PORT, bind: str = DEFAULT_BIND,
     return ThreadingHTTPServer((bind, port), handler)
 
 
-def _results_aus_db():
+def _results_aus_db(settings=None):
     """Standard-Datenquelle: gespeicherte Signale, Ampel wie Ergebnis-Ansicht."""
-    return pipeline.results_from_db(materialize_pdfs=False)
+    return pipeline.results_from_db(settings, materialize_pdfs=False)
 
 
 def konfiguriert(settings: dict | None = None) -> bool:

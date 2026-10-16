@@ -1,0 +1,174 @@
+{
+  "generatedUtc": "2026-10-16T18:49:00.9961459Z",
+  "repositories": [
+    {
+      "name": "MqlDownloader",
+      "head": "c328b0b5bc27666f0a4c136c7784d700209529a9",
+      "headArchiveSha256": "96ff9e293cfe1b7b6fad0998a60ba09d56f30dbecad1a0445c2529ce44353db9",
+      "snapshot": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\antigravity_handover_pruefung_2026-10-16\\MqlDownloader_snapshot",
+      "trackedPlusOverlayTreeSha256": "220fc28c378eb38e49d6ddf66153abed2be5a6ef0cf4a55845704941b9a71f1f",
+      "treeEntries": 96,
+      "overlayFiles": [
+        {
+          "path": "README.md",
+          "sha256": "1146b1ab6239a69c9c63aeb640fc04155f25117dc55a9ba9bf92579a79e17040",
+          "snapshotMatches": true
+        },
+        {
+          "path": "doc/REST_API_Dokumentation.md",
+          "sha256": "2264c190996a7ab6d23d200301bb9cb9f9c56046a0db6c95473ef440d06aa002",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/converter/HtmlConverter.java",
+          "sha256": "ca715b8f280e739c629eada969245b2021124f4641d42283e62b3da0e29fd582",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/rest/MetricsParser.java",
+          "sha256": "7b4b7d3e3aff97d86a4d7e337b5b3345ca4bf4489ff3e4090f09bdfb567a58ad",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/rest/RestApiServer.java",
+          "sha256": "9ac42e375518588f0571c8689b46f4c5676753e5f6249905b718e3319fac9480",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/utils/DataExtractor.java",
+          "sha256": "3ba6d30c435f673b6d0615a12e0222016f628556a9f6603d6b13ab65de84c93a",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/utils/HtmlParser.java",
+          "sha256": "26c9fe2cfa96966923da72a8fc181a164df857a54fe0ca155600accfe4184a3a",
+          "snapshotMatches": true
+        },
+        {
+          "path": "tests/rest/ReviewFollowupRestTest.java",
+          "sha256": "f1fe65ca1552d91a94dadaf3a3905b4ed55c41a07b8fa2d38202186583ca3590",
+          "snapshotMatches": true
+        },
+        {
+          "path": "tests/utils/AccountMoneyReviewTest.java",
+          "sha256": "a96015acfab9cd3eb5c4a36deeb9e9adbd1e54f51d1ebc074d03546b6a2c3469",
+          "snapshotMatches": true
+        }
+      ],
+      "packages": [
+        {
+          "name": "MqlDownloader-0.0.35-SNAPSHOT-jar-with-dependencies.jar",
+          "sha256": "870928f320597737e4429404834cee8959d84f01f61085901c2f34bfd1b8be90"
+        },
+        {
+          "name": "MqlDownloader-0.0.35-SNAPSHOT.jar",
+          "sha256": "9df0557d58614f24ca145e6c3dbca5d90565b26fbc5c12644b6533b38a7fcbf9"
+        }
+      ]
+    },
+    {
+      "name": "vantage",
+      "head": "503f34ac34a99174adb687fbf8f1882fdd87f42e",
+      "headArchiveSha256": "fdc0647da8fc6ace547f71d7cc386b6cd98ad7c9547d6de311d017fb6e152252",
+      "snapshot": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\antigravity_handover_pruefung_2026-10-16\\vantage_snapshot",
+      "trackedPlusOverlayTreeSha256": "e31f2187d88a4b40022c2f92ba15ee9f77c7fc4537850b573f0c515861508010",
+      "treeEntries": 63,
+      "overlayFiles": [
+        {
+          "path": "README.md",
+          "sha256": "02a8efe4854d51dc130dea01b584943e7c5325668dbf8c9c934392d0528da0c1",
+          "snapshotMatches": true
+        },
+        {
+          "path": "download_trades.py",
+          "sha256": "5478a67cc596d7d18e7a3f41740f68b2613703a419fea06ba77bcbbc23c07931",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/main/java/de/vantagemonitor/VantageMonitorApp.java",
+          "sha256": "ebab9a647cfe7f9e1116ca267f1be64a042bfff2ccad707aa87a3a8166a1e957",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/main/java/de/vantagemonitor/api/VantageClient.java",
+          "sha256": "47f168fdfef9ff5570abd64b2fd0e8eb365fe182d08405a5321db5d7a1035aa6",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/main/java/de/vantagemonitor/report/SignalPayloadBuilder.java",
+          "sha256": "3f6d8f7e936dde919ec8fb09599e350fd7873e84b4c58a600e69b966bf5d4d22",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/main/java/de/vantagemonitor/rest/RestApiServer.java",
+          "sha256": "0554a14b0091ee412584daf1bb54818f434519facd8c652f912581b8829b9fa7",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/main/java/de/vantagemonitor/store/TradeListStore.java",
+          "sha256": "4b2f0e1cf7910847d224cf2890524defabac939d92e8031c4df1bc84c502a3e7",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/main/java/de/vantagemonitor/store/TradeStore.java",
+          "sha256": "f5aa66a4cfc49732dd9d1241c526dfa894ff244a3de1a5f8a01d6eecb518e803",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/test/java/de/vantagemonitor/RestApiServerTest.java",
+          "sha256": "7157b86a17b388dcd13689c9f027073d1a0a8e8e880c43403f8b263777bc70f0",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/test/java/de/vantagemonitor/report/DrawdownBasisTest.java",
+          "sha256": "9606b6b90e425fd656b2b1f8fae9edad8e9e18396ade01e4b907adeb32e8956d",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/test/java/de/vantagemonitor/store/TradeIntegrityTest.java",
+          "sha256": "f8ddc190c6929083d086356f1b4e9711302d65fc94c172d8820d1a5d4239ec4e",
+          "snapshotMatches": true
+        },
+        {
+          "path": "tests/test_download_trades.py",
+          "sha256": "0af0ac1813af2c03840d88c97917f7b54af761c4b56d7ada8e1ff1c4b72620d0",
+          "snapshotMatches": true
+        },
+        {
+          "path": "src/test/java/de/vantagemonitor/api/ReviewFollowupTest.java",
+          "sha256": "e9547e8915c111cb17ba55be2964d060fdd4372cef22de9c31b3cf791457d8dc",
+          "snapshotMatches": true
+        }
+      ],
+      "packages": [
+        {
+          "name": "vantagemonitor-1.2.0.jar",
+          "sha256": "6175d03d587869953ffb54bee178ec4833e8d96c79055377a9ea34dda083d42f"
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "mql124": {
+      "log": "mql_full_package.log",
+      "passed": 124,
+      "failures": 0,
+      "skipped": 0
+    },
+    "vantageJava": {
+      "log": "vantage_full_package.log",
+      "passed": 76,
+      "failures": 0,
+      "skipped": 0
+    },
+    "vantageTimezoneSubset": {
+      "log": "vantage_timezone_after.log",
+      "passed": 6,
+      "zone": "America/New_York"
+    },
+    "vantagePython": {
+      "log": "vantage_python_after.log",
+      "passed": 21
+    }
+  }
+}

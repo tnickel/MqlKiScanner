@@ -35,12 +35,15 @@ nicht eingebunden; eine Hub-Anbindung ist nicht implementiert.
 
 ## Reviews
 
+- [Kritische Antigravity-Prüfung und vollständiger GLM-Nachtragskatalog](reviews/2026-10-16_antigravity_handover_pruefung/README.md)
+  trennt aktuelle Fehler von bereits behobenen oder unbelegten Aussagen und
+  dokumentiert die Währungsabsicherung in Forensik-Version 19.
 - [Kritische Prüfung des DeepSeek-Reviews](reviews/2026-10-16_deepseek_pruefung/README.md)
   prüft alte Befunde gegen den veröffentlichten Stand und dokumentiert
   zusätzliche Anzeige-, Alters- und Testdatenkorrekturen.
 - [Kritische Prüfung des GLM-5.3-Reviews](reviews/2026-10-16_glm53_pruefung/README.md)
   trennt bereits behobene, zusätzliche und unbelegte Befunde; die aktuellen
-  fachlichen Korrekturen verwenden Forensik-Version 18.
+  damaligen fachlichen Korrekturen verwendeten Forensik-Version 18.
 - [Gesamtreview vom 16.10.2026](reviews/2026-10-16_gesamtreview/REVIEW.md)
   dokumentiert die damaligen Gegenbeispiele; der
   [Behebungsnachweis](reviews/2026-10-16_gesamtreview/BEHEBUNG.md) ordnet

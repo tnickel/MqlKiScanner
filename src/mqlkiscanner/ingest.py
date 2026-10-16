@@ -96,6 +96,12 @@ def normalisiere_wochen(wert) -> float | None:
     return zahl if math.isfinite(zahl) and zahl >= 0 else None
 
 
+def normalisiere_abonnenten(wert) -> int | None:
+    """Missing or invalid counts do not prove an audience; zero is known zero."""
+    zahl = normalisiere_wochen(wert)
+    return int(zahl) if zahl is not None and zahl.is_integer() else None
+
+
 def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
     """Katalog-Items → Kandidaten im Pipeline-Format (crawler-Kompatibel).
 
@@ -121,7 +127,7 @@ def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
             "platform": _PLATTFORM.get(version, ""),
             "url": str(item.get("url")
                        or f"https://www.mql5.com/en/signals/{signal_id}"),
-            "abonnenten": item.get("subscribers"),
+            "abonnenten": normalisiere_abonnenten(item.get("subscribers")),
             "wochen": wochen,
             "quelle_kuerzel": str(quelle.get("kuerzel") or ""),
             "quelle_id": int(quelle["id"]),
@@ -164,7 +170,7 @@ def kandidaten_aus_quellen(log=None) -> list[dict]:
     # spaeter, wen top_n_export (Forensik-Export) trifft — unsortiert haette
     # der Katalog eines Downloader-Defaults "aufsteigend" die KLEINSTEN
     # Provider zuerst geliefert (Review MqlDownloader 28.09.2026).
-    out.sort(key=lambda s: -float(s.get("abonnenten") or 0))
+    out.sort(key=lambda s: (-(s.get("abonnenten") or 0), s["id"]))
     return out
 
 
@@ -347,7 +353,8 @@ QUELLEN_BROKER_FALLBACK = {
 }
 
 
-def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None) -> dict:
+def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None,
+                     *, quelle_version: str | None = None) -> dict:
     """Metrics-Antwort → Felder der MQL5-Kennzahlenseite (doc/20 §4).
 
     Nur vorhanden Werte werden gemappt — nichts geraten. `initial_deposit_usd`
@@ -357,6 +364,18 @@ def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None) ->
     """
     antwort = antwort or {}
     metrics = antwort.get("metrics") if isinstance(antwort.get("metrics"), dict) else {}
+    # MqlDownloader exports native account money. The other bundled monitors
+    # normalize their CSV and balance to USD. An arbitrary source alias or the
+    # transport protocol alone never establishes a USD contract (Robo also uses
+    # mql4/mql5 version names). Pelican's Currency describes the original
+    # account, whereas its successful CSV and money metrics are already USD.
+    normalizes_usd = (str(quelle_version or antwort.get("version") or "").lower()
+                      in {"pelican", "vantage", "zulu"})
+    currency = (str(metrics["Currency"]).strip().upper()
+                if metrics.get("Currency") is not None else None)
+    if normalizes_usd:
+        currency = "USD"
+    native_money = not normalizes_usd
     eq_dd = _zahl(metrics.get("EquityDrawdown"))
     if eq_dd is None:
         eq_dd = _zahl(metrics.get("MaxDDGraphic"))
@@ -365,12 +384,16 @@ def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None) ->
         "dd_balance_pct": None,
         "monthly_growth_pct": _zahl(metrics.get("Average3MonthProfit")),
         "subscribers": metrics.get("Subscribers"),
-        "initial_deposit_usd": _zahl(metrics.get("InitialDeposit")),
+        "account_currency": currency,
+        "initial_deposit_account": _zahl(metrics.get("InitialDeposit")) if native_money else None,
+        "balance_account": _zahl(metrics.get("Balance")) if native_money else None,
+        "initial_deposit_usd": _zahl(metrics.get("InitialDeposit")) if currency == "USD" else None,
         # Virtuelle Kapitalbasis (z. B. PelicanMonitor "InitialDepositVirtual"):
         # klar markierte Annahme, KEIN Plattformwert. Dient als Fallback fuer
         # die Forensik (DD-/Schock-Prozente brauchen ein Startkapital), nie
         # als echtes InitialDeposit und nie in den Cent-genauen Abgleich.
-        "kapitalbasis_virtual_usd": _zahl(metrics.get("InitialDepositVirtual")),
+        "kapitalbasis_virtual_usd": (_zahl(metrics.get("InitialDepositVirtual"))
+                                    if currency == "USD" else None),
         # Review 04.10. (V2a-Folge): Vantage kappen Batch-Downloads auf 2.000
         # Trades — der Monitor legt offen, ob die Historie unvollstaendig ist
         # (TradesTruncated / TradesTotalAvailable). Nur Hinweis, kein Malus.
@@ -386,7 +409,7 @@ def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None) ->
         "quelle_trades_anzahl": _anzahl(metrics.get("Trades")),
         "quelle_gewinne_anzahl": _anzahl(metrics.get("Wins")),
         "quelle_verluste_anzahl": _anzahl(metrics.get("Losses")),
-        "balance_usd": _zahl(metrics.get("Balance")),
+        "balance_usd": _zahl(metrics.get("Balance")) if currency == "USD" else None,
         # Vom Datenquellen-Monitor aus der VOLLEN Trade-Kurve nachgemessener
         # Max-EQ-DD (TradeEqDrawdownPct) — unabhängige Zweitmessung neben dem
         # gemeldeten Plattform-DD. Geht seit B1 (Intensiv-Review 29./30.09.)

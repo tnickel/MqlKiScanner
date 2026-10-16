@@ -155,6 +155,7 @@ def katalog_resultate(*, gescannt=None, studien=None, progress=None,
                     res.dd_equity_pct = stats.get("dd_equity_pct")
                     res.ertrag_monat_pct = stats.get("monthly_growth_pct")
                     res.broker_server = stats.get("broker_server")
+                    res.account_currency = stats.get("account_currency")
         resultate.append(res)
     # Batch-Equity-Studien („Lücken füllen", Nutzer 08.10.2026): True-DD,
     # TrueRetDD-Familie und True-DD USD in die Katalog-Zeilen mappen —
@@ -208,7 +209,8 @@ def _metrics_aus_artefakt(result, version, artefakt) -> dict:
             return {}
         return ingest.metrics_zu_stats(
             antwort,
-            quelle_kuerzel=str(getattr(result, "quelle", "") or ""))
+            quelle_kuerzel=str(getattr(result, "quelle", "") or ""),
+            quelle_version=version)
     except (OSError, TypeError, ValueError):
         return {}
 
@@ -256,6 +258,12 @@ def workflow_stats_bulk(resultate, workflow_stats, *, katalog_rows=None,
         frisch = _metrics_aus_artefakt(
             res, version, artefakte.get((qid, int(res.id), version, 'metrics')))
         bisher = out.setdefault(int(res.id), {})
+        if "account_currency" in frisch:
+            res.account_currency = frisch["account_currency"]
+            bisher["account_currency"] = frisch["account_currency"]
+            if frisch["account_currency"] != "USD":
+                for feld in ("initial_deposit_usd", "balance_usd", "kapitalbasis_virtual_usd"):
+                    bisher[feld] = None
         for feld, wert in frisch.items():
             if feld == 'initial_deposit_usd' and (
                     not isinstance(wert, (int, float)) or isinstance(wert, bool)
@@ -315,8 +323,17 @@ def lade_signal_daten(result, log=None) -> tuple[str, bool]:
             f"Datenquelle {result.quelle!r} existiert nicht (mehr).")
     if log:
         log(f"Trades + Kennzahlen für #{result.id} von {quelle['kuerzel']} laden …")
+    # A previous USD proof cannot authorize a newly downloaded native CSV if
+    # its metadata fetch fails. Only known converting export versions have a
+    # unit contract independent of this per-account evidence.
+    result.account_currency = ingest.metrics_zu_stats(
+        None, str(quelle["kuerzel"]),
+        quelle_version=result.quelle_version).get("account_currency")
     try:
-        ingest.hole_metrics(quelle, int(result.id), result.quelle_version)
+        antwort = ingest.hole_metrics(quelle, int(result.id), result.quelle_version)
+        result.account_currency = ingest.metrics_zu_stats(
+            antwort, str(quelle["kuerzel"]),
+            quelle_version=result.quelle_version).get("account_currency")
     except downloader_client.DownloaderError:
         # Kennzahlen sind Zusatz — die Trades allein rechnen schon die
         # ganze Vorstufen-Statistik (Plattformspalten bleiben dann leer).

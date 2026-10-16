@@ -1,0 +1,97 @@
+{
+  "sha256": "afe62dbb479d2bf0ef7408aaf612edc9a7ae25f8a916d511fb870f7e567e7afd",
+  "cases": [
+    {
+      "fault": "none",
+      "mutex_released": true,
+      "workflow_exits": 1,
+      "error": null,
+      "events": [
+        "start_db",
+        "register",
+        "signals",
+        "complete",
+        [
+          "finish_db",
+          "ok"
+        ]
+      ]
+    },
+    {
+      "fault": "prepare",
+      "mutex_released": true,
+      "workflow_exits": 1,
+      "error": null,
+      "events": [
+        "start_db",
+        [
+          "finish_db",
+          "abgebrochen"
+        ]
+      ]
+    },
+    {
+      "fault": "register",
+      "mutex_released": true,
+      "workflow_exits": 1,
+      "error": null,
+      "events": [
+        "start_db",
+        "register",
+        [
+          "finish_db",
+          "abgebrochen"
+        ]
+      ]
+    },
+    {
+      "fault": "signals",
+      "mutex_released": true,
+      "workflow_exits": 1,
+      "error": null,
+      "events": [
+        "start_db",
+        "register",
+        "signals",
+        "abort",
+        [
+          "finish_db",
+          "abgebrochen"
+        ]
+      ]
+    },
+    {
+      "fault": "complete",
+      "mutex_released": true,
+      "workflow_exits": 1,
+      "error": null,
+      "events": [
+        "start_db",
+        "register",
+        "signals",
+        "complete",
+        "abort",
+        [
+          "finish_db",
+          "abgebrochen"
+        ]
+      ]
+    },
+    {
+      "fault": "finish_db",
+      "mutex_released": true,
+      "workflow_exits": 1,
+      "error": "RuntimeError",
+      "events": [
+        "start_db",
+        "register",
+        "signals",
+        "complete",
+        [
+          "finish_db",
+          "ok"
+        ]
+      ]
+    }
+  ]
+}

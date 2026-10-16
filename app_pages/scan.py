@@ -548,7 +548,8 @@ with st.expander("Analyseumfang anpassen", icon=":material/tune:", expanded=Fals
         section_header("Vorfilter", "Nur Signale, die alt genug und sichtbar genug sind.",
                        help_key="scan_filters")
         min_weeks = st.number_input(
-            "Mindestalter in Wochen", *config.SCAN_INPUT_BOUNDS["min_wochen"], value=int(settings["min_wochen"]),
+            "Mindestalter in Wochen", min_value=float(config.SCAN_INPUT_BOUNDS["min_wochen"][0]),
+            value=float(settings["min_wochen"]), step=0.5,
             key="set_wochen", disabled=running)
         min_subs = st.number_input(
             "Mindestens Abonnenten", *config.SCAN_INPUT_BOUNDS["min_abonnenten"], value=int(settings["min_abonnenten"]),
@@ -635,7 +636,7 @@ run_settings = {
     "listen_seiten": int(pages),
     "listen_modus": str(listen_modus),
     "top_n_export": int(top_n),
-    "min_wochen": int(min_weeks),
+    "min_wochen": float(min_weeks),
     "min_abonnenten": int(min_subs),
     "llm_stufe1": bool(use_llm),
     "llm_stufe2": bool(use_llm),

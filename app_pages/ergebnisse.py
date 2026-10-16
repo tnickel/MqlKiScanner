@@ -47,11 +47,12 @@ with st.container(border=True):
     selected_run = st.selectbox('Quelle', options, format_func=_fmt, key='results_run')
     freshness = st.session_state.get('refreshed_signal_ids')
     fresh_ids: set[int] = set(freshness or [])
-    # Nur alte Sitzungsstände ohne explizite Frischeliste benötigen den Fallback.
+    # Alte Sitzungsstände brauchen ebenfalls einen expliziten Persistenzbeleg.
     # [] bedeutet: Im letzten Lauf wurde kein Signaldatensatz aktualisiert.
     if freshness is None and st.session_state.scan_results:
         fresh_ids = {r.id for r in st.session_state.scan_results
-                     if getattr(r, 'source_kind', 'live') == 'live'}
+                     if getattr(r, 'source_kind', 'live') == 'live'
+                     and getattr(r, 'persisted_this_run', False)}
 
     if selected_run.startswith('Datenbank'):
         results = [r for r in pipeline.results_from_db()

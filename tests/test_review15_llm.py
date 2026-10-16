@@ -126,6 +126,14 @@ def test_same_basis_old_part_is_retained_but_not_counted_as_a_new_success(setup)
     assert len(pipe.llm.calls) == 2
 
 
+def test_unknown_per_call_usage_never_uses_the_client_lifetime_total(setup):
+    pipe, make_result, stored = setup
+    llm_runner.run_llm(pipe, [make_result()], lambda _: None)
+    assert len(stored) == 3
+    assert all(args[3] == 0 for args, _ in stored)
+    assert len(pipe.llm.calls) == 3
+
+
 def test_missing_basis_detaches_old_reports_and_sends_no_requests(setup, monkeypatch):
     pipe, make_result, _ = setup
     monkeypatch.setattr(pipeline, "report_basis_for", lambda r, cfg: None)

@@ -96,6 +96,13 @@ CREATE TABLE IF NOT EXISTS tradeserver_sync_runs (
     status      TEXT,
     summary_json TEXT
 );
+CREATE TABLE IF NOT EXISTS llm_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    call_id TEXT NOT NULL, attempt INTEGER NOT NULL, created_at TEXT NOT NULL,
+    model TEXT, prompt TEXT, content TEXT, response TEXT,
+    usage_json TEXT, http_status INTEGER, finish_reason TEXT,
+    UNIQUE(call_id,attempt)
+);
 CREATE TABLE IF NOT EXISTS ampel_verlauf (
     signal_id  INTEGER NOT NULL,
     ts         TEXT NOT NULL,
@@ -419,6 +426,33 @@ def store_analysis(signal_id: int | None, kind: str, model: str, tokens: int, te
     return created_at
 
 
+def store_llm_attempt(call_id: str, attempt: int, *, model: str, prompt: str,
+                      content: str, response: str, usage: dict, http_status=None,
+                      finish_reason=None) -> None:
+    """Full response audit, separate from billing and successful analysis history.
+
+    Never stores HTTP headers/API keys. Agent budget rows remain the sole
+    source of agent cost accounting; this table does not charge tokens.
+    """
+    init_db()
+    with _connect() as conn:
+        conn.execute("INSERT INTO llm_attempts "
+            "(call_id,attempt,created_at,model,prompt,content,response,usage_json,http_status,finish_reason) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (call_id,attempt,_now(),model,prompt,content,response,
+             json.dumps(usage,ensure_ascii=False),http_status,finish_reason))
+
+
+def list_llm_attempts(call_id: str) -> list[dict]:
+    init_db()
+    with _connect() as conn:
+        rows=conn.execute("SELECT * FROM llm_attempts WHERE call_id=? ORDER BY attempt",(call_id,)).fetchall()
+    result=[]
+    for row in rows:
+        item=dict(row);item["usage"]=json.loads(item.pop("usage_json") or "{}");result.append(item)
+    return result
+
+
 def get_latest_analysis(signal_id: int | None, kind: str, *, basis: str | None = None) -> dict | None:
     if kind == "portfolio" and signal_id == 0:
         signal_id = None
@@ -607,6 +641,22 @@ def list_tradeserver_sync_runs(limit: int = 10) -> list[dict]:
             eintrag["summary"] = {}
         runs.append(eintrag)
     return runs
+
+
+def start_tradeserver_sync_run(base_url: str) -> int:
+    """Persist the real start before preparing or transmitting a snapshot."""
+    init_db()
+    with _connect() as conn:
+        cursor = conn.execute("INSERT INTO tradeserver_sync_runs "
+            "(started_at,base_url,status,summary_json) VALUES (?,?,?,?)",
+            (_now(), str(base_url), "running", "{}"))
+        return int(cursor.lastrowid)
+
+
+def finish_tradeserver_sync_run(run_id: int, status: str, summary: dict) -> None:
+    with _connect() as conn:
+        conn.execute("UPDATE tradeserver_sync_runs SET finished_at=?,status=?,summary_json=? WHERE id=?",
+            (_now(), status, json.dumps(summary, ensure_ascii=False), run_id))
 
 
 def store_ampel_verlauf(signal_id: int, ts: str, quelle: str, ampel: str,
@@ -1040,7 +1090,17 @@ def list_client_updates(limit: int = 100) -> list[dict]:
 
 def letzte_client_updates_je_quelle() -> dict[str, dict]:
     """Je Kürzel der NEUESTE Eintrag (Admin/Datenquellen-Spalte „letztes Update")."""
-    eintraege = list_client_updates(limit=500)
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute("SELECT c.* FROM client_updates c JOIN "
+            "(SELECT kuerzel,MAX(id) AS latest FROM client_updates GROUP BY kuerzel) n "
+            "ON c.id=n.latest ORDER BY c.id DESC").fetchall()
+    eintraege = [dict(row) for row in rows]
+    for row in eintraege:
+        try:
+            row["hinweise"] = json.loads(row.get("hinweise") or "[]")
+        except ValueError:
+            row["hinweise"] = []
     neueste: dict[str, dict] = {}
     for eintrag in eintraege:  # absteigend — erster Treffer je Kürzel gewinnt
         neueste.setdefault(str(eintrag.get("kuerzel")), eintrag)

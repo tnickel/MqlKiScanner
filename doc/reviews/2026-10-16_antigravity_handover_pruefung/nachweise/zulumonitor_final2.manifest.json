@@ -1,0 +1,12 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\zulumonitor",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\antigravity_handover_pruefung_2026-10-16\\zulumonitor_final2",
+  "head": "3eb92b582f91107f7f7227f21d5518a2ce0b5730",
+  "overlay_sha256": {
+    "README.md": "3ccdb87c3a0e3ce5bb4af37056337dc82c2801e070cffc4f0998a69043f969a0",
+    "src\\main\\java\\de\\zulumonitor\\api\\ZuluTradeClient.java": "1e0402c6a4d1d252c53ec5b82d4e1245a2d14d8dc9666a12749a81d146b9e079",
+    "src\\main\\java\\de\\zulumonitor\\report\\TradePayloadBuilder.java": "c99c242e34db52d46f6fbfd2829d4208e78da3fa3f3fcda73094db4750b6ff94",
+    "src\\test\\java\\de\\zulumonitor\\report\\DrawdownBasisTest.java": "40aeb65294b550fa54d115f9d4308b85d493b51d54473496334207ed7b4b1b64",
+    "src\\test\\java\\de\\zulumonitor\\api\\CataloguePaginationTest.java": "35875f592cf8301dde1f9e39822b349c511e219b79a9b07a29fd5ffcb2406801"
+  }
+}

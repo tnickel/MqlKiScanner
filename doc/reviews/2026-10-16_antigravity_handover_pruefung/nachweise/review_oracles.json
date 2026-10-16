@@ -1,0 +1,21 @@
+{
+  "antigravity_example": {
+    "monthly_return_pct": 2.5,
+    "months": 3.5,
+    "dd_pct": 2,
+    "period_return_pct": 9.026866123364883,
+    "annual_return_pct": 34.488882424629836,
+    "annual_calmar": 17.244441212314918
+  },
+  "quoted_source_test_counts": {
+    "five_sources_java": 584,
+    "five_sources_java_and_vantage_python": 590,
+    "seven_projects_user_summary": 803,
+    "claimed_634_is_sum": false
+  },
+  "limits": [
+    "Passing tests establish tested behavior, not absence of all defects.",
+    "H1 sampled portfolio estimates do not guarantee a lower bound on actual broker equity drawdown.",
+    "No universal profitable pip threshold or future ranking follows from the reviewed code."
+  ]
+}

@@ -1,0 +1,92 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/D:/DevelopmentTools/apache-maven-3.9.6/lib/jansi-2.4.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/D:/DevelopmentTools/apache-maven-3.9.6/lib/guava-32.0.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< de.vantagemonitor:vantagemonitor >------------------
+[INFO] Building VantageMonitor 1.2.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ vantagemonitor ---
+[INFO] skip non existing resourceDirectory D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\antigravity_handover_pruefung_2026-10-16\vantage_snapshot\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ vantagemonitor ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 30 source files with javac [debug release 25] to target\classes
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/antigravity_handover_pruefung_2026-10-16/vantage_snapshot/src/main/java/de/vantagemonitor/store/TradeListStore.java: D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\antigravity_handover_pruefung_2026-10-16\vantage_snapshot\src\main\java\de\vantagemonitor\store\TradeListStore.java verwendet oder überschreibt eine veraltete API.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/antigravity_handover_pruefung_2026-10-16/vantage_snapshot/src/main/java/de/vantagemonitor/store/TradeListStore.java: Wiederholen Sie die Kompilierung mit -Xlint:deprecation, um Details zu erhalten.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/antigravity_handover_pruefung_2026-10-16/vantage_snapshot/src/main/java/de/vantagemonitor/VantageMonitorApp.java: Einige Eingabedateien verwenden nicht geprüfte oder unsichere Vorgänge.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/antigravity_handover_pruefung_2026-10-16/vantage_snapshot/src/main/java/de/vantagemonitor/VantageMonitorApp.java: Wiederholen Sie die Kompilierung mit -Xlint:unchecked, um Details zu erhalten.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ vantagemonitor ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ vantagemonitor ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 20 source files with javac [debug release 25] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ vantagemonitor ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running de.vantagemonitor.api.ReviewFollowupTest
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 0.333 s <<< FAILURE! -- in de.vantagemonitor.api.ReviewFollowupTest
+[ERROR] de.vantagemonitor.api.ReviewFollowupTest.epochTradeTimestampUsesUtcInsteadOfHostTimezoneForFxDate -- Time elapsed: 0.034 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <2025-01-01T23:30> but was: <2025-01-02T00:30>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:177)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1145)
+	at de.vantagemonitor.api.ReviewFollowupTest.epochTradeTimestampUsesUtcInsteadOfHostTimezoneForFxDate(ReviewFollowupTest.java:39)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+[ERROR] de.vantagemonitor.api.ReviewFollowupTest.rankingApiErrorIsNeverAcceptedAsSuccessfulEmptyCatalog -- Time elapsed: 0.215 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Expected de.vantagemonitor.api.VantageClient.ApiException to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:152)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:73)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3115)
+	at de.vantagemonitor.api.ReviewFollowupTest.rankingApiErrorIsNeverAcceptedAsSuccessfulEmptyCatalog(ReviewFollowupTest.java:27)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   ReviewFollowupTest.epochTradeTimestampUsesUtcInsteadOfHostTimezoneForFxDate:39 expected: <2025-01-01T23:30> but was: <2025-01-02T00:30>
+[ERROR]   ReviewFollowupTest.rankingApiErrorIsNeverAcceptedAsSuccessfulEmptyCatalog:27 Expected de.vantagemonitor.api.VantageClient.ApiException to be thrown, but nothing was thrown.
+[INFO] 
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.212 s
+[INFO] Finished at: 2026-10-16T20:35:13+02:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.2.2:test (default-test) on project vantagemonitor: There are test failures.
+[ERROR] 
+[ERROR] Please refer to D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\antigravity_handover_pruefung_2026-10-16\vantage_snapshot\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

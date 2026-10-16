@@ -1,0 +1,87 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/D:/DevelopmentTools/apache-maven-3.9.6/lib/jansi-2.4.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/D:/DevelopmentTools/apache-maven-3.9.6/lib/guava-32.0.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< de.vantagemonitor:vantagemonitor >------------------
+[INFO] Building VantageMonitor 1.2.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ vantagemonitor ---
+[INFO] skip non existing resourceDirectory D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\antigravity_handover_pruefung_2026-10-16\vantage_snapshot\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ vantagemonitor ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 30 source files with javac [debug release 25] to target\classes
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/antigravity_handover_pruefung_2026-10-16/vantage_snapshot/src/main/java/de/vantagemonitor/store/TradeListStore.java: D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\antigravity_handover_pruefung_2026-10-16\vantage_snapshot\src\main\java\de\vantagemonitor\store\TradeListStore.java verwendet oder überschreibt eine veraltete API.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/antigravity_handover_pruefung_2026-10-16/vantage_snapshot/src/main/java/de/vantagemonitor/store/TradeListStore.java: Wiederholen Sie die Kompilierung mit -Xlint:deprecation, um Details zu erhalten.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/antigravity_handover_pruefung_2026-10-16/vantage_snapshot/src/main/java/de/vantagemonitor/VantageMonitorApp.java: Einige Eingabedateien verwenden nicht geprüfte oder unsichere Vorgänge.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/waste/antigravity_handover_pruefung_2026-10-16/vantage_snapshot/src/main/java/de/vantagemonitor/VantageMonitorApp.java: Wiederholen Sie die Kompilierung mit -Xlint:unchecked, um Details zu erhalten.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ vantagemonitor ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ vantagemonitor ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 20 source files with javac [debug release 25] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.2.2:test (default-test) @ vantagemonitor ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running de.vantagemonitor.api.MetricsWindowTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.297 s -- in de.vantagemonitor.api.MetricsWindowTest
+[INFO] Running de.vantagemonitor.api.RankingUnionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.074 s -- in de.vantagemonitor.api.RankingUnionTest
+[INFO] Running de.vantagemonitor.api.ReviewFollowupTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in de.vantagemonitor.api.ReviewFollowupTest
+[INFO] Running de.vantagemonitor.api.TradeContractTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in de.vantagemonitor.api.TradeContractTest
+[INFO] Running de.vantagemonitor.config.PromptMigrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.052 s -- in de.vantagemonitor.config.PromptMigrationTest
+[INFO] Running de.vantagemonitor.FxRatesTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in de.vantagemonitor.FxRatesTest
+[INFO] Running de.vantagemonitor.HeadlessTradelistenLoadTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in de.vantagemonitor.HeadlessTradelistenLoadTest
+[INFO] Running de.vantagemonitor.report.DrawdownBasisTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in de.vantagemonitor.report.DrawdownBasisTest
+[INFO] Running de.vantagemonitor.RestApiServerTest
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.sqlite.SQLiteJDBCLoader in an unnamed module (file:/C:/Users/tnickel/.m2/repository/org/xerial/sqlite-jdbc/3.46.1.3/sqlite-jdbc-3.46.1.3.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.323 s -- in de.vantagemonitor.RestApiServerTest
+[INFO] Running de.vantagemonitor.store.TradeIntegrityTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in de.vantagemonitor.store.TradeIntegrityTest
+[INFO] Running de.vantagemonitor.store.TradeListStoreTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in de.vantagemonitor.store.TradeListStoreTest
+[INFO] Running de.vantagemonitor.store.TradeStoreMonateTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in de.vantagemonitor.store.TradeStoreMonateTest
+[INFO] Running de.vantagemonitor.store.UiPrefsTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in de.vantagemonitor.store.UiPrefsTest
+[INFO] Running de.vantagemonitor.UpdateJobStufe0Test
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.082 s -- in de.vantagemonitor.UpdateJobStufe0Test
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 76, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.3.0:jar (default-jar) @ vantagemonitor ---
+[INFO] Building jar: D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\waste\antigravity_handover_pruefung_2026-10-16\vantage_snapshot\target\vantagemonitor-1.2.0.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.522 s
+[INFO] Finished at: 2026-10-16T20:44:37+02:00
+[INFO] ------------------------------------------------------------------------

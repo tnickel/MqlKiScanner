@@ -1,0 +1,6 @@
+{
+  "new_csv": "synthetic-new-native.csv",
+  "changed": true,
+  "currency_after_failed_metrics": "USD",
+  "stale_usd_proof_retained": true
+}

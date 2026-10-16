@@ -86,6 +86,16 @@ def _historie_hinweis(statistik: dict) -> str:
 MARKIERUNG_EMOJI = {"gruen": "🟩", "gelb": "🟨", "orange": "🟧"}
 
 
+def usd_statistik_fehler(result) -> str | None:
+    """Apply the same currency evidence as forensics before any USD display."""
+    from .pipeline import require_usd_account
+    try:
+        require_usd_account(result)
+    except ValueError as exc:
+        return f"USD-Statistik und Tradeliste gesperrt: {exc}"
+    return None
+
+
 def tabellen_zeile(result, statistik: dict | None,
                    markierungen: dict | None = None,
                    kommentare: dict | None = None, *, fix_ids: set | None = None) -> dict:
@@ -98,6 +108,9 @@ def tabellen_zeile(result, statistik: dict | None,
     je Spalte über den Help-Text in der column_config der Seite.
     """
     statistik = statistik or {}
+    waehrungsfehler = usd_statistik_fehler(result)
+    if waehrungsfehler:
+        statistik = {'fehler': waehrungsfehler, 'waehrung_gesperrt': True}
     nur_finanzdaten = bool(statistik.get('teilstatistik_finanzdaten'))
     markierungen = markierungen or {}
     farbe = markierungen.get(getattr(result, "id", None))
@@ -206,6 +219,12 @@ def tabellen_zeile(result, statistik: dict | None,
         for spalte in ('Trading-DD %', 'True-DD %', 'True-DD ≈', 'True-DD USD',
                        'Geom. %/M', 'TrueRetDD', 'TrueRetDD ≈', 'RetDD/Monat'):
             zeile[spalte] = None
+    if waehrungsfehler:
+        # Historical/session values cannot establish a unit for native money.
+        for spalte in ('Trading-DD %', 'True-DD %', 'True-DD ≈', 'True-DD USD',
+                       'Geom. %/M', 'TrueRetDD', 'TrueRetDD ≈', 'RetDD/Monat'):
+            zeile[spalte] = None
+        zeile['Basis'] = '—'
     return zeile
 
 
@@ -366,6 +385,11 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
     st.caption(zeile)
     if url:
         st.page_link(url, label="Signal beim Anbieter öffnen", icon=":material/open_in_new:")
+
+    waehrungsfehler = usd_statistik_fehler(auswahl)
+    if waehrungsfehler:
+        st.warning(waehrungsfehler, icon=":material/warning:")
+        return
 
     historie = _historie_hinweis(statistik)
     if historie:

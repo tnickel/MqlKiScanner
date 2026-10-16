@@ -287,6 +287,7 @@ def _metrics_cache(tmp_path, quelle_id, signal_id, version, *, deposit=25000):
               tmp_path / f"{quelle_id}_{signal_id}_{version}_metrics.json",
               json.dumps({"signalId": str(signal_id), "version": version,
                           "metrics": {"InitialDeposit": deposit,
+                                      "Currency": "USD",
                                       "Broker": "Provider-Live"}}).encode("utf-8"))
 
 

@@ -96,7 +96,8 @@ def test_fuellung_inhalt_wird_nicht_mitgefuellt():
     """Zwei-Phasen-Füllung: ein {typ} im eingefügten Inhalt bleibt literal."""
     ergebnis = rollen_prompts.fuellung(
         "Kopf {typ}", {"typ": "Inhalt mit {typ} innen"})
-    assert ergebnis == "Kopf Inhalt mit {typ} innen"
+    assert ergebnis.endswith("Kopf Inhalt mit {typ} innen")
+    assert ergebnis.startswith("## Umgang mit Fremdtext (bindend)")
 
 
 def test_fuellung_unversorgter_platzhalter_ist_fehler():

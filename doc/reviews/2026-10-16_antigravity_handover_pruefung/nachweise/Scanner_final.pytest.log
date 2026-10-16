@@ -1,0 +1,97 @@
+........................................................................ [  3%]
+........................................................................ [  6%]
+..........................F............................................. [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 16%]
+s....................................................................... [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 25%]
+........................................................................ [ 29%]
+........................................................................ [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 42%]
+........................................................................ [ 45%]
+........................................................................ [ 48%]
+........................................................................ [ 51%]
+......FF................................................................ [ 55%]
+........................................................................ [ 58%]
+........................................................................ [ 61%]
+........................................................................ [ 64%]
+............................s.s......................................... [ 68%]
+.....................F.................................................. [ 71%]
+........................................................................ [ 74%]
+...........................................FF........................... [ 77%]
+........................................................................ [ 81%]
+........................................................................ [ 84%]
+........................................................................ [ 87%]
+................FFF..F.................................................. [ 90%]
+........................................................................ [ 94%]
+........................................................................ [ 97%]
+..........................................................               [100%]
+================================== FAILURES ===================================
+__________________ test_scan_full_orchestrierung_und_meldung __________________
+tests\test_agenten_phase_e.py:135: in test_scan_full_orchestrierung_und_meldung
+    assert fake_pipeline.aufrufe[:3] == ["crawl", "kandidaten", "analyze:2349227"]
+E   AssertionError: assert ['crawl', 'ka..., 'analyze:2'] == ['crawl', 'ka...lyze:2349227']
+E     
+E     At index 2 diff: 'analyze:2' != 'analyze:2349227'
+E     Use -v to get more diff
+_ test_metrics_stats_workflow_ohne_quelle_id_nutzt_echte_basis[941002-robo-mql4-mt4] _
+tests\test_katalog.py:411: in test_metrics_stats_workflow_ohne_quelle_id_nutzt_echte_basis
+    assert stats["initial_deposit_usd"] == 25000
+E   assert None == 25000
+_ test_metrics_stats_workflow_ohne_quelle_id_nutzt_echte_basis[941009-mql5-mql4-MT4] _
+tests\test_katalog.py:411: in test_metrics_stats_workflow_ohne_quelle_id_nutzt_echte_basis
+    assert stats["initial_deposit_usd"] == 25000
+E   assert None == 25000
+______ test_unknown_per_call_usage_never_uses_the_client_lifetime_total _______
+tests\test_review15_llm.py:133: in test_unknown_per_call_usage_never_uses_the_client_lifetime_total
+    assert len(pipe.llm.calls) == 2
+E   AssertionError: assert 3 == 2
+E    +  where 3 = len([(101, 'trade_analyse'), (101, 'risiko_analyse'), (101, 'gesamtbericht')])
+E    +    where [(101, 'trade_analyse'), (101, 'risiko_analyse'), (101, 'gesamtbericht')] = <test_review15_llm.FakeLlm object at 0x0000024C0234FE60>.calls
+E    +      where <test_review15_llm.FakeLlm object at 0x0000024C0234FE60> = namespace(settings={}, llm=<test_review15_llm.FakeLlm object at 0x0000024C0234FE60>).llm
+_____________ test_client_holt_length_abbruch_mit_doppeltem_limit _____________
+tests\test_review_bewertung_ki_ablauf.py:109: in test_client_holt_length_abbruch_mit_doppeltem_limit
+    assert c.chat("Bericht bitte", max_tokens=1000, meta_out=meta) == "voller Bericht"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\mqlkiscanner\llm\client.py:170: in chat
+    content=audit_content, response=r.text, usage=audit_usage,
+                                    ^^^^^^
+E   AttributeError: 'FakeResp' object has no attribute 'text'
+___________ test_client_length_ohne_budget_fuer_retry_bleibt_fehler ___________
+tests\test_review_bewertung_ki_ablauf.py:138: in test_client_length_ohne_budget_fuer_retry_bleibt_fehler
+    c.chat("Bericht", max_tokens=800)
+src\mqlkiscanner\llm\client.py:170: in chat
+    content=audit_content, response=r.text, usage=audit_usage,
+                                    ^^^^^^
+E   AttributeError: 'FakeResp' object has no attribute 'text'
+_ test_fresh_independent_real_study_visible_while_engine_stays_stale[True-False] _
+tests\test_stale_independent_study_display.py:16: in test_fresh_independent_real_study_visible_while_engine_stays_stale
+    assert row['True-DD %']==10 and row['TrueRetDD']==6 and row['RetDD/Monat']==.5
+E   assert (None == 10)
+_ test_fresh_independent_real_study_visible_while_engine_stays_stale[False-False] _
+tests\test_stale_independent_study_display.py:16: in test_fresh_independent_real_study_visible_while_engine_stays_stale
+    assert row['True-DD %']==10 and row['TrueRetDD']==6 and row['RetDD/Monat']==.5
+E   assert (None == 10)
+_ test_fresh_independent_real_study_visible_while_engine_stays_stale[True-True] _
+tests\test_stale_independent_study_display.py:16: in test_fresh_independent_real_study_visible_while_engine_stays_stale
+    assert row['True-DD %']==10 and row['TrueRetDD']==6 and row['RetDD/Monat']==.5
+E   assert (None == 10)
+__________ test_short_history_independent_study_has_dd_but_no_ratio ___________
+tests\test_stale_independent_study_display.py:31: in test_short_history_independent_study_has_dd_but_no_ratio
+    assert row['True-DD %']==10 and row['TrueRetDD'] is None
+E   assert (None == 10)
+=========================== short test summary info ===========================
+FAILED tests/test_agenten_phase_e.py::test_scan_full_orchestrierung_und_meldung
+FAILED tests/test_katalog.py::test_metrics_stats_workflow_ohne_quelle_id_nutzt_echte_basis[941002-robo-mql4-mt4]
+FAILED tests/test_katalog.py::test_metrics_stats_workflow_ohne_quelle_id_nutzt_echte_basis[941009-mql5-mql4-MT4]
+FAILED tests/test_review15_llm.py::test_unknown_per_call_usage_never_uses_the_client_lifetime_total
+FAILED tests/test_review_bewertung_ki_ablauf.py::test_client_holt_length_abbruch_mit_doppeltem_limit
+FAILED tests/test_review_bewertung_ki_ablauf.py::test_client_length_ohne_budget_fuer_retry_bleibt_fehler
+FAILED tests/test_stale_independent_study_display.py::test_fresh_independent_real_study_visible_while_engine_stays_stale[True-False]
+FAILED tests/test_stale_independent_study_display.py::test_fresh_independent_real_study_visible_while_engine_stays_stale[False-False]
+FAILED tests/test_stale_independent_study_display.py::test_fresh_independent_real_study_visible_while_engine_stays_stale[True-True]
+FAILED tests/test_stale_independent_study_display.py::test_short_history_independent_study_has_dd_but_no_ratio
+10 failed, 2205 passed, 3 skipped, 4 deselected in 679.04s (0:11:19)

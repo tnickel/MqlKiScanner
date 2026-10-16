@@ -1,0 +1,12 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+__________________ test_scan_full_orchestrierung_und_meldung __________________
+tests\test_agenten_phase_e.py:135: in test_scan_full_orchestrierung_und_meldung
+    assert fake_pipeline.aufrufe[:3] == ["crawl", "kandidaten", "analyze:2349227"]
+E   AssertionError: assert ['crawl', 'ka..., 'analyze:2'] == ['crawl', 'ka...lyze:2349227']
+E     
+E     At index 2 diff: 'analyze:2' != 'analyze:2349227'
+E     Use -v to get more diff
+=========================== short test summary info ===========================
+FAILED tests/test_agenten_phase_e.py::test_scan_full_orchestrierung_und_meldung
+1 failed in 0.61s

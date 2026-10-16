@@ -496,7 +496,7 @@ def test_echte_kapitalbasis_hat_vorrang_vor_virtueller(monkeypatch):
     """Liefert eine Quelle BOTH InitialDeposit (echt) und Virtual, gewinnt das
     echte — der Cent-Abgleich bleibt für belegte Werte aktiv."""
     quelle = _quelle("pelik", "http://pelican:8090")
-    stats = ingest.metrics_zu_stats({"metrics": {
+    stats = ingest.metrics_zu_stats({"version": "pelican", "metrics": {
         "InitialDeposit": 2500.0, "InitialDepositVirtual": 10000.0}})
     assert stats["initial_deposit_usd"] == 2500.0
     assert stats["kapitalbasis_virtual_usd"] == 10000.0

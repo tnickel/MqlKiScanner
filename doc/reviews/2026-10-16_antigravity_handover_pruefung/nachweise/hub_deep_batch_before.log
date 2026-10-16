@@ -1,0 +1,19 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_________ test_deep_batch_cannot_start_while_scan_owns_workflow_lock __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001E89C94F740>
+
+    def test_deep_batch_cannot_start_while_scan_owns_workflow_lock(monkeypatch):
+        db.init_db()
+        monkeypatch.setattr('mqlkiscanner.secrets_store.get_secret',lambda _: 'synthetic-key')
+        calls=Mock();monkeypatch.setattr(tiefen_batch,'run_tiefenanalyse_einzeln',calls)
+        with lock.lauf_lock(config.DATA_DIR):
+            started,message=tiefen_batch.batch_starten([pipeline.ScanResult(id=71)],settings={})
+>       assert not started and 'Lock' in message
+E       assert (not True)
+
+tests\test_antigravity_hub_contracts.py:109: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_antigravity_hub_contracts.py::test_deep_batch_cannot_start_while_scan_owns_workflow_lock
+1 failed, 11 deselected in 1.07s

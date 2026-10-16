@@ -24,6 +24,7 @@ from datetime import datetime
 from typing import Callable
 
 from . import config, db, secrets_store
+from .agenten import lock
 from .llm_runner import run_tiefenanalyse_einzeln
 
 _BATCH_ATTR = "_mqlkiscanner_tiefen_batch"
@@ -42,6 +43,14 @@ def batch_laeuft() -> bool:
 
 def batch_starten(ziele: list, settings: dict | None = None,
                   log: Callable[[str], None] | None = None) -> tuple[bool, str]:
+    """Serialize session starts, then reserve the shared workflow lock."""
+    start_lock = builtins.__dict__.setdefault("_mqlkiscanner_tiefen_start_lock", threading.Lock())
+    with start_lock:
+        return _batch_starten(ziele, settings, log)
+
+
+def _batch_starten(ziele: list, settings: dict | None = None,
+                   log: Callable[[str], None] | None = None) -> tuple[bool, str]:
     """Batch ueber die gegebenen ScanResults starten.
 
     Rueckgabe (gestartet?, Meldung). Ablehnung, wenn bereits ein Batch
@@ -55,6 +64,11 @@ def batch_starten(ziele: list, settings: dict | None = None,
     if not ziele:
         return False, "Keine geeigneten Signale (mit Trade-Daten) in der Quelle."
     einstellungen = {**config.load_settings(), **(settings or {})}
+    workflow_lock = lock.lauf_lock(config.DATA_DIR)
+    try:
+        workflow_lock.__enter__()
+    except lock.LockBesetzt as exc:
+        return False, str(exc)
 
     zustand = {
         "total": len(ziele),
@@ -71,7 +85,7 @@ def batch_starten(ziele: list, settings: dict | None = None,
         "thread": None,
     }
 
-    def worker() -> None:
+    def process_targets() -> None:
         for i, result in enumerate(ziele, 1):
             if zustand["stop"]:
                 zustand["abgebrochen"] = True
@@ -99,13 +113,30 @@ def batch_starten(ziele: list, settings: dict | None = None,
         zustand["fertig"] = True
         zustand["ende"] = datetime.now()
 
+    def worker() -> None:
+        try:
+            process_targets()
+        except Exception as exc:
+            zustand["abgebrochen"] = True
+            zustand["fehler"] += 1
+            zustand["fehler_liste"].append(f"{type(exc).__name__}: {exc}")
+        finally:
+            zustand["fertig"] = True
+            zustand["ende"] = datetime.now()
+            workflow_lock.__exit__(None, None, None)
+
     thread = threading.Thread(target=worker, daemon=True, name="tiefen-batch")
     zustand["thread"] = thread
     setattr(builtins, _BATCH_ATTR, zustand)
-    if log:
-        log(f"Batch-Erweiterte-KI-Analyse gestartet: {len(ziele)} Strategien "
-            "(vorhandene werden übersprungen).")
-    thread.start()
+    try:
+        if log:
+            log(f"Batch-Erweiterte-KI-Analyse gestartet: {len(ziele)} Strategien "
+                "(vorhandene werden übersprungen).")
+        thread.start()
+    except Exception:
+        workflow_lock.__exit__(None, None, None)
+        delattr(builtins, _BATCH_ATTR)
+        raise
     return True, ""
 
 

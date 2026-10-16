@@ -1,0 +1,328 @@
+FFFFFFFFFFFFFFFFFFFFFFF...FFFFFFFFFFFFFFFFFFFFFFFF                       [100%]
+================================== FAILURES ===================================
+___ test_equal_subscriber_counts_select_same_ids_for_every_catalogue_order ____
+tests\test_handover_filter_contracts.py:15: in test_equal_subscriber_counts_select_same_ids_for_every_catalogue_order
+    assert [item["id"] for item in selected] == [10, 20]
+E   assert [30, 10] == [10, 20]
+E     
+E     At index 0 diff: 30 != 10
+E     Use -v to get more diff
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[None-direct] ____
+tests\test_handover_filter_contracts.py:31: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert "unbekannt" in reasons[0]["grund"]
+E   AssertionError: assert 'unbekannt' in '\u2717 Abonnenten: 0 < Mindestabo 1.'
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[None-ingest] ____
+tests\test_handover_filter_contracts.py:31: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert "unbekannt" in reasons[0]["grund"]
+E   AssertionError: assert 'unbekannt' in '\u2717 Abonnenten: 0 < Mindestabo 1.'
+_____ test_invalid_subscriber_count_cannot_prove_one_subscriber[-direct] ______
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   AssertionError: assert '' is None
+_____ test_invalid_subscriber_count_cannot_prove_one_subscriber[-ingest] ______
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   AssertionError: assert '' is None
+__ test_invalid_subscriber_count_cannot_prove_one_subscriber[unknown-direct] __
+tests\test_handover_filter_contracts.py:27: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    selected = pipeline.ScanPipeline({"min_abonnenten": 1, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1532: in build_candidates
+    if (s.get("abonnenten") or 0) < min_abo:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'int'
+__ test_invalid_subscriber_count_cannot_prove_one_subscriber[unknown-ingest] __
+tests\test_handover_filter_contracts.py:27: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    selected = pipeline.ScanPipeline({"min_abonnenten": 1, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1532: in build_candidates
+    if (s.get("abonnenten") or 0) < min_abo:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'int'
+____ test_invalid_subscriber_count_cannot_prove_one_subscriber[nan-direct] ____
+tests\test_handover_filter_contracts.py:29: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...nenten': nan}] == []
+E     
+E     Left contains one more item: {'id': 123, 'wochen': 52.0, 'abonnenten': nan}
+E     Use -v to get more diff
+____ test_invalid_subscriber_count_cannot_prove_one_subscriber[nan-ingest] ____
+tests\test_handover_filter_contracts.py:29: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'pelican', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+____ test_invalid_subscriber_count_cannot_prove_one_subscriber[inf-direct] ____
+tests\test_handover_filter_contracts.py:29: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...nenten': inf}] == []
+E     
+E     Left contains one more item: {'id': 123, 'wochen': 52.0, 'abonnenten': inf}
+E     Use -v to get more diff
+____ test_invalid_subscriber_count_cannot_prove_one_subscriber[inf-ingest] ____
+tests\test_handover_filter_contracts.py:29: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'pelican', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+____ test_invalid_subscriber_count_cannot_prove_one_subscriber[-1-direct] _____
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   assert -1 is None
+____ test_invalid_subscriber_count_cannot_prove_one_subscriber[-1-ingest] _____
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   assert -1 is None
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[True-direct] ____
+tests\test_handover_filter_contracts.py:29: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...enten': True}] == []
+E     
+E     Left contains one more item: {'id': 123, 'wochen': 52.0, 'abonnenten': True}
+E     Use -v to get more diff
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[True-ingest] ____
+tests\test_handover_filter_contracts.py:29: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'pelican', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[False-direct] ___
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   assert False is None
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[False-ingest] ___
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   assert False is None
+____ test_invalid_subscriber_count_cannot_prove_one_subscriber[1.5-direct] ____
+tests\test_handover_filter_contracts.py:29: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...nenten': 1.5}] == []
+E     
+E     Left contains one more item: {'id': 123, 'wochen': 52.0, 'abonnenten': 1.5}
+E     Use -v to get more diff
+____ test_invalid_subscriber_count_cannot_prove_one_subscriber[1.5-ingest] ____
+tests\test_handover_filter_contracts.py:29: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert selected == []
+E   AssertionError: assert [{'id': 123, ...ls/123', ...}] == []
+E     
+E     Left contains one more item: {'id': 123, 'name': '123', 'platform': 'pelican', 'url': 'https://www.mql5.com/en/signals/123', ...}
+E     Use -v to get more diff
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[raw9-direct] ____
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   assert {} is None
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[raw9-ingest] ____
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   assert {} is None
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[raw10-direct] ___
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   assert [] is None
+___ test_invalid_subscriber_count_cannot_prove_one_subscriber[raw10-ingest] ___
+tests\test_handover_filter_contracts.py:30: in test_invalid_subscriber_count_cannot_prove_one_subscriber
+    assert reasons[0]["abonnenten"] is None
+E   assert [] is None
+__________ test_known_subscriber_counts_keep_inclusive_boundary[1_1] __________
+tests\test_handover_filter_contracts.py:36: in test_known_subscriber_counts_keep_inclusive_boundary
+    selected = pipeline.ScanPipeline({"min_abonnenten": 1, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1532: in build_candidates
+    if (s.get("abonnenten") or 0) < min_abo:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'int'
+__________ test_known_subscriber_counts_keep_inclusive_boundary[ 7 ] __________
+tests\test_handover_filter_contracts.py:36: in test_known_subscriber_counts_keep_inclusive_boundary
+    selected = pipeline.ScanPipeline({"min_abonnenten": 1, "fix_signal_ids": []}).build_candidates(
+src\mqlkiscanner\pipeline.py:1532: in build_candidates
+    if (s.get("abonnenten") or 0) < min_abo:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: '<' not supported between instances of 'str' and 'int'
+___ test_unknown_subscribers_remain_allowed_when_subscriber_filter_disabled ___
+tests\test_handover_filter_contracts.py:47: in test_unknown_subscribers_remain_allowed_when_subscriber_filter_disabled
+    assert "unbekannt" in reasons[0]["grund"]
+E   AssertionError: assert 'unbekannt' in '\u2713 Vorfilter bestanden (52 Wochen, 0 Abonnenten) \u2014 \xfcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\xe4chstes entschieden.'
+_______ test_fix_id_bypasses_subscriber_filter_without_inventing_count ________
+tests\test_handover_filter_contracts.py:54: in test_fix_id_bypasses_subscriber_filter_without_inventing_count
+    assert selected[0]["abonnenten"] is None
+E   assert nan is None
+____________ test_scan_settings_preserve_fractional_minimum_weeks _____________
+tests\test_handover_filter_contracts.py:65: in test_scan_settings_preserve_fractional_minimum_weeks
+    assert app.number_input(key="set_wochen").value == 26.5
+E   AssertionError: assert 26 == 26.5
+E    +  where 26 = NumberInput(key='set_wochen', _value=InitialValue(), label='Mindestalter in Wochen', step=1.0).value
+E    +    where NumberInput(key='set_wochen', _value=InitialValue(), label='Mindestalter in Wochen', step=1.0) = WidgetList(_list=[NumberInput(key='set_seiten', _value=InitialValue(), label='Listen-Seiten je MT4/MT5', min=1.0, max=...ter in Wochen', step=1.0), NumberInput(key='set_abo', _value=InitialValue(), label='Mindestens Abonnenten', step=1.0)])(key='set_wochen')
+E    +      where WidgetList(_list=[NumberInput(key='set_seiten', _value=InitialValue(), label='Listen-Seiten je MT4/MT5', min=1.0, max=...ter in Wochen', step=1.0), NumberInput(key='set_abo', _value=InitialValue(), label='Mindestens Abonnenten', step=1.0)]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\streamlit_app.py'...    children={\n                0: UnknownElement(),\n                1: UnknownElement()\n            }\n        )\n    }\n).number_input
+---------------------------- Captured stderr call -----------------------------
+2026-10-16 20:30:40.919 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+____ test_source_adapter_preserves_native_money_without_implicit_usd[None] ____
+tests\test_handover_source_currency.py:16: in test_source_adapter_preserves_native_money_without_implicit_usd
+    assert stats["account_currency"] == currency
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'account_currency'
+__ test_source_adapter_preserves_native_money_without_implicit_usd[unknown] ___
+tests\test_handover_source_currency.py:16: in test_source_adapter_preserves_native_money_without_implicit_usd
+    assert stats["account_currency"] == currency
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'account_currency'
+____ test_source_adapter_preserves_native_money_without_implicit_usd[USC] _____
+tests\test_handover_source_currency.py:16: in test_source_adapter_preserves_native_money_without_implicit_usd
+    assert stats["account_currency"] == currency
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'account_currency'
+____ test_source_adapter_preserves_native_money_without_implicit_usd[EUR] _____
+tests\test_handover_source_currency.py:16: in test_source_adapter_preserves_native_money_without_implicit_usd
+    assert stats["account_currency"] == currency
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'account_currency'
+____ test_source_adapter_preserves_native_money_without_implicit_usd[USD] _____
+tests\test_handover_source_currency.py:16: in test_source_adapter_preserves_native_money_without_implicit_usd
+    assert stats["account_currency"] == currency
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'account_currency'
+___ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-None] ___
+tests\test_handover_source_currency.py:43: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert reached.call_count == int(currency == "USD")
+E   AssertionError: assert 1 == 0
+E    +  where 1 = <Mock id='1488799672768'>.call_count
+E    +  and   0 = int(None == 'USD')
+_ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-unknown] __
+tests\test_handover_source_currency.py:43: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert reached.call_count == int(currency == "USD")
+E   AssertionError: assert 1 == 0
+E    +  where 1 = <Mock id='1488799671952'>.call_count
+E    +  and   0 = int('unknown' == 'USD'
+E       
+E       - USD
+E       + unknown)
+___ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-USC] ____
+tests\test_handover_source_currency.py:43: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert reached.call_count == int(currency == "USD")
+E   AssertionError: assert 1 == 0
+E    +  where 1 = <Mock id='1488799702896'>.call_count
+E    +  and   0 = int('USC' == 'USD'
+E       
+E       - USD
+E       + USC)
+___ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-EUR] ____
+tests\test_handover_source_currency.py:43: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert reached.call_count == int(currency == "USD")
+E   AssertionError: assert 1 == 0
+E    +  where 1 = <Mock id='1488799702752'>.call_count
+E    +  and   0 = int('EUR' == 'USD'
+E       
+E       - USD
+E       + EUR)
+___ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-USD] ____
+tests\test_handover_source_currency.py:47: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert stored["account_money"]["balance_account"] == 1100
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'balance_account'
+_ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-None] _
+tests\test_handover_source_currency.py:43: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert reached.call_count == int(currency == "USD")
+E   AssertionError: assert 1 == 0
+E    +  where 1 = <Mock id='1488816649088'>.call_count
+E    +  and   0 = int(None == 'USD')
+_ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-unknown] _
+tests\test_handover_source_currency.py:43: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert reached.call_count == int(currency == "USD")
+E   AssertionError: assert 1 == 0
+E    +  where 1 = <Mock id='1488816638624'>.call_count
+E    +  and   0 = int('unknown' == 'USD'
+E       
+E       - USD
+E       + unknown)
+_ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-USC] _
+tests\test_handover_source_currency.py:43: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert reached.call_count == int(currency == "USD")
+E   AssertionError: assert 1 == 0
+E    +  where 1 = <Mock id='1488816638576'>.call_count
+E    +  and   0 = int('USC' == 'USD'
+E       
+E       - USD
+E       + USC)
+_ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-EUR] _
+tests\test_handover_source_currency.py:43: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert reached.call_count == int(currency == "USD")
+E   AssertionError: assert 1 == 0
+E    +  where 1 = <Mock id='1488816646208'>.call_count
+E    +  and   0 = int('EUR' == 'USD'
+E       
+E       - USD
+E       + EUR)
+_ test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-USD] _
+tests\test_handover_source_currency.py:47: in test_source_pipeline_currency_guard_precedes_fx_and_terminal
+    assert stored["account_money"]["balance_account"] == 1100
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'balance_account'
+_ test_documented_usd_normalizing_source_contract_is_preserved[pelican-pelican] _
+tests\test_handover_source_currency.py:55: in test_documented_usd_normalizing_source_contract_is_preserved
+    assert stats["account_currency"] == "USD"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'account_currency'
+_ test_documented_usd_normalizing_source_contract_is_preserved[vantage-vant] __
+tests\test_handover_source_currency.py:55: in test_documented_usd_normalizing_source_contract_is_preserved
+    assert stats["account_currency"] == "USD"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'account_currency'
+___ test_documented_usd_normalizing_source_contract_is_preserved[zulu-zulu] ___
+tests\test_handover_source_currency.py:55: in test_documented_usd_normalizing_source_contract_is_preserved
+    assert stats["account_currency"] == "USD"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'account_currency'
+___ test_documented_usd_normalizing_source_contract_is_preserved[mql5-robo] ___
+tests\test_handover_source_currency.py:55: in test_documented_usd_normalizing_source_contract_is_preserved
+    assert stats["account_currency"] == "USD"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'account_currency'
+=========================== short test summary info ===========================
+FAILED tests/test_handover_filter_contracts.py::test_equal_subscriber_counts_select_same_ids_for_every_catalogue_order
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[None-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[None-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[unknown-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[unknown-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[nan-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[nan-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[inf-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[inf-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[-1-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[-1-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[True-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[True-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[False-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[False-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[1.5-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[1.5-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[raw9-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[raw9-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[raw10-direct]
+FAILED tests/test_handover_filter_contracts.py::test_invalid_subscriber_count_cannot_prove_one_subscriber[raw10-ingest]
+FAILED tests/test_handover_filter_contracts.py::test_known_subscriber_counts_keep_inclusive_boundary[1_1]
+FAILED tests/test_handover_filter_contracts.py::test_known_subscriber_counts_keep_inclusive_boundary[ 7 ]
+FAILED tests/test_handover_filter_contracts.py::test_unknown_subscribers_remain_allowed_when_subscriber_filter_disabled
+FAILED tests/test_handover_filter_contracts.py::test_fix_id_bypasses_subscriber_filter_without_inventing_count
+FAILED tests/test_handover_filter_contracts.py::test_scan_settings_preserve_fractional_minimum_weeks
+FAILED tests/test_handover_source_currency.py::test_source_adapter_preserves_native_money_without_implicit_usd[None]
+FAILED tests/test_handover_source_currency.py::test_source_adapter_preserves_native_money_without_implicit_usd[unknown]
+FAILED tests/test_handover_source_currency.py::test_source_adapter_preserves_native_money_without_implicit_usd[USC]
+FAILED tests/test_handover_source_currency.py::test_source_adapter_preserves_native_money_without_implicit_usd[EUR]
+FAILED tests/test_handover_source_currency.py::test_source_adapter_preserves_native_money_without_implicit_usd[USD]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-None]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-unknown]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-USC]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-EUR]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql5-USD]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-None]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-unknown]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-USC]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-EUR]
+FAILED tests/test_handover_source_currency.py::test_source_pipeline_currency_guard_precedes_fx_and_terminal[mql_mirror-USD]
+FAILED tests/test_handover_source_currency.py::test_documented_usd_normalizing_source_contract_is_preserved[pelican-pelican]
+FAILED tests/test_handover_source_currency.py::test_documented_usd_normalizing_source_contract_is_preserved[vantage-vant]
+FAILED tests/test_handover_source_currency.py::test_documented_usd_normalizing_source_contract_is_preserved[zulu-zulu]
+FAILED tests/test_handover_source_currency.py::test_documented_usd_normalizing_source_contract_is_preserved[mql5-robo]
+47 failed, 3 passed in 8.22s

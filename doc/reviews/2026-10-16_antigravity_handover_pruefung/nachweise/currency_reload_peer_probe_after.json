@@ -1,0 +1,33 @@
+{
+  "new_csv": "synthetic-new-native.csv",
+  "changed": true,
+  "currency_after_failed_metrics": null,
+  "stale_usd_proof_retained": false,
+  "versions": [
+    {
+      "version": "mql4",
+      "currency": null,
+      "usd_guard_blocked": true
+    },
+    {
+      "version": "mql5",
+      "currency": null,
+      "usd_guard_blocked": true
+    },
+    {
+      "version": "pelican",
+      "currency": "USD",
+      "usd_guard_blocked": false
+    },
+    {
+      "version": "vantage",
+      "currency": "USD",
+      "usd_guard_blocked": false
+    },
+    {
+      "version": "zulu",
+      "currency": "USD",
+      "usd_guard_blocked": false
+    }
+  ]
+}

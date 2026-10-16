@@ -1,0 +1,23 @@
+{
+  "sha256": "e32ac86584414188544e2249de747ea28b946c744942b2d91a1cc553314f691b",
+  "cases": [
+    {
+      "audit_write_fails": false,
+      "error": null,
+      "paid_response_tokens": 100,
+      "usage_tokens": 100,
+      "usage_requests": 1,
+      "inflight": 0,
+      "metadata_tokens": 100
+    },
+    {
+      "audit_write_fails": true,
+      "error": "OperationalError",
+      "paid_response_tokens": 100,
+      "usage_tokens": 0,
+      "usage_requests": 0,
+      "inflight": 0,
+      "metadata_tokens": null
+    }
+  ]
+}

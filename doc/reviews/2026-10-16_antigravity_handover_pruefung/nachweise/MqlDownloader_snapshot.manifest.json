@@ -1,0 +1,17 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\MqlDownloader",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\antigravity_handover_pruefung_2026-10-16\\MqlDownloader_snapshot",
+  "head": "c328b0b5bc27666f0a4c136c7784d700209529a9",
+  "overlay_sha256": {
+    "README.md": "1146b1ab6239a69c9c63aeb640fc04155f25117dc55a9ba9bf92579a79e17040",
+    "doc/REST_API_Dokumentation.md": "2264c190996a7ab6d23d200301bb9cb9f9c56046a0db6c95473ef440d06aa002",
+    "src/converter/HtmlConverter.java": "ca715b8f280e739c629eada969245b2021124f4641d42283e62b3da0e29fd582",
+    "src/rest/MetricsParser.java": "7b4b7d3e3aff97d86a4d7e337b5b3345ca4bf4489ff3e4090f09bdfb567a58ad",
+    "src/rest/RestApiServer.java": "9ac42e375518588f0571c8689b46f4c5676753e5f6249905b718e3319fac9480",
+    "src/utils/DataExtractor.java": "3ba6d30c435f673b6d0615a12e0222016f628556a9f6603d6b13ab65de84c93a",
+    "src/utils/HtmlParser.java": "26c9fe2cfa96966923da72a8fc181a164df857a54fe0ca155600accfe4184a3a",
+    "tests/rest/ReviewFollowupRestTest.java": "f1fe65ca1552d91a94dadaf3a3905b4ed55c41a07b8fa2d38202186583ca3590",
+    "tests/utils/AccountMoneyReviewTest.java": "a96015acfab9cd3eb5c4a36deeb9e9adbd1e54f51d1ebc074d03546b6a2c3469"
+  },
+  "provenance": "clients_manifest_final2.json; normalized schema, original retained"
+}

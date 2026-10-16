@@ -153,7 +153,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             try:
                 created_at = db.store_analysis(
                     result.id, field, model,
-                    metas[field].get("total_tokens", pipe.llm.usage.total_tokens),
+                    metas[field].get("total_tokens") or 0,
                     text, basis=basis)
             except Exception as storage_error:
                 record_failure(RuntimeError(f"{label} nicht gespeichert: {storage_error}"),
@@ -203,7 +203,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
         try:
             result.gesamtbericht_at = db.store_analysis(
                 result.id, "gesamtbericht", model_strong,
-                meta_gb.get("total_tokens", pipe.llm.usage.total_tokens) or 0,
+                meta_gb.get("total_tokens") or 0,
                 result.gesamtbericht, basis=basis)
         except Exception as exc:
             record_failure(RuntimeError(f"Gesamtbericht nicht gespeichert: {exc}"), "Speicherfehler")

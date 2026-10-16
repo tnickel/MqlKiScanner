@@ -1,0 +1,41 @@
+{
+  "sha256": "06cb09a643dedc8a4ec4445bc1645e64a64d60aa0d6f782fea1b94b0d22beb07",
+  "cases": [
+    {
+      "fault": "none",
+      "workflow_exits": 1,
+      "registry_present": true,
+      "finished": true,
+      "aborted": false,
+      "error_count": 0,
+      "error": null
+    },
+    {
+      "fault": "thread_start",
+      "workflow_exits": 1,
+      "registry_present": false,
+      "finished": null,
+      "aborted": null,
+      "error_count": null,
+      "error": "RuntimeError"
+    },
+    {
+      "fault": "log_callback",
+      "workflow_exits": 1,
+      "registry_present": false,
+      "finished": null,
+      "aborted": null,
+      "error_count": null,
+      "error": "RuntimeError"
+    },
+    {
+      "fault": "worker_db",
+      "workflow_exits": 1,
+      "registry_present": true,
+      "finished": true,
+      "aborted": true,
+      "error_count": 1,
+      "error": null
+    }
+  ]
+}

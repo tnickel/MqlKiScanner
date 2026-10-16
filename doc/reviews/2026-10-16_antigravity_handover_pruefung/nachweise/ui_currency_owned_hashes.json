@@ -1,0 +1,14 @@
+{
+  "app_pages/alle_signale.py": {
+    "sha256": "0113a6c447ec2c03f12a41123dae8af29753380b67bb0623f89f24cd42a9653f",
+    "checkout_matches": true
+  },
+  "src/mqlkiscanner/alle_signale_ui.py": {
+    "sha256": "117566f425b55fdebdbfa1103c4b3219c014cbd9eefe171b9860270f000c7ff6",
+    "checkout_matches": true
+  },
+  "tests/test_alle_signale_seite.py": {
+    "sha256": "3fda8ecfb05f19fb86faa77a963f289c140b91c614d2705b56468074bbebe29a",
+    "checkout_matches": true
+  }
+}

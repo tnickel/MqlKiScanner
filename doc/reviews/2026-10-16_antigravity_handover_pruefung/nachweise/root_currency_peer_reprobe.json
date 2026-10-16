@@ -1,0 +1,459 @@
+{
+  "method": "Current pure functions extracted by AST; no imports with settings/DB/network side effects",
+  "sha256": {
+    "ingest.py": "5d5202f04ae79ff1b8fbc93a49b36e4fae8bde8c041e24846248204f33f813d7",
+    "pipeline.py": "949c0bbef6072aaa134a1fcb3b0e93038cb8125667ee3f497904faf3b450c8b6"
+  },
+  "native_cases": [
+    {
+      "version": "mql4",
+      "alias": "mql_mirror",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "mql_mirror",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "mql_mirror",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "mql_mirror",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "mql_mirror",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql4",
+      "alias": "robo",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "robo",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "robo",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "robo",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "robo",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql4",
+      "alias": "pelican",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "pelican",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "pelican",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "pelican",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "pelican",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql4",
+      "alias": "vantage",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "vantage",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "vantage",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "vantage",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "vantage",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql4",
+      "alias": "vant",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "vant",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "vant",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "vant",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "vant",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql4",
+      "alias": "zulu",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "zulu",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "zulu",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "zulu",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql4",
+      "alias": "zulu",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql5",
+      "alias": "mql_mirror",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "mql_mirror",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "mql_mirror",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "mql_mirror",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "mql_mirror",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql5",
+      "alias": "robo",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "robo",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "robo",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "robo",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "robo",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql5",
+      "alias": "pelican",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "pelican",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "pelican",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "pelican",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "pelican",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql5",
+      "alias": "vantage",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "vantage",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "vantage",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "vantage",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "vantage",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql5",
+      "alias": "vant",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "vant",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "vant",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "vant",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "vant",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql5",
+      "alias": "zulu",
+      "currency": null,
+      "mapped_currency": null,
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "zulu",
+      "currency": "unknown",
+      "mapped_currency": "UNKNOWN",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "zulu",
+      "currency": "USC",
+      "mapped_currency": "USC",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "zulu",
+      "currency": "EUR",
+      "mapped_currency": "EUR",
+      "allowed": false
+    },
+    {
+      "version": "mql5",
+      "alias": "zulu",
+      "currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    }
+  ],
+  "positive_controls": [
+    {
+      "version": "pelican",
+      "alias": "pelik",
+      "original_currency": "EUR",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "vantage",
+      "alias": "my_vantage",
+      "original_currency": "USC",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "zulu",
+      "alias": "my_zulu",
+      "original_currency": "EUR",
+      "mapped_currency": "USD",
+      "allowed": true
+    },
+    {
+      "version": "mql5",
+      "alias": "robo",
+      "original_currency": "USD",
+      "mapped_currency": "USD",
+      "allowed": true
+    }
+  ]
+}

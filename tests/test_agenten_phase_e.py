@@ -132,8 +132,10 @@ def test_scan_full_orchestrierung_und_meldung(fake_pipeline):
     ergebnis = scan_launcher.starte_scan("full", quelle="test",
                                          log=lambda *_: None)
     assert ergebnis["status"] == "ok"
-    assert fake_pipeline.aufrufe[:3] == ["crawl", "kandidaten", "analyze:2349227"]
-    assert "analyze:2" in fake_pipeline.aufrufe
+    # Both fake candidates have no subscriber evidence. Equal counts now use
+    # the canonical numeric ID instead of the incoming catalogue position.
+    assert fake_pipeline.aufrufe[:3] == ["crawl", "kandidaten", "analyze:2"]
+    assert "analyze:2349227" in fake_pipeline.aufrufe
     assert ergebnis["geprueft"] == 2
     meldung = journal.meldungen_lesen(typ="scan")[0]
     assert "full" in meldung["titel"]

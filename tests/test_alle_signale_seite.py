@@ -9,6 +9,7 @@ rechnet auf der kleinen CSV echt.
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from streamlit.testing.v1 import AppTest
@@ -43,7 +44,7 @@ def _probe_mit_trades(csv_pfad: str) -> pipeline.ScanResult:
         id=42, name="Testsignal Euro", platform="MT5", quelle="pelik",
         ampel="🟡", url="https://example.org/42", wochen=100.0, abonnenten=123.0,
         dd_equity_pct=9.9, ertrag_monat_pct=1.5,
-        trades_path=csv_pfad)
+        trades_path=csv_pfad, account_currency="USD")
 
 
 def _probe_ohne_trades() -> pipeline.ScanResult:
@@ -53,6 +54,102 @@ def _probe_ohne_trades() -> pipeline.ScanResult:
 
 
 # --------------------------------------------------------------- App-Tests
+@pytest.mark.parametrize("platform", ["MT4", "MT5"])
+@pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
+def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, monkeypatch, platform, currency):
+    from mqlkiscanner import signal_statistik
+    import pandas as pd
+    probe = _probe_mit_trades(_csv(tmp_path / "native.csv"))
+    probe.platform = platform
+    probe.quelle = "robo"  # A free alias must not establish conversion.
+    probe.quelle_version = "mql4" if platform == "MT4" else "mql5"
+    probe.account_currency = currency
+    probe.true_dd_usd = 98765.0  # Old session/DB values must not bypass the guard.
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+    monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+        {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+    calculate = Mock(wraps=signal_statistik.berechne)
+    monkeypatch.setattr(signal_statistik, "berechne", calculate)
+    at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+    assert not at.exception, at.exception
+    at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+    at.run()
+    assert not at.exception, at.exception
+    if currency != "USD":
+        calculate.assert_not_called()
+        assert any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+        assert pd.isna(at.dataframe[0].value.iloc[0]["True-DD USD"])
+        assert not [b for b in at.button if b.key and "tradeliste" in b.key]
+        assert len(at.get("plotly_chart")) == 0
+    else:
+        assert calculate.called
+        assert at.button(key="alle_signale_detail_42_tradeliste_button")
+        assert at.dataframe[0].value.iloc[0]["True-DD USD"] == 98765.0
+
+
+@pytest.mark.parametrize("contract", ["demo", "pelican", "vantage", "zulu"])
+def test_demo_and_converted_source_detail_keep_their_usd_contract(tmp_path, monkeypatch, contract):
+    from mqlkiscanner import ingest
+    probe = _probe_mit_trades(_csv(tmp_path / "normalized.csv"))
+    if contract == "demo":
+        probe.source_kind = "demo"
+        probe.account_currency = None
+        # The live catalogue intentionally excludes demos; exercise their shared detail renderer.
+        code = f'''
+from mqlkiscanner.pipeline import ScanResult
+from mqlkiscanner import signal_statistik
+from mqlkiscanner.alle_signale_ui import render_detail
+render_detail(ScanResult(id=42, platform="MT5", source_kind="demo",
+    trades_path={probe.trades_path!r}),
+    signal_statistik.berechne({probe.trades_path!r}, {{"balance_usd":10000}}), key_prefix="demo")
+'''
+        at = AppTest.from_string(code, default_timeout=60).run()
+        assert not at.exception, at.exception
+        assert not any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+        assert at.button(key="demo_tradeliste_button")
+        return
+    else:
+        probe.platform = contract
+        probe.quelle_version = contract
+        # Original account currency may differ; the successful source CSV is USD.
+        probe.account_currency = ingest.metrics_zu_stats(
+            {"version": contract, "metrics": {"Currency": "EUR", "Balance": 10000}},
+            "free_alias", quelle_version=contract)["account_currency"]
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+    monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+        {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+    at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+    assert not at.exception, at.exception
+    at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+    at.run()
+    assert not at.exception, at.exception
+    assert not any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+    assert at.button(key="alle_signale_detail_42_tradeliste_button")
+
+
+@pytest.mark.parametrize("currency", [None, "USC", "EUR"])
+def test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache(tmp_path, currency):
+    csv_path = _csv(tmp_path / "untrusted.csv")
+    code = f'''
+from mqlkiscanner.pipeline import ScanResult
+from mqlkiscanner.alle_signale_ui import render_detail
+import streamlit as st
+st.session_state["blocked_tradeliste_offen"] = True
+render_detail(ScanResult(id=42, name="Native MQL", platform="MT5", quelle="pelican",
+    quelle_version="mql5", account_currency={currency!r}, trades_path={csv_path!r}),
+    {{"netto_gesamt_usd":98765, "teilstatistik_finanzdaten":True,
+      "fehler":"old partial data", "dauer_statistik":{{"dauer_median_s":100}}}},
+    key_prefix="blocked")
+'''
+    at = AppTest.from_string(code, default_timeout=60).run()
+    assert not at.exception, at.exception
+    assert any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+    assert not at.metric and not at.dataframe
+    assert not [b for b in at.button if b.key and "tradeliste" in b.key]
+
+
 def test_seite_rendert_mit_zwei_signalen(tmp_path, monkeypatch):
     csv_pfad = _csv(tmp_path / "trades_42.csv")
     proben = [_probe_mit_trades(csv_pfad), _probe_ohne_trades()]
@@ -368,7 +465,7 @@ import streamlit as st
 from mqlkiscanner.alle_signale_ui import render_detail
 from mqlkiscanner.pipeline import ScanResult
 auswahl = ScanResult(id=42, name="Vorbehalt Detail", ampel="🟡", quelle="pelik",
-                     trades_path=r"{csv_pfad}", trades_sha256="abc123")
+                     trades_path=r"{csv_pfad}", trades_sha256="abc123", account_currency="USD")
 auswahl.retdd_monat_vorbehalt = 0.1032
 auswahl.retdd_jahr_vorbehalt = 1.32
 auswahl.retdd_vorbehalt_grund = "Offene Position über Wechselgrenze"
@@ -405,7 +502,7 @@ import streamlit as st
 from mqlkiscanner.alle_signale_ui import render_detail
 from mqlkiscanner.pipeline import ScanResult
 auswahl = ScanResult(id=43, name="Formel Detail", ampel="🟡", quelle="pelik",
-                     trades_path=r"{csv_pfad}", trades_sha256="abc123")
+                     trades_path=r"{csv_pfad}", trades_sha256="abc123", account_currency="USD")
 auswahl.retdd_monat_vorbehalt = 0.1032
 auswahl.retdd_jahr_vorbehalt = 1.32
 auswahl.retdd_vorbehalt_grund = "Offene Position über Wechselgrenze"

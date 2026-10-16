@@ -1,0 +1,88 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+__ test_paid_usage_survives_local_audit_failure_without_a_second_http[stop] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F92659A3F0>
+finish = 'stop'
+
+    @pytest.mark.parametrize('finish', ['stop','length'])
+    def test_paid_usage_survives_local_audit_failure_without_a_second_http(monkeypatch,finish):
+        monkeypatch.setattr('mqlkiscanner.secrets_store.get_secret',lambda _: 'synthetic-key')
+        http=Mock(return_value=response('paid fragment',100,60,40,finish))
+        monkeypatch.setattr('mqlkiscanner.llm.client.requests.post',http)
+        monkeypatch.setattr(db,'store_llm_attempt',Mock(side_effect=OSError('synthetic audit disk failure')))
+        client=GlmClient('synthetic','synthetic',max_total_tokens=10000);meta={}
+        with pytest.raises(LlmError,match='Audit'):
+>           client.chat('synthetic',max_tokens=10,meta_out=meta)
+
+tests\test_antigravity_hub_contracts.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\mqlkiscanner\llm\client.py:168: in chat
+    db.store_llm_attempt(call_id, attempt_no, model=model,
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:1139: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:1143: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <Mock id='2169601894656'>, args = ('9cf3408996f84633ac17e61971d4e8a6', 1)
+kwargs = {'model': 'synthetic', 'prompt': '[{"role": "user", "content": "synthetic"}]', 'content': 'paid fragment', 'response':...ment"}, "finish_reason": "stop"}], "usage": {"total_tokens": 100, "prompt_tokens": 60, "completion_tokens": 40}}', ...}
+
+    def _execute_mock_call(self, /, *args, **kwargs):
+        # separate from _increment_mock_call so that awaited functions are
+        # executed separately from their call, also AsyncMock overrides this method
+    
+        effect = self.side_effect
+        if effect is not None:
+            if _is_exception(effect):
+>               raise effect
+E               OSError: synthetic audit disk failure
+
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:1198: OSError
+_ test_paid_usage_survives_local_audit_failure_without_a_second_http[length] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F92659A570>
+finish = 'length'
+
+    @pytest.mark.parametrize('finish', ['stop','length'])
+    def test_paid_usage_survives_local_audit_failure_without_a_second_http(monkeypatch,finish):
+        monkeypatch.setattr('mqlkiscanner.secrets_store.get_secret',lambda _: 'synthetic-key')
+        http=Mock(return_value=response('paid fragment',100,60,40,finish))
+        monkeypatch.setattr('mqlkiscanner.llm.client.requests.post',http)
+        monkeypatch.setattr(db,'store_llm_attempt',Mock(side_effect=OSError('synthetic audit disk failure')))
+        client=GlmClient('synthetic','synthetic',max_total_tokens=10000);meta={}
+        with pytest.raises(LlmError,match='Audit'):
+>           client.chat('synthetic',max_tokens=10,meta_out=meta)
+
+tests\test_antigravity_hub_contracts.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\mqlkiscanner\llm\client.py:168: in chat
+    db.store_llm_attempt(call_id, attempt_no, model=model,
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:1139: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:1143: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <Mock id='2169601885200'>, args = ('c758c17c27a34ac2b2e4ec7aa0e40a13', 1)
+kwargs = {'model': 'synthetic', 'prompt': '[{"role": "user", "content": "synthetic"}]', 'content': 'paid fragment', 'response':...nt"}, "finish_reason": "length"}], "usage": {"total_tokens": 100, "prompt_tokens": 60, "completion_tokens": 40}}', ...}
+
+    def _execute_mock_call(self, /, *args, **kwargs):
+        # separate from _increment_mock_call so that awaited functions are
+        # executed separately from their call, also AsyncMock overrides this method
+    
+        effect = self.side_effect
+        if effect is not None:
+            if _is_exception(effect):
+>               raise effect
+E               OSError: synthetic audit disk failure
+
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:1198: OSError
+=========================== short test summary info ===========================
+FAILED tests/test_antigravity_hub_contracts.py::test_paid_usage_survives_local_audit_failure_without_a_second_http[stop]
+FAILED tests/test_antigravity_hub_contracts.py::test_paid_usage_survives_local_audit_failure_without_a_second_http[length]
+2 failed, 12 deselected in 0.60s

@@ -8,6 +8,8 @@ Regeln (AGENTS.md):
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -182,15 +184,31 @@ def load_settings() -> dict:
     settings = dict(DEFAULT_SETTINGS)
     if SETTINGS_FILE.exists():
         try:
-            settings.update(json.loads(SETTINGS_FILE.read_text(encoding="utf-8")))
-        except (json.JSONDecodeError, OSError):
-            pass
+            loaded = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
+            if not isinstance(loaded, dict):
+                raise ValueError("Settings müssen ein JSON-Objekt sein")
+            settings.update(loaded)
+        except (ValueError, OSError) as exc:
+            raise ValueError(f"Einstellungen nicht lesbar: {SETTINGS_FILE}: {exc}") from exc
     return settings
 
 
 def save_settings(settings: dict) -> None:
     merged = {**DEFAULT_SETTINGS, **settings}
-    SETTINGS_FILE.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+    raw = json.dumps(merged, ensure_ascii=False, indent=2, allow_nan=False)
+    SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=SETTINGS_FILE.parent,
+                                         suffix=".tmp", delete=False) as out:
+            temporary = Path(out.name)
+            out.write(raw)
+            out.flush()
+            os.fsync(out.fileno())
+        os.replace(temporary, SETTINGS_FILE)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def load_known_signals() -> dict:

@@ -14,12 +14,14 @@ from __future__ import annotations
 import json
 import threading
 import time
+import uuid
 from dataclasses import dataclass, field
 
 import requests
 
 from .. import config as _config
 from .. import secrets_store
+from .. import db
 
 
 class LlmError(RuntimeError):
@@ -96,6 +98,8 @@ class GlmClient:
         gefuellt wird — noetig bei parallelen Aufrufen (last_call allein rasant).
         """
         model = model or (self.model_stufe1 if stufe == 1 else self.model_stufe2)
+        if meta_out is not None:
+            meta_out.clear()
         # Konservative Reservierung: Antwort-Limit plus Prompt-Obergrenze
         # (UTF-8-Bytes plus Systemtext und Framing). Muss VOR dem
         # Budget-Check stehen, sonst buchen parallele Calls gemeinsam über.
@@ -121,6 +125,11 @@ class GlmClient:
                 "max_tokens": max_tokens,
             }
             last_error: Exception | None = None
+            call_id = uuid.uuid4().hex
+            if meta_out is not None:
+                meta_out["call_id"] = call_id
+            attempt_no = 0
+            totals = {"total_tokens": 0, "prompt_tokens": 0, "completion_tokens": 0, "reasoning_tokens": 0}
             length_retry_offen = True
             verworfene_tokens = 0   # F8 (Fremd-Review 01.10.)
             for attempt in range(3):
@@ -128,6 +137,7 @@ class GlmClient:
                 # Ein Transportfehler darf nicht den gesamten Signal-Lauf abbrechen.
                 # Pro HTTP-Aufruf genau eine Wiederholung, dann ein LlmError.
                 for transport_attempt in range(2):
+                    attempt_no += 1
                     try:
                         if self.agent_budget_settings is not None:
                             from ..agenten import budget
@@ -138,11 +148,52 @@ class GlmClient:
                                               timeout=self.timeout)
                         break
                     except requests.RequestException as exc:
+                        db.store_llm_attempt(call_id, attempt_no, model=model,
+                            prompt=json.dumps(body["messages"],ensure_ascii=False), content="",
+                            response=f"{type(exc).__name__}: {exc}", usage={})
                         if transport_attempt:
                             raise LlmError(
                                 f"GLM-Verbindungsfehler nach 2 Versuchen: "
                                 f"{type(exc).__name__}: {exc}") from exc
                         time.sleep(5)
+                # Preserve every response, including discarded length/error attempts.
+                try:
+                    audit_data = r.json()
+                    audit_choice = (audit_data.get("choices") or [{}])[0]
+                    audit_content = (audit_choice.get("message") or {}).get("content") or ""
+                    audit_usage = audit_data.get("usage") or {}
+                    audit_finish = audit_choice.get("finish_reason")
+                except (ValueError, TypeError, AttributeError, IndexError):
+                    audit_content, audit_usage, audit_finish = "", {}, None
+                try:
+                    db.store_llm_attempt(call_id, attempt_no, model=model,
+                        prompt=json.dumps(body["messages"],ensure_ascii=False),
+                        content=audit_content, response=r.text, usage=audit_usage,
+                        http_status=r.status_code, finish_reason=audit_finish)
+                except Exception as audit_error:
+                    # The HTTP attempt is already paid. A local disk failure
+                    # cannot refund its usage or trigger a second paid request.
+                    raw_usage = audit_usage if isinstance(audit_usage, dict) else {}
+                    paid = {}
+                    for key in totals:
+                        value = raw_usage.get(key, 0)
+                        if key == "reasoning_tokens":
+                            details = raw_usage.get("completion_tokens_details") or {}
+                            value = details.get(key, 0) if isinstance(details, dict) else 0
+                        paid[key] = value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else 0
+                    for key in totals:
+                        totals[key] += paid[key]
+                    failed_meta = {**totals, "model": model, "call_id": call_id,
+                        "attempt_count": attempt_no, "finish_reason": audit_finish,
+                        "agent_budget_ledger": self.agent_budget_settings is not None,
+                        "audit_complete": False, "audit_error": str(audit_error),
+                        "audit_failed_response": r.text}
+                    with self._lock:
+                        self.usage.add(model, paid["total_tokens"])
+                        self.last_call = failed_meta
+                        if meta_out is not None:
+                            meta_out.update(failed_meta)
+                    raise LlmError(f"Lokales LLM-Audit fehlgeschlagen; bekannte Antwortkosten gebucht: {audit_error}") from audit_error
                 if r.status_code >= 400:
                     try:
                         err = r.json().get("error", {})
@@ -193,6 +244,8 @@ class GlmClient:
                 usage = data.get("usage", {})
                 call_meta = {
                     "model": model,
+                    "call_id": call_id,
+                    "attempt_count": attempt_no,
                     "agent_budget_ledger": self.agent_budget_settings is not None,
                     # total_tokens = Kosten DIESES Calls (M3, Review T1/2 29.09.):
                     #usage.total_tokens ist der kumulierte Lauf-Zahler und darf
@@ -207,6 +260,11 @@ class GlmClient:
                     "zeichen": len(content),
                     "prompt_zeichen": len(prompt),
                 }
+                for key in totals:
+                    totals[key] += call_meta[key]
+                call_meta.update(totals)
+                if verworfene_tokens:
+                    call_meta["verworfene_retry_tokens"] = verworfene_tokens
                 with self._lock:
                     # Reservierung gegen die echte (kleinere) Nutzung aufloesen
                     self._inflight_tokens -= reservierung
@@ -220,9 +278,6 @@ class GlmClient:
                         meta_out.clear()
                         meta_out.update(call_meta)
                         if verworfene_tokens:
-                            meta_out["total_tokens"] = (
-                                int(call_meta.get("total_tokens", 0))
-                                + verworfene_tokens)
                             meta_out["verworfene_retry_tokens"] = verworfene_tokens
                 if finish not in (None, "stop"):
                     # F-11 (Review 29.09.): finish_reason=length ist BEZAHLT

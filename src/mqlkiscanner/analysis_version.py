@@ -31,4 +31,6 @@ Bei Änderungen an Pflichtprüfungen oder Bewertungsregeln erhöhen: Live-Befund
 # Preflow-Equity nicht als Equity-TWR freigegeben, Roh-DD/Kosten/FX korrigiert.
 # 18: Direkte MQL-Kontobeträge benötigen belegtes USD; native Fremdwährung
 # darf nicht als USD-Basis für H1-/Schockmessung wiederverwendet werden.
-FORENSICS_VERSION = 18
+# 19: Auch MQL-Quelltrades sind native Kontobeträge; kein pauschaler USD-
+# Vertrag durch REST-Transport. Nur belegtes USD darf in die USD-Forensik.
+FORENSICS_VERSION = 19

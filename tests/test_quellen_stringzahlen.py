@@ -12,6 +12,7 @@ from mqlkiscanner import ingest, scoring
 
 def test_metrics_zu_stats_parsst_komma_strings():
     stats = ingest.metrics_zu_stats({"metrics": {
+        "Currency": "USD",
         "EquityDrawdown": "9,10",
         "Average3MonthProfit": "1 234,5",
         "InitialDeposit": "2.000,00",

@@ -530,6 +530,14 @@ def results_from_db(settings: dict | None = None, *, catalog_rows=None,
         trades_stale = bool(f) and bool(aktueller_sha) and (
             not f.get("trades_sha256") or f["trades_sha256"] != aktueller_sha)
         forensik_stale = forensik_stale or version_stale or trades_stale
+        currency = stats.get("account_currency")
+        native_mql = (str(row.get("platform") or "").upper() in {"MT4", "MT5", "MQL4", "MQL5"}
+                      or str(row.get("quelle") or "mql5") == "mql5")
+        currency_version = stats.get("account_currency_evidence_version", stats.get("forensik_version"))
+        if native_mql and (not isinstance(currency_version, int) or currency_version < 19):
+            # Before v19 the REST path assigned USD without a unit proof. An
+            # old value must not authorize a fresh USD study on native money.
+            currency = None
         res = ScanResult(
             id=int(row["signal_id"]),
             source_kind="demo" if row.get("platform") == "CSV" else "live",
@@ -541,7 +549,7 @@ def results_from_db(settings: dict | None = None, *, catalog_rows=None,
             abo_preis_usd=row.get("abo_preis"),
             wochen=row.get("wochen"),
             quelle=str(row.get("quelle") or "mql5"),
-            account_currency=stats.get("account_currency"),
+            account_currency=currency,
             growth_pct=stats.get("growth_pct"),
             ertrag_monat_pct=stats.get("ertrag_monat_pct"),
             ertrag_monat_pct_forensik=stats.get("ertrag_monat_pct_forensik"),
@@ -799,14 +807,17 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
 
 
 def require_usd_account(result: ScanResult) -> None:
-    """Direct MQL trades may enter USD H1 models only with a proven USD unit.
+    """Native MQL and explicitly non-USD source money must not enter USD models.
 
-    Local CSV/demo analysis and other source APIs retain their explicit USD
-    model/export contracts. Historical MQL rows without currency need a rescan.
+    Known converting monitors and local CSV/demo analysis retain their USD
+    contracts. Old or unknown MQL mirrors require an explicit currency rescan.
     """
-    if (getattr(result, "quelle", "") == "mql5"
-            and getattr(result, "source_kind", "live") != "demo"
-            and getattr(result, "account_currency", None) != "USD"):
+    native_mql = (getattr(result, "quelle", "") == "mql5"
+                  or str(getattr(result, "platform", "")).upper() in {"MT4", "MT5", "MQL4", "MQL5"}
+                  or str(getattr(result, "quelle_version", "")).lower() in {"mql4", "mql5"})
+    if (getattr(result, "source_kind", "live") != "demo"
+            and getattr(result, "account_currency", None) != "USD"
+            and (native_mql or getattr(result, "account_currency", None) is not None)):
         currency = getattr(result, "account_currency", None) or "unbekannt/uneindeutig"
         raise ValueError(f"Kontowährung {currency}: USD-Forensik gesperrt — "
                          "keine belegte Umrechnung von Export und Kontobasis in USD.")
@@ -1468,7 +1479,7 @@ class ScanPipeline:
         wird, erhält JEDES Eingangssignal einen Erklärungs-Datensatz
         (Nutzer-Wunsch 02.10.2026: Auswahl nachvollziehbar — warum drin,
         warum draußen)."""
-        from .ingest import normalisiere_wochen
+        from .ingest import normalisiere_wochen, normalisiere_abonnenten
         identities: dict[int, set[tuple[str, str]]] = {}
         for s in signals:
             platform = str(s.get("platform") or "").upper().replace("MQL", "MT")
@@ -1498,6 +1509,7 @@ class ScanPipeline:
             return fix_signale.begruendungseintrag(s, status, grund)
 
         for s in signals:
+            s = dict(s, abonnenten=normalisiere_abonnenten(s.get("abonnenten")))
             if "wochen" in s:
                 # Validate direct candidates too; NaN compares false to every
                 # minimum and must not prove age. Copy instead of mutating the
@@ -1529,19 +1541,22 @@ class ScanPipeline:
                              f"{min_wochen:g} Wochen.")
                     begruendung.append(_eintrag(s, "DRAUSSEN", grund))
                 continue
-            if (s.get("abonnenten") or 0) < min_abo:
+            subscribers = s.get("abonnenten")
+            if (subscribers or 0) < min_abo:
                 if begruendung is not None:
                     begruendung.append(_eintrag(
                         s, "DRAUSSEN",
-                        f"✗ Abonnenten: {s.get('abonnenten') or 0} < "
-                        f"Mindestabo {min_abo}."))
+                        ("✗ Abonnenten unbekannt — Mindestabo "
+                         f"{min_abo} kann nicht belegt werden."
+                         if subscribers is None else
+                         f"✗ Abonnenten: {subscribers} < Mindestabo {min_abo}.")))
                 continue
             candidates.append(s)
             if begruendung is not None:
                 begruendung.append(_eintrag(
                     s, "KANDIDAT",
                     f"✓ Vorfilter bestanden ({weeks:g} Wochen, "
-                    f"{s.get('abonnenten') or 0} Abonnenten) — über die "
+                    f"{subscribers if subscribers is not None else 'unbekannt'} Abonnenten) — über die "
                     "Auswahl (Slots bzw. Teilscan-Scope) wird als Nächstes "
                     "entschieden."))
         log(f"Vorfilter (Wochen >= {min_wochen:g}, Abonnenten >= {min_abo}): "
@@ -1599,6 +1614,8 @@ class ScanPipeline:
                          abonnenten=cand.get("abonnenten"),
                          abo_preis_usd=cand.get("abo_preis_usd"),
                          wochen=cand.get("wochen"), growth_pct=cand.get("growth_pct"),
+                         quelle_id=cand.get("quelle_id"),
+                         quelle_version=str(cand.get("quelle_version") or ""),
                          quelle=str(cand.get("quelle_kuerzel") or "mql5"))
         try:
             # Auch der erste headless Lauf braucht das Schema vor dem
@@ -1634,7 +1651,8 @@ class ScanPipeline:
                 # Fallback griff sonst fuer CopyFX-Signale nicht (08.10.).
                 stats = ingest.metrics_zu_stats(
                     ingest.hole_metrics(quelle_row, res.id, quelle_version),
-                    quelle_kuerzel=str(quelle_row["kuerzel"]))
+                    quelle_kuerzel=str(quelle_row["kuerzel"]),
+                    quelle_version=quelle_version)
                 if stats.get('quelle_trade_history_complete') is False:
                     reasons = stats.get('quelle_trade_history_quality_reasons') or []
                     raise ValueError('Quelle meldet unvollständige Positionshistorie: '
@@ -1643,10 +1661,9 @@ class ScanPipeline:
                 log("Kennzahlen-Seite laden (mql5) …")
                 stats = signal_stats.fetch_signal_stats(session, res.id)
             res.dd_equity_pct = stats.get("dd_equity_pct")
-            # Source API money fields have a documented USD export contract;
-            # direct HTML must prove its native unit explicitly.
-            res.account_currency = stats.get("account_currency") or (
-                "USD" if quelle_row is not None else None)
+            # The native MQL source requires the same proof as direct HTML;
+            # ingest supplies USD only for monitors with a conversion contract.
+            res.account_currency = stats.get("account_currency")
             res.dd_balance_pct = stats.get("dd_balance_pct")
             res.ertrag_monat_pct = stats.get("monthly_growth_pct")
             res.pf = stats.get("profit_factor")
@@ -1981,6 +1998,7 @@ class ScanPipeline:
                 "initial_deposit_usd": stats.get("initial_deposit_usd"),
                 "balance_usd": stats.get("balance_usd"),
                 "account_currency": res.account_currency,
+                "account_currency_evidence_version": FORENSICS_VERSION,
                 "account_money": {key: value for key, value in stats.items()
                                   if key.endswith("_account")},
                 # Virtuelle Annahme aus dem Quellen-Monitor (Audit-Snapshot)

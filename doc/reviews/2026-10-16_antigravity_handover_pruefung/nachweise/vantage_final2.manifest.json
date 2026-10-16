@@ -1,0 +1,24 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\vantage",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\antigravity_handover_pruefung_2026-10-16\\vantage_final2",
+  "head": "503f34ac34a99174adb687fbf8f1882fdd87f42e",
+  "overlay_sha256": {
+    "README.md": "02a8efe4854d51dc130dea01b584943e7c5325668dbf8c9c934392d0528da0c1",
+    "download_trades.py": "5478a67cc596d7d18e7a3f41740f68b2613703a419fea06ba77bcbbc23c07931",
+    "src/main/java/de/vantagemonitor/VantageMonitorApp.java": "ebab9a647cfe7f9e1116ca267f1be64a042bfff2ccad707aa87a3a8166a1e957",
+    "src/main/java/de/vantagemonitor/api/VantageClient.java": "47f168fdfef9ff5570abd64b2fd0e8eb365fe182d08405a5321db5d7a1035aa6",
+    "src/main/java/de/vantagemonitor/model/SignalProvider.java": "c65fd3677f20ed2aa7311f4a0a3a4cca17aa381c8d0690c637a944eaf4b5e722",
+    "src/main/java/de/vantagemonitor/report/SignalPayloadBuilder.java": "3f6d8f7e936dde919ec8fb09599e350fd7873e84b4c58a600e69b966bf5d4d22",
+    "src/main/java/de/vantagemonitor/rest/RestApiServer.java": "a95f525efcad7b3843e617b0870ba8b175cc62280d8eac99e1bcebd1e17bafd6",
+    "src/main/java/de/vantagemonitor/store/TradeListStore.java": "4b2f0e1cf7910847d224cf2890524defabac939d92e8031c4df1bc84c502a3e7",
+    "src/main/java/de/vantagemonitor/store/TradeStore.java": "aa2e67f3ae678c1d303a7c6c1a3af077923c6ba88db8a330eae41216eadd620b",
+    "src/test/java/de/vantagemonitor/RestApiServerTest.java": "30e41ce12da82456b1978c8482f8299cee74c6966a68b015d1e5256f825fa37d",
+    "src/test/java/de/vantagemonitor/report/DrawdownBasisTest.java": "9606b6b90e425fd656b2b1f8fae9edad8e9e18396ade01e4b907adeb32e8956d",
+    "src/test/java/de/vantagemonitor/store/TradeIntegrityTest.java": "f8ddc190c6929083d086356f1b4e9711302d65fc94c172d8820d1a5d4239ec4e",
+    "src/test/java/de/vantagemonitor/store/TradeStoreMonateTest.java": "8b35b4fe4f7599aeb1144ac50006fffc16c69147b13e1e1fdff8ffa80100ba9b",
+    "tests/test_download_trades.py": "0af0ac1813af2c03840d88c97917f7b54af761c4b56d7ada8e1ff1c4b72620d0",
+    "src/test/java/de/vantagemonitor/api/ReviewFollowupTest.java": "e9547e8915c111cb17ba55be2964d060fdd4372cef22de9c31b3cf791457d8dc",
+    "src/test/java/de/vantagemonitor/store/LegacyEpochAgeTest.java": "ef43257f1fa24cb09f49d69e55ca9b82226c7b3775965808288a4b444608dc2c"
+  },
+  "provenance": "clients_manifest_final2.json; normalized schema, original retained"
+}

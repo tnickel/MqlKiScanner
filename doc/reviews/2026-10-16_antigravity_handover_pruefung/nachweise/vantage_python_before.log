@@ -1,0 +1,23 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+___ test_python_cache_has_explicit_utc_basis_and_does_not_recertify_legacy ____
+
+tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1959/test_python_cache_has_explicit0')
+
+    def test_python_cache_has_explicit_utc_basis_and_does_not_recertify_legacy(tmp_path):
+        from datetime import datetime, timezone
+        closed = int(datetime(2025, 1, 1, 23, 30, tzinfo=timezone.utc).timestamp() * 1000)
+        item = {**trade(), "openTime": closed - 3600000, "closeTime": closed}
+        module.save_all(970007, [item], [], {}, "USD", total_count=1, output_dir=tmp_path)
+>       assert module._ts(closed) == "2025-01-01T23:30:00"
+E       AssertionError: assert '2025-01-02T00:30:00' == '2025-01-01T23:30:00'
+E         
+E         - 2025-01-01T23:30:00
+E         ?          ^ ^^
+E         + 2025-01-02T00:30:00
+E         ?          ^ ^^
+
+tests\test_download_trades.py:96: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_download_trades.py::test_python_cache_has_explicit_utc_basis_and_does_not_recertify_legacy
+1 failed, 12 deselected in 0.42s

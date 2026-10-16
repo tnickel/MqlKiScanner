@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 
 from .. import config
+from ..llm.bausteine import REGELN_FREMDTEXT
 
 # Schlüssel der Rollen-Vorlagen. Die Pfade werden pro Zugriff neu aus
 # config.PROMPTS_DIR aufgelöst — Tests lenken das Verzeichnis um, und ein
@@ -258,4 +259,4 @@ def fuellung(template: str, mapping: dict[str, str]) -> str:
         tokens[token] = wert
     for token, wert in tokens.items():
         out = out.replace(token, wert)
-    return out
+    return REGELN_FREMDTEXT + "\n\n" + out

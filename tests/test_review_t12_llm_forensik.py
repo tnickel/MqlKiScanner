@@ -6,6 +6,7 @@ Regeltexte), M5 (Budget-Reservierung), F1 (Kapitalbasis-Paar), F4
 from __future__ import annotations
 
 from datetime import datetime
+import json
 
 from mqlkiscanner import pipeline, regelwerk
 from mqlkiscanner.forensics import drawdown, exposure, stops
@@ -49,6 +50,10 @@ def test_chat_meta_enthaelt_pro_call_total_tokens(monkeypatch):
     class FakeResp:
         status_code = 200
 
+        @property
+        def text(self):
+            return json.dumps(self.json())
+
         def json(self):
             return {"choices": [{"message": {"content": "ok"},
                                  "finish_reason": "stop"}],
@@ -77,6 +82,10 @@ def test_budget_blockt_parallel_einen_call_noch_vor_kosten(monkeypatch):
 
     class FakeResp:
         status_code = 200
+
+        @property
+        def text(self):
+            return json.dumps(self.json())
 
         def json(self):
             return {"choices": [{"message": {"content": "ok"},

@@ -17,18 +17,25 @@ eingebunden**; eine Hub-Anbindung ist nicht implementiert.
 
 Die Korrekturen des [Gesamtreviews vom 16.10.2026](doc/reviews/2026-10-16_gesamtreview/BEHEBUNG.md)
 und der [kritischen GLM-Gegenprüfung](doc/reviews/2026-10-16_glm53_pruefung/README.md)
-verwenden inzwischen Forensik-Version 18. Ältere Befunde und Equity-Studien werden nicht
+werden durch die [ergänzende Antigravity-/GLM-Gegenprüfung](doc/reviews/2026-10-16_antigravity_handover_pruefung/README.md)
+mit Forensik-Version 19 ergänzt. Ältere Befunde und Equity-Studien werden nicht
 als aktuelle Freigabe wiederverwendet. Vor einer neuen Auswahl müssen die
 geänderten Quellen neu gebaut und gestartet sowie betroffene Signale neu
 geladen und analysiert werden. Kapitalflüsse während offener Positionen
 erlauben ohne belegte Equity am Flusszeitpunkt keinen belastbaren Calmar.
-Direkte MQL-Kontobeträge brauchen für USD-Forensik und USD-Kontostudien einen
+Direkte und über MqlDownloader gelieferte MQL-Kontobeträge brauchen für USD-Forensik und USD-Kontostudien einen
 belegten USD-Kontowährungsnachweis; fremde oder unbekannte native Einheiten
 werden als solche erhalten. Ohne belegte Umrechnung wird keine USD-Messung freigegeben.
+Alte MqlDownloader-Kennzahlen ohne `Currency` belegen keine USD-Einheit.
 
 Die [DeepSeek-Gegenprüfung](doc/reviews/2026-10-16_deepseek_pruefung/README.md)
 ergänzt korrekte Jahres-Calmar-Anzeigen, konsistente Kriterienbeschreibungen,
 öffentlich reproduzierbare Parser-Fixtures und den Quellen-Altersabgleich.
+
+Vor der Forensik werden pro Quelle die abonnentenstärksten Kandidaten ausgewählt;
+bei Gleichstand entscheidet die Signal-ID aufsteigend. Das ist eine begrenzte
+Vorauswahl und keine vollständige Suche nach den renditestärksten Plattformsignalen.
+Unbekannte Abonnentenzahlen belegen einen positiven Mindestabo-Filter nicht.
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)

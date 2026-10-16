@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="9" skipped="0" tests="11" time="8.812" timestamp="2026-10-16T20:50:53.168804+02:00" hostname="Ryzen7950X"><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[None-MT4]" time="1.357"><failure message="AssertionError: Expected 'mock' to not have been called. Called 1 times.&#10;Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block0\\native.csv', {'balance_usd': 10000.0})].">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1968/test_native_mql_currency_block0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002A9B80B70E0&gt;
+platform = 'MT4', currency = None
+
+    @pytest.mark.parametrize("platform", ["MT4", "MT5"])
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
+    def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, monkeypatch, platform, currency):
+        from mqlkiscanner import signal_statistik
+        import pandas as pd
+        probe = _probe_mit_trades(_csv(tmp_path / "native.csv"))
+        probe.platform = platform
+        probe.quelle = "robo"  # A free alias must not establish conversion.
+        probe.quelle_version = "mql4" if platform == "MT4" else "mql5"
+        probe.account_currency = currency
+        probe.true_dd_usd = 98765.0  # Old session/DB values must not bypass the guard.
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        calculate = Mock(wraps=signal_statistik.berechne)
+        monkeypatch.setattr(signal_statistik, "berechne", calculate)
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        if currency != "USD":
+&gt;           calculate.assert_not_called()
+
+tests\test_alle_signale_seite.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;Mock id='2927941629904'&gt;
+
+    def assert_not_called(self):
+        """assert that the mock was never called.
+        """
+        if self.call_count != 0:
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+&gt;           raise AssertionError(msg)
+E           AssertionError: Expected 'mock' to not have been called. Called 1 times.
+E           Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block0\\native.csv', {'balance_usd': 10000.0})].
+
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:910: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[None-MT5]" time="0.660"><failure message="AssertionError: Expected 'mock' to not have been called. Called 1 times.&#10;Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block1\\native.csv', {'balance_usd': 10000.0})].">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1968/test_native_mql_currency_block1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002A9B80B72F0&gt;
+platform = 'MT5', currency = None
+
+    @pytest.mark.parametrize("platform", ["MT4", "MT5"])
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
+    def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, monkeypatch, platform, currency):
+        from mqlkiscanner import signal_statistik
+        import pandas as pd
+        probe = _probe_mit_trades(_csv(tmp_path / "native.csv"))
+        probe.platform = platform
+        probe.quelle = "robo"  # A free alias must not establish conversion.
+        probe.quelle_version = "mql4" if platform == "MT4" else "mql5"
+        probe.account_currency = currency
+        probe.true_dd_usd = 98765.0  # Old session/DB values must not bypass the guard.
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        calculate = Mock(wraps=signal_statistik.berechne)
+        monkeypatch.setattr(signal_statistik, "berechne", calculate)
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        if currency != "USD":
+&gt;           calculate.assert_not_called()
+
+tests\test_alle_signale_seite.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;Mock id='2927995973328'&gt;
+
+    def assert_not_called(self):
+        """assert that the mock was never called.
+        """
+        if self.call_count != 0:
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+&gt;           raise AssertionError(msg)
+E           AssertionError: Expected 'mock' to not have been called. Called 1 times.
+E           Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block1\\native.csv', {'balance_usd': 10000.0})].
+
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:910: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USC-MT4]" time="0.676"><failure message="AssertionError: Expected 'mock' to not have been called. Called 1 times.&#10;Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block2\\native.csv', {'balance_usd': 10000.0})].">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1968/test_native_mql_currency_block2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002A9B80B6B10&gt;
+platform = 'MT4', currency = 'USC'
+
+    @pytest.mark.parametrize("platform", ["MT4", "MT5"])
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
+    def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, monkeypatch, platform, currency):
+        from mqlkiscanner import signal_statistik
+        import pandas as pd
+        probe = _probe_mit_trades(_csv(tmp_path / "native.csv"))
+        probe.platform = platform
+        probe.quelle = "robo"  # A free alias must not establish conversion.
+        probe.quelle_version = "mql4" if platform == "MT4" else "mql5"
+        probe.account_currency = currency
+        probe.true_dd_usd = 98765.0  # Old session/DB values must not bypass the guard.
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        calculate = Mock(wraps=signal_statistik.berechne)
+        monkeypatch.setattr(signal_statistik, "berechne", calculate)
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        if currency != "USD":
+&gt;           calculate.assert_not_called()
+
+tests\test_alle_signale_seite.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;Mock id='2927996193776'&gt;
+
+    def assert_not_called(self):
+        """assert that the mock was never called.
+        """
+        if self.call_count != 0:
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+&gt;           raise AssertionError(msg)
+E           AssertionError: Expected 'mock' to not have been called. Called 1 times.
+E           Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block2\\native.csv', {'balance_usd': 10000.0})].
+
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:910: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USC-MT5]" time="0.695"><failure message="AssertionError: Expected 'mock' to not have been called. Called 1 times.&#10;Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block3\\native.csv', {'balance_usd': 10000.0})].">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1968/test_native_mql_currency_block3')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002A9BA2C5EB0&gt;
+platform = 'MT5', currency = 'USC'
+
+    @pytest.mark.parametrize("platform", ["MT4", "MT5"])
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
+    def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, monkeypatch, platform, currency):
+        from mqlkiscanner import signal_statistik
+        import pandas as pd
+        probe = _probe_mit_trades(_csv(tmp_path / "native.csv"))
+        probe.platform = platform
+        probe.quelle = "robo"  # A free alias must not establish conversion.
+        probe.quelle_version = "mql4" if platform == "MT4" else "mql5"
+        probe.account_currency = currency
+        probe.true_dd_usd = 98765.0  # Old session/DB values must not bypass the guard.
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        calculate = Mock(wraps=signal_statistik.berechne)
+        monkeypatch.setattr(signal_statistik, "berechne", calculate)
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        if currency != "USD":
+&gt;           calculate.assert_not_called()
+
+tests\test_alle_signale_seite.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;Mock id='2927996135392'&gt;
+
+    def assert_not_called(self):
+        """assert that the mock was never called.
+        """
+        if self.call_count != 0:
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+&gt;           raise AssertionError(msg)
+E           AssertionError: Expected 'mock' to not have been called. Called 1 times.
+E           Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block3\\native.csv', {'balance_usd': 10000.0})].
+
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:910: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[EUR-MT4]" time="0.683"><failure message="AssertionError: Expected 'mock' to not have been called. Called 1 times.&#10;Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block4\\native.csv', {'balance_usd': 10000.0})].">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1968/test_native_mql_currency_block4')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002A9FA503DA0&gt;
+platform = 'MT4', currency = 'EUR'
+
+    @pytest.mark.parametrize("platform", ["MT4", "MT5"])
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
+    def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, monkeypatch, platform, currency):
+        from mqlkiscanner import signal_statistik
+        import pandas as pd
+        probe = _probe_mit_trades(_csv(tmp_path / "native.csv"))
+        probe.platform = platform
+        probe.quelle = "robo"  # A free alias must not establish conversion.
+        probe.quelle_version = "mql4" if platform == "MT4" else "mql5"
+        probe.account_currency = currency
+        probe.true_dd_usd = 98765.0  # Old session/DB values must not bypass the guard.
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        calculate = Mock(wraps=signal_statistik.berechne)
+        monkeypatch.setattr(signal_statistik, "berechne", calculate)
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        if currency != "USD":
+&gt;           calculate.assert_not_called()
+
+tests\test_alle_signale_seite.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;Mock id='2929072282688'&gt;
+
+    def assert_not_called(self):
+        """assert that the mock was never called.
+        """
+        if self.call_count != 0:
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+&gt;           raise AssertionError(msg)
+E           AssertionError: Expected 'mock' to not have been called. Called 1 times.
+E           Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block4\\native.csv', {'balance_usd': 10000.0})].
+
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:910: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[EUR-MT5]" time="0.681"><failure message="AssertionError: Expected 'mock' to not have been called. Called 1 times.&#10;Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block5\\native.csv', {'balance_usd': 10000.0})].">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1968/test_native_mql_currency_block5')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002A9FA500260&gt;
+platform = 'MT5', currency = 'EUR'
+
+    @pytest.mark.parametrize("platform", ["MT4", "MT5"])
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
+    def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, monkeypatch, platform, currency):
+        from mqlkiscanner import signal_statistik
+        import pandas as pd
+        probe = _probe_mit_trades(_csv(tmp_path / "native.csv"))
+        probe.platform = platform
+        probe.quelle = "robo"  # A free alias must not establish conversion.
+        probe.quelle_version = "mql4" if platform == "MT4" else "mql5"
+        probe.account_currency = currency
+        probe.true_dd_usd = 98765.0  # Old session/DB values must not bypass the guard.
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        calculate = Mock(wraps=signal_statistik.berechne)
+        monkeypatch.setattr(signal_statistik, "berechne", calculate)
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        if currency != "USD":
+&gt;           calculate.assert_not_called()
+
+tests\test_alle_signale_seite.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;Mock id='2927996195120'&gt;
+
+    def assert_not_called(self):
+        """assert that the mock was never called.
+        """
+        if self.call_count != 0:
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+&gt;           raise AssertionError(msg)
+E           AssertionError: Expected 'mock' to not have been called. Called 1 times.
+E           Calls: [call('C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-1968\\test_native_mql_currency_block5\\native.csv', {'balance_usd': 10000.0})].
+
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:910: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USD-MT4]" time="0.673" /><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USD-MT5]" time="0.679" /><testcase classname="tests.test_alle_signale_seite" name="test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache[None]" time="0.509"><failure message="assert False&#10; +  where False = any(&lt;generator object test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache.&lt;locals&gt;.&lt;genexpr&gt; at 0x000002A9BA1F97D0&gt;)">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1968/test_direct_detail_cannot_use_0')
+currency = None
+
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR"])
+    def test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache(tmp_path, currency):
+        csv_path = _csv(tmp_path / "untrusted.csv")
+        code = f'''
+    from mqlkiscanner.pipeline import ScanResult
+    from mqlkiscanner.alle_signale_ui import render_detail
+    import streamlit as st
+    st.session_state["blocked_tradeliste_offen"] = True
+    render_detail(ScanResult(id=42, name="Native MQL", platform="MT5", quelle="pelican",
+        quelle_version="mql5", account_currency={currency!r}, trades_path={csv_path!r}),
+        {{"netto_gesamt_usd":98765, "teilstatistik_finanzdaten":True,
+          "fehler":"old partial data", "dauer_statistik":{{"dauer_median_s":100}}}},
+        key_prefix="blocked")
+    '''
+        at = AppTest.from_string(code, default_timeout=60).run()
+        assert not at.exception, at.exception
+&gt;       assert any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+E       assert False
+E        +  where False = any(&lt;generator object test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache.&lt;locals&gt;.&lt;genexpr&gt; at 0x000002A9BA1F97D0&gt;)
+
+tests\test_alle_signale_seite.py:134: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache[USC]" time="0.490"><failure message="assert False&#10; +  where False = any(&lt;generator object test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache.&lt;locals&gt;.&lt;genexpr&gt; at 0x000002A9FA5F52F0&gt;)">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1968/test_direct_detail_cannot_use_1')
+currency = 'USC'
+
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR"])
+    def test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache(tmp_path, currency):
+        csv_path = _csv(tmp_path / "untrusted.csv")
+        code = f'''
+    from mqlkiscanner.pipeline import ScanResult
+    from mqlkiscanner.alle_signale_ui import render_detail
+    import streamlit as st
+    st.session_state["blocked_tradeliste_offen"] = True
+    render_detail(ScanResult(id=42, name="Native MQL", platform="MT5", quelle="pelican",
+        quelle_version="mql5", account_currency={currency!r}, trades_path={csv_path!r}),
+        {{"netto_gesamt_usd":98765, "teilstatistik_finanzdaten":True,
+          "fehler":"old partial data", "dauer_statistik":{{"dauer_median_s":100}}}},
+        key_prefix="blocked")
+    '''
+        at = AppTest.from_string(code, default_timeout=60).run()
+        assert not at.exception, at.exception
+&gt;       assert any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+E       assert False
+E        +  where False = any(&lt;generator object test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache.&lt;locals&gt;.&lt;genexpr&gt; at 0x000002A9FA5F52F0&gt;)
+
+tests\test_alle_signale_seite.py:134: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache[EUR]" time="0.488"><failure message="assert False&#10; +  where False = any(&lt;generator object test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache.&lt;locals&gt;.&lt;genexpr&gt; at 0x000002A9BA1FA0C0&gt;)">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-1968/test_direct_detail_cannot_use_2')
+currency = 'EUR'
+
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR"])
+    def test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache(tmp_path, currency):
+        csv_path = _csv(tmp_path / "untrusted.csv")
+        code = f'''
+    from mqlkiscanner.pipeline import ScanResult
+    from mqlkiscanner.alle_signale_ui import render_detail
+    import streamlit as st
+    st.session_state["blocked_tradeliste_offen"] = True
+    render_detail(ScanResult(id=42, name="Native MQL", platform="MT5", quelle="pelican",
+        quelle_version="mql5", account_currency={currency!r}, trades_path={csv_path!r}),
+        {{"netto_gesamt_usd":98765, "teilstatistik_finanzdaten":True,
+          "fehler":"old partial data", "dauer_statistik":{{"dauer_median_s":100}}}},
+        key_prefix="blocked")
+    '''
+        at = AppTest.from_string(code, default_timeout=60).run()
+        assert not at.exception, at.exception
+&gt;       assert any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+E       assert False
+E        +  where False = any(&lt;generator object test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache.&lt;locals&gt;.&lt;genexpr&gt; at 0x000002A9BA1FA0C0&gt;)
+
+tests\test_alle_signale_seite.py:134: AssertionError</failure></testcase></testsuite></testsuites>

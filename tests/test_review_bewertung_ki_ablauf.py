@@ -88,17 +88,26 @@ def test_client_holt_length_abbruch_mit_doppeltem_limit(monkeypatch):
     class FakeResp:
         status_code = 200
 
-        def json(self):
+        def __init__(self):
             aufrufe["n"] += 1
             if aufrufe["n"] == 1:
-                return {"choices": [{"message": {"content": "abgebrochen"},
+                self.body = {"choices": [{"message": {"content": "abgebrochen"},
                                      "finish_reason": "length"}],
                         "usage": {"total_tokens": 100, "prompt_tokens": 50,
                                   "completion_tokens": 50}}
-            return {"choices": [{"message": {"content": "voller Bericht"},
+            else:
+                self.body = {"choices": [{"message": {"content": "voller Bericht"},
                                  "finish_reason": "stop"}],
                     "usage": {"total_tokens": 130, "prompt_tokens": 50,
                               "completion_tokens": 80}}
+
+        def json(self):
+            return self.body
+
+        @property
+        def text(self):
+            import json
+            return json.dumps(self.body)
 
     monkeypatch.setattr(llm_client.requests, "post",
                         lambda *a, **kw: FakeResp())
@@ -120,12 +129,19 @@ def test_client_length_ohne_budget_fuer_retry_bleibt_fehler(monkeypatch):
     class FakeResp:
         status_code = 200
 
-        def json(self):
+        def __init__(self):
             aufrufe["n"] += 1
+
+        def json(self):
             return {"choices": [{"message": {"content": "x"},
                                  "finish_reason": "length"}],
                     "usage": {"total_tokens": 50, "prompt_tokens": 20,
                               "completion_tokens": 30}}
+
+        @property
+        def text(self):
+            import json
+            return json.dumps(self.json())
 
     monkeypatch.setattr(llm_client.requests, "post",
                         lambda *a, **kw: FakeResp())

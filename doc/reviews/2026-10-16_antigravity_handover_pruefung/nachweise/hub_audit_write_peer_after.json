@@ -1,0 +1,21 @@
+{
+  "sha256": "43a50312874d966b0be536e8d2917b76ac1819adcb1d93411e50f1ddfe15dc88",
+  "cases": [
+    {
+      "finish": "stop",
+      "http_calls": 1,
+      "usage": 100,
+      "meta_tokens": 100,
+      "inflight": 0,
+      "error": "Lokales LLM-Audit fehlgeschlagen; bekannte Antwortkosten gebucht: synthetic audit write failure"
+    },
+    {
+      "finish": "length",
+      "http_calls": 1,
+      "usage": 100,
+      "meta_tokens": 100,
+      "inflight": 0,
+      "error": "Lokales LLM-Audit fehlgeschlagen; bekannte Antwortkosten gebucht: synthetic audit write failure"
+    }
+  ]
+}

@@ -17,11 +17,13 @@ from __future__ import annotations
 
 import base64
 import time
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Iterable
 
 from . import config, db, tradeserver_client
+from .agenten import lock
 from .pdf_reports import (PdfRenderError, materialize_portfolio_pdf,
                           materialize_result_pdfs)
 
@@ -247,7 +249,27 @@ def _payload_ohne_lokale_felder(doc: dict, *, mit_inhalt: bool = False) -> dict:
     return payload
 
 
-def sync_alle(results: Iterable, portfolio: dict | None = None, *,
+_SYNC_LOCK = threading.Lock()
+
+
+def sync_alle(results: Iterable, portfolio: dict | None = None, **kwargs) -> dict:
+    """Only one sync per data directory, across sessions and processes."""
+    message = "Tradeserver-Sync läuft bereits in einer anderen Sitzung."
+    if _SYNC_LOCK.acquire(blocking=False):
+        try:
+            try:
+                with lock.lauf_lock(config.DATA_DIR, name="tradeserver_sync"):
+                    return _sync_alle(results, portfolio, **kwargs)
+            except lock.LockBesetzt as exc:
+                message = str(exc)
+        finally:
+            _SYNC_LOCK.release()
+    return {"signale":0,"gespeichert":0,"geloescht":0,"dokumente":0,
+            "uebertragen":0,"uebersprungen":0,"bytes":0,"fehler":[],
+            "abgebrochen":message,"run_id":None,"server_zeit":None,"dauer_s":0.0}
+
+
+def _sync_alle(results: Iterable, portfolio: dict | None = None, *,
               fresh_ids: set[int] | None = None,
               client: tradeserver_client.TradeserverClient | None = None,
               progress: Callable[[int, int, str], None] | None = None) -> dict:
@@ -266,17 +288,19 @@ def sync_alle(results: Iterable, portfolio: dict | None = None, *,
             gesehen.add(r.id)
             unique.append(r)
 
-    zeilen = signal_zeilen(unique, fresh_ids=fresh_ids)
-    dokumente, fehler = dokumente_sammeln(unique, portfolio)
     summary = {
-        "signale": len(zeilen), "gespeichert": 0, "geloescht": 0,
-        "dokumente": len(dokumente), "uebertragen": 0, "uebersprungen": 0,
-        "bytes": 0, "fehler": fehler, "abgebrochen": None,
+        "signale": 0, "gespeichert": 0, "geloescht": 0,
+        "dokumente": 0, "uebertragen": 0, "uebersprungen": 0,
+        "bytes": 0, "fehler": [], "abgebrochen": None,
         "run_id": None, "server_zeit": None, "dauer_s": None,
     }
     client = client or _client()
+    local_run_id = db.start_tradeserver_sync_run(client.base)
     run_offen = False
     try:
+        zeilen = signal_zeilen(unique, fresh_ids=fresh_ids)
+        dokumente, fehler = dokumente_sammeln(unique, portfolio)
+        summary.update(signale=len(zeilen), dokumente=len(dokumente), fehler=fehler)
         info = client.register(signal_count=len(zeilen))
         summary["run_id"] = info.get("runId")
         summary["server_zeit"] = info.get("serverTime")
@@ -325,10 +349,8 @@ def sync_alle(results: Iterable, portfolio: dict | None = None, *,
                 pass  # Best-Effort: Server markiert den Lauf sonst beim Timeout.
     finally:
         summary["dauer_s"] = round(time.monotonic() - start, 1)
-        db.store_tradeserver_sync_run(
-            base_url=client.base,
-            status=("abgebrochen" if summary["abgebrochen"] else "ok"),
-            summary=summary)
+        db.finish_tradeserver_sync_run(local_run_id,
+            "abgebrochen" if summary["abgebrochen"] else "ok", summary)
     return summary
 
 

@@ -1,0 +1,13 @@
+{
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\roboforex",
+  "destination": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\antigravity_handover_pruefung_2026-10-16\\roboforex_final",
+  "head": "96ca0a7b8b34bc11e6bf587c548b308ce5c0092c",
+  "overlay_sha256": {
+    "README.md": "c4973eb9671232fd1290e36e87d443695e604c1b1babac6798661acd057e3e4d",
+    "src\\main\\java\\de\\robomonitor\\api\\RoboForexClient.java": "83dc5d4c32e51ab52a3f13d769960a913bc42be5119d002bcfee4743aa47342f",
+    "src\\main\\java\\de\\robomonitor\\rest\\RestApiServer.java": "c94ab6ee17d42df275f60121c5f71b04a448cdcf2e1e2202eedcd0fa0964ccdf",
+    "src\\main\\java\\de\\robomonitor\\update\\UpdateJobRunner.java": "cc4105965b66099c97ea14c345530665f14e1703885557238f927013f2bf9892",
+    "src\\test\\java\\de\\robomonitor\\RestApiServerTest.java": "10e34b2d4429821226109c28a528b1365297eee1da92026b4e3f411c928224fe",
+    "src\\test\\java\\de\\robomonitor\\UpdateJobStufe0Test.java": "49ae22f491f534e1b1c3b2308d97836e91140453582370f5ce8b7052c95adb93"
+  }
+}

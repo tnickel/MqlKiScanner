@@ -191,6 +191,9 @@ def _statistik_cached(trades_pfad: str, sha: str, stats_json: str,
 
 
 def _statistik_fuer(result) -> dict | None:
+    waehrungsfehler = tabellen_ui.usd_statistik_fehler(result)
+    if waehrungsfehler:
+        return {'fehler': waehrungsfehler, 'waehrung_gesperrt': True}
     pfad = getattr(result, 'trades_path', '') or ''
     if not pfad or not Path(pfad).exists():
         return None
