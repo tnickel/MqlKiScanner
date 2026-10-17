@@ -27,6 +27,11 @@ Direkte und über MqlDownloader gelieferte MQL-Kontobeträge brauchen für USD-F
 belegten USD-Kontowährungsnachweis; fremde oder unbekannte native Einheiten
 werden als solche erhalten. Ohne belegte Umrechnung wird keine USD-Messung freigegeben.
 Alte MqlDownloader-Kennzahlen ohne `Currency` belegen keine USD-Einheit.
+Einzel- und Batchstudien erneuern einen fehlenden Währungsnachweis vor dem
+Kurszugriff über die eindeutig zugeordnete Datenquelle, auch bei vorhandenem
+Trade-Cache. Dieser Abruf verwendet keinen Offline-Ersatz durch alte Metrics.
+Explizites EUR/USC und weiterhin unbekannte Einheiten bleiben gesperrt;
+nach jeder neuen Trade-Lieferung wird die Einheit erneut geprüft.
 
 Die [DeepSeek-Gegenprüfung](doc/reviews/2026-10-16_deepseek_pruefung/README.md)
 ergänzt korrekte Jahres-Calmar-Anzeigen, konsistente Kriterienbeschreibungen,

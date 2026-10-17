@@ -165,7 +165,7 @@ def _laufe(jobs: list, control: dict, settings: dict,
             control["phase"] = "rechnet"
             t0 = time.time()
             try:
-                pipeline.require_usd_account(res)
+                katalog.require_studienwaehrung(res)
                 # Connect only after the first eligible account. A batch of
                 # unknown / non-USD MQL exports must not start a terminal.
                 if anbieter is None:
@@ -374,6 +374,7 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
         if not trades_nachladen:
             return False
         pfad, _ = katalog.lade_signal_daten(res)
+        pipeline.require_usd_account(res)
         res.trades_path = pfad
         artefakt = db.get_quellen_artefakt(int(res.quelle_id), int(res.id),
                                            str(res.quelle_version or ""), "trades")
@@ -401,6 +402,7 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
         # die Quelle abgeschlossene Trades meldet. Genau ein Refresh je
         # Signal/Batch, ueber denselben Quellen-/SHA-Pfad wie beim Erstladen.
         pfad, _ = katalog.lade_signal_daten(res)
+        pipeline.require_usd_account(res)
         res.trades_path = pfad
         artefakt = db.get_quellen_artefakt(int(res.quelle_id), int(res.id),
                                            str(res.quelle_version or ""), "trades")

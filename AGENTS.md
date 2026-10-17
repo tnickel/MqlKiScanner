@@ -51,6 +51,12 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   ohne die aktuelle Fehler-Ampel aufzuwerten. REST-GET erzeugt keine PDFs;
   zentrale Promptregeln sind an den Berichtshash gebunden. Details im
   `doc/reviews/2026-10-16_glm53_pruefung/README.md`.
+- **Währungsnachweis (17.10.2026):** Einzel-/Batchstudien laden fehlende
+  Kontowährungsmetadaten vor dem Kurszugriff von der eindeutig zugeordneten
+  Quelle nach, auch bei vorhandenem Trade-Cache. Dafür kein Offline-Fallback
+  auf ältere Metrics; explizite Fremdwährungen bleiben gesperrt. Jede neue
+  Trade-Lieferung erfordert erneut die USD-Prüfung. Eine Website-USD-Angabe
+  darf nicht durch einen alten Metrics-Export ohne `Currency` verloren gehen.
 - **DeepSeek-Gegenprüfung 16.10.2026:** Sichtbares Regelwerk und Stationsdialoge
   verwenden den konfigurierten Jahres-Calmar mit Jahres-Vorbehalt. Monitor-DD
   bleibt Closing-Kurve und Schrankenkanal. Öffentliche synthetische Parser-Fixtures

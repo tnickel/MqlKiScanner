@@ -230,15 +230,20 @@ def hole_trades(quelle: dict, signal_id: int, version: str, *,
 
 @_serialisiere_artefakt
 def hole_metrics(quelle: dict, signal_id: int, version: str, *,
-                 client: downloader_client.DownloaderClient | None = None) -> dict:
+                 client: downloader_client.DownloaderClient | None = None,
+                 allow_offline_cache: bool = True) -> dict:
     """Metrics-Antwort holen und cachen; Rückgabe ist das gecachte JSON.
 
     Offline-Fallback wie hole_trades: Verbindung fehlgeschlagen + Cache
-    vorhanden → letzter bekannter Stand (geändert=False logisch)."""
+    vorhanden → letzter bekannter Stand (geändert=False logisch).
+    Ein neu benötigter Währungsnachweis kann diesen Fallback ausschalten.
+    """
     cli = client or quellen.client_fuer_quelle(quelle)
     try:
         antwort = cli.metrics(signal_id, version)
     except downloader_client.DownloaderConnectionError:
+        if not allow_offline_cache:
+            raise
         alt_offline = db.get_quellen_artefakt(int(quelle["id"]), signal_id,
                                               version, "metrics")
         if alt_offline and alt_offline.get("path") \

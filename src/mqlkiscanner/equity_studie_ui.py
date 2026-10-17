@@ -48,8 +48,9 @@ def berechne(result, progress) -> dict:
     Wirft RuntimeError mit klarem Text, wenn die Trade-Datei fehlt oder das
     Kurs-Terminal nicht verfügbar ist. progress: callback(anteil_0_1, text).
     """
-    from .pipeline import require_usd_account
-    require_usd_account(result)
+    from . import katalog
+    progress(0.01, "Kontowährung prüfen …")
+    katalog.require_studienwaehrung(result)
     progress(0.02, "Trade-Liste laden …")
     pfad = (getattr(result, "trades_path", "") or "").strip()
     if not pfad or not Path(pfad).exists():
@@ -70,6 +71,8 @@ def berechne(result, progress) -> dict:
     # Pipeline tatsächlich verwendete Basis aus dem Forensik-Snapshot).
     extern = getattr(result, "kapitalbasis_verwendet_usd", None) \
         or getattr(result, "kapitalbasis_usd", None)
+    if extern is None:
+        extern = katalog.metrics_stats(result).get("initial_deposit_usd")
     if getattr(result, "kapitalbasis_verwendet_usd", None) is not None and parsed.trades:
         # Verwendete Basis ist bereits der Netto-Startsaldo. drawdown.run
         # erwartet dagegen die externe Basis VOR separaten Kontokosten.
@@ -631,7 +634,9 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
                      icon=":material/error_outline:")
             return
         bar.empty()
-        st.session_state[cache_key] = daten
+        # Der fehlende Währungsnachweis kann während berechne() erneuert
+        # worden sein. Nur unter der tatsächlich geprüften Einheit cachen.
+        st.session_state[_cache_key(result)] = daten
         st.toast("Equity-Studie berechnet", icon=":material/monitoring:")
 
     if daten.get("status") != "ok":

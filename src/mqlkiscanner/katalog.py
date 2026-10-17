@@ -298,6 +298,54 @@ def quellen_referenz(result) -> tuple[int, str] | None:
     return int(quelle["id"]), str(zeile.get("version") or "")
 
 
+def require_studienwaehrung(result) -> None:
+    """Fehlenden Währungsnachweis vor Kurszugriff aus der Quelle erneuern.
+
+    Bereits belegtes USD, Demo- und konvertierte Exportverträge bleiben
+    gültig. Eine unbekannte native Einheit darf dagegen frische Metrics
+    nachladen, auch wenn die CSV bereits lokal liegt. Kein Offline-Ersatz
+    durch einen älteren USD-Wert und keine Zuordnung über fremde Quellen.
+    """
+    try:
+        pipeline.require_usd_account(result)
+        return
+    except ValueError:
+        currency = str(getattr(result, "account_currency", None) or "").strip().casefold()
+        if currency not in {"", "unknown", "unbekannt", "uneindeutig", "unbekannt/uneindeutig"}:
+            raise
+
+    ref = quellen_referenz(result)
+    if ref is None:
+        pipeline.require_usd_account(result)
+        return
+    quelle_id, version = ref
+    quelle = db.get_quelle(quelle_id)
+    platform = str(getattr(result, "platform", "") or "")
+    bekannte_version = str(getattr(result, "quelle_version", "") or "")
+    if (quelle is None or quelle.get("kuerzel") != getattr(result, "quelle", "")
+            or version not in ingest._PLATTFORM
+            or (bekannte_version and bekannte_version != version)
+            or (platform and downloader_client.platform_version(platform) != version)):
+        raise ValueError("Kontowährung nicht belegt: Quellen- oder Plattformzuordnung widersprüchlich.")
+
+    try:
+        antwort = ingest.hole_metrics(quelle, int(result.id), version,
+                                      allow_offline_cache=False)
+    except downloader_client.DownloaderError as exc:
+        raise ValueError(
+            "Kontowährung unbekannt/uneindeutig: USD-Forensik gesperrt — "
+            "Währungsnachweis konnte nicht von der Quelle aktualisiert werden.") from exc
+    if (not isinstance(antwort, dict)
+            or (antwort.get("version") and str(antwort["version"]) != version)
+            or (antwort.get("signalId") is not None
+                and str(antwort["signalId"]) != str(int(result.id)))):
+        raise ValueError("Kontowährung nicht belegt: Metadaten gehören zu einem anderen Signal oder einer anderen Plattform.")
+    result.account_currency = ingest.metrics_zu_stats(
+        antwort, str(quelle["kuerzel"]), quelle_version=version).get("account_currency")
+    result.quelle_id, result.quelle_version = quelle_id, version
+    pipeline.require_usd_account(result)
+
+
 def lade_signal_daten(result, log=None) -> tuple[str, bool]:
     """Trades + Kennzahlen EINES Katalog-Signals on demand vom Client holen.
 
