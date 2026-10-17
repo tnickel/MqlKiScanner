@@ -2142,7 +2142,7 @@ class ScanPipeline:
         return res
 
     def _kursanbieter_fuer(self, log: LogCb):
-        """KursDaten lazy je Pipeline (ein Terminal-Start pro Lauf).
+        """KursDaten lazy je Pipeline; verwendete Terminals bleiben im Lauf offen.
 
         Ohne Terminal/ohne Freigabe: ein Versuch, danach still None —
         die Rekonstruktion entfällt für den Rest des Laufs (kein Malus).
@@ -2164,7 +2164,7 @@ class ScanPipeline:
         return self._kursanbieter
 
     def kursdaten_beenden(self) -> None:
-        """Terminal des Kursdaten-Anbieters sauber beenden (Lauf-Ende)."""
+        """Alle verwendeten Kurs-Terminals sauber beenden (Lauf-Ende)."""
         if self._kursanbieter is not None:
             self._kursanbieter.beenden()
             self._kursanbieter = None

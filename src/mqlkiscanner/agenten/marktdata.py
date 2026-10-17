@@ -9,8 +9,10 @@ fertig berechnete Kennzahlen, niemals Rohkurse.
 
 Start-Politik (Nutzer-Entscheidung 22.09.2026): Standardmäßig startet der
 Scanner das Terminal NICHT selbst. Mit dem Schalter markt_start_erlauben
-darf er: initialize() startet das Terminal dann im PORTABLE-Modus (die
-Hauptinstallation bleibt unberührt). Das Terminal des konfigurierten Pfads
+darf er das Terminal mit /portable starten. Auch beim Verbinden mit einer
+laufenden Instanz muss deren portabler Datenpfad belegt sein. Start und
+Prüfung verwenden dieselbe KursDaten-Logik wie die Scan-Historien. Das
+Terminal des konfigurierten Pfads
 gehört dem Scanner — es wird nach jedem Lauf beendet (terminal_beenden),
 auch wenn es schon vor dem Lauf lief.
 """
@@ -145,26 +147,17 @@ def kurse_holen(symbole: list[str], settings: dict) -> dict:
     selbststart = not lief_schon
     lookback = int(settings.get("markt_lookback_tage", 30))
 
-    import MetaTrader5 as mt5  # spät: nur wenn wirklich verbunden wird
-
-    def _verbinden() -> bool:
-        pfad = terminal_pfad if Path(terminal_pfad).exists() else None
-        if pfad:
-            # portable=Nur beim Selbststart: die Scanner-eigene Instanz soll
-            # die Hauptinstallation (Profile/Logs) unberührt lassen.
-            return bool(mt5.initialize(pfad, portable=selbststart))
-        return bool(mt5.initialize())
-
-    if not _verbinden():
-        fehler = str(mt5.last_error())
-        mt5.shutdown()
-        terminal_beenden(terminal_pfad)
-        grund = f"MT5-Verbindung fehlgeschlagen: {fehler}"
-        if selbststart:
-            grund += " (Selbststart: portable Terminal wurde beendet.)"
-        return {"ok": False, "grund": grund}
+    # Lokaler Import: kursdaten nutzt die pfadgenauen Prozess-Helfer aus
+    # diesem Modul. Ein Import auf Modulebene wäre daher zirkulär.
+    from ..kursdaten import KursDaten
+    anbieter = KursDaten({**settings, "kursdaten_terminals": [terminal_pfad]})
     ergebnis: dict | None = None
     try:
+        verbunden, grund = anbieter.starten()
+        if not verbunden:
+            return {"ok": False, "grund": f"MT5-Verbindung fehlgeschlagen: {grund}"}
+        selbststart = getattr(anbieter, "_selbststart", selbststart)
+        import MetaTrader5 as mt5  # erst nach belegter portabler Verbindung
         info = mt5.terminal_info()
         kurse: dict[str, dict] = {}
         fehler_symbole: list[str] = []
@@ -190,10 +183,9 @@ def kurse_holen(symbole: list[str], settings: dict) -> dict:
             ergebnis["symbole_ohne_daten"] = fehler_symbole
         return ergebnis
     finally:
-        mt5.shutdown()
-        beendet = terminal_beenden(terminal_pfad)
+        anbieter.beenden()
         if ergebnis is not None:
-            ergebnis["terminal_beendet"] = beendet
+            ergebnis["terminal_beendet"] = not terminal_laueft(terminal_pfad)
 
 
 def _bar(rate) -> dict:
@@ -208,7 +200,24 @@ def verbindung_testen(settings: dict) -> dict:
 
     Mit Start-Freigabe wird ein nicht laufendes Terminal portabel gestartet.
     Das Terminal dieses Pfads wird nach dem Test grundsätzlich beendet.
+    Das globale Scan-/Studien-Lock bleibt bis nach dem Terminal-Cleanup
+    gehalten; bei einem aktiven Lauf wird kein Terminal angefasst.
     """
+    from .. import config
+    from . import lock
+
+    try:
+        with lock.lauf_lock(config.DATA_DIR):
+            return _verbindung_testen_exklusiv(settings)
+    except lock.LockBesetzt:
+        return {"ok": False,
+                "grund": ("Verbindungstest übersprungen: Ein anderer Lauf ist "
+                          "aktiv (Scan, Studie oder Marktdaten). Nach dessen "
+                          "Ende erneut testen.")}
+
+
+def _verbindung_testen_exklusiv(settings: dict) -> dict:
+    """Terminal-Lebensdauer innerhalb des vom Aufrufer gehaltenen Lauf-Locks."""
     terminal_pfad = str(settings.get("markt_terminal_pfad") or DEFAULT_TERMINAL)
     start_erlauben = bool(settings.get("markt_start_erlauben", False))
     lief_schon = terminal_laueft(terminal_pfad)
@@ -217,17 +226,15 @@ def verbindung_testen(settings: dict) -> dict:
                 "grund": ("Terminal läuft nicht. Standard-Politik: der Scanner "
                           "startet es nicht selbst — Terminal öffnen und erneut "
                           "testen.")}
-    import MetaTrader5 as mt5
     selbststart = not lief_schon
-    pfad = terminal_pfad if Path(terminal_pfad).exists() else None
-    verbunden = (bool(mt5.initialize(pfad, portable=selbststart)) if pfad
-                 else bool(mt5.initialize()))
-    if not verbunden:
-        fehler = str(mt5.last_error())
-        mt5.shutdown()
-        terminal_beenden(terminal_pfad)
-        return {"ok": False, "grund": f"Verbindung fehlgeschlagen: {fehler}"}
+    from ..kursdaten import KursDaten
+    anbieter = KursDaten({**settings, "kursdaten_terminals": [terminal_pfad]})
     try:
+        verbunden, grund = anbieter.starten()
+        if not verbunden:
+            return {"ok": False, "grund": f"Verbindung fehlgeschlagen: {grund}"}
+        selbststart = getattr(anbieter, "_selbststart", selbststart)
+        import MetaTrader5 as mt5
         info = mt5.terminal_info()
         test_symbol = broker_symbol("XAUUSD", settings)
         mt5.symbol_select(test_symbol, True)
@@ -243,8 +250,7 @@ def verbindung_testen(settings: dict) -> dict:
                          f"XAUUSD-H1-Close {float(bars[-1]['close']):.2f}"
                          f"{hinweis}, Terminal danach beendet"}
     finally:
-        mt5.shutdown()
-        terminal_beenden(terminal_pfad)
+        anbieter.beenden()
 
 
 # ── Kennzahlen (reiner Code — das LLM zitiert sie nur) ─────────────

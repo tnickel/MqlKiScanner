@@ -15,6 +15,7 @@ ist er aus, läuft die Schleife leer bis zum Stopp.
 from __future__ import annotations
 
 import time
+from contextlib import ExitStack
 from datetime import datetime
 
 from .. import config
@@ -296,14 +297,23 @@ def _rolle_ausfuehren(rolle: str, settings: dict, ergebnis: dict, log) -> None:
     # Der liveness-basierte Rollen-Lock schließt beide Wege; LockBesetzt
     # (lebender Halter) = dokumentierter Skip wie beim Journal-Guard.
     try:
-        with lock.lauf_lock(config.DATA_DIR, lock.rolle_lock_name(rolle)):
+        with ExitStack() as lauf_sperren:
+            # Der Marktbeobachter beendet sein MT5-Terminal am Lauf-Ende.
+            # Dasselbe Terminal darf waehrend eines Scans/einer Studie
+            # weiterlaufen; deshalb hier wie bei GUI/Komplettkette auch
+            # das globale Scan-Lock halten. Andere Rollen bleiben parallel.
+            if rolle == "markt":
+                lauf_sperren.enter_context(lock.lauf_lock(config.DATA_DIR))
+            lauf_sperren.enter_context(
+                lock.lauf_lock(config.DATA_DIR, lock.rolle_lock_name(rolle)))
             lauf = _rolle_starten(rolle, settings, log,
                                   betreuer, chef, dirigent, markt, melder)
     except lock.LockBesetzt as exc:
         pid = getattr(exc, "pid", None)
         kennzeichen = f"pid:{pid}" if pid else f"unbekannt:{id(exc)}"
-        grund = (f"{rolle.capitalize()} läuft bereits (PID {pid}) — "
-                 "Daemon-Tick übersprungen (Rollen-Lock)")
+        lock_typ = ("Lauf-Lock" if exc.name == "agenten_lauff" else "Rollen-Lock")
+        grund = (f"{rolle.capitalize()}: Ein anderer Lauf ist aktiv (PID {pid}) — "
+                 f"Daemon-Tick übersprungen ({lock_typ})")
         _guard_skip_melden(rolle, kennzeichen, grund,
                            f"rolle_lock#{rolle}", log)
         ergebnis["ausgefuehrt"].append({"rolle": rolle, "status": "skipped",

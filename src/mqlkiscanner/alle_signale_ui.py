@@ -10,6 +10,7 @@ Max-Drawdown bleibt dort exklusiv.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -24,6 +25,86 @@ from .forensics import drawdown
 _FARBE_POSITIV = "#2e7d32"
 _FARBE_NEGATIV = "#d32f2f"
 _FARBE_KURVE = "#1f6feb"
+
+
+def studien_batch_merken(state, active_run):
+    """Batch je Sitzung behalten, auch nachdem das Worker-Register frei ist."""
+    if (active_run is not None
+            and getattr(active_run, 'workflow', {}).get('typ') == 'studien_batch'):
+        state['_alle_signale_studien_run'] = active_run
+    return state.get('_alle_signale_studien_run')
+
+
+def studien_batch_tabellenstand(run) -> dict:
+    """Stand VOR dem DB-Lesen festhalten; spätere Ergebnisse bleiben neu."""
+    if run is None:
+        return {}
+    return {'control': run.control,
+            'gerechnet': run.control.get('gerechnet') or 0,
+            'fertig': bool(run.control.get('fertig'))}
+
+
+def studien_batch_refresh_noetig(run, tabellenstand: dict, *,
+                                 jetzt: float, intervall_s: float = 15.0) -> bool:
+    """Neue Studien gedrosselt, den Abschluss sofort in die Tabelle übernehmen.
+
+    Der Tabellenstand gehört der Sitzung. Das gemeinsame Worker-Control wird
+    niemals als global konsumierter Abschluss markiert.
+    """
+    if run is None:
+        return False
+    if tabellenstand.get('control') is not run.control:
+        return True
+    if run.control.get('fertig') and not tabellenstand.get('fertig'):
+        return True
+    return ((run.control.get('gerechnet') or 0) > tabellenstand.get('gerechnet', 0)
+            and jetzt - tabellenstand.get('geladen_am', jetzt) >= intervall_s)
+
+
+def studien_batch_unbekannte_waehrungen(fehler: list[str], resultate: list) -> list[dict]:
+    """Währungsfehler des Batches mit aktuellen lokalen Kontobelegen verbinden.
+
+    Der historische Fehler bleibt auch bei inzwischen belegter Währung oder
+    aus dem Katalog verschwundenen Signalen sichtbar. Keine Daten nachladen
+    und bei mehrdeutigen IDs keine Quelle oder Währung zuordnen.
+    """
+    nach_id: dict[int, list] = {}
+    for res in resultate:
+        nach_id.setdefault(int(res.id), []).append(res)
+    zeilen, gesehen = [], set()
+    unbekannt = {'', 'unknown', 'unbekannt', 'uneindeutig', 'unbekannt/uneindeutig'}
+    for meldung in fehler:
+        match = re.fullmatch(
+            r'#(\d+)\s+(.*?): ValueError: Kontowährung ([^:]*): USD-Forensik gesperrt.*',
+            meldung)
+        if not match or match[3].strip().casefold() not in unbekannt:
+            continue
+        signal_id = int(match[1])
+        name = match[2].strip() or f'Signal {signal_id}'
+        identitaet = (signal_id, name)
+        if identitaet in gesehen:
+            continue
+        gesehen.add(identitaet)
+        kandidaten = nach_id.get(signal_id, [])
+        res = kandidaten[0] if len(kandidaten) == 1 else None
+        waehrung = str(getattr(res, 'account_currency', '') or '').strip()
+        if res is None:
+            stand = ('Signal-ID mehrdeutig' if kandidaten else
+                     'Signal nicht mehr in der Übersicht')
+        elif waehrung.casefold() in unbekannt:
+            stand = 'weiterhin nicht belegt'
+        else:
+            stand = waehrung
+        zeilen.append({
+            'Signal': name,
+            'Signal-ID': str(signal_id),
+            'Quelle': getattr(res, 'quelle', '') or 'nicht zugeordnet',
+            'Plattform': getattr(res, 'platform', '') or '—',
+            'Kontowährung im Batch': 'unbekannt / nicht belegt',
+            'Aktueller Nachweis': stand,
+            'Signal öffnen': getattr(res, 'url', '') or None,
+        })
+    return zeilen
 
 
 @st.cache_data(show_spinner=False)

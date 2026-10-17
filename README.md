@@ -104,6 +104,11 @@ Restzeit zunächst unbekannt. PDF-Speicherung prüft Inhalt und Renderer-Version
 Ältere PDFs ohne diese Metadaten werden beim nächsten PDF-Zugriff einmalig
 verifiziert und anschließend ebenfalls wiederverwendet.
 
+Während eines Studien-Batches übernimmt die Tabelle neue gespeicherte Studien
+etwa alle 15 Sekunden. Jede Browsersitzung verfolgt ihren eigenen Tabellenstand
+und lädt den Abschluss auch dann nach, wenn der Worker bereits beendet ist.
+Die Fortschrittsanzeige nennt gespeicherte Studien, übersprungene Signale und Fehler.
+
 Die Übersicht übernimmt eine virtuelle 10.000-USD-Kapitalbasis nur aus einer
 Studie mit passender Trade-SHA. „Messstatus“ kennzeichnet diese Annahme und
 zeigt Gründe für unvollständige Messungen; deren Werte sind orange markiert.
@@ -112,14 +117,35 @@ Vorhandensein eines Roh-DD gilt dabei nicht als abgeschlossene Messung.
 
 Alle Kursdatenquellen (Tickmill, ActivTrades und Vantage) starten ausdrücklich
 mit `/portable` im jeweiligen Terminalverzeichnis und prüfen danach
-Datenverzeichnis und Broker-Verbindung.
-Die belegten Devisenpaare und Gold tragen dort `+`; Index-Futures verwenden
+Datenverzeichnis und Broker-Verbindung. Derselbe geprüfte Start gilt auch für
+Marktbeobachtung und Admin-Verbindungstest; es gibt keinen automatischen
+Ausweichstart ohne Terminalpfad. Eine vorgefundene Instanz mit anderer
+Datenablage wird bei Startfreigabe einmal kontrolliert portabel neu gestartet.
+Während eines Scans oder Studien-Batches
+bleiben alle tatsächlich benötigten Terminals offen; beim Quellenwechsel wird
+nur die Python-Verbindung umgeschaltet. Am Laufende werden die verwendeten
+Terminals geschlossen. Die tägliche Marktbeobachtung, der Admin-Verbindungstest
+und die Einzelstudie verwenden dasselbe Lauf-Lock. Verbindungstest und
+Einzelstudie halten es auch während des Terminal-Cleanups; ein paralleler
+Start wird vor jedem Terminalzugriff abgefangen.
+
+H1-Originalkurse werden dauerhaft in `data/kursdaten.db` gespeichert, getrennt
+nach Terminal, belegtem Brokerserver und exaktem Brokersymbol. Bereits geladene
+Zeitfenster werden auch für andere Signale wiederverwendet; Erweiterungen laden
+nur fehlende Bereiche nach. Die offene Stunde und erfolglose Randabrufe werden
+nach 60 Sekunden erneut geprüft, Binnenlücken nach 24 Stunden. Ein Abrufversuch
+füllt keine Datenlücke und belegt keine vollständige Historie. Für die erste
+Abfrage eines Terminals wird dessen Serveridentität erneut geprüft; ohne
+Servernachweis bleibt der Cache auf den aktuellen Lauf beschränkt. Gespeichert
+wird ausschließlich der Servername als Kontobezug, keine Kontonummer oder Balance.
+
+Bei Vantage tragen die belegten Devisenpaare und Gold `+`; Index-Futures verwenden
 das kleingeschriebene `ft`. Aktien, Krypto und Cash-Indizes erhalten kein
 pauschales Suffix. Nachweise und die Prüfung von 96 Tabellenzellen stehen in
 `doc/reviews/vantage_zellen_2026-10-10.md` und den zugehörigen JSON-Dateien.
 ActivTrades verwendet unter anderem `GOLD`, `Usa500`, `UsaTec` und `Ger40`.
-WTI wird dort auf `LCrude`, Brent auf `Brent` abgebildet. Historiencaches sind
-nach Terminal getrennt; leere Erstabrufe erhalten begrenzte Nachladeversuche.
+WTI wird dort auf `LCrude`, Brent auf `Brent` abgebildet. Leere Erstabrufe
+erhalten begrenzte Nachladeversuche.
 Die H1-Equity-Rekonstruktion kann CNH aus dem zeitgleichen USDCNH-Close und
 BCH aus einem zeitgleichen BCHUSD-Close desselben belegten Feeds umrechnen.
 Diese Ergänzung ersetzt weder die gesonderte Kapitalflussbewertung noch die

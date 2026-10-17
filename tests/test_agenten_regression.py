@@ -199,29 +199,28 @@ def test_veraenderung_30t_braucht_31_closes():
     assert k_kurz["veraenderung_pct"]["30t"] is None  # 30 Bars nicht
 
 
-def test_kurse_holen_nach_31_bars_verlangt():
+def test_kurse_holen_nach_31_bars_verlangt(monkeypatch):
     """Der Abruf fordert lookback+1 D1-Bars an (Regression zum +1-Fix)."""
     import MetaTrader5 as mt5
+    from mqlkiscanner.kursdaten import KursDaten
     angefragt = {}
     def _fake_copy(symbol, timeframe, start, count):
         angefragt.setdefault(timeframe, []).append(count)
         n = max(2, count)
         return [{"time": i, "open": 1, "high": 2, "low": 0.5, "close": 1 + i}
                 for i in range(n)]
-    monkey = pytest.MonkeyPatch()
-    monkey.setattr(mt5, "initialize", lambda *a, **k: True)
-    monkey.setattr(mt5, "shutdown", lambda: None)
-    monkey.setattr(mt5, "terminal_info", lambda: type("T", (), {"name": "T"})())
-    monkey.setattr(mt5, "symbol_select", lambda s, f: True)
-    monkey.setattr(mt5, "copy_rates_from_pos", _fake_copy)
-    monkey.setattr(marktdata, "terminal_laueft", lambda pfad: True)
-    try:
-        ergebnis = marktdata.kurse_holen(
-            ["XAUUSD"], {**config.load_settings(), "markt_lookback_tage": 30})
-        assert ergebnis["ok"], ergebnis
-        assert max(angefragt[mt5.TIMEFRAME_D1]) == 31  # lookback + 1
-    finally:
-        monkey.undo()
+    # Diese Regression prüft ausschließlich den D1-Abruf. Start und Ende
+    # am gemeinsamen Anbieter faken, damit kein echter Prozess berührt wird.
+    monkeypatch.setattr(KursDaten, "starten", lambda self: (True, "Test"))
+    monkeypatch.setattr(KursDaten, "beenden", lambda self: None)
+    monkeypatch.setattr(mt5, "terminal_info", lambda: type("T", (), {"name": "T"})())
+    monkeypatch.setattr(mt5, "symbol_select", lambda s, f: True)
+    monkeypatch.setattr(mt5, "copy_rates_from_pos", _fake_copy)
+    monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: True)
+    ergebnis = marktdata.kurse_holen(
+        ["XAUUSD"], {**config.load_settings(), "markt_lookback_tage": 30})
+    assert ergebnis["ok"], ergebnis
+    assert max(angefragt[mt5.TIMEFRAME_D1]) == 31  # lookback + 1
 
 
 # ── Phase E: Scan-Merker im Fehlerfall ─────────────────────────────

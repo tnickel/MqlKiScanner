@@ -46,8 +46,23 @@ def berechne(result, progress) -> dict:
     """Studie für ein ScanResult rechnen: CSV laden → Kapitalbasis → Kurse → Kurve.
 
     Wirft RuntimeError mit klarem Text, wenn die Trade-Datei fehlt oder das
-    Kurs-Terminal nicht verfügbar ist. progress: callback(anteil_0_1, text).
+    Kurs-Terminal nicht verfügbar oder bereits belegt ist. Die gemeinsame
+    Lauf-Sperre bleibt bis nach dem Terminal-Aufräumen gehalten.
+    progress: callback(anteil_0_1, text).
     """
+    from .agenten.lock import LockBesetzt, lauf_lock
+
+    try:
+        with lauf_lock(config.DATA_DIR):
+            return _berechne_exklusiv(result, progress)
+    except LockBesetzt as exc:
+        raise RuntimeError(
+            "Ein Scan, eine Studie oder ein Verbindungstest ist bereits aktiv. "
+            "Bitte dessen Abschluss abwarten und die Studie erneut starten.") from exc
+
+
+def _berechne_exklusiv(result, progress) -> dict:
+    """Messung unter der von berechne() gehaltenen Lauf-Sperre."""
     from . import katalog
     progress(0.01, "Kontowährung prüfen …")
     katalog.require_studienwaehrung(result)
@@ -86,10 +101,10 @@ def berechne(result, progress) -> dict:
     progress(0.10, "MT5-Referenzterminal verbinden (Kurse, kann einige Sekunden dauern) …")
     settings = config.load_settings()
     anbieter = kursdaten.KursDaten(settings)
-    ok, grund = anbieter.starten()
-    if not ok:
-        raise RuntimeError(f"Kursdaten nicht verfügbar: {grund}")
     try:
+        ok, grund = anbieter.starten()
+        if not ok:
+            raise RuntimeError(f"Kursdaten nicht verfügbar: {grund}")
         daten = studie(
             parsed, anbieter, startkapital,
             broker=getattr(result, "broker_server", None) or None,

@@ -37,6 +37,21 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   keine vollständigen Intrabar-Tiefs.
 - **Stufe 0** ist für GUI- und autonome Scans implementiert: aktive Quellen
   parallel per POST aktualisieren, Status vor dem Scan abwarten (doc/23).
+- **Kursdaten (17.10.2026):** Im Scan/Studien-Batch bleiben verwendete
+  MetaTrader bis zum Laufende offen; Quellenwechsel trennen nur die SDK-
+  Verbindung. H1-Originalbars liegen dauerhaft in `data/kursdaten.db`, nach
+  Terminal, belegtem Brokerserver und exaktem Symbol getrennt. Enthaltene
+  Fenster werden wiederverwendet, fehlende Bereiche nachgeladen. Offene Bars
+  und leere Randabrufe haben 60 Sekunden Frische, Binnenlücken 24 Stunden;
+  Abrufversuche sind kein Abdeckungsnachweis. `account_info` wird ausschließlich
+  für den Servernamen gelesen; keine Kontonummer/Balancen im Cache. Die
+  tägliche Marktrolle, der Admin-Verbindungstest und die Einzelstudie
+  respektieren das gemeinsame Scan-/Studienlauf-Lock. Admin-Test und
+  Einzelstudie halten es vom ersten Zugriff bis nach dem Terminal-Cleanup;
+  bei belegter Sperre wird kein Terminal geprüft, gestartet oder beendet.
+  Alle Startwege (auch Marktrolle und Admin-Verbindungstest) verwenden
+  denselben geprüften `/portable`-Start. Eine vorgefundene falsche Datenablage
+  erlaubt bei Startfreigabe genau einen Neustart nach bestätigtem Prozessende.
 - **Offen:** vollständige Composite-Identität `(quelle, signal_id)` in der
   zentralen Signaltabelle; Quellenkollisionen werden derzeit abgewehrt.
   Täglicher Betreuer derzeit nur MQL5, andere Quellen werden übersprungen.

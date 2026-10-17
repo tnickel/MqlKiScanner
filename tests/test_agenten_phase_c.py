@@ -10,6 +10,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+import pytest
+
 from mqlkiscanner import config, db
 from mqlkiscanner.agenten import (betreuer, journal, markt, marktdata, rollen)
 
@@ -94,12 +96,31 @@ def test_verbindungstest_erklaert_standardpolitik(monkeypatch):
     assert "Terminal läuft nicht" in ergebnis["grund"]
 
 
-def _fake_mt5(monkeypatch, aufrufe):
+def _fake_mt5(monkeypatch, aufrufe, tmp_path, *, lief_schon=False,
+              terminal_name="TickmillLifeMql5"):
     """MT5-Fakes mit Aufruf-Protokoll: initialize/shutdown + Kursdaten.
 
-    _terminal_prozesse wird leer gemockt: Tests dürfen NIE echte
-    terminal64-Prozesse sehen (und damit beenden)."""
+    Ausschließlich temporäre EXE-Platzhalter und gemockte Prozesse: Tests
+    dürfen NIE echte Terminals starten, sehen oder beenden."""
     import MetaTrader5 as mt5
+    import subprocess
+
+    terminal = tmp_path / terminal_name / "terminal64.exe"
+    terminal.parent.mkdir()
+    terminal.touch()
+    zustand = {"prozesse": [(4242, str(terminal).lower())] if lief_schon else [],
+               "datenpfad": str(terminal.parent)}
+
+    def _popen(befehl, **kwargs):
+        aufrufe.append(("start", befehl, kwargs))
+        zustand["prozesse"] = [(4242, str(terminal).lower())]
+        zustand["datenpfad"] = str(terminal.parent)
+
+    def _run(befehl, **kwargs):
+        assert befehl[0] == "taskkill"
+        aufrufe.append(("stop", befehl, kwargs))
+        zustand["prozesse"] = []
+        return subprocess.CompletedProcess(befehl, 0)
 
     def _initialize(*args, **kwargs):
         aufrufe.append(("initialize", args, kwargs))
@@ -109,6 +130,7 @@ def _fake_mt5(monkeypatch, aufrufe):
         aufrufe.append(("shutdown", (), {}))
 
     def _rates(*args):
+        aufrufe.append(("rates", args, {}))
         anzahl = args[-1]
         return [{"time": i, "open": 100.0 + i, "high": 105.0 + i,
                  "low": 95.0 + i, "close": 100.0 + i} for i in range(anzahl)]
@@ -116,70 +138,128 @@ def _fake_mt5(monkeypatch, aufrufe):
     monkeypatch.setattr(mt5, "initialize", _initialize)
     monkeypatch.setattr(mt5, "shutdown", _shutdown)
     monkeypatch.setattr(mt5, "terminal_info",
-                        lambda: type("Info", (), {"name": "FakeTerm"})())
+                        lambda: type("Info", (), {"name": "FakeTerm",
+                              "data_path": zustand["datenpfad"],
+                              "connected": True})())
     monkeypatch.setattr(mt5, "symbol_select", lambda *a, **k: True)
     monkeypatch.setattr(mt5, "copy_rates_from_pos", _rates)
-    monkeypatch.setattr(marktdata, "_terminal_prozesse", lambda pfad: [])
+    monkeypatch.setattr(marktdata, "_terminal_prozesse", lambda pfad: zustand["prozesse"])
+    monkeypatch.setattr(subprocess, "Popen", _popen)
+    monkeypatch.setattr(subprocess, "run", _run)
+    return terminal, zustand
 
 
-def test_kurse_holen_selbststart_portable_und_beenden(monkeypatch):
-    """Start-Freigabe + kein laufendes Terminal: PORTABLE-Start, und am
-    Lauf-Ende wird die Verbindung (und damit das Terminal) wieder beendet."""
-    monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: False)
+@pytest.mark.parametrize("terminal_name", ["TickmillLifeMql5", "ActivTrades", "Vantage"])
+@pytest.mark.parametrize("abruf", ["kurse", "verbindungstest"])
+def test_markt_selbststart_aller_terminals_portable_und_beenden(
+        monkeypatch, tmp_path, terminal_name, abruf):
+    """Marktrolle und Admin-Test nutzen für jeden Broker denselben
+    expliziten /portable-Start und prüfen dessen lokale Datenablage."""
     aufrufe = []
-    _fake_mt5(monkeypatch, aufrufe)
-    ergebnis = marktdata.kurse_holen(
-        ["XAUUSD"], {"markt_start_erlauben": True,
-                     "markt_terminal_pfad": marktdata.DEFAULT_TERMINAL})
+    terminal, zustand = _fake_mt5(monkeypatch, aufrufe, tmp_path,
+                                 terminal_name=terminal_name)
+    settings = {"markt_start_erlauben": True, "markt_terminal_pfad": str(terminal)}
+    ergebnis = (marktdata.kurse_holen(["XAUUSD"], settings) if abruf == "kurse"
+                else marktdata.verbindung_testen(settings))
     assert ergebnis["ok"]
-    assert ergebnis["selbststart"] is True
+    if abruf == "kurse":
+        assert ergebnis["selbststart"] is True
+        assert ergebnis["terminal_beendet"] is True
+    start = next(a for a in aufrufe if a[0] == "start")
+    assert start[1] == [str(terminal), "/portable"]
     init = next(a for a in aufrufe if a[0] == "initialize")
-    assert init[2].get("portable") is True             # Portable-Modus beim Selbststart
-    assert init[1][0] == marktdata.DEFAULT_TERMINAL    # richtiger Terminal-Pfad
-    assert aufrufe[-1][0] == "shutdown"               # Abbau am Ende
+    assert init[2] == {"portable": True}
+    assert init[1] == (str(terminal),)
+    assert zustand["prozesse"] == []
+    assert aufrufe[-1][0] == "stop"
 
 
-def test_kurse_holen_attach_ohne_portableflag(monkeypatch):
-    """Läuft das Terminal schon, wird nur angehängt — KEIN portable-Start."""
-    monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: True)
+@pytest.mark.parametrize("abruf", ["kurse", "verbindungstest"])
+def test_markt_attach_nur_mit_belegtem_portable_datenpfad(monkeypatch, tmp_path, abruf):
+    """Auch bei laufendem Terminal gilt portable=True plus Datenpfad-Prüfung."""
     aufrufe = []
-    _fake_mt5(monkeypatch, aufrufe)
-    ergebnis = marktdata.kurse_holen(
-        ["XAUUSD"], {"markt_start_erlauben": True,
-                     "markt_terminal_pfad": marktdata.DEFAULT_TERMINAL})
+    terminal, zustand = _fake_mt5(monkeypatch, aufrufe, tmp_path, lief_schon=True)
+    settings = {"markt_start_erlauben": False, "markt_terminal_pfad": str(terminal)}
+    ergebnis = (marktdata.kurse_holen(["XAUUSD"], settings) if abruf == "kurse"
+                else marktdata.verbindung_testen(settings))
     assert ergebnis["ok"]
-    assert ergebnis["selbststart"] is False
+    if abruf == "kurse":
+        assert ergebnis["selbststart"] is False
+        assert ergebnis["terminal_beendet"] is True
     init = next(a for a in aufrufe if a[0] == "initialize")
-    assert init[2].get("portable") is False
+    assert init[2].get("portable") is True
+    assert not any(a[0] == "start" for a in aufrufe)
+    assert zustand["prozesse"] == []
 
 
-def test_terminal_wird_nach_lauf_auch_bei_attach_beendet(monkeypatch):
+def test_terminal_wird_nach_lauf_auch_bei_attach_beendet(monkeypatch, tmp_path):
     """Nutzer-Regel 22.09.2026: Das Terminal dieses Pfads gehört dem Scanner
     — auch ein VORGEFUNDENES Terminal wird nach dem Lauf beendet."""
-    import subprocess
-
-    monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: True)
     aufrufe = []
-    _fake_mt5(monkeypatch, aufrufe)
-    zustand = {"prozesse": [(4242, marktdata.DEFAULT_TERMINAL.lower())]}
-    monkeypatch.setattr(marktdata, "_terminal_prozesse",
-                        lambda pfad: zustand["prozesse"])
-    kills: list[list[str]] = []
-
-    def _fake_run(befehl, **kwargs):
-        kills.append(list(befehl))
-        zustand["prozesse"] = []  # der sanfte taskkill reicht im Test
-        return subprocess.CompletedProcess(befehl, 0)
-
-    monkeypatch.setattr(subprocess, "run", _fake_run)
+    terminal, _ = _fake_mt5(monkeypatch, aufrufe, tmp_path, lief_schon=True)
     ergebnis = marktdata.kurse_holen(
         ["XAUUSD"], {"markt_start_erlauben": True,
-                     "markt_terminal_pfad": marktdata.DEFAULT_TERMINAL})
+                     "markt_terminal_pfad": str(terminal)})
     assert ergebnis["ok"]
     assert ergebnis["terminal_beendet"] is True
-    assert any("taskkill" in k for k in kills), kills
-    sanft = next(k for k in kills if "taskkill" in k)
+    sanft = next(a[1] for a in aufrufe if a[0] == "stop")
     assert "/F" not in sanft  # sanfter Versuch zuerst (WM_CLOSE)
+
+
+@pytest.mark.parametrize("abruf", ["kurse", "verbindungstest"])
+def test_markt_liest_keine_kurse_aus_nonportable_instanz(monkeypatch, tmp_path, abruf):
+    aufrufe = []
+    terminal, zustand = _fake_mt5(monkeypatch, aufrufe, tmp_path, lief_schon=True)
+    zustand["datenpfad"] = str(tmp_path / "AppData" / "MetaQuotes")
+    settings = {"markt_start_erlauben": False, "markt_terminal_pfad": str(terminal)}
+    ergebnis = (marktdata.kurse_holen(["XAUUSD"], settings) if abruf == "kurse"
+                else marktdata.verbindung_testen(settings))
+    assert not ergebnis["ok"]
+    assert "Datenablage" in ergebnis["grund"]
+    assert not any(a[0] in {"start", "rates"} for a in aufrufe)
+    assert zustand["prozesse"] == []
+
+
+@pytest.mark.parametrize("abruf", ["kurse", "verbindungstest"])
+def test_markt_korrigiert_nonportable_instanz_nur_mit_startfreigabe(
+        monkeypatch, tmp_path, abruf):
+    aufrufe = []
+    terminal, zustand = _fake_mt5(monkeypatch, aufrufe, tmp_path, lief_schon=True)
+    zustand["datenpfad"] = str(tmp_path / "AppData" / "MetaQuotes")
+    settings = {"markt_start_erlauben": True, "markt_terminal_pfad": str(terminal)}
+    ergebnis = (marktdata.kurse_holen(["XAUUSD"], settings) if abruf == "kurse"
+                else marktdata.verbindung_testen(settings))
+    assert ergebnis["ok"]
+    if abruf == "kurse":
+        assert ergebnis["selbststart"] is True
+    else:
+        assert "portable Selbststart" in ergebnis["grund"]
+    assert len([a for a in aufrufe if a[0] == "start"]) == 1
+    assert len([a for a in aufrufe if a[0] == "initialize"]) == 2
+    erster_stop = next(i for i, a in enumerate(aufrufe) if a[0] == "stop")
+    erste_kurse = next(i for i, a in enumerate(aufrufe) if a[0] == "rates")
+    assert erster_stop < erste_kurse
+    assert zustand["prozesse"] == []
+
+
+@pytest.mark.parametrize("abruf", ["kurse", "verbindungstest"])
+def test_markt_fehlender_pfad_startet_kein_ausweichterminal(monkeypatch, tmp_path, abruf):
+    import MetaTrader5 as mt5
+    from mqlkiscanner import kursdaten
+
+    monkeypatch.setattr(marktdata, "terminal_laueft", lambda pfad: False)
+    monkeypatch.setattr(kursdaten, "terminal_laueft", lambda pfad: False)
+
+    def _verboten(*args, **kwargs):
+        raise AssertionError("Bei fehlendem EXE-Pfad darf kein MT5 initialisiert werden")
+
+    monkeypatch.setattr(mt5, "initialize", _verboten)
+    settings = {"markt_start_erlauben": True,
+                "markt_terminal_pfad": str(tmp_path / "fehlt" / "terminal64.exe")}
+    ergebnis = (marktdata.kurse_holen(["XAUUSD"], settings) if abruf == "kurse"
+                else marktdata.verbindung_testen(settings))
+    assert not ergebnis["ok"]
+    assert "existiert nicht" in ergebnis["grund"]
 
 
 # ── Marktbeobachter-Rolle ──────────────────────────────────────────

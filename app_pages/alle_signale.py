@@ -78,6 +78,8 @@ with st.container(horizontal=True, vertical_alignment='center'):
                    + (f" — Stand {max((w.get('gelaufen_am') or '')[:16] for w in sync_status.values())}"
                       if sync_status else ''))
 
+_batch_run = tabellen_ui.studien_batch_merken(st.session_state, scan_worker.active_run())
+_batch_tabellenstand = tabellen_ui.studien_batch_tabellenstand(_batch_run)
 _lade_start = time.monotonic()
 _lade_status = st.empty()
 _lade_balken = st.empty()
@@ -258,19 +260,43 @@ def _dauer_text(s: float | None) -> str:
 
 @st.fragment(run_every=2.0)
 def _batch_fortschritt() -> None:
-    run = scan_worker.active_run()
-    if not run or run.workflow.get('typ') != 'studien_batch':
+    run = tabellen_ui.studien_batch_merken(st.session_state, scan_worker.active_run())
+    if run is None:
         return
     c = run.control
+    refresh = tabellen_ui.studien_batch_refresh_noetig(
+        run, st.session_state.get('_alle_signale_batch_tabellenstand') or {},
+        jetzt=time.monotonic())
     if c.get('fertig'):
         st.info('Studien-Batch beendet: ' + (c.get('summary') or ''),
                 icon=':material/task_alt:')
         if c.get('fehler'):
+            waehrungsfehler = tabellen_ui.studien_batch_unbekannte_waehrungen(
+                c['fehler'], alle)
+            if waehrungsfehler:
+                sichtbar = st.session_state.get('_alle_signale_waehrungsfehler_run') is run
+                aktion = 'ausblenden' if sichtbar else 'anzeigen'
+                if st.button(
+                        f'Unbekannte Kontowährungen {aktion} ({len(waehrungsfehler)})',
+                        key='alle_signale_batch_waehrungen', icon=':material/currency_exchange:'):
+                    sichtbar = not sichtbar
+                    st.session_state['_alle_signale_waehrungsfehler_run'] = run if sichtbar else None
+                if sichtbar:
+                    st.caption(
+                        f'{len(waehrungsfehler)} betroffene Signale: Im beendeten Batch '
+                        'war ihre Kontowährung nicht ausreichend belegt. '
+                        '„Aktueller Nachweis“ zeigt den jetzt lokal vorhandenen Stand. '
+                        'Die Liste umfasst auch durch die Seitenfilter ausgeblendete Signale.')
+                    st.dataframe(
+                        pd.DataFrame(waehrungsfehler), hide_index=True, height=420,
+                        column_config={
+                            'Signal öffnen': st.column_config.LinkColumn(display_text='öffnen'),
+                        },
+                        key='alle_signale_batch_waehrungen_tabelle')
             with st.expander(f'Fehler ({len(c["fehler"])})', icon=':material/warning:'):
-                st.markdown('\n'.join(f'- {z}' for z in c['fehler'][:50]))
-        if not c.get('uebernommen'):
-            c['uebernommen'] = True
-            st.rerun()          # Tabelle einmalig mit den neuen Werten neu laden
+                st.markdown('\n'.join(f'- {z}' for z in c['fehler']))
+        if refresh:
+            st.rerun(scope='app')
         return
     gesamt = c.get('gesamt') or 0
     aktuell = c.get('aktuell') or 0
@@ -279,13 +305,23 @@ def _batch_fortschritt() -> None:
             f'{_dauer_text(c.get("dauer_je_s"))}/Signal · Rest ≈ '
             f'{_dauer_text(c.get("restzeit_s"))} · {c.get("aktuelles_signal") or c.get("phase", "")}')
     st.progress(anteil, text=text)
+    st.caption(f'{c.get("gerechnet") or 0} Studien gespeichert · '
+               f'{c.get("uebersprungen") or 0} übersprungen · '
+               f'{len(c.get("fehler") or [])} Fehler · '
+               'Neue Tabellenwerte werden etwa alle 15 Sekunden übernommen.')
     if st.button('Abbrechen', key='alle_signale_batch_abbruch',
                  icon=':material/cancel:'):
         c['abbruch'] = True
+    if refresh:
+        st.rerun(scope='app')
 
 
 # Fragment NUR definieren reicht nicht — ohne Aufruf rendert nichts und der
 # run_every-Timer startet nicht (genau deshalb fehlte der Balken, 08.10.).
+# Erst nach der Datenaufbereitung die Drosselzeit starten. Sonst könnte ein
+# langsamer Seitenaufbau den nächsten Rerun vor dem Tabellenrendern auslösen.
+st.session_state['_alle_signale_batch_tabellenstand'] = {
+    **_batch_tabellenstand, 'geladen_am': time.monotonic()}
 _batch_fortschritt()
 
 
@@ -319,6 +355,7 @@ if st.session_state.get('alle_signale_batch_offen'):
                          '— bitte warten, bis dieser fertig ist.',
                          icon=':material/hourglass_top:')
             else:
+                tabellen_ui.studien_batch_merken(st.session_state, run)
                 st.session_state['alle_signale_batch_offen'] = False
                 st.rerun()
         if col2.button('Schließen', key='alle_signale_batch_schliessen'):

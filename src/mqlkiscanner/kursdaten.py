@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 
-Known-Limitation (L11, Review-Handoff 29.09.): Das MetaTrader5-Paket
-hat keinen nativen Timeout-Parameter — ein haengendes Terminal kann
-initialize()/copy_rates_range() minutenlang blockieren (GUI-Scan- bzw.
-Daemon-Thread). Bewusst akzeptiert statt Thread-Timeout-Komplexität;
+Known-Limitation (L11, Review-Handoff 29.09.): copy_rates_range() hat
+keinen Timeout-Parameter; initialize() nutzt den SDK-Verbindungs-Timeout.
+Eine harte Gesamtfrist fuer blockierende MT5-Aufrufe gibt es hier nicht
+(GUI-Scan- bzw. Daemon-Thread). Bewusst akzeptiert statt Thread-Timeout-Komplexität;
 beenden() ist idempotent und wird von allen Scan-Wegen in finally
 aufgerufen. Bei wiederkehrenden Blockaden: Entscheidung Thread-Timeout.
 Historische Kursdaten für die Equity-DD-Rekonstruktion (Nutzer-Wunsch 28.09).
@@ -29,28 +29,34 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import logging
 import os
+import json
+import sqlite3
 import subprocess
 import time
 
 from .agenten.marktdata import broker_symbol, terminal_beenden, terminal_laueft
+from .kurs_cache import KursCache
 from .symbols import alias_fuer_symbol, normalize_symbol
 
 ERLAUBTE_MT5_AUFRUFE = frozenset((
-    "initialize", "shutdown", "terminal_info", "last_error",
+    "initialize", "shutdown", "terminal_info", "last_error", "account_info",
     "symbol_select", "copy_rates_range",
 ))
 
 _DEFAULT_TERMINAL = r"C:\Forex\Mt5\TickmillLifeMql5\terminal64.exe"
+_LOG = logging.getLogger(__name__)
 
 
 class KursDaten:
     """H1-Historie je Symbol — pro Scan ein Anbieter, lazy initialisiert.
 
     Lifespan: `starten()` verbindet (und startet bei Freigabe das Terminal
-    portabel), `beenden()` trennt und beendet das Terminal des Pfads
-    (Nutzer-Regel: es gehört dem Scanner — doc/19 §7.3). Dazwischen bedient
-    `hole_h1()` alle Symbole aus dem Cache.
+    portabel). Quellenwechsel trennen nur die SDK-Verbindung; die dabei
+    verwendeten Terminals bleiben bis `beenden()` offen. Am Laufende werden
+    alle verwendeten Terminals pfadgenau beendet (Nutzer-Regel: sie gehören
+    dem Scanner — doc/19 §7.3). `hole_h1()` bedient Symbole aus dem Cache.
     """
 
     def __init__(self, settings: dict):
@@ -71,7 +77,18 @@ class KursDaten:
         self._mt5 = None
         self._aktiv = False
         self._selbststart = False
-        self._cache: dict[str, list[dict]] = {}
+        self._verbindungs_nr = 0
+        # Nur tatsächlich verwendete Pfade gehören zu diesem Lauf. Andere
+        # konfigurierte Terminals werden weder vorsorglich gestartet noch
+        # am Laufende beendet. Normierte Schlüssel vermeiden Doppel-Stops.
+        self._genutzte_terminals: dict[str, str] = {}
+        self._cache: dict[str, list[dict] | None] = {}
+        self._cache_zeit: dict[str, float] = {}
+        self._cache_bis: dict[str, float] = {}
+        self._kurs_cache: KursCache | None = None
+        self._cache_defekt = False
+        self._feed_je_terminal: dict[str, str] = {}
+        self._aufgeloeste_symbole: dict[tuple[str, str], str] = {}
         # B10: roh-Symbol → tatsächlich verwendetes Terminal-Symbol, wenn
         # das exakte (suffigierte) Symbol nicht existierte.
         self.suffix_annahmen: dict[str, str] = {}
@@ -98,51 +115,97 @@ class KursDaten:
 
     def _terminal_portabel(self, mt5, lief_schon: bool) -> tuple[bool, str]:
         """Alle Kurs-Terminals brauchen /portable und ihre lokale Datenablage."""
-        exe = Path(self.terminal_pfad).resolve()
+        try:
+            exe = Path(self.terminal_pfad).resolve()
+        except (OSError, ValueError):
+            return False, "Terminalpfad ungültig — kein automatisches Ausweichterminal."
         name = exe.parent.name
         if not exe.is_file():
             return False, f"{name}-Terminalpfad existiert nicht — kein automatisches Ausweichterminal."
 
+        terminal_key = os.path.normcase(os.path.realpath(str(exe)))
+
         def fehler(grund):
-            mt5.shutdown()
-            terminal_beenden(self.terminal_pfad)
+            self._trennen()
+            # Nur diese fehlerhafte Instanz schließen. Frühere Quellen
+            # bleiben offen und werden weiterhin beim finalen Ende erfasst.
+            self._beende_terminal(terminal_key, self.terminal_pfad)
             return False, grund
 
         try:
-            if not lief_schon:
-                subprocess.Popen([str(exe), "/portable"], cwd=str(exe.parent),
-                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-            if not mt5.initialize(str(exe), portable=True):
-                return fehler(f"{name}-MT5-Verbindung fehlgeschlagen: {mt5.last_error()}")
             erwartet = os.path.normcase(os.path.realpath(str(exe.parent)))
-            for versuch in range(16):
-                info = mt5.terminal_info()
-                datenpfad = getattr(info, "data_path", "") if info else ""
-                if datenpfad and os.path.normcase(os.path.realpath(datenpfad)) != erwartet:
+            for neustart in (False, True):
+                self._genutzte_terminals[terminal_key] = self.terminal_pfad
+                if not lief_schon or neustart:
+                    subprocess.Popen([str(exe), "/portable"], cwd=str(exe.parent),
+                                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                self._mt5 = mt5
+                if not mt5.initialize(str(exe), portable=True):
+                    return fehler(f"{name}-MT5-Verbindung fehlgeschlagen: {mt5.last_error()}")
+                falscher_datenpfad = False
+                for versuch in range(16):
+                    info = mt5.terminal_info()
+                    datenpfad = getattr(info, "data_path", "") if info else ""
+                    if datenpfad and os.path.normcase(os.path.realpath(datenpfad)) != erwartet:
+                        falscher_datenpfad = True
+                        break
+                    if datenpfad and bool(getattr(info, "connected", False)):
+                        self._aktiv = True
+                        if neustart:
+                            return True, "portabel neu gestartet; Datenpfad geprüft, verbunden"
+                        return True, ("portabel selbstgestartet; Datenpfad geprüft, verbunden"
+                                      if not lief_schon else
+                                      "portabel verbunden; Datenpfad geprüft")
+                    if versuch < 15:
+                        time.sleep(1.0)
+                if not falscher_datenpfad:
+                    return fehler(f"{name}-Terminal nach 15 s nicht verbunden oder portabler Datenpfad "
+                                  "nicht belegbar — keine Kursmessung.")
+                if neustart or not lief_schon or not self.start_erlauben:
                     return fehler(f"{name} verwendet eine andere Datenablage statt des portablen "
                                   "Terminalordners — keine Kursmessung; betroffene Instanz beendet.")
-                if datenpfad and bool(getattr(info, "connected", False)):
-                    self._mt5 = mt5
-                    self._aktiv = True
-                    return True, ("portabel selbstgestartet; Datenpfad geprüft, verbunden"
-                                  if not lief_schon else
-                                  "portabel verbunden; Datenpfad geprüft")
-                if versuch < 15:
-                    time.sleep(1.0)
-            return fehler(f"{name}-Terminal nach 15 s nicht verbunden oder portabler Datenpfad "
-                          "nicht belegbar — keine Kursmessung.")
+                # portable=True stellt eine laufende Instanz nicht um. Nur
+                # einen belegten Fremddatenpfad mit Startfreigabe korrigieren.
+                self._trennen()
+                if not self._beende_terminal(terminal_key, self.terminal_pfad):
+                    return False, (f"{name} verwendet eine andere Datenablage und konnte nicht "
+                                   "beendet werden — kein portabler Neustart, keine Kursmessung.")
+                self._selbststart = True
         except (OSError, RuntimeError) as exc:
             return fehler(f"{name}-Portable-Start fehlgeschlagen: {type(exc).__name__}")
 
-    def beenden(self) -> None:
-        if self._mt5 is not None and self._aktiv:
+    def _trennen(self) -> None:
+        """Nur die prozessweite MT5-SDK-Verbindung lösen, Terminal offen lassen."""
+        if self._mt5 is not None:
             try:
                 self._mt5.shutdown()
             except Exception:
                 pass
         self._mt5 = None
         self._aktiv = False
-        terminal_beenden(self.terminal_pfad)
+        self._selbststart = False
+        self._verbindungs_nr += 1
+
+    def _beende_terminal(self, terminal_key: str, terminal_pfad: str) -> bool:
+        """Einen Prozess bereinigen, ohne die übrigen Quellen zu verlieren."""
+        try:
+            beendet = terminal_beenden(terminal_pfad)
+        except Exception as exc:
+            _LOG.warning("Kursdaten-Terminal konnte nicht beendet werden (%s): %s",
+                         terminal_pfad, type(exc).__name__)
+            return False
+        if beendet is True:
+            self._genutzte_terminals.pop(terminal_key, None)
+            return True
+        return False
+
+    def beenden(self) -> None:
+        """Lauf abschließen und alle darin verwendeten Terminals schließen."""
+        self._trennen()
+        for terminal_key, terminal_pfad in list(self._genutzte_terminals.items()):
+            # Fehlschläge bleiben für einen erneuten beenden()-Aufruf
+            # vorgemerkt; bereits geschlossene Terminals sind idempotent.
+            self._beende_terminal(terminal_key, terminal_pfad)
 
     # ------------------------------------------------ Multi-Terminal (05.10.)
 
@@ -152,15 +215,13 @@ class KursDaten:
 
     def wechsle_terminal(self) -> tuple[bool, str]:
         """Zur naechsten Kursdatenquelle wechseln. MT5-Python ist pro
-        Prozess ein Singleton: der Wechsel faehrt das aktuelle Terminal
-        herunter und startet das naechste. None-Cache-Eintraege werden
-        geloescht, damit der neue Terminal sie erneut versuchen kann."""
+        Prozess ein Singleton: nur die SDK-Verbindung wird umgeschaltet.
+        Bereits verwendete Terminals und deren Cache bleiben erhalten."""
         if not self.hat_weiteren_terminal():
             return False, "keine weitere Quelle"
-        self.beenden()
+        self._trennen()
         self.terminal_idx += 1
         self.terminal_pfad = self.terminals[self.terminal_idx]
-        self._cache = {k: v for k, v in self._cache.items() if v is not None}
         ok, msg = self.starten()
         return ok, f"{self.terminal_pfad}: {msg}"
 
@@ -173,14 +234,62 @@ class KursDaten:
         (Live-Befund: NAS100FT nach einem HK50FT-Signal)."""
         if self.terminal_idx == 0:
             return True, "bereits erste Quelle"
-        self.beenden()
+        self._trennen()
         self.terminal_idx = 0
         self.terminal_pfad = self.terminals[0]
-        self._cache = {k: v for k, v in self._cache.items() if v is not None}
         ok, msg = self.starten()
         return ok, f"{self.terminal_pfad}: {msg}"
 
     # --------------------------------------------------------------- Kursdaten
+
+    def _feed_identitaet(self) -> tuple[str, str | None]:
+        """Terminal und belegter Server; keine Kontonummer/Kontostaende speichern.
+
+        Eine Installation kann später einen anderen Server verwenden. Deshalb
+        erst nach dem Verbinden dessen Identität prüfen, bevor persistente Bars
+        wiederverwendet werden. Ohne Servernachweis bleibt nur der Laufcache.
+        Nach dem Trennen ist die zuletzt in diesem Lauf bestätigte ID bekannt.
+        """
+        terminal = os.path.normcase(os.path.realpath(self.terminal_pfad))
+        if self._aktiv and self._mt5 is not None:
+            konto_lesen = getattr(self._mt5, "account_info", None)
+            server = ""
+            if callable(konto_lesen):
+                try:
+                    konto = konto_lesen()
+                    server = str(getattr(konto, "server", "") or "").strip()
+                except (RuntimeError, OSError):
+                    pass
+            if server:
+                self._feed_je_terminal[terminal] = json.dumps(
+                    [terminal, server], ensure_ascii=False)
+            else:
+                self._feed_je_terminal.pop(terminal, None)
+                if callable(konto_lesen):
+                    # Fehlender Nachweis kann auch einen laufenden Server-
+                    # wechsel bedeuten. Kein Rücksprung auf frühere schwache
+                    # RAM-Einträge derselben Installation.
+                    self._verbindungs_nr += 1
+        return f"{terminal}|verbindung:{self._verbindungs_nr}", self._feed_je_terminal.get(terminal)
+
+    def _cache_fehler(self, exc: Exception) -> None:
+        self._cache_defekt = True
+        _LOG.warning("H1-Kurscache nicht verfügbar (%s); Kurse werden direkt gelesen.",
+                     type(exc).__name__)
+
+    def _laufcache_setzen(self, key: str, bars: list[dict] | None, jetzt: float) -> None:
+        # Der dauerhafte Bestand lebt in SQLite. Nur wenige exakte Fenster
+        # im RAM halten, damit lange Sammelläufe keine Historien duplizieren.
+        if key not in self._cache and len(self._cache) >= 8:
+            alt = min(self._cache, key=lambda k: self._cache_zeit.get(k, 0))
+            self._cache.pop(alt, None)
+            self._cache_zeit.pop(alt, None)
+            self._cache_bis.pop(alt, None)
+        self._cache[key] = bars
+        self._cache_zeit[key] = jetzt
+        self._cache_bis[key] = min(
+            [jetzt + 60, *(b["time"] + 3600 for b in (bars or [])
+                            if b["time"] + 3600 > jetzt)])
 
     def hole_h1(self, symbol: str, von_epoch: int, bis_epoch: int,
                 gmt_offset_s: int = 0) -> list[dict] | None:
@@ -198,45 +307,102 @@ class KursDaten:
         Basis-Symbol als zweiter Versuch genommen und in
         suffix_annahmen protokolliert (raw → verwendet).
         """
-        if not self._aktiv or self._mt5 is None:
+        von_s = int(von_epoch) + int(gmt_offset_s)
+        bis_s = int(bis_epoch) + int(gmt_offset_s)
+        if von_s > bis_s:
             return None
-        # Jeder Feed hat eine eigene Historie/Zeitbasis. Ein vorhandener
-        # Teilbestand von Quelle 0 darf einen Abruf von Quelle 1 nicht
-        # durch einen scheinbaren Cache-Treffer verhindern.
-        terminal_key = os.path.normcase(os.path.realpath(self.terminal_pfad))
-        key = f"{terminal_key}|{symbol}|{von_epoch}|{bis_epoch}|{gmt_offset_s}"
-        if key in self._cache:
-            bars = self._cache[key]
+        terminal_key, feed = self._feed_identitaet()
+        feed_key = feed or terminal_key
+        key = f"{feed_key}|{symbol}|{von_s}|{bis_s}"
+        jetzt = time.time()
+        aufloesung = (feed_key, symbol)
+        gewaehlt = self._aufgeloeste_symbole.get(aufloesung)
+        am_broker = broker_symbol(symbol, self.settings)
+
+        def herkunft(bars):
             if bars:
                 self.terminal_herkunft[symbol.upper().strip()] = self.terminal_pfad
+                if gewaehlt and gewaehlt != am_broker:
+                    self.suffix_annahmen[symbol] = gewaehlt
+                else:
+                    self.suffix_annahmen.pop(symbol, None)
             return bars
+
+        # Kurzlebige exakte Ergebnisse sparen DB-Abfragen; Teilhistorien und
+        # offene Stunden werden dadurch nicht den ganzen Lauf eingefroren.
+        if (key in self._cache
+                and self._cache_zeit.get(key, 0) <= jetzt < self._cache_bis.get(key, 0)):
+            bars = self._cache[key]
+            return herkunft(bars)
+
         mt5 = self._mt5
-        normalisiert = normalize_symbol(symbol)
-        am_broker = broker_symbol(symbol, self.settings)
-        kandidaten = [am_broker]
-        if normalisiert != symbol.upper().strip():
-            kandidaten.append(broker_symbol(normalisiert, self.settings))
-        # Nutzer-Wunsch 05.10.: Broker-Ersetzungstabelle (z. B. DE40 heisst
-        # bei ActiveTrades GER40; USOIL heisst bei Tickmill XTIUSD).
-        alias = alias_fuer_symbol(symbol, self.terminal_pfad,
-                                  self.settings.get("symbol_aliases"))
-        # MT5 unterscheidet DJ30FT (CSV) und DJ30ft (Terminal).
-        if alias and alias not in kandidaten:
-            kandidaten.append(alias)
-        gewaehlt = None
-        for kandidat in kandidaten:
-            if mt5.symbol_select(kandidat, True):
-                gewaehlt = kandidat
-                break
         if gewaehlt is None:
-            self._cache[key] = None
+            if not self._aktiv or mt5 is None:
+                return None
+            normalisiert = normalize_symbol(symbol)
+            kandidaten = [am_broker]
+            if normalisiert != symbol.upper().strip():
+                kandidaten.append(broker_symbol(normalisiert, self.settings))
+            alias = alias_fuer_symbol(symbol, self.terminal_pfad,
+                                      self.settings.get("symbol_aliases"))
+            if alias and alias not in kandidaten:
+                kandidaten.append(alias)
+            gewaehlt = next((k for k in kandidaten if mt5.symbol_select(k, True)), None)
+        if gewaehlt is None:
+            self._laufcache_setzen(key, None, jetzt)
             return None
-        if gewaehlt != kandidaten[0]:
-            self.suffix_annahmen[symbol] = gewaehlt
+        self._aufgeloeste_symbole[aufloesung] = gewaehlt
+
+        bereiche = [(von_s, bis_s)]
+        persistent = bool(feed) and not self._cache_defekt
+        bars = []
+        if persistent:
+            try:
+                if self._kurs_cache is None:
+                    self._kurs_cache = KursCache()
+                bars = self._kurs_cache.lese(feed, gewaehlt, von_s, bis_s, now=jetzt)
+                bereiche = self._kurs_cache.fehlende_bereiche(
+                    feed, gewaehlt, von_s, bis_s, now=jetzt)
+            except (sqlite3.Error, OSError, ValueError) as exc:
+                self._cache_fehler(exc)
+                persistent = False
+                bereiche = [(von_s, bis_s)]
+
+        if self._aktiv and mt5 is not None:
+            gesammelt = {bar["time"]: bar for bar in bars}
+            vorlaeufig = {b["time"] for b in bars if b["time"] + 3600 > jetzt}
+            for anfang, ende in bereiche:
+                abruf_start = time.time()
+                neue = self._hole_terminal_h1(gewaehlt, anfang, ende)
+                # Niemals Bars erfinden oder fremde Feed-Historien zusammenlegen.
+                neue = [b for b in neue if von_s <= b["time"] <= bis_s]
+                gesammelt.update((b["time"], b) for b in neue)
+                for bar in neue:
+                    if bar["time"] + 3600 > abruf_start:
+                        vorlaeufig.add(bar["time"])
+                    else:
+                        vorlaeufig.discard(bar["time"])
+                if persistent:
+                    try:
+                        self._kurs_cache.speichere(
+                            feed, gewaehlt, anfang, ende, neue, now=abruf_start)
+                    except (sqlite3.Error, OSError, ValueError) as exc:
+                        self._cache_fehler(exc)
+                        persistent = False
+            ende_abruf = time.time()
+            bars = sorted((b for t, b in gesammelt.items()
+                           if t not in vorlaeufig or t + 3600 > ende_abruf),
+                          key=lambda b: b["time"])
+        self._laufcache_setzen(key, bars or None, jetzt)
+        return herkunft(bars or None)
+
+    def _hole_terminal_h1(self, symbol: str, von_s: int, bis_s: int) -> list[dict]:
+        """Eine fehlende Strecke lesen; MT5-Historiennachladen bleibt begrenzt."""
+        mt5 = self._mt5
         import datetime as _dt
-        von = _dt.datetime.fromtimestamp(von_epoch + gmt_offset_s, tz=_dt.timezone.utc)
-        bis = _dt.datetime.fromtimestamp(bis_epoch + gmt_offset_s, tz=_dt.timezone.utc)
-        rates = mt5.copy_rates_range(gewaehlt, mt5.TIMEFRAME_H1, von, bis)
+        von = _dt.datetime.fromtimestamp(von_s, tz=_dt.timezone.utc)
+        bis = _dt.datetime.fromtimestamp(bis_s, tz=_dt.timezone.utc)
+        rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_H1, von, bis)
         # MT5 laedt Historie ON DEMAND vom Server: der ERSTE Abruf kann nur
         # den bereits lokalen Teil liefern und den Download anstossen (real
         # 05.10.: GBPJPY endete mitten im Fenster, der zweite Abruf brachte
@@ -255,21 +421,18 @@ class KursDaten:
             if fertig:
                 break
             time.sleep(2.0)
-            weitere = mt5.copy_rates_range(gewaehlt, mt5.TIMEFRAME_H1, von, bis)
+            weitere = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_H1, von, bis)
             weitere_anzahl = len(weitere) if weitere is not None else 0
             if anzahl > 0 and weitere_anzahl <= anzahl:
                 break
             if weitere_anzahl > 0:
                 rates = weitere
         if rates is None or len(rates) == 0:
-            self._cache[key] = None
-            return None
+            return []
         bars = [{"time": int(r["time"]), "open": float(r["open"]),
                  "high": float(r["high"]), "low": float(r["low"]),
                  "close": float(r["close"])} for r in rates]
         bars.sort(key=lambda b: b["time"])
-        self._cache[key] = bars
-        self.terminal_herkunft[symbol.upper().strip()] = self.terminal_pfad
         return bars
 
 

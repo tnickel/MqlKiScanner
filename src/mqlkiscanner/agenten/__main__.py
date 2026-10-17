@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+from contextlib import ExitStack
 
 log = logging.getLogger("mqlkiscanner.agenten")
 
@@ -58,12 +59,20 @@ def main() -> None:
         kette — vorher konnte ein CLI-Start parallel zu GUI/Daemon
         doppelt exportieren (Doppel-Kosten, Doppel-Journal)."""
         try:
-            with lock.lauf_lock(config.DATA_DIR, lock.rolle_lock_name(rolle)):
+            with ExitStack() as lauf_sperren:
+                # Markt-Terminal gegen GUI-/autonome Scans und Studien
+                # schuetzen. GUI und Komplettkette halten dieses Lock
+                # bereits selbst; der direkte CLI-Start bisher nicht.
+                if rolle == "markt":
+                    lauf_sperren.enter_context(lock.lauf_lock(config.DATA_DIR))
+                lauf_sperren.enter_context(
+                    lock.lauf_lock(config.DATA_DIR, lock.rolle_lock_name(rolle)))
                 return fn()
         except lock.LockBesetzt as exc:
             pid = getattr(exc, "pid", None)
-            log.warning("%s läuft bereits (PID %s) — CLI-Start übersprungen "
-                        "(Rollen-Lock).", rolle.capitalize(), pid)
+            lock_typ = ("Lauf-Lock" if exc.name == "agenten_lauff" else "Rollen-Lock")
+            log.warning("%s: Ein anderer Lauf ist aktiv (PID %s) — "
+                        "CLI-Start übersprungen (%s).", rolle.capitalize(), pid, lock_typ)
             return None
 
     if args.once:

@@ -11,8 +11,9 @@ Laufprinzip:
   ein „Lauf“ wie ein Scan: Während er läuft, blockieren Scan-Start und
   manuelle Equity-Studie (beide brauchen das MT5-Referenzterminal
   exklusiv) und das dateibasierte Lauf-Lock schützt gegen den Daemon.
-- Das MT5-Terminal wird EINMAL für den ganzen Batch gestartet (je Signal
-  nur die H1-Kurs-Abfragen) — nicht je Studie neu.
+- Benötigte MT5-Terminals werden beim ersten Zugriff gestartet und bleiben
+  während des Batches offen. Quellenwechsel trennen nur die SDK-Verbindung;
+  erst am Laufende werden alle verwendeten Terminals geschlossen.
 - Fehlende Trade-Caches werden on demand von der Quelle nachgeladen
   (katalog.lade_signal_daten, SHA-geprüfter Cache).
 - Fortschritt in einem plain dict (control): fertig/gesamt/aktuell/Ø-Dauer/

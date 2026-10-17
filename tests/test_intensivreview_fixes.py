@@ -375,12 +375,13 @@ def test_b10_kursdaten_faellt_auf_basis_symbol_zurueck():
 
 def test_b10_kursdaten_whitelist_bleibt_nur_lesend():
     """R-Whitelist (Intensiv-Review): die MT5-Aufruf-Whitelist von kursdaten
-    darf keine Order-/Kontofunktionen enthalten — statisch bewacht, wie bei
-    marktdata (test_agenten_phase_c)."""
+    darf keine Handelsfunktionen enthalten. account_info liest allein die
+    Serveridentität zur Trennung persistenter Kursfeeds; Kontonummer und
+    Kontostand werden weder gespeichert noch ausgegeben."""
     from mqlkiscanner import kursdaten
     verboten = {"order_send", "order_check", "positions_open", "positions_modify",
                 "positions_close", "orders_total", "positions_get",
-                "account_info", "trade_request"}
+                "trade_request"}
     quelle = open(kursdaten.__file__, encoding="utf-8").read()
     assert not (verboten & set(kursdaten.ERLAUBTE_MT5_AUFRUFE))
     for name in verboten:
