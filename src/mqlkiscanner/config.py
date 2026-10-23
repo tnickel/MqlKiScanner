@@ -97,6 +97,7 @@ DEFAULT_SETTINGS: dict = {
     # 05.10. nachts: 5 Mio reichten fuer Full-Scan + Portfolio nicht mehr
     # (Budget fiel genau vor dem Portfolio-Bericht auf 0) — 10 Mio.
     "llm_max_total_tokens": 10_000_000,  # Token-Budget je Lauf (Abo: grosszuegig)
+    "abonnenten_analyse_parallelitaet": 10,  # Gleichzeitige KI-Kurzanalysen neuer Rechercheaufträge (1..10)
     "glm_base_url": GLM_BASE_URL,   # Coding-Plan-Endpunkt (Abo); umstellbar auf API-Endpunkt
     "model_stufe1": MODEL_STUFE1,
     "model_stufe2": MODEL_STUFE2,

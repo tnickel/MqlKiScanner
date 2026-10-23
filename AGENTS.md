@@ -166,6 +166,31 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   Neue MQL-Zählerläufe benötigen den Client mit `subscriberSelectionProof`.
   Abnahme und Aktivierungsgrenzen:
   `doc/reviews/2026-10-24_grok47/README.md`.
+- **Recherchebudget und KI-Parallelität (Nutzerentscheidung 24.10.2026):**
+  Die oben protokollierten 50/50/60 Mio. Tokens sind für den bestehenden
+  Recherchetest durch ausdrücklich freigegebene 200 Mio. je Lauf, Tag und
+  Monat abgelöst. Die Änderung gilt weiterhin nur über dessen `budget_settings`;
+  globale Settings bleiben unverändert. Der kontrollierte KI-Neustart hat
+  zugleich die Grok-Korrekturen im KI-Worker aktiviert; native Clients sind
+  dadurch nicht aktualisiert. Auf Wunsch nach zehn parallelen Agenten erhält
+  die Kurztestphase bis zu zehn unabhängige Strategie-Worker mit eigenen
+  KI-Clients und gemeinsamer Budget-/Ergebniskoordination. Neue Aufträge
+  speichern die im Dialog gewählte Parallelität (1–10, Standard 10); ältere
+  Aufträge ohne Feld bleiben bei einem Platz. Eine gemeinsame Drosselung
+  reagiert auf HTTP 429/Code 1302. Zehn Plätze garantieren weder zehn aktive
+  HTTP-Anfragen noch eine zehnfache Beschleunigung. Fachliche Regeln,
+  Tradeabdeckung und die zentrale Top-5-Auswahl bleiben unverändert.
+  Umsetzung siehe doc/26; private Aktivierungsbelege unter
+  `data/runs/parallel_ki_20261024/`.
+  Aktivierung 24.10. um 00:44 MESZ: derselbe KI-Auftrag mit zehn Plätzen,
+  unveränderten 800 Datenversuchen und Quellensnapshots fortgesetzt.
+  523 kombinierte Tests bestanden; 105 davon zusätzlich mit der beim Start
+  verwendeten gebündelten Python-3.12-Laufzeit und den installierten
+  Projektpaketen. Der Windows-Store-Python-Starter war beim Neustart stark
+  verzögert. Live um 00:46 MESZ: zehn belegte Anfrageplätze, zwei Ablehnungen
+  mit 429/1302, zehn erfolgreiche Antworten, adaptive Grenze inzwischen drei.
+  Das belegt den fortgesetzten Parallelbetrieb, keinen Rechercheabschluss
+  oder eine feste Anbietergrenze von zehn.
 - **MqlRealmonitor ist noch nicht in den Gesamtworkflow eingebunden.**
   REST-Server im Scanner und Client-Code im Monitor sind vorbereitet;
   die Integration bleibt vorerst zurückgestellt (Nutzerentscheidung

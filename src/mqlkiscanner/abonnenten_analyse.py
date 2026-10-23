@@ -10,13 +10,16 @@ import os
 import uuid
 from copy import deepcopy
 from collections import Counter
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from threading import Event, Lock
 
 from . import config, db, ingest, quellen as source_registry, scan_worker
 from .abonnenten_analyse_store import Store, now
 from .abonnenten_analyse_ki import AnalyseKI, Angehalten, FACTS_PAYLOAD_VERSION, digest, report_pdf
+from .abonnenten_analyse_parallel import AdaptiveHttpGate
 from .analysis_version import FORENSICS_VERSION
 from .llm import prompts
-from .llm.client import LlmBudgetError, LlmError, LlmNoBalanceError
+from .llm.client import LlmBudgetError, LlmError, LlmNoBalanceError, LlmRateLimitError
 
 POLICY_VERSION = "abonnenten_recherche_v1"
 BUDGET_SETTING_KEYS = frozenset({
@@ -130,6 +133,8 @@ def starten(quellen: list[str], settings=None, retdd_gewicht=70, dd_grenze=None)
            "quellen": sorted(chosen), "retdd_gewicht": float(retdd_gewicht), "dd_grenze": dd_grenze,
            "policy_version": POLICY_VERSION, "logs": [], "detail": "Bewertung wird gestartet",
            "snapshot_quellen": {}, "stop_requested": False, "fehler": ""}
+    run["ki_parallelitaet"] = _ki_parallelitaet(
+        run, {**config.load_settings(), **(settings or {})}, new_run=True)
     store = Store()
     store.create(run)
     try:
@@ -171,6 +176,14 @@ def _budget_settings(run: dict) -> dict:
             raise ValueError(f"budget_settings.{key} muss eine positive ganze Zahl sein")
         approved[key] = value
     return approved
+
+
+def _ki_parallelitaet(run: dict, settings: dict, *, new_run=False) -> int:
+    # An old saved run must not silently inherit a newly raised global default.
+    value = run.get("ki_parallelitaet", settings.get("abonnenten_analyse_parallelitaet", 1) if new_run else 1)
+    if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 10:
+        raise ValueError("KI-Parallelität muss eine ganze Zahl zwischen 1 und 10 sein")
+    return value
 
 
 def _budget_attempt_reusable(entry: dict, refs: set[int], basis: str) -> bool:
@@ -329,6 +342,7 @@ def _launch(run_id, settings=None):
         raise ValueError("Unbekannter Bewertungslauf")
     overrides = _budget_settings(run)  # validate before creating any worker
     settings = {**config.load_settings(), **(settings or {}), **overrides}
+    _ki_parallelitaet(run, settings)
     def execute():
         _execute(store, run_id, settings)
     worker = scan_worker.start(execute, workflow={"abonnenten_id": run_id}, control={}, logs={}, results=[],
@@ -409,12 +423,149 @@ def _snapshot(store, run, settings, log, stopped):
         store.update(run["id"], snapshot_quellen=done)
 
 
+class _KeinKiSchluessel(LlmError):
+    """Missing credentials stop dispatch, rather than failing every strategy."""
+
+
+def _kurzanalysen(store, run_id, entries, settings, profile, stopped, log, slots):
+    """Bounded strategy tasks; only this coordinator mutates saved entries.
+
+    Every task owns its AnalyseKI/client and evidence/cost state. On any
+    interruption all submitted tasks are drained before returning or raising;
+    completed paid reports are still merged while the run lock remains held.
+    """
+    halt, failure_lock = Event(), Lock()
+    failures = []
+    pending_short = False
+    iterator = iter(entries)
+    exhausted = False
+    active = {}
+
+    def fail(exc):
+        with failure_lock:
+            failures.append(exc)
+            halt.set()
+
+    def task_stopped():
+        return halt.is_set() or stopped()
+
+    def check_stop():
+        if task_stopped():
+            raise Angehalten("Stop angefordert")
+
+    def http_progress(snapshot):
+        store.update(run_id, ki_http_limit=snapshot["limit"], ki_http_aktiv=snapshot["active"],
+                     ki_http_max_aktiv=snapshot["max_active"], ki_drosselungen=snapshot["throttles"])
+
+    gate = AdaptiveHttpGate(max_limit=slots, check_stop=check_stop, log=log, on_change=http_progress)
+    http_progress(gate.status())
+
+    def task(entry):
+        try:
+            if task_stopped():
+                raise Angehalten("Stop angefordert")
+            ai = AnalyseKI(store, run_id, deepcopy(settings), deepcopy(profile),
+                           should_stop=task_stopped,
+                           log=lambda message: log(f"{entry['quelle']}:{entry['id']} · {message}"))
+            ai.client.request_gate = gate
+            if not ai.client.has_key:
+                raise _KeinKiSchluessel("Kein GLM-Key konfiguriert; Berechnungen bleiben erhalten. "
+                                       "Unter Einstellungen ergänzen und fortsetzen.")
+            return ai.analyse(deepcopy(entry))
+        except BaseException as exc:
+            if not isinstance(exc, LlmError) or isinstance(exc, (
+                    Angehalten, LlmBudgetError, LlmNoBalanceError, LlmRateLimitError, _KeinKiSchluessel)):
+                fail(exc)
+            raise
+
+    def progress():
+        try:
+            store.update(run_id, ki_aktive_slots=len(active))
+        except BaseException as exc:
+            fail(exc)
+
+    progress()
+    with ThreadPoolExecutor(max_workers=slots, thread_name_prefix="abonnenten-kurztest") as executor:
+        while active or (not exhausted and not halt.is_set()):
+            try:
+                if stopped() and not halt.is_set():
+                    fail(Angehalten("Stop angefordert"))
+                while not exhausted and not halt.is_set() and len(active) < slots:
+                    entry = next(iterator, None)
+                    if entry is None:
+                        exhausted = True
+                        break
+                    if not _ki_possible(entry):
+                        continue
+                    basis = kurztest_basis(entry, profile, settings)
+                    if entry.get("kurz_basis") == basis and entry.get("kurztest"):
+                        _check_hints(entry, entry["kurztest"].get("pruefhinweise") or [], stage="kurztest")
+                        store.save_task(run_id, entry)
+                        continue
+                    if stopped():
+                        fail(Angehalten("Stop angefordert"))
+                        break
+                    # Fatal task failures and submission share this lock so a
+                    # known failure never leaves another queued strategy.
+                    with failure_lock:
+                        if halt.is_set():
+                            break
+                        future = executor.submit(task, entry)
+                        active[future] = (entry, basis)
+                    progress()
+            except BaseException as exc:
+                fail(exc)
+            if not active:
+                break
+            completed, _ = wait(active, timeout=.2, return_when=FIRST_COMPLETED)
+            for future in completed:
+                entry, basis = active.pop(future)
+                try:
+                    answer = future.result()
+                except BaseException as exc:
+                    if isinstance(exc, LlmError) and not isinstance(exc, (
+                            Angehalten, LlmBudgetError, LlmNoBalanceError, LlmRateLimitError, _KeinKiSchluessel)):
+                        entry.update(status="ki_fehler", ki_fehler=str(exc))
+                        pending_short = True
+                        try:
+                            log(f"Kurztest {entry['name']}: {exc}")
+                            store.save_task(run_id, entry)
+                        except BaseException as save_exc:
+                            fail(save_exc)
+                    # Fatal errors are recorded by the task before its future
+                    # completes. Peers may only report a cooperative stop.
+                    continue
+                try:
+                    _record_hint_origins(entry, entry.get("ki_pruefhinweise") or [])
+                    entry.update(kurztest=answer, kurz_basis=basis, ki_fehler="")
+                    # Preserve the completed paid result even if a later
+                    # snapshot/hint integrity check raises an interruption.
+                    store.save_task(run_id, entry)
+                    _check_hints(entry, answer.get("pruefhinweise") or [], stage="kurztest")
+                    entry["status"] = "ausgeschlossen" if entry.get("hard_excluded") else "fertig"
+                    store.save_task(run_id, entry)
+                except BaseException as exc:
+                    fail(exc)
+            progress()
+    # All worker callbacks have ended; publish an authoritative final snapshot
+    # after concurrent display updates so no older active count can remain.
+    http_progress(gate.status())
+    # The executor has joined every submitted task. Do not label a peer's
+    # induced stop as the cause when a real budget/provider failure triggered it.
+    if failures:
+        raise next((exc for exc in failures if not isinstance(exc, Angehalten)), failures[0])
+    if stopped():
+        raise Angehalten("Stop angefordert")
+    return pending_short
+
+
 def _execute(store, run_id, settings):
     from .abonnenten_analyse_daten import AnalyseDaten
     run = store.read(run_id)
     log = lambda message: store.log(run_id, message)
     stopped = lambda: bool(store.read(run_id).get("stop_requested"))
     try:
+        parallelitaet = _ki_parallelitaet(run, settings)
         # This controlled restart validates all frozen data before any source
         # refresh, terminal provider construction or paid model operation.
         frozen_entries = store.tasks(run_id)
@@ -426,6 +577,7 @@ def _execute(store, run_id, settings):
             process_start = 0
         store.update(run_id, status="laeuft", pid=os.getpid(), process_start=process_start,
                      stop_requested=False, fehler="", phase="kurzanalysen" if checkpoint is not None else "quellen_aktualisieren",
+                     ki_parallelitaet=parallelitaet, ki_aktive_slots=0,
                      budget_applied={key: settings[key] for key in BUDGET_SETTING_KEYS if key in settings})
         if checkpoint is None:
             _snapshot(store, run, settings, log, stopped)
@@ -501,35 +653,13 @@ def _execute(store, run_id, settings):
             store.save_task(run_id, entry)
         if stopped():
             raise Angehalten("Stop angefordert")
-        ai = AnalyseKI(store, run_id, settings, profile, should_stop=stopped, log=log)
         store.update(run_id, phase="kurzanalysen")
-        pending_short = False
-        for entry in entries:
-            if not _ki_possible(entry):
-                continue
-            basis = kurztest_basis(entry, profile, settings)
-            if entry.get("kurz_basis") == basis and entry.get("kurztest"):
-                _check_hints(entry, entry["kurztest"].get("pruefhinweise") or [], stage="kurztest")
-                store.save_task(run_id, entry)
-                continue
-            if not ai.client.has_key:
-                raise LlmError("Kein GLM-Key konfiguriert; Berechnungen bleiben erhalten. Unter Einstellungen ergänzen und fortsetzen.")
-            try:
-                _record_hint_origins(entry, entry.get("ki_pruefhinweise") or [])
-                entry.update(kurztest=ai.analyse(entry), kurz_basis=basis, ki_fehler="")
-                _check_hints(entry, entry["kurztest"].get("pruefhinweise") or [], stage="kurztest")
-                entry["status"] = "ausgeschlossen" if entry.get("hard_excluded") else "fertig"
-            except (LlmBudgetError, LlmNoBalanceError, Angehalten):
-                raise
-            except LlmError as exc:
-                entry.update(status="ki_fehler", ki_fehler=str(exc))
-                pending_short = True
-                log(f"Kurztest {entry['name']}: {exc}")
-            store.save_task(run_id, entry)
+        pending_short = _kurzanalysen(store, run_id, entries, settings, profile, stopped, log, parallelitaet)
         if pending_short:
             store.update(run_id, status="teilweise", phase="kurzanalysen", detail="Einzelne Kurzanalysen fehlen; fortsetzen möglich")
             return
         store.update(run_id, phase="top5_analysen")
+        ai = AnalyseKI(store, run_id, settings, profile, should_stop=stopped, log=log)
         ranked = rank_entries(entries, run["retdd_gewicht"])
         for entry in entries:
             store.save_task(run_id, entry)
@@ -554,6 +684,9 @@ def _execute(store, run_id, settings):
                 raise Angehalten("Stop angefordert")
             try:
                 if not entry.get("bericht_markdown") or entry.get("top5_basis") != basis:
+                    if not ai.client.has_key:
+                        raise _KeinKiSchluessel("Kein GLM-Key konfiguriert; Berechnungen und Kurzberichte bleiben erhalten. "
+                                               "Unter Einstellungen ergänzen und fortsetzen.")
                     _record_hint_origins(entry, entry.get("ki_pruefhinweise") or [])
                     answer = ai.analyse(entry, deep=True, comparison=comparison)
                     entry.update(bericht_markdown=answer["bericht_markdown"], top5_befund=answer,
@@ -564,7 +697,7 @@ def _execute(store, run_id, settings):
                 store.save_task(run_id, entry)  # preserve paid response before PDF work
                 entry["pdf_path"] = report_pdf(entry, run_id)
                 entry["ki_fehler"] = ""
-            except (LlmBudgetError, LlmNoBalanceError, Angehalten):
+            except (LlmBudgetError, LlmNoBalanceError, LlmRateLimitError, Angehalten, _KeinKiSchluessel):
                 raise
             except Exception as exc:
                 entry.update(status="ki_fehler", ki_fehler=str(exc))
@@ -587,6 +720,8 @@ def _execute(store, run_id, settings):
                             + (f"; {reviews} offene KI-Prüfungen" if reviews else ""))
     except Angehalten as exc:
         store.update(run_id, status="angehalten", detail=str(exc))
+    except LlmRateLimitError as exc:
+        store.update(run_id, status="wartet_anbieter", detail=str(exc), fehler=str(exc))
     except (LlmBudgetError, LlmNoBalanceError) as exc:
         store.update(run_id, status="wartet_budget", detail=str(exc), fehler=str(exc))
     except Exception as exc:

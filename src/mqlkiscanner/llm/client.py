@@ -15,6 +15,7 @@ import json
 import threading
 import time
 import uuid
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 
 import requests
@@ -36,6 +37,10 @@ class LlmBudgetError(LlmError):
     """Token-Budget des Laufs erschoepft."""
 
 
+class LlmRateLimitError(LlmError):
+    """Provider throttling persisted through the existing bounded retries."""
+
+
 class LlmIncompleteResponseError(LlmError):
     """Antwort wurde abgebrochen und darf nicht als fertiger Bericht gelten."""
 
@@ -55,7 +60,7 @@ class LlmUsage:
 class GlmClient:
     def __init__(self, model_stufe1: str, model_stufe2: str,
                  max_total_tokens: int = 5_000_000, timeout: int = 300,
-                 base_url: str | None = None):
+                 base_url: str | None = None, request_gate=None):
         # base_url: Coding-Plan-Endpunkt (Abo-Keys) vs. Standard-API-Endpunkt
         # (Pay-as-you-go-Keys) — falscher Endpunkt => Fehler 1113 "Insufficient
         # balance". Default kommt aus den Settings (config.glm_base_url).
@@ -78,6 +83,7 @@ class GlmClient:
         self._inflight_tokens = 0
         self.agent_budget_settings = None
         self.agent_budget_context = (None, 'agent')
+        self.request_gate = request_gate
 
     @property
     def has_key(self) -> bool:
@@ -125,6 +131,12 @@ class GlmClient:
             self._inflight_tokens += reservierung
 
         verrechnet = False
+        http_attempted = False
+        def retry_wait(seconds):
+            if self.request_gate is None:
+                time.sleep(seconds)
+            else:
+                self.request_gate.backoff(seconds)
         try:
             body = {
                 "model": model,
@@ -152,13 +164,21 @@ class GlmClient:
                 for transport_attempt in range(2):
                     attempt_no += 1
                     try:
-                        if self.agent_budget_settings is not None:
-                            from ..agenten import budget
-                            r = budget.post(self, body, self._headers(), meta_out)
-                        else:
-                            r = requests.post(f"{self.base_url}/chat/completions",
-                                              headers=self._headers(), data=json.dumps(body),
-                                              timeout=self.timeout)
+                        gate = self.request_gate
+                        with gate.slot() if gate is not None else nullcontext():
+                            # Admission/cancellation happens before budget.post
+                            # creates its durable per-HTTP reservation.
+                            headers = self._headers()
+                            http_attempted = True
+                            if self.agent_budget_settings is not None:
+                                from ..agenten import budget
+                                r = budget.post(self, body, headers, meta_out)
+                            else:
+                                r = requests.post(f"{self.base_url}/chat/completions",
+                                                  headers=headers, data=json.dumps(body),
+                                                  timeout=self.timeout)
+                            if gate is not None:
+                                gate.observe(r)
                         break
                     except requests.RequestException as exc:
                         db.store_llm_attempt(call_id, attempt_no, model=model,
@@ -168,7 +188,7 @@ class GlmClient:
                             raise LlmError(
                                 f"GLM-Verbindungsfehler nach 2 Versuchen: "
                                 f"{type(exc).__name__}: {exc}") from exc
-                        time.sleep(5)
+                        retry_wait(5)
                 # Preserve every response, including discarded length/error attempts.
                 try:
                     audit_data = r.json()
@@ -231,14 +251,14 @@ class GlmClient:
                         last_error = LlmError(
                             f"GLM-Serverfehler (HTTP {r.status_code}): {r.text[:200]}")
                         if attempt < 2:
-                            time.sleep(5 * (attempt + 1))
+                            retry_wait(5 * (attempt + 1))
                         continue
                     if r.status_code == 429 or code == "1302":
-                        last_error = LlmError(
+                        last_error = LlmRateLimitError(
                             f"GLM-Drosselung (HTTP {r.status_code}, Code {code or 'unbekannt'}): "
                             f"{r.text[:200]}")
                         if attempt < 2:
-                            time.sleep(5 * (attempt + 1))
+                            retry_wait(5 * (attempt + 1))
                         continue
                     raise LlmError(f"GLM-API HTTP {r.status_code}: {r.text[:300]}")
                 try:
@@ -336,6 +356,12 @@ class GlmClient:
                         "aufgebraucht — Limit erhoehen.")
                 return content
             raise last_error or LlmError("GLM-Aufruf fehlgeschlagen.")
+        except BaseException:
+            if meta_out is not None and self.request_gate is not None:
+                # Never overwrite this with True after an earlier HTTP attempt
+                # in the same chat, including an uncertain transport outcome.
+                meta_out["known_not_sent"] = not http_attempted
+            raise
         finally:
             # Fehler VOR der Abrechnung: Reservierung zurueckgeben, sonst
             # vergiftet jeder fehlgeschlagene Call das Budget.

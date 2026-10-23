@@ -19,6 +19,7 @@ class _Backend:
     def __init__(self):
         self.state = {}
         self.started = []
+        self.started_settings = []
         self.stopped = []
         self.resumed = []
 
@@ -31,10 +32,12 @@ class _Backend:
 
     def starten(self, quellen, settings=None, retdd_gewicht=70, dd_grenze=None):
         self.started.append((quellen, retdd_gewicht, dd_grenze))
+        self.started_settings.append(dict(settings or {}))
         self.state = {"id": "run1", "status": "laeuft", "phase": "berechnet",
                       "detail": "Test", "laeuft": True, "total": 2, "done": 1,
                       "entries": [], "logs": ["synthetischer Testlauf"],
-                      "retdd_gewicht": retdd_gewicht, "dd_grenze": dd_grenze}
+                      "retdd_gewicht": retdd_gewicht, "dd_grenze": dd_grenze,
+                      "ki_parallelitaet": (settings or {}).get("abonnenten_analyse_parallelitaet", 10)}
         return "run1"
 
     def stoppen(self, run_id=None):
@@ -75,11 +78,17 @@ def test_dialog_defaults_start_and_no_automatic_start(backend):
     assert at.multiselect(key="abonnenten_analyse_quellen").value == ["mql5", "pelik"]
     assert at.slider(key="abonnenten_analyse_start_retdd").value == 70
     assert at.toggle(key="abonnenten_analyse_start_dd_aktiv").value is False
-    assert not at.number_input
+    parallel = at.number_input(key="abonnenten_analyse_start_parallelitaet")
+    assert parallel.value == 10
+    assert parallel.proto.min == 1 and parallel.proto.max == 10 and parallel.proto.step == 1
+    assert type(config.DEFAULT_SETTINGS["abonnenten_analyse_parallelitaet"]) is int
+    assert config.DEFAULT_SETTINGS["abonnenten_analyse_parallelitaet"] == 10
     assert any("2 Monate und 50" in x.value for x in at.info)
     at.button(key="abonnenten_analyse_start").click().run()
     assert not at.exception, at.exception
     assert backend.started == [(["mql5", "pelik"], 70.0, None)]
+    assert backend.started_settings[-1]["abonnenten_analyse_parallelitaet"] == 10
+    assert backend.state["ki_parallelitaet"] == 10
     at.run()
     assert len(backend.started) == 1
 
@@ -92,6 +101,7 @@ def test_dialog_save_defaults_and_optional_limit(backend):
     at.toggle(key="abonnenten_analyse_start_dd_aktiv").set_value(True).run()
     at.number_input(key="abonnenten_analyse_start_dd").set_value(65.0)
     at.slider(key="abonnenten_analyse_start_retdd").set_value(90.0)
+    at.number_input(key="abonnenten_analyse_start_parallelitaet").set_value(3)
     at.checkbox(key="abonnenten_analyse_standard").check()
     at.button(key="abonnenten_analyse_start").click().run()
     assert not at.exception, at.exception
@@ -101,6 +111,8 @@ def test_dialog_save_defaults_and_optional_limit(backend):
     assert saved["abonnenten_analyse_dd_grenze"] == 65
     assert saved["abonnenten_analyse_retdd_gewicht"] == 90
     assert saved["abonnenten_analyse_quellen"] == ["pelik"]
+    assert saved["abonnenten_analyse_parallelitaet"] == 3
+    assert backend.started_settings[-1]["abonnenten_analyse_parallelitaet"] == 3
 
 
 def test_missing_new_prompt_blocks_only_research_start(backend):
@@ -152,11 +164,62 @@ from mqlkiscanner.abonnenten_analyse_ui import render_defaults_editor
 render_defaults_editor(config.load_settings())
 """).run()
     at.slider(key="admin_abonnenten_analyse_retdd").set_value(80.0)
+    at.number_input(key="admin_abonnenten_analyse_parallelitaet").set_value(4)
     at.button(key="admin_abonnenten_standard").click().run()
     assert not at.exception, at.exception
     assert config.load_settings()["abonnenten_analyse_retdd_gewicht"] == 80
     assert config.load_settings()["abonnenten_analyse_dd_grenze"] is None
     assert config.load_settings()["schranke_eq_dd_pct"] == 37
+    assert config.load_settings()["abonnenten_analyse_parallelitaet"] == 4
+
+
+def test_new_run_parallelity_is_forwarded_as_snapshot_without_changing_saved_default(backend):
+    config.save_settings({"abonnenten_analyse_parallelitaet": 3, "llm_max_total_tokens": 123456})
+    at = _app()
+    at.button(key="abonnenten_analyse_oeffnen").click().run()
+    assert at.number_input(key="abonnenten_analyse_start_parallelitaet").value == 3
+    at.number_input(key="abonnenten_analyse_start_parallelitaet").set_value(7).run()
+    assert any("Bis zu 7 KI-Kurzanalysen gleichzeitig" in e.value and "kann drosseln" in e.value for e in at.caption)
+    at.button(key="abonnenten_analyse_start").click().run()
+    assert not at.exception, at.exception
+    assert backend.started_settings[-1]["abonnenten_analyse_parallelitaet"] == 7
+    assert backend.started_settings[-1]["llm_max_total_tokens"] == 123456
+    assert backend.state["ki_parallelitaet"] == 7
+    assert any("KI-Parallelität dieses Auftrags: bis zu 7" in e.value for e in at.caption)
+    assert config.load_settings()["abonnenten_analyse_parallelitaet"] == 3
+
+
+@pytest.mark.parametrize("bad", [0, 11, True, "3", 3.0])
+def test_invalid_stored_parallelity_cannot_break_bounded_start_widget(backend, bad):
+    config.save_settings({"abonnenten_analyse_parallelitaet": bad})
+    at = _app()
+    at.button(key="abonnenten_analyse_oeffnen").click().run()
+    assert not at.exception, at.exception
+    assert at.number_input(key="abonnenten_analyse_start_parallelitaet").value == 10
+    assert config.load_settings()["abonnenten_analyse_parallelitaet"] == bad
+
+
+def test_resume_keeps_saved_run_parallelity_instead_of_new_global_default(backend):
+    backend.starten(["mql5"], settings={"abonnenten_analyse_parallelitaet": 2})
+    backend.state.update(status="angehalten", laeuft=False)
+    config.save_settings({"abonnenten_analyse_parallelitaet": 9})
+    at = _app()
+    assert any("KI-Parallelität dieses Auftrags: bis zu 2" in e.value for e in at.caption)
+    at.button(key="abonnenten_analyse_resume_run1").click().run()
+    assert not at.exception, at.exception
+    assert backend.resumed == ["run1"]
+    assert backend.state["ki_parallelitaet"] == 2
+    assert config.load_settings()["abonnenten_analyse_parallelitaet"] == 9
+    assert len(backend.started_settings) == 1
+
+
+def test_legacy_run_without_parallelity_snapshot_does_not_display_new_global_default(backend):
+    backend.starten(["mql5"])
+    backend.state.pop("ki_parallelitaet")
+    config.save_settings({"abonnenten_analyse_parallelitaet": 10})
+    at = _app()
+    assert not at.exception, at.exception
+    assert any("KI-Parallelität dieses Auftrags: nicht gespeichert (älterer Auftrag)" in e.value for e in at.caption)
 
 
 def test_csv_preserves_missing_numbers_and_source_identity():
@@ -340,6 +403,30 @@ def test_top5_progress_counts_saved_reports_and_keeps_errors_separate(backend):
     assert metrics["Anbieter mit KI-Fehler"] == "1"
     assert at.get("progress")[0].proto.value == 40
     assert any("Arbeitsschritt dieses Auftrags: Ausführliche Top-5-Analysen" in e.value for e in at.caption)
+
+
+@pytest.mark.parametrize("slots", [0, 3, 10])
+def test_live_short_analysis_displays_verified_slot_occupancy_with_saved_capacity(backend, slots):
+    backend.starten(["mql5"], settings={"abonnenten_analyse_parallelitaet": 10})
+    backend.state.update(phase="kurzanalysen", ki_aktive_slots=slots,
+                         entries=[_ki_entry(i) for i in range(1, 13)])
+    at = _app()
+    assert not at.exception, at.exception
+    metric = next(metric for metric in at.metric if metric.label == "Belegte KI-Plätze")
+    assert metric.value == f"{slots}/10"
+    assert "keine aktiven HTTP-Anfragen" in metric.proto.help
+    backend.state.update(status="angehalten", laeuft=False)
+    at.run()
+    assert not any(metric.label == "Belegte KI-Plätze" for metric in at.metric)
+
+
+@pytest.mark.parametrize("slots", [-1, 11, True, "3", None])
+def test_invalid_or_missing_slot_evidence_is_not_presented_as_active_work(backend, slots):
+    backend.starten(["mql5"])
+    backend.state.update(phase="kurzanalysen", ki_aktive_slots=slots)
+    at = _app()
+    assert not at.exception, at.exception
+    assert not any(metric.label == "Belegte KI-Plätze" for metric in at.metric)
 
 
 def test_ki_counter_uses_backend_pure_selection_without_recalculating_gates(backend, monkeypatch):

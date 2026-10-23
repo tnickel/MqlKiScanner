@@ -330,6 +330,8 @@ class AnalyseKI:
             if len(values) == len(ids):
                 return sum(int(row[0]) for row in values)
             return None  # retain the reservation if any receipt is missing
+        if meta.get("known_not_sent") is True:
+            return 0  # Gate cancelled before any HTTP/ticket; no uncertain charge.
         return meta.get("total_tokens")
 
     def _prompt(self, key, entry, processing, trade_data, parts, *, short=None, comparison=None):

@@ -100,7 +100,9 @@ def test_pure_preparation_and_mixed_attempts_reused_with_failed_source_unchanged
     settings = {**settings, "llm_model": "new", "glm_base_url": "https://synthetic.invalid"}
     analyse._execute(store, run["id"], settings)
     saved_run, saved = store.read(run["id"]), store.tasks(run["id"])
-    assert calls == {"snapshot": 0, "data": 0, "ai_init": 1, "short": [1], "deep": [1, 6]}
+    # Short strategy tasks own a private client; the sequential Top5 phase
+    # uses a separate one. Neither phase repeats completed data attempts.
+    assert calls == {"snapshot": 0, "data": 0, "ai_init": 2, "short": [1], "deep": [1, 6]}
     assert saved_run["snapshot_quellen"] == run["snapshot_quellen"]
     assert saved_run["budget_resume_refs"] == [91]
     assert saved_run["budget_checkpoint"] == {"historical": True}

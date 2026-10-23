@@ -165,6 +165,13 @@ def _render_ki_fortschritt(state: dict, backend, *, aktueller_lauf: bool) -> boo
         st.metric("Top-5-Analysen vorhanden", f"{counts['top5_fertig']}/{counts['top5_gesamt']}",
                   help="Gespeicherte ausführliche Berichte der derzeitigen Top 5; PDF-Erstellung und Fehler bleiben getrennt.")
         st.metric("Anbieter mit KI-Fehler", str(counts["fehler"]))
+        slots, parallel = state.get("ki_aktive_slots"), _parallelitaet_wert(state.get("ki_parallelitaet"))
+        if (state["phase"] == "kurzanalysen" and aktueller_lauf and state.get("laeuft")
+                and state.get("status") == "laeuft" and parallel is not None
+                and type(slots) is int and 0 <= slots <= parallel):
+            st.metric("Belegte KI-Plätze", f"{slots}/{parallel}",
+                      help="Eingereihte, noch nicht vollständig übernommene Kurztest-Aufträge. "
+                           "Die Zahl belegt keine aktiven HTTP-Anfragen.")
     key = "kurz" if state["phase"] == "kurzanalysen" else "top5"
     total, done = counts[f"{key}_gesamt"], counts[f"{key}_fertig"]
     st.progress(min(1.0, done / total) if total else 0.0)
@@ -194,6 +201,19 @@ def _defaults(settings: dict) -> tuple[float, float | None]:
     return weight, limit
 
 
+def _parallelitaet_wert(value) -> int | None:
+    return value if type(value) is int and 1 <= value <= 10 else None
+
+
+def _parallelitaet_input(settings: dict, prefix: str) -> int:
+    parallel = st.number_input(
+        "KI-Kurzanalysen gleichzeitig", min_value=1, max_value=10, step=1,
+        value=_parallelitaet_wert(settings.get("abonnenten_analyse_parallelitaet")) or 10,
+        key=f"{prefix}_parallelitaet")
+    st.caption(f"Bis zu {parallel} KI-Kurzanalysen gleichzeitig; der KI-Anbieter kann drosseln.")
+    return int(parallel)
+
+
 def _policy_inputs(settings: dict, prefix: str) -> tuple[float, float | None]:
     weight, limit = _defaults(settings)
     limited = st.toggle("Drawdown-Grenze verwenden", value=limit is not None,
@@ -216,13 +236,15 @@ def render_defaults_editor(settings: dict) -> None:
     """Eigener Speicherbereich, ohne andere Einstellungsgruppen zu überschreiben."""
     with st.expander("Standard für die Abonnentenanalyse", expanded=False):
         weight, limit = _policy_inputs(settings, "admin_abonnenten_analyse")
+        parallel = _parallelitaet_input(settings, "admin_abonnenten_analyse")
         st.caption("Top 200 je Quelle, mindestens 1 Abonnent · 2 Monate und 50 Trades · "
                    "Kurztest für alle auswertbaren Strategien, Vollbericht für die besten 5.")
         if st.button("Analyse-Standard speichern", key="admin_abonnenten_standard",
                      icon=":material/save:"):
             config.save_settings({**config.load_settings(),
                                   "abonnenten_analyse_retdd_gewicht": weight,
-                                  "abonnenten_analyse_dd_grenze": limit})
+                                  "abonnenten_analyse_dd_grenze": limit,
+                                  "abonnenten_analyse_parallelitaet": parallel})
             st.success("Standard für neue Rechercheaufträge gespeichert.")
 
 
@@ -247,6 +269,7 @@ def analyse_dialog() -> None:
                             format_func=lambda key: labels[key],
                             key="abonnenten_analyse_quellen")
     weight, limit = _policy_inputs(settings, "abonnenten_analyse_start")
+    parallel = _parallelitaet_input(settings, "abonnenten_analyse_start")
     st.info("Mindestens 2 Monate und 50 abgeschlossene Trades. Fehlende Daten werden "
             "automatisch geladen. Kurz-KI für alle auswertbaren Strategien; "
             "ausführliche Analyse für die besten 5. Budget aus den Einstellungen.")
@@ -268,7 +291,7 @@ def analyse_dialog() -> None:
             if backend.zustand().get("laeuft"):
                 st.warning("Eine Abonnentenanalyse läuft bereits. Fortschritt unten öffnen.")
                 return
-            run_id = backend.starten(chosen, settings=settings,
+            run_id = backend.starten(chosen, settings={**settings, "abonnenten_analyse_parallelitaet": parallel},
                                      retdd_gewicht=weight, dd_grenze=limit)
             if not run_id:
                 st.error("Der Analyseauftrag konnte nicht gestartet werden.")
@@ -282,6 +305,7 @@ def analyse_dialog() -> None:
                 config.save_settings({**config.load_settings(),
                                       "abonnenten_analyse_retdd_gewicht": weight,
                                       "abonnenten_analyse_dd_grenze": limit,
+                                      "abonnenten_analyse_parallelitaet": parallel,
                                       "abonnenten_analyse_quellen": chosen})
             except Exception as exc:
                 st.session_state["_abonnenten_analyse_notice"] = (
@@ -525,6 +549,10 @@ def render_results() -> None:
         return
     st.caption(f"Ausgewählter Rechercheauftrag: {run_id} · "
                f"erstellt {metadata[run_id].get('created_at') or 'Zeitpunkt unbekannt'}")
+    parallel = _parallelitaet_wert(state.get("ki_parallelitaet"))
+    st.caption("KI-Parallelität dieses Auftrags: " + (
+        f"bis zu {parallel} Kurzanalysen gleichzeitig." if parallel is not None
+        else "nicht gespeichert (älterer Auftrag)."))
     if run_id != next(iter(metadata)):
         st.info("Sie sehen einen früheren Rechercheauftrag. Seine Fehler und Ergebnisse gehören "
                 "zu diesem Auftrag. Ein neuerer Auftrag ist oben in der Auswahl verfügbar.")

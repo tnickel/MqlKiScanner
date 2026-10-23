@@ -244,3 +244,46 @@ Codebelege der Untersuchung: `app_pages/abonnenten_statistik.py:65,179`,
 `src/mqlkiscanner/forensics/equity_rekonstruktion.py:920–1021`,
 `src/mqlkiscanner/equity_studie.py:246–253,539–589`,
 `src/mqlkiscanner/trade_data.py:139–146,274–278`.
+
+## 8. Parallele Kurzanalysen (24.10.2026)
+
+Ein Rechercheauftrag verteilt unabhängige Strategien auf bis zu zehn
+Analyseplätze. Der Startdialog und die Konfiguration erlauben 1–10; neue
+Aufträge verwenden standardmäßig zehn. Die Auswahl wird am Auftrag gespeichert.
+Ältere Aufträge ohne gespeicherte Parallelität bleiben bei einem Platz, bis
+ihre Einstellung ausdrücklich geändert wird. Die Parallelität gehört nicht
+zur fachlichen Bewertungsbasis und entwertet keine fertigen Teilanalysen.
+
+Jede bearbeitete Strategie besitzt einen eigenen KI-Client sowie eigene
+Tradebelege und Kostenbelege. Nur der gemeinsame Koordinator übernimmt fertige
+Kurzberichte, prüft Hinweise und bildet anschließend die Rangliste. Datenabruf,
+Equity-Rechnung und die ausführlichen Top-5-Analysen behalten ihre bisherige
+Orchestrierung. Der eine Lauf hält weiterhin das gemeinsame Lauf-Lock.
+
+Die Lauf-, Tages- und Monatsbudgets werden vor Anfragen gemeinsam und atomar
+reserviert. Ein Stop oder erschöpftes Budget beendet die Auftragsvergabe;
+bereits laufende Anfragen werden abgewickelt und verwertbare Ergebnisse
+gespeichert, bevor der Lauf endet. Ein Neustart verwendet passende gespeicherte
+Tradeblöcke und Berichte erneut.
+
+Zehn Analyseplätze sind kein Nachweis für zehn gleichzeitig zugelassene
+HTTP-Anfragen. Z.ai beschreibt die Parallelitätsgrenzen als tarif- und
+auslastungsabhängig: <https://docs.z.ai/devpack/usage-policy>. Eine gemeinsame
+Anfragesteuerung reduziert die gleichzeitigen Anfragen bei HTTP 429 bzw.
+Code 1302 und wartet vor weiteren Versuchen. Erst eine Messung im konkreten
+Lauf belegt die erreichte Parallelität; eine zehnfache Beschleunigung folgt
+nicht allein aus der Konfiguration.
+
+Bleibt die Drosselung auch nach den vorhandenen begrenzten Wiederholungen
+bestehen, pausiert der Auftrag als `wartet_anbieter`. Er kann ausdrücklich
+fortgesetzt werden; die restlichen Strategien werden nicht einzeln als
+fehlgeschlagene Analysen abgearbeitet.
+
+Abnahme 24.10.2026: 523 kombinierte Tests bestanden; 105 davon zusätzlich mit
+der für den Neustart verwendeten Python-3.12-Laufzeit. Der unveränderte
+Rechercheauftrag läuft seit 00:44 MESZ mit zehn Analyseplätzen weiter. Im
+Livebeleg um 00:46 MESZ stehen zehn erfolgreiche Antworten und zwei
+Ablehnungen mit HTTP 429/1302. Die adaptive Anfragegrenze war nach anfänglicher
+Reduktion bereits wieder auf drei gestiegen. Dies ist ein Betriebsnachweis,
+kein Gesamtabschluss und keine belastbare Fünf-Stunden-Prognose. Private
+Aktivierungs- und Laufbelege: `data/runs/parallel_ki_20261024/`.
