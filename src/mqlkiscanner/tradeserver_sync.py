@@ -353,6 +353,12 @@ def _sync_alle(results: Iterable, portfolio: dict | None = None, *,
         zeilen = signal_zeilen(unique, fresh_ids=fresh_ids)
         dokumente, fehler = dokumente_sammeln(unique, portfolio)
         summary.update(signale=len(zeilen), dokumente=len(dokumente), fehler=fehler)
+        if fehler:
+            # v2 is a complete mirror: silently omitting a failed local PDF
+            # would delete its previously committed remote document.
+            raise tradeserver_client.TradeserverError(
+                "Dokumentensammlung unvollständig; Serverbestand bleibt erhalten: "
+                + "; ".join(fehler))
         info = client.register(signal_count=len(zeilen))
         summary["run_id"] = info.get("runId")
         summary["server_zeit"] = info.get("serverTime")

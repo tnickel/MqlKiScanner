@@ -375,15 +375,21 @@ def _abo_auswahlhinweis(entry: dict) -> str:
     count = len(_abo_positionen(entry))
     skipped = (f"{count} API-Position{'en' if count != 1 else ''} ausgelassen. "
                if count else "")
+    supplied = str(entry.get("abo_auswahl_hinweis") or "").strip()
     reference = _number(entry.get("abo_referenz_n"))
     basis = f"{int(reference)} erfassten Anbietern" if reference is not None and reference > 0 else "den erfassten Anbietern"
-    return (f"Vorläufige Abonnentenauswahl: {skipped}Vollständige Top 200 nicht belegt. "
+    return (f"Vorläufige Abonnentenauswahl: {skipped}" + (f"{supplied} " if supplied else "")
+            + "Vollständige Top 200 nicht belegt. "
             f"Der Abonnentenrang gilt innerhalb von {basis}.")
 
 
 def _mit_abo_auswahl(entry: dict, state: dict) -> dict:
     """Auch der eingefrorene Quellenbeleg bleibt in Ansicht/Export sichtbar."""
-    catalog = ((state.get("snapshot_quellen") or {}).get(entry.get("quelle")) or {}).get("abonnenten_katalog")
+    snapshot = ((state.get("snapshot_quellen") or {}).get(entry.get("quelle")) or {})
+    if snapshot.get("abonnenten_auswahl_unbestaetigt"):
+        return {**entry, "abo_referenz_vollstaendig": False,
+                "abo_auswahl_hinweis": snapshot.get("auswahl_hinweis") or "Auswahl/Abdeckung unbestätigt"}
+    catalog = snapshot.get("abonnenten_katalog")
     if not isinstance(catalog, dict) or catalog.get("complete") is not False:
         return entry
     return {**entry, "abo_referenz_vollstaendig": False,
@@ -574,7 +580,11 @@ def render_results() -> None:
         st.warning(f"Fehler dieses Rechercheauftrags: {state['fehler']}")
     for source, snapshot in (state.get("snapshot_quellen") or {}).items():
         catalog = snapshot.get("abonnenten_katalog")
-        if isinstance(catalog, dict) and catalog.get("complete") is False:
+        if snapshot.get("abonnenten_auswahl_unbestaetigt"):
+            st.warning(f"Quellenauswahl dieses Auftrags · {source}: " + _abo_auswahlhinweis({
+                "abo_referenz_vollstaendig": False, "abo_auswahl_hinweis": snapshot.get("auswahl_hinweis"),
+                "abo_referenz_n": snapshot.get("anzahl")}))
+        elif isinstance(catalog, dict) and catalog.get("complete") is False:
             st.warning(f"Quellenauswahl dieses Auftrags · {source}: " + _abo_auswahlhinweis({
                 "abo_referenz_vollstaendig": False, "abo_ausgelassene_positionen": catalog.get("skipped_positions"),
                 "abo_referenz_n": snapshot.get("anzahl")}))

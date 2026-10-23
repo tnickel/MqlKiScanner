@@ -44,8 +44,9 @@ page_header('ABONNENTENSTATISTIK', 'Wohin laufen die Nutzer?',
             'Zuwachs allein ist kein Qualitätsnachweis; die Workflow-Ampel '
             'bleibt vom Rechercheergebnis getrennt.')
 with st.container(horizontal=True, vertical_alignment='center'):
-    st.caption('Datenbasis: gemessene Abonnenten-Historien der Clients '
-               '(MqlDownloader & Monitore) plus eigene Messpunkte je Sync. '
+    st.caption('Datenbasis: gespeicherte Abonnenten-Historien. Neue Messpunkte '
+               'stammen aus den Client-Historien; bloßes Neulesen bestätigt '
+               'keine neue Messung. '
                'Mindestens ein Abonnent ist Anzeige-Standard.')
     info_button('abonnentenstatistik', key='abonnenten_statistik_info')
 
@@ -495,8 +496,10 @@ def _tabelle_rendern(tab_zeilen: list[dict], schluessel: str,
                  'Die große Kurve gibt es per Zeilenauswahl unten.'),
         'Letzte Messung': st.column_config.TextColumn(
             'Messung', width=92,
-            help='Zeitpunkt der neuesten Messung beim Client bzw. des '
-                 'eigenen Sync-Messpunkts'),
+            help='Zeitpunkt des neuesten gespeicherten Messpunkts. Neue '
+                 'Punkte übernehmen den Messzeitpunkt des Clients. Frühere '
+                 'Scanner-Sync-Punkte bleiben historisch erhalten und '
+                 'werden durch Neulesen nicht erneut bestätigt.'),
         'Ber.': st.column_config.TextColumn(
             'Ber.', width=52,
             help='📄 = KI-Analysen vorhanden (Trade-/Risiko-Analyse, '

@@ -11,9 +11,9 @@ Datenfluss (doc/24 §3): Jeder Sync liest je aktiver Quelle den Vollkatalog
 (``minSubscribers=0``, validierte Pagination über ingest.hole_katalog) UND
 die komplette Abonnenten-Historie je Provider aus der Client-DB
 (``GET /providers/{id}/{v}/history``, Millisekunden) in die Scanner-Tabelle
-``subscriber_history``; zusätzlich schreibt der Scanner einen EIGENEN
-Messpunkt „jetzt" aus der Katalogzahl — so baut der Scanner eine dichte
-eigene Historie auf, unabhängig vom Lauf-Takt der Clients. Die Δ-Werte
+``subscriber_history``. Nur echte native Historien liefern Messzeitpunkte;
+Katalogabrufe erzeugen keine eigenen Jetztpunkte und damit keine Tagesfrische.
+Ein expliziter Refresh erneuert die nativen Zählerhistorien vor dem Spiegeln. Die Δ-Werte
 berechnet der Scanner einheitlich selbst (die Client-Felder weekChange/
 monthChange werden bewusst NICHT gemischt — deren Semantik je Client
 differiert). Tradelisten werden nie geladen.
@@ -40,11 +40,6 @@ from uuid import uuid4
 
 from . import config, db, downloader_client, ingest, katalog, quellen
 from .downloader_sync import _bilanz as _bilanz_reihe
-
-# Innerhalb dieses Fensters erzeugt ein erneuter Sync KEINEN zweiten eigenen
-# Messpunkt mit identischem Wert (Rerun-/Doppelklick-Schutz; der Punkt bliebe
-# sonst mehrfach pro Tag in der Reihe).
-_MESSPUNKT_MIN_ABSTAND_S = 6 * 3600
 
 # Fenster der Tabellen-Sparkline („Verlauf 30 T"), relativ zum NEUESTEN
 # Messpunkt — dieselbe Semantik wie das Sparkline-Fenster des MqlDownloaders
@@ -109,20 +104,19 @@ def _vergleichspunkt(reihe: list[tuple[datetime, int]], tage: int) -> int | None
     return min(kandidaten, key=lambda x: abs((x[0] - ziel).total_seconds()))[1]
 
 
-# ── Sync: Katalog + Historie + eigene Messpunkte ─────────────────────────
-
+# ── Sync: Katalog + belegte native Historie ──────────────────────────────
 def sync_quelle(quelle: dict, *, log: Callable[[str], None] | None = None,
-                eigene_messpunkte: bool = True) -> dict:
+                eigene_messpunkte: bool = False) -> dict:
     """Katalog + vollständige Abonnenten-Historie EINER Quelle spiegeln.
 
     1. Vollkatalog (minSubscribers=0) via ingest.hole_katalog — dieselbe
        validierte Pagination wie „Alle Signale"; katalog_signale wird
        mit-aktualisiert (beide Übersichten teilen sich den Bestand).
     2. je Provider GET /history → subscriber_history (idempotenter Upsert;
-       404 = Client kennt keinen Verlauf, dann bleibt der eigene Messpunkt).
-    3. eigener Messpunkt „jetzt" aus der Katalogzahl (change gegenüber dem
-       vorherigen Punkt der vereinten Reihe); übersprungen, wenn der Wert
-       innerhalb des Mindest-Abstands schon identisch gemessen wurde.
+       404 = Client kennt keinen Verlauf, dann bleibt die Historie unbekannt).
+    Katalogzeilen und selbst ein stabiler Update-Job binden die einzelnen
+    Zähler nicht an einen Messzeitpunkt. Daher entstehen keine Eigenpunkte.
+    ``eigene_messpunkte`` bleibt nur zur Aufrufkompatibilität angenommen.
 
     Rückgabe {"anzahl", "history_punkte", "messpunkte", "fehler" (Liste),
     "abgebrochen" (str|None)}. Verbindungs-/Auth-Fehler brechen DIESE Quelle
@@ -147,23 +141,23 @@ def sync_quelle(quelle: dict, *, log: Callable[[str], None] | None = None,
         _log(f"Katalog nicht ladbar — {exc}")
         return eintrag
     zeilen = katalog._normalisiere(roh)
-    gespeichert, geloescht = db.katalog_upsert_many(quelle["kuerzel"], zeilen)
+    scope_warning = ingest.katalog_scope_hinweis(roh)
+    gespeichert, geloescht = db.katalog_upsert_many(
+        quelle["kuerzel"], zeilen, fehlende_loeschen=not scope_warning)
+    if scope_warning:
+        eintrag["fehler"].append(scope_warning)
+        _log(scope_warning)
     eintrag["anzahl"] = gespeichert
     _log(f"Katalog: {gespeichert} Signale übernommen, {geloescht} rausgefallen.")
 
-    roh_index = {(str(item.get("signalId")).strip(), str(item.get("version") or "").strip()): item
-                 for item in roh if isinstance(item, dict)}
-    jetzt = datetime.now()
     for zeile in zeilen:
         signal_id = int(zeile["signal_id"])
         version = str(zeile.get("version") or "")
-        raw = roh_index.get((str(signal_id), version), {})
-        subs = ingest.normalisiere_abonnenten(raw.get("subscribers"))
         punkte: list[dict] = []
         try:
             punkte = client.history(signal_id, version)
         except downloader_client.DownloaderNotFound:
-            punkte = []  # kein Verlauf beim Client — nur eigener Messpunkt
+            punkte = []  # Kein nativer Zeitbeleg; keinen Ersatzpunkt erfinden.
         except (downloader_client.DownloaderConnectionError,
                 downloader_client.DownloaderAuthError) as exc:
             eintrag["abgebrochen"] = str(exc)
@@ -178,29 +172,6 @@ def sync_quelle(quelle: dict, *, log: Callable[[str], None] | None = None,
         except db.IdentityError as exc:
             eintrag["fehler"].append(f"#{signal_id}: {exc}")
             continue
-        if not eigene_messpunkte or subs is None:
-            continue
-        vereint = db.get_history(signal_id, version, quelle=kuerzel)
-        reihe = sorted((p for p in vereint
-                        if _parse_ts(p.get("ts")) is not None
-                        and p.get("subscribers") is not None),
-                       key=lambda p: str(p["ts"]))
-        vorheriger_ts: datetime | None = None
-        vorheriger_wert: int | None = None
-        if reihe:
-            vorheriger_ts = _parse_ts(reihe[-1]["ts"])
-            vorheriger_wert = int(reihe[-1]["subscribers"])
-        if (vorheriger_wert is not None and vorheriger_wert == subs
-                and vorheriger_ts is not None
-                and (jetzt - vorheriger_ts).total_seconds() < _MESSPUNKT_MIN_ABSTAND_S):
-            continue  # identischer Wert, eben schon gemessen — kein Duplikat
-        change = (subs - vorheriger_wert) if vorheriger_wert is not None else 0
-        db.store_history_points(
-            signal_id, version,
-            [{"timestamp": jetzt.isoformat(timespec="seconds"),
-              "subscribers": subs, "change": change}],
-            quelle=kuerzel)
-        eintrag["messpunkte"] += 1
     if eintrag["fehler"]:
         _log(f"{len(eintrag['fehler'])} Einzel fehler bei der Historie.")
     _log(f"Historie gespiegelt: {eintrag['history_punkte']} Punkte, "
@@ -543,7 +514,12 @@ def starte_refresh(*, messen: bool, kuerzels: list[str] | None = None,
             summary = sync(log=_log)
             for kuerzel, ergebnis in client_ergebnisse.items():
                 coverage = ergebnis.get("abonnenten_katalog") or {}
-                if (ergebnis.get("status") == client_updates.TEILWEISE
+                if ergebnis.get("abonnenten_auswahl_unbestaetigt") is True:
+                    eintrag = summary["quellen"].setdefault(kuerzel, {"anzahl": 0, "fehler": []})
+                    eintrag["abonnenten_auswahl_unbestaetigt"] = True
+                    eintrag.setdefault("fehler", []).append(
+                        "Auswahl unbestätigt: " + str(ergebnis.get("detail") or "Auswahlbeleg fehlt"))
+                elif (ergebnis.get("status") == client_updates.TEILWEISE
                         and coverage.get("complete") is False):
                     eintrag = summary["quellen"].setdefault(kuerzel, {"anzahl": 0, "fehler": []})
                     eintrag["abonnenten_katalog"] = coverage

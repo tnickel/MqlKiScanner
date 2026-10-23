@@ -80,27 +80,60 @@ def _kuerzel_verzeichnis(quelle: dict):
     return verzeichnis
 
 
+class KatalogListe(list):
+    """Paginated rows retain the source's actual catalog scope receipt."""
+    def __init__(self, items=(), *, catalog_scope=None):
+        super().__init__(items)
+        self.catalog_scope = catalog_scope
+
+
+def katalog_scope(items) -> str | None:
+    return getattr(items, "catalog_scope", None)
+
+
+def katalog_scope_hinweis(items) -> str:
+    if katalog_scope(items) == "full":
+        return ""
+    if katalog_scope(items) == "unknown":
+        return ("Vollkatalog nicht bestätigt: catalogScope=unknown (Listenbasis unbelegt). "
+                "Vorhandene Kataloganbieter bleiben erhalten.")
+    return ("Vollkatalog nicht bestätigt: Quelle liefert nur die Abonnentenauswahl. "
+            "Vorhandene Kataloganbieter bleiben erhalten." if katalog_scope(items) == "subscribers" else
+            "Vollkatalog nicht bestätigt: catalogScope fehlt. Quelle aktualisieren; "
+            "vorhandene Kataloganbieter bleiben erhalten.")
+
+
 def hole_katalog(quelle: dict, *, client: downloader_client.DownloaderClient | None = None,
                  seitengroesse: int = 500, max_seiten: int = 100,
-                 min_subscribers: int = 1) -> list[dict]:
-    """Nur einen nachweislich vollständigen Katalog zur Ersetzung liefern.
+                 min_subscribers: int = 1, catalog_scope: str = "full") -> list[dict]:
+    """Validate pagination and retain the separate actual list-scope receipt.
 
     ``total`` zählt Rohzeilen vor der Normalisierung. Eine Teilantwort darf
-    nie als Vollkatalog fehlende IDs aus ``katalog_signale`` löschen.
+    nie als Vollkatalog fehlende IDs aus ``katalog_signale`` löschen. Even
+    complete pagination permits replacement only with catalog_scope=full.
     Vollständigkeit gilt für den gewählten Abonnenten-Scope: reguläre
     Kandidaten behalten 1; die Übersicht fordert ausdrücklich 0 an.
     """
     cli = client or quellen.client_fuer_quelle(quelle)
+    if catalog_scope not in {"full", "subscribers"}:
+        raise ValueError("catalog_scope muss full oder subscribers sein")
     items: list[dict] = []
     offset = 0
     gesamt = None
     gesehen = set()
+    page_scope = None
     for _ in range(max(1, max_seiten)):
         seite = cli.katalog(limit=seitengroesse, offset=offset,
-                           min_subscribers=min_subscribers)
+                           min_subscribers=min_subscribers, catalog_scope=catalog_scope)
         if not isinstance(seite, dict) or not isinstance(seite.get("items"), list):
             raise downloader_client.DownloaderError("Katalog unvollständig: ungültige Seite/items.")
         block = seite["items"]
+        actual_scope = seite.get("catalogScope")
+        if actual_scope is not None and (not isinstance(actual_scope, str) or actual_scope not in {"full", "subscribers", "unknown"}):
+            raise downloader_client.DownloaderError("Katalog unvollständig: ungültiger catalogScope.")
+        if gesamt is not None and actual_scope != page_scope:
+            raise downloader_client.DownloaderError("Katalog unvollständig: catalogScope wechselte während der Pagination.")
+        page_scope = actual_scope
         raw_total = seite.get("total")
         try:
             if isinstance(raw_total, bool):
@@ -132,7 +165,7 @@ def hole_katalog(quelle: dict, *, client: downloader_client.DownloaderClient | N
         items.extend(block)
         offset += len(block)
         if offset == total:
-            return items
+            return KatalogListe(items, catalog_scope=page_scope)
         if not block:
             raise downloader_client.DownloaderError(
                 f"Katalog unvollständig: leere Seite nach {offset} von {total} Rohzeilen.")
@@ -209,6 +242,9 @@ def kandidaten_aus_quellen(log=None) -> list[dict]:
     for quelle in aktiv:
         try:
             items = hole_katalog(quelle)
+            if katalog_scope(items) != "full":
+                _log(f"Quelle {quelle['kuerzel']}: Workflow übersprungen — {katalog_scope_hinweis(items)}")
+                continue
         except downloader_client.DownloaderError as exc:
             _log(f"Quelle {quelle['kuerzel']}: Katalog nicht erreichbar — {exc}")
             continue

@@ -33,11 +33,11 @@ class _FakeClient:
         self.history_map = dict(history or {})
         self.katalog_aufrufe: list[dict] = []
 
-    def katalog(self, *, version=None, limit=500, offset=0, min_subscribers=1):
+    def katalog(self, *, version=None, limit=500, offset=0, min_subscribers=1, catalog_scope=None):
         self.katalog_aufrufe.append({"limit": limit, "offset": offset,
                                       "minSubscribers": min_subscribers})
         return {"items": self.items[offset:offset + limit],
-                "total": len(self.items), "offset": offset}
+                "total": len(self.items), "offset": offset, "catalogScope": "full"}
 
     def history(self, signal_id, version):
         punkte = self.history_map.get((int(signal_id), str(version)))
@@ -93,13 +93,13 @@ def test_sync_quelle_spiegelt_katalog_und_historie(fake_client):
     # Vollständigkeit gefordert: Übersicht fragt ausdrücklich 0 an.
     assert client.katalog_aufrufe[0]["minSubscribers"] == 0
     reihe = db.get_history(1, "mql5", quelle="fake")
-    # 2 Client-Punkte + 1 eigener Messpunkt (change = 8-7 = +1)
-    assert len(reihe) == 3
-    eigener = reihe[-1]
-    assert eigener["subscribers"] == 8 and eigener["change"] == 1
-    # Signal 2 hat KEINEN Verlauf beim Client (404) → nur eigener Messpunkt
+    # Nur die zwei tatsächlich datierten Client-Punkte; Katalogzahl8 belegt
+    # keinen zusätzlichen Messzeitpunkt.
+    assert len(reihe) == 2 and ergebnis["messpunkte"] == 0
+    assert reihe[-1]["subscribers"] == 7
+    # Signal 2 hat KEINEN Verlauf beim Client (404) → weiter unbekannt.
     reihe2 = db.get_history(2, "mql5", quelle="fake")
-    assert len(reihe2) == 1 and reihe2[0]["subscribers"] == 3
+    assert reihe2 == []
     # Katalog-Zeilen stehen der „Alle Signale“-Übersicht zur Verfügung
     katalog_refs = {z["signal_id"] for z in db.katalog_list()}
     assert katalog_refs == {1, 2}
@@ -255,7 +255,8 @@ def test_starte_alle_updates_abonnenten_variante(update_transport):
         quellen_filter=["fake"], modus="abonnenten")
     # Nur die gewählte Quelle lief; POST ohne Tradelisten + erzwingend.
     assert set(zustaende) == {"fake"}
-    assert zustaende["fake"]["status"] == cu.FERTIG
+    assert zustaende["fake"]["status"] == cu.TEILWEISE
+    assert zustaende["fake"]["abonnenten_auswahl_unbestaetigt"] is True
     assert payloads and payloads[0]["tradelisten"] is False
     assert payloads[0]["katalogMaxAlterH"] == 0
     assert payloads[0]["nurAbonnenten"] is True
@@ -305,7 +306,7 @@ def test_refresh_runner_stufe_a_liest_und_beendet(fake_client):
     assert not abo.refresh_laeuft()
     assert zustand["fehler"] == ""
     assert zustand["summary"]["quellen"]["fake"]["anzahl"] == 1
-    assert len(db.get_history(1, "mql5", quelle="fake")) == 2
+    assert len(db.get_history(1, "mql5", quelle="fake")) == 1
     assert zustand["lauf_id"].startswith("abo-")
     assert datetime.fromisoformat(zustand["gestartet"]).tzinfo is not None
     assert datetime.fromisoformat(zustand["beendet"]).tzinfo is not None

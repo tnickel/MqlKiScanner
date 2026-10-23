@@ -16,8 +16,8 @@ class Pages:
     def __init__(self, pages):
         self.pages = iter(pages)
 
-    def katalog(self, *, limit, offset, min_subscribers=1):
-        return next(self.pages)
+    def katalog(self, *, limit, offset, min_subscribers=1, catalog_scope=None):
+        return {"catalogScope": "full", **next(self.pages)}
 
 
 @pytest.mark.parametrize("pages", [

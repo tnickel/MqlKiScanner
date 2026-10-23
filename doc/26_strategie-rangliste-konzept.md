@@ -1,5 +1,9 @@
 # Ein Button: Strategien bewerten, Kandidatenliste und Top-5-Analysen
 
+Abgleich 24.10.2026: Der initiale Implementierungsstand unten ist historisch;
+der inzwischen laufende KI-Auftrag ist in Abschnitt 8 eingeordnet. Abschnitt 9
+beschreibt die anschließenden Review-Korrekturen im Quellcode.
+
 Stand: 23.10.2026. Überarbeitet nach der konkretisierten Nutzeranforderung.
 **Implementiert im Arbeitsbaum:** Dialog, dauerhafter Recherchelauf, gezielte
 Quellenabrufe, Floating-DD-Berechnung, Rangliste und beide KI-Stufen.
@@ -287,3 +291,34 @@ Ablehnungen mit HTTP 429/1302. Die adaptive Anfragegrenze war nach anfänglicher
 Reduktion bereits wieder auf drei gestiegen. Dies ist ein Betriebsnachweis,
 kein Gesamtabschluss und keine belastbare Fünf-Stunden-Prognose. Private
 Aktivierungs- und Laufbelege: `data/runs/parallel_ki_20261024/`.
+
+## 9. Listenbasis und Messfrische nach GLM-Nachprüfung (24.10.2026)
+
+Die Recherche fordert nach dem Zählerjob ausdrücklich
+`GET /providers?catalogScope=subscribers` an. Diese Liste enthält die letzte
+native Zählerauswahl. Reguläre Katalogübersicht und Workflow fordern dagegen
+`catalogScope=full` an: den gesamten lokal bekannten Quellenbestand. Ein
+erfolgreich paginierter Ausschnitt ist damit noch kein Vollbestand.
+
+Der Antwort-Scope wird auf jeder Seite geprüft. Fehlender Scope bei alten
+Clients und `unknown` bei unbelegten CSV-Altbeständen erlauben im Scanner nur
+ergänzendes Spiegeln; fehlende Anbieter werden nicht gelöscht. Der reguläre
+Workflow überspringt solche unbestätigten Quellen sichtbar. Ein neuer nativer
+Vollimport kann einen Vollbeleg schaffen; bloßes Umbenennen oder Neuspeichern
+einer Auswahl kann das nicht.
+
+Ohne Beleg für die globale Abonnentenrangfolge bleibt eine Recherche-Auswahl
+benutzbar, wird aber in Oberfläche, KI-Eingabe, PDF und CSV ausdrücklich als
+unbestätigt gekennzeichnet. Daraus werden keine unbekannten ausgelassenen
+Rangpositionen erfunden. MQL verwendet seinen getrennten MT4-/MT5-Beleg;
+Vantage behält bekannte ausgesparte Positionen bei.
+
+Zählerläufe erhalten bereits bekannte Anbieter und ihre Profildetails. Spätere
+GUI-Speicherungen dürfen aktuellere Zähler und Auswahlmitgliedschaft nicht
+zurücksetzen. Neue Statistik-Messpunkte stammen ausschließlich aus nativen
+Historien, nicht aus dem Lesedatum des Katalogs.
+
+Diese Änderungen sind mit lokalen Regressionen geprüft. Sie ändern weder den
+eingefrorenen laufenden Rechercheauftrag noch die DD-/RetDD-Regeln. Die neuen
+nativen Pakete wurden noch nicht aktiviert. Kritische Einordnung aller
+49 GLM-Befunde: `reviews/2026-10-24_glm53_nachpruefung/README.md`.

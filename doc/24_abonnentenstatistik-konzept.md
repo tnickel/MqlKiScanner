@@ -1,5 +1,10 @@
 # doc/24 — Konzept „Abonnentenstatistik" (Seite im SignalKiScanner)
 
+Abgleich 24.10.2026: Die Seite ist umgesetzt. Die Bestandsaufnahme vom 20.10.
+bleibt historisch; Datenfluss und Refreshbeschreibung berücksichtigen die
+Trennung von Vollbestand und Zählerauswahl sowie ausschließlich native neue
+Messzeitpunkte. Die Review-Korrekturen sind noch nicht produktiv aktiviert.
+
 Stand: 20.10.2026 · Konzept abgestimmt (Nutzer-Entscheidungen unten), Umsetzung noch nicht begonnen.
 Vorbild: Abonnentenstatistik-Fenster des MqlDownloader (Swing `SubscriberStatisticsDialog`).
 Zweck: Signale finden, **wo die meisten Nutzer neu hinzukommen** (Zuwachs als Kandidaten-Heuristik);
@@ -83,13 +88,20 @@ Monitor-Semantik `zuwachs(N)`: neuester Snapshot (max. 2 Tage alt) minus neueste
 
 Sync-Ablauf je aktiver, erreichbarer Quelle (Teilausfall bricht nichts — Muster downloader_sync):
 
-1. `GET /providers?minSubscribers=0&limit=5000` (paginiert, Vollständigkeit validiert wie ingest).
+1. `GET /providers?minSubscribers=0&limit=5000&catalogScope=full` (paginiert,
+   Antwort-Scope auf jeder Seite geprüft). Nur bestätigter Scope `full` erlaubt das
+   Entfernen nicht mehr gelieferter Katalogzeilen. `unknown`, fehlender Scope bei
+   Alt-Clients oder eine Auswahl erlauben nur ergänzendes Spiegeln mit Hinweis.
 2. Je Provider `GET /providers/{id}/{v}/history` (ms) → `subscriber_history` (idempotent).
    **Nutzer-Entscheidung 2: komplett beim Sync** (~1.600 winzige Calls über alle Quellen,
    einmalig grob 1–2 min, danach Festplatten-Cache/Fragment).
-3. **Eigener Messpunkt „jetzt"** aus der Katalog-Abonnentenzahl in `subscriber_history`
-   (Scanner baut eine eigene, dichte Historie auf — unabhängig vom Client-Takt;
-   `change` = Differenz zum vorherigen Punkt derselben Identität).
+3. **Keine eigene Jetztmessung aus Katalogzeilen** (Korrektur 24.10.2026):
+   Ein Katalog enthält auch ältere Zähler außerhalb der letzten Top-Auswahl.
+   Lesen oder ein beendeter Quellenjob belegen keinen Messzeitpunkt für jede Zeile.
+   Neue Historienpunkte stammen daher ausschließlich aus den nativen Historien;
+   ohne History-Antwort bleibt der Verlauf unbekannt. Frühere Scanner-Eigenpunkte
+   bleiben als historische Daten erhalten; ihre Herkunft lässt sich im bisherigen
+   Schema nicht zuverlässig nachträglich trennen.
 4. Δ-Spalten berechnet der Scanner **selbst** (Toleranzfenster wie MqlDownloader 7±2/30±4 Tage
    bzw. bestehende ±3-Logik — bei Umsetzung auf EINE Regel festlegen und testen); Client-Felder
    weekChange/monthChange werden bewusst nicht gemischt.
@@ -111,7 +123,7 @@ keine ID-basierten Kreuz-Zugriffe, getrennt je Besitzer.
 Ein Refresh-Button öffnet einen Dialog mit Wahl:
 
 - **Stufe A — „Nur neu lesen" (Standard, ~5–15 s):** Katalog + Historie aller erreichbaren
-  Clients neu ziehen, Messpunkte schreiben, Tabelle frischen. Kein Eingriff in Clients,
+  Clients neu ziehen, native Messpunkte spiegeln, Tabelle frischen. Kein Eingriff in Clients,
   keine Website-Kontakte.
 - **Stufe B — „Frisch messen (ohne Tradelisten)" (je Quelle Checkbox):**
   `POST /api/v1/update {"tradelisten": false, "katalogMaxAlterH": 0}` an die gewählten
@@ -123,8 +135,10 @@ Ein Refresh-Button öffnet einen Dialog mit Wahl:
   (MqlDownloader: `checkAndUpdateSubscribers` je Katalog-Zeile — auch bei
   `tradelisten=false`; Monitore: Snapshot-Write am Ende der Katalog-Phase), d. h. Stufe B
   schreibt zugleich einen neuen Tages-Snapshot in die Client-eigene `abonnenten.db`
-  (deren 7/30-Tage-Zuwächse bleiben dicht) — und der Scanner schreibt beim anschließenden
-  Lesen (Stufe A) seinen eigenen Messpunkt zusätzlich.
+  (deren 7/30-Tage-Zuwächse bleiben dicht). Der Scanner übernimmt beim anschließenden
+  Lesen (Stufe A) nur diese tatsächlichen Messpunkte mit ihren nativen Zeitstempeln.
+  Der Zählerabruf ist seit 23.10. auf höchstens 200 positive Anbieter je Quelle
+  begrenzt; außerhalb dieser Auswahl wird keine neue Messung behauptet.
   Live-Status im Dialog über Stufe-0-Polling (`GET /update/status`, `login_required`-
   Behandlung), Chronik in `client_updates` mit Kennzeichnung `abonnenten-refresh`;
   danach automatisch Stufe A. Geschätzte Dauern (code-basiert; bei Umsetzung live messen):
@@ -151,7 +165,7 @@ Ein Refresh-Button öffnet einen Dialog mit Wahl:
 
 ## 6. Umsetzungsplan
 
-1. `src/mqlkiscanner/abonnenten_statistik.py` — Sync (Katalog + Historie + eigene Messpunkte,
+1. `src/mqlkiscanner/abonnenten_statistik.py` — Sync (Katalog + belegte native Historie,
    je Quelle, Teilausfall-sicher), einheitliche Bilanz auf `subscriber_history`-Basis
    (verallgemeinerte `abo_bilanz`), KPI-Aggregate.
 2. `client_updates.py` — Parameter `tradelisten=False` + Quell-Teilmenge + Modus-Kennzeichnung
@@ -160,7 +174,7 @@ Ein Refresh-Button öffnet einen Dialog mit Wahl:
    Alle-Signale), Detail mit Verlaufs-Chart, Refresh-Dialog mit Live-Fragment, CSV.
 4. Navigation (`streamlit_app.py`), Hilfe-Thema, FAQ, AGENTS.md-Eintrag.
 5. Tests: Sync/Bilanz über mehrere Quellen inkl. Toleranzfenster und „–" statt falscher 0,
-   ≥1-Filter, eigene Messpunkte (change-Verkettung), Offline-Quelle, Stufe-B-Parameter,
+   ≥1-Filter, keine künstliche Messfrische, Offline-Quelle, Stufe-B-Parameter,
    AppTest der Seite (Muster test_alle_signale_seite).
 
 Keine Änderungen an: Bewertungsregeln, Ampel-Logik, Client-Projekten (deren REST genügt),

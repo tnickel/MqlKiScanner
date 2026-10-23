@@ -329,7 +329,9 @@ def kurztest_basis(entry: dict, profile: dict, settings: dict) -> str:
     return digest({"data": entry.get("data_basis"), "sha": entry.get("trades_sha256"),
                    "facts_payload_version": FACTS_PAYLOAD_VERSION,
                    "facts": entry.get("forensik"), "equity": entry.get("equity"), "profile": profile,
-                   **({"auswahl_luecken": entry.get("abo_ausgelassene_positionen")}
+                   **({"auswahl_luecken": entry.get("abo_ausgelassene_positionen"),
+                       **({"auswahl_hinweis": entry["abo_auswahl_hinweis"]}
+                          if entry.get("abo_auswahl_hinweis") else {})}
                       if entry.get("abo_referenz_vollstaendig") is False else {}),
                    "prompt": prompts.prompt_fingerprint(("abonnenten_kurztest",)),
                    "model": prompts.prompt_model("abonnenten_kurztest", settings)})
@@ -369,9 +371,10 @@ def _snapshot(store, run, settings, log, stopped):
         update = updates.get(name) or {}
         coverage = update.get("abonnenten_katalog") or {}
         partial_catalog = (update.get("status") == client_updates.TEILWEISE
-                           and coverage.get("complete") is False
-                           and coverage.get("reached_end") is True
-                           and bool(coverage.get("skipped_positions"))
+                           and ((coverage.get("complete") is False
+                                 and coverage.get("reached_end") is True
+                                 and bool(coverage.get("skipped_positions")))
+                                or update.get("abonnenten_auswahl_unbestaetigt") is True)
                            and not update.get("tradelisten_fehler")
                            and not update.get("tradelisten_abgebrochen"))
         if source is None or (update.get("status") != client_updates.FERTIG and not partial_catalog):
@@ -383,7 +386,12 @@ def _snapshot(store, run, settings, log, stopped):
         try:
             cli = source_registry.client_fuer_quelle(source)
             health = cli.health()
-            raw = ingest.hole_katalog(source, client=cli, min_subscribers=1)
+            raw = ingest.hole_katalog(source, client=cli, min_subscribers=1, catalog_scope="subscribers")
+            if ingest.katalog_scope(raw) == "full":
+                raise ValueError("Quelle liefert Vollkatalog statt angeforderter frischer Abonnentenauswahl")
+            selection_unverified = (not coverage and not update.get("abonnenten_auswahl", {}).get("verified"))
+            selection_warning = ("Abonnentenauswahl/Abdeckung unbestätigt: kein Auswahl- oder Katalogbeleg; "
+                                 "globale Top 200 nicht bestätigt." if selection_unverified else "")
             candidates = ingest.kandidaten(source, raw)
             claims = {}
             for entry in candidates:
@@ -407,16 +415,27 @@ def _snapshot(store, run, settings, log, stopped):
                     entry.update(abo_referenz_vollstaendig=coverage["complete"],
                                  abo_ausgelassene_positionen=coverage["skipped_positions"],
                                  abo_katalog_geprueft=coverage["scanned_providers"])
+                elif selection_unverified:
+                    entry.update(abo_referenz_vollstaendig=False, abo_ausgelassene_positionen=[],
+                                 abo_katalog_geprueft=None, abo_auswahl_hinweis=selection_warning)
+                else:
+                    entry["abo_referenz_vollstaendig"] = True
                 if health.get("providerRefresh") is not True:
                     entry["quellen_hinweis"] = health.get("providerRefreshReason") or "Gezielter Anbieterabruf benötigt einen aktualisierten Client"
             checkpoint = {"status": "fertig", "anzahl": len(valid), "stand": now(), "update_job": update.get("job_id")}
             if coverage:
                 checkpoint["abonnenten_katalog"] = coverage
+            if update.get("abonnenten_auswahl"):
+                checkpoint["abonnenten_auswahl"] = update["abonnenten_auswahl"]
+            if selection_unverified:
+                checkpoint.update(abonnenten_auswahl_unbestaetigt=True, auswahl_hinweis=selection_warning)
             done = store.freeze_source(run["id"], name, valid, checkpoint)
             log(f"{name}: {len(valid)} Anbieter im Prüfauftrag festgeschrieben")
-            if partial_catalog:
+            if coverage.get("complete") is False:
                 log(f"{name}: Auswahl aus lesbaren Anbietern; "
                     f"{len(coverage['skipped_positions'])} API-Position(en) ausgelassen.")
+            if selection_warning:
+                log(f"{name}: {selection_warning}")
         except Exception as exc:
             done[name] = {"status": "fehler", "grund": str(exc)}
             log(f"Quelle {name}: {exc}")
@@ -709,6 +728,7 @@ def _execute(store, run_id, settings):
             store.save_task(run_id, entry)
         source_errors = any(q.get("status") != "fertig"
                             or q.get("abonnenten_katalog", {}).get("complete") is False
+                            or q.get("abonnenten_auswahl_unbestaetigt") is True
                             for q in run.get("snapshot_quellen", {}).values())
         gaps = any(not e.get("data_done") or e.get("review_pending") for e in entries)
         unfinished = pending_deep or any(not e.get("bericht_markdown") for e in ranked[:5])

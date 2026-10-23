@@ -208,6 +208,25 @@ def test_sync_alle_uebertraegt_neue_dokumente_mit_inhalt():
     assert client.schritt_namen() == ["register", "signals", "document", "complete"]
 
 
+@pytest.mark.parametrize("failure", ["portfolio", "signal", "missing_file"])
+def test_incomplete_local_documents_never_replace_the_remote_mirror(monkeypatch, failure):
+    client = _FakeClient(inventar={"portfolio/previous.pdf": "old-sha"})
+    portfolio = None
+    if failure == "portfolio":
+        portfolio = {"text": "Expected portfolio", "created_at": "2026-10-24"}
+        def failed_pdf(*args, **kwargs):
+            raise tradeserver_sync.PdfRenderError("synthetic render failure")
+        monkeypatch.setattr(tradeserver_sync, "materialize_portfolio_pdf", failed_pdf)
+    else:
+        message = "Signal: PDF nicht erzeugbar" if failure == "signal" else "Signal: Datei fehlt lokal"
+        monkeypatch.setattr(tradeserver_sync, "dokumente_sammeln", lambda *a: ([], [message]))
+    summary = tradeserver_sync.sync_alle([_result()], portfolio=portfolio, client=client)
+    assert "Dokumentensammlung unvollständig" in summary["abgebrochen"]
+    assert summary["fehler"]
+    assert client.aufrufe == []  # No register/signals/complete; old PDFs remain untouched.
+    assert summary["run_id"] is None
+
+
 def test_sync_alle_demo_signale_bleiben_draussen():
     client = _FakeClient()
     summary = tradeserver_sync.sync_alle(

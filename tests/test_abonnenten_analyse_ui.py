@@ -544,6 +544,24 @@ def test_selection_coverage_csv_is_explicit_and_source_bound_without_inventing_m
     assert "abo_referenz_vollstaendig" not in entries[0]
 
 
+def test_unconfirmed_selection_is_visible_without_inventing_skipped_positions(backend):
+    backend.starten(["mql5"])
+    backend.state["snapshot_quellen"] = {"mql5": {
+        "status": "fertig", "anzahl": 200, "abonnenten_auswahl_unbestaetigt": True,
+        "auswahl_hinweis": "Auswahl/Abdeckung unbestätigt: Der Client liefert keinen Auswahlbeleg."}}
+    backend.state["entries"] = [{"id": 42, "quelle": "mql5", "name": "Kandidat", "rang": 1}]
+    at = _app()
+    assert not at.exception, at.exception
+    assert any("Auswahl/Abdeckung unbestätigt" in item.value for item in at.warning)
+    assert not any("API-Positionen ausgelassen" in item.value for item in at.warning)
+    table = at.dataframe[0].value
+    assert table.iloc[0]["Abonnentenreferenz vollständig"] == False
+    assert "keinen Auswahlbeleg" in table.iloc[0]["Auswahlhinweis"]
+    assert "abo_referenz_vollstaendig" not in backend.state["entries"][0]
+    exported = pd.read_csv(io.BytesIO(ui.ergebnis_csv(backend.state["entries"], backend.state)), sep=";")
+    assert "keinen Auswahlbeleg" in exported.iloc[0]["Auswahlhinweis"]
+
+
 def test_selection_coverage_without_skips_is_not_assumed_incomplete_or_warned(backend):
     backend.starten(["mql5"])
     backend.state["snapshot_quellen"] = {"mql5": {"status": "fertig", "anzahl": 200}}

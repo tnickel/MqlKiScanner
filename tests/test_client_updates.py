@@ -203,7 +203,8 @@ def test_mql_receipt_requirement_does_not_change_other_sources(monkeypatch, sour
                    status=[_status("done", jobId="job-1", ergebnis={"nurAbonnenten": True, "signaleGeliefert": 12})]).install(monkeypatch)
     z = cu._update_eine_quelle(quelle, settings={}, log=None, on_fortschritt=None,
                              gestopft=lambda: False, modus="abonnenten", **_SCHNELL)
-    assert z["status"] == cu.FERTIG
+    assert z["status"] == cu.TEILWEISE
+    assert z["abonnenten_auswahl_unbestaetigt"] is True
 
 
 def test_done_with_trade_failures_finishes_with_warning(monkeypatch):

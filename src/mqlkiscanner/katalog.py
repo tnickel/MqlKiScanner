@@ -82,11 +82,16 @@ def sync(log=None, *, kuerzel: str | None = None) -> dict:
         try:
             # The overview includes known zero-audience providers. This
             # metadata request must not broaden the scan/trade-download scope.
-            items = _normalisiere(ingest.hole_katalog(quelle, min_subscribers=0))
+            raw = ingest.hole_katalog(quelle, min_subscribers=0)
+            scope_warning = ingest.katalog_scope_hinweis(raw)
+            items = _normalisiere(raw)
             gespeichert, geloescht = db.katalog_upsert_many(
-                quelle["kuerzel"], items)
+                quelle["kuerzel"], items, fehlende_loeschen=not scope_warning)
             eintrag["anzahl"] = gespeichert
             eintrag["geloescht"] = geloescht
+            if scope_warning:
+                eintrag["hinweis"] = scope_warning
+                _log(f"Katalog {quelle['kuerzel']}: {scope_warning}")
             _log(f"Katalog {quelle['kuerzel']}: {gespeichert} Signale "
                  f"übernommen, {geloescht} rausgefallen.")
         except Exception as exc:  # nicht nur DownloaderError — auch kaputte
@@ -95,7 +100,7 @@ def sync(log=None, *, kuerzel: str | None = None) -> dict:
             eintrag["fehler"] = str(exc)
             _log(f"Katalog {quelle['kuerzel']} nicht ladbar — {exc}")
         db.katalog_sync_vermerken(quelle["kuerzel"], eintrag["anzahl"],
-                                  eintrag["fehler"])
+                                  eintrag["fehler"] or eintrag.get("hinweis"))
         eintrag["gelaufen_am"] = db.katalog_sync_status().get(
             db.kanonische_quelle(quelle["kuerzel"]), {}).get("gelaufen_am")
         summary["quellen"][quelle["kuerzel"]] = eintrag

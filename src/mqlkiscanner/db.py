@@ -1332,7 +1332,8 @@ def store_quell_pruefung(quelle_id: int, pruefung: dict) -> None:
 _KATALOG_STALE_CHUNK = 500
 
 
-def katalog_upsert_many(quelle_kuerzel: str, items: list[dict]) -> tuple[int,int]:
+def katalog_upsert_many(quelle_kuerzel: str, items: list[dict], *,
+                       fehlende_loeschen: bool = True) -> tuple[int,int]:
     init_db()
     with _connect() as conn:
         conn.execute("BEGIN IMMEDIATE")
@@ -1353,7 +1354,7 @@ def katalog_upsert_many(quelle_kuerzel: str, items: list[dict]) -> tuple[int,int
                 updated_at=excluded.updated_at""",(identity.quelle,identity.signal_ref,item.get("name"),
                 item.get("platform"),item.get("url"),item.get("version"),item.get("abonnenten"),
                 item.get("wochen"),item.get("risiko"),_now()))
-        stale = old-kept
+        stale = old-kept if fehlende_loeschen else set()
         for ref in stale:
             conn.execute("DELETE FROM katalog_signale WHERE signal_ref=?",(ref,))
     return len(kept),len(stale)

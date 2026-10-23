@@ -33,7 +33,7 @@ def test_platform_conflict_cannot_be_hidden_by_ingest_dedup(monkeypatch, version
     source("mql5")
     rows = [{"signalId": "42", "version": version, "signalName": version,
              "weeks": 52, "subscribers": 5} for version in versions]
-    monkeypatch.setattr(ingest, "hole_katalog", lambda *a, **kw: rows)
+    monkeypatch.setattr(ingest, "hole_katalog", lambda *a, **kw: ingest.KatalogListe(rows, catalog_scope="full"))
     candidates = ingest.kandidaten_aus_quellen()
     selected = pipeline.ScanPipeline({"min_abonnenten": 1, "min_wochen": 26}).build_candidates(candidates, lambda _: None)
     assert selected == [], "Same source+ID with MT4/MT5 conflict must fail closed, not take the first page item"
@@ -42,8 +42,8 @@ def test_platform_conflict_cannot_be_hidden_by_ingest_dedup(monkeypatch, version
 def test_two_sources_with_equal_ids_keep_both_regular_candidates(monkeypatch):
     source("vant")
     source("pelik")
-    monkeypatch.setattr(ingest, "hole_katalog", lambda *a, **kw: [
-        {"signalId": "42", "version": "vantage", "weeks": 52, "subscribers": 5}])
+    monkeypatch.setattr(ingest, "hole_katalog", lambda *a, **kw: ingest.KatalogListe([
+        {"signalId": "42", "version": "vantage", "weeks": 52, "subscribers": 5}], catalog_scope="full"))
     candidates = ingest.kandidaten_aus_quellen()
     selected = pipeline.ScanPipeline({"min_abonnenten": 1, "min_wochen": 26}).build_candidates(candidates, lambda _: None)
     assert {c["quelle_kuerzel"] for c in selected} == {"vant", "pelik"}

@@ -1,0 +1,967 @@
+================================================================================
+CODE-REPORT — UNABHÄNGIGE PRÜFUNG „ABONNENTENSTATISTIK & STRATEGIERECHERCHE“
+Stand: 2026-10-24 · Erstellt von einer Prüf-KI (GLM) auf Nutzerauftrag
+================================================================================
+
+## 0. ANWEISUNGEN FÜR DIE LESENDE KI
+
+- Diese Datei ist ein maschinenlesbarer Prüfbericht über EINEN Commit je
+  Repository. Sie ist die einzige verbindliche Quelle dieses Reviews.
+  Dokumentation (doc/, AGENTS.md, frühere Review-Berichte) wurde nur zur
+  Orientierung gelesen; sie ist KEIN Beweis für Fehlerfreiheit. Alle Befunde
+  beruhen auf Code- und Test-Inspektion der genannten Dateien/Zeilen.
+- Befund-IDs: <REPO>-F<n> = bestätigter Fehler; <REPO>-R<n> = begründetes
+  Risiko (wird real, sobald die genannte Bedingung eintritt); XR-<n> =
+  grenzüberschreitender Befund (mehrere Repos zusammen); OQ-<n> = offene
+  Frage; S-… = SignalKiScanner selbst.
+- Schweregrade (Auswirkung auf korrekte Daten/Ergebnisse, nicht Kosmetik):
+  HOCH   = verfälscht Ergebnisse/Datenbestand oder bricht die Funktion real
+  MITTEL = falsche/verlorene Daten unter realistisch eintretenden Bedingungen
+  NIEDRIG = Hygiene/Doku/Vertragsschärfe ohne heutigen Falschlauf
+- Jeder Befund hat: Fundort(e) Datei:Zeile, Auslöser, Auswirkung, Ursache,
+  kleinsten sinnvollen Fix, passenden Regressionstest. Nicht ausgeführte
+  Prüfungen stehen in Abschnitt 8 — ein dort nicht genannter Test gilt als
+  gelaufen und grün (Abschnitt 2).
+- WICHTIGE GRENZE: Alle Prüfungen liefen offline/isoliert (Fixtures, Mocks,
+  Temp-Verzeichnisse). Grüne Tests belegen Spezifikationstreue der geprüften
+  Fälle, NICHT den Abschluss eines produktiven Gesamtablaufs. Keine echten
+  Plattformzugriffe, Downloads, Deployments oder bezahlten Modellaufrufe.
+
+## 1. PRÜFUMFANG (Commitspannen, je genau ein Commit)
+
+  Repository        GitHub-Name     Lokaler Pfad                          Spanne
+  SignalKiScanner   MqlKiScanner    …/SIGNALDOWNLOADER/SignalKiScanner     1bda2fa..81f8329
+  MqlDownloader     MqlDownloader   …/SIGNALDOWNLOADER/MqlDownloader      afe507e..442bb60
+  PelicanTrading    PelicanTrading  …/SIGNALDOWNLOADER/PelicanTrading     ff883d6..1f7d12d
+  roboforex         robomonitor     …/SIGNALDOWNLOADER/roboforex          7314666..f104396
+  vantage           vantagemonitor  …/SIGNALDOWNLOADER/vantage           81511b4..7d26a4d
+  zulumonitor       zulumonitor     …/SIGNALDOWNLOADER/zulumonitor        cfcf688..e44b1fb
+  MqlTradeMonitor   MqlTradeMonitor …/GitWorkspace/MqlTradeMonitor        18a59d7..0eda6b0
+
+Hauptauftrag: neue Abonnentenstatistik + Strategierecherche („Strategien
+bewerten“: Top 200 je Quelle ≥1 Abonnent, MQL4/5 teilen sich die Plätze,
+2 Monate/50 Trades Mindestmaterial, RetDD aus gemessenem Floating-Equity-DD,
+70/30-Rangfolge RetDD-Perzentil/quellenrelatives Abonnentenperzentil,
+Kurz-KI für alle Auswertbaren, ausführliche Top-5-Berichte, fortsetzbarer
+Eigenstore, CSV/PDF-Export) inkl. Wechselwirkung mit Quellenidentität
+(Schema 2), Drawdown-Berechnung und Tradeserver v2.
+
+## 2. AUSGEFÜHRTE TESTLÄUFE (alle isoliert/offline, keine LLM-Marker)
+
+  SignalKiScanner: pytest, 3 Tranchen der neuen/geänderten Suiten:
+    388 bestanden (Abonnenten-Analyse/-KI/-Daten/-UI/-Statistik/-Budget/
+    Robo-Profit/CLI/Performance/Review/Evidence-Contract)
+    314 bestanden, 1 übersprungen (Identität, DB-Initialisierung, Migration,
+    Activation, Audit, Tradeserver v2, Download-Review, Live-Abschluss,
+    Provider-Refresh, Stufe-0)
+    195 bestanden (Workflow-Transport, LLM-Request-Optionen/-Resume-Stufen,
+    PromptFehlt, Terminal-Prozesserkennung, Kurscache/-lücken, Parser,
+    Tiefenanalyse-Payload, Kontraktbelege, FT-Specs, Katalog, UI-Fixes)
+    => Summe 897 grün, 1 Skip. conftest isoliert DATA/DB/Secrets nach
+    tmp_path und entfernt Credential-Env-Variablen.
+  MqlDownloader: mvn -o test => 184 grün.
+  PelicanTrading: mvn -o test => 206 grün.
+  robomonitor:    mvn -o test => 210 grün.
+  vantagemonitor: mvn -o test => 129 grün; pytest tests/test_download_trades.py => 23 grün.
+  zulumonitor:    mvn -o test => 173 grün (vollständig offline).
+  MqlTradeMonitor: Commitscope-Tests offline grün (15+11+2 = 28 KiScanner-
+                 Tests, 0 Fehler); Vollsuite nur unter JDK 21 grün (unter
+                 Java 25 37 präexistierende Mockito-Fehler, am Vorfahr-
+                 Commit reproduziert — siehe 7.1/TMM-R7).
+
+## 3. GRENZÜBERSCHREITENDE BEFUNDE (XR)
+
+--------------------------------------------------------------------------------
+XR-1 [HOCH] Katalog-Schrumpf nach Abonnenten-Zählerläufen — kein
+      Listenbasis-Merkmal im Katalog-Endpunkt, Scanner löscht betroffene Zeilen
+--------------------------------------------------------------------------------
+Fundorte (je Quelle der native Effekt + Scanner-Löschung):
+  MqlDownloader  src/gui/MqlDownloaderGui.java:273-277 + DatabaseManager
+                 publishSubscriberCatalogue (~:304-344): nach nurAbonnenten-
+                 Lauf filtert GET /api/v1/providers den Katalog auf die
+                 Membership (≤200); aufgehoben nur durch erfolgreichen
+                 VOLLUPDATE (mit Tradelisten-Konvertierung), nicht durch
+                 tradelisten=false-Läufe.
+  PelicanTrading RestApiServer.java:814-827 + DataStore.java:55-77: existiert
+                 data/providers_abonnenten.csv, dient /providers NUR die ≤200er-
+                 Auswahl (Overlay); ein Volllauf löscht das Overlay.
+  vantagemonitor RestApiServer.java:654-667 + DataStore.java:46-59: Overlay
+                 data/signals_abonnenten.csv beschattet den Vollkatalog in
+                 GET /providers (per Test als gewollt gepinnt).
+  robomonitor    UpdateJobRunner/DataStore: der Zählerlauf ersetzt den Katalog
+                 (signals.csv) durch die ≤200-Auswahl; Altbestand nur noch im
+                 data/subscriber_catalog_archive (manuell wiederherstellbar).
+  SignalKiScanner src/mqlkiscanner/katalog.py:85 (sync, min_subscribers=0) +
+                 src/mqlkiscanner/db.py:1335-1359 katalog_upsert_many: Zeilen
+                 der Quelle, die nicht in der gelesenen Liste stehen, werden
+                 GELÖSCHT (stale = old − kept). Automatischer Trigger:
+                 app_pages/alle_signale.py:61,72 (Katalogsync beim Seitenaufruf)
+                 sowie src/mqlkiscanner/abonnenten_statistik.py sync (Stufe A).
+Auslöser: Ein Recherche-Start („Strategien bewerten“) oder „frisch messen“ der
+  Abonnentenstatistik (modus=abonnenten) bei mind. einer Quelle; danach der
+  nächste Katalogsync (automatisch beim Öffnen von „Alle Signale“).
+Auswirkung: katalog_signale der betroffenen Quelle schrumpft auf ≤200 Zeilen
+  bis zum nächsten VOLLAUF des jeweiligen Clients. Konkret: „Alle Signale“
+  verliert Anbieter (widerspricht der Nutzerentscheidung 18.10., der
+  Vollkatalog inkl. minSubscribers=0 war ausdrücklich gefordert); die
+  Abonnentenstatistik behält zwar Messpunkte (Minimalzeilen aus Identität,
+  abonnenten_statistik.zeilen), verliert aber Name/URL/Plattform der Anbieter
+  außerhalb der 200; Workflow-Quellenkandidaten (ingest.kandidaten_aus_quellen,
+  min_subscribers=1 — Pelikan zuvor ~648) schrumpfen auf ≤200. Trades,
+  Forensik, Studien, Berichte und Historien-Messpunkte bleiben unberührt.
+Ursache: Der Katalog-Endpunkt aller vier Clients trägt kein Feld, OB er
+  gerade die Abonnenten-Auswahl oder den Vollkatalog ausliefert. Der Scanner
+  (ingest.hole_katalog) validiert nur Paginations-Konsistenz (total, offset,
+  Duplikate) und behandelt jede konsistente Antwort als Gesamtkatalog; der
+  löschende Upsert setzt das fort.
+Kleinster sinnvoller Fix (zwei komplementäre Hälften, mindestens eine nötig):
+  a) Nativ: Basis-Feld im /providers-Response (z. B. "basis":
+     "abonnenten_auswahl" | "vollkatalog") in allen 4 Clients — Vertrag ist
+     additiv, alte Scanner bleiben funktionstüchtig.
+  b) Scanner (minimal, ohne Client-Änderung): kennt der Scanner einen
+     erfolgreichen nurAbonnenten-Auftrag ohne darauffolgenden Volllauf der
+     Quelle, überspringt katalog.sync diese Quelle (Hinweis statt Löschung),
+     statt die 200er-Auswahl als Vollkatalog zu übernehmen.
+Regressionstest: Fixture — Quelle liefert nach nurAbonnenten 200 Zeilen
+  konsistent; katalog.sync darf die bestehenden >200 katalog_signale-Zeilen
+  NICHT löschen (mit Basis-Feld: Auswahl überspringen; ohne: Sync-Verzicht am
+  Overlay-Zustand). Zusätzlich Client-seitig: /providers nach nurAbonnenten
+  liefert basis="abonnenten_auswahl".
+Bemerkung: Für die Recherche selbst (liest ohnehin Top 200) ist XR-1 folgen-
+  los; betroffen sind Übersicht, Statistik-Metadaten und Workflow-Kandidaten.
+
+--------------------------------------------------------------------------------
+XR-2 [MITTEL] Abdeckungsbeleg „subscriberCatalog*“ nur bei Vantage —
+      stille Unterversorgung der Top-200 anderswo nicht erkennbar
+--------------------------------------------------------------------------------
+Fundorte: vantagemonitor liefert subscriberCatalogComplete/-ReachedEnd/
+  -Scanned/-SkippedPositions/-Months/-Sort (UpdateJobRunner.java:168-173);
+  MqlDownloader/Robo/Pelican liefern KEINE dieser Felder (Repo-weit 0 Treffer,
+  robomonitor Risiko 3 des Teilreviews; MqlDownloader-Review R1). Scanner:
+  src/mqlkiscanner/client_updates.py:106-123 _abonnenten_katalog — fehlen die
+  Felder, gilt coverage=None ohne jeden Hinweis; die Abschlussprüfung
+  (starte_alle_updates ~:414-446) verlangt nur signaleGeliefert 0..200.
+Auslöser: MqlDownloader-Beispiel — Paginator-DOM wird nicht erkannt
+  (getMaxPageNumber liefert 1/0); der Zählerlauf liest nur Seite 1 (~50
+  Zeilen/Plattform) und meldet DONE mit z. B. 100 statt 200 Anbietern.
+Auswirkung: Die Recherche friert eine falsch verkleinerte Auswahl als
+  „Top 200“ ein (Store.freeze_source); kein Fehler, kein Abdeckungshinweis —
+  gegen das eigene Vollständigkeitsversprechen (global Top 200 nur mit Beleg).
+Ursache: Der Coverage-Vertrag wurde nur für Vantage umgesetzt; der Scanner
+  behandelt fehlende Felder als „altem Client“-Fall und akzeptiert still.
+Kleinster Fix: Die drei anderen Clients liefern die Felder je Zählerlauf
+  (Robo/Vantage-Muster; MqlDownloader: complete=reachedEnd && skipped leer,
+  months=1/3 je Fenster, sort="subscribers"). Scanner zusätzlich: bei
+  nurAbonnenten-Ergebnissen OHNE Coverage-Felder einen sichtbaren Hinweis
+  „Abdeckung unbestätigt“ führen (kein Fehler).
+Regressionstest: Client-Fixture ohne Coverage-Felder → Scanner-Hinweis;
+  MqlDownloader-Fixture maxPageNumber=0 + volle Folgeseite → Lauf meldet
+  weiterzulesen/Abbruch statt DONE mit Teilmenge.
+
+## 4. SIGNALKISCANNER (MqlKiScanner, 1bda2fa..81f8329)
+
+Bestätigte Fehler im Recherche-Kern: KEINE.
+  Geprüft und für korrekt befunden (Auszug der wichtigsten Verifikationen):
+  - Button→Dialog→Start (abonnenten_analyse_ui.render_start_button/analyse_dialog),
+    gemeinsames Lauf-Lock über scan_worker.start (lock_basis=DATA_DIR,
+    abonnenten_analyse.py:332) mit GUI-Scans/Studienbatches.
+  - Top 200 je Quelle, ≥1 Abonnent, MQL4+MQL5 teilen sich die Plätze:
+    _snapshot (abonnenten_analyse.py:338-407) liest den Gesamt-Katalog der
+    Quelle (ingest.hole_katalog min_subscribers=1, validierte Pagination),
+    sortiert LOKAL nach Abonnenten absteigend und schneidet bei 200 ab —
+    keine API-Sortierungsannahme; widersprüchliche Plattformen je ID werden
+    fail-closed abgelehnt (siehe S-R2).
+  - Mindestmaterial 2 Monate/50 Trades (MIN_MONATE/MIN_TRADES,
+    abonnenten_analyse_daten.py:21-22,85-92); Prompts und UI nennen die
+    Untergrenzen ausdrücklich NICHT als Gütenachweis (abonnenten_kurztest.md
+    Z.23-26, MESSHINWEIS Z.23-29).
+  - RetDD-Nenner: equity_nenner (abonnenten_analyse_daten.py:115-129)
+    akzeptiert NUR status=ok, verlaesslich=true, OHNE Teilmessung/FX-Lücke/
+    nicht betrachtete Symbole und nur bei trades_total ==
+    trades_mit_kurs_und_kontrakt == Trades gesamt; ungerundeter
+    equity_dd_pct_raw. Closing-/Balance-DD erscheinen im Recherchepfad
+    nirgends als Nenner; H1-Beschränkung steht in MESSHINWEIS, Prompt,
+    UI-Caption und CSV. effizienz_kennzahlen läuft mit belastbarer
+    Kapitalbasis (csv_einzahlungen ODER echter Initial Deposit, Z.286-313);
+    virtuelle 10k-Basis und implizite Basis sind hart gesperrt; USD-Kontowährung
+    belegbar gefordert (Z.264-267); Kapitalbasis-Abgleich gegen Quellenstats
+    (_kapitalbasis_abgleich); gekappte/unvollständige Historie wird
+    abgelehnt (Z.268-271).
+  - Rangfolge: rank_entries (abonnenten_analyse.py:44-58) = gewichtete
+    Perzentile (Default 70/30, im Dialog einstellbar), Perzentile sind
+    quellenrelativ (abo_perzentil aus der Top-200-Auswahl JE QUELLE,
+    _snapshot:382), absolute Abonnentenzahlen werden nie quer verglichen;
+    hoher DD allein schließt NICHT aus (dd_grenze optional, Default aus).
+  - KI-Schicht (abonnenten_analyse_ki.py): Segmentierung deckt jeden Trade
+    exakt einmal ab (segments():98-101, _fit_blocks:424-425; Tests zu
+    Manifest/Unicode/Overlap); Hierarchische Verdichtung mit Endlos-
+    Schutz (Level ≤ 12); Belegvertrag mit Register, erfundene Referenzen
+    werden abgelehnt (validate_evidence); Martingale-Kontrakt verbietet
+    „code_belegt“ gegen den Codebefund (validate:147-158) — KI-Hinweise
+    sind NIE Ausschluss (_check_hints prüft nur Codehärte neu);
+    Zahlen/Rangfolge liefert ausschließlich der Code (analysegrundlage wird
+    überschrieben, Z.569-572).
+  - Abrechnung: Store.reserve/finish_call/spent — unbestätigte
+    Reservierungen bleiben angerechnet (tokens IS NULL → reserved), Fehler-
+    versuche bleiben im Ledger (status=error), Wiederholung nur 2 frische
+    Versuche je Ausführung, alte Antworten werden SHA-basiert wiederverwendet
+    statt neu zu bezahlen (nur bei identischem Prompt+Modell — Promptänderung
+    erzwingt Neulauf, Test deckt das ab).
+  - Stoppen/Fortsetzen: stop_requested kooperativ; Prozessidentität über
+    psutil create_time-vs-process_start (_alive), CLI-Resume wartet auf
+    Workerende; einmaliger KI-Konfigurationsneustart-Checkpoint (prepare/
+    validate/consume) erhält Datenversuche, Quellensnapshots UND bekannte
+    Datenlücken verbatim (Tests test_abonnenten_analyse_ki_config_restart).
+  - Einzelfehler verlieren keine nachfolgenden Anbieter: je Anbieter
+    try/except → status=datenluecke mit Grund (abonnenten_analyse.py:487-491);
+    Quellenfehler markieren nur die Quelle (snapshot_quellen[quelle]=fehler),
+    Rest läuft weiter; Abschluss status=teilweise bei Lücken/Fehlern.
+  - Fortschrittsanzeige trennt Anbieter-Endstände, Kurztests, Top-5-Berichte
+    und KI-Fehler (_ki_zaehler + Captions); Tradeblöcke im Protokoll.
+  - Robo-Quellenprofitabilität: eigener Zweig (robo_quellenwerte), liest
+    ausschließlich ProfitUsd/YieldWindowPct+Months/RatingBalanceUsd als
+    Quellenangaben (keine Umrechnung, kein RetDD, eligible=false, trades=None),
+    eigene UI-/CSV-Spalten, eigene Ansicht, PDF-los; vom native Monitor
+    bestätigt getrennt (roboforex-Review: alle DD-Veröffentlichungen null,
+    x10-Lot-Pfad nur noch hinter 404 unverified_trade_units).
+  - Injektion/Zugangsdaten: Beide Abonnenten-Prompts markieren Kandidaten-/
+    Trade-/Voranalysen-Texte als Daten ohne Anweisungscharakter; Promptbau
+    tokenisiert Platzhalter (kein Doppel-Ersetzen); Trade-Kommentare werden
+    auf druckbare Zeichen gekürzt (trade_rows:56); CSV-Formelinjektion
+    escaped (ergebnis_csv:435-437); GLM-Key nur im Client, MQL5-Credentials
+    nur im Downloader — nichts davon erreicht Prompt-Inhalte.
+  - Keine Workflow-Regression: portfolio_statistik.effizienz_kennzahlen
+    behält Default min_historie=3 Monate (nur Parameter für Recherche-2),
+    Ampel/Gates unberührt; init_db lehnt Legacy-DB weiter ab
+    (IdentityMigrationRequired, db.py:347-363) — keine automatische
+    Migration. 897 Tests grün.
+  - Tradeserver v2 Client/Sync (tradeserver_client.py, tradeserver_sync.py):
+    registrierungspflichtige runId für jeden Schreibschritt, keine v1-
+    Rückstufung (Protokollversion 2 wird erzwungen), docKeys quellen-
+    gebunden ("signal/{sourceUid}/{signalId}/…"), Lösch-Diff über
+    documentKeys beim Complete, Hash über die tatsächlich gesendeten Bytes,
+    Sperren unbelegter Quellenidentitäten (_remote_identity), stale Berichte
+    werden nicht mehr exportiert (_eigene_berichte_aktuell).
+
+Begründete Risiken / Anmerkungen Scanner:
+S-R1 [NIEDRIG] budget_resume_refs hat keinen produktiven Setz-Weg
+  (nur manuelle Store-Bearbeitung; gelesen in _execute:436-438, geleert
+  :492-493; Tests setzen das Feld direkt). Dokumentierter Betriebshebel
+  (AGENTS 23.10.), aber ohne UI/CLI. → OQ-1.
+S-R2 [NIEDRIG] Gleiche numerische Anbieter-ID mit mql4 UND mql5 im
+  MqlDownloader-Katalog lässt den GESAMTEN Quellensnapshot mql5 fehlschlagen
+  („Widersprüchliche Plattformen…“, _snapshot:373-376). Der Downloader kann
+  solche Paare prinzipiell führen (Composite-PK (signal_id, mql_version);
+  Refresh-Test mit ID 42 auf beiden Plattformen). Falls mql5.com IDs global
+  einzigartig vergibt, nie real; sonst fällt die ganze Quelle statt nur der
+  kollidierende Eintrag aus. Fix-Idee: Kollision einzeln als datenluecke
+  führen statt Quelle fehlschlagen zu lassen (begrenzt auf nachweislich
+  verschiedene Anbieter).
+S-R3 [NIEDRIG] Der Recherche-Start legt Identitätszeilen (signal_identitaeten)
+  für bis zu 200×Quellen-Anbieter in der Haupt-DB an (resolve_identity
+  create=True, _snapshot:386) — auch wenn der Lauf sofort gestoppt wird.
+  Bewusste Datenzeilen (keine Schema-Migration), aber irreversibel in der
+  Haupt-DB. Nur Erwähnung, kein Fix verlangt.
+S-HINweis (kein Fehler) Der Recherchepfad rechnet — regelkonform — ohne
+  plattform_positions-Dedup-Beweis (Quellen liefern keine beweisfähige
+  Positionszahl; metrics_zu_stats hält Aggregate bewusst getrennt).
+  Identische Zeilen werden also wie vom Nutzer entschieden NICHT entfernt
+  (Beweis entscheidet, nicht Masse). known_signals-Ausschlüsse und
+  Martingale-Codebefunde greifen trotzdem hart.
+
+## 5. TEILREVIEWS DER NATIVEN CLIENTS
+
+### 5.1 MqlDownloader (afe507e..442bb60)
+MD-F1 [MITTEL, bestätigt] Reguläres Listenende wird als KRITISCHER Fehler
+  gewertet; dokumentierter Pagination-Fallback ist tot.
+  Fundort: src/downloader/SignalDownloader.java:646-648 (leere Seite →
+  UnverifiedProviderPage), Fehlerklasse CRITICAL :793; toter Zweig
+  :494-498 und :543 („Keine Signal-Provider gefunden“ unerreichbar);
+  maxPageNumber-Erkennung :460-468.
+  Auslöser: Paginator-DOM wird nicht erkannt (maxPageNumber=0) UND das Lauf-
+  limit reicht über das echte Listenende hinaus (z. B. limit=0 =
+  Integer.MAX_VALUE, :1250).
+  Auswirkung: Vor dem Commit endete eine leere Folgeseite sauber als Ende;
+  jetzt bricht der komplette Download/Job mit kritischem Fehler ab. Kein
+  Datenverlust, aber Funktionsverlust des dokumentierten Fallbacks.
+  Fix: Bei maxPageNumber=0 eine nach erfolgreichem Laden LEERE Seite als
+  reguläres Ende werten (oder toten Zweig entfernen + Semantik dokumentieren).
+  Test: Proxy-WebDriver — alle Paging-Selektoren leer (maxPageNumber=0),
+  Seite 2 ohne numerische Links → Lauf endet ohne Fehler mit den Anbietern
+  von Seite 1.
+MD-R1 [MITTEL→XR-2] Stille Unterversorgung des Top-200 ohne Abdeckungs-
+  signal bei maxPageNumber-Fehl-Erkennung (DOM-Heuristik :180-287; DONE mit
+  z. B. 100 Anbietern, kein Endgrund-Feld).
+MD-R2 [NIEDRIG] Cross-Seiten-Duplikat durch Live-Zählerdrift (Anbieter
+  wandert über Seitengrenze, erscheint erneut) → harter Abbruch des gesamten
+  nurAbonnenten-Laufs (:717-721, :682-684). Laut, aber flatteranfällig;
+  Zulu-Muster (bereinigen bei identischem Zähler) wäre stabiler.
+MD-R3 [MITTEL, bedingt] subscribersOnly-Massenkonvertierung überschreibt
+  gute alte Kennzahlen mit NaN: HtmlConverter.convertHtmlFile
+  (src/converter/HtmlConverter.java:196-226) — bei nicht berechenbarem 3MPDD
+  wird im Skip-Filter-Modus weiterverarbeitet und _root.txt mit 3MPDD=NaN
+  ÜBERSCHRIEBEN (vorher: alte TXT blieb erhalten). Bedingung: frisch
+  gespeicherte unbrauchbare Profil-HTML (Login-/Fehlerseite, DOM-Änderung).
+  Originale html/csv bleiben; die letzte gute Kennzahl geht verloren. Auch:
+  keine htmlIdentity-Prüfung im Sammelpfad vor dem Überschreiben.
+  Fix: bei !isFinite wieder alt lassen (altes Verhalten) ODER Identität
+  prüfen; Test: unbrauchbare HTML im subscribersOnly-Pfad darf _root.txt
+  nicht verschlechtern.
+MD-R4 [NIEDRIG] /providers-Latenz durch weeks-Parsing je Anbieter (jsoup,
+  LRU 512; erster Aufruf über 200 Anbieter kann Sekunden blockieren; REST-
+  Pool 4 Threads).
+MD-R5 [NIEDRIG] ClientUpdateRunner.eligible akzeptiert \d+-IDs („007“), die
+  REST/Parser/Refresh ablehnen → begrenzter, laut gezählter Fehlversuch.
+Positiv bestätigt: MQL4/MQL5 teilen sich die 200er-Auswahl über lokale
+  Merge-Sortierung (Interleaving-Test), gezielter Provider-Refresh ist
+  plattformgebunden (id+Version, Export-Dateinamen-, Header- und DOM-
+  Identitätsprüfung; falsche Plattform scheitert laut), Zählermodus schreibt
+  keine Profile/Trades/Metrics, Publikation transaktional mit Rollback-Test,
+  Credentials nur via sendKeys, nie geloggt, Rate-Limit 4-30 s intakt.
+
+### 5.2 PelicanTrading (ff883d6..1f7d12d)
+PT-F1 [NIEDRIG, bestätigt] Neue Laufzeit-Artefakte fehlen in .gitignore:
+  data/providers_abonnenten.csv, data/abonnenten_update_state.json sind
+  untracked-committbar; .gitignore deckt nur die Pendants providers.csv/
+  update_state.json. Auslöser: jeder Zählerlauf + git add -A.
+  Fix: 2 Zeilen .gitignore; Test: jede von DataStore/UpdateJobRunner
+  geschriebene data/-Datei muss ignoriert sein.
+PT-R1 [NIEDRIG] Overlay-Race kann transient leeren/500er-Katalog liefern
+  (RestApiServer.java:814-820: Existenzprüfung vor loadAbonnentenProviders;
+  paralleler Volllauf löscht Overlay, DataStore.java:77). Bedingung:
+  Millisekundenfenster GUI-Volllauf vs. Scanner-Katalogabruf.
+PT-R2 [NIEDRIG] Strict-Zählerannahme (jeder Eintrag braucht integrales
+  NumCopiers, PelicanClient.java:182-185) lässt den GESAMTEN Zählerlauf
+  scheitern, sobald Pelican einzelnen Einträgen das Feld vorenthält
+  (bewusst fail-closed, kein Teilbestand).
+PT-R3 [NIEDRIG] requireArchiveConfirmed macht Anbieter dauerhaft nicht
+  erneuerbar, wenn die Plattform die Lebenszeithistorie nicht mehr liefert
+  (ProviderRefresh.java:9-15) — ehrlicher Fehler, aber Altstand bleibt.
+PT-R4 [NIEDRIG] Breite Exklusivschaft (sourceOperationBusy für ALLE GUI-
+  Tasks inkl. KI-Batch) → 409 auf POST /update / Refresh während langer
+  nutzergesteuerter Läufe. Verfügbarkeit, keine Korruption.
+PT-R5 [MITTEL→XR-1] /providers ohne Listenbasis-Merkmal (Overlay vs.
+  Vollkatalog nur über total unterscheidbar; lastUpdated betrifft nur
+  Tradelisten; kein Zählerfrische-Feld).
+PT-R6 [NIEDRIG] Zweite SessionException im nurAbonnenten-Lauf endet als
+  „error“ statt „login_required“ (UpdateJobRunner.java:171-206) — Scanner
+  sieht harten Fehler statt Login-Hinweis.
+PT-R7 [NIEDRIG] Start-Cache-Snapshot vermerkt nach Neustart ohne heutigen
+  Lauf STALE providers.csv-Zähler als heutigen Tagesstand (PelicanMonitorApp
+  :199-206); folgetäglich ohne Lauf verschleiert /history.
+Positiv bestätigt: Sitzungserneuerung endlich (GENAU 1 Login + max. 2
+  Arbeitsdurchläufe, zweiter Auth-Fehler terminal; Chrome 35 s/100 s,
+  WebView 210 s Hartfrist mit Fensterschluss; REST antwortet 202 sofort,
+  Erneuerung im Daemon-Worker; CAS-Exklusivschaft ohne Deadlock); Katalog
+  vollständig+lokal sortiert (NumCopiers desc, Tie-Break ID asc, ≥1, Deckel);
+  Detaildaten unangetastet (Test sichert unverändertes update_state.json);
+  gezielter Refresh ersetzt genau eine Zeile und erhält Overlay-Mitgliedschaft.
+
+### 5.3 vantagemonitor (81511b4..7d26a4d)
+VT-F1 [NIEDRIG, bestätigt] DOKUMENTATION_API.md:151-159 beschreibt einen
+  nicht existierenden „Listenfenster-Fallback“ (Neustart mit months=3/6/12):
+  Code isoliert IMMER mit festem Fenster months=1 (VantageClient.java:302;
+  Test pinnt das). Wer der Doku folgt, erwartet andere Coverage-Semantik.
+  Fix: Absatz streichen/als abgelöst markieren.
+VT-F2 [NIEDRIG, bestätigt] /health meldet abonnentenRefresh:true auch ohne
+  UpdateStarter (RestApiServer.java:323 vs. 405 bei POST /update, :149-152).
+  Consumer entscheidet sich für nurAbonnenten und erhält 405. Produktiv
+  (Starter immer gesetzt) nicht betroffen. Fix: Flag an Starter binden
+  („abonnentenRefresh“, updateStarter != null); Test im serverOhneStarter-
+  Fall. [Anm.: Robo macht dasFlag korrekt — false+Grund.]
+VT-R1 [MITTEL] Stille Abdeckungslücke bei KURZEN nicht-finalen Listenseiten:
+  subscriberRange prüft nur entries.size() > size (VantageClient.java:325);
+  eine Mittelseite mit 0<Zeilen<pageSize wird akzeptiert, Rest des Fensters
+  wird nie gelesen und zählt NICHT als skipped → catalogComplete=true trotz
+  Lücke. Bedingung: Plattform liefert kurze Mittelseiten (live 23.10. nicht
+  beobachtet). Fix: kurze Nicht-Endseite als Fehler/Lücke werten; Test fehlt.
+VT-R2 [NIEDRIG] Transienter 1223 (generischer Engine-Fehler) wird ohne
+  zweiten Versuch als PERMANENTE Positionsauslassung verbucht (Size-1-Slot
+  ohne Retry). Ehrlich markiert, aber Auswahl evtl. kleiner als nötig.
+VT-R3 [MITTEL→XR-1] Overlay beschattet Vollkatalog in GET /providers; kein
+  Overlay-/Coverage-Merkmal im Response (nur im Job-Status).
+VT-R4 [NIEDRIG] Zählerkonflikt (gleiche ID, abweichende copiers) während
+  des gestreckten Durchlaufs verwirft die GESAMTE Auswahl (regelkonform,
+  aber flatteranfällig bei Live-Drift).
+VT-R5 [NIEDRIG] History-Dateien einer Generation werden sequenziell
+  verschoben (HistoryFiles.java:81-85) — Millisekundenfenster neue CSV +
+  altes Meta für gleichzeitige Leser.
+VT-R6 [NIEDRIG] Antwortete die Plattform jenseits des Endes mit 1223 statt
+  leer, isoliert der Code jede Einzelposition bis zum harten Abbruch bei der
+  21. Auslassung (kein falscher Abschluss, aber Totalausfall des Zählerlaufs).
+Positiv bestätigt: 1223-Isolierung exakt auf Positionsebene (Teilerkette
+  100→50→25→5→1; nur HTTP-200-Plattformcode ≠200 trägt apiCode; Netz-/5xx/
+  429/andere Codes bleiben harte Fehler — Test mit 10402); mehrere 1223-
+  Positionen über Seitengrenzen; Grenzen 20 Auslassungen/256 Anfragen als
+  harter Abbruch OHNE Teilübernahme; komplette Auswahl wird bei spätem
+  Fehler verworfen; lokale Sortierung copiers desc/Tie-Break ID asc; ≥1-
+  Filter; Duplikate putIfAbsent; Detaildaten byte-identisch (Test);
+  Coverage-Felder vollständig; neue Identitätsbasis historyRecordId für
+  Trade-Archive (Java+Python) mit Konfliktabbruch.
+
+### 5.4 robomonitor (7314666..f104396)
+Bestätigte Fehler: KEINE. 210 Tests grün.
+RB-R1 [MITTEL] Anomale LEERSEITE Seite 1 mit page.more=true (oder alle
+  Zähler 0) beendet die Schleife still und ersetzt signals.csv durch einen
+  LEEREN Katalog — Job meldet DONE mit signaleGeliefert:0 (RoboForexClient
+  :163; Archiv nur manuell wiederherstellbar). Inkonsistent zur sonstigen
+  Fail-Closed-Strenge. Bedingung: CopyFX liefert strukturell gültige,
+  leere First-Page (Wartung/Geo-Block/API-Änderung).
+  Fix: entries.isEmpty() && more==true als ApiException; Test: Fixture
+  Leerseite+more:true → Fehler statt DONE.
+RB-R2 [MITTEL, bedingt] RatingBalanceUsd/YieldWindowPct liefern still 0.0
+  statt „unbekannt“, wenn die API die Felder omitiert (RestApiServer.java:
+  450/:474; parseSignal RoboForexClient.java:206,216 asDouble()) — Scanner
+  liest 0 USD/0 % als Quellenwert. ProfitUsd hat NaN→null-Behandlung, die
+  beiden anderen nicht. Lokaler Gegenbeleg: in data/rating_full.json (5.028
+  echte Einträge) fehlen die Felder in 0 Fällen — daher Risiko. Fix:
+  gleiche Finite-Behandlung; Test mit fehlendem Feld.
+RB-R3 [NIEDRIG→XR-2] Kein Coverage-Beleg (subscriberCatalog* nicht
+  geliefert) — Robo-Zählerläufe werden ohne Abdeckungsnachweis akzeptiert.
+RB-R4 [NIEDRIG] preserveSubscriberDetails übernimmt bei erhaltenen
+  Anbietern nur Zähler — Plattformwechsel seit dem letzten Vollkatalog
+  bleibt unbeachtet (DataStore.java:57-71).
+RB-R5 [NIEDRIG] Unlocked Meta-Leser (DealStore platformVon/… ohne Pfad-
+  Lock) im Millisekundenfenster der Bundle-Publikation — transient falsche
+  Qualitätsflags möglich; Lesepfade mit SHA-Revalidierung dominiert.
+Positiv bestätigt: Quellenprofitabilität unverändert durchgereicht (keine
+  Umrechnung/Skalierung; einzige Transformation CSV-Rundung 1e8); Trennung
+  von Trade-Auswertung HAART (TradeUnits.verified konstant false → alle DD-
+  Veröffentlichungen null; KI-Payload nur *Nativ/volumeUnit:unverified…;
+  Injektions-Guard als System-Nachricht; risk/rowColor null); Katalog-
+  Pagination bis belegtes Ende mit seitenübergreifender Abwärtsprüfung,
+  ≥1-Filter zweifach, Duplikate putIfAbsent mit Identitätsschlüssel
+  sourceId#login, Konflikt/Fortschrittslosigkeit = Fehler ohne Übernahme;
+  Provider-Refresh fail-closed 422 (Health meldet providerRefresh:false +
+  Grund — lügt nicht).
+
+## 6. OFFENE FRAGEN (OQ)
+
+OQ-1 Wie soll budget_resume_refs produktiv gesetzt werden (UI/CLI/Doku)?
+    Heute rein manueller Store-Eingriff (S-R1).
+OQ-2 (aus MD-Review) Ist orderby=subscribers tatsächlich die unterstützte
+    mql5-Listensortierung? Live nicht prüfbar; die strengen Abwärtsprüfungen
+    machen einen ignorierten Parameter laut (Abbruch), aber der MQL-Zählerlauf
+    ist laut AGENTS live noch nicht abschließend nachgewiesen.
+OQ-3 (aus MD-Review) Soll ein {tradelisten:false}-Update die 200er-Katalog-
+    Beschränkung aufheben? Heute hebt nur ein erfolgreicher VOLLUPDATE
+    (mit Konvertierung) die Beschränkung auf.
+OQ-4 (aus VT-Review) Soll /providers oder /health den Overlay-Zustand +
+    Coverage kennzeichnen (XR-1/XR-2)? Soll transienter 1223 auf Size-1
+    einmal wiederholt werden? Soll eine kurze Nicht-Endseite als Lücke/Fehler
+    gelten (VT-R1)?
+OQ-5 (aus PT-Review) Behandelt der Scanner-Ingest total=0/HTTP 500 als
+    transient (PT-R1)? — Antwort aus Scanner-Sicht: hole_katalog lehnt
+    Konsistenzfehler fail-closed ab; ein transienter Leerlauf markiert die
+    Quelle als Fehler (Recherche) bzw. vermerkt den Fehler (Statistik) —
+    kein Datenverlust, Wiederholung nötig.
+OQ-6 (aus RB-Review) Sollte der Robo-Monitor einen Zeitpunkt der Finanzwerte
+    (ratingFetchedAt) liefern statt die Unkenntnis dem Scanner zu attestieren?
+
+## 7. TEILREVIEWS ZULUMONITOR UND MQLTRADEMONITOR
+
+### 7.1 MqlTradeMonitor (18a59d7..0eda6b0)
+Arbeitsbaum verifiziert auf 0eda6b0. Commitscope-Tests offline grün
+  (KiScannerApiControllerTest 15, KiScannerV2Test 11,
+  KiScannerMigrationTest 2; 0 Fehler). Vollsuite unter dem hier defaultenden
+  Java 25 nicht grün (37 Mockito-Klassenmock-Fehler) — am Vorfahr-Commit
+  18a59d7 im sauberen Worktree reproduziert, also präexistierend und
+  commit-unabhängig; Autorenlog belegt Abnahme unter JDK 21 (server/target/
+  all-tests-calmar.log, „using Java 21.0.8“).
+
+Bestätigte Fehler:
+TMM-E1 [NIEDRIG] v1-Randpfad hart geworden + toter Code: complete()/abort()
+  ohne register() liefern jetzt HTTP 400 statt des alten v1-Verhaltens
+  HTTP 200 {runId:null}; die dafür vorgesehenen Zeilen (KiScannerService.java
+  :265, :324) sind unerreichbarer toter Code, da validateRun (:87) vorher
+  wirft. Undokumentiert (Doku/Controller-Javadoc nennen noch v1) und ohne
+  Test. Der reale v1-Client registriert immer → kein heutiger Falschlauf.
+  Fix: dead lines streichen UND Verhärtung dokumentieren+testen (oder
+  Altzustand bewusst 200 lassen). Test: POST /complete ohne register →
+  erwartetes Verhalten festschreiben.
+
+Positiv bestätigt (Kern des v2-Auftrags — alles geprüft, kein Fehler):
+  - Quellegebundene Identität: leer/fehlerhafte sourceUid/source → 400
+    (inkl. reserviertem Namensraum „legacy:v1“, Steuerzeichen, >255 Bytes);
+    doppelte (sourceUid,signalId) im Snapshot → 400; v2 überschreibt keine
+    v1-Zeilen und umgekehrt (nach erstem v2-Commit v1-Schreiben abgelehnt).
+  - Atomarität: /signals und /documents schreiben NUR In-Memory-Staging;
+    Complete ersetzt Signale+Dokumente+Journal+activateV2 in EINER
+    Transaktion (KiScannerService.java:299-312); Abbruch/Neustart/
+    Commit-Fehler lassen den alten Bestand sichtbar (Neustart-Marker in
+    KiScannerSchemaMigration.java:45-46); Rollback getestet.
+  - Migration: läuft automatisch beim Start (InitializingBean), einmalig per
+    Marker, atomar per Copy; Alttabellen/Quarantäne bleiben erhalten; v1 war
+    signal_id UNIQUE → Kollisionsverlust ausgeschlossen; Copy-Fehler rollt
+    beide Tabellen zurück (Test). Kein DB-Zustand „v2-Zeilen ohne aktives v2“.
+  - docKeys: Quellkollision über Prefix signal/{RFC3986-uid}/{id}/;
+    encodeSegment entspricht exakt Pythons quote(uid, safe=""); Besitzer-
+    wechsel wird gegen Staging UND DB geprüft; alte v1-Keys werden beim
+    ersten v2-Complete aus dem aktiven Bestand entfernt (Originale bleiben).
+  - runId an Lauf UND Key-Hash gebunden; fremde/abgelaufene runId → 400;
+    Complete-Zähler/Bytes strikt gegen Staging geprüft; X-User-Key weiter
+    überall; Payload-Grenzen 12 MiB/PDF, neu 512 MiB/10000 Staging.
+  - Anzeige: Calmar/Jahr mit minCalmarJahr-Vergleich, Vorbehalt orange ≈,
+    equityMeasurementStatus/Vorbehaltgrund im Dialog, Quelle+externe ID
+    sichtbar, DOM-IDs auf interne Zeilen-ID umgestellt, DD-Färbung erst nach
+    drawdownLimitPct (50 % möglich). Scanner-Anzeige „N am Server entfernt“
+    ist im Signalkontext korrekt (deleted = Signal-Zeilen; siehe TMM-R6).
+
+Begründete Risiken:
+TMM-R1 [NIEDRIG] Scanner-Crash mitten im v2-Lauf (ohne abort, runId verloren)
+  → register 400 bis startedAt >30 Min alt oder Serverneustart (running→
+  aborted). Verzögerter nächster Sync, keine Korruption.
+TMM-R2 [MITTEL, bedingt] Complete mit signalCount=0 + leerem Snapshot löscht
+  den GESAMTEN Bestand inkl. aller Signal-PDFs (Mirror-Semantik jetzt auch
+  dokumentlöschend). Bedingung: Scanner sendet versehentlich leere Sammlung
+  mit konsistenten Zählern. Fix-Idee: explizites „leer ist Absicht“-Flag.
+TMM-R3 [MITTEL, bedingt] Fehlt das Portfolio in documentKeys (z. B. Portfolio-
+  Generierung fehlgeschlagen, Sync läuft durch), löscht der Commit das
+  bisherige Portfolio-PDF. Beabsichtigte Vertragssemantik („documentKeys
+  enthält exakt alle gewollten Dokumente“), aber fehleranfällig. Scanner-
+  Seite hätte vor Complete abbrechen können, wenn Portfolio-Generierung
+  fehlschlug.
+TMM-R4 [NIEDRIG] Legacy-Signal-PDFs verschwinden aus der Ansicht beim ersten
+  v2-Sync (gewollter Übergang; vorher sichern).
+TMM-R5 [NIEDRIG] openRun/Staging im Heap, Schutz nur single-process
+  synchronized; zweite Monitor-Instanz gegen dieselbe H2 (AUTO_SERVER=TRUE)
+  nicht verhindert.
+TMM-R6 [NIEDRIG] Complete-Antwort „deleted“ zählt gelöschte SIGNAL-Zeilen;
+  die Anzahl gelöschter PDFs ist nirgends eigenständig sichtbar (nur
+  indirekt über documentsTotal). Scanner liest es konsistent als Signal-
+  Löschung.
+TMM-R7 [NIEDRIG] Testumgebung: Vollsuite erst unter JDK 21 grün (präexistierend,
+  am Vorfahr-Commit reproduziert).
+Fehlende Testfälle (vom Teilreview benannt): leere/fehlende sourceUid → 400
+  direkt; expectedSignals-Abweichung; sizeBytes-Abweichung; Legacy-docKey in
+  v2-documentKeys; Portfolio-Validierung (Portfolio-Dokument mit signalId/
+  falschem Prefix); documentKeys-Eintrag ohne Snapshot-Besitzer; Staging-
+  Limits; 30-Minuten-Fenster (keine Clock-Injection); Doppel-Complete nach
+  Erfolg; Migration gegen breites Alt-Produktionsschema.
+
+### 7.2 zulumonitor (cfcf688..e44b1fb)
+Arbeitsbaum verifiziert auf e44b1fb (clean). mvn -o test => 173 Tests grün
+  (vollständig offline). Der F1-Befund wurde von der Leit-KI eigenhändig
+  am Code nachverifiziert (Trader.java:76-83 + ZuluMonitorApp.java:401).
+
+ZU-F1 [MITTEL-HOCH, bestätigt und nachverifiziert] Gezielter Provider-
+  Refresh verwirft den frisch geladenen Abonnentenzähler (Argument-
+  vertauschung).
+  Fundort: src/main/java/de/zulumonitor/ZuluMonitorApp.java:401
+    `Trader saved = fresh.withSubscriberCounts(previous);`
+  Wirkmechanismus: Trader.withSubscriberCounts (model/Trader.java:76-83)
+  behält ALLE Felder des EMPFÄNGERS und übernimmt followers/liveFollowers
+  vom PARAMETER. Empfänger `fresh` = gerade geladenes aktuelles Profil
+  (:386), Parameter `previous` = ALTER Katalogeintrag (:383) → alle Felder
+  aktuell, aber Abonnentenzähler = alter Katalogwert; der frische Zähler
+  wird verworfen (auch kein subscriberDb.snapshot → nicht in der Historie).
+  Das korrekt verwendete Muster steht in DataStore.preserveSubscriberDetails
+  (DataStore.java:69: `old.withSubscriberCounts(s)`).
+  Auslöser: POST /api/v1/providers/{id}/zulu/refresh, nachdem sich followers
+  seit dem letzten Zählerlauf geändert hat (z. B. 1500→1600).
+  Auswirkung: Job endet done mit platformRefreshed=true, aber Katalog und
+  GET /api/v1/providers liefern weiter den alten Zähler bis zum nächsten
+  Zählerlauf. Innerhalb eines geschlossenen Recherche-Laufs (Zählerlauf
+  direkt vorher) ist `previous` selbst frisch → Schaden dort klein; betroffen
+  sind Resume-Läufe ohne neuen Zählerlauf und jeder standalone Refresh.
+  Keine Korruption, aber Erfolgsbeleg mit verworfener Aktualität.
+  Ursache: Empfänger/Argument vertauscht.
+  Kleinster Fix: `Trader saved = fresh;` (Vollabruf ⇒ alles aktuell); die
+  vorliegende Richtung ist unter keiner Lesart richtig.
+  Regressionstest: Fixture-Katalog followers=1500 + lokaler Suchserver
+  followers=1600 → refreshProviderDaten → gespeicherter Katalog-/REST-Wert
+  = 1600. (Kein vorhandener Test prüft die Datenrichtung.)
+
+Positiv bestätigt (Kern der Zulu-Anforderung):
+  - Seitenende NUR über leere Seite (ZuluTradeClient.java:247); Wieder-
+    holungen blättern weiter, solange ≥1 neue ID kommt (256-265); Nullzähler
+    sind gültige Zeilen und KEINE Endmarke; Fortschrittslosigkeit →
+    IOException „Abonnenten-Pagination ohne neue Provider“ = Gesamtausfall
+    ohne Teilübernahme; maxPages=10000 als Endlosschleifenschutz. Alles via
+    SubscriberRankingTest belegt („later Top Provider after 200 candidates“,
+    „zero-only pages“).
+  - Duplikate: erste Erscheinung gewinnt; Konflikt (gleiche ID, andere
+    followers, auch seitenübergreifend) → IOException → Gesamtabbruch vor
+    Veröffentlichung.
+  - Sortierung exakt followers absteigend, Tie-Break providerId aufsteigend
+    (subscriberSelection:274-278).
+  - Atomare Historien-Publikation: unveränderliche Generation (CREATE_NEW +
+    channel.force), Pointer-Tausch ausschließlich ATOMIC_MOVE ohne Fallback,
+    CSV+meta+receipt in EINEM Namespace-Switch; Abbruch vor Commit lässt
+    alten Stand sichtbar; ambiguer Move-Fehler wird per Pointer-Vergleich
+    als committet klassifiziert (kein falscher Rollback); beschädigter
+    Pointer → harte IOException, kein Stillfallback auf Legacy; Leser/
+    Schreiber über statisches pfadbasiertes Lock synchronisiert. Halbe
+    Historien können nicht erscheinen.
+  - Detailerhalt: preserveSubscriberDetails übernimmt nur Zähler; Profildaten
+    inkl. demo/weeks bleiben; Trades werden im Zählermodus nicht angefasst;
+    Altbytes des Katalogs landen unter subscriber_catalog_archive/<sha>.csv.
+  - REST: /update mit nurAbonnenten-Validierung (Boolean, target≤200),
+    /update/cancel jobId-bindend, /providers/{id}/zulu/refresh; metrics
+    trennt CatalogTrades von SHA-gebundenen History-Zahlen; Abbruch zeigt
+    alte Archive weiter (status cancelled, datenstand=null).
+
+Begründete Risiken:
+ZU-R1 [MITTEL] Leere ERSTE Seite = „erfolgreicher Abschluss mit 0
+  Anbietern“: Gateway liefert Seite 0 einmalig `{"result":[]}` (Transiente,
+  kein Schema-Verstoß) → Lauf DONE mit signaleGeliefert=0, traders.csv wird
+  durch leere Liste ERSETZT (Alter nur im Archiv-Ordner), REST /providers
+  leer (ZuluTradeClient.java:247-253). Gleiches Muster wie RB-R1.
+  Fix: „Seite 0 leer = Fehler“ (Plausibilitäts-Mindestumfang); Test fehlt.
+ZU-R2 [NIEDRIG] Neuer terminaler Job-State `cancelled` ist dem Scanner-
+  Poll unbekannt (client_updates.py kennt done/error/login_required) →
+  Scanner pollt bis Timeout, wenn ein Mensch/Server den Job abbricht
+  (UpdateJob.java:24/86). Vertretbar, aber vertraglich ungeregelt.
+ZU-R3 [NIEDRIG] Unbegrenztes Generations-Wachstum: jede publishArchive
+  kopiert die GESAMTE CSV in eine neue Generation, kein Pruning
+  (DataStore.java:398-399, Kommentar :584) — Dauerbetrieb füllt trades/
+  .generations/; Platz voll → Publish scheitert VOR Pointerwechsel (Daten
+  sicher, Lauf versagt).
+ZU-R4 [NIEDRIG] Abonnenten-Snapshot-Fehler NACH Katalogaustausch
+  (UpdateJobRunner.java:162-163): Job ERROR, aber neuer Katalog bereits
+  veröffentlicht → Monitor hält neue Zähler, Scanner verwirft Lauf;
+  Divergenz bis zum nächsten erfolgreichen Lauf.
+ZU-R5 [NIEDRIG] Neue harte API-Konsistenzprüfungen (totalPages↔last,
+  fehlendes followers in einer Zeile, Fremd-Provider-Zeilen) → jeweils
+  GESAMtausfall; mit „keine Teilübernahme“ konsistent, aber jede echte
+  API-Sonderform legt den Pfad lahm (live nicht verifizierbar).
+ZU-R6 [NIEDRIG] requireArchiveConfirmed blockiert Anbieter-Refresh
+  dauerhaft, wenn die Plattform alte History-Zeilen entfernt (Frisch ⊉
+  Archiv) — Altbestand bleibt (beabsichtigt), Refresh-Pfad weg.
+ZU-R7 [NIEDRIG] TRADE_LOCKS statisch je JVM — zwei Monitor-Prozesse auf
+  demselben data/ könnten Generationen/Pointer interleaved schreiben
+  (Last-Writer-wins; Bedingung: Doppeltstart).
+ZU-R8 [NIEDRIG] stop() wartet nur 5 s auf Non-Daemon-Worker; Worker ohne
+  kooperative Abbruchpunkte verzögern JVM-Exit (bewusst für Integrität).
+Fehlende Testfälle: Datenrichtung des Refresh (ZU-F1-Test); leere Seite 0
+  → Fehler statt DONE-0 (ZU-R1); scannerseitiges `cancelled`-Handling;
+  Generations-Pruning/Disk-Full; Zwei-Prozess-Concurrency; Performance der
+  Vollkatalog-Pagination (~300 Seiten) und verifiedMeta-Vollparse je Aufruf.
+
+## 8. NICHT AUSGEFÜHRTE PRÜFUNGEN (ausdrücklich)
+
+- Keine echten Plattformzugriffe (mql5.com, CopyFX, Vantage, ZuluTrade,
+  Pelican), keine Logins, keine Downloads, keine produktiven REST-Aufrufe
+  gegen laufende Instanzen.
+- Keine Neustarts/Deployments der 7 Systeme; kein Schreiben in Produktiv-
+  datenbanken (alle Tests in tmp_path/@TempDir/target).
+- Keine bezahlten Modellaufrufe: pytest mit -m "not llm"; LLM-Verhalten nur
+  über Mocks/Fixtures geprüft (Validatoren, Ledger, Prompts).
+- Keine JavaFX-GUI-Manualtests (Fenster-/Dialogverhalten nur codegelesen);
+  kein Headless-Browser-Realfall (MqlDownloader-Login-Kette am Code und
+  Loopback-Fixtures bewertet).
+- Live-Verhalten der Plattform-APIs jenseits dokumentierter Annahmen
+  (Sortierparameter, Paginator-DOM, kurze Mittelseiten, 1223 jenseits des
+  Endes, Feld-Omission bei CopyFX) ist unbelegt — dort stehen Risiken.
+- Ein erfolgreicher Testlauf ist kein Nachweis eines abgeschlossenen
+  produktiven Recherchelaufs: Gesamtlauf d38440b65c6540b79ce69e7fe7457ab0
+  und vollständige Top-200-Kette blieben laut Aufgabenstellung ausdrücklich
+  unaufgefordert und wurden nicht ausgeführt.
+
+## 9. GESAMTEINSCHÄTZUNG: WAS MUSS VOR ZUVERLÄSSIGEM EINSATZ BEHOBEN WERDEN?
+
+Muss (blockiert verlässliche Ergebnisse/Bestände unter realistischen
+Bedingungen):
+  1. XR-1 Katalog-Schrumpf (Scanner-Löschhälfte ODER Basis-Feld) — sonst
+     verliert „Alle Signale“/Statistik-Metadaten/Workflow-Kandidaten nach
+     jedem Recherche- oder Messlauf still Anbieter. Kleinster Scanner-Fix:
+     Overlay-Zustand erkennen und Quelle überspringen statt löschen.
+  2. XR-2 + MD-R1 Abdeckungsbeleg der Top-200 (mindestens MqlDownloader:
+     Endgrund/Coverage-Felder; Scanner-Hinweis bei fehlendem Beleg) — sonst
+     ist „Top 200“ still eine unbekannte Teilmenge (DOM-Änderung genügt).
+  3. MD-F1 Listenende=Endlosschritt (Fallback wiederherstellen) — sonst
+     bricht der MQL-Zählerlauf komplett, sobald der Paginator nicht erkannt
+     wird.
+  4. VT-R1 kurze Nicht-End-Seiten als Lücke/Fehler — einziger bekannter
+     Weg, wie Vantage „complete=true“ trotz Lücke meldet (Vollständigkeits-
+     versprechen der 1223-Entscheidung).
+  5. ZU-F1 Argument-Vertauschung im gezielten Zulu-Refresh (einzeiliger
+     Fix + Datenrichtungs-Test) — bestätigter Falschlauf mit Erfolgsbeleg
+     in der neuen Kernfunktion „gezielte aktuelle Datenbeschaffung“.
+Soll (unter realistischen Bedingungen falsche Daten, aber begrenzt/bedingt):
+  MD-R3 (NaN-Überschreibung guter Kennzahlen), RB-R1/ZU-R1 (Leerseite→
+  DONE mit 0 / Katalogersetzung leer), RB-R2 (0.0 statt unbekannt),
+  PT-R6 (error statt login_required), MD-R2/VT-R4 (Drift-Abbruch-Flatter),
+  XR-1-Resthälfte (Basis-Feld), TMM-R2 (leeres Complete löscht Gesamt-
+  abspiegel — Absichtsschutz fehlt), TMM-R3 (fehlendes Portfolio in
+  documentKeys löscht Portfolio-PDF), PT-F1 (.gitignore), VT-F1/F2
+  (Doku/Health-Flag), TMM-E1 (v1-Randpfad).
+Kann warten: alle übrigen NIEDRIG-Risiken; S-R1…S-R3; OQ-Punkte.
+
+Fehlende Testfälle (wichtigste Lücken, geordnet):
+  a) XR-1: „Katalogsync nach nurAbonnenten darf keine Zeilen löschen“
+     (Scanner + je Client ein /providers-Basis-Test).
+  b) XR-2/MD-R1: MqlDownloader-Fixture maxPageNumber=0 + Folgeseiten →
+     kein DONE mit Teilmenge; Scanner-Hinweis bei fehlendem Coverage-Feld.
+  c) MD-F1: leere Seite nach erfolgreichem Laden = reguläres Ende.
+  d) VT-R1: kurze Nicht-End-Seite (0<Zeilen<pageSize, nicht letzte) →
+     Lücke/Fehler, NICHT complete=true.
+  e) MD-R2: gleiche ID über Seitengrenze mit GLEICHEM Zähler → bereinigen
+     statt Abbruch (falls gewollt) bzw. Abbruch-Test mit anderem Zähler.
+  f) MD-R3: unbrauchbare Profil-HTML im subscribersOnly-Pfad darf _root.txt
+     nicht verschlechtern; htmlIdentity im Sammelpfad.
+  g) RB-R1: Leerseite+more=true → Fehler; RB-R2: fehlendes balance_usd/
+     profit_percent → null statt 0.0.
+  h) PT-R6: zweite SessionException → login_required; PT-R1: Overlay-Race
+     (existiert-Prüfung + Löschen) → Fallback auf providers.csv.
+  i) S-R2: Katalogfixture mit gleicher ID als mql4+mql5 → definiertes
+     Verhalten (einzelne Datenlücke statt ganzer Quellfehler).
+  j) PT-R7/RB-R4: Neustag-Zähler-/Plattformstalität nach Neustart ohne Lauf.
+  k) TMM: siehe Fehlende-Testfälle-Liste in 7.1 (u. a. leere sourceUid → 400
+     direkt, expectedSignals-Abweichung, Doppel-Complete, Portfolio-Validierung,
+     30-Minuten-Fenster).
+
+================================================================================
+MASCHENLESBARE BEFUNDLISTE (JSON). Schlüssel:
+  id, typ (Fehler|Risiko|Frage|Hinweis), schwere (HOCH|MITTEL|NIEDRIG),
+  repos (betroffene Repositories), ort (Datei:Zeile, mehrere durch ";"),
+  ausloeser, wirkung, ursache, fix, test (Regressionstest), status
+  (bestaetigt = am Code gegenverifiziert | begründet).
+Ein leeres Feld bedeutet: im zugehörigen Textabschnitt oben nachlesen.
+================================================================================
+
+```json
+{
+  "review": "abonnenten_recherche_codereview_2026-10-24",
+  "commits": {
+    "SignalKiScanner": "1bda2fa..81f8329",
+    "MqlDownloader": "afe507e..442bb60",
+    "PelicanTrading": "ff883d6..1f7d12d",
+    "robomonitor": "7314666..f104396",
+    "vantagemonitor": "81511b4..7d26a4d",
+    "zulumonitor": "cfcf688..e44b1fb",
+    "MqlTradeMonitor": "18a59d7..0eda6b0"
+  },
+  "tests": {
+    "SignalKiScanner": "897 passed, 1 skipped (pytest, -m 'not llm', isoliert)",
+    "MqlDownloader": "184 passed (mvn -o)",
+    "PelicanTrading": "206 passed (mvn -o)",
+    "robomonitor": "210 passed (mvn -o)",
+    "vantagemonitor": "129 passed (mvn -o) + 23 passed (pytest)",
+    "zulumonitor": "173 passed (mvn -o)",
+    "MqlTradeMonitor": "28 KiScanner-Commitscope-Tests passed; Vollsuite nur JDK21 (Java 25: 37 praexistierende Fehler)"
+  },
+  "befunde": [
+    {"id": "XR-1", "typ": "Fehler", "schwere": "HOCH", "status": "bestaetigt",
+     "repos": ["MqlDownloader", "PelicanTrading", "vantagemonitor", "robomonitor", "SignalKiScanner"],
+     "ort": "SignalKiScanner src/mqlkiscanner/katalog.py:85 + db.py:1335-1359 + app_pages/alle_signale.py:61,72; MqlDownloader DatabaseManager.publishSubscriberCatalogue; PelicanTrading RestApiServer.java:814-827; vantagemonitor RestApiServer.java:654-667; robomonitor UpdateJobRunner/DataStore Katalogersetzung",
+     "ausloeser": "Recherche-/Messlauf (modus=abonnenten) + danach naechster Katalogsync",
+     "wirkung": "katalog_signale der Quelle schrumpft auf <=200 bis zum naechsten VOLLLAUF; Uebersicht/Statistik-Metadaten/Workflow-Kandidaten verlieren Anbieter still",
+     "ursache": "Katalog-Endpunkt ohne Feld fuer Listenbasis (Auswahl vs. Vollkatalog); Scanner behandelte jede konsistente Antwort als Vollkatalog und loescht Differenz",
+     "fix": "nativ Basis-Feld in /providers ODER Scanner: Overlay-Zustand erkennen und Quelle im Katalogsync ueberspringen statt loeschen",
+     "test": "nach nurAbonnenten-Lauf darf katalog.sync keine Zeilen loeschen; /providers-Basis-Test je Client"},
+    {"id": "XR-2", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["MqlDownloader", "robomonitor", "PelicanTrading", "zulumonitor", "SignalKiScanner"],
+     "ort": "SignalKiScanner client_updates.py:106-123; nur vantagemonitor liefert subscriberCatalog*-Felder",
+     "ausloeser": "MqlDownloader maxPageNumber-DOM-Erkennung schlaegt fehl -> nur Seite 1 gelesen, DONE mit z.B. 100 Anbietern",
+     "wirkung": "falsch verkleinerte Auswahl wird als Top 200 eingefroren, ohne Hinweis",
+     "fix": "Coverage-Felder in allen Clients + Scanner-Hinweis 'Abdeckung unbestaetigt' bei fehlenden Feldern",
+     "test": "Fixture ohne Coverage-Felder -> Hinweis; maxPageNumber=0 -> kein DONE mit Teilmenge"},
+    {"id": "MD-F1", "typ": "Fehler", "schwere": "MITTEL", "status": "bestaetigt",
+     "repos": ["MqlDownloader"], "ort": "src/downloader/SignalDownloader.java:646-648,793,460-468,494-498,543",
+     "ausloeser": "Paginator nicht erkannt (maxPageNumber=0) und Lauflimit ueber Listenende",
+     "wirkung": "leere Folgeseite = kritischer Fehler statt regulärem Ende; kompletter Lauf bricht ab",
+     "fix": "bei maxPageNumber=0 leere Seite nach erfolgreichem Laden als Ende werten (oder toten Zweig entfernen + dokumentieren)",
+     "test": "Proxy-WebDriver: Paging-Selektoren leer, Seite 2 ohne Links -> Lauf endet mit Seite-1-Anbietern"},
+    {"id": "MD-R3", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["MqlDownloader"], "ort": "src/converter/HtmlConverter.java:196-226",
+     "ausloeser": "subscribersOnly + frisch unbrauchbare Profil-HTML (Login-/Fehlerseite)",
+     "wirkung": "_root.txt wird mit 3MPDD=NaN ueberschrieben, letzte gute Kennzahl verloren",
+     "fix": "bei !isFinite alte TXT lassen und htmlIdentity im Sammelpfad pruefen",
+     "test": "unbrauchbare HTML darf _root.txt nicht verschlechtern"},
+    {"id": "ZU-F1", "typ": "Fehler", "schwere": "MITTEL", "status": "bestaetigt",
+     "repos": ["zulumonitor"], "ort": "src/main/java/de/zulumonitor/ZuluMonitorApp.java:401 + model/Trader.java:76-83",
+     "ausloeser": "POST /providers/{id}/zulu/refresh nach Zähleränderung seit letztem Zählerlauf",
+     "wirkung": "frisch geladener Abonnentenzähler wird verworfen, alter Katalogwert bleibt, Job meldet platformRefreshed=true",
+     "ursache": "Empfänger/Argument vertauscht (fresh.withSubscriberCounts(previous)); korrektes Muster DataStore.java:69",
+     "fix": "Trader saved = fresh;",
+     "test": "Katalog followers=1500, Suchserver 1600 -> nach Refresh 1600"},
+    {"id": "VT-F1", "typ": "Fehler", "schwere": "NIEDRIG", "status": "bestaetigt",
+     "repos": ["vantagemonitor"], "ort": "DOKUMENTATION_API.md:151-159 vs. VantageClient.java:302",
+     "ausloeser": "Leser richtet sich nach API-Doku",
+     "wirkung": "erwartete months=3/6/12-Neustart-Semantik existiert nicht (fix months=1)",
+     "fix": "Absatz streichen/als abgelöst markieren", "test": "Prosa; months=1 bereits gepinnt"},
+    {"id": "VT-F2", "typ": "Fehler", "schwere": "NIEDRIG", "status": "bestaetigt",
+     "repos": ["vantagemonitor"], "ort": "RestApiServer.java:323 vs. :149-152",
+     "ausloeser": "Server ohne UpdateStarter (unterstützte Konfiguration)",
+     "wirkung": "/health meldet abonnentenRefresh:true, POST /update antwortet 405",
+     "fix": "Flag an updateStarter!=null binden", "test": "serverOhneStarter-Fall + health-Assertion"},
+    {"id": "VT-R1", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["vantagemonitor"], "ort": "VantageClient.java:325 (nur entries.size()>size geprueft)",
+     "ausloeser": "Plattform liefert kurze Nicht-End-Seite (0<Zeilen<pageSize)",
+     "wirkung": "Restpositionen des Fensters unlesbar, zaehlen nicht als skipped -> catalogComplete=true trotz Lücke",
+     "fix": "kurze Nicht-End-Seite als Lücke/Fehler werten", "test": "entsprechende Fixture"},
+    {"id": "PT-F1", "typ": "Fehler", "schwere": "NIEDRIG", "status": "bestaetigt",
+     "repos": ["PelicanTrading"], "ort": ".gitignore vs. data/providers_abonnenten.csv, data/abonnenten_update_state.json",
+     "ausloeser": "Zählerlauf + git add -A", "wirkung": "Laufzeitdaten committbar",
+     "fix": "2 .gitignore-Zeilen", "test": "geschriebene data/-Dateien muessen ignoriert sein"},
+    {"id": "RB-R1", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["robomonitor"], "ort": "RoboForexClient.java:163",
+     "ausloeser": "CopyFX liefert Seite 1 mit entries:[] und page.more:true (oder alle Zaehler 0)",
+     "wirkung": "signals.csv wird durch leeren Katalog ersetzt, DONE mit signaleGeliefert=0; Altbestand nur im Archiv",
+     "fix": "leer+more=true als ApiException", "test": "Fixture Leerseite+more:true -> Fehler"},
+    {"id": "RB-R2", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["robomonitor", "SignalKiScanner"], "ort": "RestApiServer.java:450,474; RoboForexClient.java:206,216; Scanner abonnenten_analyse_daten.py:57-68",
+     "ausloeser": "CopyFX omittiert balance_usd/profit_percent in Eintraegen",
+     "wirkung": "Scanner liest 0 USD/0 % als Quellenwert statt 'unbekannt' (ProfitUsd hat NaN->null, die beiden anderen nicht)",
+     "fix": "gleiche Finite-Behandlung wie ProfitUsd", "test": "fehlendes Feld -> null"},
+    {"id": "TMM-E1", "typ": "Fehler", "schwere": "NIEDRIG", "status": "bestaetigt",
+     "repos": ["MqlTradeMonitor"], "ort": "KiScannerService.java:265,324 (tot) vs. validateRun :87",
+     "ausloeser": "v1-Client ruft complete/abort ohne register",
+     "wirkung": "jetzt HTTP 400 statt altem v1-200; undokumentiert, ungetestet",
+     "fix": "dead lines entfernen + Verhärtung dokumentieren/testen (oder bewusst 200)",
+     "test": "POST /complete ohne register -> Verhalten festlegen"},
+    {"id": "TMM-R2", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["MqlTradeMonitor", "SignalKiScanner"], "ort": "KiScannerService.java:299-312",
+     "ausloeser": "Scanner sendet versehentlich leeren Snapshot mit konsistenten Zaehlern",
+     "wirkung": "Gesamtbestand inkl. aller Signal-PDFs wird geloescht",
+     "fix": "explizites 'leer ist Absicht'-Flag", "test": "leeres Complete -> Schutz greift"},
+    {"id": "TMM-R3", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["MqlTradeMonitor", "SignalKiScanner"], "ort": "KiScannerService.java:301-308",
+     "ausloeser": "Portfolio-Generierung schlaegt fehl, Sync laeuft durch (documentKeys ohne Portfolio)",
+     "wirkung": "bisheriges Portfolio-PDF wird geloescht",
+     "fix": "Scanner: vor Complete abbrechen, wenn Portfolio-Generierung fehlschlug (oder Portfolio-Flag)",
+     "test": "Sync ohne Portfolio -> Portfolio bleibt"},
+    {"id": "ZU-R1", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["zulumonitor"], "ort": "ZuluTradeClient.java:247-253",
+     "ausloeser": "Gateway liefert Seite 0 einmalig {\"result\":[]}",
+     "wirkung": "DONE mit 0 Anbietern, traders.csv durch leere Liste ersetzt",
+     "fix": "Seite 0 leer = Fehler", "test": "Fixture leere Seite 0 -> Fehler"},
+    {"id": "MD-R1", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["MqlDownloader", "SignalKiScanner"], "ort": "SignalDownloader.java:180-287 (DOM-Heuristik)",
+     "ausloeser": "maxPageNumber-Fehl-Erkennung", "wirkung": "DONE mit Teilmenge, kein Abdeckungssignal",
+     "fix": "siehe XR-2", "test": "siehe XR-2"},
+    {"id": "MD-R2", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["MqlDownloader"], "ort": "SignalDownloader.java:717-721,682-684",
+     "ausloeser": "Anbieter wandert bei Live-Zaehlerdrift ueber Seitengrenze und erscheint erneut",
+     "wirkung": "harter Abbruch des gesamten nurAbonnenten-Laufs",
+     "fix": "bei identischem Zaehler bereinigen (Zulu-Muster)", "test": "Duplikat gleich/verschiedener Zaehler"},
+    {"id": "PT-R1", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["PelicanTrading"], "ort": "RestApiServer.java:814-820; DataStore.java:77",
+     "ausloeser": "GUI-Volllauf loescht Overlay Millisekunden vor Katalogabruf",
+     "wirkung": "transient total=0/leer oder 500", "fix": "nach Leerlast auf providers.csv zurueckfallen", "test": "Race-Fixture"},
+    {"id": "PT-R5", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["PelicanTrading", "SignalKiScanner"], "ort": "RestApiServer.java:814-827,964-975",
+     "ausloeser": "Katalogsync ohne vorangegangenen eigenen Zaehlerjob",
+     "wirkung": "Teil von XR-1 (kein Listenbasis-Merkmal)", "fix": "siehe XR-1", "test": "siehe XR-1"},
+    {"id": "PT-R6", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["PelicanTrading", "SignalKiScanner"], "ort": "UpdateJobRunner.java:171-206",
+     "ausloeser": "zweite SessionException im nurAbonnenten-Lauf",
+     "wirkung": "Job-Status error statt login_required; Scanner sieht harten Fehler statt Login-Hinweis",
+     "fix": "zweiten Auth-Fehler als login_required melden", "test": "Fixture Doppel-Auth-Fehler"},
+    {"id": "PT-R7", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["PelicanTrading"], "ort": "PelicanMonitorApp.java:199-206",
+     "ausloeser": "Neustart ohne heutigen Lauf", "wirkung": "stale Zaehler als heutiger Tagesstand in /history",
+     "fix": "nur echte Messungen snapshotten", "test": "Neustart-Szenario"},
+    {"id": "PT-R2", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["PelicanTrading"], "ort": "PelicanClient.java:182-185",
+     "ausloeser": "Pelican laesst einzelnen Eintraegen NumCopiers weg", "wirkung": "ganzer Zaehlerlauf schlaegt fehl (fail-closed)", "fix": "—", "test": "—"},
+    {"id": "PT-R3", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["PelicanTrading"], "ort": "ProviderRefresh.java:9-15",
+     "ausloeser": "Plattform-Retention < Lebenshistorie", "wirkung": "Anbieter dauerhaft nicht erneuerbar (ehrlicher Fehler)", "fix": "—", "test": "—"},
+    {"id": "PT-R4", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["PelicanTrading"], "ort": "PelicanMonitorApp.java:2687-2690",
+     "ausloeser": "langer nutzergesteuerter GUI-Lauf (inkl. KI-Batch)", "wirkung": "409 auf /update und Refresh", "fix": "—", "test": "—"},
+    {"id": "VT-R2", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["vantagemonitor"], "ort": "VantageClient.java:826,305-311",
+     "ausloeser": "transienter 1223 auf Einzel-Slot", "wirkung": "gesunder Anbieter als Position ausgelassen (ehrlich markiert)", "fix": "1 Retry auf Size-1 (Nutzerentscheidung)", "test": "—"},
+    {"id": "VT-R3", "typ": "Risiko", "schwere": "MITTEL", "status": "begruendet",
+     "repos": ["vantagemonitor", "SignalKiScanner"], "ort": "RestApiServer.java:654-667",
+     "ausloeser": "regulaerer Katalogsync waehrend Overlay existiert", "wirkung": "Teil von XR-1", "fix": "siehe XR-1", "test": "siehe XR-1"},
+    {"id": "VT-R4", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["vantagemonitor"], "ort": "VantageClient.java:272-275",
+     "ausloeser": "copiers-Dritt waehrend des gestreckten Durchlaufs", "wirkung": "Gesamtauswahl verworfen (regelkonform)", "fix": "—", "test": "—"},
+    {"id": "VT-R5", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["vantagemonitor"], "ort": "HistoryFiles.java:81-85",
+     "ausloeser": "Leser im Millisekundenfenster sequentieller Moves", "wirkung": "neue CSV + altes Meta transient", "fix": "—", "test": "—"},
+    {"id": "VT-R6", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["vantagemonitor"], "ort": "VantageClient.java:307-310",
+     "ausloeser": "Plattform antwortet jenseits des Endes mit 1223", "wirkung": "Totalausfall des Zaehlerlaufs (kein falscher Abschluss)", "fix": "—", "test": "—"},
+    {"id": "MD-R4", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["MqlDownloader"], "ort": "RestApiServer.java:814-816; ProviderAge.java:19-40",
+     "ausloeser": "erster /providers-Aufruf mit kaltem weeks-Cache", "wirkung": "Sekunden-Latenz (4 REST-Threads)", "fix": "—", "test": "—"},
+    {"id": "MD-R5", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["MqlDownloader"], "ort": "ClientUpdateRunner.java:33-43",
+     "ausloeser": "ID '007'", "wirkung": "laut gezaehlter Fehlversuch", "fix": "Muster angleichen", "test": "—"},
+    {"id": "RB-R3", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["robomonitor"], "ort": "fehlt repo-weit",
+     "ausloeser": "Zaehlerlauf", "wirkung": "kein Abdeckungsbeleg (XR-2)", "fix": "subscriberCatalog*-Felder nachliefern", "test": "—"},
+    {"id": "RB-R4", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["robomonitor"], "ort": "DataStore.java:57-71",
+     "ausloeser": "Plattformwechsel zwischen Voll- und Zaehlerlauf", "wirkung": "stale Plattform aktiv", "fix": "—", "test": "—"},
+    {"id": "RB-R5", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["robomonitor"], "ort": "DealStore.java:132-160,296-305",
+     "ausloeser": "Leser im Move-Fenster der Bundle-Publikation", "wirkung": "transient falsche Qualitaetsflags", "fix": "—", "test": "—"},
+    {"id": "ZU-R2", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["zulumonitor", "SignalKiScanner"], "ort": "UpdateJob.java:24/86; Scanner client_updates.py Poll",
+     "ausloeser": "Abbruch eines Scanner-getriggerten Jobs", "wirkung": "Scanner pollt bis Timeout", "fix": "cancelled im Scanner-Poll behandeln", "test": "—"},
+    {"id": "ZU-R3", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["zulumonitor"], "ort": "DataStore.java:398-399,584",
+     "ausloeser": "Dauerbetrieb", "wirkung": "Generations-Wachstum ohne Pruning; Platz voll -> Publish versagt (Daten sicher)", "fix": "Pruning", "test": "—"},
+    {"id": "ZU-R4", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["zulumonitor"], "ort": "UpdateJobRunner.java:162-163",
+     "ausloeser": "Snapshot-Fehler nach Katalogaustausch", "wirkung": "Monitor neu / Scanner verwirft -> Divergenz bis naechster Lauf", "fix": "—", "test": "—"},
+    {"id": "ZU-R5", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["zulumonitor"], "ort": "ZuluTradeClient.java:415-421,306-307,448-449",
+     "ausloeser": "echte API-Sonderformen", "wirkung": "Gesamtausfall (keine Teiluebernahme, konsistent)", "fix": "—", "test": "—"},
+    {"id": "ZU-R6", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["zulumonitor"], "ort": "ProviderRefresh.java:17-24",
+     "ausloeser": "Plattform entfernt alte History-Zeilen", "wirkung": "Refresh dauerhaft blockiert (Altbestand bleibt)", "fix": "—", "test": "—"},
+    {"id": "ZU-R7", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["zulumonitor"], "ort": "DataStore.java:44",
+     "ausloeser": "zwei Monitor-Prozesse auf demselben data/", "wirkung": "interleaved Generationen (Last-Writer-wins)", "fix": "—", "test": "—"},
+    {"id": "ZU-R8", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["zulumonitor"], "ort": "App stop() ~:2833",
+     "ausloeser": "Worker ohne Abbruchpunkte bei JVM-Stopp", "wirkung": "Exit verzögert (bewusst fuer Integritaet)", "fix": "—", "test": "—"},
+    {"id": "TMM-R1", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["MqlTradeMonitor", "SignalKiScanner"], "ort": "KiScannerService.java:50-54",
+     "ausloeser": "Scanner-Crash ohne abort", "wirkung": "register 400 bis 30 min/Serverneustart", "fix": "—", "test": "—"},
+    {"id": "TMM-R4", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["MqlTradeMonitor"], "ort": "erster v2-Complete",
+     "ausloeser": "Uebergang v1->v2", "wirkung": "Legacy-PDFs verschwinden aus Ansicht (Originale bleiben; gewollt)", "fix": "—", "test": "—"},
+    {"id": "TMM-R5", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["MqlTradeMonitor"], "ort": "openRun/Staging im Heap",
+     "ausloeser": "zweite Server-Instanz gegen dieselbe H2", "wirkung": "Laufzustand nicht DB-gestuetzt", "fix": "—", "test": "—"},
+    {"id": "TMM-R6", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["MqlTradeMonitor"], "ort": "Complete-Antwort 'deleted'",
+     "ausloeser": "Sync-Abschluss", "wirkung": "PDF-Loeschbilanz nicht eigenständig sichtbar (Scanner liest konsistent als Signal-Loeschung)", "fix": "documentsDeleted-Feld", "test": "—"},
+    {"id": "TMM-R7", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["MqlTradeMonitor"], "ort": "Testumgebung Java 25",
+     "ausloeser": "mvn test unter Java 25", "wirkung": "37 praexistierende Mockito-Fehler (am Vorfahr-Commit reproduziert)", "fix": "—", "test": "—"},
+    {"id": "S-R1", "typ": "Frage", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["SignalKiScanner"], "ort": "abonnenten_analyse.py:436-438,492-493",
+     "ausloeser": "Budgetfortsetzung", "wirkung": "budget_resume_refs ohne produktiven Setz-Weg (manueller Store-Eingriff)", "fix": "UI/CLI/Doku entscheiden", "test": "—"},
+    {"id": "S-R2", "typ": "Risiko", "schwere": "NIEDRIG", "status": "begruendet",
+     "repos": ["SignalKiScanner", "MqlDownloader"], "ort": "abonnenten_analyse.py:373-376",
+     "ausloeser": "gleiche numerische ID als mql4 UND mql5 im Katalog",
+     "wirkung": "GANZE Quelle mql5 faehlt im Snapshot (fail-closed) statt einzelne Datenlücke",
+     "fix": "Kollision einzeln als datenluecke führen", "test": "Katalogfixture mit ID-Kollision"},
+    {"id": "S-R3", "typ": "Hinweis", "schwere": "NIEDRIG", "status": "bestaetigt",
+     "repos": ["SignalKiScanner"], "ort": "abonnenten_analyse.py:386 (resolve_identity create=True)",
+     "ausloeser": "Recherche-Start", "wirkung": "Identitaetszeilen fuer bis zu 200xQuellen Anbieter in Haupt-DB (Datenzeilen, keine Migration), auch bei sofortigem Stop", "fix": "—", "test": "—"}
+  ],
+  "offene_fragen": [
+    {"id": "OQ-1", "text": "Wie soll budget_resume_refs produktiv gesetzt werden (S-R1)?"},
+    {"id": "OQ-2", "text": "Ist orderby=subscribers die tatsaechlich unterstuetzte mql5-Listensortierung (MD)?"},
+    {"id": "OQ-3", "text": "Soll ein tradelisten:false-Update die 200er-Katalogbeschraenkung aufheben (MD)?"},
+    {"id": "OQ-4", "text": "Overlay-/Coverage-Kennzeichnung in /providers bzw. /health; Retry transienter 1223 auf Size-1; kurze Nicht-End-Seite als Luecke/Fehler (VT)?"},
+    {"id": "OQ-5", "text": "Scanner-Ingest bei total=0/500 transient (PT-R1)? Scanner: fail-closed, Wiederholung noetig."},
+    {"id": "OQ-6", "text": "Sollte Robo einen ratingFetchedAt liefern statt Finanzdatenstand=unbekannt zu attestieren (RB)?"},
+    {"id": "OQ-7", "text": "ZU-F1-Datenrichtung vom Autor bestaetigen (fresh vs. previous.withSubscriberCounts(fresh))."},
+    {"id": "OQ-8", "text": "Wer denkt den Job-State 'cancelled' scannerseitig mit (ZU-R2)?"},
+    {"id": "OQ-9", "text": "TMM: v1 complete/abort ohne register bewusst 400 (E1)? Zweite Monitor-Instanz ausgeschlossen (R5)? documentsDeleted-Feld (R6)?"}
+  ],
+  "nicht_ausgefuehrt": [
+    "keine echten Plattformzugriffe/Logins/Downloads/prouktiven REST-Aufrufe",
+    "keine Neustarts/Deployments/Schreibzugriffe auf Produktivdaten",
+    "keine bezahlten Modellaufrufe (pytest -m 'not llm')",
+    "keine JavaFX-GUI-Manualtests, kein Headless-Browser-Realfall",
+    "Live-API-Verhalten (Sortierung, Paginator-DOM, kurze Mittelseiten, 1223 jenseits Ende, CopyFX-Feld-Omission) unbelegt",
+    "produktiver Gesamtrecherchelauf (d38440b65c6540b79ce69e7fe7457ab0) nicht ausgefuehrt/abgeschlossen"
+  ]
+}
+```
+
+================================================================================
+ENDE DER DATEI
+================================================================================

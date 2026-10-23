@@ -344,6 +344,8 @@ class AnalyseKI:
                      "platform", "abonnenten", "abo_perzentil", "abo_referenz_n", "katalog_stand",
                      "rang", "auswahlwert", "retdd_perzentil", "abo_referenz_vollstaendig",
                      "abo_ausgelassene_positionen", "abo_katalog_geprueft")}
+        if entry.get("abo_auswahl_hinweis"):
+            candidate["abo_auswahl_hinweis"] = entry["abo_auswahl_hinweis"]
         fact_paths = _fact_refs(facts)
         preferred = ("forensik.stats.trades", "forensik.stats.monthly_net_by_close", "equity.status",
                      "forensik.forensics.martingale.flag", "retdd_jahr", "retdd_zeitraum",
@@ -593,7 +595,8 @@ def report_pdf(entry: dict, run_id: str) -> str:
     from . import pdf_reports
     body = entry["bericht_markdown"]
     if entry.get("abo_referenz_vollstaendig") is False:
-        body = ("**Auswahlhinweis:** Der Quellenkatalog enthält ausgelassene API-Positionen. "
+        warning = entry.get("abo_auswahl_hinweis") or "Der Quellenkatalog enthält ausgelassene API-Positionen."
+        body = (f"**Auswahlhinweis:** {warning} "
                 "Rang und Abonnentenrang beziehen sich auf die lesbaren Anbieter; "
                 "eine globale Top-200-Auswahl ist nicht bestätigt.\n\n" + body)
     report = pdf_reports.PdfReport(kind="abonnenten_top5", body=body,

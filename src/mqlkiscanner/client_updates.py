@@ -109,7 +109,7 @@ def _abonnenten_katalog(ergebnis: dict) -> dict | None:
               "subscriberCatalogScanned", "subscriberCatalogSkippedPositions",
               "subscriberCatalogMonths", "subscriberCatalogSort")
     if not any(key in ergebnis for key in fields):
-        return None  # Existing clients still reject gaps before publishing.
+        return None  # A missing receipt is explicitly unconfirmed below.
     complete, end, scanned, skipped, months, sort = (ergebnis.get(key) for key in fields)
     if (type(complete) is not bool or end is not True
             or type(scanned) is not int or scanned < 0
@@ -460,6 +460,8 @@ def _update_eine_quelle_ablauf(quelle: dict, *, z: dict, settings: dict, log, on
                         if coverage["scanned_providers"] < geliefert:
                             raise ValueError("Auswahl ist größer als der geprüfte Abonnentenkatalog")
                         z["abonnenten_katalog"] = coverage
+                    z["abonnenten_auswahl_unbestaetigt"] = (
+                        coverage is None and not z.get("abonnenten_auswahl", {}).get("verified"))
                 except ValueError as exc:
                     _melde(str(exc), status=FEHLER, fehler=str(exc))
                     break
@@ -468,7 +470,8 @@ def _update_eine_quelle_ablauf(quelle: dict, *, z: dict, settings: dict, log, on
             katalog = (" (Katalog übersprungen — 3-Tage-Regel)"
                        if z["katalog_uebersprungen"] else "")
             catalog_gaps = z.get("abonnenten_katalog", {}).get("complete") is False
-            teilweise = z["tradelisten_fehler"] > 0 or z["tradelisten_abgebrochen"] or catalog_gaps
+            selection_unknown = z.get("abonnenten_auswahl_unbestaetigt") is True
+            teilweise = z["tradelisten_fehler"] > 0 or z["tradelisten_abgebrochen"] or catalog_gaps or selection_unknown
             detail = (f"Teilweise aktualisiert — {z['tradelisten_fehler']} Tradelistenfehler; "
                       f"Jobende {stand}{katalog}" if teilweise
                       else f"Fertig — Datenstand {stand}{katalog}")
@@ -478,8 +481,18 @@ def _update_eine_quelle_ablauf(quelle: dict, *, z: dict, settings: dict, log, on
                            "Anbietern, globale Top 200 unbestätigt.")
                 z["hinweise"] = list(dict.fromkeys([*z["hinweise"], warning]))
                 detail = f"Mit Kataloglücken aktualisiert — {warning} Datenstand {stand}"
+            elif selection_unknown:
+                warning = ("Abonnentenauswahl/Abdeckung unbestätigt: Client liefert keinen "
+                           "Auswahl- oder Katalogbeleg; globale Top 200 nicht bestätigt.")
+                z["hinweise"] = list(dict.fromkeys([*z["hinweise"], warning]))
+                detail = f"Zähler aktualisiert mit unbestätigter Auswahl — {warning} Datenstand {stand}"
             _melde(detail, status=TEILWEISE if teilweise else FERTIG,
                    phase=phase, done=done if teilweise else max(done, total), total=total)
+            break
+        if state == "cancelled":
+            grund = str(info.get("error") or nachricht or "Client hat den Auftrag abgebrochen")
+            _melde(f"Client-Auftrag abgebrochen: {grund}", status=ABGEBROCHEN, fehler=grund,
+                   phase=phase, done=done, total=total)
             break
         if state == "error":
             fehler = str(info.get("error") or nachricht or "Client meldete Fehler")

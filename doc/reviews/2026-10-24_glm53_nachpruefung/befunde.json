@@ -1,0 +1,349 @@
+{
+  "stand": "2026-10-24T01:32:00+02:00; Nachpruefung, Regressionen und Paketbau abgeschlossen; keine Aktivierung",
+  "befunde": [
+    {
+      "id": "XR-1",
+      "glm_typ": "Fehler",
+      "glm_schwere": "HOCH",
+      "einordnung": "behoben",
+      "begruendung": "Vollkatalog und Abonnentenauswahl sind ausdrücklich getrennt. Scanner löscht bei fehlendem, unknown oder Teil-Scope keine fehlenden Anbieter. Native Clients erhalten bekannte IDs und Detailfelder; CSV-Existenz allein ist kein Fullbeleg."
+    },
+    {
+      "id": "XR-2",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "entschaerft",
+      "begruendung": "MQL-Abdeckungsbeleg war bereits korrigiert. Fehlende globale Auswahlbelege werden jetzt bis KI, Oberfläche, PDF und CSV als unbestätigt weitergegeben. Das erzeugt keinen nachträglichen Beleg für die übrigen Plattformen."
+    },
+    {
+      "id": "MD-F1",
+      "glm_typ": "Fehler",
+      "glm_schwere": "MITTEL",
+      "einordnung": "verfuegbarkeitsgrenze",
+      "begruendung": "Der normale MQL-Crawl kann ohne verifizierbares Listenende abbrechen. Ein leeres HTML-Dokument beweist weder Ende noch Nullanbieter; die vorgeschlagene stille Endannahme wird nicht übernommen. Kein belegter End-DOM/Liveabschluss in diesem Auftrag."
+    },
+    {
+      "id": "MD-R3",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "behoben",
+      "begruendung": "Falsche Anbieter-ID, falsche Plattform und Login-/Fremd-HTML werden vor Persistenz abgewiesen. Bei gültigem Profil bleiben fehlende Einzelkennzahlen unbekannt statt mit alten Werten als frisch zu erscheinen."
+    },
+    {
+      "id": "ZU-F1",
+      "glm_typ": "Fehler",
+      "glm_schwere": "MITTEL",
+      "einordnung": "behoben",
+      "begruendung": "Der belegte frische Einzelprofil-Zähler wird gespeichert und in Auswahl, Vollbestand und REST erhalten. Ein späterer GUI-Export überschreibt diesen Stand nicht."
+    },
+    {
+      "id": "VT-F1",
+      "glm_typ": "Fehler",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "dokumentation_korrigiert",
+      "begruendung": "Die Beschreibung entspricht dem tatsächlichen festen Listenfenster und der Eingrenzung ausschließlich von API-Code 1223; keine erfundene Monatsfallback-Kette."
+    },
+    {
+      "id": "VT-F2",
+      "glm_typ": "Fehler",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "Health meldet Abonnenten-Refresh nur bei vorhandenem Update-Starter. Derselbe Vertragsfehler wurde auch in Robo, Pelican und Zulu korrigiert."
+    },
+    {
+      "id": "VT-R1",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "bereits_behoben",
+      "begruendung": "Der vorherige Grok-Fix prüft kurze Mittelseiten über verifizierte Unterbereiche; nicht erneut als neuer Fehler gezählt."
+    },
+    {
+      "id": "PT-F1",
+      "glm_typ": "Fehler",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "Auswahl-CSV und lokaler Abonnenten-Updatezustand sind ausgeschlossen; der neue Fullbeleg ist ebenfalls private Laufzeitdatei."
+    },
+    {
+      "id": "RB-R1",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "behoben",
+      "begruendung": "Leere erste Seite bei behaupteter Fortsetzung oder fehlendem Endbeleg wird abgewiesen. Ein belegtes Ranking ausschließlich mit Nullabonnenten darf dagegen eine gültige leere positive Auswahl ergeben."
+    },
+    {
+      "id": "RB-R2",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "behoben",
+      "begruendung": "Fehlende oder ungültige balanceUsd/yieldWindowPct bleiben unbekannt (CSV leer, REST null), echte Null bleibt Null. Der ältere Profit-Fix war bereits enthalten."
+    },
+    {
+      "id": "TMM-E1",
+      "glm_typ": "Fehler",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "dokumentation_korrigiert",
+      "begruendung": "Complete und Abort verlangen einen registrierten offenen Lauf, auch für v1. Kommentar/Doku und Regressionstests stimmen damit überein; unerreichbare Erfolgspfade entfernt."
+    },
+    {
+      "id": "TMM-R2",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "protokollsemantik",
+      "begruendung": "Ein konsistenter leerer Vollspiegel entfernt bisherige Spiegelinhalte absichtlich. Ein zusätzliches allowEmpty-Protokoll ist eine neue Bedien-/Vertragsregel, kein nachgewiesener Implementierungsfehler. Versehentlich leer gestartete Spiegel bleiben ein Bedienrisiko."
+    },
+    {
+      "id": "TMM-R3",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "behoben",
+      "begruendung": "Fehler beim Erstellen oder Sammeln benötigter lokaler PDFs brechen vor Register-POST ab. Ein fehlendes PDF kann dadurch nicht als beabsichtigte Spiegel-Löschung abgeschlossen werden."
+    },
+    {
+      "id": "ZU-R1",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "behoben",
+      "begruendung": "Leere erste Zulu-Seite führt beim Zählerabruf und regulären Listenabruf zum Fehler statt zur Publikation einer angeblich vollständigen Leerliste. Spätere belegte Endseiten bleiben zulässig."
+    },
+    {
+      "id": "MD-R1",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "bereits_behoben",
+      "begruendung": "MQL4/5-Zielmenge und Abdeckung werden bereits getrennt belegt; unsichere Pagination wird nicht still als Topauswahl bestätigt."
+    },
+    {
+      "id": "MD-R2",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bewusste_schranke",
+      "begruendung": "Doppelte Identitäten durch Drift brechen den MQL-Zählerlauf sichtbar ab. Stilles Deduplizieren würde ohne neuen Abdeckungsbeleg die bestätigte Auswahlsemantik ändern."
+    },
+    {
+      "id": "PT-R1",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "Gemeinsames Katalog-Lock und ein zusammenhängend geladener Snapshot verhindern den beschriebenen Overlay-/Full-Umschaltrace zwischen Storeinstanzen."
+    },
+    {
+      "id": "PT-R5",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "behoben",
+      "begruendung": "Durch XR-1 abgedeckt: expliziter Listen-Scope und ehrliche Legacy-Provenienz."
+    },
+    {
+      "id": "PT-R6",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "Ein erneuter Authentifizierungsfehler wird als login_required gemeldet; der Scanner erhält keinen unspezifischen Downloadfehler."
+    },
+    {
+      "id": "PT-R7",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "Start aus altem GUI-Cache erzeugt keinen heutigen nativen Zähler-Snapshot mehr. Zusätzlich erzeugt auch Scanner-Kataloglesen keine Jetztpunkte mehr."
+    },
+    {
+      "id": "PT-R2",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bewusste_schranke",
+      "begruendung": "Fehlendes NumCopiers ist unbekannt und darf weder Null noch einen bestätigten Rangplatz vortäuschen. Sichtbarer Abbruch ist hier beabsichtigt."
+    },
+    {
+      "id": "PT-R3",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bewusste_schranke",
+      "begruendung": "Eine gegenüber dem Archiv verkürzte Tradehistorie bleibt gesperrt. Retention allein beweist keine vollständige Lebenshistorie; alte Daten werden nicht überschrieben."
+    },
+    {
+      "id": "PT-R4",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bewusste_schranke",
+      "begruendung": "409 bei laufendem GUI-/KI-Batch verhindert konkurrierende produktive Schreibläufe. Kein belegter Deadlock."
+    },
+    {
+      "id": "VT-R2",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "verfuegbarkeitsgrenze",
+      "begruendung": "Ein transienter 1223-Einzelfehler kann einen lesbaren Anbieter auslassen. Die Lücke und unbestätigte globale Topauswahl werden ausdrücklich mitgeführt. Zusätzliche Retry-Politik wurde nicht erfunden."
+    },
+    {
+      "id": "VT-R3",
+      "glm_typ": "Risiko",
+      "glm_schwere": "MITTEL",
+      "einordnung": "behoben",
+      "begruendung": "Durch XR-1 abgedeckt: Vollkatalog und Zählerauswahl sind getrennt."
+    },
+    {
+      "id": "VT-R4",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bewusste_schranke",
+      "begruendung": "Widersprüchliche aktuelle Zähler derselben Identität verwerfen die Auswahl sichtbar statt einen willkürlichen Wert zu bestätigen."
+    },
+    {
+      "id": "VT-R5",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "SHA-geprüfter unveränderlicher Snapshot bindet Trades, Gesamtzahl und Normalisierungsbelege unter demselben Pfadlock. REST-metrics, JSON und CSV verwenden je genau einen Snapshot. Sieben neue Regressionen prüfen Teilpublikation, Generationswechsel und manipulierte CSV; vollständige Vantage-Suite mit 148 Tests bestanden."
+    },
+    {
+      "id": "VT-R6",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "verfuegbarkeitsgrenze",
+      "begruendung": "1223 jenseits eines vermuteten Listenendes beweist kein Ende. Sichtbarer Fehler bleibt sicherer als eine unbelegte Vollständigkeit."
+    },
+    {
+      "id": "MD-R4",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "leistungsgrenze",
+      "begruendung": "Kaltes Lesen belegter Altersdaten kann Sekunden dauern. Kein belegter Korrektheitsfehler; keine unbelegte Performanceverbesserung behauptet."
+    },
+    {
+      "id": "MD-R5",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "Provider-IDs müssen kanonische positive Dezimal-IDs sein; mehrdeutige führende Nullen werden vor dem Refresh abgewiesen."
+    },
+    {
+      "id": "RB-R3",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "entschaerft",
+      "begruendung": "Ohne nativen globalen Rankingbeleg wird die Topauswahl ausdrücklich unbestätigt geführt. Fehlende Belege werden nicht erfunden."
+    },
+    {
+      "id": "RB-R4",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "Gültige aktuelle Rating-Plattform (mt4/mt5/rst) wird bei identischem sourceId/login übernommen und bestimmt den Abrufpfad. Ownerfremde alte Caches bleiben gesperrt; Finanzwerte und ihre Zeitbasis werden nicht als frisch ausgegeben."
+    },
+    {
+      "id": "RB-R5",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "REST liest Owner-/SHA-geprüfte Rohtrades und Paginationgründe aus einem gemeinsamen Snapshot unter demselben Writerlock. Ein erzwungen halb veröffentlichter Dateistand wird nicht als gemischte Generation gelesen; Einheiten-/DD-Sperren bleiben bestehen."
+    },
+    {
+      "id": "ZU-R2",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "behoben",
+      "begruendung": "cancelled ist im Scanner ein sofortiger terminaler Abbruchzustand, kein Polling bis Timeout."
+    },
+    {
+      "id": "ZU-R3",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "betriebsgrenze",
+      "begruendung": "Historische Generationen wachsen ohne Pruning. Belegter Speicherplatzbedarf, aber keine autorisierte Aufbewahrungs-/Löschregel; kein automatisches Löschen von Auditdaten eingeführt."
+    },
+    {
+      "id": "ZU-R4",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "betriebsgrenze",
+      "begruendung": "Katalog und separate Historien-DB sind keine gemeinsame Transaktion. Ein Snapshotfehler meldet den Job als Fehler; Scanner friert daraus keine erfolgreiche Recherche ein und erzeugt keine Ersatzmessung."
+    },
+    {
+      "id": "ZU-R5",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bewusste_schranke",
+      "begruendung": "Nicht unterstützte oder widersprüchliche API-Formen bleiben sichtbare Fehler. Kein belegter zulässiger Sonderfall, den der Parser hier falsch abweist."
+    },
+    {
+      "id": "ZU-R6",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bewusste_schranke",
+      "begruendung": "Verkürzte neue Tradehistorie bleibt gesperrt und alter Bestand erhalten; keine stille Retentionsfreigabe."
+    },
+    {
+      "id": "ZU-R7",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "betriebsgrenze",
+      "begruendung": "Prozessinterne Locks schützen nicht vor zwei Monitorprozessen auf demselben Datenverzeichnis. Dieser Mehrprozessbetrieb ist nicht unterstützt und wurde nicht als sicher ausgegeben."
+    },
+    {
+      "id": "ZU-R8",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bewusste_schranke",
+      "begruendung": "Warten auf nicht unterbrechbare Worker beim Beenden schützt die Datenintegrität. Kein belegter neuer Fehler oder garantierter Shutdown-Zeitpunkt."
+    },
+    {
+      "id": "TMM-R1",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "betriebsgrenze",
+      "begruendung": "Nach abgestürztem Sender kann der offene Sync-Lauf bis zum 30-Minuten-Timeout blockieren. Vorhandene Laufexklusivität; kein stiller Parallel-Lauf zugelassen."
+    },
+    {
+      "id": "TMM-R4",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "protokollsemantik",
+      "begruendung": "Der erste v2-Spiegel ersetzt die v1-Ansicht; Originaldateien bleiben erhalten. Beabsichtigter Übergang, keine belegte Datenvernichtung."
+    },
+    {
+      "id": "TMM-R5",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "betriebsgrenze",
+      "begruendung": "Laufzustand liegt pro Serverprozess im Speicher; zwei Serverinstanzen gegen dieselbe Datenbank sind damit nicht abgesichert. Keine Hochverfügbarkeitszusage."
+    },
+    {
+      "id": "TMM-R6",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "erweiterungswunsch",
+      "begruendung": "deleted zählt konsistent entfernte Signale. Ein zusätzliches documentsDeleted wäre eine Protokollerweiterung, kein falsch berechneter bestehender Zähler."
+    },
+    {
+      "id": "TMM-R7",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "testumgebung",
+      "begruendung": "Die genannten Mockito-Probleme unter Java 25 bestanden zuvor. Die betroffenen aktuellen Controller-/v2-/Migrationstests wurden unter installiertem JDK21 geprüft; keine gesamte Server-Vollsuite behauptet."
+    },
+    {
+      "id": "S-R1",
+      "glm_typ": "Frage",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bediengrenze",
+      "begruendung": "budget_resume_refs hat weiterhin keinen UI-/CLI-Setzweg. Normales Fortsetzen ist bedienbar; der neuere validierte KI-Konfigurations-Checkpoint ist eine explizite Operator-API, kein automatisch bedienter Neustartknopf. Kein Datenkorrektheitsfehler, aber der gesonderte Administrationsweg bleibt erforderlich."
+    },
+    {
+      "id": "S-R2",
+      "glm_typ": "Risiko",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "bewusste_schranke",
+      "begruendung": "Gleiche externe MQL-ID mit widersprüchlicher MT4/5-Zuordnung ist eine Besitzermehrdeutigkeit. Die Quelle wird vor Persistenz abgewiesen; das Abschwächen auf Einzel-Lücken wäre eine neue Identitätsregel."
+    },
+    {
+      "id": "S-R3",
+      "glm_typ": "Hinweis",
+      "glm_schwere": "NIEDRIG",
+      "einordnung": "erwartetes_verhalten",
+      "begruendung": "Stabile Quellen-/Provideridentitäten werden beim Recherche-Snapshot registriert. Das sind normale Datenzeilen, keine Schema-Migration oder Neubewertung."
+    }
+  ],
+  "glm_sha256": "4fd952d29d32031005d82dbbc165e8cc86ba7ec93d5ed6b4fd730edd84d2cbec"
+}

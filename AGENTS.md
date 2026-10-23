@@ -7,11 +7,27 @@ wurde (Ursprungs-Session: `sess_ff799a20-8b9b-4b1b-b605-0826e01ceffa` — bei
 Bedarf mit ReadSessionContext referenzierbar; zusätzlich liegt alles Wesentliche
 in `doc/` und `data/` dieses Projekts).
 
-## Aktueller Status (Dokumentationsabgleich 18.10.2026)
+## Aktueller Status (Dokumentationsabgleich 24.10.2026)
 
 Dieser Block und die aktuellen Design-Regeln ordnen die datierten
 Umsetzungsnotizen unten ein. Frühere Testzahlen, Bewertungen und inzwischen
 abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
+
+- **GLM-Review-Nachprüfung (24.10.2026, Quellcode):** Katalog-REST trennt
+  `catalogScope=full` und `subscribers`; unbekannte Altbestände werden nicht
+  als vollständig ausgegeben. Unbestätigte/partielle Antworten dürfen im
+  Scanner keine fehlenden Katalogzeilen löschen. Zählerauswahlen erhalten
+  bekannte Anbieter und ihre Profildetails; spätere GUI-Detail-/Trade-Speicherungen
+  dürfen Auswahlmitgliedschaft und aktuellere Zähler nicht zurücksetzen.
+  Abonnentenstatistik übernimmt neue Messpunkte ausschließlich aus nativen
+  Historien; Kataloglesen erzeugt keine künstliche Jetztmessung. Historische
+  Scanner-Eigenpunkte bleiben mangels eindeutiger Herkunft unverändert erhalten.
+  Unbestätigte Top-Auswahl wird bis KI, PDF und CSV gekennzeichnet. Fehlende
+  benötigte PDFs brechen den Tradeserver-Sync vor dem Register-POST ab.
+  Die neuen nativen Pakete wurden gebaut und mit lokalen Regressionen geprüft,
+  aber noch nicht produktiv aktiviert. Der laufende KI-Auftrag behält seinen
+  eingefrorenen Datenstand und wird hierfür nicht neu gestartet. Nachprüfung:
+  `doc/reviews/2026-10-24_glm53_nachpruefung/README.md`.
 
 - **Arbeitsunterbrechung (Nutzerentscheidung 18.10.2026, ca. 21:00 MESZ):**
   Die KI-Arbeit wird ausschließlich auf ausdrückliche neue Nutzeraufforderung

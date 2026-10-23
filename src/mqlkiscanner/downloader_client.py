@@ -160,7 +160,8 @@ class DownloaderClient:
         return items if isinstance(items, list) else []
 
     def katalog(self, *, version: str | None = None, limit: int = 500,
-                offset: int = 0, min_subscribers: int = 1) -> dict:
+                offset: int = 0, min_subscribers: int = 1,
+                catalog_scope: str | None = None) -> dict:
         """Katalogseite im gewählten Abonnenten-Scope.
 
         Der bisherige Scan-Scope bleibt mindestens ein Abonnent. Die
@@ -168,6 +169,10 @@ class DownloaderClient:
         """
         params: dict = {"limit": int(limit), "offset": int(offset),
                         "minSubscribers": int(min_subscribers)}
+        if catalog_scope is not None:
+            if catalog_scope not in {"full", "subscribers"}:
+                raise ValueError("catalog_scope muss full oder subscribers sein")
+            params["catalogScope"] = catalog_scope
         if version:
             params["version"] = version
         return self._get("/providers", params=params)

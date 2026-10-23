@@ -27,7 +27,7 @@ class ProviderAPI:
         offset = params.get("offset", 0)
         block = rows[offset:offset + min(params.get("limit", 500), 2)]
         total = len(rows) + int(self.change_total and offset > 0)
-        data = {"items": block, "count": len(block), "total": total, "offset": offset}
+        data = {"items": block, "count": len(block), "total": total, "offset": offset, "catalogScope": "full"}
         return SimpleNamespace(status_code=200, json=lambda: data)
 
 

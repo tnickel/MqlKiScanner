@@ -34,12 +34,12 @@ class FakeClient:
             raise self.fehler
         return dict(self._health)
 
-    def katalog(self, *, version=None, limit=500, offset=0, min_subscribers=1):
+    def katalog(self, *, version=None, limit=500, offset=0, min_subscribers=1, catalog_scope=None):
         if self.fehler:
             raise self.fehler
         block = self._katalog[offset:offset + limit]
         return {"total": len(self._katalog), "count": len(block),
-                "offset": offset, "items": block}
+                "offset": offset, "items": block, "catalogScope": "full"}
 
     def trades_csv(self, signal_id, version):
         if self.fehler:

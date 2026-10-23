@@ -28,6 +28,11 @@ Aktuelle Umsetzungs-/Livebelege: `doc/reviews/2026-10-18_tradeserver_v2_liveabsc
   SHA-Skips. Der Server prüft Besitzer und Zähler und übernimmt Signale,
   Dokumente und Löschungen in einer Transaktion. Erst danach ist der neue
   Stand sichtbar. `abort` verwirft nur das vorgemerkte neue Material.
+- Bereits die lokale Dokumentensammlung muss vollständig gelingen. Fehler
+  beim Erzeugen, Lesen oder Prüfen erwarteter PDFs (einschließlich Portfolio)
+  brechen vor `register` ab. Ein fehlgeschlagenes Dokument wird nicht still
+  aus `documentKeys` entfernt, denn das würde sein bisheriges Server-PDF
+  löschen. Bewusst nicht mehr aktuelle Berichte bleiben vom Mirror ausgenommen.
 - Altbestand wird verlustfrei in neue Tabellen kopiert, mit explizitem
   Namensraum `legacy:v1`; ursprüngliche Tabellen bleiben erhalten. Keine
   heutige Quelle wird geraten. Nach der ersten v2-Übernahme dürfen alte
