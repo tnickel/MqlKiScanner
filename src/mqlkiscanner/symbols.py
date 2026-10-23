@@ -211,6 +211,10 @@ SYMBOL_ALIASE_DEFAULT = {
     "HK50FT": {"tickmilllifemql5": "HK50", "activetrades003": "HKInd"},
     "UK100FT": {"tickmilllifemql5": "UK100"},
     "CL-OIL": {"tickmilllifemql5": "XTIUSD", "activetrades003": "LCrude"},
+    # Exact names from VantageMarkets-Live 10 symbol_info, 18.10.2026;
+    # case restoration only, no cash/future proxy.
+    "NIKKEI225": {"vantage": "Nikkei225"},
+    "SOYBEAN-C": {"vantage": "Soybean-C"},
     # RoboForex-CASH-Indizes (Punkt-Präfix-Schreibweise, live 09.10. in
     # Skip-Gründen gesehen) — Kurs-Alias auf die Tickmill-Referenznamen.
     ".US30CASH": {"tickmilllifemql5": "US30"},

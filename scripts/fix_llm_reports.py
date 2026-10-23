@@ -36,16 +36,16 @@ def main() -> None:
 
     settings = config.load_settings()
     pipe = pipeline.ScanPipeline(settings)
-    fix_ids = sorted(fix_signale.fix_ids())
+    fix_ids = sorted(fix_signale.fix_keys())
     log(f"Start: {len(fix_ids)} Fix-IDs · LLM-Key: {pipe.llm.has_key}")
 
     # ── 1) Forensik für Fix-IDs ohne aktuelle Forensik (Quellen-Weg) ──────
-    results = {r.id: r for r in pipeline.results_from_db()}
+    results = {r.signal_key: r for r in pipeline.results_from_db()}
     fehlt = [i for i in fix_ids
              if not (i in results and results[i].forensik_vorhanden)]
     if fehlt:
         log(f"Forensik nötig für {len(fehlt)}: {fehlt}")
-        kat = {int(z["signal_id"]): z for z in db.katalog_list()}
+        kat = {(z["quelle"], int(z["signal_id"])): z for z in db.katalog_list()}
         quellen = {q["kuerzel"]: q for q in db.list_quellen()}
         for i in fehlt:
             z = kat.get(i)
@@ -54,7 +54,7 @@ def main() -> None:
                 log(f"  #{i}: nicht im Katalog/ohne Quelle — übersprungen")
                 continue
             cand = {
-                "id": i,
+                "id": i[1],
                 "name": z.get("name") or str(i),
                 "platform": z.get("platform") or "",
                 "url": z.get("url") or "",
@@ -62,6 +62,8 @@ def main() -> None:
                 "wochen": z.get("wochen"),
                 "quelle_kuerzel": z.get("quelle"),
                 "quelle_id": int(quelle["id"]),
+                "quellen_uid": z.get("quellen_uid") or "",
+                "signal_ref": z.get("signal_ref"),
                 "quelle_version": str(z.get("version") or ""),
             }
             try:
@@ -72,7 +74,7 @@ def main() -> None:
                 log(f"  #{i} FEHLER {type(exc).__name__}: {exc}")
 
     # ── 2) LLM: 3 Prompts für Fix-IDs mit Forensik, ohne Bericht ──────────
-    results = {r.id: r for r in pipeline.results_from_db()}
+    results = {r.signal_key: r for r in pipeline.results_from_db()}
     jobs = [results[i] for i in fix_ids if i in results
             and results[i].forensik_vorhanden and not results[i].fehler
             and not results[i].gesamtbericht]
@@ -90,7 +92,7 @@ def main() -> None:
 
     # ── 3) PDF-Berichte materialisieren ───────────────────────────────────
     from mqlkiscanner.pdf_reports import materialize_result_pdfs
-    results = {r.id: r for r in pipeline.results_from_db()}
+    results = {r.signal_key: r for r in pipeline.results_from_db()}
     for i in fix_ids:
         r = results.get(i)
         if r and r.gesamtbericht:

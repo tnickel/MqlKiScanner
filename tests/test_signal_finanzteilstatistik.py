@@ -93,7 +93,7 @@ def test_katalog_sha_metrics_bis_tabellenhistorienhinweis(tmp_path):
         db.store_quellen_artefakt(qid,43,'vantage',art,
                                   hashlib.sha256(pfad.read_bytes()).hexdigest(),str(pfad))
     results,stats=katalog.katalog_resultate(gescannt=set(),studien={})
-    computed=signal_statistik.berechne(results[0].trades_path,stats[43])
+    computed=signal_statistik.berechne(results[0].trades_path,stats[("vant",43)])
     row=tabellen_zeile(results[0],computed,fix_ids=set())
     assert 'Historie gekappt' in row['Messstatus']
     assert '2000.0 Trades gespeichert, 42000 insgesamt verfügbar' in row['Messstatus']

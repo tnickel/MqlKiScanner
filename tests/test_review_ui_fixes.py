@@ -98,7 +98,7 @@ def test_database_view_hides_legacy_demo_without_deleting_it():
     db.init_db()
     db.upsert_signal(123, name="legacy demo", platform="CSV",
                      stats={"forensik_ok": True})
-    db.store_forensik(123, {"score": 4.7})
+    db.store_forensik(123, {"score": 4.7}, quelle="mql5")
     at = AppTest.from_file(str(ROOT / "streamlit_app.py"), default_timeout=30).run()
     at.switch_page("app_pages/ergebnisse.py").run()
     assert not at.exception

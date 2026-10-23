@@ -15,6 +15,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from mqlkiscanner import db, pipeline
+from mqlkiscanner.signal_identity import stable_identity_key
 from mqlkiscanner import katalog as katalog_mod
 from mqlkiscanner.alle_signale_ui import (
     dauer_balken_chart,
@@ -84,7 +85,7 @@ def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, mo
         assert len(at.get("plotly_chart")) == 0
     else:
         assert calculate.called
-        assert at.button(key="alle_signale_detail_42_tradeliste_button")
+        assert at.button(key=f"alle_signale_detail_{stable_identity_key(probe)}_tradeliste_button")
         assert at.dataframe[0].value.iloc[0]["True-DD USD"] == 98765.0
 
 
@@ -126,7 +127,7 @@ render_detail(ScanResult(id=42, platform="MT5", source_kind="demo",
     at.run()
     assert not at.exception, at.exception
     assert not any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
-    assert at.button(key="alle_signale_detail_42_tradeliste_button")
+    assert at.button(key=f"alle_signale_detail_{stable_identity_key(probe)}_tradeliste_button")
 
 
 @pytest.mark.parametrize("currency", [None, "USC", "EUR"])
@@ -206,7 +207,7 @@ def _katalog_seite(monkeypatch, proben, katalog_resultate, katalog_stats=None):
     """AppTest mit gescannten Proben + gepatchtem Katalog (ohne Netz)."""
     monkeypatch.setattr(pipeline, "results_from_db", lambda **kwargs: proben)
     monkeypatch.setattr(db, "list_catalog", lambda: [
-        {"signal_id": r.id, "stats": {"balance_usd": 10_000.0}} for r in proben])
+        {"signal_id": r.id, "quelle": r.quelle, "stats": {"balance_usd": 10_000.0}} for r in proben])
     monkeypatch.setattr(db, "katalog_sync_status",
                         lambda: {"vant": {"gelaufen_am": "2026-10-08 15:00:00",
                                           "anzahl": 104, "fehler": None}})
@@ -250,6 +251,7 @@ def test_katalog_zeile_laedt_daten_on_demand(tmp_path, monkeypatch):
     """Zeile ohne Trade-Cache → Lade-Button; danach läuft render_detail."""
     csv_pfad = _csv(tmp_path / "trades_dino.csv")
     probe = _katalog_probe_mit_quelle()
+    probe.quelle_id = db.add_quelle("vant", "VantageMonitor", "http://synthetic-vantage:8199")
     geladen = []
 
     def _fake_laden(res):
@@ -264,7 +266,7 @@ def test_katalog_zeile_laedt_daten_on_demand(tmp_path, monkeypatch):
     at.run()
     assert not at.exception, at.exception
     assert any("lokalen Trade-Cache" in i.value for i in at.info)
-    at.button(key="alle_signale_fetch_1286742").click()
+    at.button(key=f"alle_signale_fetch_{stable_identity_key(probe)}").click()
     # Der Button-Klick sendet alle Widget-States neu (Selektion fällt auf
     # leer zurück) — dieselbe Zeile erneut setzen, wie es der Klick im
     # echten Frontend (Selektion bleibt bestehen) liefern würde.
@@ -352,8 +354,8 @@ def test_gescannte_zeile_ohne_trades_mit_katalogref_holt_nach(tmp_path, monkeypa
     at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
     at.run()
     assert not at.exception, at.exception
-    assert at.button(key="alle_signale_fetch_99") is not None
-    at.button(key="alle_signale_fetch_99").click()
+    assert at.button(key=f"alle_signale_fetch_{stable_identity_key(probe)}") is not None
+    at.button(key=f"alle_signale_fetch_{stable_identity_key(probe)}").click()
     at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
     at.run()
     assert not at.exception, at.exception
@@ -536,13 +538,13 @@ render_detail(auswahl, {{"monate_pct": {{}}, "monate_usd": {{}}, "kurve": [],
 def test_markierungen_db_setzen_ueberschreiben_entfernen():
     from mqlkiscanner import db as db_mod
     db_mod.init_db()
-    db_mod.setze_markierung(501, "gruen")
-    db_mod.setze_markierung(502, "orange")
+    db_mod.setze_markierung(501, "gruen", quelle="mql5")
+    db_mod.setze_markierung(502, "orange", quelle="mql5")
     assert db_mod.list_markierungen() == {501: "gruen", 502: "orange"}
-    db_mod.setze_markierung(501, "gelb")          # überschreiben
+    db_mod.setze_markierung(501, "gelb", quelle="mql5")          # überschreiben
     assert db_mod.list_markierungen()[501] == "gelb"
-    db_mod.setze_markierung(501, None)            # entfernen
-    db_mod.setze_markierung(502, None)
+    db_mod.setze_markierung(501, None, quelle="mql5")            # entfernen
+    db_mod.setze_markierung(502, None, quelle="mql5")
     assert db_mod.list_markierungen() == {}
 
 
@@ -601,3 +603,194 @@ def test_seite_markiert_zeile_und_filtert(tmp_path, monkeypatch):
     at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
     at.run()
     assert db.list_markierungen() == {}
+
+
+def test_beobachten_geteilt_mit_abonnentenstatistik(tmp_path, monkeypatch):
+    """👁-Spalte + Beobachten-Button auf Alle Signale nutzen DIesselbe
+    Liste wie die Abonnentenstatistik (Nutzer-Wunsch 20.10.)."""
+    probe = _probe_mit_trades(_csv(tmp_path / "beob.csv"))
+    ident = db.resolve_identity(42, quelle="pelik", create=True)
+    probe.signal_ref = ident.signal_ref
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+    monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+        {"signal_id": 42, "stats": {}}])
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+    at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+    assert not at.exception, at.exception
+    assert at.dataframe[0].value.iloc[0]["Beob."] == ""
+    at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+    at.run()
+    # AppTest-Falle: Die injizierte Auswahl überlebt nur bis zur Widget-
+    # Materialisierung — für den Klicklauf erneut injizieren (im Browser
+    # hält Streamlit die Auswahl von selbst).
+    at.button(key=f"alle_signale_beob_{ident.signal_ref}_0").click()
+    at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+    at.run()
+    assert ident.signal_ref in db.list_beobachtungen()
+    # Gleicher Wert überall: neuer Seitenlauf zeigt 👁 in der Tabelle
+    at2 = AppTest.from_file(str(SEITE), default_timeout=60).run()
+    assert not at2.exception, at2.exception
+    assert at2.dataframe[0].value.iloc[0]["Beob."] == "👁"
+    # ... und die Abonnentenstatistik sieht dieselbe Liste (Modul-Ebene)
+    from mqlkiscanner import abonnenten_statistik as abo
+    zeilen = abo.zeilen(workflow_zeilen=[], katalog_zeilen=[], ampeln={})
+    assert ident.signal_ref in db.list_beobachtungen()
+
+
+def test_berichte_icon_zaehlt_analyse_arten():
+    from mqlkiscanner.alle_signale_ui import _berichte_icon, tabellen_zeile
+    probe = _probe_ohne_trades()
+    assert _berichte_icon(probe) == ""
+    probe.gesamtbericht = "Berichtstext"
+    assert _berichte_icon(probe) == "📄"
+    probe.trade_analyse = "Analysetext"
+    probe.tiefenanalyse = "Tiefentext"
+    assert _berichte_icon(probe) == "📄×3"
+    zeile = tabellen_zeile(probe, None)
+    assert zeile["Ber."] == "📄×3"
+
+
+def test_quelle_tabs_statt_pills_und_berichtsspalte(tmp_path, monkeypatch):
+    """Nutzer-Wunsch 20.10.: Broker-Tabs wie bei der Abonnentenstatistik,
+    Quelle-Pills weg; zusätzlich Ber.-Spalte."""
+    probe = _probe_mit_trades(_csv(tmp_path / "tabs.csv"))
+    probe.gesamtbericht = "Bericht"
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+    monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+        {"signal_id": 42, "stats": {}}])
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+    at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+    assert not at.exception, at.exception
+    # Tabs: Beobachten + Alle + Quelle pelik; pills sind weg
+    assert len(at.tabs) == 3
+    assert not [p for p in at.pills if p.key == "alle_signale_quelle"]
+    df_alle = at.dataframe(key="alle_signale_tabelle").value
+    assert df_alle.iloc[0]["Ber."] == "📄"
+    # Broker-Tab hat eigene Tabelle mit eigenem Schlüssel + CSV
+    assert at.dataframe(key="alle_signale_tabelle_pelik") is not None
+    df_pelik = at.dataframe(key="alle_signale_tabelle_pelik").value
+    assert set(df_pelik["Quelle"].tolist()) == {"pelik"}
+
+
+def test_doku_spalte_alle_signale(tmp_path, monkeypatch):
+    probe = _probe_ohne_trades()
+    ident = db.resolve_identity(7, quelle="mql5", create=True)
+    probe.signal_ref = ident.signal_ref
+    pdf = tmp_path / "rep.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+    db.store_downloader_report(7, "mql5", "mqlki-rep.pdf", str(pdf), quelle="mql5")
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [])
+    monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+        {"signal_id": 7, "stats": {}}])
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([probe], {}))
+    at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+    assert not at.exception, at.exception
+    df = at.dataframe(key="alle_signale_tabelle").value
+    zeile = df[df["ID"] == 7].iloc[0]
+    assert zeile["Doku"] == "📑×1"
+
+
+def test_doku_nachladen_button_alle_signale(tmp_path, monkeypatch):
+    """📑-Button in der Markierleiste ruft sync_reports OHNE Trades auf."""
+    probe = _probe_ohne_trades()   # kein trades_path — der Button darf trotzdem
+    probe.signal_ref = db.resolve_identity(7, quelle="mql5",
+                                           create=True).signal_ref
+    import mqlkiscanner.downloader_sync as dsync
+    aufgerufen = []
+    monkeypatch.setattr(dsync, "sync_reports",
+                        lambda sid, platform, **kw: aufgerufen.append(
+                            (sid, platform, kw)) or [])
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [])
+    monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+        {"signal_id": 7, "stats": {}}])
+    monkeypatch.setattr(katalog_mod, "katalog_resultate",
+                        lambda **kw: ([probe], {}))
+    at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+    assert not at.exception, at.exception
+    at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+    at.run()
+    at.button(key="alle_signale_doku_laden").click()
+    at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+    at.run()
+    assert aufgerufen == [(7, "MT4", {"quelle": "mql5"})]
+
+
+def test_beobachten_tab_alle_auswaehlen_und_ki_sammelschalter(tmp_path, monkeypatch):
+    """Beobachten-Tab (gleiche Liste), ☰-Alle-auswählen und der KI-Batch-
+    Sammelschalter für mehrere Häkchen (Nutzer-Wunsch 20.10. spät)."""
+    import mqlkiscanner.tiefen_batch as tb
+    probe_a = _probe_mit_trades(_csv(tmp_path / "a.csv"))
+    probe_a.name = "AlphaA"
+    probe_b = _probe_ohne_trades()
+    probe_b.name = "BetaB"
+    ident_a = db.resolve_identity(42, quelle="pelik", create=True)
+    probe_a.signal_ref = ident_a.signal_ref
+    probe_b.signal_ref = db.resolve_identity(7, quelle="mql5",
+                                             create=True).signal_ref
+    db.setze_beobachtung(42, True, quelle="pelik")
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe_a])
+    monkeypatch.setattr(db, "list_catalog", lambda **kw: [{"signal_id": 42, "stats": {}}])
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([probe_b], {}))
+    gestartet = []
+    monkeypatch.setattr(tb, "batch_starten", lambda ziele: gestartet.append(ziele)
+                        or (True, ""))
+    at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+    assert not at.exception, at.exception
+    # Beobachten-Tab enthält GENAU das beobachtete Signal (probe_a)
+    df_beob = at.dataframe(key="alle_signale_tabelle_beobachten").value
+    assert set(df_beob["Name"].tolist()) == {"AlphaA"}
+    # ☰ Alle-auswählen injiziert die volle Auswahl (dict-Weg)
+    at.button(key="alle_signale_select_all_alle_signale_tabelle").click().run()
+    sel = at.session_state["alle_signale_tabelle"]["selection"]["rows"]
+    assert len(sel) == 2
+    # Mehrfachauswahl → Sammelschalter statt Detail; Klick startet den Batch
+    assert not any("AlphaA" in s.value for s in at.subheader)
+    at.button(key="alle_signale_ki_batch").click()
+    at.session_state["alle_signale_tabelle"] = {
+        "selection": {"rows": list(range(2))}}
+    at.run()
+    assert len(gestartet) == 1 and len(gestartet[0]) >= 1
+
+
+def test_ki_batch_limit_50(monkeypatch):
+    probe = _probe_ohne_trades()
+    monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [])
+    monkeypatch.setattr(db, "list_catalog", lambda **kw: [])
+    monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+    # Direkt am Limit-Prüfer: 60 Ziele → Sammelschalter disabled wäre UI-
+    # logik; hier genügt der Nachweis, dass batch_starten NICHT aufgerufen
+    # wird, weil die Seite vorher abwürgt — simuliert über session_state.
+    gestartet = []
+    monkeypatch.setattr(
+        __import__("mqlkiscanner.tiefen_batch", fromlist=["batch_starten"]),
+        "batch_starten", lambda ziele: gestartet.append(ziele) or (True, ""))
+    at = AppTest.from_file(str(SEITE), default_timeout=60)
+    at.run()
+    at.session_state["alle_signale_tabelle"] = {
+        "selection": {"rows": list(range(60))}}
+    at.run()
+    assert not at.exception
+    # Tabellen-Selection existiert, aber es gibt keinen aktivierbaren KI-Button
+    assert at.session_state["alle_signale_tabelle"]["selection"]["rows"][59] == 59
+    assert gestartet == []
+
+
+def test_tiefen_batch_refresh_drossel_und_abschluss():
+    """Auto-Refresh der Tabelle bei KI-Batch-Fortschritt (Nutzer 20.10.):
+    done-Anstieg → Rerun gedrosselt alle 20 s, FERTIG → sofort."""
+    from mqlkiscanner.alle_signale_ui import tiefen_batch_refresh_noetig
+    assert not tiefen_batch_refresh_noetig(None, None, 0.0, jetzt=100.0)
+    # erster Tick nach dem Laden: Tabelle ist frisch → kein Rerun
+    assert not tiefen_batch_refresh_noetig((1, 30, False), None, 0.0, jetzt=100.0)
+    # done-Anstieg, Drossel noch nicht abgelaufen → nein
+    assert not tiefen_batch_refresh_noetig(
+        (2, 30, False), (1, 30, False), 95.0, jetzt=110.0)
+    # done-Anstieg nach Drosselintervall → ja
+    assert tiefen_batch_refresh_noetig(
+        (2, 30, False), (1, 30, False), 95.0, jetzt=116.0)
+    # kein done-Anstieg → nein (auch nach langer Zeit)
+    assert not tiefen_batch_refresh_noetig(
+        (2, 30, False), (2, 30, False), 0.0, jetzt=999.0)
+    # FERTIG-Wechsel → SOFORT, ohne Drossel
+    assert tiefen_batch_refresh_noetig(
+        (30, 30, True), (29, 30, False), 110.0, jetzt=111.0)

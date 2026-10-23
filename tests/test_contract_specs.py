@@ -133,8 +133,11 @@ def test_cross_broker_false_needs_matching_broker(tmp_path):
     ok = exposure.run(export_mit("USOUSD-ECN", lots=3.0), broker="Tickmill-EU-Live1")
     assert ok["shock_usd"] == pytest.approx(3.0 * 10.0 * 1.0)
     # Anderer Broker: Spec darf NICHT stillschweigend gelten (Faktor-100-Falle).
-    with pytest.raises(ValueError, match="cross_broker=false"):
+    with pytest.raises(ValueError, match="cross_broker=false") as refused:
         exposure.run(export_mit("USOUSD-ECN"), broker="ICMarketsSC-Live23")
+    assert "nur mit belegter" in str(refused.value)
+    assert "für diesen Broker und dieses Instrument" in str(refused.value)
+    assert "Keine Registry-Ergänzung allein zur Freischaltung" in str(refused.value)
     # Kein Broker bekannt: ebenfalls verweigern.
     with pytest.raises(ValueError, match="cross_broker=false"):
         exposure.run(export_mit("USOUSD-ECN"))

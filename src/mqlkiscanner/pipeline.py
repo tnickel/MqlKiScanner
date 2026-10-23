@@ -29,6 +29,7 @@ from . import downloader_client
 from . import fx_rates
 from .ampel_matrix import matrix_payload
 from .analysis_version import FORENSICS_VERSION
+from .signal_identity import key_for
 from .engine import analyze as analyze_export
 from .llm import client as llm_client
 from .llm import prompt_fill
@@ -245,6 +246,8 @@ class ScanResult:
     llm_fehler: str = ""
     fehler: str = ""
     quelle: str = ""                # Herkunfts-Kürzel der Datenquelle (doc/20)
+    signal_ref: int | None = None   # Interne Referenz; id bleibt externe Provider-ID.
+    quellen_uid: str = ""           # Stabiler logischer Quellen-Namensraum.
     account_currency: str | None = None  # Belegte Export-/Kontowährung; nie USD raten.
     # Nur-Katalog-Zeilen der Übersicht „Alle Signale" (Nutzer 08.10.2026):
     # direkt aus dem Client-Katalog, NOCH NICHT Teil des Workflows — der
@@ -257,6 +260,10 @@ class ScanResult:
     source_kind: str = "live"  # Demo-Ergebnisse nie in den Live-Katalog übernehmen.
     persisted_this_run: bool = False  # Mindestens ein Versuch dieses analyze_candidate-Aufrufs gespeichert.
     ampel_wechsel: dict | None = None  # Protokollierter Wechsel gegen den letzten Chronik-Eintrag (ampel_verlauf).
+
+    @property
+    def signal_key(self) -> tuple[str, int]:
+        return key_for(self)
 
     @property
     def equity_rekon_gmt_text(self) -> str:
@@ -487,7 +494,7 @@ def results_from_db(settings: dict | None = None, *, catalog_rows=None,
     """Alle in der SQLite-DB gespeicherten Signale als ScanResult-Liste."""
     settings = {**config.load_settings(), **(settings or {})}
     results: list[ScanResult] = []
-    _studien_cache = db.list_equity_studien() if studien is None else studien
+    _studien_cache = db.list_equity_studien(identitaeten=True) if studien is None else studien
     rows = db.list_catalog() if catalog_rows is None else catalog_rows
     if progress:
         progress(0, len(rows))
@@ -529,6 +536,16 @@ def results_from_db(settings: dict | None = None, *, catalog_rows=None,
         # einen separaten Import nicht von einem atomaren Vollscan unterscheiden.
         trades_stale = bool(f) and bool(aktueller_sha) and (
             not f.get("trades_sha256") or f["trades_sha256"] != aktueller_sha)
+        # Matching metadata alone does not prove that the evidence still
+        # exists or contains these bytes. Check otherwise-current findings;
+        # old-version results are already blocked and need no extra file IO.
+        if f and aktueller_sha and not (forensik_stale or version_stale or trades_stale):
+            try:
+                db.verify_trade_file(row.get("trades_path") or "", aktueller_sha)
+            except (OSError, ValueError):
+                trades_stale = True
+                snapshot_error = "Trade-Snapshot fehlt, ist unlesbar oder stimmt nicht mit seinem SHA überein"
+                last_fehler = f"{last_fehler} | {snapshot_error}" if last_fehler else snapshot_error
         forensik_stale = forensik_stale or version_stale or trades_stale
         currency = stats.get("account_currency")
         native_mql = (str(row.get("platform") or "").upper() in {"MT4", "MT5", "MQL4", "MQL5"}
@@ -540,6 +557,8 @@ def results_from_db(settings: dict | None = None, *, catalog_rows=None,
             currency = None
         res = ScanResult(
             id=int(row["signal_id"]),
+            signal_ref=row.get("signal_ref"),
+            quellen_uid=str(row.get("quellen_uid") or ""),
             source_kind="demo" if row.get("platform") == "CSV" else "live",
             name=row.get("name") or str(row["signal_id"]),
             platform=row.get("platform") or "",
@@ -724,7 +743,12 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
     Basislose Studien (keine belegbare Kapitalbasis) liefern bewusst nur
     den USD-Drawdown, nie Prozente.
     """
-    studie = studien.get(int(res.id))
+    studie = studien.get(res.signal_key)
+    if studie is None and int(res.id) in studien:
+        # Legacy callers may supply an ID-only cache only with proven ownership.
+        identity = db.resolve_identity(res.id)
+        if identity is not None and identity.signal_key == res.signal_key:
+            studie = studien.get(int(res.id))
     if studie is None:
         return
     try:
@@ -836,9 +860,9 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
             result.dd_equity_pct, result.dd_balance_pct, result.trading_dd_pct,
             result.equity_dd_rekonstruiert_pct, result.monitor_trade_eq_dd_pct) > limit
     known = config.load_known_signals()
-    excluded = {e["id"]: e for e in known.get("ausgeschlossen", [])}
-    if result.id in excluded:
-        return "⛔", f"Ausgeschlossen (Liste): {excluded[result.id].get('grund', '')}"
+    excluded = {key_for(e): e for e in known.get("ausgeschlossen", [])}
+    if result.signal_key in excluded:
+        return "⛔", f"Ausgeschlossen (Liste): {excluded[result.signal_key].get('grund', '')}"
     if result.martingale_flag:
         return "🔴", "Martingale-Signatur nachgewiesen (Ablehnung)"
     if result.kapitalbasis_usd is not None and result.kapitalbasis_usd <= 0:
@@ -989,6 +1013,7 @@ def _kandidat_json(r: ScanResult) -> str:
     r.refresh_efficiency()
     return json.dumps({
         "id": r.id, "name": r.name, "platform": r.platform,
+        "quelle": r.signal_key[0], "quellen_uid": r.quellen_uid,
         "autor": r.autor, "url": r.url,
         "wochen": r.wochen, "abonnenten": r.abonnenten,
         "abo_preis_usd": r.abo_preis_usd,
@@ -1241,13 +1266,15 @@ def report_basis_for(result: ScanResult, settings: dict) -> str | None:
         BAUSTEINE, sort_keys=True, ensure_ascii=False, separators=(",", ":"),
         allow_nan=False).encode("utf-8")).hexdigest()
     content = {
-        "format": 2, "version": result.forensik_version,
+        "format": 3, "version": result.forensik_version,
+        "identity": {"quellen_uid": result.quellen_uid or result.signal_key[0],
+                     "signal_id": result.id},
         "implementation_version": FORENSICS_VERSION,
         "prompt_rules_sha256": rules_hash,
         "forensics_complete": result.forensik_vorhanden,
         "csv_sha256": csv_hash, "facts": facts, "forensics": forensics,
         "exclusion": next((entry for entry in config.load_known_signals().get("ausgeschlossen", [])
-                           if entry["id"] == result.id), None),
+                           if key_for(entry) == result.signal_key), None),
         "criteria": {key: settings.get(key, config.DEFAULT_SETTINGS[key])
                      for key in ("schranke_eq_dd_pct", "min_ertrag_pct_monat", "min_calmar_jahr")},
     }
@@ -1314,8 +1341,8 @@ def restore_current_reports(result: ScanResult, settings: dict) -> bool:
     basis = report_basis_for(result, settings) if result.forensik_vorhanden and not result.fehler else None
     stale = False
     for kind in ("trade_analyse", "risiko_analyse", "gesamtbericht"):
-        previous = db.get_latest_analysis(result.id, kind)
-        current = db.get_latest_analysis(result.id, kind, basis=basis) if basis else None
+        previous = db.get_latest_analysis(result.id, kind, quelle=result.signal_key[0])
+        current = db.get_latest_analysis(result.id, kind, basis=basis, quelle=result.signal_key[0]) if basis else None
         setattr(result, kind, current["text"] if current else "")
         setattr(result, f"{kind}_at", (current["created_at"] or "") if current else "")
         setattr(result, f"{kind}_model", (current["model"] if "model" in current else "") if current else "")
@@ -1325,8 +1352,8 @@ def restore_current_reports(result: ScanResult, settings: dict) -> bool:
     # Basis ohne Kennzeichnung; sie könnten ungeprüft in PDF-Anhänge laufen.
     # Ohne EVERY Forensik (Vorprüfung) gibt es keine vergleichbare Basis:
     # dann bleibt die letzte Tiefenanalyse sichtbar (Bestehendes Verhalten).
-    tiefe_previous = db.get_latest_analysis(result.id, "tiefenanalyse")
-    tiefe_current = (db.get_latest_analysis(result.id, "tiefenanalyse", basis=basis)
+    tiefe_previous = db.get_latest_analysis(result.id, "tiefenanalyse", quelle=result.signal_key[0])
+    tiefe_current = (db.get_latest_analysis(result.id, "tiefenanalyse", basis=basis, quelle=result.signal_key[0])
                      if basis else tiefe_previous)
     result.tiefenanalyse = tiefe_current["text"] if tiefe_current else ""
     result.tiefenanalyse_at = (tiefe_current["created_at"] or "") if tiefe_current else ""
@@ -1366,8 +1393,10 @@ def _incomplete_forensics_reason(exposure: dict) -> str:
 
 
 class ScanPipeline:
-    def __init__(self, settings: dict | None = None, quelle: str = "full"):
+    def __init__(self, settings: dict | None = None, quelle: str = "full", *,
+                 allow_offline_source_cache: bool = True):
         self.settings = {**config.load_settings(), **(settings or {})}
+        self.allow_offline_source_cache = bool(allow_offline_source_cache)
         # Laufart für die Ampel-Chronik ("full" | "gelbgruen") — nur Protokoll.
         self.quelle = quelle
         self.llm = llm_client.GlmClient(
@@ -1431,10 +1460,10 @@ class ScanPipeline:
             # Crawler liefert 'MT5'/'MT4', der Quellen-Ingest 'mt5'/'mt4';
             # der exakte Vergleich nahm denselben MQL5-Spiegel-Eintrag
             # zweimal auf (Slots/KI doppelt verbraucht).
-            gesehen = {(s.get("id"), str(s.get("platform") or "").lower())
+            gesehen = {(key_for(s), str(s.get("platform") or "").upper().replace("MQL", "MT"))
                        for s in signals}
             neu = [s for s in quellen_signale
-                   if (s.get("id"), str(s.get("platform") or "").lower())
+                   if (key_for(s), str(s.get("platform") or "").upper().replace("MQL", "MT"))
                    not in gesehen]
             signals.extend(neu)
             log(f"Vereinigt: +{len(neu)} Signale nur aus Datenquellen "
@@ -1450,15 +1479,24 @@ class ScanPipeline:
         abgerufen; ohne Session (Modus quellen) ist ein Einzelabruf nicht
         moeglich — der Fall wird protokolliert, der Lauf laeuft weiter.
         """
-        fix = sorted(fix_signale.fix_ids(self.settings))
+        for sid in sorted(fix_signale.unaufgeloeste_fix_ids(self.settings)):
+            log(f"Fix-ID {sid}: Quellenbesitzer nicht eindeutig belegt — "
+                "bitte in der Fix-Verwaltung mit Quelle zuordnen; nicht geraten.")
+        fix = sorted(fix_signale.fix_keys(self.settings))
         if not fix:
             return
-        vorhanden = {s.get("id") for s in signals}
+        vorhanden = {key_for(s) for s in signals}
         fehlend = [i for i in fix if i not in vorhanden]
         if not fehlend:
             log(f"Fix-IDs {fix}: alle bereits in der Liste enthalten.")
             return
-        for sid in fehlend:
+        source_keys = {key for key in fehlend if key[0] != "mql5"}
+        if source_keys:
+            signals.extend(fix_signale.teilscan_ergaenze_aus_db(
+                source_keys, vorhanden, self.settings))
+        for source, sid in fehlend:
+            if source != "mql5":
+                continue
             if session is None:
                 log(f"Fix-ID {sid}: im Katalog der Datenquellen nicht gefunden — "
                     "ohne MQL5-Session nicht einzeln ladbar, in diesem Lauf übergangen.")
@@ -1480,28 +1518,27 @@ class ScanPipeline:
         (Nutzer-Wunsch 02.10.2026: Auswahl nachvollziehbar — warum drin,
         warum draußen)."""
         from .ingest import normalisiere_wochen, normalisiere_abonnenten
-        identities: dict[int, set[tuple[str, str]]] = {}
+        identities: dict[tuple[str, int], set[str]] = {}
         for s in signals:
             platform = str(s.get("platform") or "").upper().replace("MQL", "MT")
-            identities.setdefault(s["id"], set()).add(
-                (str(s.get("quelle_kuerzel") or "mql5"), platform))
+            identities.setdefault(key_for(s), set()).add(platform)
         conflicts = {sid for sid, values in identities.items() if len(values) > 1}
         unique = []
         seen = set()
         for s in signals:
-            if s["id"] in conflicts:
-                reason = ("✗ ID-Kollision: mehrere Quellen/Plattformen für dieselbe "
-                          "numerische ID — keine eindeutige Speicherung möglich.")
+            if key_for(s) in conflicts:
+                reason = ("✗ ID-Kollision: widersprüchliche Plattformen innerhalb "
+                          "derselben Quellenidentität — Speicherung gesperrt.")
                 log(f"Signal {s['id']}: {reason}")
                 if begruendung is not None:
                     begruendung.append(fix_signale.begruendungseintrag(s, "DRAUSSEN", reason))
-            elif s["id"] not in seen:
-                seen.add(s["id"])
+            elif key_for(s) not in seen:
+                seen.add(key_for(s))
                 unique.append(s)
         signals = unique
         min_abo = int(self.settings.get("min_abonnenten", 0))
         min_wochen = float(self.settings.get("min_wochen", 26))
-        fix = fix_signale.fix_ids(self.settings)
+        fix = fix_signale.fix_keys(self.settings)
         candidates = []
         n_fix = 0
 
@@ -1517,7 +1554,7 @@ class ScanPipeline:
                 s = dict(s, wochen=normalisiere_wochen(s["wochen"]))
             # Fix-IDs umgehen die Vorfilter (Nutzer-Wunsch: immer scannen) —
             # ein gepinntes Signal darf nicht an Wochen/Abonnenten scheitern.
-            if s.get("id") in fix:
+            if key_for(s) in fix:
                 candidates.append(s)
                 n_fix += 1
                 if begruendung is not None:
@@ -1616,6 +1653,8 @@ class ScanPipeline:
                          wochen=cand.get("wochen"), growth_pct=cand.get("growth_pct"),
                          quelle_id=cand.get("quelle_id"),
                          quelle_version=str(cand.get("quelle_version") or ""),
+                         signal_ref=cand.get("signal_ref"),
+                         quellen_uid=str(cand.get("quellen_uid") or ""),
                          quelle=str(cand.get("quelle_kuerzel") or "mql5"))
         try:
             # Auch der erste headless Lauf braucht das Schema vor dem
@@ -1623,7 +1662,7 @@ class ScanPipeline:
             # Exportversuch verbrauchen; echte DB-Fehler bleiben im
             # vorhandenen Fehler-/Retrypfad dieser Einzelpruefung.
             db.init_db()
-            existing = db.get_signal(res.id) or {}
+            existing = db.get_signal(res.id, quelle=res.quelle) or {}
             previous_platform = str(existing.get("platform") or "").upper().replace("MQL", "MT")
             current_platform = str(res.platform).upper().replace("MQL", "MT")
             if (previous_platform in ("MT4", "MT5")
@@ -1643,6 +1682,14 @@ class ScanPipeline:
                 if quelle_row is None or not quelle_row["aktiv"]:
                     raise RuntimeError(f"Datenquelle „{cand['quelle_kuerzel']}“ "
                                        "existiert nicht mehr oder ist inaktiv.")
+                if (db.kanonische_quelle(quelle_row["kuerzel"]) != res.signal_key[0]
+                        or (res.quellen_uid and res.quellen_uid != quelle_row.get("quellen_uid"))):
+                    res.fehler = "Quellenidentität des Kandidaten stimmt nicht mit der Verbindung überein."
+                    refresh_report_verdict(res, self.settings)
+                    log(res.fehler)
+                    return res
+                res.quelle = quelle_row["kuerzel"]
+                res.quellen_uid = str(quelle_row.get("quellen_uid") or "")
                 quelle_version = str(cand.get("quelle_version") or "mql5")
                 log(f"Kennzahlen aus Datenquelle {quelle_row['kuerzel']} "
                     f"({quelle_version}) …")
@@ -1650,7 +1697,8 @@ class ScanPipeline:
                 # antwortet mit version mql4/mql5 (nie 'robo'), der Broker-
                 # Fallback griff sonst fuer CopyFX-Signale nicht (08.10.).
                 stats = ingest.metrics_zu_stats(
-                    ingest.hole_metrics(quelle_row, res.id, quelle_version),
+                    ingest.hole_metrics(quelle_row, res.id, quelle_version,
+                        **({"allow_offline_cache": False} if not self.allow_offline_source_cache else {})),
                     quelle_kuerzel=str(quelle_row["kuerzel"]),
                     quelle_version=quelle_version)
                 if stats.get('quelle_trade_history_complete') is False:
@@ -1679,7 +1727,7 @@ class ScanPipeline:
                 # scoping Kontraktspecs (XTIUSD & Co.) aushungern zu lassen
                 # (Live-Fall Lunar Express #2332746: TradeSmart via Seiten-
                 # Abruf gelernt, 09.10.2026).
-                alt_row = db.get_signal(res.id) or {}
+                alt_row = db.get_signal(res.id, quelle=res.quelle) or {}
                 try:
                     alt_stats = json.loads(alt_row.get("stats_json") or "{}")
                 except ValueError:
@@ -1711,7 +1759,8 @@ class ScanPipeline:
                         # entsprechend drehen (Fremd-Review 01.10.: Log
                         # vertauschte Cache/neu geladen).
                         path, geaendert = ingest.hole_trades(
-                            quelle_row, res.id, quelle_version)
+                            quelle_row, res.id, quelle_version,
+                            **({"allow_offline_cache": False} if not self.allow_offline_source_cache else {}))
                         from_cache = not geaendert
                     else:
                         path, from_cache = exporter.export_positions(
@@ -1731,6 +1780,10 @@ class ScanPipeline:
                     from .mql5.browser_session import export_positions_via_browser
                     path = export_positions_via_browser(res.id, log=log)
                     from_cache = False
+                # A later on-demand refresh may replace the download cache.
+                # Freeze its exact bytes before any parser/forensic/return
+                # calculation, and keep this identity through SQL commit.
+                path, res.trades_sha256 = db.snapshot_trade_file(path)
                 res.trades_path = path
                 with open(path, encoding="utf-8") as fh:
                     n_lines = sum(1 for _ in fh)
@@ -2039,6 +2092,7 @@ class ScanPipeline:
             if res.forensik_vorhanden or res.winrate_pct is not None:
                 forensik_payload = {
                     "version": FORENSICS_VERSION,
+                    "trades_sha256": res.trades_sha256,
                     "vollstaendig": bool(res.forensik_vorhanden),
                     "trading_dd": {"pct": res.trading_dd_pct, "usd": res.trading_dd_usd},
                     "winrate_pct": res.winrate_pct,
@@ -2107,10 +2161,17 @@ class ScanPipeline:
             # Kollisionsschutz (R1/F3 in db.upsert_signal) umging und den
             # Inhalt still unter falschem Quellenlabel ersetzte.
             signal_payload["quelle"] = str(cand.get("quelle_kuerzel") or "mql5")
+            if res.quellen_uid:
+                signal_payload["quellen_uid"] = res.quellen_uid
             saved_trades_path = db.store_scan_result(
                 res.id, signal_payload,
-                trades_path=res.trades_path, forensik=forensik_payload)
+                trades_path=res.trades_path, forensik=forensik_payload,
+                expected_trades_sha256=res.trades_sha256 or None)
             res.persisted_this_run = True
+            identity = db.resolve_identity(res.id, quelle=res.quelle)
+            if identity:
+                res.signal_ref = identity.signal_ref
+                res.quellen_uid = identity.quellen_uid
             if saved_trades_path:
                 res.trades_path = saved_trades_path
                 res.trades_sha256 = db.file_sha256(saved_trades_path)

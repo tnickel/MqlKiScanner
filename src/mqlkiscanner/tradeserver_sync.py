@@ -6,7 +6,7 @@ ausschließlich Daten und Anzeigen — er bewertet NIE neu und schreibt
 nichts in signals/forensik/analyses. Lokal entsteht allein die
 Lauf-Historie in tradeserver_sync_runs.
 
-Ablauf des Protokolls v1 (doc/06_tradeserver-sync.md): Register-
+Ablauf des Protokolls v2 (doc/06_tradeserver-sync.md): Register-
 Handshake → Tabellen-Snapshot → Dokumente (nur Änderungen, Diff über
 SHA-256 gegen den gemeldeten Serverbestand) → Complete. Danach ist die
 Verbindung beendet — es gibt keine Dauerverbindung. Der Sync-Button
@@ -21,9 +21,11 @@ import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Iterable
+from urllib.parse import quote
 
 from . import config, db, tradeserver_client
 from .agenten import lock
+from .signal_identity import identity_key
 from .pdf_reports import (PdfRenderError, materialize_portfolio_pdf,
                           materialize_result_pdfs)
 
@@ -39,6 +41,40 @@ _ART_LABELS = {
 # ~10 MB Requestkörper an; Base64 bläht um ein Drittel auf. Größere
 # Dateien werden übersprungen und im Sync-Bericht vermerkt.
 _MAX_DOC_BYTES = 8 * 1024 * 1024
+
+
+def _remote_identity(result) -> dict:
+    """Only an established local namespace may own a remote signal."""
+    source, external = identity_key(result)
+    if external <= 0 or isinstance(result.id, bool):
+        raise tradeserver_client.TradeserverError("Ungültige externe Signal-ID.")
+    ref = getattr(result, "signal_ref", None)
+    try:
+        identity = db.resolve_identity(external, quelle=source, signal_ref=ref)
+        namespace = db.source_identity(source)
+    except ValueError as exc:
+        raise tradeserver_client.TradeserverError(str(exc)) from exc
+    if namespace is None or (ref is not None and identity is None):
+        raise tradeserver_client.TradeserverError(
+            f"Unbelegte Quellenidentität für {source}:{external}; Export gesperrt.")
+    uid = str(namespace["quellen_uid"])
+    claimed_uid = getattr(result, "quellen_uid", "")
+    if claimed_uid and claimed_uid != uid:
+        raise tradeserver_client.TradeserverError(
+            f"Quellen-UID widerspricht dem lokalen Register: {source}:{external}.")
+    return {"sourceUid": uid, "source": namespace["kuerzel"], "signalId": external}
+
+
+def _document_prefix(owner: dict) -> str:
+    return f"signal/{quote(owner['sourceUid'], safe='')}/{owner['signalId']}"
+
+
+def _eigene_berichte_aktuell(result) -> bool:
+    """Historical texts may remain visible locally but cannot become a current export."""
+    return bool(getattr(result, "berichte_basis", "")
+                and getattr(result, "forensik_vorhanden", False)
+                and not getattr(result, "forensik_stale", False)
+                and not getattr(result, "fehler", ""))
 
 
 def konfiguriert() -> bool:
@@ -70,29 +106,31 @@ def signal_zeilen(results: Iterable, fresh_ids: set[int] | None = None) -> list[
     results = list(results)
     fresh_ids = fresh_ids or set()
     settings = config.load_settings()
-    docs_counts = db.downloader_report_counts([r.id for r in results])
+    docs_counts = db.downloader_report_counts([identity_key(r) for r in results])
     abo = downloader_sync.abo_bilanz(
-        [r.id for r in results],
-        platformen={r.id: getattr(r, "platform", "") or "" for r in results})
+        [identity_key(r) for r in results],
+        platformen={identity_key(r): getattr(r, "platform", "") or "" for r in results})
     zeilen: list[dict] = []
     for r in results:
         refresh = getattr(r, "refresh_efficiency", None)
         if callable(refresh):
             refresh()
-        docs_eigene = sum(bool(getattr(r, feld, "")) for feld in
+        aktuelle_berichte = _eigene_berichte_aktuell(r)
+        docs_eigene = (sum(bool(getattr(r, feld, "")) for feld in
                           ("trade_analyse", "risiko_analyse", "gesamtbericht"))
-        docs_tiefen = 1 if getattr(r, "tiefenanalyse", "") else 0
-        bilanz = abo.get(r.id) or {}
+                       if aktuelle_berichte else 0)
+        docs_tiefen = int(aktuelle_berichte and bool(getattr(r, "tiefenanalyse", "")))
+        bilanz = abo.get(identity_key(r)) or {}
         zeilen.append({
-            "signalId": int(r.id),
+            **_remote_identity(r),
             "name": r.name or "",
             "platform": getattr(r, "platform", "") or "",
-            "url": (r.url or
-                    (f"https://www.mql5.com/en/signals/{r.id}" if r.id else "")),
+            "url": (r.url or (f"https://www.mql5.com/en/signals/{r.id}"
+                              if identity_key(r)[0] == "mql5" else "")),
             "ampel": r.ampel or "⚪",
             "score": _runden(r.score),
             "urteil": r.urteil or "",
-            "kurzfassung": getattr(r, "kurzfassung", "") or "",
+            "kurzfassung": (getattr(r, "kurzfassung", "") or "") if aktuelle_berichte else "",
             "stop": r.stop_nachweis or "",
             "stopEvidence": getattr(r, "stop_evidence", None),
             "tradingDdPct": _runden(r.trading_dd_pct),
@@ -120,6 +158,9 @@ def signal_zeilen(results: Iterable, fresh_ids: set[int] | None = None) -> list[
             "cagrJahrPct": getattr(r, "cagr_jahr_pct", None),
             "retddMonat": getattr(r, "retdd_monat", None),
             "retddJahr": getattr(r, "retdd_jahr", None),
+            "retddJahrVorbehalt": getattr(r, "retdd_jahr_vorbehalt", None),
+            "retddVorbehaltGrund": getattr(r, "retdd_vorbehalt_grund", "") or "",
+            "equityMeasurementStatus": getattr(r, "equity_messung_status", "") or "",
             "retddBasis": (getattr(r, "effizienz_befund", {}) or {}).get("retdd_basis"),
             "growthPct": _runden(r.growth_pct),
             "pf": _runden(r.pf),
@@ -138,12 +179,13 @@ def signal_zeilen(results: Iterable, fresh_ids: set[int] | None = None) -> list[
             "kapitalbasisUsd": _runden(getattr(r, "kapitalbasis_usd", None)),
             "brokerServer": getattr(r, "broker_server", None),
             "symbole": getattr(r, "symbole", "") or "",
-            "berichtVom": getattr(r, "gesamtbericht_at", "") or None,
+            "berichtVom": (getattr(r, "gesamtbericht_at", "") or None)
+                          if aktuelle_berichte else None,
             "docsBerichte": docs_eigene,
             "docsTiefenanalyse": docs_tiefen,
-            "docsDownloader": docs_counts.get(r.id, 0),
+            "docsDownloader": docs_counts.get(identity_key(r), 0),
             "tradesSha256": getattr(r, "trades_sha256", "") or "",
-            "stand": "NEU" if r.id in fresh_ids else "",
+            "stand": "NEU" if identity_key(r) in fresh_ids else "",
         })
     return zeilen
 
@@ -161,15 +203,18 @@ def dokumente_sammeln(results: Iterable, portfolio: dict | None = None) -> tuple
     fehler: list[str] = []
 
     for r in results:
-        try:
-            pfade = materialize_result_pdfs(r)
-        except (PdfRenderError, OSError) as exc:
-            fehler.append(f"#{r.id}: Bericht-PDFs nicht erzeugbar: {exc}")
-            pfade = {}
+        owner = _remote_identity(r)
+        prefix = _document_prefix(owner)
+        pfade = {}
+        if _eigene_berichte_aktuell(r):
+            try:
+                pfade = materialize_result_pdfs(r)
+            except (PdfRenderError, OSError) as exc:
+                fehler.append(f"#{r.id}: Bericht-PDFs nicht erzeugbar: {exc}")
         for art, path in pfade.items():
             dokumente.append({
-                "docKey": f"signal/{int(r.id)}/{path.name}",
-                "signalId": int(r.id),
+                "docKey": f"{prefix}/{path.name}",
+                **owner,
                 "group": "eigene",
                 "kind": art,
                 "label": _ART_LABELS.get(art, path.name),
@@ -178,11 +223,11 @@ def dokumente_sammeln(results: Iterable, portfolio: dict | None = None) -> tuple
                 "contentType": "application/pdf",
                 "lastModified": getattr(r, f"{art}_at", "") or None,
             })
-        for row in db.list_downloader_reports(r.id):
+        for row in db.list_downloader_reports(r.id, quelle=identity_key(r)[0]):
             path = Path(row["path"])
             dokumente.append({
-                "docKey": f"signal/{int(r.id)}/downloader/{row['version']}/{row['name']}",
-                "signalId": int(r.id),
+                "docKey": f"{prefix}/downloader/{quote(row['version'], safe='')}/{quote(row['name'], safe='')}",
+                **owner,
                 "group": "downloader",
                 "kind": "downloader_testreport",
                 "label": row["name"],
@@ -202,6 +247,8 @@ def dokumente_sammeln(results: Iterable, portfolio: dict | None = None) -> tuple
             dokumente.append({
                 "docKey": f"portfolio/{path.name}",
                 "signalId": None,
+                "sourceUid": None,
+                "source": None,
                 "group": "portfolio",
                 "kind": "portfolio",
                 "label": "Portfolio-Gesamtbericht",
@@ -234,6 +281,8 @@ def _payload_ohne_lokale_felder(doc: dict, *, mit_inhalt: bool = False) -> dict:
     payload = {
         "docKey": doc["docKey"],
         "signalId": doc.get("signalId"),
+        "sourceUid": doc.get("sourceUid"),
+        "source": doc.get("source"),
         "group": doc.get("group"),
         "kind": doc.get("kind"),
         "label": doc.get("label"),
@@ -281,11 +330,14 @@ def _sync_alle(results: Iterable, portfolio: dict | None = None, *,
     """
     start = time.monotonic()
     results = [r for r in results if getattr(r, "source_kind", "live") == "live"]
-    gesehen: set[int] = set()
+    # Validate every owner before creating a client or a journal entry.
+    gesehen: set[tuple[str, int]] = set()
     unique: list = []
     for r in results:
-        if r.id and r.id not in gesehen:
-            gesehen.add(r.id)
+        owner = _remote_identity(r)
+        key = owner["sourceUid"], owner["signalId"]
+        if key not in gesehen:
+            gesehen.add(key)
             unique.append(r)
 
     summary = {
@@ -306,7 +358,7 @@ def _sync_alle(results: Iterable, portfolio: dict | None = None, *,
         summary["server_zeit"] = info.get("serverTime")
         run_offen = True
         bestand = info.get("documents") or []
-        bekannt = {str(e.get("docKey")): str(e.get("sha256") or "")
+        bekannt = {str(e.get("docKey")): e
                    for e in bestand if isinstance(e, dict)}
 
         ergebnis = client.signals(zeilen)
@@ -316,19 +368,31 @@ def _sync_alle(results: Iterable, portfolio: dict | None = None, *,
         for done, doc in enumerate(dokumente, 1):
             if progress:
                 progress(done, len(dokumente), str(doc.get("label") or doc["docKey"]))
-            doc["sha256"] = db.file_sha256(str(doc["path"]))
-            if bekannt.get(doc["docKey"]) == doc["sha256"]:
+            # Hash the same immutable bytes that are uploaded, not a prior read.
+            doc["bytes"] = doc["path"].read_bytes()
+            if len(doc["bytes"]) > _MAX_DOC_BYTES:
+                raise tradeserver_client.TradeserverError(
+                    f"{doc['docKey']}: PDF überschreitet nach Sammlung die Größengrenze.")
+            import hashlib
+            doc["sha256"] = hashlib.sha256(doc["bytes"]).hexdigest()
+            doc["sizeBytes"] = len(doc["bytes"])
+            remote = bekannt.get(doc["docKey"]) or {}
+            if (remote.get("sha256") == doc["sha256"]
+                    and remote.get("sourceUid") == doc.get("sourceUid")
+                    and remote.get("signalId") == doc.get("signalId")):
                 summary["uebersprungen"] += 1
                 continue
-            doc["bytes"] = doc["path"].read_bytes()
             client.document(_payload_ohne_lokale_felder(doc, mit_inhalt=True))
             summary["uebertragen"] += 1
             summary["bytes"] += int(doc.get("sizeBytes") or 0)
 
-        client.complete(
+        completed = client.complete(
             signals=summary["signale"], documents=summary["dokumente"],
             uploaded=summary["uebertragen"], skipped=summary["uebersprungen"],
-            bytes_total=summary["bytes"])
+            bytes_total=summary["bytes"],
+            document_keys=[doc["docKey"] for doc in dokumente])
+        if "deleted" in completed:
+            summary["geloescht"] = int(completed["deleted"] or 0)
         run_offen = False
     except tradeserver_client.TradeserverError as exc:
         summary["abgebrochen"] = str(exc)
@@ -388,10 +452,14 @@ def verbindungs_status(force: bool = False, timeout: float = 3.0) -> dict:
             client = _client()
             client.timeout = timeout
             info = client.ping()
-            ok = str(info.get("status", "")).lower() == "ok"
+            reachable = str(info.get("status", "")).lower() == "ok"
+            compatible = (2 in (info.get("supportedProtocolVersions") or [])
+                          or info.get("kiscannerApi") in (2, "2", "v2"))
+            ok = reachable and compatible
             wert = {"konfiguriert": True, "ok": ok,
-                    "detail": ("Verbindung ok, API-Key akzeptiert" if ok else
-                               f"Unerwarteter Status: {info.get('status')!r}"),
+                    "detail": ("Verbindung ok, Protokoll v2 und API-Key akzeptiert" if ok else
+                               "Tradeserver aktualisieren: Protokoll v2 erforderlich."
+                               if reachable else f"Unerwarteter Status: {info.get('status')!r}"),
                     "service": info.get("service"),
                     "api_version": info.get("kiscannerApi"),
                     "geprueft": jetzt}

@@ -74,12 +74,12 @@ def main() -> None:
     while runde < 12:                      # Sicherheitsdeckel
         runde += 1
         rows = db.list_catalog()
-        studien_vorher = db.list_equity_studien()
+        studien_vorher = db.list_equity_studien(identitaeten=True)
         resultate = [r for r in pipeline.results_from_db(
             catalog_rows=rows, studien=studien_vorher, materialize_pdfs=False)
             if getattr(r, "source_kind", "live") == "live"]
         kat_res, _ = katalog.katalog_resultate(
-            gescannt={row["signal_id"] for row in rows}, studien=studien_vorher)
+            gescannt={(row["quelle"], row["signal_id"]) for row in rows}, studien=studien_vorher)
         vor = len(studien_vorher)
         jobs, erledigt = studien_batch.luecken_sammeln(
             resultate + kat_res, studien_vorher, trades_nachladen=True)
@@ -96,7 +96,7 @@ def main() -> None:
                 log("  Lock belegt (UI/Scan aktiv) — warte 60 s.")
                 time.sleep(60)
         run.thread.join()
-        studien_nachher = db.list_equity_studien()
+        studien_nachher = db.list_equity_studien(identitaeten=True)
         nach = len(studien_nachher)
         verbessert = studien_verbessert(studien_vorher, studien_nachher)
         c = run.control

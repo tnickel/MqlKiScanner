@@ -36,14 +36,14 @@ def dossiers_kompakt() -> list[dict]:
     kompakt = []
     for kandidat in betreuer.kandidaten():
         signal_id = kandidat["id"]
-        profil = dossier.profil_lesen(signal_id)
-        beob = dossier.beobachtungen_lesen(signal_id, limit=30)
+        profil = dossier.profil_lesen(signal_id, quelle=kandidat.get("quelle") or "mql5")
+        beob = dossier.beobachtungen_lesen(signal_id, limit=30, quelle=kandidat.get("quelle") or "mql5")
         von_woche = [b for b in beob if b["ts"] >= seit]
         einordnungen = {e: sum(1 for b in von_woche if b["einordnung"] == e)
                         for e in dossier.EINORDNUNGEN}
         stilbrueche = [b for b in von_woche if b["einordnung"] == "STILBRUCH"]
         kompakt.append({
-            "signal": kandidat["name"], "id": signal_id,
+            "signal": kandidat["name"], "id": signal_id, "quelle": kandidat.get("quelle") or "mql5",
             "ampel": kandidat["ampel"],
             "profil_version": (profil or {}).get("version"),
             "beobachtungen_7t": einordnungen,
@@ -67,7 +67,7 @@ def _marktkontexte_der_woche() -> list[str]:
 
 def _wechsel_der_woche() -> list[dict]:
     seit = _wochenfenster()
-    return [{"name": w.get("name"), "signal_id": w.get("signal_id"),
+    return [{"name": w.get("name"), "signal_id": w.get("signal_id"), "signal_quelle": w.get("signal_quelle"),
              "wechsel": f"{w.get('ampel_alt') or '—'} → {w.get('ampel_neu')}",
              "richtung": w.get("richtung"), "ts": w.get("ts")}
             for w in db.list_ampel_wechsel(limit=100)

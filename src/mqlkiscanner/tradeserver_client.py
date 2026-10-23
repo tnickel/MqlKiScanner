@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""REST-Client für das KiScanner-Sync-Protokoll v1 des MqlTradeMonitor.
+"""REST-Client für das quellengebundene KiScanner-Sync-Protokoll v2.
 
 Der MqlTradeMonitor (Spring-Boot-Tradeserver, Projekt
 D:\\AntiGravitySoftware\\GitWorkspace\\MqlTradeMonitor) nimmt normally
@@ -23,7 +23,7 @@ import requests
 
 from . import __version__, secrets_store
 
-PROTOKOLL_VERSION = 1
+PROTOKOLL_VERSION = 2
 CLIENT_NAME = "MqlKiScanner"
 TIMEOUT_S = 20.0
 
@@ -67,12 +67,13 @@ def normalize_base_url(url: str) -> str:
 
 
 class TradeserverClient:
-    """Dünner Wrapper um das KiScanner-Sync-Protokoll v1 (POST-lastig)."""
+    """V2-Client: jeder Schreibschritt ist an einen bestätigten Lauf gebunden."""
 
     def __init__(self, base_url: str, api_key: str = "", timeout: float = TIMEOUT_S):
         self.base = normalize_base_url(base_url)
         self.api_key = (api_key or "").strip()
         self.timeout = timeout
+        self.run_id: int | None = None
 
     def _headers(self) -> dict:
         return {"X-User-Key": self.api_key, "Content-Type": "application/json"}
@@ -102,7 +103,7 @@ class TradeserverClient:
                 "Der Tradeserver hat den API-Key abgelehnt (HTTP 401). Key "
                 "im Admin-Bereich prüfen; er muss zu einem Benutzer mit "
                 "hinterlegtem API-Key im MqlTradeMonitor passen.")
-        if response.status_code == 400:
+        if response.status_code in (400, 409):
             raise TradeserverProtocolError(
                 f"Protokollfehler vom Tradeserver: {_detail() or 'HTTP 400'}")
         if response.status_code >= 400:
@@ -132,32 +133,54 @@ class TradeserverClient:
         Antwort enthält runId sowie den Serverbestand (documents mit
         sha256, signalIds) — die Grundlage für den clientseitigen Diff.
         """
-        return self._post("/register", {
+        if self.run_id is not None:
+            raise TradeserverProtocolError("Ein Tradeserver-Lauf ist bereits offen.")
+        info = self._post("/register", {
             "client": CLIENT_NAME,
             "protocolVersion": PROTOKOLL_VERSION,
             "scannerVersion": __version__,
             "signalCount": int(signal_count),
         })
+        version = info.get("protocolVersion")
+        run_id = info.get("runId")
+        if (version != PROTOKOLL_VERSION or isinstance(version, bool)
+                or not isinstance(run_id, int) or isinstance(run_id, bool)
+                or run_id <= 0):
+            raise TradeserverProtocolError(
+                "Tradeserver bestätigt Protokoll v2 und gültige runId nicht. "
+                "Server zuerst aktualisieren; keine Rückstufung auf numerische IDs.")
+        self.run_id = run_id
+        return info
+
+    def _run_payload(self, payload: dict) -> dict:
+        if self.run_id is None:
+            raise TradeserverProtocolError("Register-Handshake vor Schreibzugriff erforderlich.")
+        return {**payload, "runId": self.run_id}
 
     def signals(self, zeilen: list[dict]) -> dict:
-        """Vollständiger Tabellen-Snapshot; ersetzt den Serverbestand."""
-        return self._post("/signals", {"signals": zeilen})
+        """Snapshot vormerken; der Server übernimmt ihn erst bei Complete."""
+        return self._post("/signals", self._run_payload({"signals": zeilen}))
 
     def document(self, dokument: dict) -> dict:
         """Ein Dokument (PDF) übertragen; sha256 gleicher Dateien bleibt unangetastet."""
-        return self._post("/documents", dokument)
+        return self._post("/documents", self._run_payload(dokument))
 
     def complete(self, *, signals: int, documents: int, uploaded: int,
-                 skipped: int, bytes_total: int) -> dict:
+                 skipped: int, bytes_total: int,
+                 document_keys: list[str] | None = None) -> dict:
         """Sync-Lauf ordnungsgemäß abschließen — danach ist die Verbindung beendet."""
-        return self._post("/complete", {
+        info = self._post("/complete", self._run_payload({
             "signals": int(signals), "documents": int(documents),
             "uploaded": int(uploaded), "skipped": int(skipped),
-            "bytes": int(bytes_total)})
+            "bytes": int(bytes_total), "documentKeys": list(document_keys or [])}))
+        self.run_id = None
+        return info
 
     def abort(self, reason: str = "") -> dict:
-        """Sync-Lauf im Fehlerfall abbrechen (Best-Effort, nie werfen)."""
-        return self._post("/abort", {"reason": str(reason or "")[:500]})
+        """Sync-Lauf abbrechen; der Aufrufer behandelt Fehler als Best-Effort."""
+        info = self._post("/abort", self._run_payload({"reason": str(reason or "")[:500]}))
+        self.run_id = None
+        return info
 
 
 def client_from_settings(settings: dict) -> TradeserverClient:

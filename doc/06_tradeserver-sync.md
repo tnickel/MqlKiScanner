@@ -1,5 +1,44 @@
 # 06 · Tradeserver-Sync (MqlTradeMonitor) — Konzept, Protokoll, Betrieb
 
+## Aktueller Vertrag: v2 (18.10.2026)
+
+Scanner und Tradeserver verwenden jetzt Quellenidentitäten. Der folgende
+datierte v1-Entwurf ist historisch; maßgeblich ist dieser v2-Vertrag.
+Aktuelle Umsetzungs-/Livebelege: `doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/`.
+
+- `POST /register`: `client:"MqlKiScanner"`, `protocolVersion:2`,
+  `scannerVersion`, `signalCount`. Die Antwort bestätigt `protocolVersion:2`,
+  liefert eine positive ganzzahlige `runId`, `supportedProtocolVersions`,
+  `signalIdentities:[{sourceUid,source,signalId}]` und das Dokumentinventar
+  mit SHA und denselben Besitzerfeldern. Kein automatischer v1-Fallback.
+- Jeder weitere POST trägt diese `runId`. Sie ist serverseitig an den
+  authentifizierten API-Key gebunden; fremde oder veraltete Läufe werden
+  abgewiesen. `X-User-Key` bleibt ausschließlich im Header.
+- `POST /signals`: `{runId,signals:[...]}`. Jede Zeile enthält die positive
+  externe `signalId`, die stabile `sourceUid` und das aktuelle Kürzel `source`.
+  Eindeutig ist `(sourceUid,signalId)`, niemals die Anbieter-ID allein.
+- `POST /documents`: PDF-Metadaten/Inhalt plus dieselben Besitzerfelder.
+  Schlüssel: `signal/{RFC3986-escaped sourceUid}/{signalId}/...`. Portfolio-
+  PDFs verwenden `portfolio/...` und alle drei Besitzerfelder `null`.
+  SHA und Größe stammen aus exakt den tatsächlich übertragenen Bytes.
+- SHA-Skips benötigen gleichen `docKey`, SHA, `sourceUid` und `signalId`.
+  Eine Quellenumbenennung verändert die UID und Dokumentenschlüssel nicht.
+- `POST /complete`: `runId`, `signals`, `documents`, `uploaded`, `skipped`,
+  `bytes` sowie `documentKeys:[...]` mit **allen** gewünschten PDFs inklusive
+  SHA-Skips. Der Server prüft Besitzer und Zähler und übernimmt Signale,
+  Dokumente und Löschungen in einer Transaktion. Erst danach ist der neue
+  Stand sichtbar. `abort` verwirft nur das vorgemerkte neue Material.
+- Altbestand wird verlustfrei in neue Tabellen kopiert, mit explizitem
+  Namensraum `legacy:v1`; ursprüngliche Tabellen bleiben erhalten. Keine
+  heutige Quelle wird geraten. Nach der ersten v2-Übernahme dürfen alte
+  v1-Clients den neuen Stand nicht mehr überschreiben.
+
+Verbindungstest `/ping` muss v2 unterstützen; ein nur erreichbarer v1-Server
+gilt für diesen Scanner als aktualisierungsbedürftig. Sync bewertet weiterhin
+nichts neu und verändert lokal nur seine Laufhistorie und PDF-Artefakte.
+
+## Historischer v1-Entwurf
+
 Stand: 20.09.2026 · Status: umgesetzt und getestet (Scanner 748 Tests grün,
 Tradeserver 56 Tests grün)
 

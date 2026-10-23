@@ -27,9 +27,9 @@ def test_lagebericht_verschiebt_bei_laufendem_scan():
 def test_lagebericht_ins_postfach_mit_llm(monkeypatch):
     db.init_db()
     db.upsert_signal(2349227, name="Gold Spike", stats={})
-    db.store_forensik(2349227, {"ampel": "🟢"})
-    dossier.profil_speichern(2349227, "Profil", "glm-5.3", {})
-    dossier.beobachtung_speichern(2349227, "KONFORM", "Alles normal.")
+    db.store_forensik(2349227, {"ampel": "🟢"}, quelle="mql5")
+    dossier.profil_speichern(2349227, "Profil", "glm-5.3", {}, quelle="mql5")
+    dossier.beobachtung_speichern(2349227, "KONFORM", "Alles normal.", quelle="mql5")
     monkeypatch.setattr(chef, "_llm_bericht",
                         lambda *a, **k: "## Lage\nAlles ruhig, eine Empfehlung.")
     ergebnis = chef.lagebericht(quelle="test", log=lambda *_: None)
@@ -42,9 +42,9 @@ def test_lagebericht_ins_postfach_mit_llm(monkeypatch):
 def test_lagebericht_grundlage_und_code_fallback(monkeypatch):
     db.init_db()
     db.upsert_signal(1, name="A", stats={})
-    db.store_forensik(1, {"ampel": "🟡"})
+    db.store_forensik(1, {"ampel": "🟡"}, quelle="mql5")
     db.store_ampel_wechsel(1, "2026-09-21 10:00:00", "daemon", "🟢", "🟡",
-                           True, "verschlechterung", gruende=[], name="A")
+                           True, "verschlechterung", gruende=[], name="A", signal_quelle="mql5")
     monkeypatch.setattr(chef, "_llm_bericht", lambda *a, **k: None)
     ergebnis = chef.lagebericht(quelle="test", log=lambda *_: None)
     text = ergebnis["text"]
@@ -56,8 +56,8 @@ def test_dossiers_kompakt_zaehlt_wochenbeobachtungen(monkeypatch):
     from mqlkiscanner.agenten import betreuer
     db.init_db()
     db.upsert_signal(2, name="B", stats={})
-    db.store_forensik(2, {"ampel": "🟢"})
-    dossier.beobachtung_speichern(2, "STILBRUCH", "Nächtliche Trades.")
+    db.store_forensik(2, {"ampel": "🟢"}, quelle="mql5")
+    dossier.beobachtung_speichern(2, "STILBRUCH", "Nächtliche Trades.", quelle="mql5")
     monkeypatch.setattr(betreuer, "kandidaten",
                         lambda settings=None: [{"id": 2, "name": "B",
                                                 "platform": "", "ampel": "🟢"}])
@@ -149,7 +149,7 @@ def test_scan_full_orchestrierung_und_meldung(fake_pipeline):
 def test_scan_gelbgruen_nur_gruen_gelb(fake_pipeline, monkeypatch):
     db.init_db()
     db.upsert_signal(2349227, name="Gold Spike", stats={})
-    db.store_forensik(2349227, {"ampel": "🟢"})
+    db.store_forensik(2349227, {"ampel": "🟢"}, quelle="mql5")
     monkeypatch.setattr(pipeline, "results_from_db",
                         lambda settings=None: [
                             type("R", (), {"id": 2349227, "ampel": "🟢",

@@ -79,7 +79,7 @@ def test_seite_laesst_abschluss_nach_registry_freigabe_in_tabelle_einfliessen(mo
                          'equity_dd_pct_raw': 9.0, 'equity_dd_usd': 800.0,
                          'test': 'equity_rekonstruktion'},
                 cagr_jahr_pct=27.0, ertrag_monat_geom_pct=2.0,
-                dd_usd=800.0, basislos=False)
+                dd_usd=800.0, basislos=False, quelle="vant")
             run.control.update(fertig=True, gerechnet=1, aktuell=2,
                                summary='1 gerechnet · 1 übersprungen · 0 Fehler')
         return None

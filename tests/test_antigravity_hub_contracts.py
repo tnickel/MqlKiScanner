@@ -46,7 +46,7 @@ def sync_client(monkeypatch):
     monkeypatch.setattr(tradeserver_sync,'signal_zeilen',lambda *a,**k:[])
     monkeypatch.setattr(tradeserver_sync,'dokumente_sammeln',lambda *a,**k:([],[]))
     return Mock(base='http://synthetic.invalid',register=Mock(return_value={'runId':'synthetic'}),
-                signals=Mock(return_value={}),complete=Mock(),abort=Mock())
+                signals=Mock(return_value={}),complete=Mock(return_value={}),abort=Mock())
 
 
 def test_sync_history_exists_while_remote_handshake_is_inflight(monkeypatch):

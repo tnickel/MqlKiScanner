@@ -76,7 +76,8 @@ def test_ping_schluessel_als_header(monkeypatch):
 
 def test_register_sendet_protokollpflichtfelder(monkeypatch):
     aufrufe = _verdrahte(monkeypatch, _Antwort(body={
-        "status": "ok", "runId": 7, "documents": [], "serverTime": "x"}))
+        "status": "ok", "runId": 7, "protocolVersion": 2,
+        "documents": [], "serverTime": "x"}))
     client = tsc.TradeserverClient("http://server:8080", api_key="k")
     client.register(signal_count=12)
     payload = aufrufe[0]["json"]
@@ -89,6 +90,7 @@ def test_register_sendet_protokollpflichtfelder(monkeypatch):
 def test_document_sendet_dokumentstruktur(monkeypatch):
     aufrufe = _verdrahte(monkeypatch, _Antwort(body={"status": "ok", "stored": True}))
     client = tsc.TradeserverClient("http://server:8080", api_key="k")
+    client.run_id = 7
     client.document({"docKey": "signal/1/01-trade-analyse.pdf",
                      "sha256": "abc", "contentBase64": "QkFGRg=="})
     payload = aufrufe[0]["json"]
@@ -100,9 +102,11 @@ def test_document_sendet_dokumentstruktur(monkeypatch):
 def test_complete_sendet_bilanz(monkeypatch):
     aufrufe = _verdrahte(monkeypatch, _Antwort(body={"status": "ok"}))
     client = tsc.TradeserverClient("http://server:8080", api_key="k")
+    client.run_id = 7
     client.complete(signals=5, documents=9, uploaded=2, skipped=7, bytes_total=1234)
     assert aufrufe[0]["json"] == {"signals": 5, "documents": 9, "uploaded": 2,
-                                  "skipped": 7, "bytes": 1234}
+                                  "skipped": 7, "bytes": 1234,
+                                  "runId": 7, "documentKeys": []}
 
 
 def test_401_ist_auth_fehler(monkeypatch):

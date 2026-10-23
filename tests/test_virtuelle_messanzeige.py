@@ -6,8 +6,8 @@ from mqlkiscanner.alle_signale_ui import tabellen_zeile
 
 @pytest.mark.parametrize('reliable', [False, True])
 def test_virtuelle_studie_zeigt_kursqualitaet_ohne_workflow_freigabe(reliable):
-    result = pipeline.ScanResult(id=42, trades_sha256='current')
-    pipeline.studie_anwenden(result, {42: {
+    result = pipeline.ScanResult(id=42, quelle='mql5', account_currency='USD', trades_sha256='current')
+    pipeline.studie_anwenden(result, {result.signal_key: {
         'trades_sha': 'current', 'virtuell': True, 'dd_usd': 352.0,
         'cagr_jahr_pct': 12.0, 'ertrag_monat_geom_pct': 1.0,
         'report': {'verlaesslich': reliable, 'equity_dd_pct': 0.35,
@@ -31,8 +31,8 @@ def test_virtuelle_studie_zeigt_kursqualitaet_ohne_workflow_freigabe(reliable):
 
 
 def test_virtueller_nullertrag_ist_null_statt_unbekannt():
-    result = pipeline.ScanResult(id=42, trades_sha256='current')
-    pipeline.studie_anwenden(result, {42: {
+    result = pipeline.ScanResult(id=42, quelle='mql5', account_currency='USD', trades_sha256='current')
+    pipeline.studie_anwenden(result, {result.signal_key: {
         'trades_sha': 'current', 'virtuell': True,
         'cagr_jahr_pct': 0.0, 'ertrag_monat_geom_pct': 0.0,
         'report': {'verlaesslich': True, 'equity_dd_pct_raw': 5.0}}})
@@ -42,8 +42,8 @@ def test_virtueller_nullertrag_ist_null_statt_unbekannt():
 
 @pytest.mark.parametrize('virtual', [True, False])
 def test_gescheiterte_studie_zeigt_grund_statt_leere_ohne_erklaerung(virtual):
-    result = pipeline.ScanResult(id=42, trades_sha256='current')
-    pipeline.studie_anwenden(result, {42: {
+    result = pipeline.ScanResult(id=42, quelle='mql5', account_currency='USD', trades_sha256='current')
+    pipeline.studie_anwenden(result, {result.signal_key: {
         'trades_sha': 'current', 'virtuell': virtual,
         'report': {'status': 'skipped', 'grund': 'Zeitabbildung nicht monoton/eindeutig'}}})
     row = tabellen_zeile(result, {}, fix_ids=set())
@@ -54,8 +54,8 @@ def test_gescheiterte_studie_zeigt_grund_statt_leere_ohne_erklaerung(virtual):
 
 @pytest.mark.parametrize('virtual', [True, False])
 def test_freigegebene_teilmessung_nennt_fehlendes_instrument(virtual):
-    result = pipeline.ScanResult(id=42, trades_sha256='current')
-    pipeline.studie_anwenden(result, {42: {
+    result = pipeline.ScanResult(id=42, quelle='mql5', account_currency='USD', trades_sha256='current')
+    pipeline.studie_anwenden(result, {result.signal_key: {
         'trades_sha': 'current', 'virtuell': virtual,
         'cagr_jahr_pct': 12.0, 'ertrag_monat_geom_pct': 1.0,
         'report': {'status': 'ok_teilmessung', 'verlaesslich': True,
@@ -75,8 +75,8 @@ def test_freigegebene_teilmessung_nennt_fehlendes_instrument(virtual):
 
 
 def test_reale_studie_nutzt_raw_fuer_schranke_und_retdd():
-    result = pipeline.ScanResult(id=920001, trades_sha256='current', forensik_vorhanden=True)
-    pipeline.studie_anwenden(result, {920001: {
+    result = pipeline.ScanResult(id=920001, quelle='mql5', account_currency='USD', trades_sha256='current', forensik_vorhanden=True)
+    pipeline.studie_anwenden(result, {result.signal_key: {
         'trades_sha': 'current', 'virtuell': False,
         'cagr_jahr_pct': 12.0, 'ertrag_monat_geom_pct': 1.0,
         'report': {'status': 'ok', 'verlaesslich': True,

@@ -146,9 +146,9 @@ def test_results_db_marks_refreshed_signals_as_neu():
         "score": 4.7, "ampel": "⚪", "stop_nachweis": "kein Nachweis",
         "martingale_flag": False, "trading_dd": {"pct": 5.0, "usd": 1.0},
         "peak_exposure": {"positionen": 1, "netto_lots": 0.1, "schock_usd": 500.0},
-    })
+    }, quelle="mql5")
     at = _run_main()
-    at.session_state["refreshed_signal_ids"] = [2265877]
+    at.session_state["refreshed_signal_ids"] = [("mql5", 2265877)]
     at.switch_page("app_pages/ergebnisse.py").run()
     assert not at.exception, at.exception
     assert at.selectbox(key="results_run").value.startswith("Datenbank")

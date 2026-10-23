@@ -81,6 +81,19 @@ FAQ_KATEGORIEN: list[dict] = [
                 "Clients** in den Scanner (REST, Ports 8089–8093). Was auf dem "
                 "Server landet, beeinflusst also nicht, welche Signale hier "
                 "erscheinen — dafür ist der Katalog-Button bzw. der Scan zuständig."),
+            (
+                "Wo sehe ich, bei welchen Signalen die meisten Nutzer neu dazu kommen?",
+                "Auf der Seite **Abonnentenstatistik** (Arbeitsbereich, unter "
+                "„Alle Signale“): je Quelle ein Tab plus „Alle“, sortiert nach "
+                "dem größten 30-Tage-Zuwachs, mit Zuwächsen seit letzter "
+                "Messung / 7 Tage / 30 Tage und Zeitpunkt der letzten Messung. "
+                "Über **„Abonnentenzahlen aktualisieren“** werden die Zahlen "
+                "frisch: *nur neu lesen* (schnell) oder *frisch messen ohne "
+                "Tradelisten* — die Clients laden dann NUR Katalog/Abonnenten "
+                "neu, keine Tradelisten. Zweimal pro Woche frisch messen "
+                "reicht für belastbare 7-Tage-Zuwächse. Die Seite beobachtet "
+                "nur: Ampel und Urteil liefert weiterhin ausschließlich der "
+                "Workflow."),
         ],
     },
     {
@@ -111,7 +124,9 @@ FAQ_KATEGORIEN: list[dict] = [
                 "hoch aus.\n"
                 "- **True-DD %** = der ECHTE Max-Drawdown: Equity inkl. schwebender "
                 "Verluste, stundenfein aus H1-Kursen nachgemessen (Equity-Studie). "
-                "Nur er zählt als Nenner für TrueRetDD und für die 30-%-Schranke.\n\n"
+                "Nur eine belastbare eigene Messung zählt als Nenner für TrueRetDD. "
+                "Die konfigurierte Drawdown-Schranke verwendet dagegen das konservative "
+                "Maximum aller vorhandenen DD-Kanäle.\n\n"
                 "Das „≈“-Zeichen (orange) bedeutet: nur roh gemessen, "
                 "Verlässlichkeitsprüfung nicht bestanden — orientierend, nie "
                 "Grün-Beleg."),
@@ -198,14 +213,16 @@ FAQ_KATEGORIEN: list[dict] = [
             (
                 "Wie entsteht die Ampel? Welche Regeln gelten?",
                 "Grundprinzip: **Risiko VOR Ertrag.** Die harten Regeln:\n\n"
-                "- **Max. 30 % Drawdown** — als konservatives MAXIMUM aus FÜNF "
-                "Messungen (Plattform-By-Equity, By-Balance, Monitor-Nachmessung, "
-                "gemessener Equity-DD aus Kursen, Peak-Exposure-Äquivalent). Ein "
-                "guter Ertrag hebt eine verletzte Schranke NIE auf.\n"
-                "- **Ertrag** über der Monatsschwelle (> 5 %/Monat), eigene "
-                "geometrische Rendite statt Plattform-Selbstauskunft.\n"
-                "- **TrueRetDD ≥ 3,0** (Jahres-Calmar) als Grün-Gate — nur mit "
-                "belastbarer Kursmessung.\n"
+                "- **Konfigurierte Drawdown-Schranke** — keine feste 30-%-Obergrenze; "
+                "auch 50 % sind zulässig. Das konservative MAXIMUM aus FÜNF "
+                "Kanälen zählt: Plattform-By-Equity, By-Balance, Trading-DD "
+                "geschlossen, eigene H1-Equity-Messung und Monitor-Closing-DD. "
+                "Ein guter Ertrag verändert den eingestellten Grenzwert nicht automatisch.\n"
+                "- **Ertrag**: eigene geometrische Monatsrendite mindestens auf "
+                "eingestellter Schwelle; die absolute Hürde ist standardmäßig aus (0).\n"
+                "- **TrueRetDD gegen die konfigurierte Mindestschwelle** "
+                "(Jahres-Calmar, Standard 3,0) als Grün-Gate — nur mit belastbarer "
+                "eigener H1-Equity-Messung und mindestens drei Monaten Historie.\n"
                 "- **Stop-Loss:** „kein Nachweis“ ist NEUTRAL (die meisten Broker "
                 "übertragen keinen SL). Nur ein BEWIESENER Stop entlastet; "
                 "abwerten darf allein die KI-Tiefenanalyse mit Begründung.\n\n"

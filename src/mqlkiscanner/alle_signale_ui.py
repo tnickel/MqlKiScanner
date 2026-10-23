@@ -10,6 +10,7 @@ Max-Drawdown bleibt dort exklusiv.
 from __future__ import annotations
 
 import json
+import math
 import re
 from pathlib import Path
 
@@ -18,7 +19,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 
-from . import quellen, signal_statistik
+from . import db, quellen, signal_statistik
+from .signal_identity import identity_key
 from .forensics import drawdown
 
 # Farbwelt wie Equity-Studie (dunkles Theme verträgt diese Töne am besten).
@@ -61,6 +63,28 @@ def studien_batch_refresh_noetig(run, tabellenstand: dict, *,
             and jetzt - tabellenstand.get('geladen_am', jetzt) >= intervall_s)
 
 
+def tiefen_batch_refresh_noetig(stand: dict | None, vorher: tuple | None,
+                                letzter_refresh_s: float, *, jetzt: float,
+                                intervall_s: float = 20.0) -> bool:
+    """Fertige Tiefenanalysen gedrosselt in die Tabelle übernehmen.
+
+    `stand` ist der (done, total, fertig)-Tupel des Tiefenbatchs, `vorher`
+    der im session_state gemerkte Vorgänger. Ein FERTIG-Wechsel wird sofort
+    übernommen; ein `done`-Anstieg nur im Intervall (Tabelle neu zu lesen
+    kostet Sekunden — das soll nicht jeden 2-s-Tick passieren, Nutzer-
+    Wunsch 20.10.: fertige Analysen sollen bald lesbar sein).
+    """
+    if stand is None or stand == vorher:
+        return False
+    if vorher is None:
+        return False  # erster Tick nach dem Laden — Tabelle ist frisch
+    _, _, fertig = stand
+    if fertig and not (vorher or (None, None, None))[2]:
+        return True
+    return (stand[0] > (vorher or (0,))[0]
+            and jetzt - letzter_refresh_s >= intervall_s)
+
+
 def studien_batch_unbekannte_waehrungen(fehler: list[str], resultate: list) -> list[dict]:
     """Währungsfehler des Batches mit aktuellen lokalen Kontobelegen verbinden.
 
@@ -75,17 +99,21 @@ def studien_batch_unbekannte_waehrungen(fehler: list[str], resultate: list) -> l
     unbekannt = {'', 'unknown', 'unbekannt', 'uneindeutig', 'unbekannt/uneindeutig'}
     for meldung in fehler:
         match = re.fullmatch(
-            r'#(\d+)\s+(.*?): ValueError: Kontowährung ([^:]*): USD-Forensik gesperrt.*',
+            r'(?:\[(?P<quelle>[^\]]+)\]\s*)?#(?P<id>\d+)\s+(?P<name>.*?): '
+            r'ValueError: Kontowährung (?P<waehrung>[^:]*): USD-Forensik gesperrt.*',
             meldung)
-        if not match or match[3].strip().casefold() not in unbekannt:
+        if not match or match['waehrung'].strip().casefold() not in unbekannt:
             continue
-        signal_id = int(match[1])
-        name = match[2].strip() or f'Signal {signal_id}'
-        identitaet = (signal_id, name)
+        signal_id = int(match['id'])
+        name = match['name'].strip() or f'Signal {signal_id}'
+        quelle = db.kanonische_quelle(match['quelle']) if match['quelle'] else None
+        identitaet = (quelle, signal_id, name)
         if identitaet in gesehen:
             continue
         gesehen.add(identitaet)
         kandidaten = nach_id.get(signal_id, [])
+        if quelle is not None:
+            kandidaten = [res for res in kandidaten if identity_key(res) == (quelle, signal_id)]
         res = kandidaten[0] if len(kandidaten) == 1 else None
         waehrung = str(getattr(res, 'account_currency', '') or '').strip()
         if res is None:
@@ -98,7 +126,7 @@ def studien_batch_unbekannte_waehrungen(fehler: list[str], resultate: list) -> l
         zeilen.append({
             'Signal': name,
             'Signal-ID': str(signal_id),
-            'Quelle': getattr(res, 'quelle', '') or 'nicht zugeordnet',
+            'Quelle': (identity_key(res)[0] if res is not None else quelle) or 'nicht zugeordnet',
             'Plattform': getattr(res, 'platform', '') or '—',
             'Kontowährung im Batch': 'unbekannt / nicht belegt',
             'Aktueller Nachweis': stand,
@@ -177,9 +205,21 @@ def usd_statistik_fehler(result) -> str | None:
     return None
 
 
+def _berichte_icon(result) -> str:
+    """📄-Icon je vorhandener KI-Analyse-Art (reine Anzeige, zählt nur)."""
+    anzahl = sum(1 for feld in ("trade_analyse", "risiko_analyse",
+                                "gesamtbericht", "tiefenanalyse")
+                 if getattr(result, feld, None))
+    if not anzahl:
+        return ""
+    return "📄" if anzahl == 1 else f"📄×{anzahl}"
+
+
 def tabellen_zeile(result, statistik: dict | None,
                    markierungen: dict | None = None,
-                   kommentare: dict | None = None, *, fix_ids: set | None = None) -> dict:
+                   kommentare: dict | None = None, *, fix_ids: set | None = None,
+                   beobachtet: set | None = None,
+                   dokumente: dict | None = None) -> dict:
     """Eine Tabellenzeile (reine Funktion) — Katalog- und Vorstufenwerte.
 
     Spaltenschlüssel sind bewusst KURZ (Nutzer 08.10.2026: kompakte Tabelle,
@@ -194,13 +234,24 @@ def tabellen_zeile(result, statistik: dict | None,
         statistik = {'fehler': waehrungsfehler, 'waehrung_gesperrt': True}
     nur_finanzdaten = bool(statistik.get('teilstatistik_finanzdaten'))
     markierungen = markierungen or {}
-    farbe = markierungen.get(getattr(result, "id", None))
+    farbe = markierungen.get(identity_key(result))
     kommentare = kommentare or {}
-    hat_kommentar = bool((kommentare.get(getattr(result, "id", None)) or "").strip())
+    hat_kommentar = bool((kommentare.get(identity_key(result)) or "").strip())
     virtuell = getattr(result, "true_dd_basis_virtuell", False)
     vorbehalt = virtuell and getattr(result, "true_dd_virtuell_vorbehalt", False)
     studie_dd = getattr(result, 'studie_anzeige_dd_pct', None)
     studie_vorbehalt = studie_dd is not None and getattr(result, 'studie_anzeige_vorbehalt', False)
+    true_dd_usd = getattr(result, 'true_dd_usd', None)
+    workflow_usd = getattr(result, 'equity_dd_rekonstruiert_usd', None)
+    if (true_dd_usd is None and getattr(result, 'forensik_vorhanden', False)
+            and not getattr(result, 'forensik_stale', False)
+            and not getattr(result, 'fehler', None)
+            and getattr(result, 'max_drawdown_equity_pct', None) is not None
+            and isinstance(workflow_usd, (int, float)) and not isinstance(workflow_usd, bool)
+            and math.isfinite(workflow_usd) and workflow_usd >= 0):
+        # Dieselbe aktuelle, belastbare Workflow-Messung wie True-DD %.
+        # Die separaten Studienwerte und die Waehrungssperre behalten Vorrang.
+        true_dd_usd = workflow_usd
     messstatus = ""
     if virtuell:
         messstatus = "10.000 USD virtuell · " + (
@@ -216,6 +267,11 @@ def tabellen_zeile(result, statistik: dict | None,
         messstatus += ' · Statistik: ' + str(statistik['fehler'])
     if statistik.get('rendite_hinweis'):
         messstatus += ' · ' + str(statistik['rendite_hinweis'])
+    if getattr(result, 'forensik_stale', False) and studie_dd is None:
+        messstatus += ' · Workflow-Forensik veraltet'
+        if (not vorbehalt and getattr(result, 'max_drawdown_equity_pct', None) is None
+                and getattr(result, 'equity_dd_rekon_roh_pct', None) is not None):
+            messstatus += ' · True-DD ≈ aus altem Workflow-Befund, kein aktueller Messnachweis'
     if studie_dd is not None:
         messstatus += ' · Unabhängige H1-Studie; Workflow-Forensik veraltet · ' + (
             getattr(result, 'studie_anzeige_grund', '') if studie_vorbehalt else 'Kursmessung bestanden')
@@ -229,8 +285,18 @@ def tabellen_zeile(result, statistik: dict | None,
     zeile = {
         "Mark.": MARKIERUNG_EMOJI.get(farbe or "", ""),
         "Komm.": "📋" if hat_kommentar else "",
+        # Beobachtungsliste der Abonnentenstatistik (Nutzer-Wunsch 20.10.):
+        # GLEICHER Wert wie dort — einmal beobachtet = überall 👁 sichtbar.
+        "Beob.": ("👁" if getattr(result, "signal_ref", None)
+                  in (beobachtet or set()) else ""),
+        # Berichte-Icon (Nutzer-Wunsch 20.10.): 📄 je vorhandener Analyse-Art
+        # — wie die Testreports-Spalte des MqlDownloader-Fensters.
+        "Ber.": _berichte_icon(result),
+        "Doku": (f"📑×{len(dokumente[result.signal_ref])}"
+                 if getattr(result, "signal_ref", None) in (dokumente or {})
+                 else ""),
         "Ampel": getattr(result, "ampel", "") or "—",
-        "Fix": "📌 FIX" if getattr(result, "id", None) in (
+        "Fix": "📌 FIX" if identity_key(result) in (
             _fix_ids() if fix_ids is None else fix_ids) else "",
         "Name": getattr(result, "name", "") or str(getattr(result, "id", "")),
         # Klickbarer Link zur Original-Signalseite beim Broker (Nutzer
@@ -261,7 +327,7 @@ def tabellen_zeile(result, statistik: dict | None,
             else None),
         # Basis-unabhängig (Batch „Lücken füllen" 08.10.): Equity inkl.
         # Floating in USD — auch ohne belegbare Kapitalbasis ehrlich belegbar
-        "True-DD USD": getattr(result, "true_dd_usd", None),
+        "True-DD USD": true_dd_usd,
         # ── Ertrag/Effizienz ───────────────────────────────────────────────
         "Plattform %/M": getattr(result, "ertrag_monat_pct", None),
         "Geom. %/M": statistik.get("ertrag_monat_geom_pct"),
@@ -311,7 +377,7 @@ def tabellen_zeile(result, statistik: dict | None,
 
 # Spalten mit Textinhalten — alles andere wird auf der Seite numerisch
 # konvertiert (None → NaN → leere Zelle statt „None“-Text in der Tabelle).
-TEXT_SPALTEN = {"Mark.", "Komm.", "Ampel", "Fix", "Name", "Link", "Quelle",
+TEXT_SPALTEN = {"Mark.", "Komm.", "Beob.", "Ber.", "Doku", "Ampel", "Fix", "Name", "Link", "Quelle",
                 "Herkunft", "Plattform", "Basis", "Forensik", "Messstatus"}
 
 
@@ -319,7 +385,7 @@ def _fix_ids() -> set:
     """Fix-IDs lazy laden (Importfehler/leer darf die Tabelle nie brechen)."""
     try:
         from . import fix_signale
-        return fix_signale.fix_ids()
+        return fix_signale.fix_keys()
     except Exception:
         return set()
 

@@ -150,7 +150,7 @@ def test_sync_holt_alle_quellen_und_vermerkt_lauf(monkeypatch):
                         lambda nur_aktiv=False: [_fake_quelle("vant", 1),
                                                  _fake_quelle("robo", 2)])
     monkeypatch.setattr(ingest, "hole_katalog",
-                        lambda quelle: kataloge[quelle["kuerzel"]])
+                        lambda quelle, *, min_subscribers=1: kataloge[quelle["kuerzel"]])
     summary = katalog.sync()
     assert summary["gesamt"] == 2
     assert summary["quellen"]["vant"]["anzahl"] == 1
@@ -165,7 +165,7 @@ def test_sync_tolariert_offline_quelle(monkeypatch):
     monkeypatch.setattr(db, "list_quellen",
                         lambda nur_aktiv=False: [_fake_quelle("vant", 1),
                                                  _fake_quelle("robo", 2)])
-    monkeypatch.setattr(ingest, "hole_katalog", lambda quelle: (
+    monkeypatch.setattr(ingest, "hole_katalog", lambda quelle, *, min_subscribers=1: (
         (_ for _ in ()).throw(downloader_client.DownloaderError("offline"))
         if quelle["kuerzel"] == "vant" else
         [{"signalId": "777", "version": "mql4", "signalName": "CopyFX",
@@ -184,7 +184,7 @@ def test_sync_toleriert_kaputte_json_antwort(monkeypatch):
     monkeypatch.setattr(db, "list_quellen",
                         lambda nur_aktiv=False: [_fake_quelle("vant", 1),
                                                  _fake_quelle("robo", 2)])
-    monkeypatch.setattr(ingest, "hole_katalog", lambda quelle: (
+    monkeypatch.setattr(ingest, "hole_katalog", lambda quelle, *, min_subscribers=1: (
         (_ for _ in ()).throw(ValueError("Expecting value: line 1 column 1"))
         if quelle["kuerzel"] == "vant" else
         [{"signalId": "777", "version": "mql4", "signalName": "CopyFX",
@@ -201,7 +201,7 @@ def test_sync_nur_ein_kuerzel(monkeypatch):
     monkeypatch.setattr(db, "list_quellen",
                         lambda nur_aktiv=False: [_fake_quelle("vant", 1),
                                                  _fake_quelle("robo", 2)])
-    monkeypatch.setattr(ingest, "hole_katalog", lambda quelle: aufgerufen.append(
+    monkeypatch.setattr(ingest, "hole_katalog", lambda quelle, *, min_subscribers=1: aufgerufen.append(
         quelle["kuerzel"]) or [])
     katalog.sync(kuerzel="robo")
     assert aufgerufen == ["robo"]
@@ -228,7 +228,7 @@ def _artefakt(quelle_id, signal_id, version, art, pfad: Path, inhalt: bytes):
 def test_katalog_resultate_scan_gewinnt_dedup_und_artefakte(tmp_path):
     vant_id = db.add_quelle("vant", "VantageMonitor", "http://localhost:8092")
     robo_id = db.add_quelle("robo", "RoboMonitor", "http://localhost:8091")
-    # 42 ist gescannt → muss RAUS; 7 doppelt (vant gewinnt: mehr Abonnenten);
+    # 42 ist in derselben Quelle gescannt → raus; 7 hat zwei Quellen;
     # 8 nur vant mit Cache; 9 ohne Cache
     db.upsert_signal(42, name="Gescannt", platform="vantage", quelle="vant")
     db.katalog_upsert_many("vant", [
@@ -262,9 +262,9 @@ def test_katalog_resultate_scan_gewinnt_dedup_und_artefakte(tmp_path):
 
     resultate, stats = katalog.katalog_resultate()
     ids = [r.id for r in resultate]
-    # Gescannter 42 raus; Dedup: 7 nur einmal (vant, mehr Abonnenten gewinnt)
+    # Nur dieselbe Quelle+ID ist dedupliziert; fremde ID-Kollision bleibt sichtbar.
     assert 42 not in ids
-    assert ids.count(7) == 1
+    assert ids.count(7) == 2
     dino = next(r for r in resultate if r.id == 7)
     assert dino.herkunft == "Katalog"
     assert dino.name == "DINO Scalping"          # vant-Zeile, nicht robo-Spiegel
@@ -278,7 +278,7 @@ def test_katalog_resultate_scan_gewinnt_dedup_und_artefakte(tmp_path):
     assert mit_cache.dd_equity_pct == pytest.approx(9.10)   # deutsches Komma
     assert mit_cache.ertrag_monat_pct == pytest.approx(3.5)
     assert mit_cache.broker_server == "VantageLT"
-    assert stats[8]["dd_equity_pct"] == pytest.approx(9.10)
+    assert stats[("vant", 8)]["dd_equity_pct"] == pytest.approx(9.10)
 
 
 # ----------------------------------------------------------- metrics_stats
@@ -309,12 +309,12 @@ def test_workflow_bulk_basis_prioritaet_ohne_db_einzelabfragen(
     for name in ('katalog_list', 'list_quellen', 'list_quellen_artefakte',
                  'get_quellen_artefakt'):
         monkeypatch.setattr(db, name, verboten)
-    alt = {41: dict(initial_deposit_usd=initial, kapitalbasis_virtual_usd=10000)}
+    alt = {('vant', 41): dict(initial_deposit_usd=initial, kapitalbasis_virtual_usd=10000)}
     neu = katalog.workflow_stats_bulk([res], alt, katalog_rows=rows,
                                      quellen_rows=quellen, artefakte=artefakte)
-    assert neu[41]['initial_deposit_usd'] == erwartet
-    assert neu[41]['broker_server'] == 'Provider-Live'
-    assert alt[41]['initial_deposit_usd'] == initial
+    assert neu[('vant', 41)]['initial_deposit_usd'] == erwartet
+    assert neu[('vant', 41)]['broker_server'] == 'Provider-Live'
+    assert alt[('vant', 41)]['initial_deposit_usd'] == initial
     assert res.wochen == 20 and res.abonnenten == 3
 
 
@@ -341,7 +341,7 @@ def test_workflow_bulk_keine_fremden_oder_veraenderten_stats(tmp_path, stoerung)
         res.quelle_version = 'mql5'
     else:
         res.platform = 'mt5'
-    alt = {42: {'initial_deposit_usd': None}}
+    alt = {('vant', 42): {'initial_deposit_usd': None}}
     assert katalog.workflow_stats_bulk([res], alt) == alt
 
 
@@ -367,8 +367,8 @@ def test_workflow_frische_virtualbasis_respektiert_initial_und_csv(
     _artefakt(qid, 43, 'vantage', 'trades', pfad, csv.encode())
     res = katalog.pipeline.ScanResult(id=43, quelle='vant', platform='vantage',
         trades_path=str(pfad), trades_sha256=hashlib.sha256(pfad.read_bytes()).hexdigest())
-    stats = katalog.workflow_stats_bulk([res], {43: dict(initial_deposit_usd=initial)})
-    result = signal_statistik.berechne(str(pfad), stats[43])
+    stats = katalog.workflow_stats_bulk([res], {('vant', 43): dict(initial_deposit_usd=initial)})
+    result = signal_statistik.berechne(str(pfad), stats[('vant', 43)])
     assert result['kapitalbasis_usd'] == basis
     assert result['kapitalbasis_quelle'] == quelle
     assert result['ertrag_monat_geom_pct'] is not None
@@ -389,8 +389,8 @@ def test_workflow_bulk_unbrauchbare_neue_initialbasis_wird_nicht_echt(tmp_path, 
     _artefakt(qid, 44, 'vantage', 'trades', pfad, b'snapshot')
     res = katalog.pipeline.ScanResult(id=44, quelle='vant', platform='vantage',
         trades_path=str(pfad), trades_sha256=hashlib.sha256(pfad.read_bytes()).hexdigest())
-    stats = katalog.workflow_stats_bulk([res], {44: {'initial_deposit_usd': None}})
-    assert stats[44]['initial_deposit_usd'] is None
+    stats = katalog.workflow_stats_bulk([res], {('vant', 44): {'initial_deposit_usd': None}})
+    assert stats[('vant', 44)]['initial_deposit_usd'] is None
 
 
 @pytest.mark.parametrize("signal_id,kuerzel,version,platform", [

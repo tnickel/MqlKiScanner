@@ -147,6 +147,7 @@ def test_ungerundeter_equity_dd_bleibt_nenner_beim_db_reload():
 def test_tradeserver_sync_uebertraegt_retdd_und_gewinn_ungerundet():
     from mqlkiscanner.tradeserver_sync import signal_zeilen
     db.init_db()
+    db.add_quelle("mql5", "mql5", "http://synthetic.invalid")
     result = _result(ertrag_monat_geom_pct=5.99994, cagr_jahr_pct=17.99994)
     result.ampel, result.urteil = pipeline.ampel_for(result, {})
     payload = signal_zeilen([result])[0]
@@ -161,6 +162,7 @@ def test_tradeserver_sync_liefert_aktuelle_auswahlgrenzen(monkeypatch):
     from mqlkiscanner import config
     from mqlkiscanner.tradeserver_sync import signal_zeilen
     db.init_db()
+    db.add_quelle("mql5", "mql5", "http://synthetic.invalid")
     original = config.load_settings()
     monkeypatch.setattr(config, "load_settings", lambda: {
         **original, "schranke_eq_dd_pct": 22, "min_ertrag_pct_monat": 7})

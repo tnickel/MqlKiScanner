@@ -27,6 +27,7 @@ from pathlib import Path
 
 from . import config
 from .parser import load_export
+from .signal_identity import identity_key
 
 JAHR_TAGE = 365.2425
 MONAT_TAGE = JAHR_TAGE / 12.0
@@ -201,7 +202,8 @@ def _symbole_als_set(symbole: str | None) -> set[str]:
 
 def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
                          dd_max_pct: float | None,
-                         plattform_positions: float | None = None) -> dict | None:
+                          plattform_positions: float | None = None, *,
+                          min_historie_monate: float = MIN_HISTORIE_MONATE) -> dict | None:
     """RetDD-Effizienz JE SIGNAL — der Produzent (B24-Fix, Lauf-Review
     02.10.: Deklaration und Verbraucher existierten seit 01.10., die
     Berechnung nie; 0/97 Signale hatten Werte).
@@ -228,6 +230,12 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
     Offene Positionen benötigen eine gesondert belegte Preflow-Equity;
     die geschlossene CSV alleine liefert sie nicht.
     """
+    # Andere ausdrücklich versionierte Analyseprofile dürfen denselben
+    # Rechenkern nutzen. Der Hauptworkflow behält unverändert drei Monate;
+    # insbesondere kein globales Umschalten der Konstanten im Batch.
+    min_historie = _positiv_endlich(min_historie_monate)
+    if min_historie is None:
+        raise ValueError("Mindesthistorie muss eine endliche positive Monatszahl sein.")
     if not trades_pfad or not Path(trades_pfad).exists():
         return None
     basis = _positiv_endlich(startkapital)
@@ -340,7 +348,7 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
     # KEIN RetDD/Calmar (Ertragswerte bleiben als Anzeige gefüllt — sie
     # sind kein Gate-Wert mehr; pipeline.refresh_efficiency sperrt über
     # den Status "historie_zu_kurz" auch den Vorbehaltswert).
-    if monate < MIN_HISTORIE_MONATE:
+    if monate < min_historie:
         retdd_monat = None
         retdd_jahr = None
         status = "historie_zu_kurz"
@@ -352,7 +360,7 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
         "ertrag_monat_geom_pct": geom_pct, "cagr_jahr_pct": cagr_pct,
         "retdd_monat": retdd_monat, "retdd_jahr": retdd_jahr,
         "effizienz_status": status,
-        "min_historie_monate": MIN_HISTORIE_MONATE,
+        "min_historie_monate": min_historie,
     })
     return ergebnis
 
@@ -365,9 +373,9 @@ def statistik(results: list, settings: dict | None = None) -> dict:
     ab 2 Verlierern, Instrument-Overlap nur Paare mit >= 3 gemeinsamen
     Symbolen und Jaccard >= 0.3, max. 12 Paare.
     """
-    kurven: dict[int, dict[str, float]] = {}
+    kurven: dict[tuple[str, int], dict[str, float]] = {}
     zeilen: list[dict] = []
-    symbole: dict[int, set[str]] = {}
+    symbole: dict[tuple[str, int], set[str]] = {}
     for r in results:
         if getattr(r, "source_kind", "live") != "live":
             continue
@@ -381,11 +389,12 @@ def statistik(results: list, settings: dict | None = None) -> dict:
             kurve = monatsrenditen(
                 pfad, basis,
                 plattform_positions=getattr(r, "plattform_trades", None))
-        kurven[r.id] = kurve
-        symbole[r.id] = _symbole_als_set(getattr(r, "symbole", None))
+        key = identity_key(r)
+        kurven[key] = kurve
+        symbole[key] = _symbole_als_set(getattr(r, "symbole", None))
         negativ = sorted(m for m, v in kurve.items() if v < 0)
         zeilen.append({
-            "id": r.id, "name": r.name,
+            "id": r.id, "quelle": key[0], "signal_key": key, "name": r.name,
             # RetDD (Nutzer 01.10.): Ertrag je Prozent DD — Effizienz für
             # die Priorisierung im Portfolio (gleiche Rendite bei halbem
             # Drawdown ist doppelt so gut).
@@ -403,16 +412,17 @@ def statistik(results: list, settings: dict | None = None) -> dict:
             "verlustmonate": negativ,
         })
 
-    # Verlustmonat-Cluster: Monat -> [(name, rendite_pct), …]
-    je_monat: dict[str, list[tuple[str, float]]] = {}
+    # Keep the source identity even when two providers have equal names.
+    je_monat: dict[str, list[dict]] = {}
     for eintrag in zeilen:
-        kurve = kurven[eintrag["id"]]
+        kurve = kurven[eintrag["signal_key"]]
         for monat in eintrag["verlustmonate"]:
-            je_monat.setdefault(monat, []).append(
-                (eintrag["name"], kurve[monat]))
+            je_monat.setdefault(monat, []).append({
+                "name": eintrag["name"], "signal_key": eintrag["signal_key"],
+                "quelle": eintrag["quelle"], "id": eintrag["id"],
+                "pct": kurve[monat]})
     cluster = {monat: {"n": len(paar),
-                       "signale": [{"name": n, "pct": v} for n, v in
-                                   sorted(paar, key=lambda x: x[1])]}
+                       "signale": sorted(paar, key=lambda x: x["pct"])}
                for monat, paar in sorted(je_monat.items()) if len(paar) >= 2}
 
     # Gemeinsames Beobachtungsfenster über alle Signale MIT Kurve.
@@ -428,8 +438,8 @@ def statistik(results: list, settings: dict | None = None) -> dict:
 
     # Instrument-Overlap (B21): gemeinsame Symbole trotz niedriger
     # Rendite-Korrelation = gemeinsames Klumpenrisiko.
-    ids = [e["id"] for e in zeilen if symbole.get(e["id"])]
-    namen = {e["id"]: e["name"] for e in zeilen}
+    ids = [e["signal_key"] for e in zeilen if symbole.get(e["signal_key"])]
+    namen = {e["signal_key"]: e["name"] for e in zeilen}
     paare = []
     for i, a in enumerate(ids):
         for b in ids[i + 1:]:
@@ -438,6 +448,7 @@ def statistik(results: list, settings: dict | None = None) -> dict:
             jaccard = round(len(gemeinsam) / len(union), 2)
             if len(gemeinsam) >= 3 and jaccard >= 0.3:
                 paare.append({"a": namen[a], "b": namen[b],
+                              "a_key": a, "b_key": b,
                               "gemeinsame_symbole": sorted(gemeinsam),
                               "n_gemeinsam": len(gemeinsam),
                               "jaccard": jaccard})

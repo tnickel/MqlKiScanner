@@ -176,7 +176,8 @@ def _portfolio_shock(net_by_symbol: dict[str, float],
                      broker: str | None = None,
                      when=None,
                      fx_state: dict | None = None,
-                     reference_prices: dict | None = None) -> tuple[float | None, str]:
+                     reference_prices: dict | None = None,
+                     usd_converter=None) -> tuple[float | None, str]:
     """Schock je Symbol mit eigenem Kontrakt, dann summieren (kein Cross-Hedge).
 
     Fremdwaehrungs-Quotes (EUR-Gold, FX-Kreuze, DE40) werden mit dem
@@ -201,7 +202,7 @@ def _portfolio_shock(net_by_symbol: dict[str, float],
             if resolved["quote"] == "USD":
                 amount = native
             else:
-                fx = fx_rates.usd_per(resolved["quote"], when.date()) if when else None
+                fx = _conversion_rate(resolved["quote"], when, sym, usd_converter)
                 if fx and (not math.isfinite(fx["rate"]) or fx["rate"] <= 0):
                     fx = None
                 amount = native * fx["rate"] if fx else None
@@ -220,14 +221,22 @@ def _portfolio_shock(net_by_symbol: dict[str, float],
     return (total if complete else None), dominant
 
 
+def _conversion_rate(quote, when, symbol, usd_converter=None):
+    fx = fx_rates.usd_per(quote, when.date()) if when else None
+    if fx is None and when and usd_converter is not None:
+        fx = usd_converter.rate(quote, when, symbol)
+    return fx
+
+
 def _snapshot(net_by_symbol: dict[str, float], long_vol: float, short_vol: float,
               time, stress_move: float | None, resolutions: dict | None = None,
               broker: str | None = None, fx_state: dict | None = None,
-              reference_prices: dict | None = None) -> dict:
+              reference_prices: dict | None = None, usd_converter=None) -> dict:
     by_sym = {s: v for s, v in net_by_symbol.items() if abs(v) > 1e-12}
     shock, peak_symbol = _portfolio_shock(by_sym, stress_move, resolutions,
                                           broker, when=time, fx_state=fx_state,
-                                          reference_prices=reference_prices)
+                                          reference_prices=reference_prices,
+                                          usd_converter=usd_converter)
     return {
         "time": time,
         "long": long_vol,
@@ -241,7 +250,7 @@ def _snapshot(net_by_symbol: dict[str, float], long_vol: float, short_vol: float
 
 def run(parsed: ParsedExport, stress_move: float | None = None,
         broker: str | None = None, kapitalbasis_usd: float | None = None,
-        kapitalbasis_quelle: str | None = None) -> dict:
+        kapitalbasis_quelle: str | None = None, kursanbieter=None) -> dict:
     trades = parsed.trades
     if not trades:
         return {"test": "exposure", "flag": False, "temporal_risk_available": False}
@@ -249,6 +258,14 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
         raise ValueError("Schockbewegung muss endlich und nicht negativ sein")
     symbols = sorted({normalize_symbol(t.symbol) for t in trades})
     resolutions = {sym: _resolve_symbol(sym, broker) for sym in symbols}
+    usd_converter = None
+    if kursanbieter is not None and any(
+            r and r["quote"] in {"CNH", "ETH", "BCH"} for r in resolutions.values()):
+        # Import lazily: equity reconstruction itself uses contract resolution
+        # from this module. The provider lifecycle and shared lock belong to
+        # the enclosing scan/study, exactly as for equity reconstruction.
+        from .exposure_fx import ExposureUsdUmrechnung
+        usd_converter = ExposureUsdUmrechnung(parsed, kursanbieter, resolutions)
     percent_symbols = {sym for sym in symbols
                        if (spec_for(sym, broker=broker) or {}).get("stress_move_pct") is not None}
     if stress_move is None:
@@ -277,8 +294,10 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
             raise ValueError(
                 "Keine anwendbare Kontraktspec (cross_broker=false, "
                 f"{broker_note} nicht freigegeben): " + ", ".join(scoped)
-                + " — Broker in data/contract_specs.json freigeben "
-                "(Eintrag 'brokers' ergänzen), dann erneut prüfen.")
+                + " — Brokerfreigabe in data/contract_specs.json nur mit belegter, "
+                "für diesen Broker und dieses Instrument passender Kontraktgröße "
+                "und Gewinnwährung (Quelle dokumentieren). Keine Registry-Ergänzung "
+                "allein zur Freischaltung; bis zum Nachweis bleibt die Prüfung gesperrt.")
         raise ValueError(
             "Unbekannte Instrumente ohne belegte Kontraktgroesse: " + ", ".join(unknown)
             + " — in data/contract_specs.json eintragen (Kontraktgroesse, "
@@ -377,7 +396,7 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
             sym: entry_value_by_symbol[sym] / gross_volume_by_symbol[sym]
             for sym in percent_symbols if gross_volume_by_symbol[sym] > 1e-12}
         snap = _snapshot(net_by_symbol, long_vol, short_vol, time, stress_move,
-                         resolutions, broker, fx_state, reference_prices)
+                         resolutions, broker, fx_state, reference_prices, usd_converter)
         snap["account"] = account
         if snap["shock"] is not None and snap["shock"] > 0 and account <= 0:
             temporal_risk_available = False
@@ -411,13 +430,13 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
             "Kapitalbasis unbekannt: keine Einzahlungen vor dem ersten Trade im "
             f"Export (Startkapital {initial_capital:+.2f} — z. B. Historie gekuerzt "
             "oder Auszahlung vor Handelsbeginn). Schockanteil in Prozent und die "
-            "30-%-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorprüfung."
+            "konfigurierte Drawdown-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorprüfung."
             + seiten_hinweis)
     elif account_dipped_negative:
         warnings.append(
             "Kontostand war bei offenen Positionen <= 0 (z. B. Auszahlung mitten "
             "im Handel): kein belastbarer Bezugswert — Schockanteil in Prozent "
-            "und die 30-%-Schranke sind nicht berechenbar.")
+            "und die konfigurierte Drawdown-Schranke sind nicht berechenbar.")
     # Fremdwaehrungs-Quotes: complete nur, wenn jeder Snapshot einen belegten
     # EZB-Kurs fand. Sonst Warnung mit konkretem Grund (Datei fehlt/Luecke).
     ezb = fx_rates.status()
@@ -435,7 +454,9 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
                 + ", ".join(sorted(fx_state["missing"]))
                 + ". Kein EZB-Kurs im 10-Tage-Fenster zum Handelstag "
                 "(Kalenderdeckung der Kursdatei: bis "
-                + str(ezb.get("letzte_kursdatum")) + ").")
+                + str(ezb.get("letzte_kursdatum")) + ")."
+                + (" Auch der belegte H1-Umrechnungskanal ist fuer diese Ereignisse unvollstaendig."
+                   if usd_converter is not None else ""))
     if not conversion_complete:
         # Nachtraeglich herabgestuft (fehlender EZB-Kurs): das Flag ist an
         # conversion_complete gekoppelt und darf nicht am alten Wert haengen.
@@ -471,16 +492,25 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
                            if r is not None and r["spec"]})
     # Provenienz der Umrechnung: welche EZB-Kurse flossen am Flag-Peak ein.
     fx_prov: dict = {}
-    if foreign_quote and relative_snap and relative_snap.get("time"):
-        for held_sym in relative_snap["by_sym"]:
+    provenance_snap = relative_snap or risk_snap
+    if foreign_quote and provenance_snap and provenance_snap.get("time"):
+        for held_sym in provenance_snap["by_sym"]:
             held_res = resolutions.get(held_sym)
             if held_res and held_res["quote"] != "USD":
-                fx = fx_rates.usd_per(held_res["quote"], relative_snap["time"].date())
+                fx = _conversion_rate(held_res["quote"], provenance_snap["time"], held_sym, usd_converter)
                 if fx:
                     fx_prov[held_sym] = {"quote": held_res["quote"],
                                          "usd_pro_einheit": round(fx["rate"], 8),
-                                         "ezb_kursdatum": fx["date"]}
+                                         "ezb_kursdatum": fx["date"] if not fx.get("source") else None}
+                    if fx.get("source"):
+                        fx_prov[held_sym].update({k: fx[k] for k in (
+                            "source", "bar_end_utc", "feed", "conversion_symbol", "time_basis_gmt_h")})
     scenarios = {}
+    fx_sources = []
+    if any(v.get("ezb_kursdatum") for v in fx_prov.values()):
+        fx_sources.append("EZB-Euro-Referenzkurse (eurofxref-hist), Cross-Kurs ueber EUR/USD am Handelstag")
+    if any(v.get("source") for v in fx_prov.values()):
+        fx_sources.append("preisbelegte H1-Referenzkurse aus abgeschlossenem Vorstunden-Close")
     for symbol in symbols:
         resolved = resolutions[symbol]
         reference = risk_snap["reference_prices"].get(symbol)
@@ -503,7 +533,8 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
             "stress_pips": scenario_move / pip if pip and scenario_move is not None else None,
             "stress_quote_per_lot": (scenario_move * factor
                                      if factor is not None and scenario_move is not None else None),
-            "usd_conversion_available": quote == "USD" or (quote is not None and fx_rates.can_convert(quote)),
+            "usd_conversion_available": quote == "USD" or (quote is not None and fx_rates.can_convert(quote))
+                or (usd_converter is not None and symbol in {s for s, _ in usd_converter.used}),
         }
     result: dict = {
         "test": "exposure",
@@ -535,11 +566,10 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
         "contract_complete": not missing_contract,
         "missing_contract_symbols": missing_contract,
         "foreign_quote_symbols": foreign_quote,
-        "fx_conversion": {"quelle": ("EZB-Euro-Referenzkurse (eurofxref-hist), "
-                                     "Cross-Kurs ueber EUR/USD am Handelstag")
-                          if fx_prov else None,
+        "fx_conversion": {"quelle": "; ".join(fx_sources) if fx_sources else None,
                           "letzte_kursdatum": ezb.get("letzte_kursdatum"),
-                          "kurse_am_flag_peak": fx_prov},
+                          "kurse_am_flag_peak": fx_prov,
+                          **({"h1_umrechnung": usd_converter.metadata()} if usd_converter is not None else {})},
         "spec_sources": spec_sources,
         "warnings": warnings,
         "per_symbol_scenarios": scenarios,

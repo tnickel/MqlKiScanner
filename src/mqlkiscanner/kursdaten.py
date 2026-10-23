@@ -47,6 +47,37 @@ ERLAUBTE_MT5_AUFRUFE = frozenset((
 
 _DEFAULT_TERMINAL = r"C:\Forex\Mt5\TickmillLifeMql5\terminal64.exe"
 _LOG = logging.getLogger(__name__)
+_INNENLUECKEN_FENSTER_S = 31 * 86400
+
+
+def _buendle_innenluecken(bereiche, bars, jetzt, vorlaeufig):
+    """Nur alte, beidseitig final begrenzte Fehlstrecken gemeinsam abfragen.
+
+    Die Originalbereiche bleiben erhalten: Brueckenbars werden weder
+    uebernommen noch neu als versucht markiert. Raender und unbestaetigte
+    Bars behalten ihre bisherigen einzelnen Abrufe.
+    """
+    finale = [b["time"] for b in bars
+              if b["time"] % 3600 == 0 and b["time"] + 3600 <= jetzt]
+    if len(finale) < 2:
+        return [[bereich] for bereich in bereiche]
+    links, rechts = min(finale), max(finale)
+    gruppen, gruppe = [], []
+    for anfang, ende in bereiche:
+        innen = (links < anfang <= ende < rechts
+                 and ende - anfang <= _INNENLUECKEN_FENSTER_S
+                 and not any(anfang <= t <= ende for t in vorlaeufig))
+        if gruppe and (not innen or ende - gruppe[0][0] > _INNENLUECKEN_FENSTER_S
+                       or any(gruppe[0][0] <= t <= ende for t in vorlaeufig)):
+            gruppen.append(gruppe)
+            gruppe = []
+        if innen:
+            gruppe.append((anfang, ende))
+        else:
+            gruppen.append([(anfang, ende)])
+    if gruppe:
+        gruppen.append(gruppe)
+    return gruppen
 
 
 class KursDaten:
@@ -354,6 +385,7 @@ class KursDaten:
         self._aufgeloeste_symbole[aufloesung] = gewaehlt
 
         bereiche = [(von_s, bis_s)]
+        abfragen = [[(von_s, bis_s)]]
         persistent = bool(feed) and not self._cache_defekt
         bars = []
         if persistent:
@@ -363,32 +395,39 @@ class KursDaten:
                 bars = self._kurs_cache.lese(feed, gewaehlt, von_s, bis_s, now=jetzt)
                 bereiche = self._kurs_cache.fehlende_bereiche(
                     feed, gewaehlt, von_s, bis_s, now=jetzt)
+                vorlaeufige_zeiten = (self._kurs_cache.vorlaeufige_barzeiten(
+                    feed, gewaehlt, von_s, bis_s) if len(bereiche) > 1 else set())
+                abfragen = _buendle_innenluecken(bereiche, bars, jetzt, vorlaeufige_zeiten)
             except (sqlite3.Error, OSError, ValueError) as exc:
                 self._cache_fehler(exc)
                 persistent = False
                 bereiche = [(von_s, bis_s)]
+                abfragen = [[(von_s, bis_s)]]
 
         if self._aktiv and mt5 is not None:
             gesammelt = {bar["time"]: bar for bar in bars}
             vorlaeufig = {b["time"] for b in bars if b["time"] + 3600 > jetzt}
-            for anfang, ende in bereiche:
+            for originalbereiche in abfragen:
                 abruf_start = time.time()
-                neue = self._hole_terminal_h1(gewaehlt, anfang, ende)
-                # Niemals Bars erfinden oder fremde Feed-Historien zusammenlegen.
-                neue = [b for b in neue if von_s <= b["time"] <= bis_s]
-                gesammelt.update((b["time"], b) for b in neue)
-                for bar in neue:
-                    if bar["time"] + 3600 > abruf_start:
-                        vorlaeufig.add(bar["time"])
-                    else:
-                        vorlaeufig.discard(bar["time"])
-                if persistent:
-                    try:
-                        self._kurs_cache.speichere(
-                            feed, gewaehlt, anfang, ende, neue, now=abruf_start)
-                    except (sqlite3.Error, OSError, ValueError) as exc:
-                        self._cache_fehler(exc)
-                        persistent = False
+                antwort = self._hole_terminal_h1(
+                    gewaehlt, originalbereiche[0][0], originalbereiche[-1][1])
+                for anfang, ende in originalbereiche:
+                    # Ausschliesslich urspruenglich fehlende Bars uebernehmen;
+                    # auch eine breite SDK-Antwort darf Cache-OHLC nicht aendern.
+                    neue = [b for b in antwort if anfang <= b["time"] <= ende]
+                    gesammelt.update((b["time"], b) for b in neue)
+                    for bar in neue:
+                        if bar["time"] + 3600 > abruf_start:
+                            vorlaeufig.add(bar["time"])
+                        else:
+                            vorlaeufig.discard(bar["time"])
+                    if persistent:
+                        try:
+                            self._kurs_cache.speichere(
+                                feed, gewaehlt, anfang, ende, neue, now=abruf_start)
+                        except (sqlite3.Error, OSError, ValueError) as exc:
+                            self._cache_fehler(exc)
+                            persistent = False
             ende_abruf = time.time()
             bars = sorted((b for t, b in gesammelt.items()
                            if t not in vorlaeufig or t + 3600 > ende_abruf),

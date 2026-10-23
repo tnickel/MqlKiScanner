@@ -1042,11 +1042,11 @@
    "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=23, Quartile 1000.00…1000.00. VIX-Punkte x 1000 USD je Lot."
   },
   "GER40FT_VANTAGE": {
-   "contract_size": 1.08,
-   "quote_currency": "USD",
+   "contract_size": 1.0,
+   "quote_currency": "EUR",
    "class": "INDEX",
    "stress_move": 500.0,
-   "unit_label": "USD Kursbewegung",
+   "unit_label": "Punkte",
    "cross_broker": false,
    "brokers": [
     "vantage"
@@ -1054,14 +1054,19 @@
    "aliases": [
     "GER40FT"
    ],
-   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=9, Quartile 1.05…1.08. Lokalw EUR/Punkt, Spread = EURUSD-Spanne der Handelszeitraeume — als USD-Aequivalent (Median) eingetragen."
+   "source": "Exakte MetaTrader5.symbol_info-Lesung 18.10.2026: GER40ft, GER40 Future, 1 EUR je Punkt/Lot; VantageMarkets-Live 10, C:/Forex/Mt5/Vantage. Beleg doc/reviews/2026-10-18_identitaet_kontrakte_umsetzung/ft_terminal_spec.json; historische Quellen-Plausibilitaet in ft_legacy_plausibility.json desselben Verzeichnisses.",
+   "retrieved": "2026-10-18",
+   "terminal_symbol": "GER40ft",
+   "observed_broker_server": "VantageMarkets-Live 10",
+   "evidence_scope": "Vantage-FT-Familienprofil: direkte Spezifikation auf dem genannten Server und FX-Gegenpruefung von 9 historischen Rohan-Trades. Der Originalserver des Providers ist unbekannt; kein Metadatennachweis fuer alle Vantage-Server oder andere Broker.",
+   "note": "Native Gewinnwaehrung EUR; USD-Risiko nur mit belegtem historischen FX-Kurs. Die vorhandene Vantage-Familienzuordnung bleibt erhalten, ohne einen Provider-Server zu erfinden. 500 Punkte sind das bestehende Schockszenario, keine Brokerspezifikation. Keine Cash-Aliasfreigabe."
   },
   "UK100FT_VANTAGE": {
-   "contract_size": 1.35,
-   "quote_currency": "USD",
+   "contract_size": 1.0,
+   "quote_currency": "GBP",
    "class": "INDEX",
    "stress_move": 200.0,
-   "unit_label": "USD Kursbewegung",
+   "unit_label": "Punkte",
    "cross_broker": false,
    "brokers": [
     "vantage"
@@ -1069,7 +1074,12 @@
    "aliases": [
     "UK100FT"
    ],
-   "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=13, Quartile 1.27…1.36. Lokalw GBP/Punkt, Spread = GBPUSD-Spanne — als USD-Aequivalent (Median) eingetragen."
+   "source": "Exakte MetaTrader5.symbol_info-Lesung 18.10.2026: UK100ft, UK100 Future, 1 GBP je Punkt/Lot; VantageMarkets-Live 10, C:/Forex/Mt5/Vantage. Beleg doc/reviews/2026-10-18_identitaet_kontrakte_umsetzung/ft_terminal_spec.json; historische Quellen-Plausibilitaet in ft_legacy_plausibility.json desselben Verzeichnisses.",
+   "retrieved": "2026-10-18",
+   "terminal_symbol": "UK100ft",
+   "observed_broker_server": "VantageMarkets-Live 10",
+   "evidence_scope": "Vantage-FT-Familienprofil: direkte Spezifikation auf dem genannten Server und FX-Gegenpruefung von 13 historischen Rohan-Trades. Der Originalserver des Providers ist unbekannt; kein Metadatennachweis fuer alle Vantage-Server oder andere Broker.",
+   "note": "Native Gewinnwaehrung GBP; USD-Risiko nur mit belegtem historischen FX-Kurs. Die vorhandene Vantage-Familienzuordnung bleibt erhalten, ohne einen Provider-Server zu erfinden. 200 Punkte sind das bestehende Schockszenario, keine Brokerspezifikation. Keine Cash-Aliasfreigabe."
   },
   "HK50FT_VANTAGE": {
    "contract_size": 0.13,
@@ -1129,26 +1139,6 @@
    "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
    "retrieved": "2026-10-08",
    "note": "Vantage-Index-CFD (FT-Namenskonvention). n=19/19 konsistent. Kursdaten-Alias: US500 (Tickmill-Referenzterminal).",
-   "class": "INDEX"
-  },
-  "GER40FT": {
-   "contract_size": 1.0,
-   "quote_currency": "EUR",
-   "stress_move": 600.0,
-   "unit_label": "Punkte",
-   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
-   "retrieved": "2026-10-08",
-   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=9, Median 1,08 USD/Punkt ≈ EURUSD → 1 EUR/Punkt (Restschwankung = FX-Kurs). Kursdaten-Alias: DE40 (Tickmill-Referenzterminal).",
-   "class": "INDEX"
-  },
-  "UK100FT": {
-   "contract_size": 1.0,
-   "quote_currency": "GBP",
-   "stress_move": 450.0,
-   "unit_label": "Punkte",
-   "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
-   "retrieved": "2026-10-08",
-   "note": "Vantage-Index-CFD (FT-Namenskonvention). n=13, Median 1,35 ≈ GBPUSD → 1 GBP/Punkt. Kursdaten-Alias: UK100 (Tickmill-Referenzterminal).",
    "class": "INDEX"
   },
   "HK50FT": {
@@ -1540,6 +1530,42 @@
    "retrieved": "2026-10-10",
    "stress_move_pct": 10.0,
    "note": "Exaktes Instrument (ORACLE CORP). stress_move_pct=10 ist ein editierbares prozentuales Szenario, keine Brokerspec: Prozent des volumengewichteten Entry gerade offener Positionen; keine fremden Signalpreise."
+  },
+  "NIKKEI225_VANTAGE": {
+   "contract_size": 1.0,
+   "quote_currency": "JPY",
+   "class": "INDEX",
+   "unit_label": "JPY Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "NIKKEI225"
+   ],
+   "terminal_symbol": "Nikkei225",
+   "source": "Portables Vantage-MT5 symbol_info, 18.10.2026, VantageMarkets-Live 10: doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_terminal_spec.json (symbols.NIKKEI225: trade_contract_size, currency_profit, trade_calc_mode).",
+   "retrieved": "2026-10-18",
+   "note": "Exaktes Instrument, kein Cash-/Future-Proxy. Aktueller Referenzserverbeleg und dokumentiertes Vantage-Familienprofil; historischer Provider-Originalserver bleibt unbekannt. Keine Freigabe fremder Broker. stress_move=3000 Punkte entspricht dem bestehenden Nikkei-Index-Szenario; keine Brokerspezifikation.",
+   "stress_move": 3000.0
+  },
+  "SOYBEAN-C_VANTAGE": {
+   "contract_size": 500.0,
+   "quote_currency": "USD",
+   "class": "SOFT_COMMODITY",
+   "unit_label": "USD Kursbewegung",
+   "cross_broker": false,
+   "brokers": [
+    "vantage"
+   ],
+   "aliases": [
+    "SOYBEAN-C"
+   ],
+   "terminal_symbol": "Soybean-C",
+   "source": "Portables Vantage-MT5 symbol_info, 18.10.2026, VantageMarkets-Live 10: doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_terminal_spec.json (symbols.SOYBEAN-C: trade_contract_size, currency_profit, trade_calc_mode).",
+   "retrieved": "2026-10-18",
+   "note": "Exaktes Instrument, kein Cash-/Future-Proxy. Aktueller Referenzserverbeleg und dokumentiertes Vantage-Familienprofil; historischer Provider-Originalserver bleibt unbekannt. Keine Freigabe fremder Broker. stress_move_pct=10 ist ein editierbares Szenario vom volumengewichteten Entry gerade offener Positionen desselben Signals; keine Brokerspezifikation.",
+   "stress_move_pct": 10.0
   }
  }
 }

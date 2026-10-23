@@ -16,11 +16,18 @@ Stufe 0 beschafft nur Daten. Protokolliert wird je Quelle in die DB-Tabelle
 """
 from __future__ import annotations
 
+import json
+import logging
+import os
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from . import config, db, downloader_client, quellen
+
+_LOG = logging.getLogger(__name__)
+_FALLBACK_LOCK = threading.Lock()
 
 # Statuswerte je Quelle (stabil für UI/DB/Tests)
 WARTET = "wartet"
@@ -47,7 +54,7 @@ STATUS_FARBE = {
 _TERMINAL = {FERTIG, TEILWEISE, FEHLER, TIMEOUT, OFFLINE, NICHT_UNTERSTUETZT, ABGEBROCHEN}
 
 
-def _neuer_zustand(quelle: dict) -> dict:
+def _neuer_zustand(quelle: dict, modus: str = "scan") -> dict:
     return {
         "quelle_id": int(quelle["id"]),
         "kuerzel": str(quelle.get("kuerzel") or ""),
@@ -68,6 +75,7 @@ def _neuer_zustand(quelle: dict) -> dict:
         "katalog_uebersprungen": False,
         "hinweise": [],
         "fehler": "",
+        "modus": str(modus),
         "geaendert": datetime.now().isoformat(timespec="seconds"),
     }
 
@@ -95,6 +103,27 @@ def _ergebnis_uebernehmen(z: dict, ergebnis: dict) -> None:
     z["hinweise"] = [str(h) for h in hinweise][:10] if isinstance(hinweise, list) else []
 
 
+def _abonnenten_katalog(ergebnis: dict) -> dict | None:
+    """Validate optional coverage receipts; skipped slots are not provider IDs."""
+    fields = ("subscriberCatalogComplete", "subscriberCatalogReachedEnd",
+              "subscriberCatalogScanned", "subscriberCatalogSkippedPositions",
+              "subscriberCatalogMonths", "subscriberCatalogSort")
+    if not any(key in ergebnis for key in fields):
+        return None  # Existing clients still reject gaps before publishing.
+    complete, end, scanned, skipped, months, sort = (ergebnis.get(key) for key in fields)
+    if (type(complete) is not bool or end is not True
+            or type(scanned) is not int or scanned < 0
+            or not isinstance(skipped, list)
+            or any(type(n) is not int or n <= 0 for n in skipped)
+            or len(set(skipped)) != len(skipped)
+            or type(months) is not int or months not in (1, 3, 6, 12)
+            or not isinstance(sort, str) or not sort.strip()
+            or complete != (not skipped)):
+        raise ValueError("Ungültiger Beleg zur Abdeckung des Abonnentenkatalogs")
+    return dict(complete=complete, reached_end=True, scanned_providers=scanned,
+                skipped_positions=sorted(skipped), months=months, sort=sort)
+
+
 def _bereit_warten(client, z: dict, *, warten_s: float, poll_s: float,
                    gestopft) -> bool:
     """/health pollen, bis der Client hochgefahren ist (startall-Fall)."""
@@ -106,6 +135,7 @@ def _bereit_warten(client, z: dict, *, warten_s: float, poll_s: float,
         try:
             info = client.health()
             if str(info.get("status", "")).lower() == "ok":
+                z["abonnenten_refresh_unterstuetzt"] = info.get("abonnentenRefresh") is True
                 _setze(z, status=BEREIT, detail="Client erreichbar — Update anstoßen …")
                 return True
             _setze(z, detail=f"Unerwarteter Health-Status: {info.get('status')!r}")
@@ -119,17 +149,44 @@ def _bereit_warten(client, z: dict, *, warten_s: float, poll_s: float,
 
 
 def _persistiere(z: dict) -> None:
-    """Ergebnis der Quelle in die Chronik-Tabelle (append-only)."""
+    """Append evidence to the existing DB, with a local ignored fallback on failure."""
+    hinweise = list(z["hinweise"])
+    # Modus-Kennzeichnung (doc/24): „abonnenten"-Läufe (nur Katalog/Abos,
+    # keine Tradelisten) sind in der Chronik sofort erkennbar. Der normale
+    # Scan-Modus bleibt unverändert („scan" wird nicht mitgeschrieben).
+    if z.get("modus") and z["modus"] != "scan":
+        hinweise.insert(0, f"Modus: {z['modus']}")
+    if z.get("detail"):
+        hinweise.append(str(z["detail"]))
+    payload = dict(
+        quelle_id=z["quelle_id"], kuerzel=z["kuerzel"], base_url=z["base_url"],
+        job_id=z["job_id"], status=z["status"], dauer_s=z["dauer_s"],
+        signale_geliefert=z["signale_geliefert"], tradelisten_neu=z["tradelisten_neu"],
+        tradelisten_aktualisiert=z["tradelisten_aktualisiert"],
+        datenstand=z["datenstand"], fehler=z["fehler"], hinweise=hinweise)
     try:
-        db.store_client_update(
-            quelle_id=z["quelle_id"], kuerzel=z["kuerzel"], base_url=z["base_url"],
-            job_id=z["job_id"], status=z["status"], dauer_s=z["dauer_s"],
-            signale_geliefert=z["signale_geliefert"],
-            tradelisten_neu=z["tradelisten_neu"],
-            tradelisten_aktualisiert=z["tradelisten_aktualisiert"],
-            datenstand=z["datenstand"], fehler=z["fehler"], hinweise=z["hinweise"])
-    except Exception:
-        pass  # Chronik darf den Update-Ablauf nie blockieren
+        db.store_client_update(**payload)
+    except Exception as exc:
+        # Runtime .log files are already excluded by .gitignore. Store only the
+        # same public job metadata as the DB, never request headers or tokens.
+        fallback = config.DATA_DIR / "client_updates_fallback.log"
+        try:
+            event = dict(payload, ts=datetime.now().isoformat(timespec="seconds"),
+                         chronik_fehler=f"{type(exc).__name__}: {exc}")
+            with _FALLBACK_LOCK:
+                fallback.parent.mkdir(parents=True, exist_ok=True)
+                with fallback.open("a", encoding="utf-8") as output:
+                    output.write(json.dumps(event, ensure_ascii=False, default=str) + "\n")
+                    output.flush()
+                    os.fsync(output.fileno())
+            message = f"Stufe-0-Chronik nicht in DB gespeichert; lokaler Beleg: {fallback}"
+        except Exception as fallback_error:
+            message = ("Stufe-0-Chronik weder in DB noch im lokalen Fallback gespeichert: "
+                       f"{type(fallback_error).__name__}")
+        try:
+            _LOG.error(message)
+        except Exception:
+            pass  # Logging cannot replace the actual source outcome or abort.
 
 
 def _zahl_aus_settings(settings: dict, schluessel: str, default: float) -> float:
@@ -151,9 +208,59 @@ def _zahl_aus_settings(settings: dict, schluessel: str, default: float) -> float
 def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
                         gestopft, bereit_warten_s: float, poll_s: float,
                         backoff_s: float, timeout_s: float | None = None,
-                        login_timeout_s: float | None = None) -> dict:
-    """Kompletter Stufe-0-Ablauf für EINE Quelle. Liefert den finalen Zustand."""
-    z = _neuer_zustand(quelle)
+                        login_timeout_s: float | None = None,
+                        tradelisten: bool = True,
+                        katalog_max_alter_h: float | None = None,
+                        modus: str = "scan") -> dict:
+    """Kompletter Stufe-0-Ablauf für EINE Quelle. Liefert den finalen Zustand.
+
+    tradelisten=False + katalog_max_alter_h=0 ist der Abonnenten-Refresh
+    (doc/24 §4 Stufe B): nur Katalog/Abonnenten neu messen, keine Trades.
+    """
+    z = _neuer_zustand(quelle, modus=modus)
+    start = time.monotonic()
+    unterbrechung = None
+    try:
+        # A process killed without Python cleanup still leaves an unfinished
+        # start trace. Never turn that trace into an invented completed run.
+        _persistiere(dict(z, detail="Stufe 0 begonnen; Abschluss steht aus"))
+        return _update_eine_quelle_ablauf(
+            quelle, z=z, settings=settings, log=log, on_fortschritt=on_fortschritt,
+            gestopft=gestopft, bereit_warten_s=bereit_warten_s, poll_s=poll_s,
+            backoff_s=backoff_s, timeout_s=timeout_s, login_timeout_s=login_timeout_s,
+            tradelisten=tradelisten, katalog_max_alter_h=katalog_max_alter_h)
+    except Exception as exc:
+        _setze(z, status=FEHLER, fehler=f"{type(exc).__name__}: {exc}",
+               detail=f"Interner Fehler: {type(exc).__name__}: {exc}")
+        return z
+    except BaseException as exc:
+        unterbrechung = exc
+        _setze(z, status=ABGEBROCHEN, fehler=f"{type(exc).__name__}: {exc}",
+               detail=f"Stufe 0 unterbrochen ({type(exc).__name__})"
+                      + ("; Ende des Client-Jobs unbekannt" if z["job_id"] else ""))
+        raise
+    finally:
+        z["dauer_s"] = round(time.monotonic() - start, 1)
+        _setze(z)
+        try:
+            _persistiere(z)
+            if on_fortschritt:
+                try:
+                    on_fortschritt(dict(z))
+                except Exception:
+                    pass
+        except BaseException:
+            if unterbrechung is None:
+                raise  # Preserve an existing KeyboardInterrupt/SystemExit cause.
+
+
+def _update_eine_quelle_ablauf(quelle: dict, *, z: dict, settings: dict, log, on_fortschritt,
+                             gestopft, bereit_warten_s: float, poll_s: float,
+                             backoff_s: float, timeout_s: float | None,
+                             login_timeout_s: float | None,
+                             tradelisten: bool = True,
+                             katalog_max_alter_h: float | None = None) -> dict:
+    """Source protocol; final evidence and callbacks belong to the outer wrapper."""
 
     # Log-Takt (doc/23 §6.4 „dezenter Takt"): identische Nachrichten höchstens
     # alle 30 s, echte Änderungen (Phase/Fortschritt) sofort. Der Live-Dialog
@@ -184,13 +291,11 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
     except downloader_client.DownloaderError as exc:
         _melde(f"Quelle nicht nutzbar: {exc}", status=FEHLER, fehler=str(exc))
         z["dauer_s"] = round(time.monotonic() - start, 1)
-        _persistiere(z)
         return z
     _melde("Warte auf Client (Bereitschaft) …")
     if not _bereit_warten(client, z, warten_s=bereit_warten_s, poll_s=poll_s,
                           gestopft=gestopft):
         z["dauer_s"] = round(time.monotonic() - start, 1)
-        _persistiere(z)
         return z
     _melde()
 
@@ -208,22 +313,47 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
 
     while z["status"] not in _TERMINAL:
         if gestopft():
-            _melde("Abbruch per Stop-Button", status=ABGEBROCHEN)
+            _melde("Abbruch per Stop-Button"
+                   + (" — Überwachung beendet; Client-Job kann weiterlaufen"
+                      if z["job_id"] else ""), status=ABGEBROCHEN)
             break
         if z["status"] == BEREIT:
+            nur_abonnenten = z.get("modus") == "abonnenten"
+            if nur_abonnenten and not z.get("abonnenten_refresh_unterstuetzt"):
+                grund = "Client unterstützt den Top-200-Zählerrefresh noch nicht; aktualisierten Client starten."
+                _melde(grund, status=NICHT_UNTERSTUETZT, fehler=grund)
+                break
             try:
+                # katalog_max_alter_h: None = Setting-Wert (Default 72 h,
+                # 3-Tage-Regel); 0 erzwingt die Katalog-Neumessung — nötig
+                # für den Abonnenten-Refresh, sonst überspringe der Client
+                # die Katalog-Phase und misst nichts neu (doc/24 §4).
+                alter_h = (float(katalog_max_alter_h)
+                           if katalog_max_alter_h is not None
+                           else _zahl_aus_settings(
+                               settings, "update_katalog_max_alter_h", 72.0))
+                extra = {"nur_abonnenten": True} if nur_abonnenten else {}
                 antwort = client.update_starten(
                     target=int(_zahl_aus_settings(
                         settings, "update_ziel_signale", 200.0)),
-                    tradelisten=True,
-                    katalog_max_alter_h=int(_zahl_aus_settings(
-                        settings, "update_katalog_max_alter_h", 72.0)),
+                    tradelisten=bool(tradelisten),
+                    katalog_max_alter_h=int(max(0.0, alter_h)),
+                    **extra,
                 )
                 z["job_id"] = str(antwort.get("jobId") or "")
+                if nur_abonnenten and not z["job_id"]:
+                    grund = "Client bestätigt den neuen Zählerauftrag ohne Job-ID; kein Frischenachweis."
+                    _melde(grund, status=FEHLER, fehler=grund)
+                    break
                 schon_laufend = bool(antwort.get("bereitsLaufend"))
+                if nur_abonnenten and schon_laufend:
+                    grund = "Client arbeitet bereits; vorhandener Job ist kein Nachweis einer neuen Zählermessung."
+                    _melde(grund, status=FEHLER, fehler=grund)
+                    break
                 _melde("Update-Job läuft"
                        + (" (lief bereits — übernehme)" if schon_laufend else ""),
                        status=LAEUFT, phase="gestartet")
+                _persistiere(dict(z, detail="Client-Job gestartet oder übernommen; Abschluss steht aus"))
             except downloader_client.DownloaderBusy:
                 versuche_409 += 1
                 if versuche_409 >= 3:
@@ -256,6 +386,10 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
             continue
         state = str(info.get("state") or "").lower()
         status_job_id = str(info.get("jobId") or "")
+        if z.get("modus") == "abonnenten" and not status_job_id:
+            grund = "Status des Zählerrefreshs enthält keine Job-ID; kein Frischenachweis."
+            _melde(grund, status=FEHLER, fehler=grund)
+            break
         if z['job_id'] and status_job_id and status_job_id != z['job_id']:
             grund = (f"Status gehört zu anderem Update-Job ({status_job_id}); "
                      f"erwartet {z['job_id']} — kein Erfolgsnachweis.")
@@ -271,14 +405,44 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
         if info.get("ergebnis"):
             _ergebnis_uebernehmen(z, info.get("ergebnis"))
         if state == "done":
+            if z.get("modus") == "abonnenten" and (
+                    not isinstance(info.get("ergebnis"), dict)
+                    or info["ergebnis"].get("nurAbonnenten") is not True):
+                grund = "Client meldet keinen Abschluss des angeforderten Zählerrefreshs."
+                _melde(grund, status=FEHLER, fehler=grund)
+                break
+            if z.get("modus") == "abonnenten":
+                geliefert = info["ergebnis"].get("signaleGeliefert")
+                if (isinstance(geliefert, bool) or not isinstance(geliefert, int)
+                        or not 0 <= geliefert <= 200
+                        or info["ergebnis"].get("katalogUebersprungen") is True):
+                    grund = "Client bestätigt keinen frischen Katalog mit höchstens 200 Anbietern."
+                    _melde(grund, status=FEHLER, fehler=grund)
+                    break
+                try:
+                    coverage = _abonnenten_katalog(info["ergebnis"])
+                    if coverage is not None:
+                        if coverage["scanned_providers"] < geliefert:
+                            raise ValueError("Auswahl ist größer als der geprüfte Abonnentenkatalog")
+                        z["abonnenten_katalog"] = coverage
+                except ValueError as exc:
+                    _melde(str(exc), status=FEHLER, fehler=str(exc))
+                    break
             _ergebnis_uebernehmen(z, info.get("ergebnis"))
             stand = z["datenstand"] or "?"
             katalog = (" (Katalog übersprungen — 3-Tage-Regel)"
                        if z["katalog_uebersprungen"] else "")
-            teilweise = z["tradelisten_fehler"] > 0 or z["tradelisten_abgebrochen"]
+            catalog_gaps = z.get("abonnenten_katalog", {}).get("complete") is False
+            teilweise = z["tradelisten_fehler"] > 0 or z["tradelisten_abgebrochen"] or catalog_gaps
             detail = (f"Teilweise aktualisiert — {z['tradelisten_fehler']} Tradelistenfehler; "
                       f"Jobende {stand}{katalog}" if teilweise
                       else f"Fertig — Datenstand {stand}{katalog}")
+            if catalog_gaps:
+                slots = z["abonnenten_katalog"]["skipped_positions"]
+                warning = (f"{len(slots)} API-Position(en) ausgelassen; Auswahl aus lesbaren "
+                           "Anbietern, globale Top 200 unbestätigt.")
+                z["hinweise"] = list(dict.fromkeys([*z["hinweise"], warning]))
+                detail = f"Mit Kataloglücken aktualisiert — {warning} Datenstand {stand}"
             _melde(detail, status=TEILWEISE if teilweise else FERTIG,
                    phase=phase, done=done if teilweise else max(done, total), total=total)
             break
@@ -309,14 +473,6 @@ def _update_eine_quelle(quelle: dict, *, settings: dict, log, on_fortschritt,
             break
         time.sleep(poll_s)
 
-    z["dauer_s"] = round(time.monotonic() - start, 1)
-    _setze(z)
-    if on_fortschritt:
-        try:
-            on_fortschritt(dict(z))
-        except Exception:
-            pass
-    _persistiere(z)
     return z
 
 
@@ -324,26 +480,43 @@ def starte_alle_updates(settings: dict, *, log=None, on_fortschritt=None,
                         gestopft=None, bereit_warten_s: float = 60.0,
                         poll_s: float = 5.0, backoff_s: float = 30.0,
                         timeout_s: float | None = None,
-                        login_timeout_s: float | None = None) -> dict[str, dict]:
-    """Stufe 0 für ALLE aktiven Quellen, parallel. Rückgabe kuerzel → Zustand.
+                        login_timeout_s: float | None = None,
+                        tradelisten: bool = True,
+                        katalog_max_alter_h: float | None = None,
+                        quellen_filter=None, modus: str = "scan") -> dict[str, dict]:
+    """Stufe 0 für aktive Quellen, parallel. Rückgabe kuerzel → Zustand.
 
     gestopft: Callable[[], bool] (Stop-Button). on_fortschritt: Callback mit
     Kopie des Zustands je Quelle (Live-Dialog). log: Zeilen-Funktion. Die
     Zeitparameter sind für Tests verkürzt; produktiv gelten die Defaults
     (None = aus den Settings: 120 min Gesamt, 10 min Login).
+
+    Abonnenten-Variante (doc/24 §4 Stufe B): tradelisten=False lädt NUR
+    Katalog/Abonnenten (keine Tradelisten), katalog_max_alter_h=0 erzwingt
+    die Neumessung trotz 3-Tage-Regel, quellen_filter begrenzt auf die
+    gewählten Kürzel, modus markiert die Chronik (z. B. "abonnenten").
     """
     settings = settings or {}
     quellen._ensure()
     aktiv = db.list_quellen(nur_aktiv=True)
-    zustaende = {str(q["kuerzel"]): _neuer_zustand(q) for q in aktiv}
+    if quellen_filter:
+        erlaubt = {db.kanonische_quelle(k) for k in quellen_filter}
+        aktiv = [q for q in aktiv if db.kanonische_quelle(q["kuerzel"]) in erlaubt]
+    zustaende = {str(q["kuerzel"]): _neuer_zustand(q, modus=modus) for q in aktiv}
     if not aktiv:
         if log:
-            log("Keine aktive Datenquelle konfiguriert — Stufe 0 ohne Arbeit.")
+            log("Keine (gewählte) aktive Datenquelle konfiguriert — "
+                "Stufe 0 ohne Arbeit.")
         return zustaende
     if log:
-        log(f"Stufe 0: Update bei {len(aktiv)} Client(s) anstoßen "
-            f"(Ziel ≥{settings.get('update_ziel_signale', 200)} Signale, "
-            f"Katalog-Frische {settings.get('update_katalog_max_alter_h', 72)} h) …")
+        if not tradelisten:
+            log(f"Stufe 0 (nur Katalog/Abonnenten): Update bei {len(aktiv)} "
+                f"gewählter Client(s) anstoßen — Katalog-Frische erzwingen, "
+                "keine Tradelisten.")
+        else:
+            log(f"Stufe 0: Update bei {len(aktiv)} Client(s) anstoßen "
+                f"(Ziel ≥{settings.get('update_ziel_signale', 200)} Signale, "
+                f"Katalog-Frische {settings.get('update_katalog_max_alter_h', 72)} h) …")
     stop_flag = gestopft or (lambda: False)
 
     def _arbeit(quelle: dict) -> tuple[str, dict]:
@@ -352,7 +525,8 @@ def starte_alle_updates(settings: dict, *, log=None, on_fortschritt=None,
                 quelle, settings=settings, log=log, on_fortschritt=on_fortschritt,
                 gestopft=stop_flag, bereit_warten_s=bereit_warten_s,
                 poll_s=poll_s, backoff_s=backoff_s, timeout_s=timeout_s,
-                login_timeout_s=login_timeout_s)
+                login_timeout_s=login_timeout_s, tradelisten=tradelisten,
+                katalog_max_alter_h=katalog_max_alter_h, modus=modus)
         except Exception as exc:  # eine Quelle darf nie die anderen mitreißen
             z = zustaende[str(quelle["kuerzel"])]
             _setze(z, status=FEHLER, fehler=f"{type(exc).__name__}: {exc}",

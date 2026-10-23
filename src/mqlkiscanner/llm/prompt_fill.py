@@ -157,3 +157,47 @@ def build_tiefenanalyse_prompt(result, trades_json: str) -> str:
         "{trades_json}": trades_json,
         "{signal_name}": getattr(result, "name", "") or "Unbenanntes Signal",
     })
+
+
+def build_abonnenten_prompt(key: str, *, laufprofil_json: str,
+                            kandidat_json: str, forensik_json: str,
+                            trades_json: str, teilanalysen_json: str = "[]",
+                            kurztest_json: str = "{}",
+                            vergleich_json: str = "{}") -> str:
+    """Rechercheprofil füllen, ohne die alte Drei-Monats-Policy einzusetzen.
+
+    Auch vom Nutzer ergänzte alte Regelbaustein-Platzhalter sind hier verboten:
+    dieser Modus hat seine eigene versionierte Policy. Eingefügte Fremdtexte
+    werden wie bei den Workflow-Buildern genau einmal eingesetzt.
+    """
+    if key not in llm_prompts.ABONNENTEN_PROMPT_KEYS:
+        raise ValueError(f"Keine Abonnentenanalyse-Vorlage: {key}")
+    values = {
+        "laufprofil_json": laufprofil_json, "kandidat_json": kandidat_json,
+        "forensik_json": forensik_json, "trades_json": trades_json,
+        "teilanalysen_json": teilanalysen_json, "kurztest_json": kurztest_json,
+        "vergleich_json": vergleich_json,
+    }
+    allowed = llm_prompts.prompt_placeholders(key)
+    template = llm_prompts.load_prompt(key)
+    slots = set(_PLACEHOLDER_RE.findall(template))
+    expected = {"{" + name + "}" for name in allowed}
+    unknown, missing = sorted(slots - expected), sorted(expected - slots)
+    if unknown or missing:
+        raise LlmError(f"Recherchevorlage '{key}': unbekannte Platzhalter {unknown}; "
+                       f"fehlende Pflicht-Platzhalter {missing}. Im Admin prüfen.")
+    tokens = {"{" + name + "}": f"\x00RECHERCHE_{i}\x00"
+              for i, name in enumerate(allowed)}
+    for slot, token in tokens.items():
+        template = template.replace(slot, token)
+    for name in allowed:
+        template = template.replace(tokens["{" + name + "}"], str(values[name]))
+    return template
+
+
+def build_abonnenten_kurztest_prompt(**values) -> str:
+    return build_abonnenten_prompt("abonnenten_kurztest", **values)
+
+
+def build_abonnenten_top5_prompt(**values) -> str:
+    return build_abonnenten_prompt("abonnenten_top5", **values)

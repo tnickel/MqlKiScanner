@@ -12,6 +12,19 @@ stehen ab §11. MqlRealmonitor gehört nicht zu den fünf aktualisierten
 Datenquellen und ist noch nicht produktiv eingebunden; seine Integration
 bleibt vorerst zurückgestellt.
 
+**Katalogumfang nach Gegenprüfung (18.10.2026):** Der Scanner fordert beim
+Metadaten-Sync für „Alle Signale“ ausdrücklich `minSubscribers=0` auf jeder
+Katalogseite an. Der Serverstandard von mindestens einem Abonnenten hatte
+sonst bereits lokal bekannte Provider aus der Übersicht ausgeschlossen.
+Reguläre Quellenkandidaten behalten `minSubscribers=1`; dieser Fix erweitert
+keine automatischen Trade-Batches und ändert weder Top-N noch Mindestalter
+oder Bewertung. Ein ausdrücklich gestarteter Studienbatch über die gesamte
+Übersicht kann entsprechend auch die zusätzlich sichtbaren Zeilen umfassen.
+Die historischen Hinweise unten zu „0-Copier-Historien“ betreffen den
+Trade-/Scan-Scope, nicht diesen vollständigen Metadatenkatalog. Vollständig
+bezieht sich auf den lokalen Quellenbestand; eine Top-Liste eines Monitors
+belegt weiterhin keinen weltweiten Plattformvollbestand.
+
 **Ergaenzung nach Fremdreview (16.10.2026):** Pelican liefert bei beendeten
 Updatejobs zusaetzlich `ergebnis.tradelistenFehler` (Anzahl) und
 `ergebnis.tradelistenAbgebrochen` (Boolean). `state=done` allein beweist keinen

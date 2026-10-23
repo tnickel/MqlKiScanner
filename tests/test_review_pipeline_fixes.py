@@ -28,8 +28,8 @@ def test_demo_does_not_replace_live_drawdown_or_import_live_reports():
     sid = 2342895
     db.upsert_signal(sid, name="Live", platform="MT5",
                      stats={"eq_dd_pct": 39, "forensik_ok": True})
-    db.store_forensik(sid, {"score": 8, "trading_dd": {"pct": 39}})
-    db.store_analysis(sid, "gesamtbericht", "test", 0, "Live-Bericht")
+    db.store_forensik(sid, {"score": 8, "trading_dd": {"pct": 39}}, quelle="mql5")
+    db.store_analysis(sid, "gesamtbericht", "test", 0, "Live-Bericht", quelle="mql5")
     before = db.list_catalog()
     raw = config.RAW_DIR / "kiracat_2342895_positions.csv"
     demo = pipeline.ScanPipeline.analyze_local_files([str(raw)])[0]
@@ -52,7 +52,7 @@ def test_demo_never_creates_ki_or_portfolio_requests():
 def test_old_csv_catalog_entry_is_identified_as_demo():
     db.init_db()
     db.upsert_signal(123, platform="CSV", stats={"forensik_ok": True})
-    db.store_forensik(123, {"score": 2})
+    db.store_forensik(123, {"score": 2}, quelle="mql5")
     assert pipeline.results_from_db()[0].source_kind == "demo"
 
 

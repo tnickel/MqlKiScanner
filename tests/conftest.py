@@ -62,6 +62,13 @@ def isolated_app_storage(tmp_path, monkeypatch):
     monkeypatch.setattr(prompts, "PROMPT_FILES", {
         key: config.PROMPTS_DIR / f"{key}.md" for key in prompts.DEFAULTS
     })
+    # Frischinstallation-Äquivalent: Die Werkvorlagen liegen committed im
+    # Repository — das Test-TMP stellt sie hier bereit. load_prompt legt
+    # NICHTS mehr automatisch an (Nutzer-Regel 20.10.: fehlende Vorlage →
+    # sichtbarer Hinweis statt stiller Default).
+    for _key, _pfad in prompts.PROMPT_FILES.items():
+        _pfad.parent.mkdir(parents=True, exist_ok=True)
+        _pfad.write_text(prompts.DEFAULTS[_key], encoding="utf-8")
     for variable in ("MQLKISCANNER_GLM_KEY", "GLM_API_KEY", "MQL5_USER", "MQL5_PASS",
                      "MQLDOWNLOADER_TOKEN", "MQLKISCANNER_DOWNLOADER_TOKEN",
                      "MQLKISCANNER_REST_TOKEN"):

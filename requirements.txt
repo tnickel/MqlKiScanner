@@ -12,6 +12,10 @@ reportlab>=4.2,<5
 streamlit[pdf]>=1.63,<2
 # Equity-DD-Studie: interaktive Charts (Zoom, Rangeslider, Zeichenwerkzeuge)
 plotly>=5.20
+# Abonnentenstatistik: Sparkline-Minigrafiken in der Tabellenspalte
+# „Verlauf 30 T" (direkte Nutzung, bewusst deklariert obwohl streamlit[pdf]
+# Pillow bereits mitbringt — Muster wie psutil)
+Pillow>=10
 # MQL5-Login/Export-Fallback (Selenium-Chrome, persistentes Profil)
 selenium>=4.15
 # LLM-Layer (Phase 3): GLM ueber die OpenAI-kompatible Z.ai-REST-API,

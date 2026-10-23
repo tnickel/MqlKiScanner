@@ -176,8 +176,14 @@ def load_export(path: str, plattform_positions: float | None = None, *,
             # Profit-Spalte = Gesamtsumme. Kein Trade — sonst verfaelscht die
             # Summe als Riesen-Trade jede Statistik.
             continue
-        if row_type in ("Charge", "Commission"):
-            money_columns = (9, 10, 11) if fmt == "mt4_orderbook" else (8, 9, 10)
+        # MT5 exports name interest bookings "Deal Interestrate". Like
+        # DEAL_TYPE_INTEREST in MetaQuotes' Deal Properties, these are signed
+        # performance bookings, never deposits. Only the observed Time/Type/
+        # Profit shape is supported; other Deal types remain unknown.
+        interest_booking = fmt == "positions" and row_type == "Deal Interestrate"
+        if row_type in ("Charge", "Commission") or interest_booking:
+            money_columns = ((10,) if interest_booking else
+                             (9, 10, 11) if fmt == "mt4_orderbook" else (8, 9, 10))
             allowed = {0, 1, *money_columns}
             if fmt == "mt4_orderbook":
                 allowed.add(12)

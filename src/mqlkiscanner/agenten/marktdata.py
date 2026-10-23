@@ -19,7 +19,10 @@ auch wenn es schon vor dem Lauf lief.
 from __future__ import annotations
 
 import subprocess
+import logging
 from pathlib import Path
+
+_LOG = logging.getLogger(__name__)
 
 # Whitelist der angebundenen MT5-Aufrufe (doc/19 §7.1). Der statische Test
 # prüft, dass das Modul keine anderen mt5.*-Aufrufe enthält.
@@ -42,48 +45,133 @@ def broker_symbol(symbol: str, settings: dict) -> str:
     return symbol + suffix
 
 
-def _terminal_prozesse(terminal_pfad: str) -> list[tuple[int, str]]:
-    """(PID, Pfad) aller terminal64-Prozesse mit genau DIESEM Pfad."""
+class TerminalProzessAbfrageFehler(RuntimeError):
+    """Unbekannter Prozesszustand darf nie als bestätigtes Prozessende gelten."""
+
+
+def _terminalpfad(terminal_pfad: str) -> str:
     try:
-        ziel = str(Path(terminal_pfad).resolve()).lower()
-    except (OSError, ValueError):
-        return []
+        if not isinstance(terminal_pfad, str) or not terminal_pfad.strip():
+            raise ValueError("Terminalpfad fehlt")
+        pfad = Path(terminal_pfad).resolve()
+        if pfad.name.casefold() != "terminal64.exe":
+            raise ValueError("Terminalpfad bezeichnet keine terminal64.exe")
+        return str(pfad).casefold()
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise TerminalProzessAbfrageFehler(f"Terminalpfad nicht belegbar: {exc}") from exc
+
+
+def _powershell_prozesse(ziel: str, abfrage: str, label: str, timeout: int,
+                        *, allow_exited=False) -> list[tuple[int, str]]:
+    """A successful complete path inventory is distinct from a query failure."""
     try:
         ausgabe = subprocess.run(
             ["powershell", "-NoProfile", "-Command",
-             "(Get-CimInstance Win32_Process "
-             "-Filter \"Name='terminal64.exe'\" "
-             "| Select-Object ProcessId, ExecutablePath "
-             "| ConvertTo-Json -Compress)"],
-            capture_output=True, timeout=20,
-            encoding="utf-8", errors="replace",
+             "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n" + abfrage],
+            capture_output=True, timeout=timeout,
+            encoding="utf-8", errors="strict",
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
-    except (OSError, subprocess.SubprocessError):
-        return []
+    except (OSError, subprocess.SubprocessError, UnicodeError) as exc:
+        raise TerminalProzessAbfrageFehler(f"{label}-Terminalabfrage fehlgeschlagen: {exc}") from exc
+    if ausgabe.returncode != 0 or (ausgabe.stderr or "").strip():
+        raise TerminalProzessAbfrageFehler(
+            f"{label}-Terminalabfrage fehlgeschlagen (Exit {ausgabe.returncode}): {(ausgabe.stderr or '')[:300]}")
     roh = (ausgabe.stdout or "").strip()
     if not roh:
         return []
     import json as _json
-    eintraege = roh.splitlines()
     try:
-        daten = _json.loads(roh) if roh.startswith("[") or roh.startswith("{") \
-            else [{"ProcessId": int(e.split()[0]),
-                   "ExecutablePath": e.split(None, 1)[1] if " " in e else ""}
-                  for e in eintraege]
-    except (ValueError, IndexError, _json.JSONDecodeError):
+        daten = _json.loads(roh)
+    except (ValueError, TypeError) as exc:
+        raise TerminalProzessAbfrageFehler(f"{label}-Terminalabfrage liefert kein gültiges JSON") from exc
+    if daten is None:
         return []
     if isinstance(daten, dict):  # ConvertTo-Json liefert ein Objekt bei EINEM Prozess
         daten = [daten]
+    if not isinstance(daten, list):
+        raise TerminalProzessAbfrageFehler(f"{label}-Terminalabfrage liefert kein gültiges Prozessschema")
     ergebnis = []
     for eintrag in daten:
         try:
-            pfad = str(eintrag.get("ExecutablePath") or "").strip().lower()
+            pid = eintrag["ProcessId"]
+            if isinstance(pid, bool) or not isinstance(pid, int) or pid <= 0:
+                raise ValueError("PID nicht belegt")
+            raw_path = eintrag["ExecutablePath"]
+            # A graceful close can invalidate Path after the name inventory.
+            # Only the same native Process object's explicit post-read exit
+            # receipt proves disappearance. Null/denied/unknown alone do not.
+            if (allow_exited and raw_path in (None, "")
+                    and eintrag.get("HasExited") is True):
+                continue
+            pfad = _terminalpfad(raw_path)
             if pfad == ziel:
-                ergebnis.append((int(eintrag["ProcessId"]), pfad))
-        except (KeyError, ValueError, TypeError):
-            continue
-    return ergebnis
+                ergebnis.append((pid, pfad))
+        except (KeyError, ValueError, TypeError) as exc:
+            raise TerminalProzessAbfrageFehler(f"{label}-Terminalabfrage enthält einen unbelegten Prozess") from exc
+    return sorted(ergebnis)
+
+
+def _terminal_prozesse_cim(ziel: str) -> list[tuple[int, str]]:
+    """Legacy fallback without psutil; never swallow WMI/CIM timeouts."""
+    return _powershell_prozesse(ziel,
+        "(Get-CimInstance Win32_Process -Filter \"Name='terminal64.exe'\" -ErrorAction Stop "
+        "| Select-Object ProcessId, ExecutablePath | ConvertTo-Json -Compress)", "CIM", 20)
+
+
+def _terminal_prozesse_native(ziel: str) -> list[tuple[int, str]]:
+    """Independent .NET process-name inventory when psutil cannot read a name.
+
+    Some Windows security processes have an empty psutil name. They must not
+    be silently skipped or force a broken CIM query; Get-Process supplies an
+    independent complete name inventory and reads paths only for terminals.
+    """
+    return _powershell_prozesse(ziel,
+        "(Get-Process -ErrorAction Stop | Where-Object { $_.ProcessName -ieq 'terminal64' } "
+        "| ForEach-Object { $prozess = $_; $exePfad = $prozess.Path; "
+        "$beendet = $prozess.HasExited; "
+        "[PSCustomObject]@{ProcessId=$prozess.Id;ExecutablePath=$exePfad;HasExited=$beendet} } "
+        "| ConvertTo-Json -Compress)", "Get-Process", 5, allow_exited=True)
+
+
+def _terminal_prozesse(terminal_pfad: str) -> list[tuple[int, str]]:
+    """(PID, canonical path) for this exact terminal; unknown state raises.
+
+    Read names first: querying every protected Windows process's executable
+    is both unnecessary and prone to access errors. Only terminal64.exe needs
+    a path check. A vanished process is harmless; an unreadable one is not
+    proof that the configured terminal has stopped.
+    """
+    ziel = _terminalpfad(terminal_pfad)
+    try:
+        import psutil
+    except ImportError:
+        return _terminal_prozesse_cim(ziel)
+    ergebnis = []
+    try:
+        for prozess in psutil.process_iter():
+            try:
+                name = prozess.name()
+                if not isinstance(name, str) or not name:
+                    raise TerminalProzessAbfrageFehler("Prozessname nicht lesbar")
+                if name.casefold() != "terminal64.exe":
+                    continue
+                pfad = _terminalpfad(prozess.exe())
+                if pfad == ziel:
+                    pid = prozess.pid
+                    if isinstance(pid, bool) or not isinstance(pid, int) or pid <= 0:
+                        raise TerminalProzessAbfrageFehler("Terminal-PID nicht belegt")
+                    ergebnis.append((pid, pfad))
+            except psutil.NoSuchProcess:
+                continue  # Process ended during the name/path query.
+    except Exception as exc:
+        try:
+            return _terminal_prozesse_native(ziel)
+        except TerminalProzessAbfrageFehler as fallback_error:
+            raise TerminalProzessAbfrageFehler(
+                f"Terminal-Prozessabfrage nicht vollständig möglich: {type(exc).__name__}: {exc}; "
+                f"unabhängige Namensinventur: {fallback_error}") from fallback_error
+    return sorted(ergebnis)
 
 
 def terminal_laueft(terminal_pfad: str) -> bool:
@@ -91,7 +179,8 @@ def terminal_laueft(terminal_pfad: str) -> bool:
 
     Nur der Prozessname reichte nicht: Ein anderes MT5-Terminal (andere
     Installation) würde sonst den Selbststart blockieren und einen Attach
-    vortäuschen.
+    vortäuschen. Eine gescheiterte Abfrage wirft TerminalProzessAbfrageFehler;
+    sie belegt weder Abwesenheit noch einen zulässigen neuen Selbststart.
     """
     return bool(_terminal_prozesse(terminal_pfad))
 
@@ -103,13 +192,9 @@ def terminal_beenden(terminal_pfad: str) -> bool:
     dem Scanner. Es wird nach jedem Lauf beendet — auch wenn es schon vor
     dem Lauf lief (shutdown() allein erfasst nur selbst gestartete).
     """
-    prozesse = _terminal_prozesse(terminal_pfad)
-    if not prozesse:
-        return True
-
     def _taskkill(hart: bool) -> None:
         for pid, _pfad in _terminal_prozesse(terminal_pfad):
-            befehl = ["taskkill", "/PID", str(pid)] + (["/F", "/T"] if hart else [])
+            befehl = ["taskkill", "/PID", str(pid)] + (["/F"] if hart else [])
             try:
                 subprocess.run(
                     befehl, capture_output=True, timeout=15,
@@ -117,12 +202,18 @@ def terminal_beenden(terminal_pfad: str) -> bool:
             except (OSError, subprocess.SubprocessError):
                 pass
 
-    _taskkill(hart=False)          # WM_CLOSE — Terminal darf Logfiles schreiben
-    if _terminal_prozesse(terminal_pfad):
-        import time as _time
-        _time.sleep(4)             # dem Terminal Zeit zum sauberen Beenden
-        _taskkill(hart=True)       # harte Notbremse, falls es hängt
-    return not _terminal_prozesse(terminal_pfad)
+    try:
+        if not _terminal_prozesse(terminal_pfad):
+            return True
+        _taskkill(hart=False)          # WM_CLOSE — Terminal darf Logfiles schreiben
+        if _terminal_prozesse(terminal_pfad):
+            import time as _time
+            _time.sleep(4)             # dem Terminal Zeit zum sauberen Beenden
+            _taskkill(hart=True)       # nur erneut pfadgenau bestätigte PIDs
+        return not _terminal_prozesse(terminal_pfad)
+    except TerminalProzessAbfrageFehler as exc:
+        _LOG.warning("Terminal-Cleanup nicht bestätigt (%s): %s", terminal_pfad, exc)
+        return False
 
 
 def kurse_holen(symbole: list[str], settings: dict) -> dict:

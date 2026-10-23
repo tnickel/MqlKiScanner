@@ -104,7 +104,7 @@ def test_conflicting_source_assignment_is_rejected_before_fetch(native_source, f
     res, source, client, _ = native_source
     res.quelle_id, res.quelle_version = source["id"], "mql5"
     setattr(res, field, value)
-    with pytest.raises(ValueError, match="Zuordnung|zuordnung|Kontowährung"):
+    with pytest.raises(ValueError, match="Zuordnung|zuordnung|Kontowährung|widersprechen sich"):
         katalog.require_studienwaehrung(res)
     client.metrics.assert_not_called()
 

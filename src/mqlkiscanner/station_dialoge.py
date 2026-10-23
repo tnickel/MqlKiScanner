@@ -57,7 +57,7 @@ def _problem_art(result) -> tuple[str, str, str]:
             ":material/account_balance_wallet:",
             "Der Trade-Export beginnt ohne Einzahlung vor dem ersten Trade — z. B. gekürzte "
             "Historie oder eine Auszahlung vor Handelsbeginn. Ohne Startkapital sind Schockanteil "
-            "und die 30-%-Schranke nicht berechenbar; das Signal bleibt deshalb bewusst ohne Urteil.",
+            "und die konfigurierte Drawdown-Schranke nicht berechenbar; das Signal bleibt deshalb bewusst ohne Urteil.",
         )
     if not result.forensik_vorhanden:
         return (
@@ -484,7 +484,8 @@ def _dialog_forensik() -> None:
         st.caption("Kein Lauf in dieser Sitzung — angezeigt ist der letzte "
                    "gespeicherte Datenbank-Stand (kann älter sein als der "
                    "letzte Lauf).")
-    res_map = {r.id: r for r in results}
+    from .signal_identity import key_for
+    res_map = {key_for(r): r for r in results}
     datei = config.DATA_DIR / "auswahl_begruendung.json"
     eintraege: list[dict] = []
     if datei.exists():
@@ -506,7 +507,7 @@ def _dialog_forensik() -> None:
     zeilen = []
     for e in eintraege:
         status = str(e.get("status") or "KANDIDAT")
-        r = res_map.get(e.get("id"))
+        r = res_map.get(key_for(e))
         if r is not None:
             r.refresh_efficiency()
         geprueft = r is not None and r.forensik_vorhanden
@@ -532,9 +533,9 @@ def _dialog_forensik() -> None:
         })
     # Ergebnisse ohne Eintrag in der Begründungsliste (z. B. ältere DB-Zeilen
     # ohne Lauf in der Datei) dürfen nicht still verschwinden.
-    bekannte = {z["ID"] for z in zeilen}
+    bekannte = {(z["Quelle"], z["ID"]) for z in zeilen}
     for r in results:
-        if r.id in bekannte or not r.forensik_vorhanden:
+        if key_for(r) in bekannte or not r.forensik_vorhanden:
             continue
         r.refresh_efficiency()
         zeilen.append({

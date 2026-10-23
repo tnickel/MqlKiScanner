@@ -65,7 +65,7 @@ class _FakeClient:
         return "# Tiefenanalyse\nTestbefund mit konkreten Trade-Beispielen."
 
 
-def test_lauf_ruft_stufe2_mit_trades_und_speichert(monkeypatch):
+def test_lauf_ruft_stufe2_mit_trades_und_speichert(monkeypatch, tmp_path):
     db.init_db()
     db.upsert_signal(2385035, name="Macro Overlay FX", platform="MT5")
     erstellt = []
@@ -78,14 +78,20 @@ def test_lauf_ruft_stufe2_mit_trades_und_speichert(monkeypatch):
     monkeypatch.setattr(llm_runner.llm_client, "GlmClient", _Client)
     monkeypatch.setattr(llm_runner, "load_export",
                          lambda path, plattform_positions=None: object())
-    monkeypatch.setattr(llm_runner, "build_trade_payload",
-                        lambda parsed: {"meta": {"trades": 7}})
+    payload_limits = []
+    def payload(parsed, *, volle_liste_max_trades=0):
+        payload_limits.append(volle_liste_max_trades)
+        return {"meta": {"trades": 7}}
+    monkeypatch.setattr(llm_runner, "build_trade_payload", payload)
+    export_path = tmp_path / "export.csv"
+    export_path.write_text("synthetic frozen input", encoding="utf-8")
     r = pipeline.ScanResult(id=2385035, name="Macro Overlay FX", platform="MT5",
-                            trades_path="export.csv")
+                            trades_path=str(export_path))
     ergebnis = llm_runner.run_tiefenanalyse_einzeln(r, settings={}, log=lambda m: None)
     client = erstellt[0]
     assert ergebnis["text"].startswith("# Tiefenanalyse")
     assert client.last_stufe == 2                     # starkes Modell
+    assert payload_limits == [250]                  # bestehender Vollisten-Vertrag
     assert '"trades": 7' in client.last_prompt        # Tradeliste mitgesendet
     assert "Macro Overlay FX" in client.last_prompt   # Name als Variable ersetzt
     assert r.tiefenanalyse.startswith("# Tiefenanalyse")
@@ -128,7 +134,7 @@ def test_pdf_spec_und_speicherpfad():
 def test_katalog_laedt_tiefenanalyse():
     db.init_db()
     db.upsert_signal(2385035, name="Macro Overlay FX", platform="MT5")
-    db.store_analysis(2385035, "tiefenanalyse", "glm-5.3", 100, "# Befund")
+    db.store_analysis(2385035, "tiefenanalyse", "glm-5.3", 100, "# Befund", quelle="mql5")
     r = next(x for x in pipeline.results_from_db(settings={}) if x.id == 2385035)
     assert r.tiefenanalyse == "# Befund"
     assert r.tiefenanalyse_model == "glm-5.3"

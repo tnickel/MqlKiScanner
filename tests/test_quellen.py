@@ -34,7 +34,7 @@ class FakeClient:
             raise self.fehler
         return dict(self._health)
 
-    def katalog(self, *, version=None, limit=500, offset=0):
+    def katalog(self, *, version=None, limit=500, offset=0, min_subscribers=1):
         if self.fehler:
             raise self.fehler
         block = self._katalog[offset:offset + limit]
@@ -219,11 +219,12 @@ def test_kandidaten_format_und_dedup(monkeypatch):
             "signalId": "99", "version": "mql5", "signalName": "Nur im Spiegel"}]),
     })
     kandidaten = ingest.kandidaten_aus_quellen()
-    assert len(kandidaten) == 2
+    assert len(kandidaten) == 3
+    assert {(k["quelle_kuerzel"], k["id"]) for k in kandidaten} == {("mql5",2349227),("spiegel",2349227),("spiegel",99)}
     erster = kandidaten[0]
     assert erster["id"] == 2349227 and erster["platform"] == "mt4"
     assert erster["wochen"] is None and erster["abonnenten"] == 42
-    assert erster["quelle_kuerzel"] == "mql5"  # erste Quelle gewinnt
+    assert erster["quelle_kuerzel"] == "mql5"  # equal IDs of different owners remain independent
     assert kandidaten[1]["quelle_kuerzel"] == "spiegel"
 
 
@@ -335,13 +336,19 @@ def test_sync_history_teilausfall_und_gesamtausfall(monkeypatch):
         "http://a:8089": FakeClient(fehler=down),
         "http://b:8089": FakeClient(history=[_punkt("2026-09-01T06:45:00", 3)]),
     })
-    assert downloader_sync.sync_history(1, "mt4") == 1  # Quelle 2 rettet den Lauf
+    with pytest.raises(downloader_client.DownloaderConnectionError):
+        downloader_sync.sync_history(1, "mt4", quelle="mql5")
+    assert downloader_sync.sync_history(1, "mt4", quelle="spiegel") == 1
+    assert db.get_history(1, "mql4", quelle="mql5") == []
+    assert len(db.get_history(1, "mql4", quelle="spiegel")) == 1
     _verdrahte(monkeypatch, {
         "http://a:8089": FakeClient(fehler=down),
         "http://b:8089": FakeClient(fehler=down),
     })
     with pytest.raises(downloader_client.DownloaderConnectionError):
-        downloader_sync.sync_history(1, "mt4")
+        downloader_sync.sync_history(1, "mt4", quelle="mql5")
+    with pytest.raises(downloader_client.DownloaderConnectionError):
+        downloader_sync.sync_history(1, "mt4", quelle="spiegel")
 
 
 def test_sync_ohne_quelle_wirft_nicht_konfiguriert():

@@ -45,9 +45,11 @@ def alert(typ: str, titel: str, text: str, *, prioritaet: int = 2,
 
 def stilbruch_alert(signal_name: str, text: str, schritt_ref: int,
                     lauf_id: int, signal_id: int,
-                    beobachtung_id: int | None = None) -> int:
+                    beobachtung_id: int | None = None, *, quelle: str = "mql5") -> int:
     """Der Betreuer meldt einen Stilbruch — sofort, prioritaet 3."""
-    quellen = [f"schritt#{schritt_ref}", f"lauf#{lauf_id}", f"signal#{signal_id}"]
+    identity = db.resolve_identity(signal_id, quelle=quelle)
+    signal_link = f"signal_ref#{identity.signal_ref}" if identity else f"signal#{quelle}:{signal_id}"
+    quellen = [f"schritt#{schritt_ref}", f"lauf#{lauf_id}", signal_link]
     if beobachtung_id:
         quellen.append(f"dossier_beobachtung#{beobachtung_id}")
     return alert("alert", f"STILBRUCH: {signal_name}", text,
@@ -94,7 +96,8 @@ def pruefe_neue_wechsel(log=print) -> list[dict]:
               f"Richtung: {richtung}. {grund_text}",
               prioritaet=prioritaet,
               quellen=[f"ampel_wechsel#{w['id']}",
-                       f"signal#{w.get('signal_id')}"],
+                       f"signal_ref#{w.get('signal_ref')}" if w.get("signal_ref") else
+                       f"signal#{w.get('signal_quelle') or 'mql5'}:{w.get('signal_id')}"],
               quelle="watcher")
         # F-15: Marker JE Alert setzen — eine Exception mitten in der
         # Schleife wiederholte sonst alle bisherigen Alerts im nächsten

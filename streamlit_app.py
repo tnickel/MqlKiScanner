@@ -61,6 +61,14 @@ agenten_page = st.Page(
 alle_signale_page = st.Page(
     "app_pages/alle_signale.py", title="Alle Signale", icon=":material/analytics:"
 )
+abonnenten_statistik_page = st.Page(
+    "app_pages/abonnenten_statistik.py", title="Abonnentenstatistik",
+    icon=":material/group_add:",
+)
+risiko_rechner_page = st.Page(
+    "app_pages/risiko_rechner.py", title="Max-Risiko-Rechner",
+    icon=":material/monitoring:",
+)
 faq_page = st.Page(
     "app_pages/faq.py", title="FAQ", icon=":material/help:"
 )
@@ -181,6 +189,8 @@ page = st.navigation(
             results_page,
             agenten_page,
             alle_signale_page,
+            abonnenten_statistik_page,
+            risiko_rechner_page,
         ],
         "Konfiguration": [
             settings_page,

@@ -70,9 +70,9 @@ def test_datei_sha256_stabil(tmp_path):
 # ── Dossier-Datenbasis ─────────────────────────────────────────────
 
 def test_profil_versioniert_nie_ueberschrieben():
-    v1 = dossier.profil_speichern(1, "Profiltext A", "glm-5.3", {"a": 1})
+    v1 = dossier.profil_speichern(1, "Profiltext A", "glm-5.3", {"a": 1}, quelle="mql5")
     v2 = dossier.profil_speichern(1, "Profiltext B", "glm-5.3", {"a": 2},
-                                  aenderungs_grund="Tiefenanalyse erneuert")
+                                  aenderungs_grund="Tiefenanalyse erneuert", quelle="mql5")
     assert (v1, v2) == (1, 2)
     aktuell = dossier.profil_lesen(1)
     assert aktuell["profil_text"] == "Profiltext B"
@@ -83,15 +83,15 @@ def test_profil_versioniert_nie_ueberschrieben():
 
 def test_beobachtung_nur_bekannte_einordnung():
     with pytest.raises(AssertionError):
-        dossier.beobachtung_speichern(1, "SUPER", "text")
-    dossier.beobachtung_speichern(1, "KONFORM", "Alles im Rahmen.")
+        dossier.beobachtung_speichern(1, "SUPER", "text", quelle="mql5")
+    dossier.beobachtung_speichern(1, "KONFORM", "Alles im Rahmen.", quelle="mql5")
     e = dossier.beobachtungen_lesen(1)[0]
     assert e["einordnung"] == "KONFORM"
     assert "Alles im Rahmen" in dossier.letzte_beobachtungen(1)
 
 
 def test_delta_speichern_und_lesen():
-    d = dossier.delta_speichern(1, None, "abc", 3, {"anzahl": 3})
+    d = dossier.delta_speichern(1, None, "abc", 3, {"anzahl": 3}, quelle="mql5")
     eintraege = dossier.deltas_lesen(1)
     assert eintraege[0]["id"] == d
     assert eintraege[0]["neue_trades"] == 3
@@ -105,13 +105,13 @@ def signal_mit_snapshot(tmp_path, monkeypatch):
     """Ein 🟢-Signal mit Profil, Snapshot in trade_files und gestubbtem Export."""
     db.init_db()
     db.upsert_signal(2349227, name="Test Spike", stats={"ampel": "🟢"})
-    db.store_forensik(2349227, {"ampel": "🟢", "vollstaendig": True})
+    db.store_forensik(2349227, {"ampel": "🟢", "vollstaendig": True}, quelle="mql5")
     db.store_analysis(2349227, "tiefenanalyse", "glm-5.3", 10,
-                      "Langer Tiefenanalysetext über den Ausbruchs-Scanner.")
+                      "Langer Tiefenanalysetext über den Ausbruchs-Scanner.", quelle="mql5")
     dossier.profil_speichern(2349227, "Profil: Ausbruchs-Scanner, 21:10 Uhr.",
-                             "glm-5.3", {})
+                             "glm-5.3", {}, quelle="mql5")
     alt_pfad = _csv(tmp_path / "alt.csv", [_trade_zeile(1)])
-    db.store_trade_file(2349227, alt_pfad)
+    db.store_trade_file(2349227, alt_pfad, quelle="mql5")
     export_pfad = _csv(tmp_path / "neu.csv",
                        [_trade_zeile(1), _trade_zeile(2, profit="15.00")])
     monkeypatch.setattr(betreuer, "export_holen",
@@ -128,14 +128,15 @@ def test_betreuter_lauf_mit_neuen_trades(signal_mit_snapshot, monkeypatch):
     antwort = ("EINORDNUNG: KONFORM\nZwei neue Trades um 10:15 Uhr im "
                "dokumentierten Fenster — Lot konstant.")
     monkeypatch.setattr(betreuer, "_llm_einordnung",
-                        lambda *a, **k: (antwort, 42))
+                        lambda *a, **k: (antwort, journal.schritt_protokollieren(a[5], "betreuer", "llm", antwort=antwort)))
     ergebnis = betreuer.signal_pruefen(signal_mit_snapshot,
                                        config.load_settings(), log=lambda *_: None)
     assert ergebnis["status"] == "ok"
     assert ergebnis["einordnung"] == "KONFORM"
     beob = dossier.beobachtungen_lesen(2349227)[0]
     assert beob["einordnung"] == "KONFORM"
-    assert beob["schritt_ref"] == 42
+    assert any(s["id"] == beob["schritt_ref"] and journal.schritt_lesen(s["id"])["antwort"] == antwort
+               for s in journal.list_schritte(limit=20))
     assert dossier.deltas_lesen(2349227)[0]["neue_trades"] == 1
     schritte = [s["schritt"] for s in journal.list_schritte(limit=20)]
     # Geänderter Pfad: Export- und Delta-Schritt; der sha_vergleich-Schritt
@@ -162,8 +163,8 @@ def test_betreuter_lauf_ohne_neue_trades(signal_mit_snapshot, monkeypatch):
 
 def _snapshot_pfad() -> str:
     with db._connect() as conn:
-        row = conn.execute("SELECT path FROM trade_files WHERE signal_id=2349227"
-                           ).fetchone()
+        row = conn.execute("SELECT path FROM trade_files WHERE signal_ref=?",
+                           (db.resolve_identity(2349227, quelle="mql5").signal_ref,)).fetchone()
     return row["path"]
 
 
@@ -185,7 +186,7 @@ def test_destillation_ohne_grundlage_und_mit_vorhandenem_profil(tmp_path):
                                              lauf_id=lauf, log=lambda *_: None)
     assert not ergebnis["erstellt"]
     assert "kein Profil ohne Belegbasis" in ergebnis["grund"]
-    dossier.profil_speichern(222, "Profil", "glm-5.3", {})
+    dossier.profil_speichern(222, "Profil", "glm-5.3", {}, quelle="mql5")
     ergebnis = destillation.profil_erstellen(222, "Vorhanden", "https://x",
                                              config.load_settings(),
                                              lauf_id=lauf, log=lambda *_: None)
@@ -215,10 +216,10 @@ def test_stilbruch_historie_nur_stilbrueche_neueste_zuerst():
     from mqlkiscanner.agenten import dossier as dossier_db
 
     dossier_db.init_dossier()
-    dossier_db.beobachtung_speichern(999001, "KONFORM", "alles normal")
-    dossier_db.beobachtung_speichern(999001, "STILBRUCH", "Martingale erkannt")
-    dossier_db.beobachtung_speichern(999001, "STILBRUCH", "SL entfernt")
-    dossier_db.beobachtung_speichern(999002, "STILBRUCH", "anderes Signal")
+    dossier_db.beobachtung_speichern(999001, "KONFORM", "alles normal", quelle="mql5")
+    dossier_db.beobachtung_speichern(999001, "STILBRUCH", "Martingale erkannt", quelle="mql5")
+    dossier_db.beobachtung_speichern(999001, "STILBRUCH", "SL entfernt", quelle="mql5")
+    dossier_db.beobachtung_speichern(999002, "STILBRUCH", "anderes Signal", quelle="mql5")
     hist = dossier_db.stilbruch_historie(999001)
     assert [h["text"] for h in hist] == ["SL entfernt", "Martingale erkannt"]
     assert dossier_db.stilbruch_historie(999003) == []
@@ -262,7 +263,7 @@ def test_betreuter_lauf_kumuliert_delta_nicht_mehr(signal_mit_snapshot, monkeypa
     Betreuer gegen den Scan-Stand und pruefte dieselben Trades erneut)."""
     antwort = "EINORDNUNG: KONFORM\nNormal gehandelt."
     monkeypatch.setattr(betreuer, "_llm_einordnung",
-                        lambda *a, **k: (antwort, 7))
+                        lambda *a, **k: (antwort, journal.schritt_protokollieren(a[5], "betreuer", "llm", antwort=antwort)))
     erste = betreuer.signal_pruefen(signal_mit_snapshot,
                                     config.load_settings(), log=lambda *_: None)
     assert erste["einordnung"] == "KONFORM"

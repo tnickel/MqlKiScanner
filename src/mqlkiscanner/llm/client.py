@@ -91,13 +91,22 @@ class GlmClient:
 
     def chat(self, prompt: str, system: str = "", model: str | None = None,
              stufe: int = 1, temperature: float = 0.4,
-             max_tokens: int = 1600, meta_out: dict | None = None) -> str:
+             max_tokens: int = 1600, meta_out: dict | None = None,
+             reasoning_effort: str | None = None,
+             response_format: dict | None = None) -> str:
         """Ein Chat-Completion. Wirft klar benannte Fehler (Key/Guthaben/Budget).
 
         meta_out: optionaler Dict, der unter Lock mit den Call-Metadaten
         gefuellt wird — noetig bei parallelen Aufrufen (last_call allein rasant).
         """
         model = model or (self.model_stufe1 if stufe == 1 else self.model_stufe2)
+        if reasoning_effort is not None and reasoning_effort not in ("low", "high", "max"):
+            raise ValueError("Ungültiger Reasoning-Aufwand")
+        if response_format is not None and (
+                not isinstance(response_format, dict)
+                or set(response_format) != {"type"}
+                or response_format.get("type") not in ("text", "json_object")):
+            raise ValueError("Ungültiges Antwortformat")
         if meta_out is not None:
             meta_out.clear()
         # Konservative Reservierung: Antwort-Limit plus Prompt-Obergrenze
@@ -124,6 +133,10 @@ class GlmClient:
                 "temperature": temperature,
                 "max_tokens": max_tokens,
             }
+            if reasoning_effort is not None:
+                body["reasoning_effort"] = reasoning_effort
+            if response_format is not None:
+                body["response_format"] = dict(response_format)
             last_error: Exception | None = None
             call_id = uuid.uuid4().hex
             if meta_out is not None:
@@ -260,6 +273,10 @@ class GlmClient:
                     "zeichen": len(content),
                     "prompt_zeichen": len(prompt),
                 }
+                if reasoning_effort is not None:
+                    call_meta["reasoning_effort"] = reasoning_effort
+                if response_format is not None:
+                    call_meta["response_format"] = dict(response_format)
                 for key in totals:
                     totals[key] += call_meta[key]
                 call_meta.update(totals)

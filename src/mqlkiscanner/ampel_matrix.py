@@ -63,8 +63,9 @@ KRITERIEN: list[Kriterium] = [
         "berechneten Trading-DD (geschlossen), dem Max-Drawdown aus "
         "Kursmessung (Equity inklusive Floating; nur bei belastbarer "
         "Abdeckung) UND dem Closing-DD des "
-        "Datenquellen-Monitors darf die Schranke (Standard "
-        "30 %) nicht überschreiten. Grün = mit Puffer ≥ 5 Punkten eingehalten, "
+        "Datenquellen-Monitors darf die konfigurierte Schranke "
+        "nicht überschreiten. Es gibt keine feste 30-%-Obergrenze. "
+        "Grün = mit Puffer ≥ 5 Punkten eingehalten, "
         "gelb = eingehalten, aber Puffer unter 5 Punkte, rot = verletzt. Alle "
         "Werte fehlen → grau (keine Daten). Der höchste Wert entscheidet — "
         "der Plattform-Drawdown (By Equity) kann deutlich niedriger als By "
@@ -345,15 +346,16 @@ def _serie_zelle(r) -> Zelle:
 
 
 def _listen_zelle(r) -> Zelle:
+    from .signal_identity import key_for
     known = config.load_known_signals()
     for eintrag in known.get("ausgeschlossen", []):
-        if eintrag.get("id") == r.id:
+        if key_for(eintrag) == key_for(r):
             grund = eintrag.get("grund", "ohne Begründung")
             return Zelle(ROT, "ausgeschlossen",
                          f"Steht auf der Ausschlussliste (known_signals.json): "
                          f"{grund}")
     for eintrag in known.get("watchlist", []):
-        if eintrag.get("id") == r.id:
+        if key_for(eintrag) == key_for(r):
             status = eintrag.get("status", "Watchlist")
             grund = eintrag.get("grund", "")
             return Zelle(GELB, status,

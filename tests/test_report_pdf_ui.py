@@ -5,7 +5,8 @@ from streamlit.testing.v1 import AppTest
 
 from conftest import ROOT
 from mqlkiscanner import pipeline
-from mqlkiscanner.pdf_reports import snapshot_token
+from mqlkiscanner.app_ui import _result_identity
+from mqlkiscanner.pdf_reports import result_snapshot_token
 
 
 def _pdf_buttons(at: AppTest):
@@ -60,8 +61,7 @@ def test_table_opens_pdf_report_and_detail_offers_all_pdfs_for_repeated_ids(monk
         ":material/picture_as_pdf: Öffnen",
         ":material/picture_as_pdf: Öffnen",
     ]
-    second_token = snapshot_token(second.source_kind, second.id, second.trades_path,
-                                  second.trades_sha256, second.name)
+    second_token = result_snapshot_token(second)
     keys = {item.key for item in buttons}
     assert f"report_panel_final_{second_token}" in keys
     assert f"report_panel_trade_{second_token}" in keys
@@ -77,8 +77,7 @@ def test_report_panel_offers_final_and_intermediate_pdfs_for_exact_snapshot():
     result = pipeline.ScanResult(
         id=0, name="Lokaler Snapshot", trades_path=r"C:\same-id.csv",
         trade_analyse="Trade", risiko_analyse="Risiko", gesamtbericht="Final")
-    identity = (result.source_kind, result.id, result.trades_path,
-                result.trades_sha256, result.name)
+    identity = _result_identity(result)
     at = AppTest.from_string(
         "import streamlit as st\n"
         "from mqlkiscanner.app_ui import render_report_panel\n"
@@ -94,7 +93,7 @@ def test_report_panel_offers_final_and_intermediate_pdfs_for_exact_snapshot():
     assert {"Gesamtbericht anzeigen", "Trade-Analyse anzeigen",
             "Risiko-Analyse anzeigen"} <= labels
     assert all(item.label == "PDF speichern" for item in _pdf_downloads(at))
-    button = at.button(key=f"report_panel_final_{snapshot_token(*identity)}")
+    button = at.button(key=f"report_panel_final_{result_snapshot_token(result)}")
     button.click().run()
     assert not at.exception
     assert at.session_state[f"{button.key}_visible"] is True

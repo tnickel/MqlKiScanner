@@ -52,6 +52,16 @@ def analyze(path: str, stress_move: float | None = None,
             startkapital=float(forensics["drawdown"].get(
                 "startkapital_raw", forensics["drawdown"].get("startkapital")) or 0.0),
             broker=broker)
+        # Contract validation above remains before any course access. Only a
+        # non-ECB gap needs this second exposure pass; the equity measurement
+        # has already populated the shared H1 cache and its gap-attempt ledger.
+        # In particular, do not fetch the same historical weekend gaps twice.
+        if (forensics["exposure"].get("conversion_complete") is False
+                and any(s.get("quote_currency") in {"CNH", "ETH", "BCH"}
+                        for s in forensics["exposure"].get("per_symbol_scenarios", {}).values())):
+            forensics["exposure"] = exposure.run(parsed, stress_move=stress_move, broker=broker,
+                kapitalbasis_usd=kapitalbasis_usd, kapitalbasis_quelle=kapitalbasis_quelle,
+                kursanbieter=kursanbieter)
     report = {
         "source": str(path),
         "source_format": parsed.source_format,

@@ -295,41 +295,22 @@ def test_b7_ausschluesse_belegen_keine_slots(tmp_path, monkeypatch):
 
 # ------------------------------------------------------------- B9 Sync-Toleranz
 
-def test_b9_nur_404_quelle_plus_down_quelle_liest_keinen_raise():
-    """Szenario Ziellauf: Quelle A (mql5-Registry) down, Quelle B antwortet,
-    kennt aber jedes Signal nicht (404) — Ergebnis leer, aber KEIN Raise;
-    nur wenn GAR KEINE Quelle antwortet, wird abgebrochen."""
-    from mqlkiscanner import downloader_client, downloader_sync, quellen
-
-    def fn_nur_404(client):
-        raise downloader_client.DownloaderNotFound("gibt es nicht")
-
-    def fn_down(client):
-        raise downloader_client.DownloaderConnectionError("down")
-
-    def fake_list(nur_aktiv=True):
-        return [{"id": 1, "kuerzel": "mql5", "base_url": "http://x",
-                 "aktiv": 1, "typ": "mql5-downloader-v1", "name": "", "token": ""}]
-
-    quelle_reaktion = {"antwort": "404"}
-
-    def fake_client(quelle):
-        return quelle_reaktion["antwort"]
-
-    orig_list = downloader_sync.db.list_quellen
-    orig_client = quellen.client_fuer_quelle
-    downloader_sync.db.list_quellen = fake_list
-    quellen.client_fuer_quelle = fake_client
-    try:
-        # B antwortet mit 404, A down → kein Raise, leeres Ergebnis
-        assert downloader_sync._ueber_quellen(fn_nur_404) == []
-        # beide down → Raise bleibt (echter Systemfehler)
-        quelle_reaktion["antwort"] = "down"
-        with pytest.raises(downloader_client.DownloaderConnectionError):
-            downloader_sync._ueber_quellen(fn_down)
-    finally:
-        downloader_sync.db.list_quellen = orig_list
-        quellen.client_fuer_quelle = orig_client
+def test_b9_selected_source_404_is_empty_and_connection_failure_is_visible(monkeypatch):
+    """Never probe other sources for the same ID, even if they could answer."""
+    from unittest.mock import Mock
+    from mqlkiscanner import db, downloader_client, downloader_sync, quellen
+    db.add_quelle("selected", "Selected", "http://selected:8090")
+    db.add_quelle("other", "Other", "http://other:8091")
+    client = Mock()
+    client.history.side_effect = downloader_client.DownloaderNotFound("missing")
+    def selected_client(source):
+        assert source["kuerzel"] == "selected"
+        return client
+    monkeypatch.setattr(quellen, "client_fuer_quelle", selected_client)
+    assert downloader_sync.sync_history(123, "MT5", quelle="selected") == 0
+    client.history.side_effect = downloader_client.DownloaderConnectionError("down")
+    with pytest.raises(downloader_client.DownloaderConnectionError):
+        downloader_sync.sync_history(123, "MT5", quelle="selected")
 
 
 # ------------------------------------------------------- B10 Suffix-Kursdaten

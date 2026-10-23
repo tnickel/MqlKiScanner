@@ -117,11 +117,11 @@ def _signal_vorbereitet(tmp_path, export_pfad, monkeypatch, signal_id=2349227,
                         name="Test Spike"):
     db.init_db()
     db.upsert_signal(signal_id, name=name)
-    db.store_forensik(signal_id, {"ampel": "🟢"})
-    dossier.profil_speichern(signal_id, "Profil", "glm-5.3", {})
+    db.store_forensik(signal_id, {"ampel": "🟢"}, quelle="mql5")
+    dossier.profil_speichern(signal_id, "Profil", "glm-5.3", {}, quelle="mql5")
     alt = tmp_path / f"alt_{signal_id}.csv"
     alt.write_text(POSITIONS_HEADER + _ZEILE_A, encoding="utf-8")
-    db.store_trade_file(signal_id, str(alt))
+    db.store_trade_file(signal_id, str(alt), quelle="mql5")
     monkeypatch.setattr(betreuer, "export_holen",
                         lambda session, signal, settings: (export_pfad, False))
     return {"id": signal_id, "name": name, "ampel": "🟢"}
@@ -135,7 +135,7 @@ def test_geaenderte_datei_ohne_neue_trades(tmp_path, monkeypatch):
     # Snapshot mit BEIDEN Zeilen, Export mit beiden in umgekehrter Reihenfolge.
     with db._connect() as conn:
         snapshot_pfad = conn.execute(
-            "SELECT path FROM trade_files WHERE signal_id=?", (sid,)
+            "SELECT path FROM trade_files WHERE signal_ref=?", (db.resolve_identity(sid, quelle="mql5").signal_ref,)
         ).fetchone()["path"]
     Path(snapshot_pfad).write_text(
         POSITIONS_HEADER + _ZEILE_A + _ZEILE_B, encoding="utf-8")
@@ -166,9 +166,9 @@ def test_tageslauf_nutzt_eine_session_fuer_alle_signale(tmp_path, monkeypatch):
         f.write_text(POSITIONS_HEADER + _ZEILE_A, encoding="utf-8")
         db.init_db()
         db.upsert_signal(sid, name=f"S{sid}")
-        db.store_forensik(sid, {"ampel": "🟡"})
-        dossier.profil_speichern(sid, "Profil", "glm-5.3", {})
-        db.store_trade_file(sid, str(f))
+        db.store_forensik(sid, {"ampel": "🟡"}, quelle="mql5")
+        dossier.profil_speichern(sid, "Profil", "glm-5.3", {}, quelle="mql5")
+        db.store_trade_file(sid, str(f), quelle="mql5")
         exports[sid] = str(f)
     monkeypatch.setattr(betreuer, "Mql5Session", _FakeSession)
     monkeypatch.setattr(betreuer, "export_holen",

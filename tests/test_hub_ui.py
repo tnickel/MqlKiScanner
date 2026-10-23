@@ -73,10 +73,10 @@ def test_quellen_details_laden_verlauf_und_pdf_ohne_legacy_url(monkeypatch):
     monkeypatch.setattr(quellen, "client_fuer_quelle", lambda *a, **kw: Client())
     at = _quellen_details()
     assert not at.exception
-    at.button(key="dl_history_77").click().run()
+    at.button(key=f"dl_history_{('mql5', 77)}").click().run()
     assert not at.exception
     assert db.get_history(77)[0]["subscribers"] == 42
-    at.button(key="dl_reports_77").click().run()
+    at.button(key=f"dl_reports_{('mql5', 77)}").click().run()
     assert not at.exception
     report = db.list_downloader_reports(77)[0]
     assert Path(report["path"]).is_relative_to(config.DOWNLOADER_DIR)
@@ -93,6 +93,6 @@ def test_quellen_details_ohne_aktive_quelle_zeigen_einrichtung(inaktive_quelle):
                       aktiv=False)
     at = _quellen_details()
     assert not at.exception
-    assert not any(b.key in ("dl_history_77", "dl_reports_77") for b in at.button)
+    assert not any(b.key in (f"dl_history_{('mql5', 77)}", f"dl_reports_{('mql5', 77)}") for b in at.button)
     assert any("Keine aktive Datenquelle konfiguriert" in e.value and
                "„Datenquellen“" in e.value for e in at.info)

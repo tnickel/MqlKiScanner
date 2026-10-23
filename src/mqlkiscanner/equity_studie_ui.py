@@ -11,6 +11,7 @@ bleiben verbindlich und unverändert.
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import math
 from pathlib import Path
 
@@ -35,11 +36,15 @@ _FARBE_FLOATING = "#d32f2f"
 
 
 def _cache_key(result) -> str:
+    from .signal_identity import stable_identity_key
     from .analysis_version import FORENSICS_VERSION
     sha = getattr(result, "trades_sha256", "") or ""
     currency = getattr(result, "account_currency", None) or "unknown"
     kind = getattr(result, "source_kind", "live")
-    return f"eqdd_studie_v{FORENSICS_VERSION}_{result.id}_{sha[:12] or 'nosha'}_{kind}_{currency}"
+    identity = (stable_identity_key(result),) + tuple(str(getattr(result, field, None) or "") for field in
+                     ("quelle", "quelle_version", "platform", "broker_server"))
+    scope = hashlib.sha256(repr(identity).encode("utf-8")).hexdigest()[:16]
+    return f"eqdd_studie_v{FORENSICS_VERSION}_{result.id}_{sha[:12] or 'nosha'}_{kind}_{currency}_{scope}"
 
 
 def berechne(result, progress) -> dict:
@@ -493,7 +498,7 @@ def _ueberdeckung_chart(daten: dict, key_prefix: str) -> None:
         xaxis=dict(title=None, gridcolor="#e5e7eb"),
         yaxis=dict(title=None, gridcolor="#e5e7eb"),
         plot_bgcolor="white", dragmode="zoom")
-    st.plotly_chart(fig, use_container_width=True,
+    st.plotly_chart(fig, width="stretch",
                     key=f"{key_prefix}_ueberdeckung",
                     config={"displaylogo": False})
 
@@ -612,6 +617,15 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
     equity_studie.py benutzt. Ergebnisse werden je (Signal-ID, Trade-SHA) in
     der Sitzung gecacht — der zweite Klick ist sofort da.
     """
+    from . import katalog
+    from .signal_identity import stable_identity_key
+    key_prefix = key_prefix + "_" + hashlib.sha256(
+        repr(stable_identity_key(result)).encode()).hexdigest()[:16]
+    try:
+        katalog.require_eindeutige_studien_identitaet(result)
+    except ValueError as exc:
+        st.warning(str(exc), icon=":material/block:")
+        return
     settings = config.load_settings()
     schranke = float(settings.get("schranke_eq_dd_pct", 30.0))
     meta_name = getattr(result, "name", "") or f"#{result.id}"

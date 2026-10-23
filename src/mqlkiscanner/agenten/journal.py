@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS agenten_laeufe (
     start         TEXT NOT NULL,
     ende          TEXT,
     status        TEXT NOT NULL,
-    signal_id     INTEGER,
+    signal_ref    INTEGER REFERENCES signal_identitaeten(signal_ref),
     zusammenfassung TEXT,
     aktion        TEXT,
     resultat      TEXT
@@ -86,6 +86,12 @@ CREATE TABLE IF NOT EXISTS agenten_steuerung (
 
 def init_journal() -> None:
     """Tabellen anlegen (idempotent; auch neben der Streamlit-App aufrufbar)."""
+    with db._connect() as conn:
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(agenten_laeufe)")}
+        if "signal_id" in cols and "signal_ref" not in cols:
+            raise db.IdentityMigrationRequired(
+                "Identitaetsmigration erforderlich: Agenten-Journal nur per Copy-Migration umstellen")
+    db.init_db()
     with db._connect() as conn:
         conn.executescript(_SCHEMA)
         cols = {r["name"] for r in conn.execute("PRAGMA table_info(agenten_laeufe)").fetchall()}
@@ -223,13 +229,30 @@ def zerlege_lauf(rolle: str, status: str, ztext: str = "", quelle: str = "") -> 
 
 # ── Läufe ─────────────────────────────────────────────────────────
 
-def lauf_starten(rolle: str, quelle: str = "daemon", signal_id: int | None = None) -> int:
+def lauf_starten(rolle: str, quelle: str = "daemon", signal_id: int | None = None,
+                 *, signal_quelle: str | None = None, signal_ref: int | None = None) -> int:
+    """Starten; quelle ist der Ausloeser, signal_quelle die Datenquelle.
+
+    Ein Signalbezug braucht eine ausdrueckliche Quelle oder interne Referenz.
+    Ohne Signalbezug bleiben signal_ref und die gelesenen Signalfelder leer.
+    """
     init_journal()
     with db._connect() as conn:
+        ref = None
+        if signal_id is not None or signal_ref is not None:
+            if signal_quelle is None and signal_ref is None:
+                raise db.IdentityError("Journal-Signalbezug benoetigt signal_quelle oder signal_ref")
+            identity = db.resolve_identity(signal_id, quelle=signal_quelle, signal_ref=signal_ref,
+                                           create=True, _connection=conn)
+            if identity is None:
+                raise db.IdentityError("Journal-Signalreferenz existiert nicht")
+            ref = identity.signal_ref
+        elif signal_quelle is not None:
+            raise db.IdentityError("Journal-Signalquelle benoetigt Signal-ID oder Referenz")
         cursor = conn.execute(
-            "INSERT INTO agenten_laeufe (rolle, quelle, start, status, signal_id) "
+            "INSERT INTO agenten_laeufe (rolle, quelle, start, status, signal_ref) "
             "VALUES (?,?,?,'laeuft',?)",
-            (rolle, quelle, _now(), signal_id))
+            (rolle, quelle, _now(), ref))
         return int(cursor.lastrowid or 0)
 
 
@@ -312,14 +335,18 @@ def list_laeufe(limit: int = 25, rolle: str | None = None) -> list[dict]:
     init_journal()
     clauses, args = [], []
     if rolle:
-        clauses.append("rolle=?")
+        clauses.append("l.rolle=?")
         args.append(rolle)
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     args.append(max(1, int(limit)))
     with db._connect() as conn:
         rows = conn.execute(
-            f"SELECT id, rolle, quelle, start, ende, status, signal_id, zusammenfassung, aktion, resultat "
-            f"FROM agenten_laeufe {where} ORDER BY id DESC LIMIT ?", args).fetchall()
+            f"SELECT l.id, l.rolle, l.quelle, l.start, l.ende, l.status, l.signal_ref, "
+            f"i.externe_id AS signal_id, q.kuerzel AS signal_quelle, q.quellen_uid, "
+            f"l.zusammenfassung, l.aktion, l.resultat FROM agenten_laeufe l "
+            f"LEFT JOIN signal_identitaeten i ON i.signal_ref=l.signal_ref "
+            f"LEFT JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid "
+            f"{where} ORDER BY l.id DESC LIMIT ?", args).fetchall()
     laeufe = []
     for r in rows:
         d = dict(r)
@@ -478,18 +505,21 @@ def aktive_laeufe(rolle: str | None = None, max_alter_s: int | None = None) -> l
     meldet (Review 29.09., B).
     """
     init_journal()
-    clauses, args = ["status='laeuft'"], []
+    clauses, args = ["l.status='laeuft'"], []
     if rolle:
-        clauses.append("rolle=?")
+        clauses.append("l.rolle=?")
         args.append(rolle)
     if max_alter_s is not None:
-        clauses.append("start >= ?")
+        clauses.append("l.start >= ?")
         args.append((datetime.now() - timedelta(seconds=max_alter_s))
                     .isoformat(sep=" ", timespec="seconds"))
     with db._connect() as conn:
         rows = conn.execute(
-            f"SELECT id, rolle, quelle, start, signal_id FROM agenten_laeufe "
-            f"WHERE {' AND '.join(clauses)} ORDER BY id", args).fetchall()
+            f"SELECT l.id, l.rolle, l.quelle, l.start, l.signal_ref, i.externe_id AS signal_id, "
+            f"q.kuerzel AS signal_quelle, q.quellen_uid FROM agenten_laeufe l "
+            f"LEFT JOIN signal_identitaeten i ON i.signal_ref=l.signal_ref "
+            f"LEFT JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid "
+            f"WHERE {' AND '.join(clauses)} ORDER BY l.id", args).fetchall()
     return [dict(r) for r in rows]
 
 

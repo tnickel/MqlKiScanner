@@ -131,7 +131,7 @@ def test_previous_version_cannot_reuse_green_without_evidence():
                                     "ertrag_monat_pct": 6})
     db.store_forensik(9000123, {"version": old_version, "score": 2, "ampel": "🟢",
                                "stop_nachweis": "behaupteter Schutz",
-                               "peak_exposure": {"shock_pct_max": 1}})
+                               "peak_exposure": {"shock_pct_max": 1}}, quelle="mql5")
     loaded = pipeline.results_from_db()[0]
     assert not loaded.forensik_vorhanden and loaded.score is None
     assert loaded.ampel == "⚪"

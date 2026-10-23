@@ -150,6 +150,8 @@ def signal_payload(results, ampel_filter: set[str] | None = None, *, settings: d
             "name": r.name or "",
             "platform": getattr(r, "platform", "") or "",
             "quelle": getattr(r, "quelle", "") or "mql5",
+            "signalKey": f"{getattr(r, 'quelle', '') or 'mql5'}:{int(r.id)}",
+            "quellenUid": getattr(r, "quellen_uid", "") or "",
             "url": r.url or (f"https://www.mql5.com/en/signals/{r.id}" if r.id else ""),
             "ampel": kurz,
             "ampelEmoji": getattr(r, "ampel", "") or "",

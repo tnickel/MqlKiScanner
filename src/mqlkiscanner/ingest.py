@@ -62,27 +62,82 @@ def _version_sicher(version: str) -> str:
 
 
 def _kuerzel_verzeichnis(quelle: dict):
-    kuerzel = _KUERZEL_SICHER.sub("_", str(quelle.get("kuerzel") or "quelle"))
-    verzeichnis = config.DATA_DIR / "quellen" / kuerzel
+    """Stable owner directory; display aliases must never determine ownership.
+
+    Existing artifact records retain their stored paths and remain readable.
+    A legacy/synthetic dict without a UID receives an explicitly unverified
+    deterministic path, never an invented registry identity or DB registration.
+    """
+    uid = quelle.get("quellen_uid")
+    if uid:
+        name = "owner-" + hashlib.sha256(str(uid).encode("utf-8")).hexdigest()
+    else:
+        fallback = json.dumps({key: quelle.get(key) for key in ("id", "kuerzel", "base_url")},
+                              ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")
+        name = "unverified-" + hashlib.sha256(fallback).hexdigest()
+    verzeichnis = config.DATA_DIR / "quellen" / name
     verzeichnis.mkdir(parents=True, exist_ok=True)
     return verzeichnis
 
 
 def hole_katalog(quelle: dict, *, client: downloader_client.DownloaderClient | None = None,
-                 seitengroesse: int = 500, max_seiten: int = 100) -> list[dict]:
-    """Gesamten Katalog einer Quelle (paginiert) als Roh-Items holen."""
+                 seitengroesse: int = 500, max_seiten: int = 100,
+                 min_subscribers: int = 1) -> list[dict]:
+    """Nur einen nachweislich vollständigen Katalog zur Ersetzung liefern.
+
+    ``total`` zählt Rohzeilen vor der Normalisierung. Eine Teilantwort darf
+    nie als Vollkatalog fehlende IDs aus ``katalog_signale`` löschen.
+    Vollständigkeit gilt für den gewählten Abonnenten-Scope: reguläre
+    Kandidaten behalten 1; die Übersicht fordert ausdrücklich 0 an.
+    """
     cli = client or quellen.client_fuer_quelle(quelle)
     items: list[dict] = []
     offset = 0
+    gesamt = None
+    gesehen = set()
     for _ in range(max(1, max_seiten)):
-        seite = cli.katalog(limit=seitengroesse, offset=offset)
-        block = seite.get("items") or []
+        seite = cli.katalog(limit=seitengroesse, offset=offset,
+                           min_subscribers=min_subscribers)
+        if not isinstance(seite, dict) or not isinstance(seite.get("items"), list):
+            raise downloader_client.DownloaderError("Katalog unvollständig: ungültige Seite/items.")
+        block = seite["items"]
+        raw_total = seite.get("total")
+        try:
+            if isinstance(raw_total, bool):
+                raise ValueError
+            total = int(str(raw_total).strip())
+            if total < 0:
+                raise ValueError
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise downloader_client.DownloaderError(
+                "Katalog unvollständig: gültige Gesamtzahl total fehlt.") from exc
+        if gesamt is not None and total != gesamt:
+            raise downloader_client.DownloaderError(
+                f"Katalog unvollständig: Gesamtzahl änderte sich von {gesamt} auf {total}.")
+        gesamt = total
+        if "offset" in seite and seite["offset"] != offset:
+            raise downloader_client.DownloaderError(
+                f"Katalog unvollständig: fremder Seitenoffset statt {offset}.")
+        if offset + len(block) > total:
+            raise downloader_client.DownloaderError("Katalog unvollständig: mehr Rohzeilen als total.")
+        for item in block:
+            if not isinstance(item, dict):
+                raise downloader_client.DownloaderError("Katalog unvollständig: ungültiger Eintrag.")
+            identitaet = (str(item.get("signalId", "")).strip(),
+                          str(item.get("version", "")).strip())
+            if identitaet in gesehen:
+                raise downloader_client.DownloaderError(
+                    "Katalog unvollständig: wiederholte Signal-/Versionsidentität.")
+            gesehen.add(identitaet)
         items.extend(block)
-        total = int(seite.get("total") or 0)
         offset += len(block)
-        if not block or (total and offset >= total):
-            break
-    return items
+        if offset == total:
+            return items
+        if not block:
+            raise downloader_client.DownloaderError(
+                f"Katalog unvollständig: leere Seite nach {offset} von {total} Rohzeilen.")
+    raise downloader_client.DownloaderError(
+        f"Katalog unvollständig: Seitenlimit erreicht ({offset} von {gesamt} Rohzeilen).")
 
 
 def normalisiere_wochen(wert) -> float | None:
@@ -117,9 +172,9 @@ def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
         except ValueError:
             continue
         version = str(item.get("version") or "").strip()
-        # PelicanTrading liefert das Signalalter (weeks) mit — dann greift der
-        # Wochen-Vorfilter erstmals auch für Quellen-Signale; MQL5-Kataloge
-        # kennen es nicht (ohne Altersbeleg regulär kein Kandidat).
+        # Quellen liefern belegtes Alter (weeks), etwa aus ihrem Profilcache.
+        # Ohne Altersbeleg bleibt der Kandidat unbekannt; der Vorfilter
+        # wird dadurch weder deaktiviert noch mit einem Ersatzwert umgangen.
         wochen = normalisiere_wochen(item.get("weeks"))
         out.append({
             "id": signal_id,
@@ -131,6 +186,7 @@ def kandidaten(quelle: dict, items: list[dict]) -> list[dict]:
             "wochen": wochen,
             "quelle_kuerzel": str(quelle.get("kuerzel") or ""),
             "quelle_id": int(quelle["id"]),
+            "quellen_uid": str(quelle.get("quellen_uid") or ""),
             "quelle_version": version,
         })
     return out
@@ -158,7 +214,11 @@ def kandidaten_aus_quellen(log=None) -> list[dict]:
             continue
         neu = 0
         for kandidat in kandidaten(quelle, items):
-            key = (kandidat["id"], kandidat["platform"])
+            from .signal_identity import key_for
+            # Keep contradictory platforms until the source-scoped conflict
+            # check in build_candidates; first-row wins would hide the error.
+            key = (key_for(kandidat), str(kandidat.get("platform") or "").upper().replace("MQL", "MT"),
+                   str(kandidat.get("quelle_version") or "").lower())
             if key in gesehen:
                 continue
             gesehen.add(key)
@@ -176,7 +236,8 @@ def kandidaten_aus_quellen(log=None) -> list[dict]:
 
 @_serialisiere_artefakt
 def hole_trades(quelle: dict, signal_id: int, version: str, *,
-                client: downloader_client.DownloaderClient | None = None) -> tuple[str, bool]:
+                client: downloader_client.DownloaderClient | None = None,
+                allow_offline_cache: bool = True) -> tuple[str, bool]:
     """Trades-CSV holen und SHA-gespiegelt cachen. Rückgabe (Pfad, geändert).
 
     Offline-Fallback (Nutzer-Fall 02.10.: Teilscan bei offline Quelle):
@@ -187,6 +248,8 @@ def hole_trades(quelle: dict, signal_id: int, version: str, *,
     try:
         roh = cli.trades_csv(signal_id, version)
     except downloader_client.DownloaderConnectionError:
+        if not allow_offline_cache:
+            raise
         alt_offline = db.get_quellen_artefakt(int(quelle["id"]), signal_id,
                                               version, "trades")
         if alt_offline and alt_offline.get("path") \
@@ -405,7 +468,11 @@ def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None,
         "quelle_trades_gekappt": metrics.get("TradesTruncated"),
         "quelle_trades_total_available": metrics.get("TradesTotalAvailable"),
         "quelle_trades_stored": _zahl(metrics.get("TradesStored")),
-        "quelle_trades_completeness_note": str(metrics.get("CompletenessNote") or ""),
+        # Paging/end-of-history evidence is distinct from UTC/identity
+        # integrity (TradeHistoryComplete) and from platform-wide totals.
+        "quelle_trades_history_complete": metrics.get("TradesHistoryComplete"),
+        "quelle_trades_completeness_note": str(metrics.get("TradesCompletenessNote")
+                                               or metrics.get("CompletenessNote") or ""),
         "quelle_trade_history_complete": metrics.get("TradeHistoryComplete"),
         "quelle_trade_history_quality_reasons": metrics.get("TradeHistoryQualityReasons") or [],
         # Source aggregates are evidence for retrying an empty cache, not

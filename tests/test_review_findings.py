@@ -165,17 +165,17 @@ def test_failed_rescan_does_not_resurrect_old_forensik_as_green(tmp_path, monkey
         "stop_nachweis": "x",
         "trading_dd": {"pct": 1.0, "usd": 1.0},
         "peak_exposure": {"positionen": 1, "netto_lots": 0.1, "schock_usd": 500.0},
-    })
+    }, quelle="mql5")
     with db._connect() as conn:
         conn.execute(
-            "UPDATE signals SET updated_at=?, stats_json=? WHERE signal_id=?",
+            "UPDATE signals SET updated_at=?, stats_json=? WHERE signal_ref=?",
             ("2099-01-01 12:00:00",
              json.dumps({"eq_dd_pct": 5.0, "ertrag_monat_pct": 10.0,
                          "last_fehler": "ValueError: corrupt export",
                          "forensik_ok": False}, ensure_ascii=False),
-             7770001))
-        conn.execute("UPDATE forensik SET updated_at=? WHERE signal_id=?",
-                     ("2020-01-01 12:00:00", 7770001))
+             db.resolve_identity(7770001, quelle="mql5").signal_ref))
+        conn.execute("UPDATE forensik SET updated_at=? WHERE signal_ref=?",
+                     ("2020-01-01 12:00:00", db.resolve_identity(7770001, quelle="mql5").signal_ref))
     loaded = pipeline.results_from_db()
     row = next(r for r in loaded if r.id == 7770001)
     assert row.forensik_vorhanden is False
@@ -195,7 +195,7 @@ def test_a_vorpruefung_without_credentials_does_not_keep_green_forensik(
         "stop_nachweis": "x",
         "trading_dd": {"pct": 1.0, "usd": 1.0},
         "peak_exposure": {"positionen": 1, "netto_lots": 0.1, "schock_usd": 100.0},
-    })
+    }, quelle="mql5")
 
     class FakeSession:
         pass
@@ -235,10 +235,10 @@ def test_a_same_second_error_marks_forensik_stale(tmp_path, monkeypatch):
     db.store_forensik(7770011, {
         "score": 3.0, "ampel": "🟢", "martingale_flag": False, "stop_nachweis": "x",
         "trading_dd": {"pct": 1.0, "usd": 1.0},
-    })
+    }, quelle="mql5")
     with db._connect() as conn:
-        conn.execute("UPDATE signals SET updated_at=? WHERE signal_id=?", (ts, 7770011))
-        conn.execute("UPDATE forensik SET updated_at=? WHERE signal_id=?", (ts, 7770011))
+        conn.execute("UPDATE signals SET updated_at=? WHERE signal_ref=?", (ts, db.resolve_identity(7770011, quelle="mql5").signal_ref))
+        conn.execute("UPDATE forensik SET updated_at=? WHERE signal_ref=?", (ts, db.resolve_identity(7770011, quelle="mql5").signal_ref))
     row = next(r for r in pipeline.results_from_db() if r.id == 7770011)
     assert row.forensik_vorhanden is False
     assert row.ampel == "⚪"
@@ -348,7 +348,8 @@ def test_self_dd_zero_is_valid_for_barrier():
     assert ev["schranke_dd_pct"] == 0.0
 
 
-def test_failed_llm_does_not_recount_old_texts(monkeypatch, tmp_path):
+@pytest.mark.parametrize("persisted,force", [(False, False), (True, False), (True, True)])
+def test_failed_llm_does_not_recount_old_texts(monkeypatch, tmp_path, persisted, force):
     monkeypatch.setattr(db, "DB_PATH", tmp_path / "llm.db")
     db.init_db()
     db.upsert_signal(7770002, name="LLM", platform="MT5")
@@ -361,15 +362,28 @@ def test_failed_llm_does_not_recount_old_texts(monkeypatch, tmp_path):
         def chat(self, *a, **k):
             raise LlmError("boom")
 
-    pipe = ScanPipeline()
+    pipe = ScanPipeline({"berichte_neu": force})
     pipe.llm = Boom()
     r = ScanResult(id=7770002, name="LLM", forensik_vorhanden=True,
                    trade_analyse="ALT TRADE", risiko_analyse="ALT RISIKO")
     r.berichte_basis = pipeline.report_basis_for(r, pipe.settings)
+    if persisted:
+        for kind, text in (("trade_analyse", "ALT TRADE"), ("risiko_analyse", "ALT RISIKO")):
+            db.store_analysis(r.id, kind, "cached-model", 10, text,
+                              basis=r.berichte_basis, quelle=r.signal_key[0])
     summary = pipe.run_llm([r], pipeline.StepLog())
     assert summary["completed"] == 0
-    assert summary["failed"] == 2 and summary["skipped"] == 1
-    assert r.trade_analyse == "ALT TRADE" and r.risiko_analyse == "ALT RISIKO"
+    # RAM-only text cannot prove a saved current report. Explicit regeneration
+    # also must not silently fall back to its older persisted inputs on error.
+    reused = persisted and not force
+    assert summary["failed"] == (1 if reused else 2)
+    assert summary["skipped"] == (0 if reused else 1)
+    assert summary["updated_ids"] == []
+    assert r.trade_analyse == ("ALT TRADE" if reused else "")
+    assert r.risiko_analyse == ("ALT RISIKO" if reused else "")
+    if persisted:
+        # Regeneration does not delete valid historical report parts.
+        assert db.get_latest_analysis(r.id, "trade_analyse", quelle=r.signal_key[0])["text"] == "ALT TRADE"
 
 
 def test_local_forensik_archive_keeps_metrics_without_live_db(tmp_path, monkeypatch):

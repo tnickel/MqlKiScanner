@@ -56,11 +56,12 @@ class _FakeKurse:
 # ---------------------------------------------------- Lückenerkennung
 def test_luecken_sammeln_trennt_belegt_luecke_und_rechenbar(tmp_path):
     csv_pfad = _csv(tmp_path / "t1.csv")
+    quelle_id = db.add_quelle("vant", "Monitor", "http://synthetic-vantage:8199")
     mit_messung = pipeline.ScanResult(id=1, name="Belegt", quelle="vant",
                                       trades_path=csv_pfad,
                                       equity_dd_rekonstruiert_pct=12.0)
     ohne_alles = pipeline.ScanResult(id=2, name="Lücke mit Quelle", quelle="vant",
-                                     quelle_id=7, quelle_version="vantage",
+                                     quelle_id=quelle_id, quelle_version="vantage",
                                      trades_path="")
     ohne_quelle = pipeline.ScanResult(id=3, name="MQL5 ohne Cache", quelle="mql5",
                                       trades_path="")
@@ -76,14 +77,15 @@ def test_luecken_sammeln_trennt_belegt_luecke_und_rechenbar(tmp_path):
 
 
 def test_luecken_sammeln_gueltige_studie_ist_keine_luecke_mehr():
+    quelle_id = db.add_quelle("vant", "Monitor", "http://synthetic-vantage:8199")
     res = pipeline.ScanResult(id=9, name="Hat Studie", quelle="vant",
                               trades_path="", trades_sha256="passend")
     # Gültig = SHA passt UND ein Drawdown-Wert existiert. Eine Studie ohne
     # dd (z. B. "Kursdaten fehlen") ist KEINE gefüllte Lücke mehr (09.10.).
-    studien = {9: {"trades_sha": "passend", "dd_usd": 5.0, "basislos": 0,
+    studien = {("vant", 9): {"trades_sha": "passend", "dd_usd": 5.0, "basislos": 0,
                    "cagr_jahr_pct": None, "ertrag_monat_geom_pct": None,
                    "report": {"equity_dd_pct": 7.5, "verlaesslich": True}}}
-    leere_studie = {9: {"trades_sha": "", "basislos": 0, "report": {}}}
+    leere_studie = {("vant", 9): {"trades_sha": "", "basislos": 0, "report": {}}}
     jobs_leer, erledigt_leer = studien_batch.luecken_sammeln(
         [res], leere_studie, trades_nachladen=False)
     assert erledigt_leer == 0          # ohne dd-Wert gilt sie als Lücke
@@ -94,9 +96,9 @@ def test_luecken_sammeln_gueltige_studie_ist_keine_luecke_mehr():
     # den Trade-Nachladen ermöglichen kann)
     res.trades_sha256 = "neu"
     res.quelle = "vant"
-    res.quelle_id = 7
+    res.quelle_id = quelle_id
     res.quelle_version = "vantage"
-    studien[9]["trades_sha"] = "alt"
+    studien[("vant", 9)]["trades_sha"] = "alt"
     jobs2, erledigt2 = studien_batch.luecken_sammeln([res], studien,
                                                      trades_nachladen=True)
     assert len(jobs2) == 1 and erledigt2 == 0
@@ -115,7 +117,7 @@ def test_luecken_sammeln_vorbehalt_oder_unbelegte_studie_bleibt_job(
     res = pipeline.ScanResult(id=42, name='Unvollständig',
         trades_path='cached.csv', trades_sha256=trade_sha,
         equity_dd_rekon_roh_pct=3.0)
-    studien = {42: dict(trades_sha=study_sha, basislos=False, virtuell=True,
+    studien = {("mql5", 42): dict(trades_sha=study_sha, basislos=False, virtuell=True,
                         report=report)}
     jobs, erledigt = studien_batch.luecken_sammeln(
         [res], studien, trades_nachladen=False)
@@ -128,7 +130,7 @@ def test_luecken_sammeln_verlaessliche_virtuelle_studie_schliesst_luecke():
     studie = dict(trades_sha='s', basislos=False, virtuell=True,
                   report=dict(equity_dd_pct=3.0, verlaesslich=True))
     jobs, erledigt = studien_batch.luecken_sammeln(
-        [res], {42: studie}, trades_nachladen=False)
+        [res], {("mql5", 42): studie}, trades_nachladen=False)
     assert jobs == [] and erledigt == 1
 
 
@@ -174,7 +176,7 @@ def test_rechne_ein_signal_ohne_basis_nimmt_virtuelle_10k(tmp_path, monkeypatch)
     assert zeile["dd_usd"] is not None
     # studie_anwenden: virtuelle Prozente nur in ANZEIGE-Felder — niemals
     # in die Workflow-Schranken (equity_dd_rekonstruiert_pct bleibt frei)
-    pipeline.studie_anwenden(res, {6: zeile})
+    pipeline.studie_anwenden(res, {("vant", 6): zeile})
     assert res.true_dd_usd is not None
     assert res.true_dd_virtuell_pct is not None
     assert res.true_dd_basis_virtuell is True
@@ -201,7 +203,7 @@ def test_rechne_ein_signal_ohne_trades_pfad_ist_uebersprungen_und_zaehlt_einmal(
 def test_luecken_sammeln_alte_nur_usd_studien_werden_neu_gerechnet():
     res = pipeline.ScanResult(id=15, name="Alt nur-USD", quelle="vant",
                               trades_path="t.csv", trades_sha256="s")
-    studien = {15: {"trades_sha": "s", "basislos": 1, "virtuell": 0,
+    studien = {("vant", 15): {"trades_sha": "s", "basislos": 1, "virtuell": 0,
                     "report": {}, "dd_usd": 5.0}}
     jobs, erledigt = studien_batch.luecken_sammeln([res], studien,
                                                    trades_nachladen=True)
@@ -211,7 +213,7 @@ def test_luecken_sammeln_alte_nur_usd_studien_werden_neu_gerechnet():
 def test_studie_anwenden_fuellt_luecke_mit_verlaesslicher_messung():
     res = pipeline.ScanResult(id=11, name="Studie belastbar", quelle="vant",
                               trades_sha256="abc")
-    studien = {11: {
+    studien = {("vant", 11): {
         "trades_sha": "abc", "basislos": 0,
         "cagr_jahr_pct": 36.0, "ertrag_monat_geom_pct": 2.6,
         "dd_usd": 1_200.0,
@@ -233,7 +235,7 @@ def test_studie_anwenden_fuellt_luecke_mit_verlaesslicher_messung():
 def test_studie_anwenden_vorbehalt_wenn_nicht_verlaesslich():
     res = pipeline.ScanResult(id=12, name="Studie roh", quelle="vant",
                               trades_sha256="abc")
-    studien = {12: {
+    studien = {("vant", 12): {
         "trades_sha": "abc", "basislos": 0,
         "cagr_jahr_pct": 36.0, "ertrag_monat_geom_pct": 2.0, "dd_usd": None,
         "report": {"verlaesslich": False, "equity_dd_pct_raw": 18.0,
@@ -252,14 +254,14 @@ def test_studie_anwenden_forensik_gewinnt_und_sha_schuetzt():
     # Forensik-Wert vorhanden → Studie wird NICHT angewendet
     res = pipeline.ScanResult(id=13, name="Forensik",
                               equity_dd_rekonstruiert_pct=5.0, trades_sha256="x")
-    studien = {13: {"trades_sha": "x", "basislos": 0, "dd_usd": 9.0,
+    studien = {("mql5", 13): {"trades_sha": "x", "basislos": 0, "dd_usd": 9.0,
                     "report": {"verlaesslich": True, "equity_dd_pct": 99.0}}}
     pipeline.studie_anwenden(res, studien)
     assert res.equity_dd_rekonstruiert_pct == 5.0
     assert res.true_dd_usd is None
     # SHA weicht ab → veraltete Studie wird nicht angewendet
     res2 = pipeline.ScanResult(id=14, name="Alt", trades_sha256="neu")
-    studien2 = {14: {"trades_sha": "alt", "basislos": 0, "dd_usd": 1.0,
+    studien2 = {("mql5", 14): {"trades_sha": "alt", "basislos": 0, "dd_usd": 1.0,
                      "report": {"verlaesslich": True, "equity_dd_pct": 7.0}}}
     pipeline.studie_anwenden(res2, studien2)
     assert res2.max_drawdown_equity_pct is None
@@ -273,7 +275,7 @@ def test_results_from_db_bezieht_studien_ein(tmp_path):
                                     "equity_dd_pct_raw": 9.0, "equity_dd_usd": 800.0,
                                     "test": "equity_rekonstruktion"},
                            cagr_jahr_pct=27.0, ertrag_monat_geom_pct=2.0,
-                           dd_usd=800.0, basislos=False)
+                           dd_usd=800.0, basislos=False, quelle="vant")
     ergebnisse = pipeline.results_from_db()
     res = next(r for r in ergebnisse if r.id == 21)
     assert res.max_drawdown_equity_pct == pytest.approx(9.0)
@@ -293,10 +295,10 @@ def test_seite_zeigt_batch_button_panel_und_usd_spalte(tmp_path, monkeypatch):
     db.init_db()
     db.store_equity_studie(31, "", {"verlaesslich": True, "equity_dd_pct": 10.0,
                                     "equity_dd_pct_raw": 10.0, "equity_dd_usd": 777.0},
-                           dd_usd=777.0, basislos=False)
+                           dd_usd=777.0, basislos=False, quelle="vant")
     probe = pipeline.ScanResult(id=31, name="Mit Studie", quelle="vant",
                                 trades_path=csv_pfad)
-    pipeline.studie_anwenden(probe, {31: db.get_equity_studie(31)})
+    pipeline.studie_anwenden(probe, {("vant", 31): db.get_equity_studie(31, quelle="vant")})
     monkeypatch.setattr(pipeline, "results_from_db", lambda **kwargs: [probe])
     monkeypatch.setattr(db, "list_catalog", lambda: [])
     monkeypatch.setattr(db, "katalog_sync_status",
@@ -380,7 +382,7 @@ def test_batch_markiert_tatsaechliche_kapitalbasis_nach_csv_kaskade(
     assert captured['capital'] == erwartete_basis
     saved = db.get_equity_studie(result.id)
     assert bool(saved['virtuell']) is virtuell
-    pipeline.studie_anwenden(result, {result.id: saved})
+    pipeline.studie_anwenden(result, {(result.quelle, result.id): saved})
     if virtuell:
         assert result.equity_dd_rekonstruiert_pct is None
         assert result.true_dd_virtuell_pct == 10

@@ -142,23 +142,27 @@ Das Bestehen dieser Filter ist keine positive Bewertung. Dafür sind Risiko- und
 Forensikprüfung erforderlich. Speichern übernimmt nur die vier Felder dieses Bereichs.
 """),
     "settings_risk": ("Risiko vor Ertrag: Grenzen richtig lesen", """
-**Maximaler Equity-Drawdown** ist der größte gemeldete Rückgang des Kontowerts einschließlich
-offener Positionen. Die Projektvorgabe erlaubt höchstens **30 %**; hier kannst du eine
-strengere Grenze einstellen. Ein Wert oberhalb der eingestellten Grenze verletzt die Schranke.
-Die Prüfung benötigt einen verfügbaren Plattformwert. In lokalen CSV-Prüfungen wird
-kein aktueller Equity-Drawdown abgerufen; der rekonstruierte Trading-Drawdown ersetzt ihn nicht.
+**Maximaler Equity-Drawdown** legt die konfigurierte Drawdown-Schranke fest.
+Es gibt keine feste 30-%-Obergrenze; auch 50 % sind einstellbar. Maßgeblich ist das
+konservative Maximum der vorhandenen DD-Kanäle. Ein Wert oberhalb der eingestellten
+Grenze verletzt die Schranke. Monitor-Closing-DD und Trading-DD aus geschlossenen
+Trades sind keine vollständige Messung der Equity einschließlich Floating.
 
 **Ertragsschwelle pro Monat** ist eine Mindestbedingung, keine Renditeprognose.
-Die Projektvorgabe verlangt **mehr als 5 % pro Monat**. Die aktuelle Engine vergleicht
-jedoch mit **größer oder gleich** der eingestellten Schwelle. Bei 5,0 % wird somit auch
-exakt 5,0 % akzeptiert. Für einen strengeren Filter kannst du einen Wert über 5,0 einstellen.
+Die absolute Hürde ist standardmäßig **ausgeschaltet (0)**. Die Engine vergleicht die
+eigene geometrische Monatsrendite mit **größer oder gleich** der eingestellten Schwelle.
+
+**Mindest-Calmar pro Jahr** bleibt ein zusätzliches Grün-Gate: Jahres-CAGR geteilt
+durch belastbaren eigenen H1-Equity-DD einschließlich Floating, gegen die konfigurierte
+Schwelle (Standard 3,0). Unter drei Monaten Trade-Historie oder ohne belastbare
+Messbasis bleibt Grün gesperrt. Ein größerer zulässiger DD ersetzt diese Prüfung nicht.
 
 Drawdown und Ertrag allein beweisen keine Sicherheit. Peak-Exposure, Martingale,
 Stop-Nachweis und rekonstruierter Drawdown müssen ebenfalls geprüft werden. Insbesondere
 enthält der Positions-Export keine SL/TP-Spalten; ein nicht übertragener SL ist neutral (kein Nachteil) — die KI-Analyse schätzt aus dem Tradingverhalten ab.
 
-Dieser Bereich speichert nur die beiden Grenzwerte. Bestehende Berichte werden nicht
-rückwirkend neu bewertet.
+Dieser Bereich speichert die drei Kriterien. Gespeicherte Ergebnisse werden mit den
+aktuellen Kriterien angezeigt; alte Messungen werden dadurch nicht neu erhoben.
 """),
     "settings_rate": ("Abrufpausen und Drosselung", """
 Diese drei Zeiten steuern das Abrufverhalten gegenüber MQL5:

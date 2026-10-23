@@ -76,7 +76,7 @@ DEFAULT_SETTINGS: dict = {
     "top_n_export": 30,             # wie viele Kandidaten bekommen Trade-Export + Forensik
     "min_abonnenten": 0,            # Vorfilter Kandidatenliste
     "min_wochen": 26,               # Vorfilter: Track-Record-Laenge
-    "schranke_eq_dd_pct": 30.0,     # harte Drawdown-Schranke (AGENTS.md)
+    "schranke_eq_dd_pct": 30.0,     # konfigurierter Startwert, keine feste Obergrenze
     # Nutzer-Regel 04.10. abends: KEINE absolute Ertragshuerde mehr (0 = aus) -
     # absolute %/Monat sind beim Kopieren ueber den Lot-Faktor frei waehlbar
     # (1,4 % x Faktor 10 = 14 %, DD skaliert mit, RetDD bleibt gleich);

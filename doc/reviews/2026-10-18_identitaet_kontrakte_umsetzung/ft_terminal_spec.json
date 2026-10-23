@@ -1,0 +1,63 @@
+{
+  "ok": true,
+  "started_utc": "2026-10-18T15:34:51.064102+00:00",
+  "requested_symbols": [
+    "GER40ft",
+    "UK100ft"
+  ],
+  "configured_terminal": "C:\\Forex\\Mt5\\Vantage\\terminal64.exe",
+  "account_fields_read": [
+    "server"
+  ],
+  "orders_or_trade_downloads": false,
+  "aliases_used": false,
+  "lock_acquired_utc": "2026-10-18T15:34:51.220041+00:00",
+  "terminal_was_running": false,
+  "connection_message": "portabel selbstgestartet; Datenpfad gepr\u00fcft, verbunden",
+  "terminal": {
+    "path": "C:\\Forex\\Mt5\\Vantage",
+    "data_path": "C:\\Forex\\Mt5\\Vantage",
+    "company": "Vantage International Group Limited",
+    "connected": true,
+    "broker_server": "VantageMarkets-Live 10"
+  },
+  "symbols": {
+    "GER40ft": {
+      "name": "GER40ft",
+      "description": "GER40 Future",
+      "trade_contract_size": 1.0,
+      "currency_profit": "EUR",
+      "currency_margin": "EUR",
+      "trade_calc_mode": 2,
+      "trade_tick_size": 0.01,
+      "trade_tick_value": 0.01,
+      "trade_tick_value_profit": 0.01,
+      "trade_tick_value_loss": 0.01,
+      "volume_min": 0.1,
+      "volume_max": 500.0,
+      "volume_step": 0.1,
+      "digits": 2,
+      "observed_utc": "2026-10-18T15:35:09.793213+00:00"
+    },
+    "UK100ft": {
+      "name": "UK100ft",
+      "description": "UK100 Future",
+      "trade_contract_size": 1.0,
+      "currency_profit": "GBP",
+      "currency_margin": "GBP",
+      "trade_calc_mode": 2,
+      "trade_tick_size": 0.01,
+      "trade_tick_value": 0.011856910800460047,
+      "trade_tick_value_profit": 0.011856910800460047,
+      "trade_tick_value_loss": 0.011862114777822591,
+      "volume_min": 0.1,
+      "volume_max": 500.0,
+      "volume_step": 0.1,
+      "digits": 2,
+      "observed_utc": "2026-10-18T15:35:09.793213+00:00"
+    }
+  },
+  "terminal_running_after_cleanup": false,
+  "cleanup_checked_utc": "2026-10-18T15:35:46.053609+00:00",
+  "finished_utc": "2026-10-18T15:35:46.058609+00:00"
+}

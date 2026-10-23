@@ -41,7 +41,7 @@ def test_batch_ueberspringt_vorhandene_und_laeuft(monkeypatch):
     db.init_db()
     db.upsert_signal(1, name="A", platform="MT5")
     db.upsert_signal(2, name="B", platform="MT5")
-    db.store_analysis(1, "tiefenanalyse", "glm-5.3", 10, "# alt")  # A bereits da
+    db.store_analysis(1, "tiefenanalyse", "glm-5.3", 10, "# alt", quelle="mql5")  # A bereits da
     aufrufe = []
     monkeypatch.setattr(tiefen_batch, "run_tiefenanalyse_einzeln",
                         lambda result, settings=None, log=None: aufrufe.append(result.id))
@@ -72,7 +72,7 @@ def test_batch_zaehlt_einzelfehler_und_laeuft_weiter(monkeypatch):
     batch = _warte_fertig()
     assert aufrufe == [2, 3]
     assert batch["fehler"] == 1
-    assert batch["fehler_liste"][0].startswith("B (#2)")
+    assert batch["fehler_liste"][0].startswith("B (mql5:2)")
     assert batch["fertig"] and not batch["abgebrochen"]
 
 

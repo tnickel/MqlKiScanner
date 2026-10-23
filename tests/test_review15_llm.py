@@ -61,7 +61,7 @@ def test_trade_storage_failure_preserves_both_answers_and_continues_next_signal(
     outcome = llm_runner.run_llm(pipe, [first, second], lambda _: None,
                                  lambda *args: events.append(args))
     assert outcome["completed"] == 4 and outcome["failed"] == 1 and outcome["skipped"] == 1
-    assert outcome["updated_ids"] == [101, 202]
+    assert outcome["updated_ids"] == [("mql5", 101), ("mql5", 202)]
     assert first.trade_analyse and first.risiko_analyse and not first.gesamtbericht
     assert "disk unavailable" in first.llm_fehler
     assert (101, "risiko_analyse") in calls
@@ -97,7 +97,7 @@ def test_fatal_parallel_error_keeps_successful_other_response_and_stops(setup, e
     r = make_result()
     outcome = llm_runner.run_llm(pipe, [r, make_result(202)], lambda _: None)
     assert outcome == {"completed": 1, "total": 6, "failed": 1, "skipped": 4,
-                       "reason": str(error), "updated_ids": [101]}
+                       "reason": str(error), "updated_ids": [("mql5", 101)]}
     assert len(pipe.llm.calls) == 2 and len(stored) == 1
     assert r.berichte_basis == "basis-101" and r.llm_fehler == str(error)
     other_stage = "risiko_analyse" if failed_stage == "trade_analyse" else "trade_analyse"
@@ -115,15 +115,19 @@ def test_stale_unbound_parts_and_summary_never_fill_a_failed_new_prompt(setup):
     assert not r.risiko_analyse and not r.gesamtbericht and not r.kurzfassung
 
 
-def test_same_basis_old_part_is_retained_but_not_counted_as_a_new_success(setup):
+def test_same_basis_saved_part_is_reused_but_not_counted_as_a_new_success(setup, monkeypatch):
     pipe, make_result, _ = setup
     pipe.llm = FakeLlm({(101, "risiko_analyse"): LlmError("risk unavailable")})
     r = make_result(old_basis="basis-101")
     r.risiko_analyse = "previous same-basis risk"
+    monkeypatch.setattr(db, "get_latest_analysis", lambda sid, kind, **kwargs:
+                        {"text": r.risiko_analyse, "basis": "basis-101"}
+                        if kind == "risiko_analyse" else None)
     outcome = llm_runner.run_llm(pipe, [r], lambda _: None)
     assert r.risiko_analyse == "previous same-basis risk"
-    assert outcome["completed"] == 1 and outcome["failed"] == 1
+    assert outcome["completed"] == outcome["total"] == 2 and outcome["failed"] == 0
     assert len(pipe.llm.calls) == 2
+    assert (101, "risiko_analyse") not in pipe.llm.calls
 
 
 def test_unknown_per_call_usage_never_uses_the_client_lifetime_total(setup):
@@ -157,7 +161,7 @@ def test_summary_storage_error_retains_text_and_continues(setup, monkeypatch):
     r = make_result()
     outcome = llm_runner.run_llm(pipe, [r, make_result(202)], lambda _: None)
     assert outcome["completed"] == 5 and outcome["failed"] == 1 and outcome["skipped"] == 0
-    assert outcome["updated_ids"] == [101, 202]
+    assert outcome["updated_ids"] == [("mql5", 101), ("mql5", 202)]
     assert r.gesamtbericht and r.kurzfassung and "summary disk error" in r.llm_fehler
 
 
@@ -166,8 +170,8 @@ def test_success_writes_one_current_basis_for_all_three_parts(setup):
     r = make_result()
     outcome = llm_runner.run_llm(pipe, [r], lambda _: None)
     assert outcome == {"completed": 3, "total": 3, "failed": 0, "skipped": 0,
-                       "reason": "", "updated_ids": [101]}
-    assert len(stored) == 3 and all(kwargs == {"basis": "basis-101"} for _, kwargs in stored)
+                       "reason": "", "updated_ids": [("mql5", 101)]}
+    assert len(stored) == 3 and all(kwargs == {"basis": "basis-101", "quelle": "mql5"} for _, kwargs in stored)
     assert r.berichte_basis == "basis-101"
 
 

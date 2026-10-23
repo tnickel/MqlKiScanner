@@ -7,12 +7,154 @@ wurde (Ursprungs-Session: `sess_ff799a20-8b9b-4b1b-b605-0826e01ceffa` — bei
 Bedarf mit ReadSessionContext referenzierbar; zusätzlich liegt alles Wesentliche
 in `doc/` und `data/` dieses Projekts).
 
-## Aktueller Status (Dokumentationsabgleich 16.10.2026)
+## Aktueller Status (Dokumentationsabgleich 18.10.2026)
 
 Dieser Block und die aktuellen Design-Regeln ordnen die datierten
 Umsetzungsnotizen unten ein. Frühere Testzahlen, Bewertungen und inzwischen
 abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
 
+- **Arbeitsunterbrechung (Nutzerentscheidung 18.10.2026, ca. 21:00 MESZ):**
+  Die KI-Arbeit wird ausschließlich auf ausdrückliche neue Nutzeraufforderung
+  fortgesetzt. Kein Termin, insbesondere keine Wiederaufnahme um 09:00 Uhr;
+  es wurde keine Wiederaufnahme-Automation angelegt. Bereits laufende native
+  Downloads dürfen sicher auslaufen. Keine neuen Prüfphasen, Update-POSTs,
+  Scannerläufe oder Deployments während dieser Unterbrechung. Der genaue
+  Fortsetzungsstand mit Belegen, laufenden Jobs und offenen Schritten steht in
+  `doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/FORTSETZUNG.json`.
+- **Wiederaufnahme (Nutzerentscheidung 19.10.2026):** Mit „guten morgen
+  mache weiter“ wurde die Fortsetzung ausdrücklich beauftragt. Der alte
+  Pausenbeleg bleibt unverändert; neue Laufbelege liegen getrennt unter
+  `data/runs/liveabschluss_20261019/`. Quellenupdates, Neuberechnungen,
+  Berichte und abschließender v2-Sync werden getrennt abgenommen.
+- **KI-Budget und Wiederaufnahme (Nutzerentscheidung 19.10.2026):**
+  Die frueheren 500.000 Tokens/Tag waren eine lokale Scanner-Schranke,
+  keine abgefragte z.ai-Kontogrenze. Nach zunaechst gewuenschter
+  Verdreifachung hat der Nutzer weitere Tages-/Monatserhoehungen fuer den
+  vollstaendigen Analyselauf ausdruecklich freigegeben. Produktive Settings
+  stehen jetzt auf 10.000.000 Tokens/Tag und 10.000.000 Tokens/Monat;
+  das vorhandene Laufbudget bleibt 10.000.000. Es bleiben 73 berechenbare
+  Signalprofile mit 218 fehlenden Berichtsstufen beim Neustart. Der Runner
+  verwendet gespeicherte Stufen nur bei passender Quelle und aktueller
+  Bewertungsbasis erneut. Alte 500k-Budget-/Run14-Belege bleiben historisch
+  unveraendert; die Anschlusskette bekommt neue Laufbelege. Keine neue
+  Automatik oder Bewertungsregel; Version21/DD50/Jahres-Calmar3/Monat0.
+- **Abonnenten-Recherche (Nutzerentscheidung 23.10.2026):** Neuer Button
+  „Strategien bewerten“ auf der Abonnentenstatistik: Dialog → gezielte aktuelle
+  Datenbeschaffung → Floating-H1-Equity-DD → Kurz-KI für alle auswertbaren
+  Anbieter → gewichtete Rangliste → ausführliche Top 5. Standard Top 200 je
+  Quelle mit mindestens einem Abonnenten, MQL4/5 gemeinsam; neue Recherche-Policy
+  `abonnenten_recherche_v1` mit mindestens zwei Monaten und 50 abgeschlossenen
+  Trades, ohne feste DD-Grenze. Vorschlag 70 % RetDD-Perzentil plus 30 %
+  quellenrelatives Abonnentenperzentil, im Dialog einstellbar. Diese Policy ist
+  von der bestehenden Drei-Monats-/DD-Ampel getrennt; alte Freigaben werden nicht
+  überschrieben. H1-Maximum ist kein exakter Intrabar-DD und umfasst weiterhin
+  nur das historische Exportfenster; aktuell offene Positionen nicht als erfasst
+  behaupten. Eigener fortsetzbarer Store `data/abonnenten_analyse/jobs.sqlite3`,
+  keine Migration der Hauptdatenbank. Prompts `abonnenten_kurztest.md` und
+  `abonnenten_top5.md` unter `config/prompts/`, im Admin editierbar. Alle fünf
+  nativen Clients sind am 23.10. neu gebaut und nach belegtem Leerlauf sanft
+  neu gestartet. Health/Status bestätigt; gezielter Provider-Refresh ist bei
+  MQL, Pelican, Vantage und Zulu verfügbar. Robo-Tradeforensik bleibt wegen
+  unbelegter nativer Währungs-/Volumeneinheiten gesperrt; ausdrücklich benannte
+  Ratinggewinne und Renditen sind separat als Quellenprofitabilität lesbar.
+  Umsetzung mit lokalen Fixtures geprüft,
+  keine produktive Laufabnahme durch diesen Implementierungsauftrag. Details
+  doc/26 und `doc/reviews/2026-10-23_abonnenten_analyse/README.md`.
+- **Abonnenten-Refresh (Nutzerentscheidung 23.10.2026):** Je Quelle höchstens
+  200 Anbieter, absteigend nach Abonnenten, mindestens ein Abonnent. MQL4 und
+  MQL5 teilen sich die 200 Plätze. Der explizite `nurAbonnenten`-Modus lädt
+  nur Listen/Zähler, keine Einzelprofile, Finanzstatistiken oder Trades;
+  neue Anbieter können in die Auswahl kommen. Frühere Pelican-Vollerfassung,
+  MQL-4500-Fortschrittslimits und Vantage-Rankingmischung gelten hierfür nicht.
+  Details und historische Daten bleiben erhalten; Zählerfrische ist keine
+  Kennzahlenfrische. Quellcode und Tests sind korrigiert; die nativen Clients
+  wurden anschließend mit der Abonnenten-Recherche am 23.10. neu gestartet.
+  Neue Download-/Analyseergebnisse sind damit noch nicht nachgewiesen. Siehe
+  `doc/reviews/2026-10-23_abonnenten_top200/README.md`.
+- **Vantage-Zählersortierung (Korrektur 23.10.2026):** Der Plattformmodus
+  `overallSort=2` liefert live keine absteigende Folge aktueller `copiers`.
+  Der native Zählerabruf liest daher alle Listenseiten bis zum belegten Ende,
+  validiert Identitäten/Zähler und wählt lokal die höchstens 200 positiven
+  Anbieter nach aktuellen Kopierern. Keine Einzelprofile/Trades. Die früher
+  angenommene monotone API-Sortierung ist widerlegt. **Neue Nutzerentscheidung
+  am Abend 23.10.: fehlerhafte Einträge ausklammern und weiterlesen.** Nur
+  API-Code 1223 wird im unveränderten Listenfenster bis zum Einzel-Slot
+  eingegrenzt und dort ausgelassen (Position, keine bekannte Anbieter-ID).
+  Der restliche Katalog wird weiter bis zur Endseite gelesen. Auswahl aus
+  lesbaren Anbietern bleibt auswertbar, erhält aber einen ausdrücklichen
+  Abdeckungshinweis; globale Top 200 sind bei Lücken unbestätigt. Andere
+  Fehler bleiben Fehler. Native/Scanner-Schnittstelle überträgt geprüfte
+  Abdeckungsdaten bis in Recherche, KI-Eingabe, PDF und CSV. 129 native und
+  159 betroffene Scanner-Tests bestanden. Livejob
+  `u-20261023-221429-63617715` endete 22:16:51 MESZ mit 5.956 gelesenen
+  Anbietern, ausgelassener Position 1256 und 200 ausgewählten Anbietern;
+  diese wurden anschließend fehlerfrei in den Scanner gespiegelt. Der
+  laufende KI-Worker wurde nicht neu gestartet und sein alter Vantage-
+  Recherche-Snapshot nicht überschrieben; Vantage-Trade-/KI-Analyse steht
+  in diesem Auftrag weiterhin aus. Nachweis unter
+  `doc/reviews/2026-10-23_vantage_sortierung/`.
+- **Zulu-Zählersortierung (Korrektur 23.10.2026):** Die Suchseiten wiederholen
+  bereits gelesene Anbieter und liefern auch neue IDs mit ansteigenden Zählern.
+  Der native Abonnentenabruf liest daher alle angebotenen Listenseiten bis zum
+  belegten Ende, bereinigt gleiche Identitäten und sortiert lokal nach
+  `followers` absteigend/ID aufsteigend. Nullzähler sind keine Endmarke.
+  Zählerkonflikte und fehlender Seitenfortschritt erlauben keine Teilübernahme.
+  173 native Tests bestanden; neu gestarteter Client und echter Zählerlauf
+  `u-20261023-154959-74481dc9` mit 200/200 erfolgreich, danach 200 Anbieter
+  fehlerfrei in den Scanner gespiegelt. Keine Trade-/KI-Läufe.
+  Nachweis unter `doc/reviews/2026-10-23_zulu_sortierung/`.
+- **Robo-Quellenprofitabilität (Nutzerentscheidung 23.10.2026):** Der
+  Recherchelauf liest `ProfitUsd`, `YieldWindowPct` samt `YieldWindowMonths`
+  und `RatingBalanceUsd` als ausgewiesene Quellenwerte, ohne Annahmen über
+  native Tradebeträge/Lots. Neue Ansicht „Quellenprofitabilität“, CSV und
+  Detail zeigen Gewinn/Rendite separat; kein gemessener DD, Jahres-RetDD oder
+  Kandidatenrang daraus. `rst` ist für diese Metadaten erlaubt und blockiert
+  die Quelle nicht. Keine Trade-/Terminal-/KI-Aufrufe für diesen Pfad;
+  unbekanntes Datum der Finanzwerte bleibt sichtbar, GET-Zeit ist keine
+  Plattformfrische. Im vorhandenen Auftrag wurden 200 Robo-Profile ergänzt,
+  darunter 3 `rst`, ohne Neustart der laufenden übrigen Analyse. Nachweis
+  `doc/reviews/2026-10-23_robo_quellenprofitabilitaet/README.md`.
+- **Liveprüfung der Recherche (23.10.2026):** Gesamtauftrag
+  `d38440b65c6540b79ce69e7fe7457ab0` bleibt offen. Der explizite CLI-Resume
+  wartet auf den Worker einschließlich Cleanup und kann mit gespeicherten
+  Stufen fortfahren. Historische Refreshwarnungen sind datiert und an den
+  jeweiligen Auftrag gebunden. Vollständige KI-Tradelisten werden unter dem
+  bisherigen Promptlimit in weniger Blöcken verarbeitet; keine Budgeterhöhung
+  durch diese Korrektur. Eine ausgefallene Windows-Prozessabfrage darf nicht
+  mehr als bestätigtes Terminalende gelten; pfadgenaue Prozessprüfung mit
+  unabhängiger Namensinventur und bestätigtem Exit bei verschwindenden
+  Prozessen. Beide im Test verwendeten Terminals wurden tatsächlich beendet
+  und nachgeprüft. Vantage-Fehler 1223 wurde bei Einzelpositionen reproduziert;
+  der spätere Nutzerauftrag zum Ausklammern gilt wie oben beschrieben.
+  Der Gesamtauftrag und vollständige Auswahl bleiben getrennt nachzuweisen.
+  Siehe `doc/reviews/2026-10-23_abonnenten_livepruefung/`.
+- **KI-Budget dieses Recherchetests (Nutzerfreigabe 23.10.2026):** Für den
+  bestehenden Auftrag `d38440b65c6540b79ce69e7fe7457ab0` ausdrücklich
+  50.000.000 Tokens je Lauf und Tag sowie 60.000.000 im Monat freigegeben.
+  Die Werte sind als `budget_settings` ausschließlich an diesen Auftrag
+  gebunden; globale Defaults und andere Aufträge bleiben unverändert.
+  Kontrolliert neu gestarteter Worker bestätigt die angewendeten Werte in
+  `budget_applied`. Ein einmaliger, SHA-/basisgeprüfter Budget-Checkpoint
+  vermeidet das Wiederholen abgeschlossener Datenversuche nur wegen des
+  Budgetwechsels; Datenlücken werden dabei niemals vollständig erklärt.
+  Bekannte Kosten und unbestätigte Reservierungen bleiben angerechnet.
+- **KI-Kurzanalysen der Recherche (Korrektur 23.10.2026 abends):** Der
+  Anbieter-Endstand ist kein Zähler fertiger KI-Berichte. Die Anzeige trennt
+  Kurztests, Top-5-Berichte und KI-Fehler. GLM-Anfragen dieses Modus verwenden
+  explizites JSON-Format, 16.384 Ausgabetokens und Reasoning `low` für Kurztests
+  beziehungsweise `high` für Top 5; andere KI-Arbeitsabläufe bleiben unverändert.
+  Ein begrenztes, aus tatsächlich gelieferten Daten erzeugtes Belegregister
+  vermeidet erfundene Faktenpfade. Unbekannte Verweise und widersprüchliche
+  Martingale-Einstufungen bleiben Fehler; Antworten werden nicht passend gemacht.
+  Ein explizit vorbereiteter einmaliger KI-Neustart-Checkpoint erhält nach
+  geprüftem Workerende die unveränderten Datenversuche und Quellensnapshots,
+  einschließlich bekannter Datenlücken. Livebelege und tatsächlicher Laufstand
+  stehen unter `doc/reviews/2026-10-23_abonnenten_livepruefung/`. GoldWave wurde
+  um 23:00 MESZ vollständig mit 305/305 Trades geprüft; der ursprüngliche
+  Auftrag läuft seit 23:02:55 gezielt in der KI-Phase weiter (PID 1951824,
+  800 unveränderte Einträge, 1/234 Kurztests). Dies ist kein Gesamtabschluss.
+  Zwei belegte alte Abbruchmarker wurden separat auditiert bereinigt;
+  neue Datenversuche setzen den Marker zurück, echte Abbrüche bleiben gesperrt.
 - **MqlRealmonitor ist noch nicht in den Gesamtworkflow eingebunden.**
   REST-Server im Scanner und Client-Code im Monitor sind vorbereitet;
   die Integration bleibt vorerst zurückgestellt (Nutzerentscheidung
@@ -25,8 +167,19 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   Freigabe ersetzt für diese Review-Belege die frühere pauschale Archivregel
   „bewusst nicht auf GitHub“. Zugangsdaten, Cookies, lokale Datenbanken,
   Trade-Caches und sonstige Laufzeitdaten bleiben ausgeschlossen.
-- **Grün-Gate:** harte Regeln (Ausschlussliste, Martingale, DD-Schranke;
-  Default 30 %) plus Jahres-Calmar `retdd_jahr >= min_calmar_jahr`
+- **Risikoschranke (Nutzerentscheidung 18.10.2026):** Keine starre
+  30-%-Obergrenze. Die DD-Schranke ist konfigurierbar; auch 50 % sind
+  zulaessig, wenn die Ertragspruefung und der belastbare Jahres-Calmar
+  die konfigurierten Kriterien erfuellen. 50 % ist damit ein erlaubter
+  Grenzwert, kein pauschal festgelegter neuer Standard. Keine automatische
+  Ausnahmeformel oder zusaetzliche absolute Ertragshuerde erfinden.
+  Die feste 30-%-Begrenzung im Admin ist ENTFERNT (18.10. nachmittags,
+  Arbeitsbaum: freie konfigurierbare Grenze, Ertragsschwelle ab 0);
+  produktiv steht `schranke_eq_dd_pct` seit 18.10. auf 50,0
+  (Nutzerentscheidung „nicht so hart filtern"). Historische
+  Ausschluesse werden nicht automatisch aufgehoben.
+- **Grün-Gate:** harte Regeln (Ausschlussliste, Martingale, konfigurierte
+  DD-Schranke) plus Jahres-Calmar `retdd_jahr >= min_calmar_jahr`
   (Default 3,0). Mindestens drei Monate Trade-Historie. Absolute Monats-
   Ertragshürde standardmäßig aus (`min_ertrag_pct_monat=0`). Fehlender
   SL-Nachweis neutral; Risiko-Score kein eigenständiges Grün-Gate.
@@ -37,6 +190,13 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   keine vollständigen Intrabar-Tiefs.
 - **Stufe 0** ist für GUI- und autonome Scans implementiert: aktive Quellen
   parallel per POST aktualisieren, Status vor dem Scan abwarten (doc/23).
+- **Katalogumfang (18.10.2026):** Der Metadaten-Sync für „Alle Signale“
+  fordert ausdrücklich `minSubscribers=0` auf jeder Seite an. Reguläre
+  Quellenkandidaten behalten den bisherigen Scope `minSubscribers=1`.
+  Die Übersicht umfasst damit auch bekannte Provider ohne Abonnenten;
+  Trade-Downloads, Top-N, Mindestalter und Bewertungsregeln bleiben getrennt.
+  Vollständig bedeutet hier: vollständiger lokal angebotener Quellenkatalog,
+  nicht sämtliche Provider der ursprünglichen Handelsplattform.
 - **Kursdaten (17.10.2026):** Im Scan/Studien-Batch bleiben verwendete
   MetaTrader bis zum Laufende offen; Quellenwechsel trennen nur die SDK-
   Verbindung. H1-Originalbars liegen dauerhaft in `data/kursdaten.db`, nach
@@ -52,12 +212,55 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   Alle Startwege (auch Marktrolle und Admin-Verbindungstest) verwenden
   denselben geprüften `/portable`-Start. Eine vorgefundene falsche Datenablage
   erlaubt bei Startfreigabe genau einen Neustart nach bestätigtem Prozessende.
-- **Offen:** vollständige Composite-Identität `(quelle, signal_id)` in der
-  zentralen Signaltabelle; Quellenkollisionen werden derzeit abgewehrt.
-  Täglicher Betreuer derzeit nur MQL5, andere Quellen werden übersprungen.
+- **Quellenidentität (18.10.2026):** Schema 2 verwendet einen stabilen
+  Quellen-UID-Namensraum und `signal_ref` mit eindeutigem Paar
+  `(quellen_uid, externe_id)`. `ScanResult.id` bleibt die Anbieter-ID.
+  Workflow- und reine Katalogidentitäten, Studien, Berichte, Chronik,
+  Dossiers, Kommentare, Markierungen und Fixierungen sind getrennt nach
+  Besitzer. Vorhandene Zeilen brauchen beim Schreiben Quelle oder Referenz;
+  numerische Altabfragen sind nur bei eindeutiger Zuordnung lesbar.
+  Bestehende Datenbanken werden niemals beim Start automatisch migriert.
+  Explizite Copy-Migration erhält unbelegte historische Besitzer in
+  verlustfreier Quarantäne; bekannte KI-Kosten bleiben im Budget erhalten.
+  Der konkrete produktive Aktivierungsstand und die Abnahme stehen in
+  `doc/reviews/2026-10-18_identitaet_kontrakte_umsetzung/`.
+  Schema 2 ist seit 18.10.2026 18:28 MESZ produktiv aktiviert; Originalwerte
+  sind gegen Backup plus Quarantäne geprüft. 1.572 unbelegte Altstudien
+  bleiben erhalten, aber inaktiv; neue Messungen sind erforderlich.
+  Täglicher und direkt aufgerufener Betreuer bleiben nur MQL5; andere
+  Quellen werden vor dem Export übersprungen. Tradeserver v2 ist am
+  18.10. produktiv bereitgestellt: stabile Quellen-UID plus Anbieter-ID,
+  quellengebundene PDFs und laufgebundene atomare Snapshots. Der Scanner
+  stuft nicht auf v1 zurück. Live-Neuberechnung und Quellenupdates sind
+  separat nachzuweisen; ein erfolgreicher Deploy ist kein Datenabschluss.
+- **FT-Kontrakte (18.10.2026):** Exakte Terminalbelege für `GER40ft` und
+  `UK100ft` am Referenzserver `VantageMarkets-Live 10`: 1 EUR beziehungsweise
+  1 GBP je Punkt/Lot. Das geprüfte Vantage-Profil verwendet historische FX
+  statt fester USD-Mediane; ungebundene Parallelmodelle sind entfernt.
+  Historische Provider-Originalserver bleiben unbelegt; keine Freigabe
+  fremder Broker, keine Aufwertung anderer Kurs-/Kontraktlücken.
+  Forensikversion 21 ergänzt belegte Vantage-Kontrakte Nikkei225 (1 JPY)
+  und Soybean-C (500 USD je Preiseinheit/Lot) sowie zeit-/feedgebundene
+  H1-Umrechnung für nicht durch EZB belegte Quotes. CNH ist niemals CNY.
+  Einzelne BTCETH-Preisereignisse bleiben bei fehlendem Preisbeleg gesperrt.
+  Belege und laufender Liveabschluss unter
+  `doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/`.
+- **Historischer Zwischenstand der Identitäts-Nachprüfung (18.10.2026,
+  vor obiger Migration):** Auch direkte `upsert_signal`-
+  Updates benötigen bei bestehenden IDs eine explizite passende Quelle.
+  Die Kataloganzeige und deren Kennzahlen verwenden `(quelle, signal_id)`;
+  gleiche IDs verschiedener Quellen bleiben sichtbar. ID-basierte Studien
+  werden bei aktuellen Quellenkonflikten nicht gelesen oder überschrieben;
+  Studienstarts prüfen dies vor dem Kurszugriff. Das ist keine vollständige
+  Composite-Migration. Markierungen/Kommentare/Fix-IDs bleiben ID-weit und
+  die Übersicht weist bei Kollision darauf hin. Der neue MqlDownloader-Code
+  liefert belegte `weeks` aus eindeutig zugeordneten lokalen Profilseiten;
+  ohne Beleg bleibt das Alter unbekannt. Neue Builds erneuern laufende
+  Dienste und produktive Historien nicht automatisch. Nachweise unter
+  `doc/reviews/2026-10-18_download_datenfluss_pruefung/fremdreview_nachpruefung/`.
 - **Maßgebliche Codeorte:** `pipeline.ampel_for`, `ScanResult.refresh_efficiency`,
   `config.DEFAULT_SETTINGS`, `portfolio_statistik.MIN_HISTORIE_MONATE` und
-  `analysis_version.FORENSICS_VERSION` (nach ergänzender Gegenprüfung 19). Produktive Settings
+  `analysis_version.FORENSICS_VERSION` (aktuell 21). Produktive Settings
   ausschließlich `config/app_settings.json`.
 - **GLM-Gegenprüfung 16.10.2026:** Direkte MQL-USD-Forensik und Kontostudien
   benötigen belegte USD-Kontowährung; native Beträge bleiben im Audit erhalten.
@@ -82,7 +285,10 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
 
 Tool, das MQL5-Signale scannt, forensisch prüft und Kandidaten bewertet.
 
-- **Risiko VOR Ertrag.** Harte Drawdown-Schranke: 30 % max.
+- **Risiko VOR Ertrag.** Keine starre 30-%-Obergrenze: Die maximale
+  DD-Schranke ist konfigurierbar; auch 50 % sind bei erfuellter
+  Ertragspruefung und belastbarem Jahres-Calmar zulaessig. Massgeblich
+  bleibt der ausdruecklich konfigurierte Grenzwert.
 - Effizienz muss stimmen: Jahres-Calmar auf belastbarem Equity-DD mindestens
   konfigurierte Schwelle (Default 3,0); frühere Pflicht >5 %/Monat ist abgelöst.
 - Stop-Evidenz untersuchen; fehlender Nachweis ist neutral und keine Grün-Sperre.
@@ -185,8 +391,11 @@ erlauben kein Grün. Die absolute Monats-Ertragshürde ist standardmäßig aus,
 kann aber konfiguriert werden. Gewinn bleibt bei fehlendem Equity-DD messbar.
 Die Rendite verwendet die echte Zeitspanne und bei Kapitalflüssen TWR-
 Unterperioden; Jahr 365,2425 Tage, Monat = Jahr/12. Leermonate nicht kürzen,
-Auswahl mit ungerundeten Werten. Die harte Risiko-Schranke bleibt das
-konservative Maximum aller fünf DD-Kanäle; gute Effizienz hebt sie nie auf.
+Auswahl mit ungerundeten Werten. Die konfigurierte Risiko-Schranke verwendet
+weiterhin das konservative Maximum aller fünf DD-Kanäle. Es gibt keine
+allgemeine 30-%-Obergrenze; auch 50 % sind nach Nutzerentscheidung
+18.10.2026 zulaessig. Gute Effizienz allein aendert den konfigurierten
+Grenzwert nicht automatisch.
 KI erhält Codewerte, Zeit-/Kapitalbasis, Messstatus und aktuelle Kriterien.
 Historische Rendite ist keine Prognose. Änderungen der fachlichen Bewertung
 werden über `analysis_version.FORENSICS_VERSION` versioniert.
@@ -1245,6 +1454,143 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
   RetDD unbekannt wegen DST-Blockern (Kurs-Reko unvollständig), Monitor-DD
   seit Review kein Nenner mehr. +1 Test tests/test_contract_specs.py.
 
+- ✅ SEKTION „ABONNENTENSTATISTIK“ — wohin laufen die Nutzer? (20.10.2026,
+  Nutzer-Wunsch + Konzept doc/24_abonnentenstatistik-konzept.md, dort auch
+  die Recherche-Belege und Nutzer-Entscheidungen 1–3): Neuer Nav-Punkt
+  unter „Alle Signale“ (app_pages/abonnenten_statistik.py + Modul
+  abonnenten_statistik.py). Tabs „Alle“ + je aktiver Quelle; Tabelle mit
+  Abonnenten, Δ seit letzter Messung / 7 T / 30 T (EINHEITLICH im Scanner
+  berechnet aus subscriber_history, Toleranz ±3 Tage, „–“ statt falscher 0),
+  Δ 7 Tage % (relativ zum Stand des Vergleichspunkts — +5 bei 5 Abonnenten
+  ist +100 %, Basis 0 bewusst ohne Prozentwert; Nutzer-Wunsch 20.10.),
+  Zuwachs-Ampel JE BROKER gegen dessen gestutzten Ø von Δ 7 Tage % (oberste
+  5 % gekappt, nur ≥1-Abonnent-Signale; 🟢 über Ø · 🟡 wachsend unter Ø ·
+  🟠 Verlust · 🔴 >10 % Bestandsverlust; negatives Ø bindet Grün an echtes
+  Wachstum, Verlierer sind nie grün; Nutzer-Wunsch 20.10. abends; Live-Ø:
+  vant +19,7 % · pelik +1,7 % · robo +0,1 % · mql5 −8,0 % · zulu 0 [API
+  statisch] — Spalte „Ampel (Zuwachs)“ + Zell-Tönung der %-Spalte),
+  Letzte Messung, Sparkline-Minigrafik „Verlauf 30 T“ (Pillow als Base64-
+  Daten-URL in ImageColumn, Festplatten-Cache; 3.104 Kurven in 0,57 s bei
+  3.186 Zeilen — Nachtrag Nutzer-Wunsch 20.10. abends), Engine-Ampel (reine
+  Anzeige, kein manuelles Risiko-Feld; Farb-Legende erklärt Zuwachs-Zahlen
+  vs. Risiko-Ampel getrennt), Anbieter-Link; KPI-Karten, Suche, Min.-Abonnenten-Default 1, Default-
+  Sortierung Δ30 desc, CSV-Export, Detail mit Verlaufs-Chart + Messpunkten.
+  BEOBACHTUNGSLISTE (Nutzer-Wunsch 20.10. abends): neue Tabelle
+  beobachtungsliste (signal_ref PK + angelegt_am; Schema-Vertrag ist
+  streng — Tabelle zusätzlich per CREATE IF NOT EXISTS in der Produktiv-DB
+  angelegt, alte Backups ohne sie melden Identitaetsmigration), Button
+  „👁 Beobachten“ in der Detailansicht (Einzelauswahl) ODER Sammel-
+  schalter bei MEHRFACHAUSWAHL (selection_mode=multi-row; gemischte Auswahl
+  trennt Setzen/Entfernen), Spalte „Beob.“ (👁), erster Tab; AUCH auf
+  „Alle Signale“ integriert (gleiche Tabelle, gleicher Wert: Spalte „Beob.“
+  via tabellen_zeile(beobachtet=...), Button in der Markierleiste).
+  ZUSÄTZLICH 20.10. nachts (Nutzer-Wünsche): Spalte „Ber.“ mit 📄/📄×N je
+  vorhandener KI-Analyse-Art (beide Seiten; Abonnentenstatistik zählt in
+  zeilen() aus workflow_zeilen, Alle Signale via _berichte_icon) UND
+  „Alle Signale“ auf BROKER-TABS umgebaut (Alle + je Quelle, wie
+  Abonnentenstatistik; Quelle-Pills entfernt; Alle-Tab behält Key
+  alle_signale_tabelle, Broker-Tabs …_<kuerzel>; Detail-Auflösung über
+  tab_definitionen tab-lokal).
+  KOMPAKTHEIT + DOKU-SPALTE 20.10. nachts: Schmale Header (Δ
+7 Tage,
+  Zuwachs, Risiko, Abos, Messung — zweizeilig/kurz, Breiten reduziert);
+  STREAMLIT-LEKTION: Int64-pd.NA rendert in Zellen als Text „None“ —
+  Δ-Spalten bewusst FLOAT (NaN → leere Zelle via Styler-na_rep);
+  Spalte „Doku“ beidseitig (📑/📑×N = gespiegelte Testreport-PDFs,
+  db.downloader_reports_liste_alle()-Bulk).
+  DOKU-LESEN+NACHLADEN 20.10. spät: Detail-Expander zeigt je PDF einen
+  INLINE-VIEWER (st.pdf, height 420) + Download; Button „📑 Doku von der
+  Quelle nachladen“ im Detail (sync_reports — reiner REST-Download,
+  funktioniert OHNE Trades; nur die KI-Berichte „Ber.“ brauchen die
+  Forensik), Batch „📑 Doku für ALLE beobachteten nachladen“ im
+  Beobachten-Tab (Spinner, Fehler je Signal gesammelt) und „📑 Doku
+  nachladen“ in der Alle-Signale-Markierleiste. REGRESSION gefixt:
+  der Doku-Block las via globalem Schleifenrest z die LETZTE Tabellen-
+  zeile statt der gewählten (modulweites for z in zeilen); jetzt aus
+  der _doku-JSON-Spalte des Detail-DataFrames.
+  TRADES-CSV-EXPORT 20.10. spät (Nutzer-Wunsch): Abonnentenstatistik-Detail
+  Expander „⬇ Trades als CSV“ — Lade-Klick (katalog.lade_signal_daten,
+  SHA-geprüfter On-demand-Cache wie Alle Signale; DownloaderError/ValueError
+  ehrlich als Warnung) setzt Session-Pfad → st.download_button
+  trades-<quelle>-<id>.csv. APPTEST: st.download_button ist EIGENER
+  Elementtyp (at.get("download_button"), nicht at.button).
+  PROMPT-REGEL 20.10. spät (Nutzer-Entscheidung „kein Default, Hinweis-
+  Fenster“): load_prompt legt fehlende Vorlagen NICHT mehr still an und
+  ersetzt sie nie — fehlt/leer → PromptFehlt mit Pfad + Reparatur-Hinweis;
+  neu: prompts.fehlende_vorlagen() + tiefen_batch.batch_starten verweigert
+  VOR dem Start mit Meldung „Berichtsvorlage(n) fehlen … Zurücksetzen“;
+  prompt_is_modified ohne Crash bei fehlender Datei. DEFAULTS bleiben
+  BEWUSST im Code — ausschließlich als Werkzeug (Admin „Zurücksetzen“/
+  Werkfassung + „geändert?“-Anzeige + B12-Sync-Test), greifen NIE als
+  Prompt. conftest stellt Werkvorlagen im Test-TMP bereit (statt der
+  alten Auto-Anlage); test_sl_prompt_evidenz auf neue Semantik umgestellt;
+  neu tests/test_prompt_fehlt.py.
+  NEUE TIEFENANALYSE-VORLAGE 20.10. spät (Nutzer-Prompt, pipeline-angepasst):
+  config/prompts/tiefenanalyse.md + DEFAULT_TIEFENANALYSE identisch getauscht —
+  Entscheidungsdokument statt Signalbewertung: Arbeitsweise-Block (kein
+  Browsing/Werkzeuge, nur gelieferte Daten, „nicht verfügbar"-Pflicht,
+  Ausnahme-Rechnung mit Quotienten-Show, Stichproben-Verbot), §3.1 Korb-
+  Verlustforensik auf CODE-Berechnung (trade_data._rekonstruiere_koerbe:
+  Overlap-Cluster je Symbol; _verlustkorb_befund: Summary Median/Ø/max +
+  30 schlimmste Verlustkörbe im trades_json), Zeitverteilung (Brokerzeit-
+  Hinweis), Kopierbarkeit, 35-%-Abschalt-Simulation auf Monatskurve (dis-
+  krete Näherung, Gewinne nach Auslösung zählen nicht) + Break-even-Formel
+  (1+g)(1−d)≥1 → 53,85 % bei 35 %, drei Noten A/B/C (C ≠ 11−B), 6 Ent-
+  scheidungsfragen. build_trade_payload: Parameter volle_liste_max_trades
+  (Tiefenanalyse=250 — kleine Exporte KOMPLETT kompakt im Prompt; größter
+  Cache-Export 10,7 MB ≈ 2,7 Mio. Tokens roh, deshalb Grenze).
+  {regeln_sl}/{regeln_fremdtext}-Bausteine unverändert → SL-Beweisvertrag
+  erfüllt. +5 Tests test_tiefenanalyse_payload.py.
+  SICHTBARKEITS-FIX 20.10. spät (Nutzer-Befund „Batch refreshed nicht“):
+  Batch-Tiefenanalysen von KATALOG-Signalen (ohne signals-Zeile) waren über
+  list_catalog/JOIN unsichtbar — db.analyses_zaehler_alle() zählt jetzt
+  UNABHÄNGIG von signals (Ber.-Spalte der Abonnentenstatistik via
+  berichte_zaehler-Param; 136→151 sichtbar), Detail-Expander „📄 Tiefen-
+  analyse lesen (KI)“ zeigt den Text + Markdown-Download via
+  db.get_latest_analysis (funktioniert auch ohne Scan). Ursache-These
+  „Batch eingefroren" war FALSCH — llm_attempts + rohe analyses-Abfrage
+  bewiesen 21/30 fertig mitten im Lauf; Diagnose-Reihenfolge bei
+  „nichts passiert": erst roh ohne JOIN prüfen, dann Netz (netstat :443),
+  dann Neustart-andenken. BUG-FIX 20.10. spät:
+  zeilen() ließ bei gescannten Signalen die KATALOG-Zeile gewinnen
+  (ohne Analyse-Felder) — „Ber.“ blieb für ALLE gescannten Signale
+  leer (5 statt 136 sichtbar); jetzt werden belegte Analyse-Felder
+  gezielt aus der Workflow-Zeile in die Metadaten gemergt.
+  ALLE-SIGNALE-BATCH 20.10. spät (Nutzer-Wünsche): Erster Tab „👁
+  Beobachten (N)“ (gleiche Liste, gefiltert auf signal_ref), Multi-Row-
+  Auswahl JE Tab + Buttons „☰ Alle im Tab auswählen (N)“/„Auswahl
+  leeren“ (INTENT-MUSTER Pflicht: Widget-State darf erst im NÄCHSTEN
+  Lauf vor Materialisierung gesetzt werden — direktes Setzen nach dem
+  st.dataframe crasht mit StreamlitWidgetAlreadyInstantiatedError, auch
+  live!), Sammelschalter „🤖 KI-Tiefenanalysen für N Signale starten“
+  (tiefen_batch.batch_starten; Limit 50 Token-Schutz; fehlende Trade-
+  Exporte werden vorher per katalog.lade_signal_daten nachgeladen;
+  disabled bei laufendem Batch/Scan/keinem Key; Skip vorhandener aktueller
+  Analysen, fortsetzbar, bewertet nie neu) + Tiefenbatch-Fortschritts-
+  Fragment mit Stop (eigene Keys alle_signale_ki_*).
+  „Beobachten“ BEWUSST ohne Mindest-Abonnenten-Filter (0-Abonnenten-Signal
+  bleibt sichtbar); db.setze_beobachtung/list_beobachtungen.
+  SYNC (Stufe A): je Quelle Vollkatalog minSubscribers=0 (validierte
+  Pagination, katalog_signale wird mit-aktualisiert) + KOMPLETTE Client-
+  Historie je Provider (GET /history, ms) nach subscriber_history + EIGENER
+  Messpunkt „jetzt“ aus der Katalogzahl (change ggü. Vorherpunkt, 6-h-
+  Dedupe); neue db-Funktionen subscriber_history_alle + letzte_ampeln_je_
+  signal. REFRESH (Stufe B, Nutzer-Entscheidung): client_updates.starte_
+  alle_updates hat Parameter tradelisten=False + katalog_max_alter_h=0
+  (erzwingt Neumessung trotz 3-Tage-Regel) + quellen_filter + modus
+  (Chronik-Hinweis „Modus: abonnenten“; Scan-Kreis 0 unverändert);
+  Dialog-Default: 4 Monitore an, MQL5 aus (Selenium 10–25 min). Hintergrund-
+  Thread mit Live-Fragment, danach automatisch Stufe A. Tradelisten lädt
+  die Seite NIE. Grenzen (Hilfe-Thema abonnentenstatistik): Monitor-
+  Historie startet 01.10. → 30-Tage-Werte dort erst ab ~31.10.; Robo/
+  Vantage/Zulu decken nur Top-N (~200) ab, Pelican alle ~2.250, MQL5 den
+  Downloader-Bestand (~372). LIVE-ABNAHME 20.10. (Suite lief per startall):
+  Stufe A über alle 5 Quellen in 139,5 s fehlerfrei — 3.185 Zeilen,
+  35.612 History-Punkte (Pelikan 27.735), 3.177 eigene Messpunkte, 2.842
+  Signale mit belastbarem Δ7T (Top: The Holy Grail +246, Lexo +90, AIT FX
+  +81, SARUJA +74). +14 Tests tests/test_abonnenten_statistik.py (Sync,
+  Dedupe, Offline-Quelle, Bilanz, Ampel-Anzeige, Stufe-B-Parameter,
+  Refresh-Runner, AppTest).
 - ✅ SEKTION „ALLE SIGNALE“ — unabhängige Statistik vor dem Workflow
   (05.10.2026, Nutzer-Wunsch „selbst ein Bild machen, bevor die KI den
   ganzen Workflow durchläuft“): Neuer Nav-Punkt UNTER Agenten
@@ -1519,5 +1865,42 @@ Entschieden und umgesetzt (Details: `doc/04_roadmap.md`):
       spätere Abonnenten) holen die Historie im nächsten Lauf nach.
       Akzeptiertes Restrisiko dokumentiert (Rang 201+ könnte nach
       Rendite/DD besser sein — Nutzer-Entscheid). mvn test 89/89 grün.
+- ✅ MAX-RISIKO-RECHNER + UNABHÄNGIGER KONTROLLSCAN (21.10.2026,
+  Nutzer-Wünsche): (1) Eigener Nav-Punkt „Max-Risiko-Rechner" im
+  Arbeitsbereich (app_pages/risiko_rechner.py + Modul
+  src/mqlkiscanner/risiko_rechner.py): Trade-CSV IMPORTIEREN
+  (MT5-Positions- oder MT4-Orderbuch-Format; Beträge USD) ODER Signal
+  aus der DB wählen → „Maximale Risikoberechnung starten" → dieselbe
+  Produktionsmessung wie die Equity-DD-Studie (equity_studie.studie:
+  H1-Equity-Kurve inkl. floating, Auto-GMT je Symbol) unter dem
+  gemeinsamen Lauf-Lock mit KursDaten-Terminal-Lifecycle → ausführliches
+  PDF (data/reports/max_risiko_<Datum>_<Name>.pdf: Max-DD %/USD,
+  Rückfallzeitraum, stärkster floating-Verlust, Unterwasser-Tage,
+  Abdeckung, EIGENER Closed-DD als Kontrast mit rotem Warnhinweis bei
+  >10 pp Unterschied, Equity-/Unterwasser-/Monats-Charts, Symbol-
+  GMT-Diagnose, Methodik/Disclaimer). Startkapital automatisch aus
+  CSV-Einzahlungen (drawdown.run), sonst Pflicht-Eingabe (kein
+  10k-Modell). Bewertet nichts, schreibt nichts in die DB.
+  (2) Unabhängiger Kontrollscan als CLI (scripts/kontrollscan_bericht.py
+  + kontrollscan_pdf.py; Prompt doc/25_abobericht-prompt.md): eigene
+  Rechnung über ALLE trade_files (TWR-Monatsrenditen, eigener Closed-DD
+  mit Peak-Senkungsregel, Martingale-Median, Peak-Positionen; K.o.s nur
+  Ausschlussliste/Martingale/inaktiv/Mikrobasis<100 USD; Historie<3
+  Monate = Kennzeichnung, KEIN Ausschluss — Nutzer-Regel 21.10.: hohe DD
+  schließt nicht aus, RetDD entscheidet) + H1-Max-DD über die
+  PRODUKTIONS-Reko (forensics/equity_rekonstruktion.rekonstruiere) mit
+  OFFLINE-Cache-Kursen (CacheKursDaten liest data/kursdaten.db
+  read-only — kein Terminal/Fenster; KursDaten.hole_h1 bräuchte sonst
+  eine aktive Terminal-Verbindung selbst bei vollem Cache);
+  Engine-Ampel ERST als Gegencheck („Grün zweifelhaft"/„möglicherweise
+  übersehen"/„geschlossene Kurve unterschätzt DD >10 pp"). PDF
+  data/reports/kontrollscan_<Datum>_<HHMM>.pdf (Uhrzeit im Namen — nie
+  eine geöffnete/gesperrte PDF überschreiben). WICHTIGER FIX dabei:
+  Closed-DD zählte Einzahlungen DOPPELT (startkapital enthielt sie UND
+  sie liefen als Events durch die Kurve) — korrekt wie drawdown.run:
+  Basis = Kontobewegungen bis zum ersten Trade-OPEN, nur SPÄTERE Flows
+  als Events. Validiert: eigener Closed-DD == Engine Trading-DD
+  (GS MT4 8,11 %, GS MT5 18,35 %, Pure Gold 28,79 %). +6 Tests
+  tests/test_risiko_rechner.py, test_app.py 20 grün.
 - [ ] Erster voller autonomer Monat (Bestätigung der Phase-E-Abnahme
       „Monat ohne Scan-Klick" nach Oktober 2026)

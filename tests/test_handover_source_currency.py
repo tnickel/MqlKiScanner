@@ -87,7 +87,7 @@ def test_catalogue_retains_verified_currency_before_study_guard(tmp_path, curren
     else:
         with pytest.raises(ValueError, match="Kontowährung"):
             pipeline.require_usd_account(result)
-    assert stats[123]["balance_usd"] == (1100 if currency == "USD" else None)
+    assert stats[("robo", 123)]["balance_usd"] == (1100 if currency == "USD" else None)
 
 
 def test_catalogue_manual_reload_carries_currency_proof_to_result(tmp_path, monkeypatch):

@@ -43,6 +43,7 @@ REPORT_TITLES = {
     "gesamtbericht": "Gesamtbericht",
     "portfolio": "Portfolio-Gesamtbericht",
     "tiefenanalyse": "Tiefenanalyse",
+    "abonnenten_top5": "Abonnentenstatistik · Top-5-Rechercheanalyse",
 }
 INTERMEDIATE_KINDS = {"trade_analyse", "risiko_analyse"}
 
@@ -77,6 +78,9 @@ class PdfReport:
     signal_name: str = ""
     created_at: str | None = None
     model: str | None = None
+    quelle: str = "mql5"
+    quellen_uid: str = ""
+    signal_ref: int | None = None
 
 
 def _register_fonts() -> None:
@@ -149,11 +153,14 @@ def report_filename(
 
 def result_snapshot_token(result) -> str:
     """Identify one exact signal/trade snapshot independently of its display row."""
+    from .signal_identity import stable_identity_key
+    owner = snapshot_token(stable_identity_key(result))
     digest = getattr(result, "trades_sha256", "")
     if digest:
-        return digest[:10]
+        return owner[:8] + "-" + digest[:10]
     return snapshot_token(
         getattr(result, "source_kind", "live"),
+        stable_identity_key(result),
         getattr(result, "id", None),
         getattr(result, "trades_path", ""),
         digest,
@@ -170,6 +177,9 @@ def result_pdf_spec(result, kind: str) -> tuple[PdfReport, str]:
         signal_name=getattr(result, "name", ""),
         created_at=getattr(result, f"{kind}_at", "") or None,
         model=getattr(result, f"{kind}_model", "") or None,
+        quelle=getattr(result, "quelle", None) or "mql5",
+        quellen_uid=getattr(result, "quellen_uid", "") or "",
+        signal_ref=getattr(result, "signal_ref", None),
     )
     filename = report_filename(
         kind,
@@ -202,7 +212,8 @@ def _empfohlene_signale(portfolio_text: str, ergebnisse) -> list:
         if getattr(result, "ampel", "") != "🟢":
             continue
         name = str(getattr(result, "name", "")).strip()
-        if not name:
+        if not name or sum(str(getattr(r, "name", "")).strip().casefold() == name.casefold()
+                           for r in ergebnisse or []) != 1:
             continue
         position = abschnitt.lower().find(name[:12].lower())
         if position >= 0:
@@ -211,13 +222,14 @@ def _empfohlene_signale(portfolio_text: str, ergebnisse) -> list:
     return [result for _, result in treffer]
 
 
-def _anhang_markdown(ergebnisse, portfolio_text: str) -> str:
+def _anhang_markdown(ergebnisse, portfolio_text: str, *, empfehlungen=None) -> str:
     """Anhang „Empfohlene Strategien im Detail" als Markdown: je Strategie
     Trennblatt mit Kennzahlen-Tabelle und ALLEN vorhandenen Berichten
     gesammelt (Nutzer-Wunsch 02.10.: alles zu Strategie 1, dann alles zu
     Strategie 2 …) — Kurzfassung, Risiko-Analyse, Trade-Analyse,
     Gesamtbericht und — falls vorhanden — die manuelle Tiefenanalyse."""
-    empfehlungen = _empfohlene_signale(portfolio_text, ergebnisse)
+    if empfehlungen is None:
+        empfehlungen = _empfohlene_signale(portfolio_text, ergebnisse)
     if not empfehlungen:
         return ""
     teile = [
@@ -337,7 +349,12 @@ def portfolio_pdf_spec(report: dict, ergebnisse=None) -> tuple[PdfReport, str]:
     """
     body = str(report.get("text") or "")
     if ergebnisse:
-        anhang = _anhang_markdown(ergebnisse, body)
+        selected = None
+        if "allokationen" in report:
+            by_key = {f"{getattr(r, 'quelle', None) or 'mql5'}:{r.id}": r for r in ergebnisse}
+            selected = [by_key[a["signal_key"]] for a in report["allokationen"]
+                        if a.get("signal_key") in by_key and a.get("gewicht_pct", 0) > 0]
+        anhang = _anhang_markdown(ergebnisse, body, empfehlungen=selected)
         if anhang:
             body = body + "\n\n" + anhang
     pdf_report = PdfReport(
@@ -376,7 +393,13 @@ def report_storage_path(
     signal = f"{signal_id}-{_slug(report.signal_name, 'unbenannt')}"
     version = _slug(snapshot, "snapshot") if snapshot else snapshot_token(
         report.signal_id, report.signal_name, report.created_at, report.model, report.body)
-    return base / "signale" / signal / version / _STORED_FILENAMES[report.kind]
+    # A display slug folds case, punctuation, Unicode and long prefixes.
+    # Hash the exact owner instead, with UUID-equivalent 128-bit separation
+    # while keeping Windows paths short. UID and legacy alias are distinct.
+    owner_value = ("uid\0" + report.quellen_uid if report.quellen_uid
+                   else "alias\0" + (report.quelle or "mql5"))
+    owner = sha256(owner_value.encode("utf-8")).hexdigest()[:32]
+    return base / "signale" / owner / signal / version / _STORED_FILENAMES[report.kind]
 
 
 @lru_cache(maxsize=1)
@@ -687,7 +710,8 @@ def render_report_pdf(report: PdfReport) -> bytes:
     styles = _styles()
     title = REPORT_TITLES[report.kind]
     final = report.kind not in INTERMEDIATE_KINDS
-    classification = "Finalbericht" if final else "Zwischenanalyse"
+    classification = ("Recherchebericht" if report.kind == "abonnenten_top5"
+                      else "Finalbericht" if final else "Zwischenanalyse")
     identity = (
         f"{report.signal_name or 'Signal'} (#{report.signal_id})"
         if report.signal_id is not None else "Gesamtes Portfolio"
@@ -695,6 +719,8 @@ def render_report_pdf(report: PdfReport) -> bytes:
     metadata = [
         ["Berichtstyp", f"{classification} · {title}"],
         ["Bezug", identity],
+        *([["Datenquelle", report.quelle or "mql5"]]
+          if report.signal_id is not None else []),
         ["Erstellt", report.created_at or "nicht verfügbar"],
         ["Modell", report.model or "nicht verfügbar"],
     ]

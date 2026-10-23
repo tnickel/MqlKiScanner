@@ -46,9 +46,11 @@ def _init():
 def _legacy(conn, period: str) -> int:
     # Ledgergebundene Rollen-Schritte sind nur Spiegel. Ihr Abschlusszeitpunkt
     # kann in einer anderen Periode als der kostenpflichtige HTTP-Start liegen.
-    return int(conn.execute('SELECT COALESCE(SUM(tokens),0) FROM agenten_schritte '
-        'WHERE prompt IS NOT NULL AND ts LIKE ? AND budget_ledger=0',
-        (period+'%',)).fetchone()[0])
+    return int(conn.execute('SELECT COALESCE(SUM(tokens),0) FROM ('
+        'SELECT tokens FROM agenten_schritte WHERE prompt IS NOT NULL AND ts LIKE ? AND budget_ledger=0 '
+        'UNION ALL SELECT tokens FROM agenten_budget_altkosten '
+        'WHERE prompt_vorhanden=1 AND ts LIKE ? AND budget_ledger=0)',
+        (period+'%',period+'%')).fetchone()[0])
 
 
 def reserve(settings: dict, amount: int, model: str, prompt: str) -> str:
@@ -107,6 +109,11 @@ def post(client, body: dict, headers: dict, meta_out=None):
     # One token per UTF-8 byte + message framing, rather than bytes/3.
     bound = int(body['max_tokens']) + len(prompt.encode('utf-8')) + 1024
     ticket = reserve(client.agent_budget_settings, bound, body['model'], prompt)
+    # Optional per-client receipt list lets a durable caller account for every
+    # HTTP retry (including transport attempts with unknown actual costs).
+    receipts = getattr(client, "budget_tickets", None)
+    if isinstance(receipts, list):
+        receipts.append(ticket)
     try:
         response = requests.post(f'{client.base_url}/chat/completions',
                                  headers=headers, data=json.dumps(body), timeout=client.timeout)

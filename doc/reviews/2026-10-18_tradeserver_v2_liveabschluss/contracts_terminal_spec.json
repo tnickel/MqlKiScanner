@@ -1,0 +1,61 @@
+{
+  "ok": true,
+  "started_utc": "2026-10-18T16:38:35.885096+00:00",
+  "requested_symbols": [
+    "NIKKEI225",
+    "SOYBEAN-C"
+  ],
+  "configured_terminal": "C:\\Forex\\Mt5\\Vantage\\terminal64.exe",
+  "account_fields_read": [
+    "server"
+  ],
+  "orders_or_trade_downloads": false,
+  "symbol_matching": "exact spelling after case normalization; no proxy",
+  "terminal_was_running": false,
+  "connection_message": "portabel selbstgestartet; Datenpfad gepr\u00fcft, verbunden",
+  "terminal": {
+    "path": "C:\\Forex\\Mt5\\Vantage",
+    "data_path": "C:\\Forex\\Mt5\\Vantage",
+    "company": "Vantage International Group Limited",
+    "connected": true,
+    "broker_server": "VantageMarkets-Live 10"
+  },
+  "symbols": {
+    "NIKKEI225": {
+      "name": "Nikkei225",
+      "description": "Nikkei Index Cash CFD (JPY)",
+      "trade_contract_size": 1.0,
+      "currency_profit": "JPY",
+      "currency_margin": "JPY",
+      "trade_calc_mode": 2,
+      "trade_tick_size": 0.01,
+      "trade_tick_value": 5.631486768821837e-05,
+      "trade_tick_value_profit": 5.631486768821837e-05,
+      "trade_tick_value_loss": 5.6327238726103174e-05,
+      "volume_min": 1.0,
+      "volume_max": 20000.0,
+      "volume_step": 1.0,
+      "digits": 2,
+      "observed_utc": "2026-10-18T16:38:47.372433+00:00"
+    },
+    "SOYBEAN-C": {
+      "name": "Soybean-C",
+      "description": "Soybean - Cash",
+      "trade_contract_size": 500.0,
+      "currency_profit": "USD",
+      "currency_margin": "USD",
+      "trade_calc_mode": 2,
+      "trade_tick_size": 0.001,
+      "trade_tick_value": 0.44481611301887797,
+      "trade_tick_value_profit": 0.44481611301887797,
+      "trade_tick_value_loss": 0.44489131305222135,
+      "volume_min": 0.1,
+      "volume_max": 40.0,
+      "volume_step": 0.1,
+      "digits": 3,
+      "observed_utc": "2026-10-18T16:38:47.372433+00:00"
+    }
+  },
+  "terminal_running_after_cleanup": false,
+  "finished_utc": "2026-10-18T16:39:07.769555+00:00"
+}

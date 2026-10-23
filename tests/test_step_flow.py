@@ -148,8 +148,8 @@ def test_step4_skips_signals_with_existing_report(mocked_crawler, monkeypatch):
                                       forensik_version=FORENSICS_VERSION, trades_sha256="a" * 64)
     basis = pipeline.report_basis_for(known_result, config.load_settings())
     db.store_analysis(2342895, "gesamtbericht", "glm-5.3", 10,
-                      "ALTER_BERICHT. Kurzfassung: Alt.", basis=basis)
-    db.store_analysis(2342895, "trade_analyse", "glm-5.3", 5, "ALTE_TRADE_ANALYSE", basis=basis)
+                      "ALTER_BERICHT. Kurzfassung: Alt.", basis=basis, quelle="mql5")
+    db.store_analysis(2342895, "trade_analyse", "glm-5.3", 5, "ALTE_TRADE_ANALYSE", basis=basis, quelle="mql5")
 
     monkeypatch.setattr(secrets_store, "get_secret", lambda key: "ui-test-key")
     empfangen: list[int] = []
@@ -204,7 +204,7 @@ def test_step3_nur_neue_skips_known_and_keeps_old_verdicts(mocked_crawler, monke
     db.store_forensik(2342895, {"version": FORENSICS_VERSION,
                                 "peak_exposure": {"shock_pct_max": 5.0},
                                 "score": 4.7, "ampel": "🟡",
-                                "stop_nachweis": "kein Nachweis"})
+                                "stop_nachweis": "kein Nachweis"}, quelle="mql5")
 
     called: list[int] = []
 

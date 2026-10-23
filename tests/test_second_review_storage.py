@@ -20,8 +20,8 @@ CSV = (
 
 def trade_record(signal_id):
     with db._connect() as conn:
-        return dict(conn.execute("SELECT * FROM trade_files WHERE signal_id=?",
-                                 (signal_id,)).fetchone())
+        return dict(conn.execute("SELECT * FROM trade_files WHERE signal_ref=?",
+                                 (db.resolve_identity(signal_id).signal_ref,)).fetchone())
 
 
 def test_database_owns_snapshot_with_hash_of_exact_bytes(tmp_path):
@@ -32,7 +32,7 @@ def test_database_owns_snapshot_with_hash_of_exact_bytes(tmp_path):
     source.write_bytes(original)
     db.init_db()
     db.upsert_signal(123)
-    stored = Path(db.store_trade_file(123, str(source)))
+    stored = Path(db.store_trade_file(123, str(source), quelle="mql5"))
     row = trade_record(123)
     assert stored.parent == db.DB_PATH.parent / "trade_snapshots"
     assert stored.read_bytes() == original
@@ -82,7 +82,7 @@ def test_successful_refresh_returns_new_committed_snapshot(tmp_path):
     db.init_db()
     first = db.store_scan_result(123, {"name": "first"}, str(source), {"score": 1})
     source.write_text(CSV.replace(";0;0;1;", ";0;0;500;"), encoding="utf8")
-    second = db.store_scan_result(123, {"name": "second"}, str(source), {"score": 2})
+    second = db.store_scan_result(123, {"name": "second", "quelle": "mql5"}, str(source), {"score": 2})
     assert first != second
     assert Path(first).read_text(encoding="utf8") == CSV
     assert Path(second).read_bytes() == source.read_bytes()
@@ -97,7 +97,7 @@ def test_identical_concurrent_snapshots_are_idempotent(tmp_path):
     db.upsert_signal(1)
     db.upsert_signal(2)
     with ThreadPoolExecutor(max_workers=2) as pool:
-        paths = list(pool.map(lambda sid: db.store_trade_file(sid, str(source)), [1, 2]))
+        paths = list(pool.map(lambda sid: db.store_trade_file(sid, str(source), quelle="mql5"), [1, 2]))
     assert paths[0] == paths[1]
     assert Path(paths[0]).read_bytes() == source.read_bytes()
     assert list((db.DB_PATH.parent / "trade_snapshots").iterdir()) == [Path(paths[0])]

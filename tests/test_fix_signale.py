@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from mqlkiscanner import config, fix_signale, pipeline
+from mqlkiscanner import config, db, fix_signale, pipeline
 from mqlkiscanner.mql5 import crawler
 
 
@@ -20,8 +20,9 @@ def test_setzen_und_lesen_rundflug():
     fix_signale.setzen(2342895, True)
     fix_signale.setzen(2349227, True)
     assert fix_signale.fix_ids() == {2342895, 2349227}
-    # Persistiert und sortiert in app_settings.json
-    assert config.load_settings()["fix_signal_ids"] == [2342895, 2349227]
+    # Neue Pins liegen quellengebunden im Register; keine neuen ID-only Settings.
+    assert config.load_settings()["fix_signal_ids"] == []
+    assert fix_signale.fix_keys() == {("mql5", 2342895), ("mql5", 2349227)}
     fix_signale.setzen(2342895, False)
     assert fix_signale.fix_ids() == {2349227}
     # Erneutes Entfernen einer fehlenden ID ist unschaedlich
@@ -104,6 +105,8 @@ def test_fetch_signal_overview_ohne_plattform_bleibt_leer():
 def _pipe(**overrides) -> pipeline.ScanPipeline:
     einstellungen = {"fix_signal_ids": [], "min_wochen": 26, "min_abonnenten": 0}
     einstellungen.update(overrides)
+    for sid in einstellungen.get("fix_signal_ids", []):
+        db.resolve_identity(sid, quelle="mql5", create=True)
     return pipeline.ScanPipeline(einstellungen)
 
 
@@ -203,6 +206,8 @@ def test_teilscan_ziel_ids_verbindet_gelbgruen_mit_fix():
         SimpleNamespace(id=3, ampel="🟡", source_kind="demo"),   # Demo nie
         SimpleNamespace(id=4, ampel="⚪", source_kind="live"),
     ]
+    for sid in (2, 99):
+        db.resolve_identity(sid, quelle="mql5", create=True)
     ziel = fix_signale.teilscan_ziel_ids(alt, {"fix_signal_ids": [2, 99]})
     assert ziel == {1, 2, 99}
 
@@ -249,7 +254,8 @@ def test_ergebnisse_seite_zeigt_fix_verwaltung_und_markierung():
     assert not at.exception, at.exception
     assert fs.fix_ids() == {2342895}
     # Persistiert für den nächsten Scan:
-    assert config.load_settings()["fix_signal_ids"] == [2342895]
+    assert config.load_settings()["fix_signal_ids"] == []
+    assert fs.fix_keys() == {("mql5", 2342895)}
 
     # Tabelle mit Fix-Markierung: Sitzungsergebnis mit der gesetzten ID.
     at.session_state["scan_results"] = [
@@ -299,6 +305,7 @@ def test_export_auswahl_fix_ids_nie_geschnitten_ohne_slot_verbrauch():
     mql5 = [_k(1000 + i, 1000 - i) for i in range(35)]
     peli = [_k(2000 + i, 900 - i, "pelik") for i in range(35)]
     fix_id = 1005  # läge mitten in den MQL5-Top-35
+    db.resolve_identity(fix_id, quelle="mql5", create=True)
     auswahl, _ = fix_signale.waehle_fuer_export(
         mql5 + peli, 30, {"fix_signal_ids": [fix_id]})
     ids = [c["id"] for c in auswahl]
@@ -389,7 +396,7 @@ def test_begruende_teilscan_scope_nennt_ampel_und_neuheit():
     cands = [_k(1001, 50), _k(1002, 50), _k(1003, 50)]
     alt = [_AltResult(1001, "🟢", "Gruen"), _AltResult(1002, "🔴", "Rot")]
     begr = [_beg(c) for c in cands]
-    fix_signale.begruende_teilscan_scope(begr, cands, {1001}, alt)
+    fix_signale.begruende_teilscan_scope(begr, cands, {("mql5", 1001)}, alt)
     by_id = {e["id"]: e for e in begr}
     assert by_id[1001]["status"] == "KANDIDAT"          # im Scope — Slot folgt
     assert by_id[1002]["status"] == "NICHT_IM_SCOPE"

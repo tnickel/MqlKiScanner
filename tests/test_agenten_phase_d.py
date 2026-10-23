@@ -43,7 +43,7 @@ def _wechsel_schreiben(signal_id=2349227, richtung="verschlechterung"):
         farbwechsel=True, richtung=richtung,
         gruende=[{"kriterium": "dd_schranke", "alt": "grün",
                   "neu": "gelb", "berechnung": "Puffer 2 Punkte"}],
-        name="Gold Spike")
+        name="Gold Spike", signal_quelle="mql5")
 
 
 def test_kuenstlicher_ampelwechsel_erzeugt_alert_mit_quellverweis():
@@ -68,7 +68,7 @@ def test_watcher_idempotent_und_verbesserung_gelber():
     # Verbesserung bleibt Warnung (P2), nicht kritisch.
     db.store_ampel_wechsel(
         2349227, "2026-09-22 08:00:00", "daemon", "🟡", "🟢",
-        farbwechsel=True, richtung="verbesserung", gruende=[], name="X")
+        farbwechsel=True, richtung="verbesserung", gruende=[], name="X", signal_quelle="mql5")
     melder.pruefe_neue_wechsel(log=lambda *_: None)
     alerts = journal.meldungen_lesen(typ="alert", limit=1)
     assert alerts[0]["prioritaet"] == 2
@@ -77,7 +77,7 @@ def test_watcher_idempotent_und_verbesserung_gelber():
 # ── Tagesdigest ────────────────────────────────────────────────────
 
 def test_digest_verschiebt_solange_betreuer_laueft():
-    journal.lauf_starten("betreuer", quelle="daemon", signal_id=1)  # bleibt laeuft
+    journal.lauf_starten("betreuer", quelle="daemon", signal_id=1, signal_quelle="mql5")  # bleibt laeuft
     ergebnis = melder.tagesdigest(quelle="test", log=lambda *_: None)
     assert ergebnis["status"] == "skipped"
     assert "Betreuer noch aktiv" in ergebnis["grund"]
@@ -86,7 +86,7 @@ def test_digest_verschiebt_solange_betreuer_laueft():
 
 def test_digest_ohne_llm_maschinelle_fassung(monkeypatch):
     monkeypatch.setattr(melder, "_llm_digest", lambda *a, **k: None)
-    dossier.beobachtung_speichern(1, "KONFORM", "Alles im Rahmen.")
+    dossier.beobachtung_speichern(1, "KONFORM", "Alles im Rahmen.", quelle="mql5")
     ergebnis = melder.tagesdigest(quelle="test", log=lambda *_: None)
     assert ergebnis["status"] == "ok"
     text = journal.meldungen_lesen(typ="digest")[0]["text"]
@@ -108,7 +108,7 @@ def test_digest_grundlage_zaehlt_eigenen_lauf_nicht_als_laeuft():
     # protokollierten Prompt „je_status: laeuft: 1" und liest sich, als
     # liefe noch etwas — Nutzer-Missverständnis 02.10.
     journal.lauf_abschliessen(journal.lauf_starten("betreuer", quelle="test",
-                                                   signal_id=1), "ok")
+                                                   signal_id=1, signal_quelle="mql5"), "ok")
     eigener = journal.lauf_starten("melder", quelle="test")  # bleibt laeuft
     ereignisse = melder._ereignisse_heute(config.load_settings(),
                                           ohne_lauf_id=eigener)
@@ -127,15 +127,15 @@ def test_digest_grundlage_zaehlt_eigenen_lauf_nicht_als_laeuft():
 def test_stilbruch_im_betreuer_loest_alert_aus(tmp_path, monkeypatch):
     db.init_db()
     db.upsert_signal(2349227, name="Test Spike")
-    db.store_forensik(2349227, {"ampel": "🟢"})
-    dossier.profil_speichern(2349227, "Profil", "glm-5.3", {})
+    db.store_forensik(2349227, {"ampel": "🟢"}, quelle="mql5")
+    dossier.profil_speichern(2349227, "Profil", "glm-5.3", {}, quelle="mql5")
     positions_header = ("Time;Type;Volume;Symbol;Price;Volume;Time;Price;"
                         "Commission;Swap;Profit\n")
     alt = tmp_path / "alt.csv"
     alt.write_text(positions_header +
                    "2026.09.20 10:15:00;Buy;0.01;XAUUSD;1900.5;0.01;"
                    "2026.09.20 11:15:00;1910.5;0;0;10.00\n", encoding="utf-8")
-    db.store_trade_file(2349227, str(alt))
+    db.store_trade_file(2349227, str(alt), quelle="mql5")
     neu = tmp_path / "neu.csv"
     neu.write_text((positions_header
                     + "2026.09.20 10:15:00;Buy;0.01;XAUUSD;1900.5;0.01;"
@@ -148,7 +148,7 @@ def test_stilbruch_im_betreuer_loest_alert_aus(tmp_path, monkeypatch):
     antwort = ("EINORDNUNG: STILBRUCH\nNächtlicher Riesen-Trade mit 0,5 Lots "
                "— verletzt Merkmale 3 und 4 (Sessions, Sizing).")
     monkeypatch.setattr(betreuer, "_llm_einordnung",
-                        lambda *a, **k: (antwort, 99))
+                        lambda *a, **k: (antwort, journal.schritt_protokollieren(a[5], "betreuer", "llm", antwort=antwort)))
     ergebnis = betreuer.signal_pruefen(
         {"id": 2349227, "name": "Test Spike", "ampel": "🟢"},
         config.load_settings(), log=lambda *_: None)
@@ -156,7 +156,7 @@ def test_stilbruch_im_betreuer_loest_alert_aus(tmp_path, monkeypatch):
     alerts = journal.meldungen_lesen(typ="alert")
     assert alerts[0]["prioritaet"] == 3
     assert "STILBRUCH: Test Spike" == alerts[0]["titel"]
-    assert "schritt#99" in alerts[0]["quellen"]
+    assert any(link.startswith("schritt#") for link in alerts[0]["quellen"])
 
 
 # ── Scheduler & Rollen ─────────────────────────────────────────────

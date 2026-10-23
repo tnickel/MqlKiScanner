@@ -7,8 +7,8 @@ from mqlkiscanner.alle_signale_ui import tabellen_zeile
 def test_uebersicht_verwendet_snapshot_ohne_pdf_rendern(monkeypatch):
     db.init_db()
     db.upsert_signal(42, name='Probe', platform='MT5')
-    db.store_analysis(42, 'tiefenanalyse', 'test', 0, 'Bestehender Bericht')
-    rows, studien = db.list_catalog(), db.list_equity_studien()
+    db.store_analysis(42, 'tiefenanalyse', 'test', 0, 'Bestehender Bericht', quelle='mql5')
+    rows, studien = db.list_catalog(), db.list_equity_studien(identitaeten=True)
     gerendert = []
     monkeypatch.setattr(pdf_reports, 'materialize_result_pdfs',
                         lambda result: gerendert.append(result.id))
@@ -72,7 +72,7 @@ def test_tabellenzeilen_nutzen_gemeinsame_fix_ids(monkeypatch):
         raise AssertionError('Einstellungen nicht je Zeile laden')
     monkeypatch.setattr(alle_signale_ui, '_fix_ids', unerwartet)
     assert tabellen_zeile(pipeline.ScanResult(id=42, name='Probe'), {},
-                          fix_ids={42})['Fix'] == '📌 FIX'
+                          fix_ids={('mql5', 42)})['Fix'] == '📌 FIX'
 
 
 def test_seite_zeigt_gezählte_phasen_und_geschaetzte_restzeit(monkeypatch):
@@ -92,7 +92,7 @@ def test_seite_zeigt_gezählte_phasen_und_geschaetzte_restzeit(monkeypatch):
     monkeypatch.setattr(DeltaGenerator, 'caption', caption)
     rows = [dict(signal_id=1, stats={}), dict(signal_id=2, stats={})]
     monkeypatch.setattr(db, 'list_catalog', lambda: rows)
-    monkeypatch.setattr(db, 'list_equity_studien', lambda: {})
+    monkeypatch.setattr(db, 'list_equity_studien', lambda **kwargs: {})
     monkeypatch.setattr(db, 'katalog_sync_status', lambda: {'vant': dict(anzahl=2)})
     def workflow(**kwargs):
         assert kwargs['materialize_pdfs'] is False
@@ -138,10 +138,10 @@ def test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades(
     stats = dict(initial_deposit_usd=initial, kapitalbasis_virtual_usd=None,
                  regression_test=tmp_path.name)
     result = pipeline.ScanResult(id=1286742, name='DINO',
-        trades_path=str(csv), trades_sha256=trade_sha)
+        trades_path=str(csv), trades_sha256=trade_sha, account_currency='USD')
     monkeypatch.setattr(db, 'list_catalog', lambda: [dict(signal_id=result.id, stats=stats)])
-    monkeypatch.setattr(db, 'list_equity_studien', lambda: {
-        result.id: dict(virtuell=True, trades_sha=study_sha)})
+    monkeypatch.setattr(db, 'list_equity_studien', lambda **kwargs: {
+        (result.quelle or "mql5", result.id): dict(virtuell=True, trades_sha=study_sha)})
     monkeypatch.setattr(db, 'katalog_sync_status', lambda: {'vant': dict(anzahl=1)})
     monkeypatch.setattr(pipeline, 'results_from_db', lambda **kwargs: [result])
     monkeypatch.setattr(katalog, 'katalog_resultate', lambda **kwargs: ([], {}))

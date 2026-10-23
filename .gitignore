@@ -24,6 +24,8 @@ data/candidates.json
 data/stats/
 data/trades/
 data/trade_snapshots/
+data/abonnenten_analyse/
+data/identity_migration/
 data/runs/
 data/reports/
 data/*.db

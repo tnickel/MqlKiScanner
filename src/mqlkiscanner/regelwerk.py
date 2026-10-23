@@ -23,8 +23,8 @@ from . import config
 # kommt auf die Liste, wenn mindestens eine Kategorie klar erfuellt ist.
 KATEGORIEN: list[tuple[str, str]] = [
     ("Drawdown-Schranke verletzt",
-     "Equity- oder Balance-Drawdown über der harten Schranke (Standard "
-     "30 %). Größte Gruppe der Liste — z. B. EQ-DD 45,9 % bei „Low Risk "
+     "Equity- oder Balance-Drawdown über der damals geltenden Schranke. "
+     "Die aktuelle Grenze ist konfigurierbar. Größte Gruppe der Liste — z. B. EQ-DD 45,9 % bei „Low Risk "
      "Gold“: Der Name lügt, der Drawdown zählt."),
     ("Martingale/Grid-Struktur nachgewiesen",
      "Positions-Eskalation oder Grid-Struktur aus dem Trade-Muster "
@@ -84,10 +84,11 @@ HARTREGELN: list[tuple[str, str]] = [
 ]
 
 
-def ausgeschlossen_eintrag(signal_id: int) -> dict | None:
+def ausgeschlossen_eintrag(signal_id: int, *, quelle: str = "mql5") -> dict | None:
     """Listen-Eintrag eines Signals (mit Grund) oder None."""
     for eintrag in config.load_known_signals().get("ausgeschlossen", []):
-        if eintrag.get("id") == signal_id:
+        from .signal_identity import key_for
+        if key_for(eintrag) == key_for({"quelle": quelle, "id": signal_id}):
             return eintrag
     return None
 

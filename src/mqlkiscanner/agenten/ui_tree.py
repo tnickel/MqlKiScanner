@@ -450,10 +450,10 @@ def zeige_agent_dialog(rolle_key: str) -> None:
                 st.caption("Auszug der letzten forensischen Dossier-Beobachtungen:")
                 for k in kandidaten[:5]:
                     sig_id = k["signal_id"]
-                    profil = dossier_db.profil_lesen(sig_id)
-                    beob = dossier_db.beobachtungen_lesen(sig_id, limit=3)
+                    profil = dossier_db.profil_lesen(sig_id, quelle=k.get("quelle") or "mql5")
+                    beob = dossier_db.beobachtungen_lesen(sig_id, limit=3, quelle=k.get("quelle") or "mql5")
                     if profil or beob:
-                        with st.expander(f"Signal #{sig_id}: {k.get('name') or 'Unbenannt'}", expanded=False):
+                        with st.expander(f"{k.get('quelle') or 'mql5'} #{sig_id}: {k.get('name') or 'Unbenannt'}", expanded=False):
                             if profil:
                                 st.markdown(f"**Algo-Profil (v{profil['version']}):**")
                                 st.markdown(profil["profil_text"][:500] + ("…" if len(profil["profil_text"]) > 500 else ""))

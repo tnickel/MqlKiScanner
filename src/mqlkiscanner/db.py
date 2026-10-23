@@ -27,16 +27,53 @@ import json
 import os
 import sqlite3
 import tempfile
+import uuid
+
+from .signal_identity import (SignalIdentity, IdentityError, AmbiguousSignalIdentity,
+                              IdentityMigrationRequired, source_label)
 from datetime import datetime
 from pathlib import Path
 
 from .config import DATA_DIR
 
 DB_PATH = DATA_DIR / "mqlkiscanner.db"
+_ALIAS_CACHE = {}
+_SCHEMA_CHECK_CACHE = set()
+_SCHEMA_CONTRACT = None
 
 _SCHEMA = """
+CREATE TABLE IF NOT EXISTS migration_quarantaene (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ursprung_tabelle TEXT NOT NULL, grund TEXT NOT NULL, datensatz_json TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS agenten_budget_altkosten (
+    schritt_id INTEGER PRIMARY KEY,
+    quarantaene_id INTEGER NOT NULL UNIQUE REFERENCES migration_quarantaene(id),
+    ts TEXT, tokens INTEGER, budget_ledger INTEGER DEFAULT 0,
+    prompt_vorhanden INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_budget_altkosten_ts ON agenten_budget_altkosten(ts);
+CREATE TABLE IF NOT EXISTS quellen_identitaeten (
+    quellen_uid TEXT PRIMARY KEY, kuerzel TEXT NOT NULL UNIQUE,
+    angelegt_am TEXT, archiviert INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS quellen_alias (
+    kuerzel TEXT PRIMARY KEY,
+    quellen_uid TEXT NOT NULL REFERENCES quellen_identitaeten(quellen_uid)
+);
+CREATE TABLE IF NOT EXISTS signal_identitaeten (
+    signal_ref INTEGER PRIMARY KEY AUTOINCREMENT,
+    quellen_uid TEXT NOT NULL REFERENCES quellen_identitaeten(quellen_uid),
+    externe_id INTEGER NOT NULL,
+    UNIQUE(quellen_uid, externe_id)
+);
+CREATE INDEX IF NOT EXISTS idx_identity_external ON signal_identitaeten(externe_id);
+CREATE TABLE IF NOT EXISTS signal_fixierungen (
+    signal_ref INT NOT NULL PRIMARY KEY REFERENCES signal_identitaeten(signal_ref),
+    updated_at TEXT
+);
 CREATE TABLE IF NOT EXISTS signals (
-    signal_id   INTEGER PRIMARY KEY,
+    signal_ref   INT NOT NULL PRIMARY KEY REFERENCES signal_identitaeten(signal_ref),
     name        TEXT,
     platform    TEXT,
     url         TEXT,
@@ -45,22 +82,23 @@ CREATE TABLE IF NOT EXISTS signals (
     abonnenten  REAL,
     wochen      REAL,
     stats_json  TEXT,
-    updated_at  TEXT
+    updated_at  TEXT,
+    quelle TEXT NOT NULL DEFAULT 'mql5'
 );
 CREATE TABLE IF NOT EXISTS trade_files (
-    signal_id   INTEGER PRIMARY KEY REFERENCES signals(signal_id),
+    signal_ref   INT NOT NULL PRIMARY KEY REFERENCES signals(signal_ref),
     path        TEXT,
     sha256      TEXT,
     fetched_at  TEXT
 );
 CREATE TABLE IF NOT EXISTS forensik (
-    signal_id   INTEGER PRIMARY KEY REFERENCES signals(signal_id),
+    signal_ref   INT NOT NULL PRIMARY KEY REFERENCES signals(signal_ref),
     json        TEXT,
     updated_at  TEXT
 );
 CREATE TABLE IF NOT EXISTS analyses (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    signal_id   INTEGER REFERENCES signals(signal_id),
+    signal_ref   INTEGER REFERENCES signal_identitaeten(signal_ref),
     kind        TEXT,
     model       TEXT,
     tokens      INTEGER,
@@ -68,25 +106,25 @@ CREATE TABLE IF NOT EXISTS analyses (
     created_at  TEXT,
     basis       TEXT
 );
-CREATE INDEX IF NOT EXISTS idx_analyses_sig_kind ON analyses(signal_id, kind, id DESC);
+CREATE INDEX IF NOT EXISTS idx_analyses_sig_kind ON analyses(signal_ref, kind, id DESC);
 CREATE TABLE IF NOT EXISTS subscriber_history (
-    signal_id   INTEGER NOT NULL,
+    signal_ref   INT NOT NULL REFERENCES signal_identitaeten(signal_ref),
     version     TEXT NOT NULL,
     ts          TEXT NOT NULL,
     subscribers INTEGER,
     change      INTEGER,
     fetched_at  TEXT,
-    PRIMARY KEY (signal_id, version, ts)
+    PRIMARY KEY (signal_ref, version, ts)
 );
 CREATE TABLE IF NOT EXISTS downloader_reports (
-    signal_id     INTEGER NOT NULL,
+    signal_ref     INT NOT NULL REFERENCES signal_identitaeten(signal_ref),
     version       TEXT NOT NULL,
     name          TEXT NOT NULL,
     path          TEXT NOT NULL,
     size_bytes    INTEGER,
     last_modified TEXT,
     fetched_at    TEXT,
-    PRIMARY KEY (signal_id, version, name)
+    PRIMARY KEY (signal_ref, version, name)
 );
 CREATE TABLE IF NOT EXISTS tradeserver_sync_runs (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,18 +142,18 @@ CREATE TABLE IF NOT EXISTS llm_attempts (
     UNIQUE(call_id,attempt)
 );
 CREATE TABLE IF NOT EXISTS ampel_verlauf (
-    signal_id  INTEGER NOT NULL,
+    signal_ref  INT NOT NULL REFERENCES signal_identitaeten(signal_ref),
     ts         TEXT NOT NULL,
     quelle     TEXT NOT NULL,
     ampel      TEXT NOT NULL,
     score      REAL,
     urteil     TEXT,
     matrix     TEXT,
-    PRIMARY KEY (signal_id, ts)
+    PRIMARY KEY (signal_ref, ts)
 );
 CREATE TABLE IF NOT EXISTS ampel_wechsel (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    signal_id   INTEGER NOT NULL,
+    signal_ref   INT NOT NULL REFERENCES signal_identitaeten(signal_ref),
     name        TEXT,
     ts          TEXT NOT NULL,
     quelle      TEXT NOT NULL,
@@ -129,6 +167,8 @@ CREATE INDEX IF NOT EXISTS idx_ampel_wechsel_ts ON ampel_wechsel(ts DESC);
 CREATE TABLE IF NOT EXISTS datenquellen (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     kuerzel          TEXT NOT NULL UNIQUE,
+    quellen_uid      TEXT NOT NULL REFERENCES quellen_identitaeten(quellen_uid),
+    archiviert       INTEGER NOT NULL DEFAULT 0,
     name             TEXT,
     base_url         TEXT NOT NULL,
     typ              TEXT NOT NULL DEFAULT 'mql5-downloader-v1',
@@ -138,13 +178,13 @@ CREATE TABLE IF NOT EXISTS datenquellen (
 );
 CREATE TABLE IF NOT EXISTS quellen_artefakte (
     quelle_id   INTEGER NOT NULL REFERENCES datenquellen(id),
-    signal_id   INTEGER NOT NULL,
+    signal_ref   INT NOT NULL REFERENCES signal_identitaeten(signal_ref),
     version     TEXT NOT NULL,
     art         TEXT NOT NULL,
     sha256      TEXT,
     path        TEXT,
     fetched_at  TEXT,
-    PRIMARY KEY (quelle_id, signal_id, version, art)
+    PRIMARY KEY (quelle_id, signal_ref, version, art)
 );
 CREATE TABLE IF NOT EXISTS client_updates (
     id                 INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -168,7 +208,7 @@ CREATE INDEX IF NOT EXISTS idx_client_updates_ts ON client_updates(ts DESC);
 -- (Mindestalter/-abo) nur beim Scan greift und die Übersicht alles zeigt.
 CREATE TABLE IF NOT EXISTS katalog_signale (
     quelle      TEXT NOT NULL,
-    signal_id   INTEGER NOT NULL,
+    signal_ref   INT NOT NULL REFERENCES signal_identitaeten(signal_ref),
     name        TEXT,
     platform    TEXT,
     url         TEXT,
@@ -177,7 +217,7 @@ CREATE TABLE IF NOT EXISTS katalog_signale (
     wochen      REAL,
     risiko      TEXT,
     updated_at  TEXT,
-    PRIMARY KEY (quelle, signal_id)
+    PRIMARY KEY (signal_ref)
 );
 CREATE TABLE IF NOT EXISTS katalog_sync (
     quelle      TEXT PRIMARY KEY,
@@ -194,17 +234,24 @@ CREATE TABLE IF NOT EXISTS katalog_sync (
 -- Freitext-Kommentar je Signal (Nutzer 09.10.2026): z. B. warum aufgenommen
 -- und warum Fix-ID — langer Text, Bearbeitung über den Dialog der Seite.
 CREATE TABLE IF NOT EXISTS signal_kommentare (
-    signal_id   INTEGER PRIMARY KEY,
+    signal_ref   INT NOT NULL PRIMARY KEY REFERENCES signal_identitaeten(signal_ref),
     kommentar   TEXT NOT NULL,
     updated_at  TEXT
 );
 CREATE TABLE IF NOT EXISTS signal_markierungen (
-    signal_id   INTEGER PRIMARY KEY,
+    signal_ref   INT NOT NULL PRIMARY KEY REFERENCES signal_identitaeten(signal_ref),
     farbe       TEXT NOT NULL,
     updated_at  TEXT
 );
+-- Beobachtungsliste der Abonnentenstatistik (Nutzer-Wunsch 20.10.2026):
+-- ausgewählte Signale dauerhaft beobachten — eigener Tab, unabhängig vom
+-- Abonnenten-Filter (ein beobachtetes Signal bleibt bei 0 Abonnenten sichtbar).
+CREATE TABLE IF NOT EXISTS beobachtungsliste (
+    signal_ref  INT NOT NULL PRIMARY KEY REFERENCES signal_identitaeten(signal_ref),
+    angelegt_am TEXT
+);
 CREATE TABLE IF NOT EXISTS equity_studien (
-    signal_id   INTEGER PRIMARY KEY,
+    signal_ref   INT NOT NULL PRIMARY KEY REFERENCES signal_identitaeten(signal_ref),
     trades_sha  TEXT,
     json        TEXT,
     cagr_jahr_pct REAL,
@@ -241,36 +288,290 @@ def _connect():
         with conn:
             yield conn
     finally:
+        if conn.total_changes:
+            _ALIAS_CACHE.clear()
         conn.close()
 
 
+SCHEMA_VERSION = 2
+
+
+def _unique_indexes(conn, table):
+    indexes=set()
+    for row in conn.execute('PRAGMA index_list("'+table.replace('"','""')+'")'):
+        if row[2] and not row[4]: # only full UNIQUE indexes enforce the complete owner domain
+            indexes.add(tuple(r[2] for r in conn.execute('PRAGMA index_info("'+row[1].replace('"','""')+'")')))
+    return indexes
+
+
+def _check_schema(conn):
+    global _SCHEMA_CONTRACT
+    version = conn.execute("PRAGMA user_version").fetchone()[0]
+    schema_version = conn.execute("PRAGMA schema_version").fetchone()[0]
+    path = conn.execute("PRAGMA database_list").fetchone()[2]
+    inode = Path(path).stat().st_ino if path else None
+    cache_key = (path,inode,schema_version,version)
+    if path and cache_key in _SCHEMA_CHECK_CACHE:
+        return True
+    names = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    for name in names - {"sqlite_sequence"}:
+        columns = {row[1] for row in conn.execute('PRAGMA table_info("'+name.replace('"','""')+'")')}
+        if "signal_id" in columns and "signal_ref" not in columns:
+            raise IdentityMigrationRequired("Identitaetsmigration erforderlich: Copy-Migration benutzen")
+    if "signal_identitaeten" in names:
+        if _SCHEMA_CONTRACT is None:
+            with contextlib.closing(sqlite3.connect(":memory:")) as expected:
+                expected.executescript(_SCHEMA)
+                _SCHEMA_CONTRACT = {name: (
+                    {r[1]:(r[5],r[3]) for r in expected.execute(f'PRAGMA table_info("{name}")')},
+                    {(r[2],r[3],r[4]) for r in expected.execute(f'PRAGMA foreign_key_list("{name}")')},
+                    _unique_indexes(expected,name))
+                    for name, in expected.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")}
+        if version != SCHEMA_VERSION or not _SCHEMA_CONTRACT.keys() <= names:
+            raise IdentityMigrationRequired("Unvollstaendiges oder nicht unterstuetztes Identitaetsschema")
+        for name,(columns,foreign_keys,unique_indexes) in _SCHEMA_CONTRACT.items():
+            actual_columns = {r[1]:(r[5],r[3]) for r in conn.execute(f'PRAGMA table_info("{name}")')}
+            actual_foreign_keys = {(r[2],r[3],r[4]) for r in conn.execute(f'PRAGMA foreign_key_list("{name}")')}
+            if (any(actual_columns.get(key)!=value for key,value in columns.items())
+                    or not foreign_keys <= actual_foreign_keys
+                    or not unique_indexes <= _unique_indexes(conn,name)):
+                raise IdentityMigrationRequired(f"Unvollstaendiges Identitaetsschema: {name}")
+        if path:
+            _SCHEMA_CHECK_CACHE.add(cache_key)
+        return True
+    if "signals" in names:
+        raise IdentityMigrationRequired("Signalbestand ohne Identitaetsregister benoetigt Copy-Migration")
+    return False
+
+
 def init_db() -> None:
+    """Initialize a new v2 DB; never silently migrate an existing legacy DB."""
+    if DB_PATH.exists() and DB_PATH.stat().st_size:
+        with contextlib.closing(sqlite3.connect(DB_PATH.resolve().as_uri() + "?mode=ro", uri=True)) as check:
+            # Version, tables and constraints must belong to one snapshot
+            # while another process may initialize a previously empty DB.
+            check.execute("BEGIN")
+            if _check_schema(check):
+                return
     with _connect() as conn:
-        conn.executescript(_SCHEMA)
-        # Serialize the additive migration across simultaneous page/worker starts.
-        conn.execute("BEGIN IMMEDIATE")
-        if 'forensics_version' not in {row['name'] for row in conn.execute('PRAGMA table_info(equity_studien)')}:
-            conn.execute('ALTER TABLE equity_studien ADD COLUMN forensics_version INTEGER NOT NULL DEFAULT 0')
-        if "basis" not in {row["name"] for row in conn.execute("PRAGMA table_info(analyses)")}:
-            conn.execute("ALTER TABLE analyses ADD COLUMN basis TEXT")
-        # Multi-Source-Hub (doc/20): Herkunfts-Kürzel je Signal. Bestand ist
-        # ausnahmslos MQL5-Welt; spätere Quellen schreiben ihr Kürzel dazu.
+        names = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if "signals" in names and "signal_identitaeten" not in names:
+            raise IdentityMigrationRequired(
+                "Identitaetsmigration erforderlich: bestehende DB nur per Copy-Migration umstellen")
+        version = conn.execute("PRAGMA user_version").fetchone()[0]
+        if version not in (0, SCHEMA_VERSION):
+            raise IdentityMigrationRequired(f"Nicht unterstuetzte DB-Schemaversion {version}")
+        # executescript commits a pending transaction before running. Start
+        # the transaction inside the script so no reader sees half the
+        # tables (or all tables before the user_version marker is committed).
+        conn.executescript("BEGIN IMMEDIATE;\n" + _SCHEMA)
         if "quelle" not in {row["name"] for row in conn.execute("PRAGMA table_info(signals)")}:
-            conn.execute("ALTER TABLE signals ADD COLUMN quelle TEXT DEFAULT 'mql5'")
-        conn.execute("UPDATE signals SET quelle='mql5' WHERE quelle IS NULL")
-        # Globale Portfolios haben kein Elternsignal. Alte 0-Platzhalter ohne
-        # Änderung des Berichtsinhalts auf den bereits erlaubten NULL-Wert heben.
-        conn.execute("UPDATE analyses SET signal_id=NULL "
-                     "WHERE kind='portfolio' AND signal_id=0")
-        # equity_studien: virtuelle-Basis-Flag (08.10.) — Alt-Bestand None
-        if "virtuell" not in {row["name"] for row in
-                              conn.execute("PRAGMA table_info(equity_studien)")}:
-            conn.execute("ALTER TABLE equity_studien ADD COLUMN virtuell INTEGER")
-            conn.execute("UPDATE equity_studien SET virtuell=0 WHERE virtuell IS NULL")
+            conn.execute("ALTER TABLE signals ADD COLUMN quelle TEXT NOT NULL DEFAULT 'mql5'")
+        conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
 
 
 def _now() -> str:
     return datetime.now().isoformat(sep=" ", timespec="seconds")
+
+
+def _source(conn, quelle, *, create=False):
+    if quelle is not None and (not isinstance(quelle, str) or not quelle.strip()):
+        raise IdentityError("Signalquelle muss ein nichtleeres Kuerzel sein")
+    label = source_label(quelle)
+    row = conn.execute(
+        "SELECT q.* FROM quellen_identitaeten q JOIN quellen_alias a "
+        "ON a.quellen_uid=q.quellen_uid WHERE a.kuerzel=?", (label,)).fetchone()
+    if row is None and create:
+        uid = str(uuid.uuid4())
+        conn.execute("INSERT INTO quellen_identitaeten(quellen_uid,kuerzel,angelegt_am) VALUES(?,?,?)",
+                     (uid, label, _now()))
+        conn.execute("INSERT INTO quellen_alias(kuerzel,quellen_uid) VALUES(?,?)", (label, uid))
+        row = conn.execute("SELECT * FROM quellen_identitaeten WHERE quellen_uid=?", (uid,)).fetchone()
+    return row
+
+
+def kanonische_quelle(quelle) -> str:
+    """Resolve a retained alias without initializing or changing a database."""
+    label = source_label(quelle)
+    if not DB_PATH.exists():
+        return label
+    def state(path):
+        try:
+            value = path.stat()
+            return value.st_mtime_ns, value.st_size
+        except OSError:
+            return None
+    key = (str(DB_PATH.resolve()), state(DB_PATH), state(Path(str(DB_PATH) + "-wal")))
+    cached = _ALIAS_CACHE.get(key)
+    if cached is not None:
+        return cached.get(label, label)
+    with contextlib.closing(sqlite3.connect(DB_PATH.resolve().as_uri() + "?mode=ro", uri=True)) as conn:
+        conn.row_factory = sqlite3.Row
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE name='quellen_alias'").fetchone():
+            return label
+        aliases = {row[0]: row[1] for row in conn.execute("SELECT a.kuerzel,q.kuerzel FROM quellen_alias a "
+            "JOIN quellen_identitaeten q ON q.quellen_uid=a.quellen_uid")}
+    _ALIAS_CACHE.clear()
+    _ALIAS_CACHE[key] = aliases
+    return aliases.get(label, label)
+
+
+def source_identity(quelle) -> dict | None:
+    init_db()
+    with _connect() as conn:
+        row = _source(conn,quelle)
+    return dict(row) if row else None
+
+
+def resolve_identity(signal_id: int | None = None, *, quelle=None, signal_ref=None,
+                     create=False, _connection=None) -> SignalIdentity | None:
+    """Resolve external identity explicitly; ambiguous ID-only reads fail closed."""
+    if _connection is None:
+        init_db()
+    with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
+        if create and not conn.in_transaction:
+            conn.execute("BEGIN IMMEDIATE")
+        base = ("SELECT i.signal_ref,i.externe_id,q.quellen_uid,q.kuerzel FROM signal_identitaeten i "
+                "JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid ")
+        if signal_ref is not None:
+            rows = conn.execute(base + "WHERE i.signal_ref=?", (int(signal_ref),)).fetchall()
+            if rows and signal_id is not None and rows[0]["externe_id"] != int(signal_id):
+                raise IdentityError("Signalreferenz und externe Signal-ID widersprechen sich")
+            if rows and quelle is not None:
+                source = _source(conn, quelle)
+                if source is None or source["quellen_uid"] != rows[0]["quellen_uid"]:
+                    raise IdentityError("Signalreferenz und behauptete Quelle widersprechen sich")
+        elif quelle is not None:
+            if signal_id is None:
+                raise IdentityError("Externe Signal-ID fehlt")
+            source = _source(conn, quelle, create=create)
+            if source is None:
+                return None
+            if create:
+                conn.execute("INSERT INTO signal_identitaeten(quellen_uid,externe_id) VALUES(?,?) "
+                             "ON CONFLICT(quellen_uid,externe_id) DO NOTHING",
+                             (source["quellen_uid"], int(signal_id)))
+            rows = conn.execute(base + "WHERE i.quellen_uid=? AND i.externe_id=?",
+                                (source["quellen_uid"], int(signal_id))).fetchall()
+        else:
+            if signal_id is None:
+                raise IdentityError("Signal-ID oder interne Referenz fehlt")
+            rows = conn.execute(base + "WHERE i.externe_id=?", (int(signal_id),)).fetchall()
+            if len(rows) > 1:
+                raise AmbiguousSignalIdentity(f"Signal-ID {signal_id} gehoert mehreren Quellen")
+            if not rows and create:
+                return resolve_identity(signal_id, quelle="mql5", create=True, _connection=conn)
+        if not rows:
+            return None
+        row = rows[0]
+        return SignalIdentity(row["kuerzel"], row["externe_id"], row["signal_ref"], row["quellen_uid"])
+
+
+def _write_identity(conn, signal_id, *, quelle=None, signal_ref=None):
+    if not conn.in_transaction:
+        conn.execute("BEGIN IMMEDIATE")
+    if quelle is not None and (not isinstance(quelle, str) or not quelle.strip()):
+        raise IdentityError("ID-Kollision abgewehrt: Signalquelle muss ein nichtleeres Kuerzel sein")
+    if quelle is None and signal_ref is None:
+        existing = conn.execute("SELECT 1 FROM signal_identitaeten WHERE externe_id=?",
+                                (int(signal_id),)).fetchone()
+        if existing:
+            raise IdentityError("ID-Kollision abgewehrt: vorhandene Identitaet benoetigt eine explizite Quelle oder signal_ref")
+    identity = resolve_identity(signal_id, quelle=quelle, signal_ref=signal_ref,
+                                create=True, _connection=conn)
+    if identity is None:
+        raise IdentityError("Interne Signalreferenz existiert nicht")
+    return identity
+
+
+def _identity_fields(identity):
+    return {"signal_id": identity.signal_id, "signal_ref": identity.signal_ref,
+            "quelle": identity.quelle, "quellen_uid": identity.quellen_uid}
+
+
+def _bulk_identities(conn, values, *, quelle=None):
+    """Resolve a whole mixed qualified batch with a fixed number of queries."""
+    from .signal_identity import identity_key
+    requests = []
+    for value in values:
+        if isinstance(value, tuple):
+            source, external = value
+        elif isinstance(value, SignalIdentity):
+            source, external = value.quelle, value.signal_id
+        else:
+            source, external = quelle, int(value)
+        requests.append((source, int(external)))
+    if not requests:
+        return {}
+    aliases = {row[0]: row[1] for row in conn.execute("SELECT kuerzel,quellen_uid FROM quellen_alias")}
+    ids = sorted({external for _, external in requests})
+    rows = []
+    for start in range(0, len(ids), 500):
+        chunk = ids[start:start+500]
+        rows.extend(conn.execute("SELECT i.signal_ref,i.externe_id,q.quellen_uid,q.kuerzel "
+            "FROM signal_identitaeten i JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid "
+            "WHERE i.externe_id IN ("+','.join('?' for _ in chunk)+")",chunk).fetchall())
+    result = {}
+    for source, external in requests:
+        matches = [row for row in rows if row["externe_id"] == external and
+                   (source is None or row["quellen_uid"] == aliases.get(source_label(source)))]
+        if len(matches) > 1:
+            raise AmbiguousSignalIdentity(f"Signal-ID {external} gehoert mehreren Quellen")
+        if matches:
+            row = matches[0]
+            identity = SignalIdentity(row["kuerzel"],external,row["signal_ref"],row["quellen_uid"])
+            key = (identity.quelle,external) if source is not None else external
+            result[key] = identity
+    return result
+
+
+def _read_ref(signal_id, *, quelle=None, signal_ref=None):
+    return resolve_identity(signal_id, quelle=quelle, signal_ref=signal_ref)
+
+
+def _connection_identity(conn, quelle_id, signal_id, *, create=False):
+    source = conn.execute("SELECT q.kuerzel FROM datenquellen d JOIN quellen_identitaeten q "
+                          "ON q.quellen_uid=d.quellen_uid WHERE d.id=?", (int(quelle_id),)).fetchone()
+    if source is None:
+        raise IdentityError("Unbekannte Datenquellen-Verbindung")
+    return resolve_identity(signal_id, quelle=source[0], create=create, _connection=conn)
+
+
+def _list_user_state(table, field, *, quelle=None, identitaeten=False):
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(f"SELECT s.{field},i.externe_id,q.kuerzel FROM {table} s "
+            "JOIN signal_identitaeten i ON i.signal_ref=s.signal_ref JOIN quellen_identitaeten q "
+            "ON q.quellen_uid=i.quellen_uid").fetchall()
+        ambiguous = {row[0] for row in conn.execute("SELECT externe_id FROM signal_identitaeten "
+                                                  "GROUP BY externe_id HAVING COUNT(*)>1")}
+    source = kanonische_quelle(quelle) if quelle is not None else None
+    return {((row["kuerzel"],row["externe_id"]) if identitaeten else row["externe_id"]):row[field]
+            for row in rows if (source is None or row["kuerzel"]==source)
+            and (identitaeten or source is not None or row["externe_id"] not in ambiguous)}
+
+
+def set_signal_fix(signal_id: int, fix=True, *, quelle=None, signal_ref=None):
+    init_db()
+    with _connect() as conn:
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+        if fix:
+            conn.execute("INSERT INTO signal_fixierungen(signal_ref,updated_at) VALUES(?,?) "
+                         "ON CONFLICT(signal_ref) DO UPDATE SET updated_at=excluded.updated_at",
+                         (identity.signal_ref, _now()))
+        else:
+            conn.execute("DELETE FROM signal_fixierungen WHERE signal_ref=?", (identity.signal_ref,))
+
+
+def list_signal_fixierungen(*, identitaeten=False):
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute("SELECT i.externe_id,q.kuerzel FROM signal_fixierungen f "
+            "JOIN signal_identitaeten i ON i.signal_ref=f.signal_ref "
+            "JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid").fetchall()
+    if identitaeten:
+        return {(row["kuerzel"], row["externe_id"]) for row in rows}
+    return {row["externe_id"] for row in rows if len(signal_quellen(row["externe_id"])) == 1}
 
 
 def file_sha256(path: str) -> str:
@@ -284,64 +585,41 @@ def file_sha256(path: str) -> str:
 def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str = "",
                   autor: str = "", abo_preis=None, abonnenten=None, wochen=None,
                   stats: dict | None = None, quelle: str | None = None, *,
-                  _connection=None) -> None:
-    """Kopfdaten je Signal. `quelle` (Herkunfts-Kürzel) wird nur geschrieben,
-    wenn übergeben — ein Update aus einer anderen Quelle überklebtert die
-    dokumentierte Herkunft nicht stillschweigend.
-
-    R1 (Intensiv-Review 29./30.09.2026): Schreibt eine ANDERE Quelle dieselbe
-    Signal-ID (numerischer Überlapp mql5 ~2,37 Mio. vs. pelik ~2,0–2,1 Mio.),
-    bleibt die dokumentierte Herkunft stehen und der Vorfall wird geloggt —
-    kein stillsprechendes Überschreiben mehr, bis die Composite-Identität
-    (quelle, signal_id) aus doc/20 Stufe 2 migriert ist."""
-    import logging as _logging
+                  signal_ref=None, _connection=None) -> None:
+    if _connection is None:
+        init_db()
     with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
-        if quelle is not None:
-            alt = conn.execute(
-                "SELECT quelle FROM signals WHERE signal_id=?",
-                (signal_id,)).fetchone()
-            alt_quelle = (alt[0] if alt and alt[0] else None)
-            if alt_quelle and alt_quelle != quelle:
-                # F3 (Fremd-Review 01.10.): Ein unverändertes Quellenlabel
-                # ist KEIN Kollisionsschutz — Name/Plattform/Forensik würden
-                # trotzdem mit den Inhalten der fremden Quelle überschrieben
-                # (Gegenprobe: MQL5 123, dann Pelican 123 -> Pelican-Inhalt
-                # unter Label mql5). Bei Konflikt wird der SCHREIBVERSUCH
-                # ganz abgewiesen; die Identität (quelle, signal_id) ist
-                # bis zur Composite-Migration (doc/20 Stufe 2) getrennt.
-                raise ValueError(
-                    f"ID-Kollision abgewehrt: Signal {signal_id} gehört "
-                    f"Quelle {alt_quelle!r}; Schreibversuch aus Quelle "
-                    f"{quelle!r} verworfen (bis Composite-Identität, "
-                    "doc/20 Stufe 2).")
-        if quelle is None:
-            conn.execute(
-                """INSERT INTO signals (signal_id, name, platform, url, autor, abo_preis,
-                   abonnenten, wochen, stats_json, updated_at)
-                   VALUES (?,?,?,?,?,?,?,?,?,?)
-                   ON CONFLICT(signal_id) DO UPDATE SET
-                     name=excluded.name, platform=excluded.platform, url=excluded.url,
-                     autor=excluded.autor, abo_preis=excluded.abo_preis,
-                     abonnenten=excluded.abonnenten, wochen=excluded.wochen,
-                     stats_json=excluded.stats_json, updated_at=excluded.updated_at""",
-                (signal_id, name, platform, url, autor, abo_preis, abonnenten, wochen,
-                 json.dumps(stats or {}, ensure_ascii=False), _now()))
-        else:
-            conn.execute(
-                """INSERT INTO signals (signal_id, name, platform, url, autor, abo_preis,
-                   abonnenten, wochen, stats_json, updated_at, quelle)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?)
-                   ON CONFLICT(signal_id) DO UPDATE SET
-                     name=excluded.name, platform=excluded.platform, url=excluded.url,
-                     autor=excluded.autor, abo_preis=excluded.abo_preis,
-                     abonnenten=excluded.abonnenten, wochen=excluded.wochen,
-                     stats_json=excluded.stats_json, updated_at=excluded.updated_at,
-                     quelle=excluded.quelle""",
-                (signal_id, name, platform, url, autor, abo_preis, abonnenten, wochen,
-                 json.dumps(stats or {}, ensure_ascii=False), _now(), quelle))
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+        _guard_platform(conn, identity.signal_ref, platform)
+        conn.execute("""INSERT INTO signals (signal_ref,name,platform,url,autor,abo_preis,
+            abonnenten,wochen,stats_json,updated_at,quelle) VALUES(?,?,?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(signal_ref) DO UPDATE SET name=excluded.name,platform=excluded.platform,
+            url=excluded.url,autor=excluded.autor,abo_preis=excluded.abo_preis,
+            abonnenten=excluded.abonnenten,wochen=excluded.wochen,stats_json=excluded.stats_json,
+            updated_at=excluded.updated_at,quelle=excluded.quelle""",
+            (identity.signal_ref,name,platform,url,autor,abo_preis,abonnenten,wochen,
+             json.dumps(stats or {},ensure_ascii=False),_now(),identity.quelle))
 
 
-def _snapshot_trade_file(path: str) -> tuple[str, str]:
+def _guard_platform(conn, signal_ref, platform, version=None):
+    """An owner/external-ID pair cannot silently change trading platform."""
+    from .downloader_client import platform_version
+    def normalized(value):
+        return platform_version(str(value or "")) or str(value or "").strip().lower()
+    claims = {normalized(value) for value in (platform,version) if value}
+    for table in ("signals", "katalog_signale"):
+        row = conn.execute(f"SELECT platform FROM {table} WHERE signal_ref=?",(signal_ref,)).fetchone()
+        if row and row[0]:
+            claims.add(normalized(row[0]))
+    row = conn.execute("SELECT version FROM katalog_signale WHERE signal_ref=?",(signal_ref,)).fetchone()
+    if row and row[0]:
+        claims.add(normalized(row[0]))
+    if len(claims) > 1:
+        raise IdentityError("Plattformwiderspruch innerhalb derselben Signalidentitaet")
+
+
+
+def _snapshot_trade_file(path: str, *, expected_sha256: str | None = None) -> tuple[str, str]:
     """Keep the exact hashed bytes independently of the mutable download cache.
 
     A rolled-back SQL transaction may leave an unused snapshot, but cannot
@@ -364,6 +642,8 @@ def _snapshot_trade_file(path: str) -> tuple[str, str]:
                 target.flush()
                 os.fsync(target.fileno())
         sha256 = digest.hexdigest()
+        if expected_sha256 is not None and sha256 != expected_sha256:
+            raise ValueError("Trade-SHA stimmt nicht mit der geprüften Analyseeingabe überein")
         snapshot = directory / f"{sha256}{suffix}"
         # Concurrent identical content has the same destination and bytes.
         os.replace(temporary, snapshot)
@@ -373,57 +653,95 @@ def _snapshot_trade_file(path: str) -> tuple[str, str]:
             temporary.unlink(missing_ok=True)
 
 
-def store_trade_file(signal_id: int, path: str, *, _connection=None) -> str:
-    snapshot, sha256 = _snapshot_trade_file(path)
+def snapshot_trade_file(path: str) -> tuple[str, str]:
+    """Freeze input bytes before analysis, independently of a SQL transaction."""
+    return _snapshot_trade_file(path)
+
+
+def verify_trade_file(path: str, expected_sha256: str) -> None:
+    """Reject missing or changed evidence instead of trusting its metadata."""
+    if not path or not expected_sha256:
+        raise ValueError("Trade-Snapshot oder sein geprüfter SHA fehlt")
+    if file_sha256(path) != expected_sha256:
+        raise ValueError("Trade-Snapshot verändert: SHA stimmt nicht überein")
+
+
+def store_trade_file(signal_id: int, path: str, *, expected_sha256=None,
+                     quelle=None, signal_ref=None, _connection=None) -> str:
+    if _connection is None:
+        init_db()
     with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
-        conn.execute(
-            """INSERT INTO trade_files (signal_id, path, sha256, fetched_at)
-               VALUES (?,?,?,?)
-               ON CONFLICT(signal_id) DO UPDATE SET path=excluded.path,
-                 sha256=excluded.sha256, fetched_at=excluded.fetched_at""",
-            (signal_id, snapshot, sha256, _now()))
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+        snapshot, sha256 = _snapshot_trade_file(path, expected_sha256=expected_sha256)
+        conn.execute("""INSERT INTO trade_files(signal_ref,path,sha256,fetched_at) VALUES(?,?,?,?)
+            ON CONFLICT(signal_ref) DO UPDATE SET path=excluded.path,sha256=excluded.sha256,
+            fetched_at=excluded.fetched_at""", (identity.signal_ref,snapshot,sha256,_now()))
     return snapshot
 
 
-def store_forensik(signal_id: int, report: dict, *, _connection=None) -> None:
+
+def store_forensik(signal_id: int, report: dict, *, quelle=None, signal_ref=None,
+                   _connection=None) -> None:
+    if _connection is None:
+        init_db()
     with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
-        # Der Befund gehoert zu genau diesem Trade-Snapshot. Ein spaeterer
-        # Import darf seine Messwerte nicht auf einen anderen Export uebertragen.
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
         report = dict(report)
-        trade = conn.execute("SELECT sha256 FROM trade_files WHERE signal_id=?",
-                             (signal_id,)).fetchone()
-        report.setdefault("trades_sha256", trade["sha256"] if trade else "")
-        conn.execute(
-            """INSERT INTO forensik (signal_id, json, updated_at) VALUES (?,?,?)
-               ON CONFLICT(signal_id) DO UPDATE SET json=excluded.json,
-                 updated_at=excluded.updated_at""",
-            (signal_id, json.dumps(report, ensure_ascii=False, default=str), _now()))
+        trade = conn.execute("SELECT sha256 FROM trade_files WHERE signal_ref=?",
+                             (identity.signal_ref,)).fetchone()
+        report.setdefault("trades_sha256",trade["sha256"] if trade else "")
+        conn.execute("""INSERT INTO forensik(signal_ref,json,updated_at) VALUES(?,?,?)
+            ON CONFLICT(signal_ref) DO UPDATE SET json=excluded.json,updated_at=excluded.updated_at""",
+            (identity.signal_ref,json.dumps(report,ensure_ascii=False),_now()))
+
 
 
 def store_scan_result(signal_id: int, signal: dict, trades_path: str = "",
-                      forensik: dict | None = None) -> str:
-    """Kennzahlen und zugehörigen Befund gemeinsam bestätigen oder zurückrollen."""
+                      forensik: dict | None = None, *, expected_trades_sha256=None,
+                      quelle=None, signal_ref=None) -> str:
+    init_db()
     snapshot = ""
     with _connect() as conn:
-        upsert_signal(signal_id, **signal, _connection=conn)
+        conn.execute("BEGIN IMMEDIATE")
+        payload = dict(signal)
+        incoming_source = payload.pop("quelle",quelle)
+        incoming_ref = payload.pop("signal_ref",signal_ref)
+        claimed_uid = payload.pop("quellen_uid",None)
+        identity = _write_identity(conn,signal_id,quelle=incoming_source,signal_ref=incoming_ref)
+        if claimed_uid is not None and claimed_uid != identity.quellen_uid:
+            raise IdentityError("Behauptete Quellen-UID passt nicht zur Signalidentitaet")
+        upsert_signal(signal_id,**payload,quelle=identity.quelle,signal_ref=identity.signal_ref,
+                      _connection=conn)
+        if expected_trades_sha256 is not None:
+            if not trades_path:
+                raise ValueError("Gepruefter Trade-SHA ohne Trade-Snapshot")
+            if forensik is not None and forensik.get("trades_sha256") != expected_trades_sha256:
+                raise ValueError("Befund-SHA stimmt nicht mit der geprueften Analyseeingabe ueberein")
         if trades_path:
-            snapshot = store_trade_file(signal_id, trades_path, _connection=conn)
+            snapshot = store_trade_file(signal_id,trades_path,expected_sha256=expected_trades_sha256,
+                                        signal_ref=identity.signal_ref,_connection=conn)
         if forensik is not None:
-            store_forensik(signal_id, forensik, _connection=conn)
+            store_forensik(signal_id,forensik,signal_ref=identity.signal_ref,_connection=conn)
     return snapshot
 
 
+
 def store_analysis(signal_id: int | None, kind: str, model: str, tokens: int, text: str,
-                   *, basis: str | None = None) -> str:
-    if kind == "portfolio" and signal_id == 0:
-        signal_id = None  # Kompatibilität für bisherige Aufrufer.
-    created_at = _now()
+                   *, basis=None, quelle=None, signal_ref=None) -> str:
+    init_db()
+    if kind in {"portfolio", "portfolio_ungueltig"} and signal_id == 0:
+        signal_id = None
     with _connect() as conn:
-        conn.execute(
-            "INSERT INTO analyses (signal_id, kind, model, tokens, text, created_at, basis) "
-            "VALUES (?,?,?,?,?,?,?)",
-            (signal_id, kind, model, tokens, text, created_at, basis))
-    return created_at
+        ref = None
+        if signal_id is not None or signal_ref is not None:
+            ref = _write_identity(conn,signal_id,quelle=quelle,signal_ref=signal_ref).signal_ref
+        elif kind not in {"portfolio", "portfolio_ungueltig"}:
+            raise IdentityError("Signalbezogene Analyse ohne Signalidentitaet")
+        stamp = _now()
+        conn.execute("INSERT INTO analyses(signal_ref,kind,model,tokens,text,created_at,basis) VALUES(?,?,?,?,?,?,?)",
+                     (ref,kind,model,tokens,text,stamp,basis))
+    return stamp
+
 
 
 def store_llm_attempt(call_id: str, attempt: int, *, model: str, prompt: str,
@@ -453,18 +771,24 @@ def list_llm_attempts(call_id: str) -> list[dict]:
     return result
 
 
-def get_latest_analysis(signal_id: int | None, kind: str, *, basis: str | None = None) -> dict | None:
-    if kind == "portfolio" and signal_id == 0:
+def get_latest_analysis(signal_id: int | None, kind: str, *, basis=None,
+                        quelle=None, signal_ref=None) -> dict | None:
+    init_db()
+    if kind in {"portfolio", "portfolio_ungueltig"} and signal_id == 0:
         signal_id = None
-    legacy_portfolio = kind == "portfolio" and signal_id is None
+    identity = None
+    if signal_id is not None or signal_ref is not None:
+        identity = _read_ref(signal_id,quelle=quelle,signal_ref=signal_ref)
+        if identity is None:
+            return None
+    elif kind not in {"portfolio", "portfolio_ungueltig"}:
+        return None
     with _connect() as conn:
-        row = conn.execute(
-            "SELECT model, tokens, text, created_at, basis FROM analyses "
-            "WHERE (signal_id IS ? OR (? AND signal_id=0)) AND kind=? "
-            "AND (? IS NULL OR basis=?) "
-            "ORDER BY id DESC LIMIT 1",
-            (signal_id, legacy_portfolio, kind, basis, basis)).fetchone()
-    return dict(row) if row else None
+        row = conn.execute("SELECT * FROM analyses WHERE signal_ref IS ? AND kind=? "
+            "AND (? IS NULL OR basis=?) ORDER BY id DESC LIMIT 1",
+            (identity.signal_ref if identity else None,kind,basis,basis)).fetchone()
+    return {**dict(row),**(_identity_fields(identity) if identity else {"signal_id":None})} if row else None
+
 
 
 def list_catalog() -> list[dict]:
@@ -473,39 +797,41 @@ def list_catalog() -> list[dict]:
     with _connect() as conn:
         rows = conn.execute(
             """
-            SELECT s.signal_id, s.name, s.platform, s.url, s.autor, s.abo_preis,
-                   s.abonnenten, s.wochen, s.quelle,
+            SELECT i.externe_id AS signal_id, s.signal_ref, q.quellen_uid, q.kuerzel AS quelle, s.name, s.platform, s.url, s.autor, s.abo_preis,
+                   s.abonnenten, s.wochen,
                    s.stats_json, s.updated_at AS signal_updated,
                    t.path AS trades_path, t.sha256 AS trades_sha256, t.fetched_at AS trades_fetched,
                    f.json AS forensik_json, f.updated_at AS forensik_updated,
-                   (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT text FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='trade_analyse' ORDER BY a.id DESC LIMIT 1) AS trade_analyse,
-                   (SELECT created_at FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT created_at FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='trade_analyse' ORDER BY a.id DESC LIMIT 1) AS trade_at,
-                   (SELECT model FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT model FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='trade_analyse' ORDER BY a.id DESC LIMIT 1) AS trade_model,
-                   (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT text FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='risiko_analyse' ORDER BY a.id DESC LIMIT 1) AS risiko_analyse,
-                   (SELECT created_at FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT created_at FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='risiko_analyse' ORDER BY a.id DESC LIMIT 1) AS risiko_at,
-                   (SELECT model FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT model FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='risiko_analyse' ORDER BY a.id DESC LIMIT 1) AS risiko_model,
-                   (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT text FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='gesamtbericht' ORDER BY a.id DESC LIMIT 1) AS gesamtbericht,
-                   (SELECT created_at FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT created_at FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='gesamtbericht' ORDER BY a.id DESC LIMIT 1) AS gesamt_at,
-                   (SELECT model FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT model FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='gesamtbericht' ORDER BY a.id DESC LIMIT 1) AS gesamt_model,
-                   (SELECT text FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT text FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='tiefenanalyse' ORDER BY a.id DESC LIMIT 1) AS tiefenanalyse,
-                   (SELECT created_at FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT created_at FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='tiefenanalyse' ORDER BY a.id DESC LIMIT 1) AS tiefe_at,
-                   (SELECT model FROM analyses a WHERE a.signal_id=s.signal_id
+                   (SELECT model FROM analyses a WHERE a.signal_ref=s.signal_ref
                       AND a.kind='tiefenanalyse' ORDER BY a.id DESC LIMIT 1) AS tiefe_model
             FROM signals s
-            LEFT JOIN trade_files t ON t.signal_id = s.signal_id
-            LEFT JOIN forensik f ON f.signal_id = s.signal_id
-            ORDER BY COALESCE(f.updated_at, s.updated_at) DESC, s.signal_id DESC
+             JOIN signal_identitaeten i ON i.signal_ref=s.signal_ref
+             JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid
+            LEFT JOIN trade_files t ON t.signal_ref = s.signal_ref
+            LEFT JOIN forensik f ON f.signal_ref = s.signal_ref
+            ORDER BY COALESCE(f.updated_at, s.updated_at) DESC, i.externe_id DESC
             """
         ).fetchall()
     out = []
@@ -517,21 +843,49 @@ def list_catalog() -> list[dict]:
     return out
 
 
-def get_signal(signal_id: int) -> dict | None:
+def get_signal(signal_id: int | None = None, *, quelle=None, signal_ref=None) -> dict | None:
+    identity = _read_ref(signal_id,quelle=quelle,signal_ref=signal_ref)
+    if identity is None:
+        return None
     with _connect() as conn:
-        row = conn.execute(
-            "SELECT * FROM signals WHERE signal_id=?", (signal_id,)).fetchone()
-    return dict(row) if row else None
+        row = conn.execute("SELECT * FROM signals WHERE signal_ref=?",(identity.signal_ref,)).fetchone()
+    return {**dict(row),**_identity_fields(identity)} if row else None
 
 
-def known_signal_ids() -> set[int]:
+
+def _signal_quellen(conn, signal_id: int) -> set[str]:
+    return {row[0] for row in conn.execute("SELECT q.kuerzel FROM signal_identitaeten i JOIN "
+        "quellen_identitaeten q ON q.quellen_uid=i.quellen_uid WHERE i.externe_id=?",(int(signal_id),))}
+
+
+
+def signal_quellen(signal_id: int) -> set[str]:
+    """Known source claims for one numeric ID; no updates or schema changes."""
+    if not DB_PATH.exists():
+        return set()
+    with contextlib.closing(sqlite3.connect(DB_PATH.resolve().as_uri()+"?mode=ro",uri=True)) as conn:
+        if not _check_schema(conn):
+            return set()
+        return _signal_quellen(conn, signal_id)
+
+
+
+
+
+def known_signal_ids(*, identitaeten=False):
+    init_db()
     with _connect() as conn:
-        rows = conn.execute("SELECT signal_id FROM signals").fetchall()
-    return {r["signal_id"] for r in rows}
+        rows = conn.execute("SELECT i.externe_id,q.kuerzel FROM signals s JOIN signal_identitaeten i "
+            "ON i.signal_ref=s.signal_ref JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid").fetchall()
+        if identitaeten:
+            return {(row["kuerzel"],row["externe_id"]) for row in rows}
+        return {row["externe_id"] for row in rows if len(_signal_quellen(conn,row["externe_id"]))==1}
+
 
 
 def store_history_points(signal_id: int, version: str, points: list[dict],
-                         *, fetched_at: str | None = None) -> int:
+                         *, fetched_at: str | None = None, quelle=None, signal_ref=None) -> int:
+    init_db()
     """Abonnenten-Punkte je Signal+Version ersetzen (Vollabgleich).
 
     Ein Punkt ohne Zeitstempel wäre ohne Bezug — er wird übersprungen.
@@ -540,71 +894,154 @@ def store_history_points(signal_id: int, version: str, points: list[dict],
     ts = fetched_at or _now()
     kept = 0
     with _connect() as conn:
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+        signal_ref = identity.signal_ref
         for point in points:
             stamp = str(point.get("timestamp") or "").strip()
             if not stamp:
                 continue
             conn.execute(
                 """INSERT INTO subscriber_history
-                   (signal_id, version, ts, subscribers, change, fetched_at)
+                   (signal_ref, version, ts, subscribers, change, fetched_at)
                    VALUES (?,?,?,?,?,?)
-                   ON CONFLICT(signal_id, version, ts) DO UPDATE SET
+                   ON CONFLICT(signal_ref, version, ts) DO UPDATE SET
                      subscribers=excluded.subscribers, change=excluded.change,
                      fetched_at=excluded.fetched_at""",
-                (signal_id, version, stamp,
+                (signal_ref, version, stamp,
                  point.get("subscribers"), point.get("change"), ts))
             kept += 1
     return kept
 
 
-def get_history(signal_id: int, version: str | None = None) -> list[dict]:
+
+def get_history(signal_id: int, version: str | None = None, *, quelle=None, signal_ref=None) -> list[dict]:
     """Abonnenten-Verlauf aufsteigend; ohne Version alle Versionen gemischt."""
+    identity = _read_ref(signal_id, quelle=quelle, signal_ref=signal_ref)
+    if identity is None:
+        return []
+    signal_ref = identity.signal_ref
     with _connect() as conn:
         rows = conn.execute(
-            "SELECT signal_id, version, ts, subscribers, change, fetched_at "
-            "FROM subscriber_history WHERE signal_id=? "
+            "SELECT signal_ref, version, ts, subscribers, change, fetched_at "
+            "FROM subscriber_history WHERE signal_ref=? "
             "AND (? IS NULL OR version=?) ORDER BY version, ts",
-            (signal_id, version, version)).fetchall()
+            (signal_ref, version, version)).fetchall()
+    return [{**dict(row), **_identity_fields(identity)} for row in rows]
+
+
+def subscriber_history_alle() -> list[dict]:
+    """ALLE Abonnenten-Messpunkte mit Identität (Abonnentenstatistik, doc/24).
+
+    Eine Abfrage für die ganze Übersicht statt N Einzelabrufe; gruppiert
+    wird beim Aufrufer. `subscribers` kann NULL sein (Punkt ohne Zahl).
+    """
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT h.signal_ref, h.version, h.ts, h.subscribers, h.change, "
+            "i.externe_id AS signal_id, q.kuerzel AS quelle, q.quellen_uid "
+            "FROM subscriber_history h "
+            "JOIN signal_identitaeten i ON i.signal_ref=h.signal_ref "
+            "JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid "
+            "ORDER BY h.signal_ref, h.version, h.ts").fetchall()
     return [dict(row) for row in rows]
+
+
+def analyses_zaehler_alle(kinds=("trade_analyse", "risiko_analyse",
+                                 "gesamtbericht", "tiefenanalyse")) -> dict[int, dict]:
+    """Berichte-Zählung je Identität — UNABHÄNGIG von der signals-Zeile.
+
+    Katalog-Signale ohne Scan haben keine signals-Zeile; über list_catalog
+    wären ihre Analysen (z. B. Batch-Tiefenanalysen, 20.10.) unsichtbar.
+    Rückgabe {signal_ref: {kind: True}}.
+    """
+    init_db()
+    platzhalter = ",".join("?" * len(kinds))
+    with _connect() as conn:
+        rows = conn.execute(
+            f"SELECT signal_ref, kind FROM analyses WHERE kind IN ({platzhalter})",
+            tuple(kinds)).fetchall()
+    out: dict[int, dict] = {}
+    for row in rows:
+        out.setdefault(int(row["signal_ref"]), {})[row["kind"]] = True
+    return out
+
+
+def letzte_ampeln_je_signal() -> dict[int, dict]:
+    """Neueste Ampel je Signal aus der Chronik (nur Anzeige, nie Neubewertung).
+
+    ampel_verlauf ist append-only; der neueste Eintrag je signal_ref ist das
+    letzte Engine-Ergebnis. Rückgabe {signal_ref: {"ampel", "ts", "urteil"}}.
+    """
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT a.signal_ref, a.ts, a.ampel, a.urteil FROM ampel_verlauf a "
+            "JOIN (SELECT signal_ref, MAX(ts) AS max_ts FROM ampel_verlauf "
+            "      GROUP BY signal_ref) n "
+            "ON a.signal_ref=n.signal_ref AND a.ts=n.max_ts").fetchall()
+    return {int(r["signal_ref"]): {"ampel": r["ampel"], "ts": r["ts"],
+                                   "urteil": r["urteil"]} for r in rows}
+
 
 
 def store_downloader_report(signal_id: int, version: str, name: str, path: str,
                             size_bytes: int | None = None,
-                            last_modified: str | None = None) -> None:
+                            last_modified: str | None = None, *, quelle=None, signal_ref=None) -> None:
+    init_db()
     with _connect() as conn:
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+        signal_ref = identity.signal_ref
         conn.execute(
             """INSERT INTO downloader_reports
-               (signal_id, version, name, path, size_bytes, last_modified, fetched_at)
+               (signal_ref, version, name, path, size_bytes, last_modified, fetched_at)
                VALUES (?,?,?,?,?,?,?)
-               ON CONFLICT(signal_id, version, name) DO UPDATE SET
+               ON CONFLICT(signal_ref, version, name) DO UPDATE SET
                  path=excluded.path, size_bytes=excluded.size_bytes,
                  last_modified=excluded.last_modified, fetched_at=excluded.fetched_at""",
-            (signal_id, version, name, path, size_bytes, last_modified, _now()))
+            (signal_ref, version, name, path, size_bytes, last_modified, _now()))
 
 
-def list_downloader_reports(signal_id: int) -> list[dict]:
+
+def list_downloader_reports(signal_id: int, *, quelle=None, signal_ref=None) -> list[dict]:
     """Lokal gespiegelte Downloader-PDFs je Signal (Version, Name sortiert)."""
+    identity = _read_ref(signal_id, quelle=quelle, signal_ref=signal_ref)
+    if identity is None:
+        return []
+    signal_ref = identity.signal_ref
     with _connect() as conn:
         rows = conn.execute(
             "SELECT version, name, path, size_bytes, last_modified, fetched_at "
-            "FROM downloader_reports WHERE signal_id=? ORDER BY version, name",
-            (signal_id,)).fetchall()
-    return [dict(row) for row in rows]
+            "FROM downloader_reports WHERE signal_ref=? ORDER BY version, name",
+            (signal_ref,)).fetchall()
+    return [{**dict(row), **_identity_fields(identity)} for row in rows]
 
 
-def downloader_report_counts(signal_ids: list[int]) -> dict[int, int]:
-    """Anzahl gespiegelter Downloader-PDFs je Signal (fuer Tabellenspalte)."""
+
+def downloader_report_counts(signal_ids, *, quelle=None, identitaeten=False) -> dict:
     init_db()
-    ids = sorted({int(signal_id) for signal_id in signal_ids if signal_id})
-    if not ids:
-        return {}
-    placeholders = ",".join("?" * len(ids))
+    with _connect() as conn:
+        identities = _bulk_identities(conn,signal_ids,quelle=quelle)
+        counts = {row[0]:row[1] for row in conn.execute("SELECT signal_ref,COUNT(*) FROM downloader_reports GROUP BY signal_ref")}
+    return {key:counts.get(identity.signal_ref,0) for key,identity in identities.items()}
+
+
+def downloader_reports_liste_alle() -> dict[int, list[dict]]:
+    """ALLE gespiegelten Testreport-PDFs mit Identität (Doku-Spalte, doc/24).
+
+    Ein Abruf für die Übersicht: {signal_ref: [{version, name, path}, …]}.
+    """
+    init_db()
     with _connect() as conn:
         rows = conn.execute(
-            f"SELECT signal_id, COUNT(*) AS n FROM downloader_reports "
-            f"WHERE signal_id IN ({placeholders}) GROUP BY signal_id",
-            ids).fetchall()
-    return {row["signal_id"]: row["n"] for row in rows}
+            "SELECT d.signal_ref, d.version, d.name, d.path "
+            "FROM downloader_reports d ORDER BY d.signal_ref, d.version, d.name").fetchall()
+    out: dict[int, list[dict]] = {}
+    for row in rows:
+        out.setdefault(int(row["signal_ref"]), []).append(
+            {"version": row["version"], "name": row["name"], "path": row["path"]})
+    return out
+
 
 
 def store_tradeserver_sync_run(*, base_url: str, status: str,
@@ -660,7 +1097,8 @@ def finish_tradeserver_sync_run(run_id: int, status: str, summary: dict) -> None
 
 
 def store_ampel_verlauf(signal_id: int, ts: str, quelle: str, ampel: str,
-                        score: float | None, urteil: str, matrix: dict | None) -> None:
+                        score: float | None, urteil: str, matrix: dict | None, *, signal_quelle=None, signal_ref=None) -> None:
+    init_db()
     """Farb-Chronik: ein append-only Eintrag je erfolgreich geprüftem Lauf.
 
     Kein UPDATE, kein DELETE — die Chronik darf nachträglich nicht verändert
@@ -669,24 +1107,31 @@ def store_ampel_verlauf(signal_id: int, ts: str, quelle: str, ampel: str,
     doch kollidieren, gewinnt der zuerst geschriebene Eintrag (OR IGNORE).
     """
     with _connect() as conn:
+        identity = _write_identity(conn, signal_id, quelle=signal_quelle, signal_ref=signal_ref)
+        signal_ref = identity.signal_ref
         conn.execute(
             "INSERT OR IGNORE INTO ampel_verlauf "
-            "(signal_id, ts, quelle, ampel, score, urteil, matrix) VALUES (?,?,?,?,?,?,?)",
-            (signal_id, ts, quelle, ampel, score, urteil,
+            "(signal_ref, ts, quelle, ampel, score, urteil, matrix) VALUES (?,?,?,?,?,?,?)",
+            (signal_ref, ts, quelle, ampel, score, urteil,
              json.dumps(matrix or {}, ensure_ascii=False)))
 
 
-def get_last_ampel_verlauf(signal_id: int) -> dict | None:
+
+def get_last_ampel_verlauf(signal_id: int, *, quelle=None, signal_ref=None) -> dict | None:
     """Der neueste Chronik-Eintrag eines Signals (Vergleichsbasis für Wechsel)."""
+    identity = _read_ref(signal_id, quelle=quelle, signal_ref=signal_ref)
+    if identity is None:
+        return None
+    signal_ref = identity.signal_ref
     init_db()
     with _connect() as conn:
         row = conn.execute(
-            "SELECT signal_id, ts, quelle, ampel, score, urteil, matrix "
-            "FROM ampel_verlauf WHERE signal_id=? ORDER BY ts DESC LIMIT 1",
-            (signal_id,)).fetchone()
+            "SELECT signal_ref, ts, quelle, ampel, score, urteil, matrix "
+            "FROM ampel_verlauf WHERE signal_ref=? ORDER BY ts DESC LIMIT 1",
+            (signal_ref,)).fetchone()
     if row is None:
         return None
-    eintrag = dict(row)
+    eintrag = {**dict(row), **_identity_fields(identity), "quelle": row["quelle"], "datenquelle": identity.quelle, "signal_quelle": identity.quelle}
     try:
         eintrag["matrix"] = json.loads(eintrag.get("matrix") or "{}")
     except json.JSONDecodeError:
@@ -694,20 +1139,27 @@ def get_last_ampel_verlauf(signal_id: int) -> dict | None:
     return eintrag
 
 
-def list_ampel_verlauf(signal_id: int, limit: int = 50) -> list[dict]:
+
+def list_ampel_verlauf(signal_id: int, limit: int = 50, *, quelle=None, signal_ref=None) -> list[dict]:
     """Farb-Chronik eines Signals, neueste zuerst (Anzeige in der GUI)."""
+    identity = _read_ref(signal_id, quelle=quelle, signal_ref=signal_ref)
+    if identity is None:
+        return []
+    signal_ref = identity.signal_ref
     init_db()
     with _connect() as conn:
         rows = conn.execute(
-            "SELECT signal_id, ts, quelle, ampel, score, urteil FROM ampel_verlauf "
-            "WHERE signal_id=? ORDER BY ts DESC LIMIT ?",
-            (signal_id, max(1, int(limit)))).fetchall()
-    return [dict(row) for row in rows]
+            "SELECT signal_ref, ts, quelle, ampel, score, urteil FROM ampel_verlauf "
+            "WHERE signal_ref=? ORDER BY ts DESC LIMIT ?",
+            (signal_ref, max(1, int(limit)))).fetchall()
+    return [{**dict(row), **_identity_fields(identity), "quelle": row["quelle"], "datenquelle": identity.quelle, "signal_quelle": identity.quelle} for row in rows]
+
 
 
 def store_ampel_wechsel(signal_id: int, ts: str, quelle: str, ampel_alt: str | None,
                         ampel_neu: str, farbwechsel: bool, richtung: str,
-                        gruende: list[dict], name: str = "") -> int:
+                        gruende: list[dict], name: str = "", *, signal_quelle=None, signal_ref=None) -> int:
+    init_db()
     """Ein protokollierter Wechsel (Farbe und/oder gekippte Kriterien).
 
     Der Signalname wird zum Zeitpunkt des Wechsels mitgespeichert — das
@@ -715,42 +1167,44 @@ def store_ampel_wechsel(signal_id: int, ts: str, quelle: str, ampel_alt: str | N
     fällt oder umbenannt wird.
     """
     with _connect() as conn:
+        identity = _write_identity(conn, signal_id, quelle=signal_quelle, signal_ref=signal_ref)
+        signal_ref = identity.signal_ref
         cursor = conn.execute(
             "INSERT INTO ampel_wechsel "
-            "(signal_id, name, ts, quelle, ampel_alt, ampel_neu, farbwechsel, richtung, gruende) "
+            "(signal_ref, name, ts, quelle, ampel_alt, ampel_neu, farbwechsel, richtung, gruende) "
             "VALUES (?,?,?,?,?,?,?,?,?)",
-            (signal_id, name, ts, quelle, ampel_alt, ampel_neu, int(farbwechsel),
+            (signal_ref, name, ts, quelle, ampel_alt, ampel_neu, int(farbwechsel),
              richtung, json.dumps(gruende, ensure_ascii=False)))
         return int(cursor.lastrowid or 0)
 
 
-def list_ampel_wechsel(limit: int = 200, nur_farbwechsel: bool = False,
-                       signal_id: int | None = None) -> list[dict]:
-    """Wechsel-Protokoll, neueste zuerst (die Wechselliste der GUI)."""
+
+def list_ampel_wechsel(limit: int = 200, nur_farbwechsel=False, signal_id=None,
+                      *, quelle=None, signal_ref=None) -> list[dict]:
     init_db()
-    clauses, args = [], []
+    filters=[];args=[]
+    if signal_id is not None or signal_ref is not None:
+        identity=_read_ref(signal_id,quelle=quelle,signal_ref=signal_ref)
+        if identity is None:
+            return []
+        filters.append("w.signal_ref=?");args.append(identity.signal_ref)
+    elif quelle is not None:
+        filters.append("q.kuerzel=?");args.append(kanonische_quelle(quelle))
     if nur_farbwechsel:
-        clauses.append("farbwechsel=1")
-    if signal_id is not None:
-        clauses.append("signal_id=?")
-        args.append(signal_id)
-    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
-    args.append(max(1, int(limit)))
+        filters.append("w.farbwechsel=1")
+    sql="SELECT w.*,i.externe_id AS signal_id,q.quellen_uid,q.kuerzel AS signal_quelle,q.kuerzel AS datenquelle "
+    sql+="FROM ampel_wechsel w JOIN signal_identitaeten i ON i.signal_ref=w.signal_ref JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid"
+    if filters:
+        sql+=' WHERE '+' AND '.join(filters)
+    sql+=' ORDER BY w.id DESC LIMIT ?';args.append(max(1,int(limit)))
     with _connect() as conn:
-        rows = conn.execute(
-            "SELECT id, signal_id, name, ts, quelle, ampel_alt, ampel_neu, farbwechsel, "
-            f"richtung, gruende FROM ampel_wechsel {where} ORDER BY id DESC LIMIT ?",
-            args).fetchall()
-    wechsel = []
+        rows=conn.execute(sql,args).fetchall()
+    out=[]
     for row in rows:
-        eintrag = dict(row)
-        eintrag["farbwechsel"] = bool(eintrag["farbwechsel"])
-        try:
-            eintrag["gruende"] = json.loads(eintrag.pop("gruende") or "[]")
-        except json.JSONDecodeError:
-            eintrag["gruende"] = []
-        wechsel.append(eintrag)
-    return wechsel
+        item=dict(row);item["farbwechsel"]=bool(item["farbwechsel"])
+        item["gruende"]=json.loads(item["gruende"] or '[]');out.append(item)
+    return out
+
 
 
 def count_ampel_wechsel() -> int:
@@ -776,10 +1230,10 @@ def _row_zu_quelle(row) -> dict:
 def list_quellen(nur_aktiv: bool = False) -> list[dict]:
     """Konfigurierte Datenquellen, oldest first (stabile Reihenfolge fürs Abholen)."""
     init_db()
-    where = "WHERE aktiv=1" if nur_aktiv else ""
+    where = "WHERE archiviert=0 AND aktiv=1" if nur_aktiv else "WHERE archiviert=0"
     with _connect() as conn:
         rows = conn.execute(
-            f"SELECT id, kuerzel, name, base_url, typ, aktiv, angelegt_am, "
+            f"SELECT id, kuerzel, quellen_uid, name, base_url, typ, aktiv, angelegt_am, "
             f"letzte_pruefung FROM datenquellen {where} ORDER BY id").fetchall()
     return [_row_zu_quelle(row) for row in rows]
 
@@ -788,54 +1242,80 @@ def get_quelle(quelle_id: int) -> dict | None:
     init_db()
     with _connect() as conn:
         row = conn.execute(
-            "SELECT id, kuerzel, name, base_url, typ, aktiv, angelegt_am, "
-            "letzte_pruefung FROM datenquellen WHERE id=?",
+            "SELECT id, kuerzel, quellen_uid, name, base_url, typ, aktiv, angelegt_am, "
+            "letzte_pruefung FROM datenquellen WHERE id=? AND archiviert=0",
             (int(quelle_id),)).fetchone()
     return _row_zu_quelle(row) if row else None
 
 
-def add_quelle(kuerzel: str, name: str, base_url: str, typ: str = "mql5-downloader-v1",
-               aktiv: bool = True) -> int:
-    """Neue Datenquelle anlegen; Kürzel ist eindeutig (sqlite3.IntegrityError)."""
+def add_quelle(kuerzel: str, name: str, base_url: str, typ="mql5-downloader-v1", aktiv=True,
+               *, quellen_uid=None) -> int:
     init_db()
     with _connect() as conn:
-        cursor = conn.execute(
-            "INSERT INTO datenquellen (kuerzel, name, base_url, typ, aktiv, angelegt_am) "
-            "VALUES (?,?,?,?,?,?)",
-            (str(kuerzel).strip(), str(name).strip(), str(base_url).strip(),
-             str(typ).strip(), int(bool(aktiv)), _now()))
-        return int(cursor.lastrowid or 0)
+        conn.execute("BEGIN IMMEDIATE")
+        if not isinstance(kuerzel, str) or not kuerzel.strip():
+            raise IdentityError("Signalquelle muss ein nichtleeres Kuerzel sein")
+        label = kuerzel.strip()
+        source = _source(conn,label)
+        if quellen_uid is not None:
+            owner = conn.execute("SELECT * FROM quellen_identitaeten WHERE quellen_uid=?",
+                                 (str(quellen_uid),)).fetchone()
+            if owner is None or (source is not None and source["quellen_uid"] != owner["quellen_uid"]):
+                raise IdentityError("Quellen-UID passt nicht zum reservierten Alias")
+            conn.execute("INSERT INTO quellen_alias(kuerzel,quellen_uid) VALUES(?,?) "
+                         "ON CONFLICT(kuerzel) DO NOTHING",(label,owner["quellen_uid"]))
+            source = owner
+        elif source is not None and not conn.execute(
+                "SELECT 1 FROM datenquellen WHERE quellen_uid=? AND archiviert=0",
+                (source["quellen_uid"],)).fetchone():
+            raise IdentityError("Reservierter Quellenalias erfordert ausdrueckliche quellen_uid")
+        if source is None:
+            source = _source(conn,label,create=True)
+        archived = conn.execute("SELECT id FROM datenquellen WHERE kuerzel=? AND archiviert=1",
+                                (label,)).fetchone()
+        if archived is not None:
+            conn.execute("UPDATE datenquellen SET archiviert=0,aktiv=?,name=?,base_url=?,typ=? WHERE id=?",
+                         (int(bool(aktiv)),name,str(base_url).rstrip('/'),typ,archived[0]))
+            return int(archived[0])
+        cursor = conn.execute("INSERT INTO datenquellen(kuerzel,quellen_uid,name,base_url,typ,aktiv,angelegt_am) "
+            "VALUES(?,?,?,?,?,?,?)",(label,source["quellen_uid"],name,str(base_url).rstrip('/'),typ,int(bool(aktiv)),_now()))
+        return int(cursor.lastrowid)
 
 
-def update_quelle(quelle_id: int, *, kuerzel: str | None = None, name: str | None = None,
-                  base_url: str | None = None, aktiv: bool | None = None) -> None:
-    """Einzelne Felder einer Quelle ändern; None lässt das Feld unberührt."""
-    sets, args = [], []
-    if kuerzel is not None:
-        sets.append("kuerzel=?")
-        args.append(str(kuerzel).strip())
-    if name is not None:
-        sets.append("name=?")
-        args.append(str(name).strip())
-    if base_url is not None:
-        sets.append("base_url=?")
-        args.append(str(base_url).strip())
-    if aktiv is not None:
-        sets.append("aktiv=?")
-        args.append(int(bool(aktiv)))
-    if not sets:
-        return
-    args.append(int(quelle_id))
+
+def update_quelle(quelle_id: int, *, kuerzel=None, name=None, base_url=None, aktiv=None) -> None:
+    init_db()
     with _connect() as conn:
-        conn.execute(f"UPDATE datenquellen SET {', '.join(sets)} WHERE id=?", args)
+        conn.execute("BEGIN IMMEDIATE")
+        old = conn.execute("SELECT * FROM datenquellen WHERE id=? AND archiviert=0",(int(quelle_id),)).fetchone()
+        if old is None:
+            raise IdentityError("Datenquellen-Verbindung existiert nicht")
+        sets,args = [],[]
+        if kuerzel is not None:
+            label = str(kuerzel).strip()
+            if not label:
+                raise IdentityError("Quellenkuerzel fehlt")
+            alias = _source(conn,label)
+            if alias is not None and alias["quellen_uid"] != old["quellen_uid"]:
+                raise IdentityError("Quellenalias gehoert bereits einem anderen Namensraum")
+            conn.execute("INSERT INTO quellen_alias(kuerzel,quellen_uid) VALUES(?,?) "
+                         "ON CONFLICT(kuerzel) DO NOTHING",(label,old["quellen_uid"]))
+            conn.execute("UPDATE quellen_identitaeten SET kuerzel=? WHERE quellen_uid=?",(label,old["quellen_uid"]))
+            sets.append("kuerzel=?");args.append(label)
+        for field,value in [("name",name),("base_url",base_url),("aktiv",aktiv)]:
+            if value is not None:
+                sets.append(field+"=?")
+                args.append(int(bool(value)) if field=="aktiv" else str(value).strip())
+        if sets:
+            conn.execute("UPDATE datenquellen SET "+','.join(sets)+" WHERE id=?",(*args,int(quelle_id)))
+
 
 
 def delete_quelle(quelle_id: int) -> None:
-    """Quelle löschen. Cache-Dateien bleiben liegen (bewusst — Neuanlage mit
-    gleichem Kürzel findet unveränderte Artefakte nicht mehr, SHA schützt)."""
+    """Archive the transport connection; never erase or reassign an owner UID."""
     with _connect() as conn:
-        conn.execute("DELETE FROM quellen_artefakte WHERE quelle_id=?", (int(quelle_id),))
-        conn.execute("DELETE FROM datenquellen WHERE id=?", (int(quelle_id),))
+        conn.execute("UPDATE datenquellen SET aktiv=0,archiviert=1 WHERE id=?",(int(quelle_id),))
+
 
 
 def store_quell_pruefung(quelle_id: int, pruefung: dict) -> None:
@@ -852,58 +1332,45 @@ def store_quell_pruefung(quelle_id: int, pruefung: dict) -> None:
 _KATALOG_STALE_CHUNK = 500
 
 
-def katalog_upsert_many(quelle_kuerzel: str, items: list[dict]) -> tuple[int, int]:
-    """Vollkatalog einer Quelle schreiben (Nutzer 08.10.2026).
-
-    Insert/Update je (quelle, signal_id); Zeilen dieser Quelle, die im
-    frischen Katalog NICHT mehr auftauchen, werden gelöscht (der Client
-    kennt nur sichtbare Provider — rausgefallene sind dann wirklich weg).
-    Rückgabe (gespeichert, geloescht).
-    """
+def katalog_upsert_many(quelle_kuerzel: str, items: list[dict]) -> tuple[int,int]:
     init_db()
-    jetzt = _now()
     with _connect() as conn:
-        frisch: set[int] = set()
+        conn.execute("BEGIN IMMEDIATE")
+        source = _source(conn,quelle_kuerzel,create=True)
+        old = {row[0] for row in conn.execute("SELECT k.signal_ref FROM katalog_signale k "
+            "JOIN signal_identitaeten i ON i.signal_ref=k.signal_ref WHERE i.quellen_uid=?",(source["quellen_uid"],))}
+        kept = set()
         for item in items:
-            signal_id = int(item["signal_id"])
-            frisch.add(signal_id)
-            conn.execute(
-                """INSERT INTO katalog_signale (quelle, signal_id, name, platform,
-                   url, version, abonnenten, wochen, risiko, updated_at)
-                   VALUES (?,?,?,?,?,?,?,?,?,?)
-                   ON CONFLICT(quelle, signal_id) DO UPDATE SET
-                     name=excluded.name, platform=excluded.platform, url=excluded.url,
-                     version=excluded.version, abonnenten=excluded.abonnenten,
-                     wochen=excluded.wochen, risiko=excluded.risiko,
-                     updated_at=excluded.updated_at""",
-                (str(quelle_kuerzel), signal_id, item.get("name"),
-                 item.get("platform"), item.get("url"), item.get("version"),
-                 item.get("abonnenten"), item.get("wochen"), item.get("risiko"),
-                 jetzt))
-        alt = {int(row["signal_id"]) for row in conn.execute(
-            "SELECT signal_id FROM katalog_signale WHERE quelle=?",
-            (str(quelle_kuerzel),))}
-        stale = sorted(alt - frisch)
-        geloescht = 0
-        for i in range(0, len(stale), _KATALOG_STALE_CHUNK):
-            block = stale[i:i + _KATALOG_STALE_CHUNK]
-            cur = conn.execute(
-                f"DELETE FROM katalog_signale WHERE quelle=? AND signal_id IN "
-                f"({','.join('?' * len(block))})",
-                [str(quelle_kuerzel), *block])
-            geloescht += cur.rowcount or 0
-    return len(frisch), geloescht
+            external = item.get("signal_id",item.get("id"))
+            identity = resolve_identity(external,quelle=source["kuerzel"],create=True,_connection=conn)
+            _guard_platform(conn,identity.signal_ref,item.get("platform"),item.get("version"))
+            kept.add(identity.signal_ref)
+            conn.execute("""INSERT INTO katalog_signale(quelle,signal_ref,name,platform,url,version,
+                abonnenten,wochen,risiko,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)
+                ON CONFLICT(signal_ref) DO UPDATE SET quelle=excluded.quelle,name=excluded.name,
+                platform=excluded.platform,url=excluded.url,version=excluded.version,
+                abonnenten=excluded.abonnenten,wochen=excluded.wochen,risiko=excluded.risiko,
+                updated_at=excluded.updated_at""",(identity.quelle,identity.signal_ref,item.get("name"),
+                item.get("platform"),item.get("url"),item.get("version"),item.get("abonnenten"),
+                item.get("wochen"),item.get("risiko"),_now()))
+        stale = old-kept
+        for ref in stale:
+            conn.execute("DELETE FROM katalog_signale WHERE signal_ref=?",(ref,))
+    return len(kept),len(stale)
+
 
 
 def katalog_list() -> list[dict]:
-    """Alle Katalogzeilen (je Quelle + Signal), Abonnenten absteigend."""
     init_db()
     with _connect() as conn:
-        rows = conn.execute(
-            "SELECT quelle, signal_id, name, platform, url, version, abonnenten, "
-            "wochen, risiko, updated_at FROM katalog_signale "
-            "ORDER BY abonnenten DESC, quelle, signal_id").fetchall()
-    return [dict(row) for row in rows]
+        rows = conn.execute("SELECT k.*,i.externe_id AS signal_id,q.quellen_uid,q.kuerzel AS aktuelle_quelle "
+            "FROM katalog_signale k JOIN signal_identitaeten i ON i.signal_ref=k.signal_ref "
+            "JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid ORDER BY k.abonnenten DESC").fetchall()
+    out=[]
+    for row in rows:
+        item=dict(row);item["quelle"]=item.pop("aktuelle_quelle");out.append(item)
+    return out
+
 
 
 def katalog_sync_vermerken(quelle_kuerzel: str, anzahl: int,
@@ -918,7 +1385,7 @@ def katalog_sync_vermerken(quelle_kuerzel: str, anzahl: int,
                ON CONFLICT(quelle) DO UPDATE SET
                  gelaufen_am=excluded.gelaufen_am, anzahl=excluded.anzahl,
                  fehler=excluded.fehler""",
-            (str(quelle_kuerzel), _now(), int(anzahl), fehler))
+            (kanonische_quelle(quelle_kuerzel), _now(), int(anzahl), fehler))
 
 
 def katalog_sync_status() -> dict[str, dict]:
@@ -926,8 +1393,8 @@ def katalog_sync_status() -> dict[str, dict]:
     init_db()
     with _connect() as conn:
         rows = conn.execute(
-            "SELECT quelle, gelaufen_am, anzahl, fehler FROM katalog_sync").fetchall()
-    return {row["quelle"]: {"gelaufen_am": row["gelaufen_am"],
+            "SELECT quelle, gelaufen_am, anzahl, fehler FROM katalog_sync ORDER BY gelaufen_am").fetchall()
+    return {kanonische_quelle(row["quelle"]): {"gelaufen_am": row["gelaufen_am"],
                             "anzahl": row["anzahl"], "fehler": row["fehler"]}
             for row in rows}
 
@@ -937,7 +1404,8 @@ def store_equity_studie(signal_id: int, trades_sha: str, report: dict, *,
                         ertrag_monat_geom_pct: float | None = None,
                         dd_usd: float | None = None,
                         basislos: bool = False,
-                        virtuell: bool = False) -> None:
+                        virtuell: bool = False, quelle=None, signal_ref=None) -> None:
+    init_db()
     """Batch-Equity-Studie persistieren (Nutzer 08.10.2026).
 
     `report` ist das volle equity_rekonstruktion-dict (dieselbe Struktur wie
@@ -949,98 +1417,107 @@ def store_equity_studie(signal_id: int, trades_sha: str, report: dict, *,
     from .analysis_version import FORENSICS_VERSION
     init_db()
     with _connect() as conn:
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+        signal_ref = identity.signal_ref
         conn.execute(
-            """INSERT INTO equity_studien (signal_id, trades_sha, json,
+            """INSERT INTO equity_studien (signal_ref, trades_sha, json,
                cagr_jahr_pct, ertrag_monat_geom_pct, dd_usd, basislos, virtuell,
                updated_at, forensics_version)
                VALUES (?,?,?,?,?,?,?,?,?,?)
-               ON CONFLICT(signal_id) DO UPDATE SET
+               ON CONFLICT(signal_ref) DO UPDATE SET
                  trades_sha=excluded.trades_sha, json=excluded.json,
                  cagr_jahr_pct=excluded.cagr_jahr_pct,
                  ertrag_monat_geom_pct=excluded.ertrag_monat_geom_pct,
                  dd_usd=excluded.dd_usd, basislos=excluded.basislos,
                  virtuell=excluded.virtuell, updated_at=excluded.updated_at,
                  forensics_version=excluded.forensics_version""",
-            (int(signal_id), trades_sha,
+            (int(signal_ref), trades_sha,
              json.dumps(report, ensure_ascii=False, sort_keys=True, default=str),
              cagr_jahr_pct, ertrag_monat_geom_pct, dd_usd,
              1 if basislos else 0, 1 if virtuell else 0, _now(), FORENSICS_VERSION))
 
 
-def get_equity_studie(signal_id: int) -> dict | None:
-    """Studien-Zeile je Signal (dict mit geparstem json) oder None."""
+
+def get_equity_studie(signal_id: int | None = None, *, quelle=None, signal_ref=None) -> dict | None:
     from .analysis_version import FORENSICS_VERSION
-    init_db()
+    identity = _read_ref(signal_id,quelle=quelle,signal_ref=signal_ref)
+    if identity is None:
+        return None
     with _connect() as conn:
-        row = conn.execute(
-            "SELECT signal_id, trades_sha, json, cagr_jahr_pct, "
-            "ertrag_monat_geom_pct, dd_usd, basislos, virtuell, updated_at "
-            "FROM equity_studien WHERE signal_id=? AND forensics_version=?",
-            (int(signal_id), FORENSICS_VERSION)).fetchone()
+        row = conn.execute("SELECT * FROM equity_studien WHERE signal_ref=? AND forensics_version=?",
+                           (identity.signal_ref,FORENSICS_VERSION)).fetchone()
     if row is None:
         return None
-    daten = dict(row)
+    item = {**dict(row),**_identity_fields(identity)}
     try:
-        daten["report"] = json.loads(daten.pop("json") or "{}")
+        item["report"] = json.loads(item.pop("json") or "{}")
     except ValueError:
         return None
-    return daten
+    return item
 
 
-def list_equity_studien() -> dict[int, dict]:
-    """Alle Studien als {signal_id: zeile} — für das Befüllen der Tabellen."""
+
+def list_equity_studien(*, identitaeten=False, quelle=None) -> dict:
     from .analysis_version import FORENSICS_VERSION
     init_db()
     with _connect() as conn:
-        rows = conn.execute(
-            "SELECT signal_id, trades_sha, json, cagr_jahr_pct, "
-            "ertrag_monat_geom_pct, dd_usd, basislos, virtuell, updated_at "
-            "FROM equity_studien WHERE forensics_version=?", (FORENSICS_VERSION,)).fetchall()
-    out: dict[int, dict] = {}
+        rows = conn.execute("SELECT e.*,i.externe_id AS signal_id,q.quellen_uid,q.kuerzel AS quelle "
+            "FROM equity_studien e JOIN signal_identitaeten i ON i.signal_ref=e.signal_ref "
+            "JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid "
+            "WHERE e.forensics_version=?",(FORENSICS_VERSION,)).fetchall()
+        ambiguous = {row[0] for row in conn.execute("SELECT externe_id FROM signal_identitaeten "
+            "GROUP BY externe_id HAVING COUNT(*)>1")}
+    result = {}
+    source = kanonische_quelle(quelle) if quelle is not None else None
     for row in rows:
-        daten = dict(row)
+        item = dict(row)
+        if source is not None and item["quelle"] != source:
+            continue
+        if not identitaeten and source is None and item["signal_id"] in ambiguous:
+            continue
         try:
-            daten["report"] = json.loads(daten.pop("json") or "{}")
+            item["report"] = json.loads(item.pop("json") or "{}")
         except ValueError:
             continue
-        out[int(daten["signal_id"])] = daten
-    return out
+        key = (item["quelle"],item["signal_id"]) if identitaeten else item["signal_id"]
+        result[key] = item
+    return result
+
 
 
 def store_quellen_artefakt(quelle_id: int, signal_id: int, version: str, art: str,
-                           sha256: str, path: str) -> None:
-    with _connect() as conn:
-        conn.execute(
-            """INSERT INTO quellen_artefakte
-               (quelle_id, signal_id, version, art, sha256, path, fetched_at)
-               VALUES (?,?,?,?,?,?,?)
-               ON CONFLICT(quelle_id, signal_id, version, art) DO UPDATE SET
-                 sha256=excluded.sha256, path=excluded.path,
-                 fetched_at=excluded.fetched_at""",
-            (int(quelle_id), int(signal_id), str(version), str(art),
-             str(sha256), str(path), _now()))
-
-
-def list_quellen_artefakte() -> dict[tuple[int, int, str, str], dict]:
-    """Artefakt-Index für Katalogansichten mit einer einzigen DB-Abfrage."""
+                          sha256: str, path: str) -> None:
     init_db()
     with _connect() as conn:
-        rows = conn.execute(
-            "SELECT quelle_id, signal_id, version, art, sha256, path, fetched_at "
-            "FROM quellen_artefakte").fetchall()
-    return {(int(r["quelle_id"]), int(r["signal_id"]), r["version"], r["art"]):
-            dict(r) for r in rows}
+        conn.execute("BEGIN IMMEDIATE")
+        identity = _connection_identity(conn,quelle_id,signal_id,create=True)
+        conn.execute("""INSERT INTO quellen_artefakte(quelle_id,signal_ref,version,art,sha256,path,fetched_at)
+            VALUES(?,?,?,?,?,?,?) ON CONFLICT(quelle_id,signal_ref,version,art) DO UPDATE SET
+            sha256=excluded.sha256,path=excluded.path,fetched_at=excluded.fetched_at""",
+            (int(quelle_id),identity.signal_ref,version,art,sha256,path,_now()))
 
 
-def get_quellen_artefakt(quelle_id: int, signal_id: int, version: str,
-                         art: str) -> dict | None:
+
+def list_quellen_artefakte() -> dict:
     init_db()
     with _connect() as conn:
-        row = conn.execute(
-            "SELECT sha256, path, fetched_at FROM quellen_artefakte "
-            "WHERE quelle_id=? AND signal_id=? AND version=? AND art=?",
-            (int(quelle_id), int(signal_id), str(version), str(art))).fetchone()
-    return dict(row) if row else None
+        rows = conn.execute("SELECT a.*,i.externe_id AS signal_id,q.quellen_uid,q.kuerzel AS quelle "
+            "FROM quellen_artefakte a JOIN signal_identitaeten i ON i.signal_ref=a.signal_ref "
+            "JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid").fetchall()
+    return {(row["quelle_id"],row["signal_id"],row["version"],row["art"]):dict(row) for row in rows}
+
+
+
+def get_quellen_artefakt(quelle_id: int, signal_id: int, version: str, art: str) -> dict | None:
+    init_db()
+    with _connect() as conn:
+        identity = _connection_identity(conn,quelle_id,signal_id)
+        if identity is None:
+            return None
+        row = conn.execute("SELECT * FROM quellen_artefakte WHERE quelle_id=? AND signal_ref=? AND version=? AND art=?",
+                           (int(quelle_id),identity.signal_ref,version,art)).fetchone()
+    return {**dict(row),**_identity_fields(identity)} if row else None
+
 
 
 # ── Stufe 0 „Clients aktualisieren" (doc/23 §6.4) ─────────────────────
@@ -1107,63 +1584,95 @@ def letzte_client_updates_je_quelle() -> dict[str, dict]:
     return neueste
 
 
-def setze_markierung(signal_id: int, farbe: str | None) -> None:
+def setze_markierung(signal_id: int, farbe: str | None, *, quelle=None, signal_ref=None) -> None:
+    init_db()
     """Nutzer-Markierung setzen (gruen/gelb/orange) oder entfernen (None)."""
     init_db()
     with _connect() as conn:
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+        signal_ref = identity.signal_ref
         if farbe is None:
-            conn.execute("DELETE FROM signal_markierungen WHERE signal_id=?",
-                         (int(signal_id),))
+            conn.execute("DELETE FROM signal_markierungen WHERE signal_ref=?",
+                         (int(signal_ref),))
         else:
             conn.execute(
-                """INSERT INTO signal_markierungen (signal_id, farbe, updated_at)
+                """INSERT INTO signal_markierungen (signal_ref, farbe, updated_at)
                    VALUES (?,?,?)
-                   ON CONFLICT(signal_id) DO UPDATE SET
+                   ON CONFLICT(signal_ref) DO UPDATE SET
                      farbe=excluded.farbe, updated_at=excluded.updated_at""",
-                (int(signal_id), str(farbe), _now()))
+                (int(signal_ref), str(farbe), _now()))
 
 
-def list_markierungen() -> dict[int, str]:
-    """Alle Markierungen als {signal_id: farbe}."""
+
+def list_markierungen(*, quelle=None, identitaeten=False) -> dict:
+    return _list_user_state("signal_markierungen","farbe",quelle=quelle,identitaeten=identitaeten)
+
+
+def setze_beobachtung(signal_id: int, beobachten: bool = True, *,
+                      quelle=None, signal_ref=None) -> None:
+    """Signal auf die Beobachtungsliste setzen (True) oder entfernen (False).
+
+    Nutzer-Wunsch 20.10.2026: ausgewählte Signale der Abonnentenstatistik
+    dauerhaft beobachten — eigener Tab, unabhängig vom Abonnenten-Filter.
+    """
     init_db()
     with _connect() as conn:
-        rows = conn.execute(
-            "SELECT signal_id, farbe FROM signal_markierungen").fetchall()
-    return {int(r["signal_id"]): str(r["farbe"]) for r in rows}
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+        if beobachten:
+            conn.execute(
+                "INSERT INTO beobachtungsliste(signal_ref,angelegt_am) VALUES(?,?) "
+                "ON CONFLICT(signal_ref) DO UPDATE SET angelegt_am=excluded.angelegt_am",
+                (identity.signal_ref, _now()))
+        else:
+            conn.execute("DELETE FROM beobachtungsliste WHERE signal_ref=?",
+                         (identity.signal_ref,))
 
 
-def setze_kommentar(signal_id: int, kommentar: str | None) -> None:
+def list_beobachtungen() -> set[int]:
+    """Signal-Referenzen der Beobachtungsliste (Set für Tabellenzugehörigkeit)."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute("SELECT signal_ref FROM beobachtungsliste").fetchall()
+    return {int(row["signal_ref"]) for row in rows}
+
+
+
+def setze_kommentar(signal_id: int, kommentar: str | None, *, quelle=None, signal_ref=None) -> None:
+    init_db()
     """Freitext-Kommentar setzen (None/leer = löschen)."""
     init_db()
     text_wert = (kommentar or "").strip()
     with _connect() as conn:
+        identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+        signal_ref = identity.signal_ref
         if not text_wert:
-            conn.execute("DELETE FROM signal_kommentare WHERE signal_id=?",
-                         (int(signal_id),))
+            conn.execute("DELETE FROM signal_kommentare WHERE signal_ref=?",
+                         (int(signal_ref),))
         else:
             conn.execute(
-                """INSERT INTO signal_kommentare (signal_id, kommentar, updated_at)
+                """INSERT INTO signal_kommentare (signal_ref, kommentar, updated_at)
                    VALUES (?,?,?)
-                   ON CONFLICT(signal_id) DO UPDATE SET
+                   ON CONFLICT(signal_ref) DO UPDATE SET
                      kommentar=excluded.kommentar,
                      updated_at=excluded.updated_at""",
-                (int(signal_id), text_wert, _now()))
+                (int(signal_ref), text_wert, _now()))
 
 
-def get_kommentar(signal_id: int) -> str:
+
+def get_kommentar(signal_id: int, *, quelle=None, signal_ref=None) -> str:
     """Kommentar je Signal ("" = keiner)."""
+    identity = _read_ref(signal_id, quelle=quelle, signal_ref=signal_ref)
+    if identity is None:
+        return ""
+    signal_ref = identity.signal_ref
     init_db()
     with _connect() as conn:
         row = conn.execute(
-            "SELECT kommentar FROM signal_kommentare WHERE signal_id=?",
-            (int(signal_id),)).fetchone()
+            "SELECT kommentar FROM signal_kommentare WHERE signal_ref=?",
+            (int(signal_ref),)).fetchone()
     return (row["kommentar"] if row else "") or ""
 
 
-def list_kommentare() -> dict[int, str]:
-    """Alle Kommentare als {signal_id: text} — für die Tabellenanzeige."""
-    init_db()
-    with _connect() as conn:
-        rows = conn.execute(
-            "SELECT signal_id, kommentar FROM signal_kommentare").fetchall()
-    return {int(r["signal_id"]): (r["kommentar"] or "") for r in rows}
+
+def list_kommentare(*, quelle=None, identitaeten=False) -> dict:
+    return _list_user_state("signal_kommentare","kommentar",quelle=quelle,identitaeten=identitaeten)

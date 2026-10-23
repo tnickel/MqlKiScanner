@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 import streamlit as st
+from mqlkiscanner.signal_identity import identity_key, stable_identity_key
 
 from mqlkiscanner import (config, db, downloader_sync, fix_signale, pipeline, regelwerk,
                           scan_state, scan_worker, tiefen_batch, tradeserver_sync)
@@ -17,7 +18,7 @@ from mqlkiscanner.app_ui import (clear_report_selection, render_ampel_matrix, re
                                  render_downloader_docs_panel, render_fehlende_kursdaten,
                                  render_report_panel,
                                  render_portfolio_pdf_viewer,
-                                 render_results_table, results_to_dataframe,
+                                 render_results_table, results_table_dataframe,
                                  render_wechsel_karten, _gelbe_anzeige)
 from mqlkiscanner.ui_design import (action_button, aktivitaets_banner, apply_theme,
                                     info_button, page_header, section_header,
@@ -46,11 +47,11 @@ with st.container(border=True):
 
     selected_run = st.selectbox('Quelle', options, format_func=_fmt, key='results_run')
     freshness = st.session_state.get('refreshed_signal_ids')
-    fresh_ids: set[int] = set(freshness or [])
+    fresh_ids = {tuple(k) for k in (freshness or []) if isinstance(k, (tuple, list))}
     # Alte Sitzungsstände brauchen ebenfalls einen expliziten Persistenzbeleg.
     # [] bedeutet: Im letzten Lauf wurde kein Signaldatensatz aktualisiert.
     if freshness is None and st.session_state.scan_results:
-        fresh_ids = {r.id for r in st.session_state.scan_results
+        fresh_ids = {identity_key(r) for r in st.session_state.scan_results
                      if getattr(r, 'source_kind', 'live') == 'live'
                      and getattr(r, 'persisted_this_run', False)}
 
@@ -58,7 +59,7 @@ with st.container(border=True):
         results = [r for r in pipeline.results_from_db()
                    if getattr(r, 'source_kind', 'live') == 'live']
         # Frisch aktualisierte Signale oben.
-        results.sort(key=lambda r: (0 if r.id in fresh_ids else 1, (r.name or '').casefold()))
+        results.sort(key=lambda r: (0 if identity_key(r) in fresh_ids else 1, (r.name or '').casefold()))
         portfolio = db.get_latest_analysis(None, 'portfolio')
         st.caption(
             f'Datenbank · {len(results)} Signale. '
@@ -98,10 +99,10 @@ with st.container(border=True):
     if abgleich_klick:
         ziele, gesehen = [], set()
         for r in results:
-            if getattr(r, 'source_kind', 'live') != 'live' or not r.id or r.id in gesehen:
+            if getattr(r, 'source_kind', 'live') != 'live' or not r.id or identity_key(r) in gesehen:
                 continue
-            gesehen.add(r.id)
-            ziele.append((r.id, getattr(r, 'platform', '') or ''))
+            gesehen.add(identity_key(r))
+            ziele.append((identity_key(r)[0], r.id, getattr(r, 'platform', '') or ''))
         if not downloader_sync.konfiguriert():
             st.info('MqlDownloader ist nicht konfiguriert. Base-URL im Admin-Bereich '
                     'unter „MqlDownloader“ hinterlegen.', icon=':material/settings_ethernet:')
@@ -248,9 +249,9 @@ with st.container(border=True):
         ziele, gesehen = [], set()
         for r in results:
             if (getattr(r, 'source_kind', 'live') != 'live' or not r.id
-                    or not getattr(r, 'trades_path', '') or r.id in gesehen):
+                    or not getattr(r, 'trades_path', '') or identity_key(r) in gesehen):
                 continue
-            gesehen.add(r.id)
+            gesehen.add(identity_key(r))
             ziele.append(r)
         ok, meldung = tiefen_batch.batch_starten(ziele)
         if ok:
@@ -272,7 +273,7 @@ portfolio = None if demo_only or not isinstance(portfolio, dict) else portfolio
 # Export-Auswahl. Verwaltung hier (auch ohne Ergebnisse erreichbar);
 # einzelne Signale lassen sich zusätzlich per Checkmark in ihrer
 # Detailansicht pinnen.
-fix_ist = fix_signale.fix_ids()
+fix_ist = fix_signale.fix_keys()
 with st.container(border=True):
     section_header('Fix-IDs · immer scannen',
                    'Diese Signal-IDs durchlaufen jeden Scan — auch wenn sie aus den '
@@ -281,13 +282,13 @@ with st.container(border=True):
     namen: dict[int, str] = {}
     try:
         for zeile in db.list_catalog():
-            namen[int(zeile['signal_id'])] = zeile.get('name') or ''
+            namen[identity_key(zeile)] = zeile.get('name') or ''
     except Exception:
         namen = {}
 
-    def _fix_label(i: int) -> str:
+    def _fix_label(i: tuple) -> str:
         name = namen.get(i)
-        return f"{name} · #{i}" if name else f"#{i}"
+        return f"{i[0]}:{i[1]} · {name}" if name else f"{i[0]}:{i[1]}"
 
     st.caption(
         'Gesetzte Fix-IDs erscheinen hier mit Entfernen-Button; in der Tabelle '
@@ -301,10 +302,11 @@ with st.container(border=True):
             st.markdown(f'📌 **{_fix_label(i)}** — wird in jedem Scan geprüft')
             if st.button('Entfernen', key=f'fix_weg_{i}', icon=':material/close:',
                          help='Nimmt diese Signal-ID von der Immer-Scannen-Liste.'):
-                fix_signale.setzen(i, False)
+                fix_signale.setzen(i[1], False, quelle=i[0])
                 st.toast(f'#{i} ist kein Fix-Signal mehr', icon=':material/push_pin:')
                 st.rerun()
     with st.container(horizontal=True):
+        fix_neu_quelle = st.selectbox('Datenquelle', sorted({'mql5', *(q['kuerzel'] for q in db.list_quellen())}), key='fix_neue_quelle')
         fix_neu_text = st.text_input(
             'Signal-ID fix setzen', placeholder='z. B. 2342895 (KiraCat)',
             key='fix_neue_id',
@@ -317,7 +319,7 @@ with st.container(border=True):
                 st.warning('Bitte eine gültige numerische Signal-ID eingeben '
                            '(z. B. 2342895).', icon=':material/error_outline:')
             else:
-                fix_signale.setzen(int(text), True)
+                fix_signale.setzen(int(text), True, quelle=fix_neu_quelle)
                 st.toast(f"#{int(text)} ist jetzt Fix — wird in jedem Scan geprüft",
                          icon=':material/push_pin:')
                 st.rerun()
@@ -365,7 +367,7 @@ if not results:
 
 # Never carry an open report from a different source or filter into this view.
 source_signature = selected_run + '|' + '|'.join(
-    repr((r.source_kind, r.id, r.trades_path, r.trades_sha256, r.name)) for r in results)
+    repr((r.source_kind, stable_identity_key(r), r.trades_path, r.trades_sha256, r.name)) for r in results)
 if st.session_state.get('_results_source') != source_signature:
     clear_report_selection()
     st.session_state.pop('downloader_doc_signal_id', None)
@@ -383,7 +385,7 @@ with st.container(horizontal=True):
               border=True, icon=':material/gpp_bad:')
     st.metric('Ohne Vollprüfung', ampeln.count('⚪'), border=True, icon=':material/help:')
 st.caption(
-    f"{len(results)} Signale insgesamt · {sum(1 for r in results if r.id in fresh_ids)} "
+    f"{len(results)} Signale insgesamt · {sum(1 for r in results if identity_key(r) in fresh_ids)} "
     "im letzten Lauf aktualisiert · leere Werte sind keine Entwarnung."
 )
 
@@ -417,7 +419,7 @@ def _wechsel_dialog() -> None:
     with st.expander('Wechsel-Historie je Signal', icon=':material/history:'):
         chronik: dict[int, list] = {}
         for w in reversed(wechsel):
-            chronik.setdefault(w['signal_id'], []).append(w)
+            chronik.setdefault((w.get('signal_quelle') or 'mql5', w['signal_id']), []).append(w)
         for sid, eintraege in sorted(chronik.items()):
             name = next((e.get('name') for e in eintraege if e.get('name')), f'#{sid}')
             band = ' → '.join(e['ampel_neu'] for e in reversed(eintraege))
@@ -456,7 +458,7 @@ with st.container(border=True):
     apply_fresh = bool(only_fresh and fresh_ids)
     visible = [r for r in results if (not statuses or r.ampel in statuses)
                and (not query.strip() or query.strip().casefold() in f'{r.name} {r.id}'.casefold())
-               and (not apply_fresh or r.id in fresh_ids)]
+               and (not apply_fresh or identity_key(r) in fresh_ids)]
     st.caption(f'{len(visible)} von {len(results)} Signalen · Tabelle und CSV verwenden dieselben Filter.')
     st.caption('Max-Drawdown (Equity) umfasst offene Gewinne und Verluste aus '
                'einer belastbaren Nachmessung. Trading-DD zählt nur geschlossene '
@@ -475,8 +477,12 @@ with st.container(border=True):
     show_fresh = fresh_ids if selected_run.startswith('Datenbank') or selected_run == 'Aktuelle Sitzung' else None
     if visible:
         signature = sha1((source_signature + repr([
-            (r.source_kind, r.id, r.trades_path, r.trades_sha256, r.name) for r in visible])
+            (r.source_kind, stable_identity_key(r), r.trades_path, r.trades_sha256, r.name) for r in visible])
                           + repr(sorted(show_fresh or []))).encode()).hexdigest()[:12]
+        # Prepare local source/document data once. A concurrent sync must not
+        # make the downloaded CSV differ from the table rendered in this run.
+        table_data = results_table_dataframe(
+            visible, fresh_ids=show_fresh, fix_ids=fix_signale.fix_keys())
         if view == 'Ampeln':
             render_ampel_matrix(visible, config.load_settings())
             selected = None
@@ -485,11 +491,10 @@ with st.container(border=True):
         else:
             selected = render_results_table(
                 visible, key=f'ergebnisse_table_{signature}', compact=view != 'Alle Kennzahlen',
-                fresh_ids=show_fresh, fix_ids=fix_signale.fix_ids())
+                fresh_ids=show_fresh, fix_ids=fix_signale.fix_keys(), table_data=table_data)
         with st.container(horizontal=True, vertical_alignment="center", gap="xsmall"):
-            csv = results_to_dataframe(visible, fresh_ids=show_fresh,
-                                       fix_ids=fix_signale.fix_ids()).drop(
-                columns=['Bericht'], errors='ignore').to_csv(index=False, sep=';').encode('utf-8-sig')
+            csv = table_data.drop(
+                columns=['Bericht', 'Studie'], errors='ignore').to_csv(index=False, sep=';').encode('utf-8-sig')
             st.download_button('Gefilterte Tabelle als CSV', csv, 'mql-signale.csv', 'text/csv',
                                key='results_download', icon=':material/download:')
             info_button('results_runs', key='results_download_help')
@@ -526,6 +531,6 @@ if visible:
     with st.expander('Urteile im Überblick', expanded=False, icon=':material/summarize:'):
         for r in visible:
             with st.container(border=True):
-                mark = ' · **NEU**' if r.id in fresh_ids else ''
+                mark = ' · **NEU**' if identity_key(r) in fresh_ids else ''
                 st.markdown(f'**{r.ampel} {r.name}** · #{r.id}{mark}')
                 st.write(r.urteil or 'Noch kein Urteil vorhanden.')

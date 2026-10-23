@@ -17,12 +17,14 @@ gelten fuer Fix-IDs exakt wie fuer alle anderen Signale.
 from __future__ import annotations
 
 from . import config
+from .signal_identity import key_for, AmbiguousSignalIdentity
 
 SETTINGS_KEY = "fix_signal_ids"
 
 
 def fix_ids(settings: dict | None = None) -> set[int]:
     """Gesetzte Fix-IDs aus den Einstellungen (robust gegen Muell-Eintraege)."""
+    include_db = settings is None
     settings = settings if settings is not None else config.load_settings()
     ids: set[int] = set()
     for raw in settings.get(SETTINGS_KEY) or []:
@@ -30,18 +32,55 @@ def fix_ids(settings: dict | None = None) -> set[int]:
             ids.add(int(raw))
         except (TypeError, ValueError):
             continue
+    if include_db:
+        from . import db
+        ids.update(db.list_signal_fixierungen())
     return ids
 
 
-def setzen(signal_id: int, fix: bool = True) -> None:
+def fix_keys(settings: dict | None = None) -> set[tuple[str, int]]:
+    """Resolve old pins only when their owner is unambiguous; new pins use refs."""
+    from . import db
+    settings = settings if settings is not None else config.load_settings()
+    keys = set(db.list_signal_fixierungen(identitaeten=True))
+    for sid in fix_ids(settings):
+        try:
+            identity = db.resolve_identity(sid)
+        except AmbiguousSignalIdentity:
+            continue
+        if identity is not None:
+            keys.add(identity.signal_key)
+    return keys
+
+
+def ist_fix(signal, settings: dict | None = None) -> bool:
+    return key_for(signal) in fix_keys(settings)
+
+
+def unaufgeloeste_fix_ids(settings: dict | None = None) -> set[int]:
+    """Legacy settings need explicit reassignment if their owner is unproven."""
+    from . import db
+    settings = settings if settings is not None else config.load_settings()
+    unresolved = set()
+    for sid in fix_ids(settings):
+        try:
+            if db.resolve_identity(sid) is None:
+                unresolved.add(sid)
+        except AmbiguousSignalIdentity:
+            unresolved.add(sid)
+    return unresolved
+
+
+def setzen(signal_id: int, fix: bool = True, *, quelle: str = "mql5") -> None:
     """Fix-ID dauerhaft setzen/entfernen (persistiert in app_settings.json)."""
     signal_id = int(signal_id)
     settings = config.load_settings()
+    from . import db
+    db.set_signal_fix(signal_id, fix, quelle=quelle)
+    # Consume legacy entries at the explicit user assignment. Never write new
+    # source-less pins: the connection's stable namespace owns the DB pin.
     ids = fix_ids(settings)
-    if fix:
-        ids.add(signal_id)
-    else:
-        ids.discard(signal_id)
+    ids.discard(signal_id)
     settings[SETTINGS_KEY] = sorted(ids)
     config.save_settings(settings)
 
@@ -53,9 +92,9 @@ def ordne_fix_vorne(cands: list[dict], settings: dict | None = None) -> tuple[li
     die Begrenzung. Ohne Trennung koennte eine Fix-ID hinter Platz 30 der
     Abonnenten-Sortierung liegen und trotzdem uebersprungen werden.
     """
-    fix = fix_ids(settings)
-    vorne = [c for c in cands if c.get("id") in fix]
-    rest = [c for c in cands if c.get("id") not in fix]
+    fix = fix_keys(settings)
+    vorne = [c for c in cands if key_for(c) in fix]
+    rest = [c for c in cands if key_for(c) not in fix]
     return vorne, rest
 
 
@@ -115,10 +154,10 @@ def waehle_fuer_export(cands: list[dict], top_n: int,
     gefiltert — Ränge spielen dann keine Rolle).
     """
     fix_vorne, rest = ordne_fix_vorne(cands, settings)
-    ausgeschlossen = {e.get("id") for e in
+    ausgeschlossen = {key_for(e) for e in
                       config.load_known_signals().get("ausgeschlossen", [])}
-    rest_mit_ausschluss = [c for c in rest if c.get("id") in ausgeschlossen]
-    rest = [c for c in rest if c.get("id") not in ausgeschlossen]
+    rest_mit_ausschluss = [c for c in rest if key_for(c) in ausgeschlossen]
+    rest = [c for c in rest if key_for(c) not in ausgeschlossen]
     gruppen: dict[str, list[dict]] = {}
     reihenfolge: list[str] = []
     for c in rest:
@@ -196,12 +235,12 @@ def begruende_teilscan_scope(begruendung: list[dict] | None, cands: list[dict],
     """
     if begruendung is None:
         return
-    ampeln = {r.id: getattr(r, "ampel", None) for r in alt_ergebnisse}
-    namen = {r.id: getattr(r, "name", "") or "" for r in alt_ergebnisse}
+    ampeln = {key_for(r): getattr(r, "ampel", None) for r in alt_ergebnisse}
+    namen = {key_for(r): getattr(r, "name", "") or "" for r in alt_ergebnisse}
     for c in cands:
-        if c.get("id") in ziel_ids:
+        if key_for(c) in ziel_ids:
             continue
-        ampel = ampeln.get(c.get("id"))
+        ampel = ampeln.get(key_for(c))
         if ampel is None:
             grund = ("✗ Teilscan: noch nie bewertet (kein DB-Eintrag) — "
                      "geprüft werden nur aktuell 🟢/🟡 laut Datenbank "
@@ -211,13 +250,13 @@ def begruende_teilscan_scope(begruendung: list[dict] | None, cands: list[dict],
                      "werden nur aktuell 🟢/🟡 laut Datenbank plus Fix-IDs.")
         eintrag = begruendungseintrag(c, "NICHT_IM_SCOPE", grund)
         # Namens-/Ampel-Stand aus der DB ist aktueller als der Katalog
-        db_name = namen.get(c.get("id"))
+        db_name = namen.get(key_for(c))
         if db_name:
             eintrag["name"] = db_name
         begruendung_upsert(begruendung, eintrag)
 
 
-def teilscan_ziel_ids(alt_ergebnisse, settings: dict | None = None) -> set[int]:
+def teilscan_ziel_keys(alt_ergebnisse, settings: dict | None = None) -> set[tuple[str, int]]:
     """Teilscan-Scope: 🟢/🟡, deren fehlgeschlagene Wiederholungen und Fix-IDs.
 
     Fix-IDs sollen immer geprueft werden — auch wenn ihre aktuelle Ampel
@@ -237,11 +276,21 @@ def teilscan_ziel_ids(alt_ergebnisse, settings: dict | None = None) -> set[int]:
             # colour history. Retry the last successful eligible evaluation,
             # without upgrading the current failed result or admitting every
             # white / never-scanned entry to the partial scan.
-            previous = db.get_last_ampel_verlauf(r.id) or {}
+            previous = db.get_last_ampel_verlauf(r.id, quelle=key_for(r)[0]) or {}
             eligible = previous.get("ampel") in ("🟢", "🟡")
         if eligible:
-            ids.add(r.id)
-    return ids | fix_ids(settings)
+            ids.add(key_for(r))
+    return ids | fix_keys(settings)
+
+
+def teilscan_ziel_ids(alt_ergebnisse, settings: dict | None = None) -> set[int]:
+    """Legacy projection: omit IDs whose ownership is ambiguous."""
+    keys = teilscan_ziel_keys(alt_ergebnisse, settings)
+    owners: dict[int, set[str]] = {}
+    for r in alt_ergebnisse:
+        source, sid = key_for(r)
+        owners.setdefault(sid, set()).add(source)
+    return {sid for source, sid in keys if len(owners.get(sid, {source})) == 1}
 
 
 def teilscan_ergaenze_aus_db(ziel_ids: set[int], vorhanden_ids: set[int],
@@ -266,10 +315,12 @@ def teilscan_ergaenze_aus_db(ziel_ids: set[int], vorhanden_ids: set[int],
         return []
     from . import db as _db  # spät: kein Kreisimport
     from .pipeline import results_from_db  # spät: kein Kreisimport
-    quellen_nach_kuerzel = {q["kuerzel"]: q for q in _db.list_quellen(nur_aktiv=True)}
+    quellen_nach_kuerzel = {}
+    for q in _db.list_quellen(nur_aktiv=True):
+        quellen_nach_kuerzel.setdefault(_db.kanonische_quelle(q["kuerzel"]), q)
     ergaenzungen: list[dict] = []
     for r in results_from_db(settings):
-        if r.id not in fehlen or r.quelle == "mql5":
+        if key_for(r) not in fehlen or r.quelle == "mql5":
             continue
         q = quellen_nach_kuerzel.get(r.quelle)
         if q is None:
@@ -279,11 +330,13 @@ def teilscan_ergaenze_aus_db(ziel_ids: set[int], vorhanden_ids: set[int],
             "id": r.id,
             "name": r.name,
             "platform": r.platform or "",
-            "url": r.url or f"https://www.mql5.com/en/signals/{r.id}",
+            "url": r.url or "",
             "abonnenten": r.abonnenten,
             "wochen": r.wochen,
             "quelle_kuerzel": r.quelle,
             "quelle_id": q["id"],
+            "quellen_uid": q.get("quellen_uid") or "",
+            "signal_ref": r.signal_ref,
             "quelle_version": version,
         })
         if begruendung is not None:
@@ -294,4 +347,26 @@ def teilscan_ergaenze_aus_db(ziel_ids: set[int], vorhanden_ids: set[int],
                 "grund": (f"✓ Im Teilscan-Scope ({r.ampel}) — Quelle offline, "
                           "aus dem DB-Stand ergänzt; Forensik lief aus den "
                           "gecachten Trade-/Metrics-Artefakten.")})
+    # A pin may originate in the complete catalog before any workflow scan.
+    # Such entries have a registry identity but deliberately no signals head.
+    # Supplement them without creating a workflow row or inventing an MQL URL.
+    ergaenzt = {key_for(c) for c in ergaenzungen}
+    for row in _db.katalog_list():
+        key = key_for(row)
+        if key not in fehlen or key in ergaenzt or key[0] == "mql5":
+            continue
+        q = quellen_nach_kuerzel.get(key[0])
+        if q is None or row.get("quellen_uid") != q.get("quellen_uid"):
+            continue
+        c = {"id": key[1], "name": row.get("name") or str(key[1]),
+             "platform": row.get("platform") or "", "url": row.get("url") or "",
+             "abonnenten": row.get("abonnenten"), "wochen": row.get("wochen"),
+             "quelle_kuerzel": key[0], "quelle_id": q["id"],
+             "quellen_uid": row.get("quellen_uid"), "signal_ref": row.get("signal_ref"),
+             "quelle_version": row.get("version") or ""}
+        ergaenzungen.append(c)
+        ergaenzt.add(key)
+        if begruendung is not None:
+            begruendung_upsert(begruendung, begruendungseintrag(
+                c, "AUSGEWAEHLT", "📌 Fix-Signal aus dem vollständigen Quellenkatalog ergänzt."))
     return ergaenzungen

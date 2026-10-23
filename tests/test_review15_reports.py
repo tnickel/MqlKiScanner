@@ -120,7 +120,7 @@ def test_changed_evidence_or_criteria_invalidate_reports(live_reports, change):
 def test_old_unbound_reports_stay_in_history_and_are_not_reused(live_reports):
     pipe, _, scan = live_reports
     result = scan()
-    db.store_analysis(123, "gesamtbericht", "legacy-model", 15, "Legacy recommendation")
+    db.store_analysis(123, "gesamtbericht", "legacy-model", 15, "Legacy recommendation", quelle="mql5")
     assert not pipeline.restore_current_reports(result, pipe.settings)
     assert result.bericht_hinweis
     assert db.get_latest_analysis(123, "gesamtbericht")["text"] == "Legacy recommendation"
@@ -146,7 +146,7 @@ def test_different_basis_cannot_replace_one_part_of_a_matching_report(live_repor
     correct_risk = result.risiko_analyse
     other = replace(result, stop_evidence="none")
     db.store_analysis(123, "risiko_analyse", "model", 5, "Other CSV risk",
-                      basis=pipeline.report_basis_for(other, pipe.settings))
+                      basis=pipeline.report_basis_for(other, pipe.settings), quelle="mql5")
     assert pipeline.restore_current_reports(result, pipe.settings)
     assert result.risiko_analyse == correct_risk
 
@@ -173,14 +173,23 @@ def test_saved_snapshot_hash_allows_reading_report_when_csv_is_offline(live_repo
     assert offline.gesamtbericht == result.gesamtbericht
 
 
-def test_legacy_schema_migration_preserves_text_and_is_concurrent_safe():
+def test_legacy_schema_requires_copy_migration_and_preserves_global_text(monkeypatch):
     db.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db.DB_PATH) as conn:
         conn.execute("CREATE TABLE analyses (id INTEGER PRIMARY KEY AUTOINCREMENT, "
                      "signal_id INTEGER, kind TEXT, model TEXT, tokens INTEGER, text TEXT, created_at TEXT)")
         conn.execute("INSERT INTO analyses (kind, text) VALUES ('portfolio', 'historical text')")
+    before = db.file_sha256(str(db.DB_PATH))
+    def rejected_init(_):
+        with pytest.raises(db.IdentityMigrationRequired):
+            db.init_db()
     with ThreadPoolExecutor(max_workers=4) as pool:
-        list(pool.map(lambda _: db.init_db(), range(4)))
+        list(pool.map(rejected_init, range(4)))
+    assert db.file_sha256(str(db.DB_PATH)) == before
+    from mqlkiscanner.identity_migration import migrate_copy
+    target = db.DB_PATH.with_name("migrated.sqlite")
+    migrate_copy(db.DB_PATH, target, settings={})
+    monkeypatch.setattr(db, "DB_PATH", target)
     legacy = db.get_latest_analysis(None, "portfolio")
     assert legacy["text"] == "historical text" and legacy["basis"] is None
     assert db.get_latest_analysis(None, "portfolio", basis="new") is None

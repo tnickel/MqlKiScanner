@@ -38,10 +38,10 @@ def test_mirror_same_identity_only_uses_first_candidate():
 
 def test_transient_error_keeps_last_successful_partial_scan_scope():
     db.init_db()
-    db.store_ampel_verlauf(123, "2026-10-15T12:00:00", "mql5", "🟢", None, "ok", {})
+    db.store_ampel_verlauf(123, "2026-10-15T12:00:00", "mql5", "🟢", None, "ok", {}, signal_quelle="mql5")
     failed = SimpleNamespace(id=123, ampel="⚪", source_kind="live", fehler="Timeout")
     assert fix_signale.teilscan_ziel_ids([failed], {"fix_signal_ids": []}) == {123}
-    db.store_ampel_verlauf(123, "2026-10-16T12:00:00", "mql5", "🔴", None, "DD", {})
+    db.store_ampel_verlauf(123, "2026-10-16T12:00:00", "mql5", "🔴", None, "DD", {}, signal_quelle="mql5")
     assert fix_signale.teilscan_ziel_ids([failed], {"fix_signal_ids": []}) == set()
 
 
@@ -131,7 +131,7 @@ def test_non_usd_export_preserves_native_audit_and_blocks_financial_analysis(
 def test_failed_attempt_survives_db_reload_in_partial_scan_scope(monkeypatch):
     db.init_db()
     db.upsert_signal(123, platform="MT5", quelle="mql5")
-    db.store_ampel_verlauf(123, "2026-10-15T12:00:00", "mql5", "🟡", None, "ok", {})
+    db.store_ampel_verlauf(123, "2026-10-15T12:00:00", "mql5", "🟡", None, "ok", {}, signal_quelle="mql5")
     monkeypatch.setattr(signal_stats, "fetch_signal_stats", Mock(side_effect=TimeoutError("temporary")))
     failed = pipeline.ScanPipeline({})._analyze_candidate_once(
         None, {"id": 123, "platform": "MT5"}, lambda _: None)
@@ -199,7 +199,7 @@ def test_only_proven_usd_mql_study_can_fill_display(currency):
     r = result(quelle="mql5", account_currency=currency, trades_sha256="same",
                equity_dd_rekonstruiert_pct=None)
     report = {"verlaesslich": True, "equity_dd_pct": 8}
-    pipeline.studie_anwenden(r, {r.id: {"trades_sha": "same", "dd_usd": 80,
+    pipeline.studie_anwenden(r, {r.signal_key: {"trades_sha": "same", "dd_usd": 80,
                                       "report": report}})
     assert r.true_dd_usd == (80 if currency == "USD" else None)
 

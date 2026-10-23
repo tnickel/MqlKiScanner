@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 import streamlit as st
 from mqlkiscanner import config, db, downloader_client, downloader_sync, fix_signale, llm_runner, quellen
+from .signal_identity import identity_key, stable_identity_key
 from mqlkiscanner import regelwerk
 from mqlkiscanner.ampel_matrix import KRITERIEN, LABELS, kriterien_matrix
 from mqlkiscanner.pdf_reports import (
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
 
 def _result_identity(result) -> tuple:
     """Different local CSV snapshots can share one signal ID (including zero)."""
-    return (result.source_kind, result.id, result.trades_path,
+    return (result.source_kind, stable_identity_key(result), identity_key(result), result.trades_path,
             result.trades_sha256, result.name)
 
 
@@ -247,11 +248,11 @@ def render_fehlende_kursdaten(results) -> None:
 
 
 @st.dialog("Abonnenten-Verlauf", width="large")
-def _abo_verlauf_dialog(signal_id: int, name: str, fenster: str) -> None:
+def _abo_verlauf_dialog(signal_id: int, name: str, fenster: str, quelle: str) -> None:
     """Fenster mit dem gespiegelten Abonnenten-Verlauf (Gesamt / 30 / 7 Tage)."""
-    punkte = db.get_history(signal_id)
+    punkte = db.get_history(signal_id, quelle=quelle)
     titel = _ABO_FENSTER.get(fenster, fenster)
-    st.caption(f"{name} (#{signal_id}) · {titel} · Quelle: MqlDownloader-Spiegel")
+    st.caption(f"{name} ({quelle}:{signal_id}) · {titel} · lokaler Downloader-Spiegel")
     if not punkte:
         st.info("Kein Verlauf gespeichert. Erst den MqlDownloader-Abgleich "
                 "ausführen (Station 6 oder Button auf dieser Seite).")
@@ -315,6 +316,27 @@ def _max_drawdown_zellenstil(value, limit) -> str:
     return f"background-color: {hintergrund}; color: {text}"
 
 
+def qualified_result_keys(keys, results) -> set[tuple[str, int]]:
+    """Legacy numeric selections survive only when their source is unique."""
+    from .signal_identity import AmbiguousSignalIdentity
+    qualified = set()
+    results = tuple(results)
+    for key in keys or ():
+        if isinstance(key, (tuple, list)) and len(key) == 2:
+            qualified.add((db.kanonische_quelle(key[0]), int(key[1])))
+        elif isinstance(key, int):
+            candidates = {identity_key(r) for r in results if int(r.id) == key}
+            if len(candidates) != 1:
+                continue
+            try:
+                owner = db.resolve_identity(key)
+            except AmbiguousSignalIdentity:
+                continue
+            if owner is None or identity_key(owner) in candidates:
+                qualified.update(candidates)
+    return qualified
+
+
 def results_to_dataframe(results, fresh_ids: set[int] | None = None,
                          fix_ids: set[int] | None = None) -> pd.DataFrame:
     results = tuple(copy(r) for r in results)
@@ -323,48 +345,62 @@ def results_to_dataframe(results, fresh_ids: set[int] | None = None,
         return pd.DataFrame()
     df = pd.DataFrame(rows)
     if fresh_ids is not None:
-        df.insert(0, "Stand", ["NEU" if r.id in fresh_ids else "" for r in results])
+        fresh_ids = qualified_result_keys(fresh_ids, results)
+        df.insert(0, "Stand", ["NEU" if identity_key(r) in fresh_ids else "" for r in results])
     if fix_ids is not None:
+        fix_ids = qualified_result_keys(fix_ids, results)
         df.insert(0 if fresh_ids is None else 1, "Fix",
-                  ["📌 FIX" if r.id in fix_ids else "" for r in results])
+                  ["📌 FIX" if identity_key(r) in fix_ids else "" for r in results])
     df["Bericht vom"] = pd.to_datetime(df["Bericht vom"], errors="coerce")
     df["Bericht"] = ":material/picture_as_pdf: Öffnen"
     return df
 
 
-def render_results_table(results, key: str = "results_table", compact: bool = True,
-                         fresh_ids: set[int] | None = None,
-                         fix_ids: set[int] | None = None) -> ScanResult | None:
-    """Tabelle mit Ampel- und Bericht-Button; Rueckgabe = gewaehlter Ergebnissnapshot."""
+def results_table_dataframe(results, fresh_ids: set[int] | None = None,
+                            fix_ids: set[int] | None = None) -> pd.DataFrame:
+    """Shared factual table/export data, including local source metadata."""
     results = tuple(copy(r) for r in results)
     df = results_to_dataframe(results, fresh_ids=fresh_ids, fix_ids=fix_ids)
     if df.empty:
-        st.info("Noch keine Ergebnisse — erst einen Scan starten oder die "
-                "Verifikations-Datensaetze laden.")
-        return None
+        return df
     # Je Quelle die richtige Anbieter-URL (Nutzer-Fall 16.10.2026: Pelican-
     # Algo öffnete pauschal die MQL5-Seite) — kein mql5-Hardcode mehr.
     df["Link"] = [quellen.oeffnen_url(r.quelle, r.id, getattr(r, "url", ""))
                   for r in results]
-    docs_counts = db.downloader_report_counts([r.id for r in results])
+    docs_counts = db.downloader_report_counts([identity_key(r) for r in results])
     abo = downloader_sync.abo_bilanz(
-        [r.id for r in results],
-        platformen={r.id: getattr(r, "platform", "") or "" for r in results})
-    df["Abonnenten"] = [(str(abo[r.id]["abonnenten"])
-                         if abo[r.id]["abonnenten"] is not None else "")
+        [identity_key(r) for r in results],
+        platformen={identity_key(r): getattr(r, "platform", "") or "" for r in results})
+    df["Abonnenten"] = [(str(abo[identity_key(r)]["abonnenten"])
+                         if abo[identity_key(r)]["abonnenten"] is not None else "")
                         for r in results]
-    df["30 Tage"] = [_abo_delta_zelle(abo[r.id]["tage30"]) for r in results]
-    df["7 Tage"] = [_abo_delta_zelle(abo[r.id]["tage7"]) for r in results]
+    df["30 Tage"] = [_abo_delta_zelle(abo[identity_key(r)]["tage30"]) for r in results]
+    df["7 Tage"] = [_abo_delta_zelle(abo[identity_key(r)]["tage7"]) for r in results]
 
     df["Dokumente"] = [
         dokumente_zelle(
             normale=sum(bool(getattr(r, feld, "")) for feld in
                         ("trade_analyse", "risiko_analyse", "gesamtbericht")),
             tiefenanalysen=1 if getattr(r, "tiefenanalyse", "") else 0,
-            downloader=docs_counts.get(r.id, 0),
+            downloader=docs_counts.get(identity_key(r), 0),
         )
         for r in results
     ]
+    return df
+
+
+def render_results_table(results, key: str = "results_table", compact: bool = True,
+                         fresh_ids: set[int] | None = None,
+                         fix_ids: set[int] | None = None, *,
+                         table_data: pd.DataFrame | None = None) -> ScanResult | None:
+    """Tabelle mit Ampel- und Bericht-Button; Rueckgabe = gewaehlter Ergebnissnapshot."""
+    results = tuple(copy(r) for r in results)
+    df = (results_table_dataframe(results, fresh_ids=fresh_ids, fix_ids=fix_ids)
+          if table_data is None else table_data.copy())
+    if df.empty:
+        st.info("Noch keine Ergebnisse — erst einen Scan starten oder die "
+                "Verifikations-Datensaetze laden.")
+        return None
 
     def _open_report():
         click = st.session_state.get(f"{key}_bericht")  # ButtonColumn-Click-Info
@@ -384,7 +420,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             if click is not None and getattr(click, "row", None) is not None:
                 treffer = results[click.row]
                 _abo_verlauf_dialog(treffer.id, treffer.name or f"#{treffer.id}",
-                                    fenster)
+                                    fenster, identity_key(treffer)[0])
         return handler
 
     def _open_eqdd():
@@ -501,10 +537,10 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                      "Trading-DD aus geschlossenen Trades."),
             "Max-Drawdown %": st.column_config.NumberColumn(
                 "Max-Drawdown % (Equity)", format="%.1f",
-                help="Gemessene Equity inklusive offener Gewinne und Verluste: "
-                     "höchster belastbarer Wert aus Kurs-Nachmessung oder Monitor. "
-                     "Die Kurs-Nachmessung reitet auf der realen Kontokurve "
-                     "ohne spätere Ein-/Auszahlungen; der Monitor hat eine eigene Basis. "
+                help="Eigene belastbare H1-Kursmessung der Equity inklusive offener "
+                     "Gewinne und Verluste der exportierten Positionen. "
+                     "Ein-/Auszahlungen werden in der realen Kontokurve berücksichtigt. "
+                     "Monitor-Closing-DD ist ein separater Schrankenkanal und kein Wert dieser Spalte. "
                      "Fehlt die Messung, bleibt das Feld leer. H1-Kurse erfassen "
                      "keine Tiefs innerhalb einer Stunde. Farbe: grün bis 80 % "
                      "der konfigurierten Drawdown-Grenze, gelb bis zur Grenze, "
@@ -544,7 +580,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                      "Öffnet ein Fenster mit Chart, Zoom und Risiko-Texten; "
                      "dauert einige Sekunden (MT5-Terminal + Kurse laden).",
                 on_click=_open_eqdd, key=f"{key}_eqdd"),
-            "Link": st.column_config.LinkColumn("MQL5", width="small"),
+            "Link": st.column_config.LinkColumn("Signal-Link", width="small"),
             "Abonnenten": st.column_config.ButtonColumn(
                 "Abonnenten",
                 help="Klick: Gesamtverlauf der Abonnenten anzeigen (MqlDownloader)",
@@ -664,10 +700,11 @@ def render_wechsel_karten(wechsel: list[dict]) -> None:
         # 🟢 soll nicht überdecken, dass der Betreuer früher einen Stilbruch
         # festgestellt hat — ein Lookup je Signal, gecacht für die Liste.
         sig = w.get("signal_id")
-        if sig is not None and sig not in _stilbruch_cache:
-            _stilbruch_cache[sig] = dossier_db.stilbruch_historie(int(sig),
-                                                                  limit=1)
-        hist = _stilbruch_cache.get(sig) or []
+        sig_key = (w.get("signal_quelle") or "mql5", sig)
+        if sig is not None and sig_key not in _stilbruch_cache:
+            _stilbruch_cache[sig_key] = dossier_db.stilbruch_historie(int(sig),
+                                               limit=1, quelle=sig_key[0])
+        hist = _stilbruch_cache.get(sig_key) or []
         if hist:
             body.append(f"⚠️ **Stilbruch-Historie** (zuletzt "
                         f"{str(hist[0]['ts'])[:10]}) — die Vergangenheit bleibt "
@@ -693,8 +730,9 @@ def render_report_panel(results) -> None:
     if report_id is None:
         return
     identity = st.session_state.get("report_result_identity")
+    legacy_keys = qualified_result_keys({report_id}, results) if identity is None else set()
     matching = [x for x in results if (_result_identity(x) == identity if identity is not None
-                                     else x.id == report_id)]
+                                     else x.id == report_id and identity_key(x) in legacy_keys)]
     # An old ID-only selection is safe only when it identifies exactly one row.
     r = matching[0] if len(matching) == 1 else None
     if r is None:
@@ -703,9 +741,9 @@ def render_report_panel(results) -> None:
     with st.container(border=True):
         head = st.container(horizontal=True)
         head.markdown(f"### :material/description: Ausführlicher Bericht — "
-                      f"{r.name} (#{r.id})")
+                      f"{r.name} ({identity_key(r)[0]}:{r.id})")
         with head:
-            close_report = action_button("Schließen", key=f"close_report_{r.id}", help_key="reports")
+            close_report = action_button("Schließen", key=f"close_report_{stable_identity_key(r)}", help_key="reports")
         if close_report:
             clear_report_selection()
             st.rerun()
@@ -756,17 +794,17 @@ def _downloader_versions(result) -> list[str]:
 
 def _dl_fetch_history(result) -> int:
     """Abonnenten-Verlauf holen und spiegeln (Logik: downloader_sync)."""
-    return downloader_sync.sync_history(result.id, getattr(result, "platform", ""))
+    return downloader_sync.sync_history(result.id, getattr(result, "platform", ""), quelle=identity_key(result)[0])
 
 
 def _dl_fetch_reports(result) -> list[str]:
     """Testreport-PDFs spiegeln, unveränderte überspringen (downloader_sync)."""
-    return downloader_sync.sync_reports(result.id, getattr(result, "platform", ""))
+    return downloader_sync.sync_reports(result.id, getattr(result, "platform", ""), quelle=identity_key(result)[0])
 
 
 def _render_dl_history(result) -> None:
     """Gespeicherten Abonnenten-Verlauf als Chart, Kennzahl und Tabelle."""
-    punkte = db.get_history(result.id)
+    punkte = db.get_history(result.id, quelle=identity_key(result)[0])
     if not punkte:
         st.info("Noch kein Abonnenten-Verlauf gespeichert. "
                 "„Nutzer-Verlauf aktualisieren“ lädt ihn aus den Datenquellen.")
@@ -794,13 +832,13 @@ def _render_dl_history(result) -> None:
 
 def _render_dl_reports(result) -> None:
     """Gespiegelte Testreport-PDFs mit Anzeige- und Speichern-Button."""
-    berichte = db.list_downloader_reports(result.id)
+    berichte = db.list_downloader_reports(result.id, quelle=identity_key(result)[0])
     if not berichte:
         st.info("Noch keine Testreport-PDFs gespiegelt. „Testberichte aktualisieren“ "
                 "lädt sie aus den Datenquellen.")
         return
     for index, item in enumerate(berichte):
-        key = f"dl_pdf_{result.id}_{item['version']}_{index}"
+        key = f"dl_pdf_{stable_identity_key(result)}_{item['version']}_{index}"
         pfad = Path(item["path"])
         visible_key = f"{key}_visible"
         visible = bool(st.session_state.get(visible_key))
@@ -845,7 +883,7 @@ def render_downloader_section(result) -> None:
         return
     with st.container(border=True):
         actions = st.container(horizontal=True, vertical_alignment="center")
-        if actions.button("Nutzer-Verlauf aktualisieren", key=f"dl_history_{result.id}",
+        if actions.button("Nutzer-Verlauf aktualisieren", key=f"dl_history_{stable_identity_key(result)}",
                           icon=":material/timeline:"):
             try:
                 neu = _dl_fetch_history(result)
@@ -853,7 +891,7 @@ def render_downloader_section(result) -> None:
                     st.toast("Keine neuen Abonnenten-Datenpunkte.", icon=":material/check:")
             except downloader_client.DownloaderError as exc:
                 st.error(f"Abonnenten-Verlauf konnte nicht geladen werden: {exc}")
-        if actions.button("Testberichte aktualisieren", key=f"dl_reports_{result.id}",
+        if actions.button("Testberichte aktualisieren", key=f"dl_reports_{stable_identity_key(result)}",
                           icon=":material/cloud_download:"):
             try:
                 if not _dl_fetch_reports(result):
@@ -889,20 +927,22 @@ def render_downloader_docs_panel(results) -> None:
     identity = st.session_state.get("downloader_doc_identity")
     match = next((x for x in results
                   if identity is not None and _result_identity(x) == identity), None)
-    if match is None:
-        match = next((x for x in results if x.id == doc_id), None)
+    if match is None and identity is None:
+        legacy_keys = qualified_result_keys({doc_id}, results)
+        legacy = [x for x in results if x.id == doc_id and identity_key(x) in legacy_keys]
+        match = legacy[0] if len(legacy) == 1 else None
     if match is None:
         st.session_state.pop("downloader_doc_signal_id", None)
         st.session_state.pop("downloader_doc_identity", None)
         return
-    berichte = db.list_downloader_reports(doc_id)
+    berichte = db.list_downloader_reports(doc_id, quelle=identity_key(match)[0])
     eigene = [(art, label) for art, label in _DOK_ARTEN
               if getattr(match, art, "")]
     with st.container(border=True):
         kopf = st.container(horizontal=True, vertical_alignment="center")
-        kopf.markdown(f"### :material/folder_open: Dokumente — {match.name} (#{doc_id})")
+        kopf.markdown(f"### :material/folder_open: Dokumente — {match.name} ({identity_key(match)[0]}:{doc_id})")
         with kopf:
-            if action_button("Schließen", key=f"close_docs_{doc_id}",
+            if action_button("Schließen", key=f"close_docs_{stable_identity_key(match)}",
                              help_key="downloader_docs"):
                 st.session_state.pop("downloader_doc_signal_id", None)
                 st.session_state.pop("downloader_doc_identity", None)
@@ -923,7 +963,7 @@ def render_downloader_docs_panel(results) -> None:
         if berichte:
             st.markdown("**Testreport-PDFs (MqlDownloader-Spiegel)**")
             for index, item in enumerate(berichte):
-                key = f"docs_panel_{doc_id}_{index}"
+                key = f"docs_panel_{stable_identity_key(match)}_{index}"
                 pfad = Path(item["path"])
                 groesse_kb = (item["size_bytes"] / 1024
                               if item.get("size_bytes") else 0)
@@ -967,26 +1007,26 @@ def render_detail(result) -> None:
     settings = config.load_settings()
     dd_limit = settings.get("schranke_eq_dd_pct", 30.0)
     with st.container(horizontal=True, vertical_alignment="center"):
-        st.subheader(f"{result.ampel} {result.name} · #{result.id}")
+        st.subheader(f"{result.ampel} {result.name} · {identity_key(result)[0]}:{result.id}")
         if result.url:
-            st.link_button("Auf MQL5 öffnen", result.url, icon=":material/open_in_new:")
+            st.link_button("Signal öffnen", result.url, icon=":material/open_in_new:")
 
     # Fix-Checkmark (Nutzer-Wunsch 28.09.2026): Signal-ID für JEDEN Scan pinnen.
     # Der Widget-Key enthält den aktuellen Zustand — ändert sich der Zustand
     # woanders (z. B. über die Fix-IDs-Verwaltung), entsteht ein frisches
     # Widget mit richtigem Häkchen statt eines veralteten Klicks.
     if getattr(result, "source_kind", "live") == "live" and result.id:
-        fix_ist = result.id in fix_signale.fix_ids()
+        fix_ist = fix_signale.ist_fix(result)
         fix_neu = st.checkbox(
             "📌 Fix — immer scannen", value=fix_ist,
-            key=f"fix_check_{result.id}_{int(fix_ist)}",
+            key=f"fix_check_{stable_identity_key(result)}_{int(fix_ist)}",
             help="Setzt diese Signal-ID auf die Immer-Scannen-Liste: Jeder Scan "
                  "(Full-Scan, Teilscan, autonome Scans) prüft das Signal — auch "
                  "wenn es aus den MQL5-Top-Listen rutscht, die Wochen-/Abonnenten-"
                  "Vorfilter nicht bestehen oder die Export-Auswahl (top N) voll ist. "
                  "Kein Vorzugsurteil: Ampel und Score gelten unverändert.")
         if fix_neu != fix_ist:
-            fix_signale.setzen(result.id, fix_neu)
+            fix_signale.setzen(result.id, fix_neu, quelle=identity_key(result)[0])
             st.toast(f"#{result.id} " + ("ist jetzt Fix — wird in jedem Scan geprüft"
                                          if fix_neu else "ist kein Fix-Signal mehr"),
                      icon=":material/push_pin:")
@@ -1028,7 +1068,7 @@ def render_detail(result) -> None:
     # Ampel später z. B. von 🟡 auf 🟢 wechselt; das Ampel-Urteil sagt nur
     # den heutigen Stand.
     from .agenten import dossier as dossier_db
-    stilbrueche = dossier_db.stilbruch_historie(result.id)
+    stilbrueche = dossier_db.stilbruch_historie(result.id, quelle=identity_key(result)[0])
     if stilbrueche:
         letztes_datum = str(stilbrueche[0]["ts"] or "")[:10]
         with st.container(border=True):
@@ -1046,7 +1086,7 @@ def render_detail(result) -> None:
                     st.markdown(str(b["text"] or ""))
 
     if result.ampel == "⛔":
-        eintrag = regelwerk.ausgeschlossen_eintrag(result.id)
+        eintrag = regelwerk.ausgeschlossen_eintrag(result.id, quelle=identity_key(result)[0])
         grund = (eintrag or {}).get("grund", "")
         with st.container(border=True):
             section_header("Regelwerk · Ausschlussliste",

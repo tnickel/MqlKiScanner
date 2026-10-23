@@ -24,6 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
+from mqlkiscanner.signal_identity import identity_key, stable_identity_key
 
 from mqlkiscanner import client_updates, config, db, downloader_sync, fix_signale, pipeline, quellen, scan_state, scan_worker, secrets_store, verbindungs_monitor
 from mqlkiscanner.station_dialoge import (
@@ -164,8 +165,9 @@ page_header(
     "Handelssignale aller Quellen belastbar prüfen",
     "Eine Analyse verbindet Handelsdaten aus allen angeschlossenen Quellen "
     "(MQL5, Pelican, RoboForex, Vantage, Zulu — je nach Konfiguration), "
-    "forensische Risikotests und optional KI-Berichte. **Schutz muss belegt "
-    "sein; 30 % Drawdown ist die harte Grenze.**",
+    "forensische Risikotests und optional KI-Berichte. "
+    f"**Drawdown-Grenze: {float(settings['schranke_eq_dd_pct']):g} %; "
+    f"Grün benötigt belastbaren Jahres-Calmar ≥ {config.min_calmar_jahr(settings):g}.**",
     image_path=str(hero_banner) if hero_banner.exists() else None,
 )
 if reattached:
@@ -479,12 +481,12 @@ with st.container(border=True, key="scan_control_panel"):
                      "kein harter Abbruch, fertige Teilergebnisse bleiben erhalten.",
             )
         else:
-            fix_hinweis = fix_signale.fix_ids()
+            fix_hinweis = fix_signale.fix_keys()
             st.caption(
                 "Full-Scan prüft alles; Teilscan nur 🟢/🟡-Signale"
                 + (" plus Fix-IDs" if fix_hinweis else "")
                 + " mit allen KI-Stufen. Stop jederzeit möglich."
-                + (f" Fix gesetzt: {', '.join(f'#{i}' for i in sorted(fix_hinweis))}."
+                + (f" Fix gesetzt: {', '.join(f'{quelle}:{sid}' for quelle, sid in sorted(fix_hinweis))}."
                    if fix_hinweis else ""))
 
     _live_status()
@@ -819,16 +821,16 @@ if command:
             # Fix-IDs sind zusätzlich IMMER im Scope (Nutzer-Wunsch
             # 28.09.2026: definierte IDs immer scannen).
             alt_ergebnisse = pipeline.results_from_db(cfg)
-            ziel_ids = fix_signale.teilscan_ziel_ids(alt_ergebnisse, cfg)
+            ziel_ids = fix_signale.teilscan_ziel_keys(alt_ergebnisse, cfg)
             vorher = len(cands)
             fix_signale.begruende_teilscan_scope(
                 control.get("begruendung"), cands, ziel_ids, alt_ergebnisse)
-            cands = [c for c in cands if c["id"] in ziel_ids]
+            cands = [c for c in cands if identity_key(c) in ziel_ids]
             # Quelle offline (z. B. PelicanMonitor aus): deren 🟢/🟡 aus der
             # DB ergänzen — Forensik aus den Cache-Artefakten (Nutzer-Fall
             # 02.10.: 12 pelik-🟡 wurden still übersprungen).
             ergaenzungen = fix_signale.teilscan_ergaenze_aus_db(
-                ziel_ids, {c["id"] for c in cands}, cfg,
+                ziel_ids, {identity_key(c) for c in cands}, cfg,
                 begruendung=control.get("begruendung"))
             if ergaenzungen:
                 cands.extend(ergaenzungen)
@@ -860,10 +862,10 @@ if command:
         only_new = bool(cfg.get("nur_neue"))
         alt: dict[int, pipeline.ScanResult] = {}
         if only_new:
-            alt = {r.id: r for r in pipeline.results_from_db(cfg) if r.forensik_vorhanden
+            alt = {identity_key(r): r for r in pipeline.results_from_db(cfg) if r.forensik_vorhanden
                    and getattr(r, "source_kind", "live") == "live"}
-        neu = [c for c in scope if c["id"] not in alt] if only_new else scope
-        uebernommen = [alt[c["id"]] for c in scope if c["id"] in alt]
+        neu = [c for c in scope if identity_key(c) not in alt] if only_new else scope
+        uebernommen = [alt[identity_key(c)] for c in scope if identity_key(c) in alt]
         session = pipeline.Mql5Session(cfg)
         log = w_log_for("forensik")
         if only_new and not neu:
@@ -924,16 +926,16 @@ if command:
                     result = pipe.analyze_candidate(
                         session, candidate, log, should_stop=lambda: bool(control.get("stop")))
                     results.append(result)
-                    new_ids.append(result.id)
+                    new_ids.append(identity_key(result))
                     _merke_wechsel(result)
                     if result.persisted_this_run:
-                        control["refreshed_ids"].append(result.id)
+                        control["refreshed_ids"].append(identity_key(result))
                 except pipeline.Mql5HardStopError as exc:
                     if getattr(exc, "result", None) is not None:
                         results.append(exc.result)
                         _merke_wechsel(exc.result)
                         if exc.result.persisted_this_run:
-                            control["refreshed_ids"].append(exc.result.id)
+                            control["refreshed_ids"].append(identity_key(exc.result))
                     log(str(exc))
                     skipped = len(neu) - (i + 1)
                     if skipped > 0:
@@ -1089,10 +1091,10 @@ if command:
         ziele: list[tuple[int, str]] = []
         gesehen: set[int] = set()
         for r in alle:
-            if getattr(r, "source_kind", "live") != "live" or not r.id or r.id in gesehen:
+            if getattr(r, "source_kind", "live") != "live" or not r.id or identity_key(r) in gesehen:
                 continue
-            gesehen.add(r.id)
-            ziele.append((r.id, getattr(r, "platform", "") or ""))
+            gesehen.add(identity_key(r))
+            ziele.append((identity_key(r)[0], r.id, getattr(r, "platform", "") or ""))
         if not downloader_sync.konfiguriert():
             w_step("downloader", "skipped",
                    detail="MqlDownloader nicht konfiguriert (Admin → MqlDownloader)")
@@ -1322,7 +1324,7 @@ if st.session_state.scan_results:
     st.caption("Tipp: Eine Tabellenzeile auswählen, um die vollständige Risikoprüfung darunter zu öffnen.")
     render_report_panel(results)
     render_downloader_docs_panel(results)
-    selected = render_results_table(results, fix_ids=fix_signale.fix_ids())
+    selected = render_results_table(results, fix_ids=fix_signale.fix_keys())
     if selected is not None:
         from mqlkiscanner.app_ui import render_detail
         render_detail(selected)

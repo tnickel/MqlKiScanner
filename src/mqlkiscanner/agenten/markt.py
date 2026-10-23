@@ -55,8 +55,9 @@ def beobachtungsliste(settings: dict | None = None) -> list[str]:
     from . import betreuer  # spät: kein Kreisimport
     with db._connect() as conn:
         for kandidat in betreuer.kandidaten(settings):
-            row = conn.execute("SELECT json FROM forensik WHERE signal_id=?",
-                               (kandidat["id"],)).fetchone()
+            identity = db.resolve_identity(kandidat["id"], quelle=kandidat.get("quelle") or "mql5")
+            row = conn.execute("SELECT json FROM forensik WHERE signal_ref=?",
+                               (identity.signal_ref if identity else None,)).fetchone()
             if not row:
                 continue
             try:

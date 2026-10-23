@@ -26,6 +26,8 @@ from typing import Callable
 from . import config, db, secrets_store
 from .agenten import lock
 from .llm_runner import run_tiefenanalyse_einzeln
+from .llm import prompts as llm_prompts
+from .signal_identity import identity_key
 
 _BATCH_ATTR = "_mqlkiscanner_tiefen_batch"
 
@@ -59,10 +61,17 @@ def _batch_starten(ziele: list, settings: dict | None = None,
     """
     if batch_laeuft():
         return False, "Es läuft bereits eine Batch-Erweiterte-KI-Analyse."
+    fehlend = llm_prompts.fehlende_vorlagen()
+    if fehlend:
+        pfade = ", ".join(f"config/prompts/{k}.md" for k in fehlend)
+        return False, ("Berichtsvorlage(n) fehlen oder sind leer: "
+                       + pfade + " — im Admin unter Berichtsvorlagen "
+                       "per Zurücksetzen wiederherstellen.")
     if not secrets_store.get_secret("glm_api_key"):
         return False, "Kein GLM-Key hinterlegt (Admin-Bereich → Zugänge)."
     if not ziele:
         return False, "Keine geeigneten Signale (mit Trade-Daten) in der Quelle."
+    ziele = list({identity_key(result): result for result in ziele}.values())
     einstellungen = {**config.load_settings(), **(settings or {})}
     workflow_lock = lock.lauf_lock(config.DATA_DIR)
     try:
@@ -97,17 +106,17 @@ def _batch_starten(ziele: list, settings: dict | None = None,
             from .pipeline import report_basis_for as _basis_fuer
             _basis = _basis_fuer(result, einstellungen)
             if db.get_latest_analysis(result.id, "tiefenanalyse",
-                                      basis=_basis):
+                                      basis=_basis, quelle=identity_key(result)[0]):
                 zustand["uebersprungen"] += 1
                 zustand["done"] = i
                 continue
-            zustand["aktuell"] = f"{result.name or 'Unbenannt'} (#{result.id})"
+            zustand["aktuell"] = f"{result.name or 'Unbenannt'} ({identity_key(result)[0]}:{result.id})"
             try:
                 run_tiefenanalyse_einzeln(result, settings=einstellungen, log=None)
             except Exception as exc:  # Einzelfehler: weiter mit dem naechsten
                 zustand["fehler"] += 1
                 zustand["fehler_liste"].append(
-                    f"{result.name or 'Unbenannt'} (#{result.id}): "
+                    f"{result.name or 'Unbenannt'} ({identity_key(result)[0]}:{result.id}): "
                     f"{type(exc).__name__}: {exc}")
             zustand["done"] = i
         zustand["fertig"] = True

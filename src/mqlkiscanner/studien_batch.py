@@ -25,6 +25,7 @@ Laufprinzip:
 from __future__ import annotations
 
 import time
+from .signal_identity import identity_key
 import math
 from collections import deque
 from pathlib import Path
@@ -68,7 +69,7 @@ def luecken_sammeln(resultate: list, studien: dict, *,
     jobs: list = []
     erledigt = 0
     for res in resultate:
-        studie = studien.get(int(res.id))
+        studie = studien.get(identity_key(res))
         if studie:
             try:
                 pipeline.require_usd_account(res)
@@ -119,7 +120,7 @@ def starten(resultate: list, *, nur_luecken: bool = True,
     nicht mehr (kein DB-Churn je Signal).
     """
     settings = config.load_settings()
-    studien = {} if not nur_luecken else db.list_equity_studien()
+    studien = {} if not nur_luecken else db.list_equity_studien(identitaeten=True)
     if nur_luecken:
         jobs, erledigt = luecken_sammeln(resultate, studien,
                                           trades_nachladen=trades_nachladen)
@@ -162,7 +163,8 @@ def _laufe(jobs: list, control: dict, settings: dict,
             if control["abbruch"]:
                 control["phase"] = "abgebrochen"
                 break
-            control["aktuelles_signal"] = (getattr(res, "name", "") or str(res.id))
+            control["aktuelles_signal"] = (
+                f"{identity_key(res)[0]}:{res.id} · {getattr(res, 'name', '')}")
             control["phase"] = "rechnet"
             t0 = time.time()
             try:
@@ -184,7 +186,7 @@ def _laufe(jobs: list, control: dict, settings: dict,
                     control["uebersprungen"] += 1
             except Exception as exc:  # ein Signal darf den Batch nie brechen
                 control["fehler"].append(
-                    f"#{res.id} {getattr(res, 'name', '')}: "
+                    f"[{identity_key(res)[0]}] #{res.id} {getattr(res, 'name', '')}: "
                     f"{type(exc).__name__}: {exc}")
             # Klebender Terminal-Fallback zurücksetzen: Der Wechsel eines
             # Signals (fehlende Symbole) darf nicht die Folge-Signale ans
@@ -428,7 +430,7 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
     cagr = statistik.get("cagr_jahr_pct")
     geom = statistik.get("ertrag_monat_geom_pct")
 
-    vorher = db.get_equity_studie(int(res.id)) or {}
+    vorher = db.get_equity_studie(int(res.id), quelle=identity_key(res)[0]) or {}
     alter_report = vorher.get("report") or {}
     alter_broker = (alter_report.get("original_broker")
                    if res.trades_sha256 and vorher.get("trades_sha") == res.trades_sha256
@@ -453,7 +455,7 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
                 and isinstance(alter_dd, (int, float)) and not isinstance(alter_dd, bool)
                 and math.isfinite(alter_dd) and alter_dd >= 0):
             control.setdefault("skipped_gruende", []).append(
-                f"#{res.id} {getattr(res, 'name', '')}: Nachmessung nicht belastbar; "
+                f"[{identity_key(res)[0]}] #{res.id} {getattr(res, 'name', '')}: Nachmessung nicht belastbar; "
                 "bestehende SHA-passende verlaessliche Studie bleibt erhalten — "
                 + str(report.get("grund") or report.get("status") or "ohne Freigabe"))
             return False
@@ -461,9 +463,9 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
                                cagr_jahr_pct=cagr,
                                ertrag_monat_geom_pct=geom,
                                dd_usd=report.get("equity_dd_usd"),
-                               basislos=False, virtuell=virtuell_basis)
+                               basislos=False, virtuell=virtuell_basis, quelle=identity_key(res)[0])
         return True
     control["skipped_gruende"].append(
-        f"#{res.id} {getattr(res, 'name', '')}: keine Kapitalbasis — "
+        f"[{identity_key(res)[0]}] #{res.id} {getattr(res, 'name', '')}: keine Kapitalbasis — "
         + str(statistik.get("fehler") or "Statistik ohne Basis"))
     return False

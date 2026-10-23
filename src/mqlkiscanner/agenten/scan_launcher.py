@@ -241,17 +241,18 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
         # exakt wie die Ergebnis-Ansicht (results_from_db). Fix-IDs sind
         # zusätzlich IMMER im Scope (fix_signale.teilscan_ziel_ids).
         alt = pipeline.results_from_db(settings)
-        ziel_ids = fix_signale.teilscan_ziel_ids(alt, settings)
+        from ..signal_identity import key_for
+        ziel_ids = fix_signale.teilscan_ziel_keys(alt, settings)
         vorher = len(kandidaten)
         fix_signale.begruende_teilscan_scope(
             begruendung, kandidaten, ziel_ids, alt)
-        kandidaten = [c for c in kandidaten if c["id"] in ziel_ids]
+        kandidaten = [c for c in kandidaten if key_for(c) in ziel_ids]
         # Nutzer-Fall 02.10.: Quelle offline (z. B. PelicanMonitor aus) —
         # deren 🟢/🟡 fehlen im Crawl und wurden still übersprungen. Der
         # Vertrag „laut DB" wird jetzt erfüllt: Kandidaten aus dem DB-Stand
         # ergänzen; Forensik nutzt die gecachten Artefakte (Offline-Fallback).
         ergaenzungen = fix_signale.teilscan_ergaenze_aus_db(
-            ziel_ids, {c["id"] for c in kandidaten}, settings,
+            ziel_ids, {key_for(c) for c in kandidaten}, settings,
             begruendung=begruendung)
         if ergaenzungen:
             kandidaten.extend(ergaenzungen)
@@ -311,7 +312,7 @@ def _scan_innerhalb(modus: str, settings: dict, lauf_id: int, log) -> dict:
     journal.schritt_protokollieren(
         lauf_id, "dirigent", "scan",
         detail={"modus": modus, "station": "forensik",
-                "kandidaten": [c["id"] for c in scope]})
+                "kandidaten": [{"quelle": c.get("quelle_kuerzel") or "mql5", "id": c["id"]} for c in scope]})
     ergebnisse = []
     try:
         # L12 (Review-Handoff 29.09.): jede unerwartete Exception

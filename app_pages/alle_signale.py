@@ -22,15 +22,19 @@ from __future__ import annotations
 import json
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 import pandas as pd
 import streamlit as st
+from mqlkiscanner.signal_identity import identity_key, stable_identity_key
 
-from mqlkiscanner import db, downloader_client, katalog, pipeline, scan_worker
+from mqlkiscanner import db, downloader_client, downloader_sync, katalog, pipeline, scan_worker
+from mqlkiscanner import quellen
 from mqlkiscanner import signal_statistik, studien_batch
+from mqlkiscanner import tiefen_batch
 from mqlkiscanner import alle_signale_ui as tabellen_ui
 from mqlkiscanner.alle_signale_ui import render_detail, tabellen_zeile
 from mqlkiscanner.ui_design import apply_theme, info_button, page_header
@@ -111,17 +115,19 @@ def _lade_phase(text: str):
 
 _lade_phase('Gespeicherte Signale und Studien aus der Datenbank lesen')
 _katalog_rows = db.list_catalog()
-_studien = db.list_equity_studien()
+_studien = db.list_equity_studien(identitaeten=True)
 _quellen_katalog = db.katalog_list()
 _quellen_rows = db.list_quellen()
 _quellen_artefakte = db.list_quellen_artefakte()
+_mehrdeutige_ids = katalog.mehrdeutige_ids(
+    {katalog.signal_identitaet(row) for row in _katalog_rows + _quellen_katalog})
 gescannte = [r for r in pipeline.results_from_db(
                 catalog_rows=_katalog_rows, studien=_studien,
                 materialize_pdfs=False,
                 progress=_lade_phase('Workflow-Signale aufbereiten'))
              if getattr(r, 'source_kind', 'live') == 'live']
 katalog_resultate, katalog_stats = katalog.katalog_resultate(
-    gescannt={int(r['signal_id']) for r in _katalog_rows}, studien=_studien,
+    gescannt={katalog.signal_identitaet(r) for r in _katalog_rows}, studien=_studien,
     katalog_rows=_quellen_katalog, quellen_rows=_quellen_rows,
     artefakte=_quellen_artefakte,
     progress=_lade_phase('Lokalen Client-Katalog aufbereiten'))
@@ -133,22 +139,24 @@ if not alle:
             'starten.', icon=':material/info:')
     st.stop()
 
-stats_je_id = katalog.workflow_stats_bulk(
-    gescannte, {zeile['signal_id']: (zeile.get('stats') or {})
+_workflow_stats = katalog.workflow_stats_bulk(
+    gescannte, {identity_key(zeile): (zeile.get('stats') or {})
                for zeile in _katalog_rows},
     katalog_rows=_quellen_katalog, quellen_rows=_quellen_rows,
     artefakte=_quellen_artefakte)
-stats_je_id.update(katalog_stats)
+stats_je_identitaet = {katalog.signal_identitaet(r): _workflow_stats.get(identity_key(r), {})
+                     for r in gescannte}
+stats_je_identitaet.update(katalog_stats)
 # Virtuelle Studien (Batch, 08.10.): die 10k-Annahme in die Vorstufen-
 # Statistik koppeln — so rechnet Gewinn %/M und Trading-DD % sinnvoll statt
 # verzerrt ohne Basis (klar als „Basis: virtuell" gekennzeichnet).
 for _resultat in alle:
-    _studie = _studien.get(int(_resultat.id)) or {}
+    _studie = _studien.get(identity_key(_resultat)) or {}
     _studien_sha = _studie.get('trades_sha') or ''
     _trades_sha = getattr(_resultat, 'trades_sha256', '') or ''
     if (_studie.get('virtuell') and _studien_sha and _trades_sha
             and _studien_sha == _trades_sha):
-        _basis_stats = stats_je_id.setdefault(int(_resultat.id), {})
+        _basis_stats = stats_je_identitaet.setdefault(katalog.signal_identitaet(_resultat), {})
         # Gespeicherte Workflow-Stats enthalten oft explizit None:
         # setdefault würde dann die virtuelle Studienbasis NICHT ergänzen.
         # Eine echte oder bereits gesetzte Basis bleibt maßgeblich.
@@ -160,10 +168,6 @@ with st.container(horizontal=True):
     suche = st.text_input('🔍 Suchen — Name oder Signal-ID',
                           key='alle_signale_suche',
                           placeholder='Tippen zum Filtern: z. B. dino oder 1286742')
-    quellen = sorted({r.quelle for r in alle})
-    gewaehlte_quellen = st.pills('Quelle', quellen, selection_mode='multi',
-                                 key='alle_signale_quelle',
-                                 default=quellen if len(quellen) <= 5 else None)
     herkunft = st.radio('Herkunft', ['Alle', 'Workflow (gescannt)', 'Katalog (neu)'],
                         horizontal=True, key='alle_signale_herkunft',
                         help='Workflow = bereits gescannt (mit Ampel/Forensik) · '
@@ -199,7 +203,7 @@ def _statistik_fuer(result) -> dict | None:
     pfad = getattr(result, 'trades_path', '') or ''
     if not pfad or not Path(pfad).exists():
         return None
-    rohstats = stats_je_id.get(result.id, {})
+    rohstats = stats_je_identitaet.get(katalog.signal_identitaet(result), {})
     # SHA im Cache-Schlüssel: Quellen-Artefakte werden bei Neu-Lieferung am
     # GLEICHEN Pfad überschrieben — ohne SHA bliebe die Statistik nach einem
     # Re-Download im Disk-Cache veraltet (Scan-Snapshots sind unveränderlich,
@@ -210,15 +214,15 @@ def _statistik_fuer(result) -> dict | None:
 
 
 suche_cf = (suche or '').strip().casefold()
-markierungen = db.list_markierungen()
-kommentare = db.list_kommentare()
+markierungen = db.list_markierungen(identitaeten=True)
+beobachtet_refs = db.list_beobachtungen()  # geteilt mit Abonnentenstatistik
+dokumente_refs = db.downloader_reports_liste_alle()
+kommentare = db.list_kommentare(identitaeten=True)
 _mark_farben = {'Grün': 'gruen', 'Gelb': 'gelb', 'Orange': 'orange'}
 gewaehlte_farben = {_mark_farben[w] for w in (mark_filter or [])}
 sichtbar = []
 for r in alle:
     if suche_cf and suche_cf not in f'{r.name} {r.id}'.casefold():
-        continue
-    if gewaehlte_quellen and r.quelle not in gewaehlte_quellen:
         continue
     if herkunft == 'Workflow (gescannt)' and getattr(r, 'herkunft', '') != 'Workflow':
         continue
@@ -230,16 +234,15 @@ for r in alle:
         continue
     if min_wochen and (getattr(r, 'wochen', None) or 0) < min_wochen:
         continue
-    if gewaehlte_farben and markierungen.get(int(r.id)) not in gewaehlte_farben:
+    if gewaehlte_farben and markierungen.get(identity_key(r)) not in gewaehlte_farben:
         continue
     sichtbar.append(r)
 
 n_katalog = sum(1 for r in sichtbar if getattr(r, 'herkunft', '') == 'Katalog')
-n_markiert_sichtbar = sum(1 for r in sichtbar if int(r.id) in markierungen)
+n_markiert_sichtbar = sum(1 for r in sichtbar if identity_key(r) in markierungen)
 st.caption(f'{len(sichtbar)} von {len(alle)} Signalen'
            + (f' · {n_markiert_sichtbar} markiert' if n_markiert_sichtbar else '')
            + (f' · {n_katalog} nur Katalog' if n_katalog else '')
-           + (f' · Quelle: {", ".join(gewaehlte_quellen)}' if gewaehlte_quellen else '')
            + f' · {sum(1 for r in sichtbar if getattr(r, "trades_path", ""))} mit Trade-Cache')
 
 # ── Batch „Lücken füllen“ (Nutzer 08.10.2026) ────────────────────────────
@@ -326,7 +329,7 @@ _batch_fortschritt()
 
 
 if st.session_state.get('alle_signale_batch_offen'):
-    studien = db.list_equity_studien()
+    studien = db.list_equity_studien(identitaeten=True)
     jobs, erledigt = studien_batch.luecken_sammeln(
         alle, studien, trades_nachladen=True)
     with st.container(border=True):
@@ -389,19 +392,27 @@ def _prozent(titel: str, breite: int = 86, help: str | None = None):
                                          help=help)
 _lade_phase('Tabelle und CSV aufbereiten')
 _fix_ids = tabellen_ui._fix_ids()
-df = pd.DataFrame([tabellen_zeile(r, s, markierungen, kommentare, fix_ids=_fix_ids)
-                       for r, s in paare])
-# Zahlen-Spalten strikt numerisch: None → NaN → LEERE Zelle statt „None“-
-# Text (Nutzer 08.10.2026: kompakte, lesbare Tabelle). Runden einmalig hier —
-# der Styler rendert die Werte dann ohne column_config-Formatierungs-Bridge.
-for _spalte in df.columns:
-    if _spalte not in tabellen_ui.TEXT_SPALTEN:
-        df[_spalte] = pd.to_numeric(df[_spalte], errors='coerce')
-df = df.round(2)
-_gestylt = df.style.format(na_rep='')   # NaN → leere Zelle (pandas-Styler!)
+
+
+def _tabellen_frame(tab_paare):
+    df = pd.DataFrame([tabellen_zeile(r, s, markierungen, kommentare,
+                                      fix_ids=_fix_ids,
+                                      beobachtet=beobachtet_refs,
+                                      dokumente=dokumente_refs)
+                       for r, s in tab_paare])
+    # Zahlen-Spalten strikt numerisch: None → NaN → LEERE Zelle statt „None“-
+    # Text (Nutzer 08.10.2026: kompakte, lesbare Tabelle). Runden einmalig hier —
+    # der Styler rendert die Werte dann ohne column_config-Formatierungs-Bridge.
+    for _spalte in df.columns:
+        if _spalte not in tabellen_ui.TEXT_SPALTEN:
+            df[_spalte] = pd.to_numeric(df[_spalte], errors='coerce')
+    return df.round(2)
+
+
 # Nutzer-Markierungen: ganze Zeile dezent einfärben (grün/gelb/orange).
 _MARK_BG = {'gruen': 'rgba(46,125,50,0.22)', 'gelb': 'rgba(214,168,0,0.20)',
             'orange': 'rgba(224,110,20,0.22)'}
+
 
 def _mark_stil(zeile):
     farbe = next((k for k, e in tabellen_ui.MARKIERUNG_EMOJI.items()
@@ -409,7 +420,6 @@ def _mark_stil(zeile):
     if not farbe:
         return [''] * len(zeile)
     return [f'background-color: {_MARK_BG[farbe]}'] * len(zeile)
-_gestylt = _gestylt.apply(_mark_stil, axis=1)
 
 
 def _virtueller_vorbehalt_stil(zeile):
@@ -418,31 +428,38 @@ def _virtueller_vorbehalt_stil(zeile):
     return [''] * len(zeile)
 
 
-_gestylt = _gestylt.apply(_virtueller_vorbehalt_stil, axis=1,
-                        subset=['True-DD USD', 'RetDD/Monat', 'Messstatus'])
-for _paar in (('True-DD %', 'True-DD ≈'),
-              ('TrueRetDD', 'TrueRetDD ≈')):
-    # Belastbar gemessen normal, vorbehaltlich orange (Marker in der
-    # ≈-Spalte; pandas-apply übergibt mit subset NUR die genannten
-    # Spalten, deshalb beide und Rückgabe je Zelle) — gleiche dezente
-    # Konvention wie in der Ergebnistabelle.
-    if {_paar[0], _paar[1]} <= set(df.columns):
-        def _vorbehalt_stil(zeile, marker=_paar[1]):
-            if pd.isna(zeile[marker]):
-                return ['', '']
-            return ['background-color: rgba(249,115,22,0.12); color: #fb923c', '']
-        _gestylt = _gestylt.apply(_vorbehalt_stil, axis=1, subset=list(_paar))
-st.dataframe(
-    _gestylt,
-    key='alle_signale_tabelle',
-    on_select='rerun',
-    selection_mode='single-row',
-    hide_index=True,
-    height=480,
-    width="stretch",
-    column_config={
-        # Kompakte Tabelle (Nutzer 08.10.2026): kurze Überschriften + feste
-        # Pixelbreiten; die langen Erklärungen leben im Hover-Help.
+def _tabelle_rendern(schluessel: str, tab_paare, dateiname: str) -> None:
+    if not tab_paare:
+        st.caption('Kein Signal in diesem Tab (Filter).')
+        return
+    df = _tabellen_frame(tab_paare)
+    gestylt = df.style.format(na_rep='').apply(_mark_stil, axis=1)
+    gestylt = gestylt.apply(_virtueller_vorbehalt_stil, axis=1,
+                           subset=['True-DD USD', 'RetDD/Monat', 'Messstatus'])
+    for _paar in (('True-DD %', 'True-DD ≈'), ('TrueRetDD', 'TrueRetDD ≈')):
+        # Belastbar gemessen normal, vorbehaltlich orange (Marker in der
+        # ≈-Spalte; pandas-apply übergibt mit subset NUR die genannten
+        # Spalten, deshalb beide und Rückgabe je Zelle).
+        if {_paar[0], _paar[1]} <= set(df.columns):
+            def _vorbehalt_stil(zeile, marker=_paar[1]):
+                if pd.isna(zeile[marker]):
+                    return ['', '']
+                stil = 'background-color: rgba(249,115,22,0.12); color: #fb923c'
+                return [stil if pd.notna(zeile.iloc[0]) else '', stil]
+            gestylt = gestylt.apply(_vorbehalt_stil, axis=1, subset=list(_paar))
+    _identitaet = tuple(stable_identity_key(r) for r, _ in tab_paare)
+    if st.session_state.get(f'_alle_signale_rows_{schluessel}') != _identitaet:
+        st.session_state.pop(schluessel, None)
+        st.session_state[f'_alle_signale_rows_{schluessel}'] = _identitaet
+    st.dataframe(
+        gestylt,
+        key=schluessel,
+        on_select='rerun',
+        selection_mode='multi-row',
+        hide_index=True,
+        height=480,
+        width="stretch",
+        column_config={
         'Mark.': st.column_config.TextColumn('Mark.', width=44, help='Deine '
                                     'manuelle Markierung — setzen/entfernen: '
                                     'Zeile anklicken, dann Markierleiste '
@@ -451,6 +468,24 @@ st.dataframe(
                                     'Kommentar vorhanden (warum aufgenommen / '
                                     'Fix-ID) — Zeile anklicken, dann '
                                     '„Kommentar bearbeiten" unter der Tabelle'),
+        'Beob.': st.column_config.TextColumn('Beob.', width=48, help='👁 = auf '
+                                    'der Beobachtungsliste (Tab „Beobachten“ '
+                                    'der Abonnentenstatistik) — setzen/'
+                                    'entfernen: Zeile anklicken, dann '
+                                    '„👁 Beobachten“-Button unter der Tabelle. '
+                                    'Gleicher Wert wie dort: einmal beobachtet '
+                                    '= überall 👁.'),
+        'Ber.': st.column_config.TextColumn('Ber.', width=52, help='📄 = '
+                                    'KI-Analysen vorhanden (Trade-/Risiko-'
+                                    'Analyse, Gesamtbericht, Tiefenanalyse; '
+                                    '📄×N = N davon). Bericht öffnen: Ergebnisse-'
+                                    'Seite bzw. Detailansicht. Katalog-Signale '
+                                    'ohne Scan haben noch keine Analysen.'),
+        'Doku': st.column_config.TextColumn('Doku', width=60, help='📑 = '
+                                    'gespiegelte Testreport-PDFs (Testreports '
+                                    'des MqlDownloader) — Anzahl ×N. Öffnen: '
+                                    'Abonnentenstatistik → Zeile anklicken → '
+                                    'Abschnitt „Dokumente“.'),
         'Ampel': st.column_config.TextColumn('Ampel', width=52,
                                    help='Offizielle Engine-Ampel '
                                    '(nur Anzeige — diese Seite bewertet nicht)'),
@@ -559,45 +594,173 @@ st.dataframe(
                  'bedeutet 10.000-USD-Modellkapital, keine nachgewiesene '
                  'Kontobasis. Vorbehalt nennt den konkreten Grund für eine '
                  'unvollständige oder gescheiterte Messung.'),
-    })
+        })
+    csv = df.to_csv(index=False, sep=';').encode('utf-8-sig')
+    st.download_button('Gefilterte Tabelle als CSV', csv, dateiname,
+                       'text/csv', key=f'alle_signale_download_{schluessel}',
+                       icon=':material/download:')
 
-csv = df.to_csv(index=False, sep=';').encode('utf-8-sig')
-st.download_button('Gefilterte Tabelle als CSV', csv, 'alle-signale.csv',
-                   'text/csv', key='alle_signale_download',
-                   icon=':material/download:')
+
+# ── Tabs: Alle + je Broker (Nutzer-Wunsch 20.10., wie Abonnentenstatistik) ─
+_tab_quellen = [k for k in (db.kanonische_quelle(q['kuerzel'])
+                            for q in db.list_quellen(nur_aktiv=True))
+                if any(r.quelle == k for r in alle)]
+for r in alle:  # Quellen ohne aktive Registry-Zeile trotzdem zeigen
+    if r.quelle not in _tab_quellen:
+        _tab_quellen.append(r.quelle)
+# Beobachtungsliste (Nutzer-Wunsch 20.10. spät): eigener ERSTER Tab, wie in
+# der Abonnentenstatistik — gleiche Liste, gleicher Wert.
+_beobachtete_paare = [(r, s) for r, s in paare
+                      if getattr(r, 'signal_ref', None) in beobachtet_refs]
+# Tab-Schlüssel → Quelle (None = Alle); der Alle-Tab behält den historischen
+# Schlüssel 'alle_signale_tabelle' (Tests/Deep-Links injizieren genau den).
+tab_definitionen = [('alle_signale_tabelle_beobachten', 'beobachten'),
+                    ('alle_signale_tabelle', None)] + [
+    (f"alle_signale_tabelle_{k.replace(' ', '_')}", k) for k in _tab_quellen]
+_tab_objekte = st.tabs(
+    [f'👁 Beobachten ({len(_beobachtete_paare)})', 'Alle']
+    + [f'{quellen.anzeige_name({"kuerzel": k})} ({k})'
+       for k in _tab_quellen])
+
+
+def _tab_paare(tab_kuerzel):
+    if tab_kuerzel == 'beobachten':
+        return _beobachtete_paare
+    return paare if tab_kuerzel is None else [
+        (r, s) for r, s in paare if r.quelle == tab_kuerzel]
+
+
+_select_all_intent = st.session_state.pop('_alle_signale_select_all', None)
+if _select_all_intent:
+    _intent_paare = _tab_paare(next(
+        (k for s, k in tab_definitionen if s == _select_all_intent), None))
+    st.session_state[_select_all_intent] = {
+        'selection': {'rows': list(range(len(_intent_paare)))}}
+
+for _nr, (_schluessel, _kuerzel) in enumerate(tab_definitionen):
+    with _tab_objekte[_nr]:
+        if _kuerzel == 'beobachten' and not _beobachtete_paare:
+            st.caption('Noch nichts beobachtet — Zeile anklicken und in der '
+                       'Markierleiste „👁 Beobachten“ klicken (oder in der '
+                       'Abonnentenstatistik; dieselbe Liste).')
+        else:
+            _tabelle_rendern(_schluessel, _tab_paare(_kuerzel), _datei := (
+                'alle-signale.csv' if _kuerzel is None
+                else f'alle-signale-{_kuerzel if _kuerzel != "beobachten" else "beobachten"}.csv'))
+            _selection_spalte = st.columns(2)
+            if _selection_spalte[0].button(
+                    f'☰ Alle im Tab auswählen ({len(_tab_paare(_kuerzel))})',
+                    key=f'alle_signale_select_all_{_schluessel}',
+                    icon=':material/select_all:',
+                    help='Setzt das Häkchen für jede Zeile DIESES Tabs '
+                         '(Mehrfachauswahl — danach z. B. KI-Analysen im '
+                         'Sammelschalter unter der Tabelle).'):
+                # Intent statt direktem State-Schreiben: Der Widget-State
+                # darf erst im NÄCHSTEN Lauf VOR der Materialisierung gesetzt
+                # werden (sonst StreamlitWidgetAlreadyInstantiatedError).
+                st.session_state['_alle_signale_select_all'] = _schluessel
+                st.rerun()
+            if _selection_spalte[1].button(
+                    'Auswahl leeren', key=f'alle_signale_clear_{_schluessel}',
+                    icon=':material/deselect:'):
+                st.session_state.pop(_schluessel, None)
+                st.rerun()
 _lade_balken.empty()
 _lade_status.caption(f'Übersicht geladen in {time.monotonic() - _lade_start:.1f} s')
 
-def _ausgewaehlte_zeile(schluessel: str) -> int | None:
-    """Zeilenauswahl der Tabelle lesen — als DataframeState ODER als dict.
+def _ausgewaehlte_zeile():
+    """Zeilenauswahl über ALLE Tabs lesen — als DataframeState ODER als dict.
 
     Letzteres ist der offizielle Weg für programmatische Selektionen
     (st.session_state[key] = {'selection': {'rows': [0]}}) und macht den
-    Zustand in AppTest- wie Deep-Link-Szenarien setzbar.
+    Zustand in AppTest- wie Deep-Link-Szenarien setzbar. Rückgabe:
+    (Tab-Schlüssel, [Zeilenindizes]) des ersten Tabs mit einer Auswahl.
     """
-    zustand = st.session_state.get(schluessel)
-    if not zustand:
-        return None
-    selection = getattr(zustand, 'selection', None)
-    if selection is None and isinstance(zustand, dict):
-        selection = zustand.get('selection')
-    if selection is None:
-        return None
-    rows = getattr(selection, 'rows', None)
-    if rows is None and isinstance(selection, dict):
-        rows = selection.get('rows')
-    return rows[0] if rows else None
+    for _schluessel, _k in tab_definitionen:
+        zustand = st.session_state.get(_schluessel)
+        if not zustand:
+            continue
+        selection = getattr(zustand, 'selection', None)
+        if selection is None and isinstance(zustand, dict):
+            selection = zustand.get('selection')
+        if selection is None:
+            continue
+        rows = getattr(selection, 'rows', None)
+        if rows is None and isinstance(selection, dict):
+            rows = selection.get('rows')
+        if rows:
+            return _schluessel, [int(r) for r in rows]
+    return None
 
 
-gewaehlt_idx = _ausgewaehlte_zeile('alle_signale_tabelle')
+_gewaehlt_tab = _ausgewaehlte_zeile()
+_tab_paar_liste = (_tab_paare(next(k for s, k in tab_definitionen
+                                   if s == _gewaehlt_tab[0]))
+                   if _gewaehlt_tab else [])
+gewaehlt_nrs = _gewaehlt_tab[1] if _gewaehlt_tab else []
+gewaehlt_idx = (gewaehlt_nrs[0] if len(gewaehlt_nrs) == 1 else None)
 
-if gewaehlt_idx is not None:
+if len(gewaehlt_nrs) > 1:
+    # Sammelschalter (Nutzer-Wunsch 20.10.): mehrere Häkchen → KI-Batch.
+    _ki_ziele = [_tab_paar_liste[i][0] for i in gewaehlt_nrs
+                 if i < len(_tab_paar_liste)]
     st.divider()
-    gewaehlt = sichtbar[gewaehlt_idx]
-    statistik = dict(paare[gewaehlt_idx][1] or {})
+    _ki_ok = (len(_ki_ziele) <= 50
+              and not tiefen_batch.batch_laeuft()
+              and scan_worker.active_run() is None)
+    _ki_hilfe = ('Erweiterte KI-Analyse (LLM-Tiefenanalyse) für die '
+                 'gewählten Signale im Hintergrund starten — vorhandene '
+                 'aktuelle werden übersprungen, es läuft fortsetzbar. '
+                 'Pro Signal mehrere Minuten und Tokenverbrauch. Fehlende '
+                 'Trade-Daten werden vorher von der Quelle nachgeladen '
+                 '(auch OHNE vorhandene Forensik möglich; die Analyse '
+                 'bewertet die Ampel nie neu).')
+    if len(_ki_ziele) > 50:
+        st.warning(f'{len(_ki_ziele)} Signale ausgewählt — bitte auf '
+                   'höchstens 50 je Batch begrenzen (Token-Schutz). '
+                   'Besser je Broker-Tab wählen.', icon=':material/warning:')
+    if st.button(f'🤖 KI-Tiefenanalysen für {len(_ki_ziele)} Signale starten',
+                 key='alle_signale_ki_batch', type='primary',
+                 disabled=not _ki_ok, icon=':material/auto_awesome:',
+                 help=_ki_hilfe):
+        _nachgeladen, _fehlend = [], []
+        with st.spinner('Fehlende Trade-Daten von den Quellen nachladen …'):
+            for _ziel in _ki_ziele:
+                if getattr(_ziel, 'trades_path', '')                         and Path(_ziel.trades_path).exists():
+                    continue
+                try:
+                    katalog.lade_signal_daten(_ziel)
+                    _nachgeladen.append(_ziel.id)
+                except Exception as _exc:  # Einzelfehler: Batch meldet es
+                    _fehlend.append(f"{getattr(_ziel, 'name', _ziel.id)}: "
+                                    f"{type(_exc).__name__}")
+        _nutzbar = [r for r in _ki_ziele
+                    if getattr(r, 'trades_path', '')
+                    and Path(r.trades_path).exists()]
+        ok, meldung = tiefen_batch.batch_starten(_nutzbar)
+        if ok:
+            st.toast(f'KI-Batch gestartet: {len(_nutzbar)} Signale'
+                     + (f' · {len(_nachgeladen)} Trade-Exporte nachgeladen'
+                        if _nachgeladen else ''), icon=':material/auto_awesome:')
+            st.rerun()
+        else:
+            st.warning(meldung, icon=':material/info:')
+        if _fehlend:
+            with st.expander(f'Ohne Trade-Daten geblieben ({len(_fehlend)})',
+                             icon=':material/error_outline:'):
+                for _z in _fehlend[:30]:
+                    st.caption(_z)
+
+if gewaehlt_idx is not None and 0 <= gewaehlt_idx < len(_tab_paar_liste):
+    st.divider()
+    gewaehlt = _tab_paar_liste[gewaehlt_idx][0]
+    statistik = dict(_tab_paar_liste[gewaehlt_idx][1] or {})
+    if int(gewaehlt.id) in _mehrdeutige_ids:
+        st.warning('Diese Signal-ID kommt in mehreren Quellen vor. Trades und Kennzahlen '
+                   'werden einschließlich Studien, Markierungen, Kommentaren und Fix-IDs je Quelle getrennt.')
     # Nutzer-Markierung (Nutzer 08.10.2026): Farbe setzen oder durch erneutes
     # Anklicken der aktiven Farbe abwählen — persistent je Signal-ID.
-    aktiv_farbe = markierungen.get(int(gewaehlt.id))
+    aktiv_farbe = markierungen.get(identity_key(gewaehlt))
     with st.container(horizontal=True, vertical_alignment='center'):
         st.caption(f'Markierung für #{gewaehlt.id} '
                    f'({getattr(gewaehlt, "name", "") or ""}):')
@@ -607,38 +770,80 @@ if gewaehlt_idx is not None:
                          key=f'alle_signale_mark_{farbe}',
                          type='primary' if aktiv_farbe == farbe else 'secondary'):
                 db.setze_markierung(int(gewaehlt.id),
-                                    None if aktiv_farbe == farbe else farbe)
+                                    None if aktiv_farbe == farbe else farbe, quelle=identity_key(gewaehlt)[0])
                 st.rerun()
         if aktiv_farbe and st.button('Markierung entfernen',
                                      key='alle_signale_mark_keine',
                                      icon=':material/block:'):
-            db.setze_markierung(int(gewaehlt.id), None)
+            db.setze_markierung(int(gewaehlt.id), None, quelle=identity_key(gewaehlt)[0])
             st.rerun()
+        # Beobachten-Schalter (Nutzer-Wunsch 20.10.): geteilt mit der
+        # Abonnentenstatistik — dieselbe Liste, derselbe Wert. Widget-Key
+        # enthält den Zustand (AppTest-Falle 15: kein veralteter Klick).
+        _beobachtet_ist = getattr(gewaehlt, 'signal_ref', None) in beobachtet_refs
+        if st.button('Beobachtung entfernen' if _beobachtet_ist else '👁 Beobachten',
+                     key=f"alle_signale_beob_{getattr(gewaehlt, 'signal_ref', 'x')}"
+                         f"_{int(_beobachtet_ist)}",
+                     type='secondary' if _beobachtet_ist else 'primary',
+                     icon=':material/visibility_off:' if _beobachtet_ist
+                     else ':material/visibility:',
+                     help='Setzt das Signal auf die gemeinsame Beobachtungsliste '
+                          '(Tab „Beobachten“ der Abonnentenstatistik; dort auch '
+                          'Mehrfachauswahl möglich).'):
+            db.setze_beobachtung(int(gewaehlt.id), not _beobachtet_ist,
+                                 quelle=identity_key(gewaehlt)[0])
+            st.rerun()
+        # Doku (Testreport-PDFs) nachladen — funktioniert OHNE Trades
+        # (reiner REST-Download vom Client; anders als die KI-Berichte).
+        if st.button('📑 Doku nachladen',
+                     key='alle_signale_doku_laden',
+                     icon=':material/cloud_download:',
+                     help='Testreport-PDFs dieses Signals von der Quelle '
+                          'anfordern und lokal spiegeln (Lesen/Download: '
+                          'Abonnentenstatistik → Zeile → Dokumente).'):
+            try:
+                with st.spinner('Doku von der Quelle laden …'):
+                    _neue = downloader_sync.sync_reports(
+                        int(gewaehlt.id), str(getattr(gewaehlt, 'platform', '')),
+                        quelle=identity_key(gewaehlt)[0])
+                if _neue:
+                    st.success(f'{len(_neue)} neue PDF(s) gespiegelt.')
+                else:
+                    st.info('Die Quelle hat keine (weiteren) PDFs für dieses '
+                            'Signal.')
+            except downloader_sync.downloader_client.DownloaderError as exc:
+                st.warning(f'Nachladen fehlgeschlagen — {exc}',
+                           icon=':material/warning:')
 
     # Freitext-Kommentar (Nutzer 09.10.2026): warum aufgenommen / Fix-ID —
     # langes Feld, Bearbeitung im Dialog (Doppelklick auf Canvas-Zellen ist
     # in st.dataframe technisch nicht abfangbar; Klick+Button ist das
     # Streamlit-Äquivalent).
-    if st.button(('📋 Kommentar bearbeiten' if db.get_kommentar(int(gewaehlt.id))
+    _selected_identity = stable_identity_key(gewaehlt)
+    if st.session_state.get('_alle_signale_detail_identity') != _selected_identity:
+        st.session_state.pop('alle_signale_komm_text', None)
+        st.session_state['alle_signale_komm_dialog'] = False
+        st.session_state['_alle_signale_detail_identity'] = _selected_identity
+    if st.button(('📋 Kommentar bearbeiten' if db.get_kommentar(int(gewaehlt.id), quelle=identity_key(gewaehlt)[0])
                   else '💬 Kommentar hinzufügen'),
                  key='alle_signale_komm_btn', icon=':material/edit_note:'):
         st.session_state['alle_signale_komm_dialog'] = True
-    if db.get_kommentar(int(gewaehlt.id)):
+    if db.get_kommentar(int(gewaehlt.id), quelle=identity_key(gewaehlt)[0]):
         with st.expander('Kommentar', icon=':material/notes:'):
-            st.markdown(db.get_kommentar(int(gewaehlt.id)))
+            st.markdown(db.get_kommentar(int(gewaehlt.id), quelle=identity_key(gewaehlt)[0]))
     if st.session_state.get('alle_signale_komm_dialog'):
         @st.dialog('Kommentar', width='large')
         def _komm_dialog() -> None:
             st.caption(f'#{gewaehlt.id} · {getattr(gewaehlt, "name", "")} · '
                        'Warum aufgenommen? Warum Fix-ID? Was beobachten?')
-            text = st.text_area('Kommentar', value=db.get_kommentar(int(gewaehlt.id)),
+            text = st.text_area('Kommentar', value=db.get_kommentar(int(gewaehlt.id), quelle=identity_key(gewaehlt)[0]),
                                 height=220, key='alle_signale_komm_text',
                                 label_visibility='collapsed')
             col1, col2 = st.columns(2)
             if col1.button('Speichern', type='primary',
                            key='alle_signale_komm_save',
                            icon=':material/save:'):
-                db.setze_kommentar(int(gewaehlt.id), text)
+                db.setze_kommentar(int(gewaehlt.id), text, quelle=identity_key(gewaehlt)[0])
                 st.session_state['alle_signale_komm_dialog'] = False
                 st.rerun()
             if col2.button('Verwerfen', key='alle_signale_komm_cancel'):
@@ -660,7 +865,7 @@ if gewaehlt_idx is not None:
                 'rechnet die Übersicht alle Kennzahlen und die Equity-Studie '
                 '(realer Drawdown) läuft ebenfalls.', icon=':material/cloud_download:')
             if st.button('Trades + Kennzahlen von der Quelle laden',
-                         key=f'alle_signale_fetch_{gewaehlt.id}',
+                         key=f'alle_signale_fetch_{stable_identity_key(gewaehlt)}',
                          icon=':material/download:'):
                 try:
                     with st.spinner('Lade Trades + Kennzahlen von der Quelle …'):
@@ -670,7 +875,7 @@ if gewaehlt_idx is not None:
                             quelle_id, int(gewaehlt.id), version, 'trades')
                         gewaehlt.trades_path = pfad
                         gewaehlt.trades_sha256 = (artefakt or {}).get('sha256') or ''
-                        stats_je_id[int(gewaehlt.id)] = katalog.metrics_stats(gewaehlt)
+                        stats_je_identitaet[katalog.signal_identitaet(gewaehlt)] = katalog.metrics_stats(gewaehlt)
                         statistik = _statistik_fuer(gewaehlt) or statistik
                     if ist_katalog:
                         # Katalog-Zeilen sind nach dem Rerun persistent bedient
@@ -690,8 +895,55 @@ if gewaehlt_idx is not None:
                        'Trade-Liste kommt über einen Scan-Lauf '
                        '(oder Nachladen, sobald eine Quelle sie liefert).')
     if (getattr(gewaehlt, 'trades_path', '') or '') or not ist_katalog:
-        render_detail(gewaehlt, statistik, key_prefix=f'alle_signale_detail_{gewaehlt.id}')
+        render_detail(gewaehlt, statistik, key_prefix=f'alle_signale_detail_{stable_identity_key(gewaehlt)}')
 else:
     st.caption('Zeile anklicken für die Detailansicht: Monats-Balken, Konto-Kurve '
                'und Max-DD-Berechnung aus Kursen. Katalog-Zeilen laden ihre '
                'Trades beim ersten Klick on demand von der Quelle.')
+
+
+# ── Tiefenbatch-Fortschritt (Muster Ergebnisseite, eigene Keys) ────────────
+@st.fragment(run_every=2.0)
+def _alle_tiefen_fortschritt() -> None:
+    batch = tiefen_batch.aktiver_batch()
+    if batch is None:
+        st.session_state.pop('_alle_tiefen_batch_stand', None)
+        return
+    # Auto-Refresh (Nutzer-Wunsch 20.10.): fertige Analysen sollen SOFORT
+    # lesbar sein — gedrosselter App-Rerun bei done-Anstieg, Abschluss
+    # sofort (Muster studien_batch_refresh_noetig).
+    _stand = (batch.get("done") or 0, batch.get("total") or 0,
+              bool(batch.get("fertig")))
+    if tabellen_ui.tiefen_batch_refresh_noetig(
+            _stand, st.session_state.get('_alle_tiefen_batch_stand'),
+            st.session_state.get('_alle_tiefen_refresh_am') or 0.0,
+            jetzt=time.monotonic()):
+        st.session_state['_alle_tiefen_refresh_am'] = time.monotonic()
+        st.rerun(scope='app')
+    st.session_state['_alle_tiefen_batch_stand'] = _stand
+    total = max(1, batch["total"])
+    if tiefen_batch.batch_laeuft():
+        st.progress(
+            batch["done"] / total,
+            text=(f"KI-Batch {batch['done']}/{batch['total']} · aktuell: "
+                  f"{batch['aktuell'] or '—'} · übersprungen: "
+                  f"{batch['uebersprungen']} · Fehler: {batch['fehler']}"),
+        )
+        if st.button("KI-Batch stoppen (nach der aktuellen Strategie)",
+                     key="alle_signale_ki_stop", icon=":material/stop_circle:"):
+            tiefen_batch.batch_stoppen()
+            st.rerun(scope="fragment")
+    else:
+        dauer = str((batch.get("ende") or datetime.now())
+                    - batch["start"]).split(".")[0]
+        art = ("Abbruch per Stop" if batch["abgebrochen"]
+               else "abgeschlossen")
+        (st.warning if batch["fehler"] else st.success)(
+            f"KI-Batch {art}: {batch['done']}/{batch['total']} bearbeitet · "
+            f"{batch['uebersprungen']} übersprungen · {batch['fehler']} Fehler "
+            f"· Dauer {dauer}",
+            icon=":material/warning:" if batch["fehler"]
+            else ":material/check_circle:")
+
+
+_alle_tiefen_fortschritt()

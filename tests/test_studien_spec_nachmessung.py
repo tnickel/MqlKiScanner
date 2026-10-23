@@ -25,6 +25,13 @@ def _studie(**kwargs):
     return {"trades_sha": "sha", "basislos": False, "report": report}
 
 
+def _lese_studie(studie):
+    def lesen(signal_id, *, quelle):
+        assert signal_id == 91 and quelle == "mql5"
+        return studie
+    return lesen
+
+
 @pytest.mark.parametrize("broker,symbol,erwartet", [
     ("Vantage", "UK100", True), ("Vantage", "LTCUSD", True),
     ("Zulu", "LTCUSD", False), ("Tickmill", "UK100", False),
@@ -39,7 +46,7 @@ def test_teilmessung_nur_mit_originalbroker_neu_versuchen(
     monkeypatch.setattr(studien_batch.katalog, "metrics_stats",
                         lambda _: pytest.fail("Originalbroker ist bereits bekannt"))
     jobs, fertig = studien_batch.luecken_sammeln(
-        [res], {res.id: studie}, trades_nachladen=False)
+        [res], {("mql5", res.id): studie}, trades_nachladen=False)
     assert jobs == ([res] if erwartet else [])
     assert fertig == (0 if erwartet else 1)
 
@@ -51,7 +58,7 @@ def test_altstudie_originalbroker_fallback(monkeypatch, resbroker, metricsbroker
                         lambda _: {"broker_server": metricsbroker})
     res = _res(broker_server=resbroker)
     jobs, fertig = studien_batch.luecken_sammeln(
-        [res], {91: _studie()}, trades_nachladen=False)
+        [res], {("mql5", 91): _studie()}, trades_nachladen=False)
     assert jobs == [res] and fertig == 0
 
 
@@ -59,7 +66,7 @@ def test_referenzterminal_ersetzt_keinen_unbekannten_originalbroker(monkeypatch)
     monkeypatch.setattr(studien_batch.katalog, "metrics_stats", lambda _: {})
     res = _res(broker_server=None)
     jobs, fertig = studien_batch.luecken_sammeln(
-        [res], {91: _studie(kursdaten_terminal="Vantage")}, trades_nachladen=False)
+        [res], {("mql5", 91): _studie(kursdaten_terminal="Vantage")}, trades_nachladen=False)
     assert jobs == [] and fertig == 1
 
 
@@ -67,14 +74,14 @@ def test_ohne_ausgeschlossene_specs_keine_metrics_abfrage(monkeypatch):
     monkeypatch.setattr(studien_batch.katalog, "metrics_stats", lambda _: pytest.fail("N+1"))
     res = _res(broker_server=None)
     assert studien_batch.luecken_sammeln(
-        [res], {91: _studie(symbole_ohne_kontrakt=[])}, trades_nachladen=False) == ([], 1)
+        [res], {("mql5", 91): _studie(symbole_ohne_kontrakt=[])}, trades_nachladen=False) == ([], 1)
 
 
 def test_einer_von_mehreren_kontrakten_genuegt_fuer_nachmessung(monkeypatch):
     monkeypatch.setattr(config, "CONTRACT_SPECS_FILE", ROOT / "data/contract_specs.json")
     res = _res(broker_server="Vantage")
     jobs, _ = studien_batch.luecken_sammeln(
-        [res], {91: _studie(symbole_ohne_kontrakt=["UNBEKANNT", "EU50"])},
+        [res], {("mql5", 91): _studie(symbole_ohne_kontrakt=["UNBEKANNT", "EU50"])},
         trades_nachladen=False)
     assert jobs == [res]
 
@@ -93,10 +100,11 @@ def test_nachmessung_verwendet_gespeicherten_originalbroker_ohne_andere_metadate
     path = tmp_path / "trades.csv"
     path.write_text("Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n"
                     "2026.01.05 10:00:00;Buy;1;EURUSD;1.1;1;2026.01.05 12:00:00;1.2;0;0;100\n")
-    res = pipeline.ScanResult(id=91, trades_path=str(path), trades_sha256="sha")
+    res = pipeline.ScanResult(id=91, quelle="mql5", account_currency="USD",
+                              trades_path=str(path), trades_sha256="sha")
     monkeypatch.setattr(studien_batch.katalog, "metrics_stats",
                         lambda _: {"initial_deposit_usd": 1000})
-    monkeypatch.setattr(db, "get_equity_studie", lambda _: _studie(original_broker="Vantage"))
+    monkeypatch.setattr(db, "get_equity_studie", _lese_studie(_studie(original_broker="Vantage")))
     brokers = []
     def messen(parsed, anbieter, kapital, broker):
         brokers.append(broker)
@@ -115,7 +123,8 @@ def test_schlechter_nachversuch_verliert_keine_gueltige_teilmessung(
     path = tmp_path / "trades.csv"
     path.write_text("Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n"
                     "2026.01.05 10:00:00;Buy;1;EURUSD;1.1;1;2026.01.05 12:00:00;1.2;0;0;100\n")
-    res = pipeline.ScanResult(id=91, name="Teil", trades_path=str(path), trades_sha256="sha")
+    res = pipeline.ScanResult(id=91, name="Teil", quelle="mql5", account_currency="USD",
+                              trades_path=str(path), trades_sha256="sha")
     monkeypatch.setattr(studien_batch.katalog, "metrics_stats",
                         lambda _: {"initial_deposit_usd": 1000, "broker_server": "Vantage"})
     monkeypatch.setattr(studien_batch, "_rekonstruiere_mit_feed_fallback",
@@ -123,7 +132,7 @@ def test_schlechter_nachversuch_verliert_keine_gueltige_teilmessung(
                                        "equity_dd_pct": 9, "grund": "Kurse fehlen"})
     vorher = _studie()
     vorher["trades_sha"] = altsha
-    monkeypatch.setattr(db, "get_equity_studie", lambda _: vorher)
+    monkeypatch.setattr(db, "get_equity_studie", _lese_studie(vorher))
     gespeichert = []
     monkeypatch.setattr(db, "store_equity_studie", lambda *a, **kw: gespeichert.append(a))
     control = {"skipped_gruende": []}

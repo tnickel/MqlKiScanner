@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-"""REST-Client für das MqlDownloader-Interface (v1, rein lesend).
+"""REST-Client für das gemeinsame Quellen-Interface (v1).
 
 Der MqlDownloader läuft im LAN und hält Abonnenten-Historien und
 Testreport-PDFs je Signal-ID vor (Doku:
 MqlDownloader/doc/REST_API_Dokumentation.md). Dieser Client holt
-ausschließlich Lesedaten — Tradelisten bleiben bewusst außen vor, denn
-die Engine arbeitet mit den eigenen, verifizierten Exporten.
+Kataloge und Artefakte einschließlich Tradelisten. Explizite Update-Aufträge
+erneuern Quellenbestände; der gezielte Anbieterabruf wartet auf seinen eigenen
+vollständigen Plattformabruf. Bewertung findet in diesem Client nicht statt.
 
 Konventionen der API: alle Pfade GET unter {base}/api/v1, Token optional
 im Header `X-API-Token`, Fehler immer JSON `{"error": ...}` (401 falscher
@@ -15,6 +16,7 @@ kein Systemfehler).
 from __future__ import annotations
 
 from urllib.parse import quote, urlsplit
+import time
 
 import requests
 
@@ -49,6 +51,10 @@ class DownloaderUpdateNotSupported(DownloaderError):
 
 class DownloaderBusy(DownloaderError):
     """Client ist mit einer anderen Aktion beschäftigt (HTTP 409, doc/23 §4.1)."""
+
+
+class DownloaderProviderBlocked(DownloaderError):
+    """Gezielter Plattformabruf ist wegen fehlender Quellenbelege gesperrt."""
 
 
 def normalize_base_url(url: str) -> str:
@@ -91,7 +97,7 @@ def platform_version(platform: str) -> str | None:
 
 
 class DownloaderClient:
-    """Dünner GET-Wrapper um die Downloader-REST-API."""
+    """Quellen-REST mit getrennten Lese- und Aktualisierungsaufträgen."""
 
     def __init__(self, base_url: str, token: str = "", timeout: float = TIMEOUT_S):
         self.base = normalize_base_url(base_url)
@@ -154,9 +160,14 @@ class DownloaderClient:
         return items if isinstance(items, list) else []
 
     def katalog(self, *, version: str | None = None, limit: int = 500,
-                offset: int = 0) -> dict:
-        """Katalogseite der Provider: total/count/offset/items (Pagination)."""
-        params: dict = {"limit": int(limit), "offset": int(offset)}
+                offset: int = 0, min_subscribers: int = 1) -> dict:
+        """Katalogseite im gewählten Abonnenten-Scope.
+
+        Der bisherige Scan-Scope bleibt mindestens ein Abonnent. Die
+        Vollübersicht fordert ausdrücklich ``min_subscribers=0`` an.
+        """
+        params: dict = {"limit": int(limit), "offset": int(offset),
+                        "minSubscribers": int(min_subscribers)}
         if version:
             params["version"] = version
         return self._get("/providers", params=params)
@@ -230,6 +241,12 @@ class DownloaderClient:
             raise DownloaderBusy(
                 detail or "Client ist beschäftigt (HTTP 409) — z. B. läuft "
                 "gerade eine andere Aktion im Fenster.")
+        if response.status_code == 422:
+            try:
+                detail = response.json().get("error", "")
+            except ValueError:
+                detail = ""
+            raise DownloaderProviderBlocked(detail or "Anbieterabruf durch die Quelle gesperrt.")
         if response.status_code >= 400:
             try:
                 detail = response.json().get("error", "")
@@ -244,19 +261,84 @@ class DownloaderClient:
                 f"(Beginn: {response.text[:80]!r})") from exc
 
     def update_starten(self, *, target: int = 200, tradelisten: bool = True,
-                       katalog_max_alter_h: int = 72, quelle: str = "signalkiscanner") -> dict:
+                       katalog_max_alter_h: int = 72, quelle: str = "signalkiscanner",
+                       nur_abonnenten: bool = False) -> dict:
         """Stufe-0-Update-Job anstoßen (doc/23 §4.1). Antwort sofort:
         {"jobId": …, "status": "gestartet", "bereitsLaufend": bool}."""
-        return self._post("/update", payload={
+        payload = {
             "target": int(target), "tradelisten": bool(tradelisten),
             "katalogMaxAlterH": int(katalog_max_alter_h), "quelle": str(quelle),
-        })
+        }
+        if nur_abonnenten:
+            payload.update(nurAbonnenten=True, target=min(200, max(1, int(target))),
+                           tradelisten=False, katalogMaxAlterH=0)
+        return self._post("/update", payload=payload)
 
     def update_status(self) -> dict:
         """Job-Status des Clients (doc/23 §4.2): state/phase/done/total/
         message/ergebnis; state=idle wenn noch nie ein Job lief."""
         data = self._get("/update/status")
         return data if isinstance(data, dict) else {}
+
+    def refresh_provider(self, signal_id: int, version: str, *,
+                         timeout_s: float = 7200.0, poll_s: float = 1.0,
+                         should_stop=None) -> dict:
+        """Gezielt Plattformdaten erneuern, bis der eigene Vollabruf belegt ist.
+
+        Ein lokales GET, ein fremder laufender Job oder eine bloße Annahme
+        des Auftrags sind ausdrücklich kein Erfolgsnachweis. Alte Clients
+        werden nicht auf ihren katalogweiten Updateweg zurückgestuft.
+        """
+        if isinstance(signal_id, bool) or int(signal_id) <= 0:
+            raise ValueError("Anbieter-ID muss positiv sein.")
+        sid = str(int(signal_id))
+        version = str(version or "").strip().lower()
+        if version not in {"mql4", "mql5", "pelican", "vantage", "zulu", "rst"}:
+            raise ValueError("Unbekannte Quellenplattform.")
+        if should_stop and should_stop():
+            raise DownloaderError("Anbieterabruf vor dem Start abgebrochen.")
+        health = self.health()
+        if health.get("providerRefresh") is not True:
+            reason = str(health.get("providerRefreshReason") or "")
+            if reason:
+                raise DownloaderProviderBlocked(reason)
+            raise DownloaderUpdateNotSupported(
+                "Client unterstützt keinen gezielten aktuellen Anbieterabruf; neuen Client aktivieren.")
+        if should_stop and should_stop():
+            raise DownloaderError("Anbieterabruf vor dem Start abgebrochen.")
+        answer = self._post(f"/providers/{sid}/{self._v(version)}/refresh", payload={})
+        if not isinstance(answer, dict) or answer.get("bereitsLaufend"):
+            raise DownloaderBusy("Vorhandener Quellenjob ist kein neuer Anbieterabruf.")
+        job_id = str(answer.get("jobId") or "")
+        if not job_id:
+            raise DownloaderError("Anbieterabruf ohne eindeutige Job-ID bestätigt.")
+        deadline = time.monotonic() + max(0.0, float(timeout_s))
+        while True:
+            if should_stop and should_stop():
+                raise DownloaderError("Warten auf Anbieterabruf abgebrochen; Quellenjob kann noch laufen.")
+            status = self.update_status()
+            if str(status.get("jobId") or "") != job_id:
+                raise DownloaderError("Anbieterstatus gehört zu einem anderen Job; kein Frischenachweis.")
+            state = str(status.get("state") or "")
+            result = status.get("ergebnis")
+            result = result if isinstance(result, dict) else {}
+            if state == "done":
+                if (str(result.get("providerId") or "") != sid
+                        or result.get("version") != version
+                        or result.get("platformRefreshed") is not True
+                        or result.get("fullHistory") is not True
+                        or not result.get("refreshedAt")
+                        or result.get("tradelistenFehler")
+                        or result.get("tradelistenAbgebrochen")):
+                    raise DownloaderError("Quellenjob belegt keinen vollständigen aktuellen Abruf dieses Anbieters.")
+                return dict(result, jobId=job_id)
+            if state == "login_required":
+                raise DownloaderAuthError(str(status.get("error") or status.get("message") or "Quellenlogin erforderlich."))
+            if state in {"error", "cancelled", "aborted"}:
+                raise DownloaderError(str(status.get("error") or status.get("message") or "Anbieterabruf fehlgeschlagen."))
+            if time.monotonic() >= deadline:
+                raise DownloaderConnectionError("Zeitlimit beim Anbieterabruf; Quellenjob kann noch laufen.")
+            time.sleep(max(0.01, float(poll_s)))
 
 
 def client_from_settings(settings: dict) -> DownloaderClient:

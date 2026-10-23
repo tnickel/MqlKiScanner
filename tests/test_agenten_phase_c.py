@@ -314,7 +314,7 @@ def test_markt_fallback_ohne_llm(monkeypatch):
 def test_beobachtungsliste_manuell_und_aus_kandidaten(monkeypatch):
     db.init_db()
     db.upsert_signal(1, name="A", stats={})
-    db.store_forensik(1, {"ampel": "🟡", "symbole": "XAUUSD, EURUSD"})
+    db.store_forensik(1, {"ampel": "🟡", "symbole": "XAUUSD, EURUSD"}, quelle="mql5")
     monkeypatch.setattr(betreuer, "kandidaten",
                         lambda settings=None: [{"id": 1, "name": "A",
                                                 "platform": "", "ampel": "🟡"}])
@@ -330,7 +330,7 @@ def test_beobachtungsliste_strip_plus_suffix_und_artefakte(monkeypatch):
     kennt nur das nackte Symbol."""
     db.init_db()
     db.upsert_signal(2, name="B", stats={})
-    db.store_forensik(2, {"ampel": "🟢", "symbole": "XAUUSD+, EURUSD+ SUMMARY"})
+    db.store_forensik(2, {"ampel": "🟢", "symbole": "XAUUSD+, EURUSD+ SUMMARY"}, quelle="mql5")
     monkeypatch.setattr(betreuer, "kandidaten",
                         lambda settings=None: [{"id": 2, "name": "B",
                                                 "platform": "", "ampel": "🟢"}])

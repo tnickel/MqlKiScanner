@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import streamlit as st
+from mqlkiscanner.signal_identity import identity_key, stable_identity_key
 
 from mqlkiscanner import config
 from mqlkiscanner.agenten import daemon, journal, rollen, tageskette
@@ -276,17 +277,17 @@ with dossiers_tab:
     if not katalog:
         st.caption("Keine Signale in der Datenbank — erst einen Scan laufen lassen.")
     else:
-        eintraege = [{"id": s["signal_id"], "name": s["name"] or f"#{s['signal_id']}"}
+        eintraege = [{"id": s["signal_id"], "quelle": s.get("quelle") or "mql5", "name": s["name"] or f"#{s['signal_id']}"}
                      for s in katalog]
         auswahl = st.selectbox(
-            "Signal", eintraege, format_func=lambda e: e["name"],
+            "Signal", eintraege, format_func=lambda e: f"{e['quelle']}:{e['id']} · {e['name']}",
             key="agenten_dossier_signal")
         if auswahl:
             signal_id = auswahl["id"]
-            profil = dossier_db.profil_lesen(signal_id)
-            historie = dossier_db.profil_historie(signal_id)
-            beobachtungen = dossier_db.beobachtungen_lesen(signal_id, limit=15)
-            deltas = dossier_db.deltas_lesen(signal_id, limit=10)
+            profil = dossier_db.profil_lesen(signal_id, quelle=auswahl["quelle"])
+            historie = dossier_db.profil_historie(signal_id, quelle=auswahl["quelle"])
+            beobachtungen = dossier_db.beobachtungen_lesen(signal_id, limit=15, quelle=auswahl["quelle"])
+            deltas = dossier_db.deltas_lesen(signal_id, limit=10, quelle=auswahl["quelle"])
 
             if profil is None:
                 st.info("Noch kein Algo-Profil — der Betreuer destilliert beim "

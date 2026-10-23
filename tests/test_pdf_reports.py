@@ -106,8 +106,10 @@ def test_reports_are_persisted_in_signal_snapshot_structure(tmp_path):
         trade_analyse="Trade", risiko_analyse="Risiko", gesamtbericht="Final")
     paths = materialize_result_pdfs(result, root=tmp_path)
     assert set(paths) == {"trade_analyse", "risiko_analyse", "gesamtbericht"}
+    owner = paths["trade_analyse"].relative_to(tmp_path).parts[1]
+    assert len(owner) == 32 and all(c in "0123456789abcdef" for c in owner)
     assert paths["trade_analyse"] == (
-        tmp_path / "signale" / "900001-gold-groesse" / ("a" * 10)
+        tmp_path / "signale" / owner / "900001-gold-groesse" / app_ui.result_snapshot_token(result)
         / "01-trade-analyse.pdf")
     assert paths["risiko_analyse"].is_file()
     assert paths["gesamtbericht"].read_bytes().startswith(b"%PDF-")

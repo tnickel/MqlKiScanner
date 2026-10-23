@@ -24,6 +24,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .. import config, db
+from ..signal_identity import key_for
 from ..llm import client as llm_client
 from ..mql5.session import Mql5Session
 from . import delta, dossier, journal, markt, rollen, rollen_prompts
@@ -84,6 +85,8 @@ def export_holen(session: Mql5Session, signal: dict, settings: dict) -> tuple[st
     die Zwischen-Signal-Pause entspricht der Pipeline (GUI-Parität).
     """
     from ..mql5.exporter import export_positions  # spät, mock-freundlich
+    if key_for(signal)[0] != "mql5":
+        raise ValueError("Der Betreuer-Export ist ausschließlich für MQL5 freigegeben.")
     return export_positions(
         session, signal["id"], cache_stunden=CACHE_STUNDEN,
         extra_pause_s=float(settings.get("rate_pause_zwischen_signalen_s", 5.0)),
@@ -103,12 +106,15 @@ def _snapshot_sha(signal_id: int) -> tuple[str | None, str | None, str | None]:
     zusaetzlich auf Trades, die NACH der letzten Pruefung geschlossen
     wurden — so kumuliert auch ein zwischenzeitlicher Scan nichts.
     """
+    identity = db.resolve_identity(signal_id, quelle="mql5")
+    if identity is None:
+        return None, None, None
     with db._connect() as conn:
         delta = conn.execute(
-            "SELECT neu_sha256, ts FROM trade_deltas WHERE signal_id=? "
-            "ORDER BY id DESC LIMIT 1", (signal_id,)).fetchone()
-        row = conn.execute("SELECT sha256, path FROM trade_files WHERE signal_id=?",
-                           (signal_id,)).fetchone()
+            "SELECT neu_sha256, ts FROM trade_deltas WHERE signal_ref=? "
+            "ORDER BY id DESC LIMIT 1", (identity.signal_ref,)).fetchone()
+        row = conn.execute("SELECT sha256, path FROM trade_files WHERE signal_ref=?",
+                           (identity.signal_ref,)).fetchone()
     alt_pfad = row["path"] if row else None
     if delta and delta["neu_sha256"]:
         return delta["neu_sha256"], alt_pfad, delta["ts"]
@@ -145,7 +151,7 @@ def _llm_einordnung(signal_id: int, signal_name: str, profil_text: str,
         rollen_prompts.lade_vorlage("betreuer_delta"),
         {"signal_name": signal_name, "profil_text": profil_text,
          "delta_json": delta_json, "marktkontext": _marktkontext_text(),
-         "letzte_beobachtungen": dossier.letzte_beobachtungen(signal_id)})
+         "letzte_beobachtungen": dossier.letzte_beobachtungen(signal_id, quelle="mql5")})
     meta: dict = {}
     import time as _time
     beginn = _time.monotonic()
@@ -203,9 +209,12 @@ def signal_pruefen(signal: dict, settings: dict, log=print,
     Rate-Limiter über den ganzen Lauf gemeinsam pacingt. quelle reist mit
     (gui/cli/daemon), damit „Letzte Läufe" den echten Auslöser zeigt.
     """
+    if key_for(signal)[0] != "mql5":
+        return {"status": "skipped", "grund": "Betreuer unterstützt derzeit nur MQL5.",
+                "signal": signal.get("name") or str(signal["id"]), "einordnung": None}
     session = session if session is not None else Mql5Session(settings)
     lauf_id = journal.lauf_starten("betreuer", quelle=quelle,
-                                   signal_id=signal["id"])
+                                   signal_id=signal["id"], signal_quelle="mql5")
     try:
         ergebnis = _signal_pruefen_inner(signal, settings, session,
                                          lauf_id, log)
@@ -234,12 +243,12 @@ def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
                            lauf_id: int, log) -> dict:
     name = signal["name"]
     # Profil fehlt? Erst destillieren (einmalig, protokolliert).
-    profil = dossier.profil_lesen(signal["id"])
+    profil = dossier.profil_lesen(signal["id"], quelle="mql5")
     if profil is None:
         url = f"https://www.mql5.com/en/signals/{signal['id']}"
         destillation.profil_erstellen(signal["id"], name, url, settings,
                                       lauf_id=lauf_id, log=log)
-        profil = dossier.profil_lesen(signal["id"])
+        profil = dossier.profil_lesen(signal["id"], quelle="mql5")
     if profil is None:
         grund = "Kein Profil verfügbar (Belegbasis/Key fehlt) — Prüfung entfällt."
         journal.schritt_protokollieren(lauf_id, "betreuer", "pruefung",
@@ -263,11 +272,11 @@ def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
         # F-6 (Review 29.09.): Die taegliche KEINE_NEUEN_TRADES-Zeile
         # verdraengte echte Befunde aus letzte_beobachtungen — nur
         # schreiben, wenn die letzte Beobachtung eine ANDERE war.
-        letzte = dossier.beobachtungen_lesen(signal["id"], limit=1)
+        letzte = dossier.beobachtungen_lesen(signal["id"], limit=1, quelle="mql5")
         if not letzte or letzte[0]["einordnung"] != "KEINE_NEUEN_TRADES":
             dossier.beobachtung_speichern(
                 signal["id"], "KEINE_NEUEN_TRADES",
-                "Export unverändert (SHA identisch) — kein Modellaufruf nötig.")
+                "Export unverändert (SHA identisch) — kein Modellaufruf nötig.", quelle="mql5")
         return {"signal": name, "einordnung": "KEINE_NEUEN_TRADES",
                 "zusammenfassung": f"{name}: keine neuen Trades"}
 
@@ -301,11 +310,11 @@ def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
     if not neue:
         # Geänderte Datei, aber keine neuen FILLED-Trades (z. B. nur Kontobewegung)
         delta_id = dossier.delta_speichern(signal["id"], alt_sha, neu_sha,
-                                           0, kzz)
+                                           0, kzz, quelle="mql5")
         dossier.beobachtung_speichern(
             signal["id"], "KEINE_NEUEN_TRADES",
             "Exportdatei geändert, aber keine neuen gefüllten Trades "
-            "(Kennzahlen leer).", delta_ref=delta_id)
+            "(Kennzahlen leer).", delta_ref=delta_id, quelle="mql5")
         return {"signal": name, "einordnung": "KEINE_NEUEN_TRADES",
                 "zusammenfassung": f"{name}: Datei geändert, keine neuen Trades"}
 
@@ -325,17 +334,17 @@ def _signal_pruefen_inner(signal: dict, settings: dict, session: Mql5Session,
             signal["id"], "NICHT_GEPRUEFT",
             "LLM-Prüfung nicht möglich (Key/Budget/API) — Delta-Kennzahlen "
             "im Protokoll (Schritt 'delta'); Prüfung wird im nächsten Lauf "
-            "wiederholt.")
+            "wiederholt.", quelle="mql5")
         return {"signal": name, "einordnung": "NICHT_GEPRUEFT",
                 "zusammenfassung": f"{name}: LLM-Prüfung nicht möglich, "
                                     "wird wiederholt"}
     antwort, schritt_id = llm
     einordnung, text = _einordnung_parsen(antwort)
     delta_id = dossier.delta_speichern(signal["id"], alt_sha, neu_sha,
-                                       len(neue), kzz)
+                                       len(neue), kzz, quelle="mql5")
     beobachtung_id = dossier.beobachtung_speichern(
         signal["id"], einordnung, text, delta_ref=delta_id,
-        schritt_ref=schritt_id)
+        schritt_ref=schritt_id, quelle="mql5")
     if einordnung == "STILBRUCH":
         melder.stilbruch_alert(name, text, schritt_id, lauf_id, signal["id"],
                                beobachtung_id=beobachtung_id)

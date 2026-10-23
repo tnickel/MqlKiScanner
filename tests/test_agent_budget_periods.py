@@ -124,6 +124,7 @@ def test_length_retry_costs_and_outer_aggregate_count_once(clock,monkeypatch):
 
 
 def test_old_journal_migration_preserves_real_legacy_costs(clock):
+    db.init_db()  # Budget-only legacy fixture inside the explicit identity schema.
     old_schema=journal._SCHEMA.replace("    budget_ledger INTEGER NOT NULL DEFAULT 0,\n","")
     assert "budget_ledger" not in old_schema
     with db._connect() as conn:

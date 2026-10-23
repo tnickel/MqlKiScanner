@@ -20,9 +20,11 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections import Counter
 from pathlib import Path
 
 from . import db, downloader_client, ingest, pipeline, quellen
+from .signal_identity import identity_key
 
 
 def _normalisiere(items: list[dict]) -> list[dict]:
@@ -71,12 +73,16 @@ def sync(log=None, *, kuerzel: str | None = None) -> dict:
     quellen._ensure()
     quellen_aktiv = db.list_quellen(nur_aktiv=True)
     if kuerzel:
-        quellen_aktiv = [q for q in quellen_aktiv if q["kuerzel"] == kuerzel]
+        kuerzel = db.kanonische_quelle(kuerzel)
+        quellen_aktiv = [q for q in quellen_aktiv
+                        if db.kanonische_quelle(q["kuerzel"]) == kuerzel]
     summary: dict = {"quellen": {}, "gesamt": 0}
     for quelle in quellen_aktiv:
         eintrag = {"anzahl": 0, "geloescht": 0, "fehler": None}
         try:
-            items = _normalisiere(ingest.hole_katalog(quelle))
+            # The overview includes known zero-audience providers. This
+            # metadata request must not broaden the scan/trade-download scope.
+            items = _normalisiere(ingest.hole_katalog(quelle, min_subscribers=0))
             gespeichert, geloescht = db.katalog_upsert_many(
                 quelle["kuerzel"], items)
             eintrag["anzahl"] = gespeichert
@@ -91,10 +97,31 @@ def sync(log=None, *, kuerzel: str | None = None) -> dict:
         db.katalog_sync_vermerken(quelle["kuerzel"], eintrag["anzahl"],
                                   eintrag["fehler"])
         eintrag["gelaufen_am"] = db.katalog_sync_status().get(
-            quelle["kuerzel"], {}).get("gelaufen_am")
+            db.kanonische_quelle(quelle["kuerzel"]), {}).get("gelaufen_am")
         summary["quellen"][quelle["kuerzel"]] = eintrag
         summary["gesamt"] += eintrag["anzahl"]
     return summary
+
+
+def signal_identitaet(result) -> tuple[str, int]:
+    """Source-scoped display identity; numeric IDs are not globally unique."""
+    return identity_key(result)
+
+
+def mehrdeutige_ids(identitaeten) -> set[int]:
+    quellen: dict[int, set[str]] = {}
+    for quelle, signal_id in identitaeten:
+        quellen.setdefault(int(signal_id), set()).add(str(quelle or "mql5"))
+    return {sid for sid, namen in quellen.items() if len(namen) > 1}
+
+
+def _transport_index(rows) -> dict:
+    """Explicit UID mirrors share their owner's canonical source namespace."""
+    result = {}
+    # Prefer active transports, preserving DB order within each group.
+    for row in sorted(rows, key=lambda q: not q.get("aktiv", True)):
+        result.setdefault(db.kanonische_quelle(row["kuerzel"]), row)
+    return result
 
 
 def katalog_resultate(*, gescannt=None, studien=None, progress=None,
@@ -102,21 +129,31 @@ def katalog_resultate(*, gescannt=None, studien=None, progress=None,
     """Katalogzeilen als leichtgewichtige ScanResults für die Übersicht.
 
     Gescannte Signale (signals-Tabelle) GEWINNEN — sie sind hier dedupliert
-    raus und erscheinen weiter über results_from_db. Doppelte signal_id
-    über Quellen: erste Zeile gewinnt (katalog_list sortiert Abonnenten
-    absteigend — der interessanteste Eintrag gewinnt). Bereits gecachte
+    raus und erscheinen weiter über results_from_db. Dedupliziert wird
+    ausschließlich dieselbe (Quelle, ID); andere Quellen bleiben sichtbar.
+    Bereits gecachte
     Trades/Kennzahlen (quellen_artefakte) werden mitgeliefert — Zeilen MIT
     Trades rechnen damit sofort echte Statistiken, die anderen lassen sich
-    per Button nachladen. Rückgabe (resultate, stats_je_id).
+    per Button nachladen. Rückgabe (resultate, stats_je_quelle_und_id).
     """
     db.init_db()
-    gescannt = db.known_signal_ids() if gescannt is None else gescannt
-    quellen_nach_kuerzel = {str(q["kuerzel"]): q for q in
-                          (db.list_quellen() if quellen_rows is None else quellen_rows)}
+    gescannt = ({signal_identitaet(row) for row in db.list_catalog()}
+                if gescannt is None else set(gescannt))
+    # Preserve the old explicitly supplied numeric exclusion interface.
+    # Production callers pass source-scoped identities.
+    legacy_ids = {sid for sid in gescannt if isinstance(sid, int)}
+    gescannt = {key for key in gescannt if isinstance(key, tuple)}
+    for sid in legacy_ids:
+        owner = db.resolve_identity(sid)
+        if owner is not None:
+            gescannt.add(identity_key(owner))
+    quellen_nach_kuerzel = _transport_index(
+        db.list_quellen() if quellen_rows is None else quellen_rows)
     resultate: list = []
-    stats_je_id: dict[int, dict] = {}
-    gesehen: set[int] = set()
+    stats_je_id: dict[tuple[str, int], dict] = {}
+    gesehen: set[tuple[str, int]] = set()
     zeilen = db.katalog_list() if katalog_rows is None else katalog_rows
+    mehrdeutig = mehrdeutige_ids(gescannt | {signal_identitaet(z) for z in zeilen})
     artefakte = db.list_quellen_artefakte() if artefakte is None else artefakte
     if progress:
         progress(0, len(zeilen))
@@ -124,10 +161,11 @@ def katalog_resultate(*, gescannt=None, studien=None, progress=None,
         if progress:
             progress(nr - 1, len(zeilen))
         signal_id = int(zeile["signal_id"])
-        kuerzel = str(zeile.get("quelle") or "")
-        if signal_id in gescannt or signal_id in gesehen:
+        kuerzel = str(zeile.get("quelle") or "mql5")
+        identitaet = (kuerzel, signal_id)
+        if identitaet in gescannt or identitaet in gesehen:
             continue
-        gesehen.add(signal_id)
+        gesehen.add(identitaet)
         res = pipeline.ScanResult(
             id=signal_id,
             name=zeile.get("name") or str(signal_id),
@@ -136,9 +174,14 @@ def katalog_resultate(*, gescannt=None, studien=None, progress=None,
             abonnenten=zeile.get("abonnenten"),
             wochen=zeile.get("wochen"),
             quelle=kuerzel or "mql5",
+            signal_ref=zeile.get("signal_ref"),
+            quellen_uid=zeile.get("quellen_uid") or "",
             herkunft="Katalog",
         )
         quelle = quellen_nach_kuerzel.get(kuerzel)
+        if (quelle is not None and res.quellen_uid and quelle.get("quellen_uid")
+                and quelle["quellen_uid"] != res.quellen_uid):
+            quelle = None
         version = str(zeile.get("version") or "")
         if quelle is not None and version:
             res.quelle_id = int(quelle["id"])
@@ -151,7 +194,7 @@ def katalog_resultate(*, gescannt=None, studien=None, progress=None,
                 if metrics and metrics.get("path") \
                         and Path(metrics["path"]).exists():
                     stats = _metrics_aus_artefakt(res, version, metrics)
-                    stats_je_id[signal_id] = stats
+                    stats_je_id[identitaet] = stats
                     res.dd_equity_pct = stats.get("dd_equity_pct")
                     res.ertrag_monat_pct = stats.get("monthly_growth_pct")
                     res.broker_server = stats.get("broker_server")
@@ -160,7 +203,7 @@ def katalog_resultate(*, gescannt=None, studien=None, progress=None,
     # Batch-Equity-Studien („Lücken füllen", Nutzer 08.10.2026): True-DD,
     # TrueRetDD-Familie und True-DD USD in die Katalog-Zeilen mappen —
     # Forensik gibt es hier nicht, die Studie gewinnt immer (SHA-geschützt).
-    studien = db.list_equity_studien() if studien is None else studien
+    studien = db.list_equity_studien(identitaeten=True) if studien is None else studien
     for res in resultate:
         pipeline.studie_anwenden(res, studien)
     if progress:
@@ -175,7 +218,10 @@ def metrics_stats(result) -> dict:
     wird dann die genaue Quelle/Version aus ihrem Katalogeintrag aufgeloest.
     Kein Ersatz durch andere Quellen oder widersprechende Plattformversionen.
     """
-    ref = quellen_referenz(result)
+    try:
+        ref = quellen_referenz(result)
+    except ValueError:
+        return {}
     if ref is None:
         return {}
     quelle_id, version = ref
@@ -227,16 +273,34 @@ def workflow_stats_bulk(resultate, workflow_stats, *, katalog_rows=None,
     quellen_rows = db.list_quellen() if quellen_rows is None else quellen_rows
     artefakte = db.list_quellen_artefakte() if artefakte is None else artefakte
     katalog_index = {(str(z['quelle']), int(z['signal_id'])): z for z in zeilen}
-    quellen_index = {str(q['kuerzel']): int(q['id']) for q in quellen_rows}
-    out = {int(sid): dict(stats or {}) for sid, stats in workflow_stats.items()}
+    quellen_index = _transport_index(quellen_rows)
+    resultate = list(resultate)
+    counts = Counter(int(r.id) for r in resultate)
+    out = {}
     for res in resultate:
-        kuerzel = str(res.quelle or '')
+        key = identity_key(res)
+        if counts[int(res.id)] > 1 and int(res.id) in workflow_stats and key not in workflow_stats:
+            raise ValueError(f"Kennzahlen für mehrdeutige ID {res.id} benötigen eine Quelle")
+        if int(res.id) in workflow_stats and key not in workflow_stats:
+            owner = db.resolve_identity(int(res.id))
+            if owner is not None and identity_key(owner) != key:
+                raise ValueError(f"Kennzahlen für ID {res.id} gehören zu einer anderen Quelle")
+        # Older callers may supply ID-keyed stats only for an unambiguous row.
+        old = (workflow_stats.get(int(res.id), {})
+               if counts[int(res.id)] == 1 else {})
+        out[key] = dict(workflow_stats.get(key, old) or {})
+    for res in resultate:
+        kuerzel = identity_key(res)[0]
         zeile = katalog_index.get((kuerzel, int(res.id)))
-        qid = quellen_index.get(kuerzel)
-        if zeile is None or qid is None:
+        quelle = quellen_index.get(kuerzel)
+        if zeile is None or quelle is None:
             continue
+        qid = int(quelle['id'])
+        uid = getattr(res, 'quellen_uid', '') or ''
+        same_uid = bool(uid and uid == quelle.get('quellen_uid'))
         version = str(zeile.get('version') or '')
-        if (not version or (res.quelle_id and int(res.quelle_id) != qid)
+        if (not version or (uid and quelle.get('quellen_uid') and not same_uid)
+                or (res.quelle_id and int(res.quelle_id) != qid and not same_uid)
                 or (res.quelle_version and res.quelle_version != version)
                 or (res.platform and ingest._PLATTFORM.get(version) != res.platform.casefold())):
             continue
@@ -257,7 +321,7 @@ def workflow_stats_bulk(resultate, workflow_stats, *, katalog_rows=None,
             continue
         frisch = _metrics_aus_artefakt(
             res, version, artefakte.get((qid, int(res.id), version, 'metrics')))
-        bisher = out.setdefault(int(res.id), {})
+        bisher = out.setdefault(identity_key(res), {})
         if "account_currency" in frisch:
             res.account_currency = frisch["account_currency"]
             bisher["account_currency"] = frisch["account_currency"]
@@ -278,24 +342,80 @@ def workflow_stats_bulk(resultate, workflow_stats, *, katalog_rows=None,
 def quellen_referenz(result) -> tuple[int, str] | None:
     """(quelle_id, version) fürs on-demand-Nachladen eines ScanResults.
 
-    Katalog-Zeilen tragen beide Felder; gescannte Signale nur das Kürzel —
-    dort wird die Version über die Katalog-Zeile des gleichen
-    (Kürzel, Signal-ID)-Paars aufgelöst (z. B. fehlgeschlagener Scan:
-    Quelle bekannt, Trade-Export nie angekommen). None ohne jede Referenz
-    (reines MQL5-Direkt-Signal).
+    Katalog-Zeilen tragen beide Felder. Persistierte Schema-2-Workflows
+    loesen ihren belegten Besitzer ueber die exakte Registry-UID auf; ihre
+    bekannte Plattform bestimmt die API-Version. Eine Katalogzeile ist
+    dafuer nicht erforderlich. Ohne solchen Besitzerbeleg bleibt nur der
+    bisherige explizite Katalogvertrag. Keine numerische Besitzervermutung.
     """
     if getattr(result, "quelle_id", None):
-        return int(result.quelle_id), str(getattr(result, "quelle_version", "") or "")
-    kuerzel = str(getattr(result, "quelle", "") or "")
+        quelle = db.get_quelle(int(result.quelle_id))
+        key = identity_key(result)
+        if quelle is not None and db.kanonische_quelle(quelle["kuerzel"]) != key[0]:
+            raise ValueError("Datenquellen-Verbindung und Signalquelle widersprechen sich.")
+        owner = db.resolve_identity(int(result.id), quelle=key[0],
+                                    signal_ref=getattr(result, "signal_ref", None))
+        uid = getattr(result, "quellen_uid", "") or (owner.quellen_uid if owner else "")
+        if owner is not None and uid != owner.quellen_uid:
+            raise ValueError("Quellen-UID und Signalquelle widersprechen sich.")
+        if quelle is not None and uid and quelle.get("quellen_uid") != uid:
+            raise ValueError("Datenquellen-Verbindung und Quellen-UID widersprechen sich.")
+        if quelle is None or not quelle.get("aktiv", True):
+            alternative = next((q for q in db.list_quellen(nur_aktiv=True)
+                                if uid and q.get("quellen_uid") == uid), None)
+            quelle = alternative or quelle
+        if quelle is None:
+            return None
+        version = str(getattr(result, "quelle_version", "") or "")
+        platform = str(getattr(result, "platform", "") or "")
+        if version and platform and downloader_client.platform_version(platform) != version:
+            raise ValueError("Datenquellen-Version und Signalplattform widersprechen sich.")
+        return int(quelle["id"]), version
+    uid = getattr(result, "quellen_uid", "") or ""
+    signal_ref = getattr(result, "signal_ref", None)
+    if uid or signal_ref is not None:
+        key = identity_key(result)
+        owner = db.resolve_identity(int(result.id), quelle=key[0], signal_ref=signal_ref)
+        if owner is None:
+            return None
+        if uid and uid != owner.quellen_uid:
+            raise ValueError("Quellen-UID und Signalquelle widersprechen sich.")
+        version = downloader_client.platform_version(getattr(result, "platform", ""))
+        bekannte_version = str(getattr(result, "quelle_version", "") or "")
+        if version is None:
+            return None
+        if bekannte_version and bekannte_version != version:
+            raise ValueError("Datenquellen-Version und Signalplattform widersprechen sich.")
+        # Explizite Spiegel derselben UID teilen den Besitzer. Wie bisher
+        # entscheidet die stabile Registry-Reihenfolge zwischen aktiven
+        # Transporten; ein fremder Besitzer mit gleicher Anbieter-ID nie.
+        quelle = next((q for q in db.list_quellen(nur_aktiv=True)
+                       if q.get("aktiv", True) and q.get("quellen_uid") == owner.quellen_uid), None)
+        if quelle is None:
+            return None
+        if db.kanonische_quelle(quelle["kuerzel"]) != owner.quelle:
+            raise ValueError("Datenquellen-Verbindung und Signalquelle widersprechen sich.")
+        return int(quelle["id"]), version
+    kuerzel = identity_key(result)[0]
     if not kuerzel:
         return None
     zeile = next((z for z in db.katalog_list()
                   if z["quelle"] == kuerzel
                   and int(z["signal_id"]) == int(result.id)), None)
-    quelle = next((q for q in db.list_quellen() if q["kuerzel"] == kuerzel), None)
+    quelle = _transport_index(db.list_quellen()).get(kuerzel)
     if zeile is None or quelle is None:
         return None
     return int(quelle["id"]), str(zeile.get("version") or "")
+
+
+def require_eindeutige_studien_identitaet(result) -> None:
+    """Validate explicit ownership; another source's equal ID is independent."""
+    if not db.DB_PATH.exists():
+        db.init_db()
+    db.resolve_identity(int(result.id), quelle=identity_key(result)[0],
+                        signal_ref=getattr(result, "signal_ref", None))
+    if getattr(result, "quelle_id", None):
+        quellen_referenz(result)
 
 
 def require_studienwaehrung(result) -> None:
@@ -306,6 +426,7 @@ def require_studienwaehrung(result) -> None:
     nachladen, auch wenn die CSV bereits lokal liegt. Kein Offline-Ersatz
     durch einen älteren USD-Wert und keine Zuordnung über fremde Quellen.
     """
+    require_eindeutige_studien_identitaet(result)
     try:
         pipeline.require_usd_account(result)
         return
@@ -322,7 +443,8 @@ def require_studienwaehrung(result) -> None:
     quelle = db.get_quelle(quelle_id)
     platform = str(getattr(result, "platform", "") or "")
     bekannte_version = str(getattr(result, "quelle_version", "") or "")
-    if (quelle is None or quelle.get("kuerzel") != getattr(result, "quelle", "")
+    if (quelle is None or not quelle.get("aktiv", True)
+            or db.kanonische_quelle(quelle.get("kuerzel")) != identity_key(result)[0]
             or version not in ingest._PLATTFORM
             or (bekannte_version and bekannte_version != version)
             or (platform and downloader_client.platform_version(platform) != version)):
@@ -346,7 +468,7 @@ def require_studienwaehrung(result) -> None:
     pipeline.require_usd_account(result)
 
 
-def lade_signal_daten(result, log=None) -> tuple[str, bool]:
+def lade_signal_daten(result, log=None, *, allow_offline_cache: bool = True) -> tuple[str, bool]:
     """Trades + Kennzahlen EINES Katalog-Signals on demand vom Client holen.
 
     Nutzt denselben SHA-geprüften Cache wie der Scan (ingest.hole_trades/
@@ -358,17 +480,28 @@ def lade_signal_daten(result, log=None) -> tuple[str, bool]:
     # Batch-Lücke 08.10.2026: gescannte Signale tragen keine quelle_id —
     # die Referenz wird hier selbst aufgelöst (Kürzel → Katalog-Zeile →
     # datenquellen-Zeile), statt mit None zu crashen (319 Signale!).
-    if getattr(result, "quelle_id", None) is None:
+    try:
         ref = quellen_referenz(result)
-        if ref is None:
-            raise downloader_client.DownloaderError(
-                f"Für #{getattr(result, 'id', '?')} ist keine Quelle "
-                "auflösbar (weder quelle_id noch Katalog-Eintrag zum Kürzel).")
-        result.quelle_id, result.quelle_version = ref
+    except ValueError as exc:
+        raise downloader_client.DownloaderError(str(exc)) from exc
+    if ref is None:
+        raise downloader_client.DownloaderError(
+            f"Für #{getattr(result, 'id', '?')} ist keine Quelle "
+            "auflösbar (weder quelle_id noch Katalog-Eintrag zum Kürzel).")
+    quelle_id, version = ref
+    platform = str(getattr(result, "platform", "") or "")
+    if (version not in ingest._PLATTFORM
+            or (platform and downloader_client.platform_version(platform) != version)):
+        raise downloader_client.DownloaderError(
+            "Datenquellen-Version und Signalplattform widersprechen sich.")
+    result.quelle_id, result.quelle_version = quelle_id, version
     quelle = db.get_quelle(int(result.quelle_id))
     if quelle is None:
         raise downloader_client.DownloaderError(
             f"Datenquelle {result.quelle!r} existiert nicht (mehr).")
+    if not quelle.get("aktiv", True):
+        raise downloader_client.DownloaderNotConfigured(
+            f"Keine aktive Datenquelle für {identity_key(result)[0]}:{result.id} konfiguriert.")
     if log:
         log(f"Trades + Kennzahlen für #{result.id} von {quelle['kuerzel']} laden …")
     # A previous USD proof cannot authorize a newly downloaded native CSV if
@@ -378,14 +511,18 @@ def lade_signal_daten(result, log=None) -> tuple[str, bool]:
         None, str(quelle["kuerzel"]),
         quelle_version=result.quelle_version).get("account_currency")
     try:
-        antwort = ingest.hole_metrics(quelle, int(result.id), result.quelle_version)
+        antwort = ingest.hole_metrics(quelle, int(result.id), result.quelle_version,
+                    **({"allow_offline_cache": False} if not allow_offline_cache else {}))
         result.account_currency = ingest.metrics_zu_stats(
             antwort, str(quelle["kuerzel"]),
             quelle_version=result.quelle_version).get("account_currency")
     except downloader_client.DownloaderError:
+        if not allow_offline_cache:
+            raise
         # Kennzahlen sind Zusatz — die Trades allein rechnen schon die
         # ganze Vorstufen-Statistik (Plattformspalten bleiben dann leer).
         pass
     pfad, geaendert = ingest.hole_trades(quelle, int(result.id),
-                                         result.quelle_version)
+                 result.quelle_version,
+                 **({"allow_offline_cache": False} if not allow_offline_cache else {}))
     return pfad, geaendert

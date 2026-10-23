@@ -38,13 +38,13 @@ def _old_failed_signal():
         "forensik_version": FORENSICS_VERSION,
     })
     db.store_forensik(123, {"version": FORENSICS_VERSION, "score": 1.0,
-                            "peak_exposure": {"shock_pct_max": 99999}})
+                            "peak_exposure": {"shock_pct_max": 99999}}, quelle="mql5")
 
 
 def test_scan_transaction_rolls_back_even_after_forensics_write(live_scan, monkeypatch):
     pipe, csv = live_scan
     _old_failed_signal()
-    db.store_trade_file(123, str(csv))
+    db.store_trade_file(123, str(csv), quelle="mql5")
     before = db.list_catalog()
     original = db.store_forensik
 
@@ -91,7 +91,7 @@ def test_obsolete_or_incomplete_database_findings_are_not_candidates(version, sh
         "forensik_ok": True, "forensik_version": version, "ertrag_monat_pct": 10,
     })
     db.store_forensik(123, {"version": version, "score": 1,
-                            "peak_exposure": {"shock_pct_max": shock}})
+                            "peak_exposure": {"shock_pct_max": shock}}, quelle="mql5")
     loaded = pipeline.results_from_db()[0]
     assert not loaded.forensik_vorhanden and loaded.score is None
     assert loaded.ampel == "⚪" and "erneute Prüfung" in loaded.urteil

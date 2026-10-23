@@ -160,10 +160,10 @@ def test_history_roundtrip_und_aktualisierung():
         {"timestamp": "2026-09-08T18:00:10", "subscribers": 45, "change": 3},
         {"timestamp": "", "subscribers": 99, "change": 0},  # ohne Zeit: übersprungen
     ]
-    assert db.store_history_points(77, "mql5", punkte) == 2
+    assert db.store_history_points(77, "mql5", punkte, quelle="mql5") == 2
     assert db.store_history_points(77, "mql5",
                                    [{"timestamp": "2026-09-08T18:00:10",
-                                     "subscribers": 46, "change": 4}]) == 1
+                                     "subscribers": 46, "change": 4}], quelle="mql5") == 1
     verlauf = db.get_history(77)
     assert [(p["ts"], p["subscribers"], p["change"]) for p in verlauf] == [
         ("2026-09-01T18:00:05", 42, 0), ("2026-09-08T18:00:10", 46, 4)]
@@ -174,10 +174,10 @@ def test_history_roundtrip_und_aktualisierung():
 def test_downloader_reports_roundtrip():
     db.init_db()
     db.store_downloader_report(77, "mql5", "a.pdf", "/tmp/a.pdf",
-                               size_bytes=1200, last_modified="2026-09-20T10:00:00")
-    db.store_downloader_report(77, "mql4", "b.pdf", "/tmp/b.pdf", size_bytes=3)
+                               size_bytes=1200, last_modified="2026-09-20T10:00:00", quelle="mql5")
+    db.store_downloader_report(77, "mql4", "b.pdf", "/tmp/b.pdf", size_bytes=3, quelle="mql5")
     db.store_downloader_report(77, "mql5", "a.pdf", "/tmp/a2.pdf",
-                               size_bytes=1300, last_modified="2026-09-21T10:00:00")
+                               size_bytes=1300, last_modified="2026-09-21T10:00:00", quelle="mql5")
     berichte = db.list_downloader_reports(77)
     assert [(b["version"], b["name"], b["path"]) for b in berichte] == [
         ("mql4", "b.pdf", "/tmp/b.pdf"), ("mql5", "a.pdf", "/tmp/a2.pdf")]
@@ -186,9 +186,9 @@ def test_downloader_reports_roundtrip():
 
 def test_report_counts_fuer_tabellenspalte():
     db.init_db()
-    db.store_downloader_report(77, "mql5", "a.pdf", "/tmp/a.pdf", size_bytes=1)
-    db.store_downloader_report(77, "mql5", "b.pdf", "/tmp/b.pdf", size_bytes=1)
-    db.store_downloader_report(88, "mql4", "c.pdf", "/tmp/c.pdf", size_bytes=1)
+    db.store_downloader_report(77, "mql5", "a.pdf", "/tmp/a.pdf", size_bytes=1, quelle="mql5")
+    db.store_downloader_report(77, "mql5", "b.pdf", "/tmp/b.pdf", size_bytes=1, quelle="mql5")
+    db.store_downloader_report(88, "mql4", "c.pdf", "/tmp/c.pdf", size_bytes=1, quelle="mql5")
     assert db.downloader_report_counts([77, 88, 99]) == {77: 2, 88: 1}
     assert db.downloader_report_counts([]) == {}
     assert db.downloader_report_counts([0]) == {}
@@ -258,7 +258,7 @@ def test_fetch_reports_spiegelt_pdf_und_ueberspringt_unveraenderte(monkeypatch):
     assert len(neu) == 1
     pfad = Path(neu[0])
     assert pfad.read_bytes() == b"%PDF-1.4 fake"
-    assert config.DOWNLOADER_DIR / "77" / "reports" / "mql5" == pfad.parent
+    assert config.DOWNLOADER_DIR / db.resolve_identity(77, quelle="mql5").quellen_uid / "77" / "reports" / "mql5" == pfad.parent
     assert db.list_downloader_reports(77)[0]["last_modified"] == "2026-09-20T10:00:00"
     # Gleicher Name + gleiche Größe → kein erneuter Download.
     assert app_ui._dl_fetch_reports(_Result()) == []
@@ -438,7 +438,7 @@ def test_abgleich_bewertet_nie_neu():
     """Grundregel: Der Sync berührt Signale, Forensik und Analysen nicht."""
     db.init_db()
     db.upsert_signal(77, name="Alt", platform="MT5", abonnenten=10)
-    db.store_forensik(77, {"trading_dd_pct": 1.0})
+    db.store_forensik(77, {"trading_dd_pct": 1.0}, quelle="mql5")
     fake = _FakeClient(history={
         "mql5": [{"timestamp": "2026-09-02T18:00:05", "subscribers": 999, "change": 900}],
     })
@@ -463,7 +463,7 @@ def _punkte(paarliste):
 
 def test_abo_bilanz_aktuell_und_fenster():
     db.init_db()
-    db.store_history_points(77, "mql5", _punkte([(100, 30), (31, 38), (7, 45), (0, 50)]))
+    db.store_history_points(77, "mql5", _punkte([(100, 30), (31, 38), (7, 45), (0, 50)]), quelle="mql5")
     z = downloader_sync.abo_bilanz([77], platformen={77: "MT5"})[77]
     assert z["abonnenten"] == 50
     assert z["tage7"] == 5        # 50 − 45 (Punkt vor 7 Tagen)
@@ -474,7 +474,7 @@ def test_abo_bilanz_aktuell_und_fenster():
 
 def test_abo_bilanz_negativ_und_zu_kurzer_verlauf():
     db.init_db()
-    db.store_history_points(77, "mql5", _punkte([(100, 60), (8, 55), (0, 50)]))
+    db.store_history_points(77, "mql5", _punkte([(100, 60), (8, 55), (0, 50)]), quelle="mql5")
     bilanz = downloader_sync.abo_bilanz([77], platformen={77: "MT5"})[77]
     assert bilanz["tage7"] == -5         # 50 − 55 (Punkt vor 8 Tagen im Fenster)
     assert bilanz["tage30"] is None      # Vergleichspunkt 100 Tage alt: außerhalb
@@ -485,8 +485,8 @@ def test_abo_bilanz_negativ_und_zu_kurzer_verlauf():
 
 def test_abo_bilanz_waehlt_plattformversion():
     db.init_db()
-    db.store_history_points(77, "mql4", _punkte([(10, 7), (0.2, 9)]))
-    db.store_history_points(77, "mql5", _punkte([(10, 40), (0.1, 44)]))
+    db.store_history_points(77, "mql4", _punkte([(10, 7), (0.2, 9)]), quelle="mql5")
+    db.store_history_points(77, "mql5", _punkte([(10, 40), (0.1, 44)]), quelle="mql5")
     assert downloader_sync.abo_bilanz([77], platformen={77: "MT4"})[77]["abonnenten"] == 9
     # Ohne Plattform-Angabe: die Version mit dem neuesten Messpunkt.
     assert downloader_sync.abo_bilanz([77], platformen={})[77]["abonnenten"] == 44

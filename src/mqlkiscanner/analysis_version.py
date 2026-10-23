@@ -33,4 +33,10 @@ Bei Änderungen an Pflichtprüfungen oder Bewertungsregeln erhöhen: Live-Befund
 # darf nicht als USD-Basis für H1-/Schockmessung wiederverwendet werden.
 # 19: Auch MQL-Quelltrades sind native Kontobeträge; kein pauschaler USD-
 # Vertrag durch REST-Transport. Nur belegtes USD darf in die USD-Forensik.
-FORENSICS_VERSION = 19
+# 20: Exakt belegte Vantage-FT-Kontrakte GER40ft/UK100ft verwenden native
+# EUR-/GBP-Gewinnwaehrung samt historischer USD-Umrechnung. Die bisherigen
+# festen USD-Medianfaktoren und ungebundenen Parallelmodelle entfallen.
+# 21: Exakt belegte Vantage-Kontrakte Nikkei225 (JPY) und Soybean-C (USD),
+# historische CNH-/ETH-Umrechnung im Exposure nur mit geschlossenem H1-Bar,
+# belegter Tradezeit und identischem Terminal-/Serverfeed. Kein CNH=CNY.
+FORENSICS_VERSION = 21

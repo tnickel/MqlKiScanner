@@ -13,6 +13,28 @@ from .parser import load_export
 from .trade_data import build_trade_payload
 
 
+def _load_verified_trade_payload(result):
+    """Bind the prompt bytes to the analyzed SHA before any paid model call."""
+    if not result.trades_path:
+        return {}
+    try:
+        snapshot, digest = db.snapshot_trade_file(result.trades_path)
+        expected = getattr(result, "trades_sha256", "")
+        if expected and digest != expected:
+            raise ValueError("Trade-SHA stimmt nicht mit der geprüften Analyseeingabe überein")
+        payload = build_trade_payload(load_export(
+            snapshot, plattform_positions=getattr(result, "plattform_trades", None)),
+            # Nutzer-Wunsch 20.10.: kleine Exporte VOLLSTÄNDIG mitgeben
+            # (bis 250 Trades ≈ ~15k Zeichen); größere bleiben Aggregate.
+            volle_liste_max_trades=250)
+        db.verify_trade_file(snapshot, digest)
+    except (OSError, ValueError, csv.Error) as exc:
+        raise llm_client.LlmError(f"Trade-Export nicht lesbar: {type(exc).__name__}: {exc}") from exc
+    result.trades_path = snapshot
+    result.trades_sha256 = digest
+    return payload
+
+
 def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
     # Pipeline owns the report contract; import after its module is initialized.
     from .pipeline import (
@@ -20,16 +42,63 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
         refresh_report_verdict, report_basis_for,
     )
 
-    jobs = [r for r in results
-            if r.source_kind == "live" and r.forensik_vorhanden and not r.fehler]
-    total = len(jobs) * 3
+    kinds = ("trade_analyse", "risiko_analyse", "gesamtbericht")
+    # Existing GUI toggle and partial-scan contract already pass this run-only
+    # setting through ScanPipeline. Explicit regeneration overrides resume;
+    # ordinary runs still reuse only persisted, owner-/basis-bound stages.
+    force_rebuild = bool(pipe.settings.get("berichte_neu", False))
+    jobs = []
+    total = 0
+    for result in results:
+        if result.source_kind != "live" or not result.forensik_vorhanden or result.fehler:
+            continue
+        preparation_error = None
+        basis = None
+        missing = set(kinds)
+        try:
+            refresh_report_verdict(result, pipe.settings)
+            if result.trades_path and not result.trades_sha256:
+                try:
+                    result.trades_sha256 = db.file_sha256(result.trades_path)
+                except OSError as exc:
+                    raise llm_client.LlmError(
+                        f"Trade-Export nicht lesbar: {type(exc).__name__}: {exc}") from exc
+            basis = report_basis_for(result, pipe.settings)
+            had_reports = any(getattr(result, field, "") for field in kinds)
+            # Only persisted, owner- and basis-bound parts are reusable. In-memory
+            # answers can also come from an unsuccessful storage attempt.
+            for field in kinds:
+                saved = (db.get_latest_analysis(result.id, field, basis=basis,
+                                                quelle=result.signal_key[0])
+                         if basis and not force_rebuild else None)
+                text = saved.get("text") if saved and saved.get("basis") == basis else None
+                reusable = isinstance(text, str) and bool(text.strip())
+                setattr(result, field, text if reusable else "")
+                setattr(result, f"{field}_at", (saved.get("created_at") or "") if reusable else "")
+                setattr(result, f"{field}_model", (saved.get("model") or "") if reusable else "")
+                if reusable:
+                    missing.remove(field)
+            result.kurzfassung = _extract_kurzfassung(result.gesamtbericht)
+            result.berichte_basis = basis if basis and len(missing) < len(kinds) else ""
+            if had_reports and len(missing) == len(kinds):
+                result.bericht_hinweis = (
+                    "Neuerstellung angefordert; bisherige Berichte werden in diesem Lauf nicht wiederverwendet."
+                    if force_rebuild else
+                    "Bisherige Berichte passen nicht zur aktuellen Bewertungsbasis.")
+            if not basis:
+                raise llm_client.LlmError("Keine belegte aktuelle Bewertungsbasis für KI-Berichte.")
+        except Exception as exc:
+            preparation_error = exc
+        if missing or preparation_error:
+            jobs.append((result, basis, missing, preparation_error))
+            total += len(missing)
     done = failed = 0
     current_signal = 0
-    updated_ids: list[int] = []
+    updated_ids: list[tuple[str, int]] = []
 
     def mark_updated(result):
-        if result.id not in updated_ids:
-            updated_ids.append(result.id)
+        if result.signal_key not in updated_ids:
+            updated_ids.append(result.signal_key)
 
     def progress(message):
         if on_progress:
@@ -55,7 +124,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
         return summary("Keine geeigneten Forensik-Ergebnisse")
 
     kriterien = _kriterien_text(pipe.settings)
-    for current_signal, result in enumerate(jobs, 1):
+    for current_signal, (result, basis, missing, preparation_error) in enumerate(jobs, 1):
         if should_stop and should_stop():
             return stopped()
         result.llm_fehler = ""
@@ -70,29 +139,15 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             progress(f"Fehler bei {result.name}: {exc}")
 
         try:
-            refresh_report_verdict(result, pipe.settings)
-            basis = report_basis_for(result, pipe.settings)
-            if not basis or getattr(result, "berichte_basis", "") != basis:
-                had_reports = any(getattr(result, field, "") for field in
-                                  ("trade_analyse", "risiko_analyse", "gesamtbericht"))
-                for field in ("trade_analyse", "risiko_analyse", "gesamtbericht", "kurzfassung"):
-                    setattr(result, field, "")
-                result.gesamtbericht_at = ""
-                result.berichte_basis = ""
-                if had_reports:
-                    result.bericht_hinweis = "Bisherige Berichte passen nicht zur aktuellen Bewertungsbasis."
-            if not basis:
-                message = "Keine belegte aktuelle Bewertungsbasis für KI-Berichte."
-                if result.trades_path:
-                    message = "Trade-Export nicht lesbar: " + message
-                raise llm_client.LlmError(message)
+            if preparation_error:
+                raise preparation_error
+            payload = _load_verified_trade_payload(result)
             trades_json = "{}"
             n_trades = 0
             if result.trades_path:
                 try:
-                    payload = build_trade_payload(load_export(
-                        result.trades_path,
-                        plattform_positions=getattr(result, 'plattform_trades', None)))
+                    # Already read from a frozen, SHA-verified snapshot above.
+                    db.verify_trade_file(result.trades_path, result.trades_sha256)
                 except (OSError, ValueError, csv.Error) as exc:
                     raise llm_client.LlmError(
                         f"Trade-Export nicht lesbar: {type(exc).__name__}: {exc}") from exc
@@ -100,22 +155,25 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
                 n_trades = payload.get("meta", {}).get("trades", 0)
             model_strong = pipe.settings.get("model_stufe2", "glm-5.3")
             model_flash = pipe.settings.get("model_stufe1", "glm-5.3-flash")
-            trade_prompt = prompt_fill.build_trade_prompt(result, trades_json)
-            risk_prompt = prompt_fill.build_risk_prompt(result, kriterien)
+            trade_prompt = (prompt_fill.build_trade_prompt(result, trades_json)
+                            if "trade_analyse" in missing else "")
+            risk_prompt = (prompt_fill.build_risk_prompt(result, kriterien)
+                           if "risiko_analyse" in missing else "")
         except Exception as exc:
             record_failure(exc, "Berichtsvorbereitung fehlgeschlagen")
             if isinstance(exc, (llm_client.LlmNoBalanceError, llm_client.LlmBudgetError)):
                 return summary(str(exc))
             continue
 
-        log(f"→ [1+2/3] Parallel: Trade-Analyse ({model_strong}, {n_trades} Trades) + "
-            f"Risiko-Analyse ({model_flash}) für {result.name} …")
-        progress(f"Trade- + Risiko-Analyse parallel: {result.name} · warte auf Modellantworten. "
-                 "Danach: Gesamtbericht")
         stages = [
             ("trade_analyse", "Trade-Analyse", trade_prompt, 2, 16384, model_strong),
             ("risiko_analyse", "Risiko-Analyse", risk_prompt, 1, 8192, model_flash),
         ]
+        stages = [stage for stage in stages if stage[0] in missing]
+        if stages:
+            labels = " + ".join(stage[1] for stage in stages)
+            log(f"→ {labels} für {result.name} ({n_trades} Trades) …")
+            progress(f"{labels}: {result.name} · warte auf Modellantworten")
         outcomes = []
         # meta je Call mitfuehren: store_analysis braucht die KOSTEN DIESES
         # Calls (meta["total_tokens"]) — pipe.llm.usage.total_tokens ist der
@@ -154,7 +212,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
                 created_at = db.store_analysis(
                     result.id, field, model,
                     metas[field].get("total_tokens") or 0,
-                    text, basis=basis)
+                    text, basis=basis, quelle=result.signal_key[0])
             except Exception as storage_error:
                 record_failure(RuntimeError(f"{label} nicht gespeichert: {storage_error}"),
                                "Speicherfehler")
@@ -170,6 +228,8 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             return summary(str(abort_error))
         if errors:
             # No synthesis from missing or unsuccessfully persisted parts.
+            continue
+        if "gesamtbericht" not in missing:
             continue
         if should_stop and should_stop():
             return stopped()
@@ -204,7 +264,7 @@ def run_llm(pipe, results, log, on_progress=None, should_stop=None) -> dict:
             result.gesamtbericht_at = db.store_analysis(
                 result.id, "gesamtbericht", model_strong,
                 meta_gb.get("total_tokens") or 0,
-                result.gesamtbericht, basis=basis)
+                result.gesamtbericht, basis=basis, quelle=result.signal_key[0])
         except Exception as exc:
             record_failure(RuntimeError(f"Gesamtbericht nicht gespeichert: {exc}"), "Speicherfehler")
         else:
@@ -250,9 +310,7 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
             "Kein GLM-Key gesetzt (Admin-Bereich → Zugänge). "
             "Die Erweiterte KI-Analyse ist optional.")
     try:
-        payload = build_trade_payload(load_export(
-                        result.trades_path,
-                        plattform_positions=getattr(result, 'plattform_trades', None)))
+        payload = _load_verified_trade_payload(result)
     except (OSError, ValueError, csv.Error) as exc:
         raise llm_client.LlmError(
             f"Trade-Export nicht lesbar: {type(exc).__name__}: {exc}") from exc
@@ -269,13 +327,12 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
         if log:
             log(f"WARNUNG: Urteils-Auffrischung vor der Tiefenanalyse "
                 f"fehlgeschlagen ({exc}) — Analyse läuft mit DB-Stand.")
-    basis: str | None = None
     try:
         basis = report_basis_for(result, settings)
     except Exception as exc:
-        if log:
-            log(f"WARNUNG: Berichtsbasis nicht berechenbar ({exc}) — "
-                "Tiefenanalyse wird ohne Basis gespeichert.")
+        raise llm_client.LlmError(f"Berichtsbasis nicht berechenbar: {exc}") from exc
+    if not basis:
+        raise llm_client.LlmError("Keine belegte aktuelle Bewertungsbasis für die Tiefenanalyse.")
     prompt = prompt_fill.build_tiefenanalyse_prompt(result, trades_json)
     if log:
         log(f"Modellaufruf Stufe 2 gestartet ({len(prompt):,} Zeichen Prompt) — "
@@ -289,7 +346,7 @@ def run_tiefenanalyse_einzeln(result, settings: dict | None = None, log=None) ->
     model = settings.get("model_stufe2", config.MODEL_STUFE2)
     created_at = db.store_analysis(result.id, "tiefenanalyse", model,
                                    meta_ta.get("total_tokens", client.usage.total_tokens) or 0,
-                                   text, basis=basis)
+                                   text, basis=basis, quelle=result.signal_key[0])
     result.tiefenanalyse = text
     result.tiefenanalyse_at = created_at
     result.tiefenanalyse_model = model

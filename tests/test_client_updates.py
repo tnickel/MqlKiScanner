@@ -96,6 +96,48 @@ _SCHNELL = dict(bereit_warten_s=0.5, poll_s=0.01, backoff_s=0.01,
                 timeout_s=5.0, login_timeout_s=0.3)
 
 
+def _coverage_receipt(**changes):
+    return {"signaleGeliefert": 2, "nurAbonnenten": True,
+            "datenstand": "2026-10-23T22:00:00", "subscriberCatalogComplete": False,
+            "subscriberCatalogReachedEnd": True, "subscriberCatalogScanned": 1000,
+            "subscriberCatalogSkippedPositions": [1256], "subscriberCatalogMonths": 1,
+            "subscriberCatalogSort": "2", **changes}
+
+
+def test_subscriber_catalog_gap_is_usable_but_yellow_and_persisted(monkeypatch):
+    quelle = _quelle_an("http://rechner:8199", "vant")
+    _FakeTransport(health=_Antwort(body={"status": "ok", "abonnentenRefresh": True}),
+                   status=[_status("done", jobId="job-1", phase="abonnenten", done=2, total=2,
+                                   ergebnis=_coverage_receipt())]).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None, on_fortschritt=None,
+                             gestopft=lambda: False, modus="abonnenten", **_SCHNELL)
+    assert z["status"] == cu.TEILWEISE
+    assert z["abonnenten_katalog"]["skipped_positions"] == [1256]
+    assert z["abonnenten_katalog"]["complete"] is False
+    assert "globale Top 200 unbestätigt" in z["detail"]
+    assert any("globale Top 200" in str(e.get("hinweise"))
+               for e in db.list_client_updates(limit=5))
+
+
+@pytest.mark.parametrize("change", [
+    {"subscriberCatalogComplete": True},
+    {"subscriberCatalogReachedEnd": False},
+    {"subscriberCatalogSkippedPositions": [True]},
+    {"subscriberCatalogSkippedPositions": [1256, 1256]},
+    {"subscriberCatalogSkippedPositions": []},
+    {"subscriberCatalogScanned": 1},
+    {"subscriberCatalogMonths": True},
+])
+def test_contradictory_subscriber_coverage_is_rejected(monkeypatch, change):
+    quelle = _quelle_an("http://rechner:8199", "vant")
+    _FakeTransport(health=_Antwort(body={"status": "ok", "abonnentenRefresh": True}),
+                   status=[_status("done", jobId="job-1", ergebnis=_coverage_receipt(**change))]
+                   ).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None, on_fortschritt=None,
+                             gestopft=lambda: False, modus="abonnenten", **_SCHNELL)
+    assert z["status"] == cu.FEHLER
+
+
 def test_done_with_trade_failures_finishes_with_warning(monkeypatch):
     quelle = _quelle_an("http://rechner:8199")
     _FakeTransport(status=[_status("done", phase="tradelisten", done=5, total=7,

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from mqlkiscanner import config, fix_signale, ingest, pipeline
+from mqlkiscanner import config, db, fix_signale, ingest, pipeline
 
 
 def test_equal_subscriber_counts_select_same_ids_for_every_catalogue_order():
@@ -49,6 +49,7 @@ def test_unknown_subscribers_remain_allowed_when_subscriber_filter_disabled():
 
 
 def test_fix_id_bypasses_subscriber_filter_without_inventing_count():
+    db.resolve_identity(123, quelle="mql5", create=True)
     selected = pipeline.ScanPipeline({"min_abonnenten": 1, "fix_signal_ids": [123]}).build_candidates(
         [{"id": 123, "wochen": 52, "abonnenten": float("nan")}], lambda _: None)
     assert selected[0]["abonnenten"] is None

@@ -45,7 +45,7 @@ def test_only_new_downloads_still_consider_all_reports(live_reports, monkeypatch
     original = pipeline.ScanPipeline.run_llm
     sent = []
     def run(self, results, *args, **kwargs):
-        sent.extend(r.id for r in results)
+        sent.extend(r.signal_key for r in results)
         return original(self, results, *args, **kwargs)
     monkeypatch.setattr(pipeline.ScanPipeline, 'run_llm', run)
     monkeypatch.setattr(pipeline.ScanPipeline, 'run_portfolio', lambda *a, **k: {'text': 'Portfolio'})
@@ -54,10 +54,10 @@ def test_only_new_downloads_still_consider_all_reports(live_reports, monkeypatch
     at.toggle(key='scan_llm_neu').set_value(rebuild).run()
     finish(at, 'scan_start')
     assert exported == [456]
-    assert set(sent) == ({456} if old_report and not rebuild else {123, 456})
+    assert set(sent) == ({("mql5", 456)} if old_report and not rebuild else {("mql5", 123), ("mql5", 456)})
     assert all(r.gesamtbericht for r in at.session_state['scan_results'])
     assert set(at.session_state['refreshed_signal_ids']) == set(sent)
-    assert at.session_state['scan_new_ids'] == [456]
+    assert at.session_state['scan_new_ids'] == [('mql5', 456)]
 
 
 def test_cached_only_run_has_explicit_empty_freshness(live_reports, monkeypatch):
@@ -72,7 +72,7 @@ def test_cached_only_run_has_explicit_empty_freshness(live_reports, monkeypatch)
     monkeypatch.setattr(pipeline.ScanPipeline, 'run_llm', Mock(side_effect=AssertionError('matching report')))
     monkeypatch.setattr(pipeline.ScanPipeline, 'run_portfolio', lambda *a, **k: {'text': 'Portfolio'})
     at = start_page()
-    at.session_state['refreshed_signal_ids'] = [123]  # previous run must not leak
+    at.session_state['refreshed_signal_ids'] = [('mql5', 123)]  # previous run must not leak
     at.toggle(key='scan_nur_neue').set_value(True).run()
     finish(at, 'scan_start')
     assert at.session_state['refreshed_signal_ids'] == []
@@ -97,10 +97,10 @@ def test_llm_only_freshness_requires_at_least_one_saved_report(live_reports, mon
     monkeypatch.setattr(db, 'store_analysis', store)
     at = start_page()
     at.session_state['scan_results'] = pipeline.results_from_db(pipe.settings)
-    at.session_state['refreshed_signal_ids'] = [999]
+    at.session_state['refreshed_signal_ids'] = [('mql5', 999)]
     at.run()
     finish(at, 'step_btn_llm')
-    assert at.session_state['refreshed_signal_ids'] == ([] if storage == 'failed' else [123])
+    assert at.session_state['refreshed_signal_ids'] == ([] if storage == 'failed' else [('mql5', 123)])
     assert at.session_state['scan_results'][0].trade_analyse == 'Fresh report'
 
 

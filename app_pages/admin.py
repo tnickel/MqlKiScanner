@@ -2,6 +2,7 @@
 """Einstellungen mit klaren Speicherbereichen und kontextbezogener Hilfe."""
 from __future__ import annotations
 
+import math
 import re
 import sqlite3
 import sys
@@ -737,17 +738,20 @@ with scan_tab:
                 _save_group(filter_values, "Scanprofil als Vorgabe für folgende Läufe gespeichert.")
 
     with risk_column, st.container(border=True):
-        section_header("Risikokriterien", "Risiko vor Ertrag. Die Drawdown-Grenze lässt sich nur verschärfen.",
+        section_header("Risikokriterien", "Drawdown-Grenze frei konfigurieren; belastbarer Jahres-Calmar bleibt erforderlich.",
                        help_key="settings_risk")
         old_dd = float(settings["schranke_eq_dd_pct"])
         old_return = float(settings["min_ertrag_pct_monat"])
-        if old_dd > 30 or old_return < 5:
-            st.warning("Die gespeicherten Grenzen weichen von den Projektvorgaben ab. "
-                       "Die Werte unten korrigieren dies erst nach dem Speichern.")
-        max_dd = st.number_input("Maximaler Equity-Drawdown (%)", 0.1, 30.0,
-                                 value=max(0.1, min(30.0, old_dd)), step=1.0, key="admin_max_dd")
-        min_return = st.number_input("Ertragsschwelle pro Monat (%)", min_value=5.0,
-                                     value=max(5.0, old_return), step=0.1, key="admin_min_return")
+        if not math.isfinite(old_dd) or old_dd <= 0:
+            st.warning("Die gespeicherte Drawdown-Grenze ist ungültig. Bitte einen positiven Wert speichern.")
+            old_dd = float(config.DEFAULT_SETTINGS["schranke_eq_dd_pct"])
+        if not math.isfinite(old_return) or old_return < 0:
+            st.warning("Die gespeicherte Ertragsschwelle ist ungültig. Bitte einen Wert ab 0 speichern.")
+            old_return = float(config.DEFAULT_SETTINGS["min_ertrag_pct_monat"])
+        max_dd = st.number_input("Maximaler Equity-Drawdown (%)", min_value=0.0,
+                                 value=old_dd, step=1.0, key="admin_max_dd")
+        min_return = st.number_input("Ertragsschwelle pro Monat (%)", min_value=0.0,
+                                     value=old_return, step=0.1, key="admin_min_return")
         # Nutzer-Entscheid 05.10.: Grün-Gate = Jahres-Calmar (CAGR ÷
         # gemessener Max-Equity-DD), Default 3,0 — frei anhebbar.
         old_calmar = config.min_calmar_jahr(settings)
@@ -760,22 +764,25 @@ with scan_tab:
                                           "schwebender Verluste. 3,0 gilt als "
                                           "sehr gut; unter 3 Monaten "
                                           "Trade-Historie bleibt Grün gesperrt.")
-        st.caption("Projektvorgabe: höchstens 30 % Drawdown; Grün-Gate = "
-                   "Jahres-Calmar ab 3,0 (05.10.), absolute Ertragsschwelle "
-                   "standardmäßig aus (0).")
-        st.info("Die Engine akzeptiert aktuell Ertrag ≥ eingestellter Schwelle. "
-                "Bei 5,0 % gilt daher auch exakt 5,0 % als ausreichend.", icon=":material/info:")
+        st.caption("Keine feste 30-%-Obergrenze: Auch 50 % sind konfigurierbar. "
+                   "Grün benötigt zusätzlich vollständige Forensik und belastbaren "
+                   "Jahres-Calmar gegen die eingestellte Schwelle. "
+                   "Absolute Monatsertragsschwelle: 0 = ausgeschaltet.")
+        st.info("Die Engine vergleicht die eigene geometrische Monatsrendite mit "
+                "der eingestellten Ertragsschwelle (größer oder gleich).", icon=":material/info:")
         risk_values = {"schranke_eq_dd_pct": float(max_dd),
                        "min_ertrag_pct_monat": float(min_return),
                        "min_calmar_jahr": float(min_calmar)}
         _draft_status(_changed(risk_values, settings))
         if action_button("Risikokriterien speichern", key="admin_risk_save", type="primary",
                          help_key="settings_risk", icon=":material/save:"):
-            if not 0 < max_dd <= 30 or not min_return >= 5:
-                st.error("Zulässig: Drawdown über 0 bis höchstens 30 %, Ertragsschwelle mindestens 5 %.")
+            if (not math.isfinite(max_dd) or max_dd <= 0
+                    or not math.isfinite(min_return) or min_return < 0):
+                st.error("Zulässig: endlicher Drawdown über 0 %, Ertragsschwelle mindestens 0 %.")
             else:
                 _save_group(risk_values, "Risikokriterien für folgende Läufe gespeichert.")
-        st.caption("Kein positives Urteil allein anhand dieser Grenzen: Stop-Nachweis und Forensik bleiben erforderlich.")
+        st.caption("Kein positives Urteil allein anhand dieser Grenzen: Forensik und "
+                   "belastbare Effizienz bleiben erforderlich; fehlender SL-Nachweis ist neutral.")
 
     with st.container(border=True):
         section_header("Abrufpausen & Drosselung", "Wartezeiten gehören zum Ablauf und schonen die Datenquelle.",
@@ -887,29 +894,62 @@ with prompts_tab:
                 "output": "Tiefenanalyse-Bericht als eigenes PDF",
             },
         }
+        for key in llm_prompts.ABONNENTEN_PROMPT_KEYS:
+            metadata = llm_prompts.prompt_metadata(key)
+            labels[key] = metadata["label"]
+            placeholders[key] = metadata["placeholders"]
+            prompt_flow[key] = metadata
+        from mqlkiscanner.abonnenten_analyse_ui import render_defaults_editor
+        render_defaults_editor(settings)
+        prompt_group = st.segmented_control(
+            "Vorlagengruppe", ["Workflow", "Abonnentenstatistik"],
+            default="Workflow", key="admin_prompt_group")
+        group_keys = (list(llm_prompts.ABONNENTEN_PROMPT_KEYS)
+                      if prompt_group == "Abonnentenstatistik" else
+                      [key for key in llm_prompts.PROMPT_FILES
+                       if key not in llm_prompts.ABONNENTEN_PROMPT_KEYS])
         st.markdown("**Alle Vorlagen auf einen Blick**")
         st.table([
             {
                 "Vorlage": labels[key],
                 "Warum": prompt_flow[key]["why"],
                 "Eingang": prompt_flow[key]["input"],
-                "Modell": (settings["model_stufe1"] if key == "risiko_analyse"
+                "Modell": (llm_prompts.prompt_model(key, settings)
+                           if key in llm_prompts.ABONNENTEN_PROMPT_KEYS else
+                           settings["model_stufe1"] if key == "risiko_analyse"
                            else settings["model_stufe2"]),
                 "Ausgang": prompt_flow[key]["output"],
             }
-            for key in ("trade_analyse", "risiko_analyse", "gesamtbericht",
-                        "portfolio", "tiefenanalyse")
+            for key in group_keys
         ])
         st.space("small")
         st.markdown("**Vorlage verstehen und bearbeiten**")
-        prompt_key = st.segmented_control("Vorlage auswählen", list(llm_prompts.PROMPT_FILES),
-                                          format_func=lambda key: labels.get(key, key), default="trade_analyse",
+        prompt_key = st.segmented_control("Vorlage auswählen", group_keys,
+                                          format_func=lambda key: labels.get(key, key), default=group_keys[0],
                                           key="admin_prompt_choice")
         if prompt_key:
-            current = llm_prompts.load_prompt(prompt_key)
+            try:
+                current = llm_prompts.load_prompt(prompt_key)
+                prompt_missing = False
+            except llm_prompts.PromptFehlt as exc:
+                current = ""
+                prompt_missing = True
+                st.error(str(exc))
             modified = current.strip() != llm_prompts.DEFAULTS[prompt_key].strip()
-            model = settings["model_stufe1"] if prompt_key == "risiko_analyse" else settings["model_stufe2"]
+            research_prompt = prompt_key in llm_prompts.ABONNENTEN_PROMPT_KEYS
+            model = (llm_prompts.prompt_model(prompt_key, settings) if research_prompt else
+                     settings["model_stufe1"] if prompt_key == "risiko_analyse" else settings["model_stufe2"])
             flow = prompt_flow[prompt_key]
+            if research_prompt:
+                st.info("Eigenes Rechercheprofil: 2 Monate und 50 Trades, standardmäßig keine "
+                        "DD-Obergrenze. Kurztest für alle auswertbaren Strategien; "
+                        "ausführliche Berichte für die besten 5. Die Workflow-Ampel bleibt getrennt.")
+                model_edit = st.text_input("Modell für diese Vorlage", value=model,
+                                           key=f"admin_{prompt_key}_modell")
+                if st.button("Modellzuordnung speichern", key=f"admin_{prompt_key}_modell_save",
+                             disabled=not model_edit.strip()):
+                    _save_group({f"{prompt_key}_modell": model_edit.strip()},
+                                "Modellzuordnung für die Recherchevorlage gespeichert.")
             if prompt_key == "tiefenanalyse":
                 st.warning(
                     "ℹ️ Gelb markierte Sonderrolle: Die Tiefenanalyse ist die "
@@ -927,12 +967,13 @@ with prompts_tab:
             with model_card.container(border=True):
                 st.caption("MODELL")
                 st.write(model)
-                st.badge("Stufe 1" if prompt_key == "risiko_analyse" else "Stufe 2",
+                st.badge("Stufe 1" if prompt_key in {"risiko_analyse", "abonnenten_kurztest"} else "Stufe 2",
                          color="blue")
             with output.container(border=True):
                 st.caption("AUSGANG")
                 st.write(flow["output"])
-            st.caption("Gespeichert: " + ("eigene Vorlage" if modified else "Standardvorlage"))
+            st.caption("Gespeichert: " + ("Vorlage fehlt/leer" if prompt_missing else
+                                         "eigene Vorlage" if modified else "Standardvorlage"))
             required = ["{" + name + "}" for name in placeholders[prompt_key]]
             st.caption("Pflicht-Platzhalter: " + ", ".join(f"`{item}`" for item in required))
             edited = st.text_area("Vorlage bearbeiten", value=current, height=420,

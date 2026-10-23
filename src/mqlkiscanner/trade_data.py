@@ -71,8 +71,80 @@ def _comment_kompakt(comment: str, max_zeichen: int = 80) -> str:
     return text[:max_zeichen]
 
 
-def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
-    """Engine-berechnetes Trade-Level-JSON fuer die LLM-Analyse."""
+def _rekonstruiere_koerbe(trades) -> list[dict]:
+    """Positionskörbe je Symbol: zusammenhängende Overlap-Episoden.
+
+    Ein Korb = Gruppe von Trades desselben Symbols, deren Haltezeiten
+    (Open bis Close) sich überschneiden (verbundene Intervalle). Teil-
+    abschlüsse und Gegenpositionen bleiben im Korb. Rein rechnerisch —
+    die Deutung (Grid, Recovery, Verlustmanagement) macht die KI.
+    """
+    je_symbol: dict[str, list] = defaultdict(list)
+    for t in trades:
+        je_symbol[t.symbol].append(t)
+    koerbe: list[dict] = []
+    for symbol, liste in sorted(je_symbol.items()):
+        liste.sort(key=lambda t: (t.open_time, t.close_time))
+        aktuell: dict | None = None
+        for t in liste:
+            if aktuell is None or t.open_time > aktuell["ende"]:
+                aktuell = {"symbol": symbol, "start": t.open_time,
+                           "ende": t.close_time, "trades": [t]}
+                koerbe.append(aktuell)
+            else:
+                aktuell["trades"].append(t)
+                if t.close_time > aktuell["ende"]:
+                    aktuell["ende"] = t.close_time
+    return koerbe
+
+
+def _verlustkorb_befund(koerbe: list[dict]) -> dict:
+    """§3.1 des Tiefenanalyse-Prompts (20.10.): Verlustkörbe als CODE-Befund.
+
+    Alle negativ abgeschlossenen Körbe mit Zusammenfassung (Median/Ø/max)
+    und Tabelle der 30 schlimmsten — Grundlage für die KI-Deutung, nicht
+    deren Ersatz. Zwischenzeitliches Floating ist hier NICHT enthalten
+    (dafür fehlen Kurse); das benennt der Prompt ausdrücklich.
+    """
+    ergebnisse = [{
+        "symbol": k["symbol"],
+        "start": k["start"].strftime("%Y-%m-%d %H:%M"),
+        "ende": k["ende"].strftime("%Y-%m-%d %H:%M"),
+        "positionen": len(k["trades"]),
+        "netto": round(sum(t.net for t in k["trades"]), 2),
+    } for k in koerbe]
+    verlierer = sorted((e for e in ergebnisse if e["netto"] < 0),
+                       key=lambda e: e["netto"])
+    betraege = [e["netto"] for e in verlierer]
+    return {
+        "zusammenfassung": {
+            "koerbe_gesamt": len(ergebnisse),
+            "koerbe_verlierend": len(verlierer),
+            "verlust_median_usd": round(statistics.median(betraege), 2) if betraege else None,
+            "verlust_avg_usd": round(statistics.mean(betraege), 2) if betraege else None,
+            "verlust_max_usd": round(min(betraege), 2) if betraege else None,
+            "abgrenzung": ("Overlap-Cluster je Symbol (verbundene Haltezeiten); "
+                           "zwischenzeitliches Floating nicht enthalten"),
+        },
+        "tabelle_schlimmste_30": verlierer[:30],
+    }
+
+
+def _kompakt_zeile(t: Trade) -> str:
+    return (f"{t.open_time:%Y-%m-%d %H:%M} {'B' if t.direction == 'Buy' else 'S'}"
+            f" {t.volume:g} {t.symbol} {t.entry_price}->{t.exit_price}"
+            f" {t.net:+.2f}")
+
+
+def build_trade_payload(parsed: ParsedExport, max_samples: int = 12,
+                         volle_liste_max_trades: int = 0) -> dict:
+    """Engine-berechnetes Trade-Level-JSON fuer die LLM-Analyse.
+
+    volle_liste_max_trades > 0: Bei kleinen Exporten (bis zur Grenze)
+    wird die KOMPAKTE vollständige Trade-Liste mitgegeben (Tiefen-
+    analyse, Nutzer-Wunsch 20.10.) — große Historien bleiben auf den
+    Aggregaten (Kontext-/Kostengrenze; größter Cache-Export ~10 MB).
+    """
     trades = parsed.trades
     if not trades:
         return {"fehler": "keine Trades"}
@@ -186,4 +258,22 @@ def build_trade_payload(parsed: ParsedExport, max_samples: int = 12) -> dict:
             "beste": [_trade_row(t) for t in best],
             "erster_handelstag": [_trade_row(t) for t in first_day],
         },
+        # Zeit-/Richtungs-Verteilung (alle Trades; Uhrzeiten wie exportiert,
+        # also Brokerzeit — NICHT als deutsche Lokalzeit ausgeben)
+        "zeitverteilung": {
+            "wochentage_mo_bis_so": [Counter(t.open_time.weekday() for t in trades)[i]
+                                     for i in range(7)],
+            "stunden_top": dict(sorted(Counter(t.open_time.hour for t in trades).items(),
+                                       key=lambda kv: -kv[1])[:8]),
+            "long": sum(1 for t in trades if t.direction == "Buy"),
+            "short": sum(1 for t in trades if t.direction != "Buy"),
+            "halt_h_median": round(statistics.median(durs), 2),
+        },
+        # §3.1 Korb-Verlustforensik (CODE-berechnet über ALLE Körbe)
+        "verlustkoerbe": _verlustkorb_befund(_rekonstruiere_koerbe(trades)),
+        # Vollständige Liste NUR bei kleinen Exporten (kompakt, je Zeile
+        # ~50 Zeichen); sonst bewusst weggelassen — Aggregate decken alles ab.
+        **({"volle_tradeliste": [_kompakt_zeile(t) for t in by_open]}
+           if volle_liste_max_trades and len(trades) <= volle_liste_max_trades
+           else {"volle_tradeliste": None}),
     }

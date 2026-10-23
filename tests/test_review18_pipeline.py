@@ -79,8 +79,8 @@ def test_version_six_metric_snapshots_must_be_rechecked_before_reuse(live_report
     old["stats"]["forensik_version"] = 6
     old["stats"]["eq_dd_pct"] = None  # A title could hide the real risk metric.
     old["forensik"]["version"] = 6
-    db.upsert_signal(result.id, name="By Equity:", platform="MT4", stats=old["stats"])
-    db.store_forensik(result.id, old["forensik"])
+    db.upsert_signal(result.id, name="By Equity:", platform="MT4", stats=old["stats"], quelle="mql5")
+    db.store_forensik(result.id, old["forensik"], quelle="mql5")
     loaded = pipeline.results_from_db(pipe.settings)[0]
     assert not loaded.forensik_vorhanden and loaded.ampel != "🟢"
     assert pipe.run_llm([loaded], lambda _: None)["total"] == 0

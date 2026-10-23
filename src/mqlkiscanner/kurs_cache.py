@@ -66,6 +66,10 @@ class KursCache:
                     PRIMARY KEY (feed, symbol, zeitrahmen, von, bis)
                 ) WITHOUT ROWID
             """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS h1_abrufversuche_gueltig_bis
+                ON h1_abrufversuche(gueltig_bis)
+            """)
 
     @contextmanager
     def _verbinden(self):
@@ -110,6 +114,16 @@ class KursCache:
                   jetzt, H1_SEKUNDEN, jetzt)).fetchall()
         return [dict(zip(("time", "open", "high", "low", "close"), row))
                 for row in rows]
+
+    def vorlaeufige_barzeiten(self, feed: str, symbol: str, von: int, bis: int) -> set[int]:
+        """Unbestaetigte Bars bleiben auch innerhalb alter Historie separat abrufbar."""
+        von, bis = self._pruefe(feed, symbol, von, bis)
+        with self._verbinden() as conn:
+            return {row[0] for row in conn.execute("""
+                SELECT epoch FROM h1_bars
+                WHERE feed = ? AND symbol = ? AND zeitrahmen = 'H1'
+                  AND epoch BETWEEN ? AND ? AND abgeschlossen = 0
+            """, (feed, symbol, von, bis))}
 
     def fehlende_bereiche(self, feed: str, symbol: str, von: int, bis: int,
                           now: float | None = None) -> list[tuple[int, int]]:
@@ -221,11 +235,22 @@ class KursCache:
             # wie die urspruengliche Abfrage. Die bekannten Grenzen sind
             # kein Beleg fuer Kurse in der Luecke, nur fuer die Innenlage
             # des tatsaechlich erneut angefragten Bereichs.
-            bekannt_von, bekannt_bis = conn.execute("""
-                SELECT MIN(epoch), MAX(epoch) FROM h1_bars
+            # Zwei Randabfragen nutzen den Primärschlüssel. Die kombinierte
+            # MIN/MAX-Abfrage durchsucht sonst bei jeder Lücke alle Symbolbars.
+            erste_bar = conn.execute("""
+                SELECT epoch FROM h1_bars
                 WHERE feed = ? AND symbol = ? AND zeitrahmen = 'H1'
                   AND abgeschlossen = 1
+                ORDER BY epoch ASC LIMIT 1
             """, (feed, symbol)).fetchone()
+            letzte_bar = conn.execute("""
+                SELECT epoch FROM h1_bars
+                WHERE feed = ? AND symbol = ? AND zeitrahmen = 'H1'
+                  AND abgeschlossen = 1
+                ORDER BY epoch DESC LIMIT 1
+            """, (feed, symbol)).fetchone()
+            bekannt_von = erste_bar[0] if erste_bar else None
+            bekannt_bis = letzte_bar[0] if letzte_bar else None
             if bekannt_von is not None:
                 innen_von = max(von, bekannt_von)
                 innen_bis = min(bis, bekannt_bis + H1_SEKUNDEN - 1)

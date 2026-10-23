@@ -19,13 +19,14 @@ from ..llm import client as llm_client
 from . import dossier, journal, rollen, rollen_prompts
 
 
-def grundlagen_lesen(signal_id: int) -> dict:
+def grundlagen_lesen(signal_id: int, *, quelle: str = "mql5") -> dict:
     """Neueste Tiefenanalyse/Gesamtbericht/Forensik aus der DB (Texte)."""
-    tiefen = db.get_latest_analysis(signal_id, "tiefenanalyse") or {}
-    bericht = db.get_latest_analysis(signal_id, "gesamtbericht") or {}
+    tiefen = db.get_latest_analysis(signal_id, "tiefenanalyse", quelle=quelle) or {}
+    bericht = db.get_latest_analysis(signal_id, "gesamtbericht", quelle=quelle) or {}
+    identity = db.resolve_identity(signal_id, quelle=quelle)
     with db._connect() as conn:
-        forensik = conn.execute("SELECT json FROM forensik WHERE signal_id=?",
-                                (signal_id,)).fetchone()
+        forensik = conn.execute("SELECT json FROM forensik WHERE signal_ref=?",
+                                (identity.signal_ref if identity else None,)).fetchone()
     return {
         "tiefenanalyse": (tiefen.get("text") or "").strip(),
         "tiefenanalyse_at": tiefen.get("created_at") or "",
@@ -37,7 +38,7 @@ def grundlagen_lesen(signal_id: int) -> dict:
 
 def profil_erstellen(signal_id: int, signal_name: str, signal_url: str,
                      settings: dict | None = None, *,
-                     lauf_id: int | None = None, log=print) -> dict:
+                     lauf_id: int | None = None, log=print, quelle: str = "mql5") -> dict:
     """Ein Profil destillieren (überspringt vorhandene; False ohne Grundlage).
 
     Rückgabe: {"erstellt": bool, "grund": str, "version": int|None}.
@@ -45,13 +46,13 @@ def profil_erstellen(signal_id: int, signal_name: str, signal_url: str,
     settings = settings if settings is not None else config.load_settings()
     modell = settings.get("agenten_betreuer_modell", rollen.STANDARD_MODELL)
     max_tokens = int(settings.get("agenten_betreuer_max_tokens", 8192))
-    basis = grundlagen_lesen(signal_id)
+    basis = grundlagen_lesen(signal_id, quelle=quelle)
     # F-7 (Review 29.09.): Vorhandenes Profil nur behalten, wenn kein NEUERER
     # Gesamtbericht vorliegt — der Docstring versprach Re-Destillation nach
     # erneuter Analyse, der alte Skip übersprang aber immer (Profil veraltete,
     # Folge: falsche STILBRUCH-Alerts). dossier_profil ist versioniert, das
     # INSERT legt die nächste Version an.
-    profil = dossier.profil_lesen(signal_id)
+    profil = dossier.profil_lesen(signal_id, quelle=quelle)
     bericht_neuer = bool(
         basis["gesamtbericht_at"]
         and str((profil or {}).get("erstellt") or "")
@@ -121,7 +122,7 @@ def profil_erstellen(signal_id: int, signal_name: str, signal_url: str,
                  "gesamtbericht_vom": basis["gesamtbericht_at"]}
     version = dossier.profil_speichern(
         signal_id, antwort, modell, grundlage,
-        aenderungs_grund="Erststellung aus Tiefenanalyse/Gesamtbericht")
+        aenderungs_grund="Erststellung aus Tiefenanalyse/Gesamtbericht", quelle=quelle)
     if lauf_id:
         journal.schritt_protokollieren(
             lauf_id, "betreuer", "profil_destillation", prompt=prompt,

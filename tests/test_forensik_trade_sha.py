@@ -15,7 +15,7 @@ def _report():
 
 
 def _signal():
-    return {"name": "Generic", "platform": "MT5", "stats": {
+    return {"name": "Generic", "platform": "MT5", "quelle": "mql5", "stats": {
         "forensik_ok": True, "forensik_version": FORENSICS_VERSION}}
 
 
@@ -33,7 +33,7 @@ def test_separate_trade_snapshot_replacement_invalidates_old_forensics(tmp_path)
     assert not _load().forensik_stale
     assert _load().max_drawdown_equity_pct == 10
     path.write_text("new trades")
-    db.store_trade_file(55, str(path))
+    db.store_trade_file(55, str(path), quelle="mql5")
     new = db.list_catalog()[0]
     assert new['forensik']['trades_sha256'] == old['trades_sha256']
     assert new['trades_sha256'] != old['trades_sha256']
@@ -53,7 +53,7 @@ def test_same_bytes_new_source_path_preserve_current_forensics(tmp_path):
     one.write_text("same data")
     two.write_bytes(one.read_bytes())
     db.store_scan_result(55, _signal(), str(one), _report())
-    db.store_trade_file(55, str(two))
+    db.store_trade_file(55, str(two), quelle="mql5")
     assert not _load().forensik_stale
 
 
@@ -78,7 +78,7 @@ def test_legacy_missing_binding_is_not_assumed_current(tmp_path):
     db.store_scan_result(55, _signal(), str(path), _report())
     with db._connect() as conn:
         # Simulate an existing database written before SHA binding existed.
-        conn.execute("UPDATE forensik SET json=? WHERE signal_id=55", (json.dumps(_report()),))
+        conn.execute("UPDATE forensik SET json=? WHERE signal_ref=(SELECT signal_ref FROM signal_identitaeten WHERE externe_id=55)", (json.dumps(_report()),))
     assert _load().forensik_stale
 
 

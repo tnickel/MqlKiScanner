@@ -48,7 +48,7 @@ def test_llm_progress_starts_at_zero_and_counts_saved_answers():
     summary = pipe.run_llm([result], pipeline.StepLog(), lambda *event: events.append(event))
 
     assert summary == {"completed": 3, "total": 3, "failed": 0, "skipped": 0,
-                       "reason": "", "updated_ids": [result.id]}
+                       "reason": "", "updated_ids": [result.signal_key]}
     assert events[0][0:2] == (0, 3)
     assert events[-1][0:2] == (3, 3)
     assert [done for done, _, _ in events] == sorted(done for done, _, _ in events)

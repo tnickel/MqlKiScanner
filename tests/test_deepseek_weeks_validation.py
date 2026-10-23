@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from mqlkiscanner import ingest, pipeline
+from mqlkiscanner import db, ingest, pipeline
 
 
 INVALID = [None, "", "unknown", "NaN", "Infinity", "-Infinity", float("nan"),
@@ -50,6 +50,7 @@ def test_valid_age_and_numeric_strings_keep_inclusive_26_week_boundary(raw, allo
 @pytest.mark.parametrize("raw", INVALID)
 def test_fix_id_still_bypasses_age_gate_but_invalid_age_stays_unknown(raw, route):
     entry = candidate(raw, route)
+    db.resolve_identity(123, quelle="mql5", create=True)
     reasons = []
     selected = pipeline.ScanPipeline({"min_wochen": 26, "fix_signal_ids": [123]}).build_candidates(
         [entry], lambda _: None, reasons)

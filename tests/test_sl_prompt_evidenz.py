@@ -16,7 +16,9 @@ from mqlkiscanner.llm import prompt_fill, prompts
 
 
 ROOT = Path(__file__).resolve().parents[1]
-KINDS = tuple(prompts.DEFAULTS)
+# Dieser Vertrag gehört zu den fünf Workflow-Vorlagen mit zentralen Bausteinen.
+# Die getrennte Recherche-Policy wird in test_abonnenten_analyse_ui geprüft.
+KINDS = tuple(key for key in prompts.DEFAULTS if key not in prompts.ABONNENTEN_PROMPT_KEYS)
 
 
 def _assert_evidence_contract(text: str) -> None:
@@ -56,8 +58,9 @@ def _assert_evidence_contract(text: str) -> None:
 def test_sl_contract_survives_missing_file_and_reset(kind):
     """A reset or missing file must not resurrect inconsistent SL rules."""
     repository = (ROOT / "config/prompts" / f"{kind}.md").read_text(encoding="utf-8")
-    assert not prompts.PROMPT_FILES[kind].exists()  # fixture uses temp storage
-    assert prompts.load_prompt(kind) == repository == prompts.DEFAULTS[kind]
+    # Nutzer-Regel 20.10.2026: Reset stellt die WERKfassung her (kein
+    # stiller Default-Ersatz mehr beim Laden — fehlende Datei wirft
+    # PromptFehlt, siehe test_prompt_fehlt_*).
     prompts.save_prompt(kind, "temporary custom prompt")
     prompts.reset_prompt(kind)
     restored = prompts.load_prompt(kind)

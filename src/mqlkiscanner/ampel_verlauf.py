@@ -98,7 +98,7 @@ def wechsel_kurztext(ereignis: dict) -> str:
     krit = "; ".join(f"{g.get('titel')}: {g.get('ampel_alt')}→{g.get('ampel_neu')} "
                      f"({g.get('kurz_alt')} → {g.get('kurz_neu')})"
                      for g in ereignis.get("gruende", []))
-    return f"#{ereignis.get('signal_id')} {ereignis.get('name') or ''}: {pfeil}" \
+    return f"{ereignis.get('signal_quelle') or ereignis.get('datenquelle') or 'mql5'} #{ereignis.get('signal_id')} {ereignis.get('name') or ''}: {pfeil}" \
            + (f" · {krit}" if krit else "")
 
 
@@ -115,11 +115,11 @@ def erfasse_bewertung(result, settings: dict, quelle: str = "full") -> dict | No
     db.init_db()
     # Vorgänger VOR dem eigenen Schreiben lesen — get_last_ampel_verlauf
     # liefert sonst den eben geschriebenen Eintrag zurück.
-    alt = db.get_last_ampel_verlauf(result.id)
+    alt = db.get_last_ampel_verlauf(result.id, quelle=result.signal_key[0])
     ts = datetime.now().isoformat(sep=" ", timespec="seconds")
     matrix = matrix_payload(result, settings)
     db.store_ampel_verlauf(result.id, ts, quelle, result.ampel, result.score,
-                           result.urteil or "", matrix)
+                           result.urteil or "", matrix, signal_quelle=result.signal_key[0])
     if alt is None:
         return None  # Erstfassung: Chronik beginnt, noch kein Vergleich.
     gruende = _diff_matrix(alt.get("matrix") or {}, matrix)
@@ -128,6 +128,10 @@ def erfasse_bewertung(result, settings: dict, quelle: str = "full") -> dict | No
         return None
     ereignis = {
         "signal_id": result.id,
+        "datenquelle": result.quelle or "mql5",
+        "signal_quelle": result.quelle or "mql5",
+        "quellen_uid": result.quellen_uid,
+        "signal_ref": result.signal_ref,
         "name": result.name,
         "ts": ts,
         "quelle": quelle,
@@ -142,5 +146,5 @@ def erfasse_bewertung(result, settings: dict, quelle: str = "full") -> dict | No
     }
     db.store_ampel_wechsel(result.id, ts, quelle, alt.get("ampel"), result.ampel,
                            farbwechsel, ereignis["richtung"], gruende,
-                           name=result.name or "")
+                           name=result.name or "", signal_quelle=result.signal_key[0])
     return ereignis

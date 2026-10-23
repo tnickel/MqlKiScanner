@@ -25,6 +25,7 @@ def _result(**kwargs) -> ScanResult:
         trading_dd_pct=8.11, dd_equity_pct=3.8, ertrag_monat_pct=6.24,
         gesamtbericht="Text des Gesamtberichts", gesamtbericht_at="2026-09-20 10:00:00",
         trades_sha256="a" * 64, tiefenanalyse="", source_kind="live",
+        forensik_vorhanden=True, berichte_basis="synthetic-current-report-proof",
     )
     werte.update(kwargs)
     return ScanResult(**werte)
@@ -34,6 +35,7 @@ def _result(**kwargs) -> ScanResult:
 def _frische_db():
     """Schema anlegen und Sync-Cache/Caches leer halten."""
     db.init_db()
+    db.add_quelle("mql5", "MQL5", "http://synthetic.invalid")
     tradeserver_sync.status_cache_leeren()
     yield
 
@@ -41,7 +43,7 @@ def _frische_db():
 # --- Tabellen-Payload -----------------------------------------------------
 
 def test_signal_zeilen_abbildung_und_rundung():
-    zeilen = tradeserver_sync.signal_zeilen([_result()], fresh_ids={2349227})
+    zeilen = tradeserver_sync.signal_zeilen([_result()], fresh_ids={("mql5", 2349227)})
     assert len(zeilen) == 1
     zeile = zeilen[0]
     assert zeile["signalId"] == 2349227
@@ -85,8 +87,9 @@ def test_dokumente_sammeln_eigene_berichte_und_downloader():
 
     dokumente, fehler = tradeserver_sync.dokumente_sammeln([result])
     keys = [d["docKey"] for d in dokumente]
-    assert "signal/2349227/03-gesamtbericht.pdf" in keys
-    assert "signal/2349227/downloader/mql5/testreport.pdf" in keys
+    uid = db.source_identity("mql5")["quellen_uid"]
+    assert f"signal/{uid}/2349227/03-gesamtbericht.pdf" in keys
+    assert f"signal/{uid}/2349227/downloader/mql5/testreport.pdf" in keys
     eigene = next(d for d in dokumente if d["group"] == "eigene")
     assert eigene["kind"] == "gesamtbericht"
     assert eigene["sizeBytes"] > 0
@@ -131,13 +134,17 @@ class _FakeClient:
 
     def ping(self):
         self.aufrufe.append(("ping", None))
-        return {"status": "ok", "service": "MqlTradeMonitor", "kiscannerApi": "v1"}
+        return {"status": "ok", "service": "MqlTradeMonitor", "kiscannerApi": 2,
+                "supportedProtocolVersions": [1, 2]}
 
     def register(self, signal_count=0):
         self._vielleicht_fehler("register")
         self.aufrufe.append(("register", signal_count))
-        return {"status": "ok", "runId": 42, "serverTime": "2026-09-20 12:00:00",
-                "documents": [{"docKey": k, "sha256": v}
+        return {"status": "ok", "runId": 42, "protocolVersion": 2,
+                "serverTime": "2026-09-20 12:00:00",
+                "documents": [{"docKey": k, "sha256": v,
+                               "sourceUid": db.source_identity("mql5")["quellen_uid"],
+                               "signalId": 2349227}
                               for k, v in self.inventar.items()],
                 "signalIds": []}
 
@@ -173,11 +180,12 @@ def _eigene_sha(result) -> str:
 
 def test_sync_alle_happy_path_mit_diff():
     result = _result()
+    uid = db.source_identity("mql5")["quellen_uid"]
     client = _FakeClient(inventar={
-        "signal/2349227/03-gesamtbericht.pdf": _eigene_sha(result)})
+        f"signal/{uid}/2349227/03-gesamtbericht.pdf": _eigene_sha(result)})
     fortschritt: list[str] = []
     summary = tradeserver_sync.sync_alle(
-        [result], fresh_ids={2349227}, client=client,
+        [result], fresh_ids={("mql5", 2349227)}, client=client,
         progress=lambda done, total, label: fortschritt.append(label))
 
     assert summary["abgebrochen"] is None
