@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import datetime as dt
+import json
 
 import pytest
 
@@ -117,6 +118,26 @@ def test_unbelegter_gewinn_wird_nicht_als_gueltige_zahl_oder_null_ausgegeben(rob
     assert result["gewinn_usd"] is None
     assert result["profitabilitaet"] == "unbekannt"
     assert not result["data_complete"]
+
+
+@pytest.mark.parametrize("metrics,profit,status,complete", [
+    ({}, None, "unbekannt", False),
+    ({"ProfitUsd": None}, None, "unbekannt", False),
+    ({"ProfitUsd": 0}, 0, "unveraendert", True),
+])
+def test_native_null_und_echte_null_bleiben_bis_zum_scanner_ergebnis_unterschieden(
+        robo_env, metrics, profit, status, complete):
+    entry, client, _ = robo_env
+    client.answer["metrics"] = metrics
+    result = berechne(entry)
+    exported = json.loads(json.dumps(result, allow_nan=False))
+    assert exported["gewinn_usd"] == profit
+    assert exported["profitabilitaet"] == status
+    assert exported["data_complete"] is complete
+    assert not exported["eligible"]
+    assert exported["equity_dd_pct"] is None and exported["retdd_jahr"] is None
+    assert exported.get("rang") is None
+    assert exported["kapitalbasis_usd"] is None
 
 
 @pytest.mark.parametrize("months", [0, 3, 6, 12])

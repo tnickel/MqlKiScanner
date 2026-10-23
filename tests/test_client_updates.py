@@ -138,6 +138,74 @@ def test_contradictory_subscriber_coverage_is_rejected(monkeypatch, change):
     assert z["status"] == cu.FEHLER
 
 
+def _mql_selection_receipt(count4=200, count5=200, target=200):
+    return {"signaleGeliefert": min(target, count4+count5), "nurAbonnenten": True,
+            "katalogUebersprungen": False, "datenstand": "2026-10-23T23:30:00",
+            "subscriberSelectionVerified": True, "subscriberSelectionTarget": target,
+            "subscriberSelectionPlatforms": {
+                version: {"collected": count, "targetReached": count == target, "zeroBoundaryReached": count < target}
+                for version, count in (("mql4", count4), ("mql5", count5))}}
+
+
+@pytest.mark.parametrize("counts,target", [((200, 200), 200), ((0, 12), 200), ((0, 0), 200), ((2, 1), 2)])
+def test_mql_subscriber_prefix_needs_two_current_target_or_zero_receipts(monkeypatch, counts, target):
+    quelle = _quelle_an("http://rechner:8199", "mql5")
+    result = _mql_selection_receipt(*counts, target=target)
+    _FakeTransport(health=_Antwort(body={"status": "ok", "abonnentenRefresh": True, "subscriberSelectionProof": True}),
+                   status=[_status("done", jobId="job-1", ergebnis=result)]).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={"update_ziel_signale": target}, log=None, on_fortschritt=None,
+                             gestopft=lambda: False, modus="abonnenten", **_SCHNELL)
+    assert z["status"] == cu.FERTIG
+    assert z["abonnenten_auswahl"]["platforms"] == result["subscriberSelectionPlatforms"]
+    assert any("MQL-Auswahlbeleg" in str(e.get("hinweise")) for e in db.list_client_updates(limit=5))
+
+
+@pytest.mark.parametrize("problem", ["missing", "not_verified", "wrong_target", "boolean_target", "missing_platform",
+                                    "foreign_platform", "unproved_short", "false_target", "boolean_count",
+                                    "oversized", "wrong_delivered", "non_boolean_zero"])
+def test_mql_done_does_not_relabel_a_short_or_legacy_list_as_fresh(monkeypatch, problem):
+    quelle = _quelle_an("http://rechner:8199", "mql5")
+    result = _mql_selection_receipt(200, 12)
+    if problem == "missing":
+        result = {k: v for k, v in result.items() if not k.startswith("subscriberSelection")}
+    elif problem == "not_verified": result["subscriberSelectionVerified"] = False
+    elif problem == "wrong_target": result["subscriberSelectionTarget"] = 100
+    elif problem == "boolean_target": result["subscriberSelectionTarget"] = True
+    elif problem == "missing_platform": result["subscriberSelectionPlatforms"].pop("mql5")
+    elif problem == "foreign_platform": result["subscriberSelectionPlatforms"]["pelican"] = {}
+    elif problem == "unproved_short": result["subscriberSelectionPlatforms"]["mql5"]["zeroBoundaryReached"] = False
+    elif problem == "false_target": result["subscriberSelectionPlatforms"]["mql5"]["targetReached"] = True
+    elif problem == "boolean_count": result["subscriberSelectionPlatforms"]["mql5"]["collected"] = True
+    elif problem == "oversized": result["subscriberSelectionPlatforms"]["mql5"]["collected"] = 201
+    elif problem == "wrong_delivered": result["signaleGeliefert"] = 199
+    elif problem == "non_boolean_zero": result["subscriberSelectionPlatforms"]["mql5"]["zeroBoundaryReached"] = "true"
+    _FakeTransport(health=_Antwort(body={"status": "ok", "abonnentenRefresh": True, "subscriberSelectionProof": True}),
+                   status=[_status("done", jobId="job-1", ergebnis=result)]).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None, on_fortschritt=None,
+                             gestopft=lambda: False, modus="abonnenten", **_SCHNELL)
+    assert z["status"] == cu.FEHLER
+    assert "MQL" in z["fehler"]
+
+
+def test_legacy_mql_counter_client_is_rejected_before_post(monkeypatch):
+    quelle = _quelle_an("http://rechner:8199", "mql5")
+    transport = _FakeTransport(health=_Antwort(body={"status": "ok", "abonnentenRefresh": True})).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None, on_fortschritt=None,
+                             gestopft=lambda: False, modus="abonnenten", **_SCHNELL)
+    assert z["status"] == cu.NICHT_UNTERSTUETZT
+    assert not any(url.endswith("/update") for url in transport.aufrufe)
+
+
+@pytest.mark.parametrize("source", ["pelik", "robo", "zulu"])
+def test_mql_receipt_requirement_does_not_change_other_sources(monkeypatch, source):
+    quelle = _quelle_an("http://rechner:8199", source)
+    _FakeTransport(health=_Antwort(body={"status": "ok", "abonnentenRefresh": True}),
+                   status=[_status("done", jobId="job-1", ergebnis={"nurAbonnenten": True, "signaleGeliefert": 12})]).install(monkeypatch)
+    z = cu._update_eine_quelle(quelle, settings={}, log=None, on_fortschritt=None,
+                             gestopft=lambda: False, modus="abonnenten", **_SCHNELL)
+    assert z["status"] == cu.FERTIG
+
+
 def test_done_with_trade_failures_finishes_with_warning(monkeypatch):
     quelle = _quelle_an("http://rechner:8199")
     _FakeTransport(status=[_status("done", phase="tradelisten", done=5, total=7,

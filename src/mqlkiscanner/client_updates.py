@@ -124,6 +124,30 @@ def _abonnenten_katalog(ergebnis: dict) -> dict | None:
                 skipped_positions=sorted(skipped), months=months, sort=sort)
 
 
+def _mql_abonnenten_auswahl(ergebnis: dict, target: int) -> dict:
+    """Both MT prefixes need target/zero proof; visible paging is no exhaustion."""
+    if (ergebnis.get("subscriberSelectionVerified") is not True
+            or type(ergebnis.get("subscriberSelectionTarget")) is not int
+            or ergebnis["subscriberSelectionTarget"] != target):
+        raise ValueError("MQL-Client bestätigt keinen aktuellen Abonnenten-Auswahlbeleg; Client aktualisieren")
+    platforms = ergebnis.get("subscriberSelectionPlatforms")
+    if not isinstance(platforms, dict) or set(platforms) != {"mql4", "mql5"}:
+        raise ValueError("MQL-Auswahlbeleg muss MT4 und MT5 enthalten")
+    receipt = {}
+    for version, proof in platforms.items():
+        if not isinstance(proof, dict):
+            raise ValueError("Ungültiger MQL-Abonnenten-Auswahlbeleg")
+        count, reached, zero = (proof.get(k) for k in ("collected", "targetReached", "zeroBoundaryReached"))
+        if (type(count) is not int or not 0 <= count <= target
+                or type(reached) is not bool or reached != (count == target)
+                or type(zero) is not bool or not (reached or zero)):
+            raise ValueError("MQL-Abonnentenliste ohne belegtes Ziel oder Nullgrenze")
+        receipt[version] = dict(collected=count, targetReached=reached, zeroBoundaryReached=zero)
+    if ergebnis.get("signaleGeliefert") != min(target, sum(p["collected"] for p in receipt.values())):
+        raise ValueError("MQL-Auswahlgröße widerspricht den beiden Plattformbelegen")
+    return dict(verified=True, target=target, platforms=receipt)
+
+
 def _bereit_warten(client, z: dict, *, warten_s: float, poll_s: float,
                    gestopft) -> bool:
     """/health pollen, bis der Client hochgefahren ist (startall-Fall)."""
@@ -136,6 +160,7 @@ def _bereit_warten(client, z: dict, *, warten_s: float, poll_s: float,
             info = client.health()
             if str(info.get("status", "")).lower() == "ok":
                 z["abonnenten_refresh_unterstuetzt"] = info.get("abonnentenRefresh") is True
+                z["mql_abonnenten_auswahlbeleg_unterstuetzt"] = info.get("subscriberSelectionProof") is True
                 _setze(z, status=BEREIT, detail="Client erreichbar — Update anstoßen …")
                 return True
             _setze(z, detail=f"Unerwarteter Health-Status: {info.get('status')!r}")
@@ -158,6 +183,8 @@ def _persistiere(z: dict) -> None:
         hinweise.insert(0, f"Modus: {z['modus']}")
     if z.get("detail"):
         hinweise.append(str(z["detail"]))
+    if z.get("abonnenten_auswahl"):
+        hinweise.append("MQL-Auswahlbeleg: " + json.dumps(z["abonnenten_auswahl"], ensure_ascii=False, sort_keys=True))
     payload = dict(
         quelle_id=z["quelle_id"], kuerzel=z["kuerzel"], base_url=z["base_url"],
         job_id=z["job_id"], status=z["status"], dauer_s=z["dauer_s"],
@@ -323,6 +350,11 @@ def _update_eine_quelle_ablauf(quelle: dict, *, z: dict, settings: dict, log, on
                 grund = "Client unterstützt den Top-200-Zählerrefresh noch nicht; aktualisierten Client starten."
                 _melde(grund, status=NICHT_UNTERSTUETZT, fehler=grund)
                 break
+            if (nur_abonnenten and db.kanonische_quelle(z["kuerzel"]) in {"mql4", "mql5"}
+                    and not z.get("mql_abonnenten_auswahlbeleg_unterstuetzt")):
+                grund = "MQL-Client unterstützt keinen belegten Top-200-Abschluss; aktualisierten Client starten."
+                _melde(grund, status=NICHT_UNTERSTUETZT, fehler=grund)
+                break
             try:
                 # katalog_max_alter_h: None = Setting-Wert (Default 72 h,
                 # 3-Tage-Regel); 0 erzwingt die Katalog-Neumessung — nötig
@@ -420,6 +452,9 @@ def _update_eine_quelle_ablauf(quelle: dict, *, z: dict, settings: dict, log, on
                     _melde(grund, status=FEHLER, fehler=grund)
                     break
                 try:
+                    if db.kanonische_quelle(z["kuerzel"]) in {"mql4", "mql5"}:
+                        target = min(200, max(1, int(_zahl_aus_settings(settings, "update_ziel_signale", 200.0))))
+                        z["abonnenten_auswahl"] = _mql_abonnenten_auswahl(info["ergebnis"], target)
                     coverage = _abonnenten_katalog(info["ergebnis"])
                     if coverage is not None:
                         if coverage["scanned_providers"] < geliefert:

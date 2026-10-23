@@ -16,6 +16,8 @@ TRADE_OVERLAP = 8
 MAX_EVIDENCE_CONTRACT_BYTES = 8_192
 MAX_EVIDENCE_REGISTER_BYTES = 4_096
 MAX_EVIDENCE_REGISTER_ENTRIES = 80
+FACTS_PAYLOAD_VERSION = 2
+MAX_FACT_LIST_ITEMS = 100
 
 
 class Angehalten(RuntimeError):
@@ -27,13 +29,20 @@ def digest(value) -> str:
 
 
 def compact(value):
-    """Keep supplied measurements, omit large curves; raw trades travel separately."""
+    """Bound fact lists explicitly; raw trades travel through their own blocks."""
     if isinstance(value, dict):
         return {str(k): compact(v) for k, v in value.items()
                 if k not in {"punkte", "equity_curve", "balance_curve", "bars", "rohkurse", "trades"}
-                or not isinstance(v, list)}
+                or not isinstance(v, (list, tuple))}
     if isinstance(value, (list, tuple)):
-        return [compact(v) for v in value[:100]]
+        items = [compact(v) for v in value[:MAX_FACT_LIST_ITEMS]]
+        if len(value) <= MAX_FACT_LIST_ITEMS:
+            return items
+        return {"eintraege": items, "abdeckung": {
+            "vollstaendig": False, "anzahl_gesamt": len(value),
+            "enthaltene_indizes": [0, MAX_FACT_LIST_ITEMS - 1],
+            "ausgelassene_indizes": [MAX_FACT_LIST_ITEMS, len(value) - 1],
+            "indexbasis": 0}}
     if isinstance(value, float) and not math.isfinite(value):
         return None
     return value
@@ -347,6 +356,10 @@ class AnalyseKI:
         register = _evidence_register(facts, candidate, comparison if key == "abonnenten_top5" else None)
         contract = {
             "version": 3,
+            "faktenlisten": "Bei abdeckung.vollstaendig=false ist eintraege nur ein Ausschnitt; "
+                "anzahl_gesamt und die inklusiven Indexbereiche (Indexbasis 0) nennen den Umfang. "
+                "Ausgelassene Einträge nicht erfinden oder den Verlauf als vollständig beschreiben. "
+                "Diese Einschränkung ist von der separat ausgewiesenen Trade-Segmentabdeckung zu unterscheiden.",
             "beleg_refs": "JSON-Liste exakter Register-IDs oder trade_ref-Werte. Bevorzugt eine passende ID aus register kopieren; keine eigenen Pfade formulieren.",
             "register": register,
             "register_bedeutung": "F: forensik_json ($ bezeichnet dessen gesamte Wurzel); K: kandidat_json; V: gelieferter Codevergleich. "
@@ -567,6 +580,7 @@ class AnalyseKI:
                                "trades_sha256": entry["trades_sha256"], "segmente": len(blocks),
                                "abdeckung_vollstaendig": True}, parts, short=short, comparison=comparison)
         answer["analysegrundlage"] = {"trades_total": len(rows), "trades_ki_abgedeckt": len(rows),
+                                      "facts_payload_version": FACTS_PAYLOAD_VERSION,
                                       "segmente": len(blocks), "trades_sha256": entry["trades_sha256"],
                                       "beleg_register": dict(self._last_evidence_register),
                                       "prompt_sha256": hashlib.sha256(prompts.load_prompt(key).encode()).hexdigest()}

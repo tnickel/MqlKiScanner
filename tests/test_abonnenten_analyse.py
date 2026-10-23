@@ -6,7 +6,7 @@ import pytest
 
 from mqlkiscanner import abonnenten_analyse as analyse, config, db
 from mqlkiscanner.abonnenten_analyse_store import Store
-from mqlkiscanner.llm.client import LlmBudgetError
+from mqlkiscanner.llm.client import LlmBudgetError, LlmError
 
 
 def row(ref, retdd=2, popularity=50, **changes):
@@ -146,11 +146,186 @@ def test_confirmed_new_hard_fact_promotes_next_candidate_automatically(synthetic
     store, calls, failures = synthetic_run
     failures["remove"] = 1
     analyse._execute(store, "job", config.load_settings())
-    assert store.read("job")["status"] == "abgeschlossen"
+    assert store.read("job")["status"] == "teilweise", "A hard exclusion does not settle an additional model hint"
     entries = store.tasks("job")
     assert next(e for e in entries if e["id"] == 1)["rang"] is None
     assert 6 in calls["deep"]
     assert all(e.get("bericht_markdown") for e in entries if e.get("rang") and e["rang"] <= 5)
+
+
+def test_open_short_hint_defers_candidate_and_prevents_false_completion(synthetic_run, monkeypatch):
+    store, calls, _ = synthetic_run
+    original = analyse.AnalyseKI
+
+    class AI(original):
+        def analyse(self, entry, *, deep=False, comparison=None):
+            result = super().analyse(entry, deep=deep, comparison=comparison)
+            if not deep and entry["id"] == 1:
+                result["pruefhinweise"] = [{"text": "New unresolved contradiction", "beleg_refs": ["equity"]}]
+            return result
+
+    monkeypatch.setattr(analyse, "AnalyseKI", AI)
+    analyse._execute(store, "job", config.load_settings())
+    entry = next(e for e in store.tasks("job") if e["id"] == 1)
+    assert entry["review_pending"] and entry["rang"] is None
+    assert entry["eligible"] and not entry.get("hard_excluded")
+    assert entry["retdd_jahr"] == 9 and entry["equity_dd_pct"] == 65
+    assert calls["deep"] == [2, 3, 4, 5, 6]
+    assert store.read("job")["status"] == "teilweise"
+    assert "1 offene KI-Prüfungen" in store.read("job")["detail"]
+
+
+def test_open_deep_hint_promotes_next_candidate_and_survives_empty_short_on_resume(synthetic_run, monkeypatch):
+    store, calls, _ = synthetic_run
+    original = analyse.AnalyseKI
+
+    class AI(original):
+        def analyse(self, entry, *, deep=False, comparison=None):
+            result = super().analyse(entry, deep=deep, comparison=comparison)
+            if deep and entry["id"] == 1:
+                result["neue_pruefhinweise"] = [{"text": "Unresolved deep finding", "beleg_refs": ["equity"]}]
+            return result
+
+    monkeypatch.setattr(analyse, "AnalyseKI", AI)
+    for _ in range(2):
+        analyse._execute(store, "job", config.load_settings())
+        entry = next(e for e in store.tasks("job") if e["id"] == 1)
+        assert entry["review_pending"] and entry["rang"] is None
+        assert entry["eligible"] and not entry.get("hard_excluded")
+        assert len(entry["ki_pruefhinweise"]) == 1
+        assert store.read("job")["status"] == "teilweise"
+    assert 6 in calls["deep"] and calls["deep"].count(1) == 1
+    assert calls["data"] == calls["short"] == list(range(1, 8))
+    assert all(e.get("bericht_markdown") for e in store.tasks("job") if e.get("rang") and e["rang"] <= 5)
+
+
+def test_cached_short_hint_is_rechecked_instead_of_trusting_old_resolved_marker(synthetic_run):
+    store, calls, _ = synthetic_run
+    analyse._execute(store, "job", config.load_settings())
+    entry = next(e for e in store.tasks("job") if e["id"] == 1)
+    entry["kurztest"]["pruefhinweise"] = [{"text": "Cached unresolved hint", "beleg_refs": ["equity"]}]
+    entry["review_pending"] = False
+    store.save_task("job", entry)
+    analyse._execute(store, "job", config.load_settings())
+    entry = next(e for e in store.tasks("job") if e["id"] == 1)
+    assert entry["review_pending"] and entry["rang"] is None
+    assert calls["short"] == list(range(1, 8))
+    assert store.read("job")["status"] == "teilweise"
+
+
+def test_cached_deep_hint_is_rechecked_without_repeating_paid_analysis(synthetic_run):
+    store, calls, _ = synthetic_run
+    analyse._execute(store, "job", config.load_settings())
+    entry = next(e for e in store.tasks("job") if e["id"] == 1)
+    entry["top5_befund"]["neue_pruefhinweise"] = [{"text": "Cached deep finding", "beleg_refs": ["equity"]}]
+    entry["review_pending"] = False
+    store.save_task("job", entry)
+    analyse._execute(store, "job", config.load_settings())
+    entry = next(e for e in store.tasks("job") if e["id"] == 1)
+    assert entry["review_pending"] and entry["rang"] is None
+    assert calls["deep"].count(1) == 1 and 6 in calls["deep"]
+    assert store.read("job")["status"] == "teilweise"
+
+
+def test_new_data_attempt_archives_old_hints_before_new_assessment(synthetic_run, monkeypatch):
+    store, calls, _ = synthetic_run
+    analyse._execute(store, "job", config.load_settings())
+    entry = next(e for e in store.tasks("job") if e["id"] == 1)
+    hint = {"text": "Old snapshot finding", "beleg_refs": ["equity"]}
+    entry.update(ki_pruefhinweise=[hint], review_pending=True, ki_hinweisstatus="Old pending hint")
+    store.save_task("job", entry)
+    monkeypatch.setattr(analyse, "POLICY_VERSION", "grok-new-data")
+    analyse._execute(store, "job", config.load_settings())
+    entry = next(e for e in store.tasks("job") if e["id"] == 1)
+    assert not entry.get("review_pending") and not entry.get("ki_pruefhinweise")
+    assert entry["previous_results"][-1]["ki_pruefhinweise"] == [hint]
+    assert entry["previous_results"][-1]["review_pending"] is True
+    assert calls["data"].count(1) == 2 and calls["short"].count(1) == 2
+    assert store.read("job")["status"] == "abgeschlossen"
+
+
+def test_facts_payload_version_repeats_reports_without_redownloading_data(synthetic_run, monkeypatch):
+    store, calls, _ = synthetic_run
+    analyse._execute(store, "job", config.load_settings())
+    monkeypatch.setattr(analyse, "FACTS_PAYLOAD_VERSION", analyse.FACTS_PAYLOAD_VERSION + 1)
+    analyse._execute(store, "job", config.load_settings())
+    assert len(calls["data"]) == 7 and len(calls["short"]) == 14 and len(calls["deep"]) == 10
+
+
+def test_snapshot_check_does_not_resolve_hint_or_accumulate_duplicate_findings(synthetic_run):
+    _, _, _ = synthetic_run
+    entry = row(1, trades_path="verified-by-fixture", trades_sha256="sha", forensik={},
+                rang=1, auswahlwert=99, retdd_perzentil=99)
+    hint = {"text": "Needs a substantive check", "beleg_refs": ["equity"]}
+    for hints in ([hint], [], [hint]):
+        analyse._check_hints(entry, hints)
+        assert entry["review_pending"]
+        assert entry["ki_pruefhinweise"] == [hint]
+        assert entry["eligible"] and not entry.get("hard_excluded")
+        assert all(entry[key] is None for key in ("rang", "auswahlwert", "retdd_perzentil"))
+
+
+@pytest.mark.parametrize("failure", ["short_error", "budget"])
+def test_open_hint_rank_is_removed_before_another_short_test_interrupts(synthetic_run, monkeypatch, failure):
+    store, _, _ = synthetic_run
+    original = analyse.AnalyseKI
+
+    class AI(original):
+        def analyse(self, entry, *, deep=False, comparison=None):
+            result = super().analyse(entry, deep=deep, comparison=comparison)
+            if not deep and entry["id"] == 1:
+                result["pruefhinweise"] = [{"text": "Unresolved finding", "beleg_refs": ["equity"]}]
+            if not deep and entry["id"] == 2:
+                if failure == "budget":
+                    raise LlmBudgetError("Synthetic budget exhaustion")
+                raise LlmError("Synthetic short-test failure")
+            return result
+
+    monkeypatch.setattr(analyse, "AnalyseKI", AI)
+    analyse._execute(store, "job", config.load_settings())
+    entry = next(e for e in store.tasks("job") if e["id"] == 1)
+    assert entry["review_pending"]
+    assert all(entry[key] is None for key in ("rang", "auswahlwert", "retdd_perzentil"))
+    assert entry["retdd_jahr"] == 9 and entry["eligible"]
+    assert store.read("job")["status"] == ("wartet_budget" if failure == "budget" else "teilweise")
+
+
+def test_old_hint_keeps_original_register_when_replacement_short_report_reuses_alias(synthetic_run, monkeypatch):
+    store, _, _ = synthetic_run
+    analyse._execute(store, "job", config.load_settings())
+    entry = next(e for e in store.tasks("job") if e["id"] == 1)
+    hint = {"text": "Needs old evidence", "beleg_refs": ["F001"]}
+    entry["kurztest"].update(pruefhinweise=[hint], analysegrundlage={"beleg_register": {"F001": "old.path"}})
+    entry.update(kurz_basis="legacy-report-basis", ki_pruefhinweise=[hint], review_pending=True)
+    store.save_task("job", entry)
+    original = analyse.AnalyseKI
+
+    class AI(original):
+        def analyse(self, entry, *, deep=False, comparison=None):
+            result = super().analyse(entry, deep=deep, comparison=comparison)
+            result["analysegrundlage"] = {"beleg_register": {"F001": "new.path"}}
+            return result
+
+    monkeypatch.setattr(analyse, "AnalyseKI", AI)
+    for _ in range(2):
+        analyse._execute(store, "job", config.load_settings())
+        entry = next(e for e in store.tasks("job") if e["id"] == 1)
+        assert entry["kurztest"]["analysegrundlage"]["beleg_register"] == {"F001": "new.path"}
+        records = entry["ki_pruefhinweis_quellen"]
+        assert len(records) == 1 and records[0]["hinweis"] == hint
+        assert records[0]["herkunft"]["bericht_basis"] == "legacy-report-basis"
+        assert records[0]["herkunft"]["analysegrundlage"]["beleg_register"] == {"F001": "old.path"}
+        assert entry["review_pending"] and entry["rang"] is None
+
+
+def test_unattributable_old_hint_is_not_bound_to_unrelated_current_register(synthetic_run):
+    entry = row(1, trades_path="verified-by-fixture", trades_sha256="sha",
+                ki_pruefhinweise=[{"text": "Old hint", "beleg_refs": ["F001"]}],
+                kurztest={"pruefhinweise": [], "analysegrundlage": {"beleg_register": {"F001": "current.path"}}})
+    analyse._check_hints(entry, [], stage="kurztest")
+    origin = entry["ki_pruefhinweis_quellen"][0]["herkunft"]
+    assert "unbekannt" in origin["status"] and "analysegrundlage" not in origin
+    assert entry["review_pending"]
 
 
 def test_prompt_change_only_repeats_dependent_short_and_deep(synthetic_run):

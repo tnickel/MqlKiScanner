@@ -8,11 +8,12 @@ from __future__ import annotations
 import math
 import os
 import uuid
+from copy import deepcopy
 from collections import Counter
 
 from . import config, db, ingest, quellen as source_registry, scan_worker
 from .abonnenten_analyse_store import Store, now
-from .abonnenten_analyse_ki import AnalyseKI, Angehalten, digest, report_pdf
+from .abonnenten_analyse_ki import AnalyseKI, Angehalten, FACTS_PAYLOAD_VERSION, digest, report_pdf
 from .analysis_version import FORENSICS_VERSION
 from .llm import prompts
 from .llm.client import LlmBudgetError, LlmError, LlmNoBalanceError
@@ -313,6 +314,7 @@ def _validate_ki_config_restart(run, entries, settings):
 def kurztest_basis(entry: dict, profile: dict, settings: dict) -> str:
     """Pure fingerprint shared by normal execution and an explicit KI probe."""
     return digest({"data": entry.get("data_basis"), "sha": entry.get("trades_sha256"),
+                   "facts_payload_version": FACTS_PAYLOAD_VERSION,
                    "facts": entry.get("forensik"), "equity": entry.get("equity"), "profile": profile,
                    **({"auswahl_luecken": entry.get("abo_ausgelassene_positionen")}
                       if entry.get("abo_referenz_vollstaendig") is False else {}),
@@ -463,8 +465,11 @@ def _execute(store, run_id, settings):
                     if entry.get("kurztest") or entry.get("bericht_markdown"):
                         entry.setdefault("previous_results", []).append({k: entry.get(k) for k in (
                             "trades_sha256", "data_basis", "kurztest", "kurz_basis", "bericht_markdown",
-                            "top5_basis", "pdf_path", "retdd_jahr", "equity_dd_pct")})
-                        for key in ("kurztest", "kurz_basis", "bericht_markdown", "top5_basis", "pdf_path", "review_pending"):
+                            "top5_basis", "top5_befund", "pdf_path", "retdd_jahr", "equity_dd_pct",
+                            "review_pending", "ki_pruefhinweise", "ki_pruefhinweis_quellen", "ki_hinweisstatus")})
+                        for key in ("kurztest", "kurz_basis", "bericht_markdown", "top5_basis", "pdf_path",
+                                    "review_pending", "ki_pruefhinweise", "ki_pruefhinweis_quellen",
+                                    "ki_hinweisstatus", "top5_befund"):
                             entry.pop(key, None)
                     # An earlier attempt's cancellation is not a property of
                     # this new attempt. A current cancellation result sets it
@@ -504,12 +509,15 @@ def _execute(store, run_id, settings):
                 continue
             basis = kurztest_basis(entry, profile, settings)
             if entry.get("kurz_basis") == basis and entry.get("kurztest"):
+                _check_hints(entry, entry["kurztest"].get("pruefhinweise") or [], stage="kurztest")
+                store.save_task(run_id, entry)
                 continue
             if not ai.client.has_key:
                 raise LlmError("Kein GLM-Key konfiguriert; Berechnungen bleiben erhalten. Unter Einstellungen ergänzen und fortsetzen.")
             try:
+                _record_hint_origins(entry, entry.get("ki_pruefhinweise") or [])
                 entry.update(kurztest=ai.analyse(entry), kurz_basis=basis, ki_fehler="")
-                _check_hints(entry, entry["kurztest"].get("pruefhinweise") or [])
+                _check_hints(entry, entry["kurztest"].get("pruefhinweise") or [], stage="kurztest")
                 entry["status"] = "ausgeschlossen" if entry.get("hard_excluded") else "fertig"
             except (LlmBudgetError, LlmNoBalanceError, Angehalten):
                 raise
@@ -546,13 +554,14 @@ def _execute(store, run_id, settings):
                 raise Angehalten("Stop angefordert")
             try:
                 if not entry.get("bericht_markdown") or entry.get("top5_basis") != basis:
+                    _record_hint_origins(entry, entry.get("ki_pruefhinweise") or [])
                     answer = ai.analyse(entry, deep=True, comparison=comparison)
                     entry.update(bericht_markdown=answer["bericht_markdown"], top5_befund=answer,
                                  top5_basis=basis, analyse_at=now(),
                                  analyse_model=prompts.prompt_model("abonnenten_top5", settings))
-                    _check_hints(entry, answer.get("neue_pruefhinweise") or [])
-                    entry["status"] = "ausgeschlossen" if entry.get("hard_excluded") else "fertig"
-                    store.save_task(run_id, entry)  # preserve paid response before PDF work
+                _check_hints(entry, (entry.get("top5_befund") or {}).get("neue_pruefhinweise") or [], stage="top5")
+                entry["status"] = "ausgeschlossen" if entry.get("hard_excluded") else "fertig"
+                store.save_task(run_id, entry)  # preserve paid response before PDF work
                 entry["pdf_path"] = report_pdf(entry, run_id)
                 entry["ki_fehler"] = ""
             except (LlmBudgetError, LlmNoBalanceError, Angehalten):
@@ -571,9 +580,11 @@ def _execute(store, run_id, settings):
         gaps = any(not e.get("data_done") or e.get("review_pending") for e in entries)
         unfinished = pending_deep or any(not e.get("bericht_markdown") for e in ranked[:5])
         final_status = "teilweise" if source_errors or gaps or unfinished else "abgeschlossen"
+        reviews = sum(bool(e.get("review_pending")) for e in entries)
         store.update(run_id, status=final_status, phase="ergebnis", finished_at=now(),
                      detail=f"{len(entries)} Anbieter bearbeitet; {len(ranked)} Kandidaten; "
-                            f"{sum(bool(e.get('bericht_markdown')) for e in ranked[:5])} ausführliche Top-5-Berichte")
+                            f"{sum(bool(e.get('bericht_markdown')) for e in ranked[:5])} ausführliche Top-5-Berichte"
+                            + (f"; {reviews} offene KI-Prüfungen" if reviews else ""))
     except Angehalten as exc:
         store.update(run_id, status="angehalten", detail=str(exc))
     except (LlmBudgetError, LlmNoBalanceError) as exc:
@@ -600,9 +611,46 @@ def eintrag_basis(entry, common, exclusions):
     return digest(fields)
 
 
-def _check_hints(entry, hints):
-    """A model hint is never an exclusion. Recheck the immutable objective facts."""
+def _record_hint_origins(entry, hints, *, stage=None):
+    """Retain the original report register; never rebind old F/K/V aliases."""
     if not hints:
+        return
+    records = entry.setdefault("ki_pruefhinweis_quellen", [])
+    for hint in hints:
+        if stage is None and any(record["hinweis"] == hint for record in records):
+            continue
+        found = False
+        for kind, field, hint_field, basis_field in (
+                ("kurztest", "kurztest", "pruefhinweise", "kurz_basis"),
+                ("top5", "top5_befund", "neue_pruefhinweise", "top5_basis")):
+            if stage is not None and kind != stage:
+                continue
+            report = entry.get(field) or {}
+            if hint not in (report.get(hint_field) or []):
+                continue
+            found = True
+            record = {"hinweis": deepcopy(hint), "herkunft": {
+                "bericht_stufe": kind, "bericht_basis": entry.get(basis_field),
+                "data_basis": entry.get("data_basis"), "trades_sha256": entry.get("trades_sha256"),
+                "analysegrundlage": deepcopy(report.get("analysegrundlage") or {})}}
+            if record not in records:
+                records.append(record)
+        if not found:
+            record = {"hinweis": deepcopy(hint), "herkunft": {
+                "status": "Historische Berichtszuordnung unbekannt; keine Bindung an das aktuelle Belegregister."}}
+            if record not in records:
+                records.append(record)
+
+
+def _check_hints(entry, hints, *, stage=None):
+    """Snapshot integrity is not an adjudication of a new model finding."""
+    pending = list(entry.get("ki_pruefhinweise") or [])
+    _record_hint_origins(entry, pending)
+    _record_hint_origins(entry, hints, stage=stage)
+    for hint in hints:
+        if hint not in pending:
+            pending.append(hint)
+    if not pending:
         entry["review_pending"] = False
         return
     db.verify_trade_file(entry["trades_path"], entry["trades_sha256"])
@@ -611,9 +659,13 @@ def _check_hints(entry, hints):
     findings = entry.get("forensik", {}).get("forensics", {})
     if findings.get("martingale", {}).get("flag") is True:
         entry.update(eligible=False, hard_excluded=True, grund="Martingale-Signatur durch Code belegt.")
-    entry["ki_pruefhinweise"] = [*entry.get("ki_pruefhinweise", []), *hints]
-    entry["review_pending"] = False
-    entry["ki_hinweisstatus"] = "Codebasis/Snapshot erneut geprüft; neue Interpretation bleibt KI-Hinweis, kein zusätzlicher bestätigter Ausschluss."
+    entry["ki_pruefhinweise"] = pending
+    entry["review_pending"] = True
+    for field in ("rang", "auswahlwert", "retdd_perzentil"):
+        entry[field] = None
+    entry["ki_hinweisstatus"] = ("Offene KI-Prüfhinweise: Snapshot-Integrität geprüft, Inhalt noch nicht geklärt. "
+                                 "Bis zur Klärung keine Kandidatenrangfolge für diesen Anbieter; "
+                                 "kein zusätzlicher bestätigter Ausschluss durch die KI.")
 
 
 def main(argv=None) -> int:

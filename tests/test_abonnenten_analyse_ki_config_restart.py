@@ -249,6 +249,7 @@ def test_shared_short_basis_matches_existing_formula_and_detects_selection_cavea
     store, run, settings, entries, path, calls = restart
     entry, profile = entries[0], analyse._profile(run)
     expected = analyse.digest({"data": entry.get("data_basis"), "sha": entry.get("trades_sha256"),
+                              "facts_payload_version": analyse.FACTS_PAYLOAD_VERSION,
                               "facts": entry.get("forensik"), "equity": entry.get("equity"), "profile": profile,
                               "prompt": analyse.prompts.prompt_fingerprint(("abonnenten_kurztest",)),
                               "model": analyse.prompts.prompt_model("abonnenten_kurztest", settings)})

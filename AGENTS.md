@@ -155,6 +155,17 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   800 unveränderte Einträge, 1/234 Kurztests). Dies ist kein Gesamtabschluss.
   Zwei belegte alte Abbruchmarker wurden separat auditiert bereinigt;
   neue Datenversuche setzen den Marker zurück, echte Abbrüche bleiben gesperrt.
+- **Grok-4.7-Gegenprüfung (24.10.2026):** F1–F5 durch eigene Fixtures
+  bestätigt und im Quellcode korrigiert: MQL-Auswahlbeleg statt sichtbarem
+  Pagingende, Vantage-Verifikation kurzer Antworten, unbekannter Robo-Gewinn
+  statt Null, offene KI-Hinweise mit sofortigem Rangentzug und ursprünglicher
+  Belegbindung sowie ausdrücklich gekennzeichnete Faktenlistenausschnitte.
+  452 relevante Scanner- und 332 native Tests bestanden. Keine neuen
+  Bewertungsgrenzen oder automatische Hinweisfreigabe. Clients und KI-Worker
+  wurden dabei nicht aktualisiert; bisherige Berichte/Daten bleiben unverändert.
+  Neue MQL-Zählerläufe benötigen den Client mit `subscriberSelectionProof`.
+  Abnahme und Aktivierungsgrenzen:
+  `doc/reviews/2026-10-24_grok47/README.md`.
 - **MqlRealmonitor ist noch nicht in den Gesamtworkflow eingebunden.**
   REST-Server im Scanner und Client-Code im Monitor sind vorbereitet;
   die Integration bleibt vorerst zurückgestellt (Nutzerentscheidung
