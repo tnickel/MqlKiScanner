@@ -319,6 +319,8 @@ zurücksetzen. Neue Statistik-Messpunkte stammen ausschließlich aus nativen
 Historien, nicht aus dem Lesedatum des Katalogs.
 
 Diese Änderungen sind mit lokalen Regressionen geprüft. Sie ändern weder den
-eingefrorenen laufenden Rechercheauftrag noch die DD-/RetDD-Regeln. Die neuen
-nativen Pakete wurden noch nicht aktiviert. Kritische Einordnung aller
+eingefrorenen laufenden Rechercheauftrag noch die DD-/RetDD-Regeln. Zum
+damaligen Review-Abschluss waren die neuen nativen Pakete noch nicht aktiviert.
+Die anschließend ausdrücklich beauftragte Aktivierung ist separat dokumentiert:
+`reviews/2026-10-24_native_aktivierung/README.md`. Kritische Einordnung aller
 49 GLM-Befunde: `reviews/2026-10-24_glm53_nachpruefung/README.md`.

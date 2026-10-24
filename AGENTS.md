@@ -24,10 +24,29 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   Scanner-Eigenpunkte bleiben mangels eindeutiger Herkunft unverändert erhalten.
   Unbestätigte Top-Auswahl wird bis KI, PDF und CSV gekennzeichnet. Fehlende
   benötigte PDFs brechen den Tradeserver-Sync vor dem Register-POST ab.
-  Die neuen nativen Pakete wurden gebaut und mit lokalen Regressionen geprüft,
-  aber noch nicht produktiv aktiviert. Der laufende KI-Auftrag behält seinen
-  eingefrorenen Datenstand und wird hierfür nicht neu gestartet. Nachprüfung:
-  `doc/reviews/2026-10-24_glm53_nachpruefung/README.md`.
+  Die neuen nativen Pakete wurden gebaut und mit lokalen Regressionen geprüft.
+  Die anschließend ausdrücklich beauftragte produktive Aktivierung hat einen
+  eigenen Betriebsnachweis; der damalige Review-Abschluss um 01:32 MESZ lag
+  davor. Der Rechercheauftrag behält seinen eingefrorenen Datenstand und wird
+  für die Monitor-Aktivierung nicht neu gestartet. Nachprüfung:
+  `doc/reviews/2026-10-24_glm53_nachpruefung/README.md`; Aktivierung:
+  `doc/reviews/2026-10-24_native_aktivierung/README.md`.
+
+- **Native Aktivierung (24.10.2026, Nutzerauftrag „mache die schritte“):**
+  Alle fünf geprüften Clients sind sanft neu gestartet und produktiv abgenommen.
+  Vollkataloge: MQL 391, Pelican 2.211, Vantage 405, Robo 402, Zulu 449;
+  getrennte Auswahl jeweils 200. Zusätzliche Startfehler in Vantage/Robo/Zulu
+  erzeugen aus alten Cachewerten keine heutigen Historienpunkte mehr.
+  Vantages größenabhängig widersprüchliche Endseiten werden durch einen
+  gezielten 50er-Zählerpfad mit unveränderten Qualitätsprüfungen vermieden;
+  der reguläre 100er-Download bleibt unverändert. Echter Zählerlauf erfolgreich,
+  aber Position 1256 bleibt ausgelassen und globale Top 200 unbestätigt.
+  Scanner-Abgleich um 05:39 MESZ: 3.858 Katalogzeilen, keine neuen künstlichen
+  Messpunkte, geschützte Fachdaten und bestehende Identitätsbindungen unverändert.
+  Der bestehende KI-Auftrag pausierte unabhängig davon um 04:44:57 MESZ am
+  freigegebenen 200-Millionen-Tokenlimit; 167/234 Kurztests vorhanden. Seine
+  800 eingefrorenen Aufgaben und Quellenauswahl wurden nicht ersetzt.
+  Beleg: `doc/reviews/2026-10-24_native_aktivierung/README.md`.
 
 - **Arbeitsunterbrechung (Nutzerentscheidung 18.10.2026, ca. 21:00 MESZ):**
   Die KI-Arbeit wird ausschließlich auf ausdrückliche neue Nutzeraufforderung

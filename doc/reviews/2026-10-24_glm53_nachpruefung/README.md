@@ -126,3 +126,9 @@ Die anschließende reine Statusprüfung um 01:32 MESZ bestätigt denselben laufe
 KI-Worker mit zehn Analyseplätzen und unveränderten 800 eingefrorenen Aufgaben
 samt Quellensnapshot. Der Auftrag befindet sich weiterhin in den Kurzanalysen;
 dies ist keine Fertigmeldung seiner Auswertung.
+
+Die danach ausdrücklich beauftragte produktive Aktivierung und dabei zusätzlich
+gefundene Start-/Pagingfehler werden in einem eigenen
+[Aktivierungsbeleg](../2026-10-24_native_aktivierung/README.md) nachgewiesen.
+Die zeitlich früheren Aussagen dieses Review-Abschlusses werden dadurch nicht
+nachträglich als damalige Liveabnahme ausgegeben.
