@@ -19,7 +19,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 
-from . import db, quellen, signal_statistik
+from . import db, kapitalbasis, quellen, signal_statistik
 from .signal_identity import identity_key
 from .forensics import drawdown
 
@@ -148,6 +148,10 @@ BASIS_KUERZEL = {
     "implizit_aus_balance": "implizit",
     "virtuelle_annahme": "virtuell",
     "extern": "extern",
+    "modell_lot_pnl": "Lot/PnL",
+    "modell_lots_kalibriert": "Lots grob",
+    "modell_fallback_10000": "10k-Modell",
+    "modell_closing_dd_anker": "DD-Anker",
 }
 
 BASIS_LANGTEXT = {
@@ -155,7 +159,7 @@ BASIS_LANGTEXT = {
     "Seite": "Signalseite „Initial Deposit“",
     "implizit": "implizit: Web-Balance − Trade-Netto (alt, Regel bis 05.10. —"
                  " nur noch bei Alt-Bestand vor dem Re-Scan)",
-    "virtuell": "virtuelle Annahme aus dem Quellen-Monitor (10.000 USD)",
+    "virtuell": "historische virtuelle Kapitalannahme",
     "extern": "extern übergeben",
 }
 
@@ -170,6 +174,14 @@ def _de(wert, nachstellen: int = 2) -> str:
 
 def basis_kuerzel(quelle: str | None) -> str:
     return BASIS_KUERZEL.get(quelle or "", "—")
+
+
+def _kapitaltext(details, quelle=None) -> str:
+    if details:
+        return kapitalbasis.beschreibung(details)
+    if quelle in BASIS_KUERZEL:
+        return kapitalbasis.beschreibung(quelle)
+    return quelle or "unbekannt"
 
 
 def _historie_hinweis(statistik: dict) -> str:
@@ -238,6 +250,8 @@ def tabellen_zeile(result, statistik: dict | None,
     kommentare = kommentare or {}
     hat_kommentar = bool((kommentare.get(identity_key(result)) or "").strip())
     virtuell = getattr(result, "true_dd_basis_virtuell", False)
+    studienbasis = getattr(result, "true_dd_kapitalbasis_details", None) or {}
+    studienquelle = getattr(result, "true_dd_kapitalbasis_quelle", None)
     vorbehalt = virtuell and getattr(result, "true_dd_virtuell_vorbehalt", False)
     studie_dd = getattr(result, 'studie_anzeige_dd_pct', None)
     studie_vorbehalt = studie_dd is not None and getattr(result, 'studie_anzeige_vorbehalt', False)
@@ -254,7 +268,8 @@ def tabellen_zeile(result, statistik: dict | None,
         true_dd_usd = workflow_usd
     messstatus = ""
     if virtuell:
-        messstatus = "10.000 USD virtuell · " + (
+        messstatus = (("Modellstudie: " + _kapitaltext(studienbasis, studienquelle))
+                     if studienbasis or studienquelle else "Virtuelle Studie: historische Kapitalbasis") + " · " + (
             "Vorbehalt: " + getattr(result, "true_dd_virtuell_grund", "")
             if vorbehalt else "Kursmessung bestanden")
     elif getattr(result, "equity_rekon_grund", ""):
@@ -315,7 +330,7 @@ def tabellen_zeile(result, statistik: dict | None,
         # ── Drawdown-Block (nebeneinander, Nutzer 08.10.2026) ──────────────
         "Plattform-DD %": getattr(result, "dd_equity_pct", None),
         "Trading-DD %": statistik.get("trading_dd_pct"),
-        # Belastbare Messung gewinnt; sonst virtuelle 10k-Basis (Batch,
+        # Belastbare Messung gewinnt; sonst virtuelle Modellbasis (Batch,
         # gekennzeichnet — geht nie in die Workflow-Schranken)
         "True-DD %": (getattr(result, "true_max_drawdown_pct", None)
                       if getattr(result, "true_max_drawdown_pct", None) is not None
@@ -348,6 +363,11 @@ def tabellen_zeile(result, statistik: dict | None,
         "Trades": statistik.get("trades"),
         "Basis": basis_kuerzel(statistik.get("kapitalbasis_quelle"))
         if statistik.get("kapitalbasis_ok") else "—",
+        "Statistikbasis USD": statistik.get("kapitalbasis_usd"),
+        "Kapitalherkunft": _kapitaltext(statistik.get("kapitalbasis_details"), statistik.get("kapitalbasis_quelle")),
+        "Kapitalunsicherheit": str((statistik.get("kapitalbasis_details") or {}).get("unsicherheit") or ""),
+        "Studienbasis": _kapitaltext(studienbasis, studienquelle) if studienbasis or studienquelle else "",
+        "Studienkapital USD": getattr(result, "true_dd_kapitalbasis_usd", None),
         "Forensik": "✓" if getattr(result, "forensik_vorhanden", False) else "—",
         "Messstatus": messstatus.strip(" ·"),
     }
@@ -357,8 +377,17 @@ def tabellen_zeile(result, statistik: dict | None,
         # Eigenstaendige Anzeige aus aktueller CSV-Vorstufe. Die Engine-
         # Effizienz bleibt stale und damit fuer Auswahl/Gruen gesperrt.
         lang_genug = (statistik.get('dauer_monate') or 0) >= 3
-        geom = statistik.get('ertrag_monat_geom_pct')
-        cagr = statistik.get('cagr_jahr_pct')
+        geom = getattr(result, 'true_dd_ertrag_monat_geom_pct', None)
+        cagr = getattr(result, 'true_dd_cagr_jahr_pct', None)
+        basis_studie = getattr(result, 'true_dd_kapitalbasis_usd', None)
+        basis_statistik = statistik.get('kapitalbasis_usd')
+        gleiche_basis = (isinstance(basis_studie, (int, float))
+                        and isinstance(basis_statistik, (int, float))
+                        and math.isclose(basis_studie, basis_statistik, rel_tol=1e-9, abs_tol=0.01)
+                        and bool(statistik.get('kapitalbasis_modell')) == kapitalbasis.ist_modellquelle(studienbasis or studienquelle))
+        if gleiche_basis:
+            geom = geom if geom is not None else statistik.get('ertrag_monat_geom_pct')
+            cagr = cagr if cagr is not None else statistik.get('cagr_jahr_pct')
         zeile['RetDD/Monat'] = geom / studie_dd if lang_genug and studie_dd > 0 and geom is not None else None
         zeile['TrueRetDD'] = cagr / studie_dd if lang_genug and studie_dd > 0 and cagr is not None else None
         zeile['TrueRetDD ≈'] = zeile['TrueRetDD'] if studie_vorbehalt else None
@@ -715,8 +744,8 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
     else:
         st.caption(f"Lot-Verhalten: {statistik.get('martingale_text') or '—'}")
 
-    basis_text = BASIS_LANGTEXT.get(basis_kuerzel(statistik.get("kapitalbasis_quelle")),
-                                    statistik.get("kapitalbasis_quelle") or "unbekannt")
+    basis_details = statistik.get("kapitalbasis_details") or {}
+    basis_text = _kapitaltext(basis_details, statistik.get("kapitalbasis_quelle"))
     st.caption(f"Kapitalbasis: {basis_text}"
                + (f" · {_de(statistik.get('kapitalbasis_usd'), 0)} USD"
                   if basis_ok else "")
@@ -724,6 +753,12 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
                   f"{str(statistik.get('zeit_bis', ''))[:10]}"
                   f" ({_de(statistik.get('dauer_monate'), 1)} Monate)"
                   if statistik.get("zeit_von") else ""))
+    if kapitalbasis.ist_modellquelle(basis_details or statistik.get("kapitalbasis_quelle")):
+        st.caption("Modellbasis: Prozent-DD und Renditen der Vorstufenstatistik sind virtuelle Werte; "
+                   "bekannte spätere Kapitalflüsse bleiben enthalten.")
+    if basis_details:
+        with st.expander("Kapitalbasis: Herkunft, Unsicherheit und Belege"):
+            st.json(basis_details)
 
     if statistik.get("monate_pct"):
         links, rechts = st.columns(2)

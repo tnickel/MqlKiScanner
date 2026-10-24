@@ -20,6 +20,7 @@ class _Backend:
         self.state = {}
         self.started = []
         self.started_settings = []
+        self.started_options = []
         self.stopped = []
         self.resumed = []
 
@@ -30,14 +31,16 @@ class _Backend:
     def zustand(self, run_id=None):
         return self.state
 
-    def starten(self, quellen, settings=None, retdd_gewicht=70, dd_grenze=None):
+    def starten(self, quellen, settings=None, retdd_gewicht=70, dd_grenze=None, **options):
         self.started.append((quellen, retdd_gewicht, dd_grenze))
         self.started_settings.append(dict(settings or {}))
+        self.started_options.append(options)
         self.state = {"id": "run1", "status": "laeuft", "phase": "berechnet",
                       "detail": "Test", "laeuft": True, "total": 2, "done": 1,
                       "entries": [], "logs": ["synthetischer Testlauf"],
                       "retdd_gewicht": retdd_gewicht, "dd_grenze": dd_grenze,
                       "ki_parallelitaet": (settings or {}).get("abonnenten_analyse_parallelitaet", 10)}
+        self.state.update(options)
         return "run1"
 
     def stoppen(self, run_id=None):
@@ -76,7 +79,7 @@ def test_dialog_defaults_start_and_no_automatic_start(backend):
     at.button(key="abonnenten_analyse_oeffnen").click().run()
     assert not at.exception, at.exception
     assert at.multiselect(key="abonnenten_analyse_quellen").value == ["mql5", "pelik"]
-    assert at.slider(key="abonnenten_analyse_start_retdd").value == 70
+    assert at.slider(key="abonnenten_analyse_start_retdd").value == 30
     assert at.toggle(key="abonnenten_analyse_start_dd_aktiv").value is False
     parallel = at.number_input(key="abonnenten_analyse_start_parallelitaet")
     assert parallel.value == 10
@@ -86,7 +89,9 @@ def test_dialog_defaults_start_and_no_automatic_start(backend):
     assert any("2 Monate und 50" in x.value for x in at.info)
     at.button(key="abonnenten_analyse_start").click().run()
     assert not at.exception, at.exception
-    assert backend.started == [(["mql5", "pelik"], 70.0, None)]
+    assert backend.started == [(["mql5", "pelik"], 30.0, None)]
+    assert backend.started_options[-1] == {"auswahl_modus": "abo_zufluss_retdd_v1",
+                                           "kurztest_optional": True, "endpruefung_auto": True}
     assert backend.started_settings[-1]["abonnenten_analyse_parallelitaet"] == 10
     assert backend.state["ki_parallelitaet"] == 10
     at.run()
@@ -113,6 +118,28 @@ def test_dialog_save_defaults_and_optional_limit(backend):
     assert saved["abonnenten_analyse_quellen"] == ["pelik"]
     assert saved["abonnenten_analyse_parallelitaet"] == 3
     assert backend.started_settings[-1]["abonnenten_analyse_parallelitaet"] == 3
+
+
+def test_dialog_inflow_default_and_legacy_selection_do_not_write_global_settings(backend):
+    config.save_settings({"abonnenten_analyse_retdd_gewicht": 75, "unrelated": "preserve"})
+    original = config.load_settings()
+    at = _app()
+    at.button(key="abonnenten_analyse_oeffnen").click().run()
+    assert not at.exception
+    assert at.selectbox(key="abonnenten_analyse_auswahlbasis").value == "Zufluss und RetDD"
+    assert at.slider(key="abonnenten_analyse_start_retdd").value == 30
+    assert any("Normierter Nettozuwachs 7 Tage 70 %" in e.value for e in at.caption)
+    assert any("Δ7 / durchschnittlicher Abonnentenbestand" in e.value for e in at.caption)
+    assert any("optionales Addon" in e.value and "fünf Endanalysen" in e.value for e in at.info)
+    assert config.load_settings() == original
+    at.selectbox(key="abonnenten_analyse_auswahlbasis").set_value("Bestand und RetDD").run()
+    assert not at.exception
+    assert at.slider(key="abonnenten_analyse_start_retdd").value == 75
+    assert config.load_settings() == original
+    at.button(key="abonnenten_analyse_start").click().run()
+    assert not at.exception
+    assert backend.started_options[-1] == {}
+    assert backend.started[-1][1] == 75
 
 
 def test_missing_new_prompt_blocks_only_research_start(backend):

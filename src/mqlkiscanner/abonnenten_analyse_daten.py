@@ -112,7 +112,7 @@ def pruefe_kriterien(daten: dict) -> tuple[bool, str]:
     return True, "Recherchekandidat; keine neue grüne Handelsfreigabe."
 
 
-def equity_nenner(report: dict, trades: int) -> tuple[float | None, str]:
+def equity_nenner(report: dict, trades: int, *, allow_zero=False) -> tuple[float | None, str]:
     """Nur vollständige Floating-Messungen; freigegebene Teilstudien reichen nicht."""
     if (report.get("verlaesslich") is not True or report.get("status") != "ok"
             or report.get("teilmessung") or report.get("fx_luecke")
@@ -124,9 +124,44 @@ def equity_nenner(report: dict, trades: int) -> tuple[float | None, str]:
             or report.get("trades_mit_kurs_und_kontrakt") != trades):
         return None, "Nicht alle abgeschlossenen Trades sind durch Kurse und Kontrakte abgedeckt."
     dd = _zahl(report.get("equity_dd_pct_raw"))
-    if dd is None or dd <= 0:
+    if dd is None or dd < 0 or (dd == 0 and not allow_zero):
         return None, "Ungerundeter positiver maximaler relativer Floating-Equity-DD fehlt."
     return dd, ""
+
+
+def _daten_effizienz(result, path, kapital, dd):
+    """Measure returns independently of screening history and DD availability.
+
+    This is confined to the explicit data-only workflow. The ordinary research
+    and main-workflow minimum history rules remain unchanged.
+    """
+    duration = _zahl(result.get("dauer_monate"))
+    minimum = min(MIN_MONATE, duration) if duration is not None and duration > 0 else MIN_MONATE
+    eff = portfolio_statistik.effizienz_kennzahlen(path, kapital, dd, min_historie_monate=minimum)
+    result["forensik"]["forensics"]["effizienz_recherche"] = eff or {}
+    for key in ("retdd_jahr", "ertrag_monat_geom_pct", "cagr_jahr_pct"):
+        result[key] = (eff or {}).get(key)
+    # The calendar-month chain gives the observed window's TWR directly. It
+    # remains representable even if annualising a very short window overflows.
+    returns = portfolio_statistik.monatsrenditen(path, kapital)
+    factor = 1.0
+    for value in returns.values():
+        factor *= 1+value/100
+    period = (factor-1)*100 if returns and math.isfinite(factor) and factor >= 0 else None
+    result["rendite_zeitraum_pct"] = period
+    result["retdd_zeitraum"] = period/dd if period is not None and dd is not None and dd > 0 else None
+    result["rendite_status"] = "gemessen" if period is not None else "unbekannt"
+    result["rendite_grund"] = str((eff or {}).get("basis_hinweis") or "Renditebasis nicht belegbar.")
+    result["retdd_status"] = ("gemessen" if _zahl(result.get("retdd_jahr")) is not None else
+                              "nicht_definiert_dd_null" if dd == 0 else "unbekannt")
+    result["retdd_grund"] = ("Gemessener Equity-DD ist null; Division durch null nicht definiert." if dd == 0 else
+                             "Jahres-RetDD benötigt eine belegte positive Equity-DD- und Renditebasis."
+                             if result["retdd_status"] != "gemessen" else "")
+    result["annualisierung_hinweis"] = (
+        "Annualisierte Renditen/RetDD sind geometrische Hochrechnungen des ausgewiesenen Exportfensters; "
+        "kein beobachtetes Jahresergebnis und keine künftige Renditezusage. "
+        "Die 2-Monate-/50-Trade-Regel betrifft nur die Recherche-Rangtauglichkeit.")
+    return eff
 
 
 def _json_sicher(value):
@@ -200,6 +235,7 @@ class AnalyseDaten:
         Ein Quellenfehler wird als einzelner nicht berechenbarer Anbieter
         zurückgegeben. Kein Offline-/10k-Fallback und keine Haupt-DB-Bewertung.
         """
+        data_only = self.settings.get("abonnenten_daten_ohne_ki") is True
         result = {
             "trades_path": "", "trades_sha256": "", "forensik": {}, "equity": {},
             "eligible": False, "data_complete": False, "grund": "", "retdd_jahr": None, "retdd_zeitraum": None,
@@ -208,6 +244,11 @@ class AnalyseDaten:
             "account_currency": None, "messhinweis": MESSHINWEIS, "hard_excluded": False,
             "policy_version": POLICY_VERSION,
         }
+        if data_only:
+            result.update(messung_ohne_rangfilter=True, trade_history_complete=None,
+                          trade_history_status="unbekannt", trade_history_reason="Kein geprüfter Trade-Export vorhanden.",
+                          trade_money_currency=None, netto_quellwaehrung=None,
+                          retdd_status="unbekannt", retdd_grund="Equity- und Renditebasis noch nicht gemessen.")
         try:
             if self._geschlossen:
                 raise ValueError("Analysekontext ist bereits geschlossen.")
@@ -263,11 +304,12 @@ class AnalyseDaten:
             result["quellen_stats"] = stats
             currency = str(stats.get("account_currency") or "").strip().upper()
             result["account_currency"] = currency or None
-            if currency != "USD":
+            if currency != "USD" and not data_only:
                 raise ValueError(f"Belegte USD-Kontowährung fehlt (geliefert: {currency or 'unbekannt'}).")
-            if (stats.get("quelle_trade_history_complete") is False
-                    or stats.get("quelle_trades_history_complete") is False
-                    or stats.get("quelle_trades_gekappt")):
+            incomplete_history = (stats.get("quelle_trade_history_complete") is False
+                                  or stats.get("quelle_trades_history_complete") is False
+                                  or bool(stats.get("quelle_trades_gekappt")))
+            if incomplete_history and not data_only:
                 raise ValueError("Die Quelle meldet unvollständige oder gekappte Trade-Historie.")
             self._stop(should_stop)
             path, _ = ingest.hole_trades(quelle, sid, version, client=cli,
@@ -276,6 +318,16 @@ class AnalyseDaten:
             result.update(trades_path=path, trades_sha256=digest)
             parsed = parser.load_export(path)
             result["trades"] = len(parsed.trades)
+            if data_only:
+                result.update(trade_history_complete=not incomplete_history,
+                              trade_history_status="teilweise" if incomplete_history else "vollstaendig",
+                              trade_history_reason=("Die Quelle meldet unvollständige oder gekappte Trade-Historie; "
+                                                    "der vorhandene Export bleibt als Teillieferung erhalten."
+                                                    if incomplete_history else
+                                                    "Anbieter-/Jobbindung und nativer fullHistory-Beleg geprüft; "
+                                                    "vollständiger gelieferter Export als SHA-Snapshot gesichert."),
+                              trade_money_currency=currency or None,
+                              netto_quellwaehrung=parsed.net_total)
             if not parsed.trades:
                 raise ValueError("Keine abgeschlossenen Trades im aktuellen Export.")
             erste = min(trade.open_time for trade in parsed.trades)
@@ -283,14 +335,20 @@ class AnalyseDaten:
             result["dauer_monate"] = ((letzte - erste).total_seconds()
                                        / 86400.0 / portfolio_statistik.MONAT_TAGE)
             result.update(zeit_von=erste.isoformat(), zeit_bis=letzte.isoformat())
-            initial = stats.get("initial_deposit_usd")
-            if initial is not None and (_zahl(initial) is None or initial <= 0):
-                raise ValueError("Gelieferte echte Kapitalbasis ist nicht positiv und endlich.")
+            if data_only:
+                material_ok, material_grund = pruefe_mindestmaterial(result["dauer_monate"], result["trades"])
+                result.update(mindestmaterial_erfuellt=material_ok, rang_pruefhinweis=material_grund)
+                # Save native-unit rows/count/window before refusing USD
+                # forensics; a source account currency is never relabelled.
+                if currency != "USD":
+                    raise ValueError(f"Belegte USD-Kontowährung fehlt (geliefert: {currency or 'unbekannt'}); "
+                                     "Trade-Snapshot in Quellenwährung gesichert, keine USD-Forensik/Umrechnung.")
+                if incomplete_history:
+                    raise ValueError(result["trade_history_reason"])
             self._stop(should_stop)
             # Volle Engine, aber noch kein Terminalstart vor Kapitalprüfung.
             report = engine.analyze(path, broker=stats.get("broker_server"),
-                                    kapitalbasis_usd=initial,
-                                    kapitalbasis_quelle="signalseite_initial_deposit")
+                                    quellen_stats=stats, kapital_kontext=result)
             result["forensik"] = report
             findings = report["forensics"]
             # Preserve proven findings even when a later capital/price check
@@ -304,16 +362,35 @@ class AnalyseDaten:
                 result.update(hard_excluded=True, ausschlussgrund="Martingale-Signatur durch Code belegt.")
             dd = findings["drawdown"]
             kapital = _zahl(dd.get("startkapital_raw"))
+            decision = findings.get("kapitalbasis") or dd.get("kapitalbasis_details") or {}
+            result["kapitalbasis_details"] = decision
+            result["kapitalbasis_modell"] = bool(decision.get("modell"))
             if kapital is None or kapital <= 0:
-                raise ValueError("Keine belegte positive echte Kapitalbasis; virtuelle 10.000-USD-Annahme ist ausgeschlossen.")
-            if dd.get("startkapital_quelle") not in {"csv_einzahlungen", "signalseite_initial_deposit"}:
-                raise ValueError("Kapitalbasis ist nicht als echte Einzahlung oder echter Initial Deposit belegt.")
+                raise ValueError("Vorhandene Anfangsbuchungen ergeben keine positive Kapitalbasis; kein Ersatzkapital zum Ausgleich bekannter Verluste.")
+            if decision.get("modell"):
+                # The subscriber table has an explicit no-flow scenario. Keep
+                # that result separate from the original account measurements.
+                from .abonnenten_modellrechnung import berechne_modell
+                proposal = dict(decision.get("schaetzung") or {})
+                proposal.update(kapital=decision["kapital"], waehrung="USD", basis_typ="modell",
+                                modell=True, methode=decision["methode"], zentrale_entscheidung=decision)
+                material_ok, material_grund = pruefe_mindestmaterial(result["dauer_monate"], result["trades"])
+                provider = self._kurse() if data_only or (material_ok and not result.get("hard_excluded")) else None
+                self._stop(should_stop)
+                result["modell"] = berechne_modell(result, proposal, kurse=provider)
+                result.update(eligible=False, data_complete=False,
+                              grund="Startkapital geschätzt; die berechneten Werte stehen im getrennten Modellszenario. "
+                                    + str(result["modell"].get("grund") or material_grund))
+                db.verify_trade_file(path, digest)
+                return _json_sicher(result)
             result["kapitalbasis_usd"] = kapital
             ok, grund = _kapitalbasis_abgleich(dd, stats)
             if not ok:
                 raise ValueError(grund)
             material_ok, material_grund = pruefe_mindestmaterial(result["dauer_monate"], result["trades"])
-            if not material_ok:
+            if data_only:
+                _daten_effizienz(result, path, kapital, None)
+            if not material_ok and not data_only:
                 db.verify_trade_file(path, digest)
                 result["data_complete"] = True
                 result["grund"] = material_grund
@@ -330,7 +407,7 @@ class AnalyseDaten:
             # im gemeinsamen Cache liegen (CNH/ETH/BCH-Verträge).
             if findings["exposure"].get("conversion_complete") is not True:
                 findings["exposure"] = exposure.run(parsed, broker=stats.get("broker_server"),
-                    kapitalbasis_usd=initial, kapitalbasis_quelle="signalseite_initial_deposit",
+                    kapitalentscheidung=decision,
                     kursanbieter=provider)
             exp = findings["exposure"]
             missing = [label for key, label in (
@@ -341,10 +418,20 @@ class AnalyseDaten:
             ) if exp.get(key) is not True]
             if missing:
                 raise ValueError("Pflichtforensik unvollständig: " + ", ".join(missing))
-            equity_dd, grund = equity_nenner(equity, result["trades"])
+            equity_dd, grund = equity_nenner(equity, result["trades"], allow_zero=data_only)
             if equity_dd is None:
                 raise ValueError(grund)
             result["equity_dd_pct"] = equity_dd
+            if data_only:
+                eff = _daten_effizienz(result, path, kapital, equity_dd)
+                result["eligible"], result["grund"] = pruefe_kriterien(result)
+                if result["rendite_status"] != "gemessen":
+                    result["grund"] = "Rendite/RetDD nicht belegbar: " + str(
+                        (eff or {}).get("effizienz_status") or "keine Renditebasis")
+                    return _json_sicher(result)
+                db.verify_trade_file(path, digest)
+                result["data_complete"] = True
+                return _json_sicher(result)
             eff = portfolio_statistik.effizienz_kennzahlen(path, kapital, equity_dd,
                                                            min_historie_monate=MIN_MONATE)
             if not eff or eff.get("effizienz_status") != "ok":

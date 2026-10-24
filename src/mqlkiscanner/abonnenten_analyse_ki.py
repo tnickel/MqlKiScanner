@@ -17,6 +17,8 @@ MAX_EVIDENCE_CONTRACT_BYTES = 8_192
 MAX_EVIDENCE_REGISTER_BYTES = 4_096
 MAX_EVIDENCE_REGISTER_ENTRIES = 80
 FACTS_PAYLOAD_VERSION = 2
+REPORT_APPENDIX_VERSION = 4
+FINAL_OUTPUT_TOKENS = 32_768
 MAX_FACT_LIST_ITEMS = 100
 
 
@@ -187,7 +189,9 @@ def _fact_refs(value, prefix=""):
 
 
 _COMPARISON_FIELDS = ("retdd_jahr", "equity_dd_pct", "auswahlwert", "rang", "dauer_monate",
-                      "abo_perzentil", "signal_ref", "quelle", "name")
+                      "abo_perzentil", "signal_ref", "quelle", "name", "abo_zufluss_perzentil",
+                      "abo_zufluss_skaliert", "abo_delta_7", "abo_quellen_durchschnitt",
+                      "abo_quellen_referenz_n", "cagr_jahr_pct", "profit_usd")
 
 
 def _comparison_refs(comparison):
@@ -304,6 +308,26 @@ def validate_evidence(answer, allowed):
     return answer
 
 
+def evidence_inputs(entry: dict) -> tuple[dict, dict]:
+    """Use identical facts and register ordering in reports and adjudication."""
+    facts = compact({"forensik": entry.get("forensik", {}), "equity": entry.get("equity", {}),
+                     "messhinweis": entry.get("messhinweis"),
+                     **{key: entry.get(key) for key in ("retdd_jahr", "retdd_zeitraum", "equity_dd_pct",
+                        "dauer_monate", "trades", "kapitalbasis_usd", "account_currency", "eligible", "grund")},
+                     **({"abonnenten_trend": entry["abo_trend"]} if entry.get("abo_trend") else {})})
+    candidate = {key: entry.get(key) for key in ("signal_ref", "quellen_uid", "id", "quelle", "name",
+                 "platform", "abonnenten", "abo_perzentil", "abo_referenz_n", "katalog_stand",
+                 "rang", "auswahlwert", "retdd_perzentil", "abo_referenz_vollstaendig",
+                 "abo_ausgelassene_positionen", "abo_katalog_geprueft")}
+    if entry.get("abo_auswahl_hinweis"):
+        candidate["abo_auswahl_hinweis"] = entry["abo_auswahl_hinweis"]
+    for key in ("abo_zufluss_perzentil", "abo_zufluss_skaliert", "abo_quellen_durchschnitt",
+                "abo_quellen_referenz_n", "abo_quellen_referenz_scope"):
+        if key in entry:
+            candidate[key] = entry[key]
+    return facts, candidate
+
+
 class AnalyseKI:
     def __init__(self, store: Store, run_id: str, settings: dict, profile: dict,
                  *, should_stop=lambda: False, log=None, client=None):
@@ -336,16 +360,7 @@ class AnalyseKI:
 
     def _prompt(self, key, entry, processing, trade_data, parts, *, short=None, comparison=None):
         """The exact same filled prompt is used for sizing and for paid calls."""
-        facts = compact({"forensik": entry.get("forensik", {}), "equity": entry.get("equity", {}),
-                         "messhinweis": entry.get("messhinweis"),
-                         **{k: entry.get(k) for k in ("retdd_jahr", "retdd_zeitraum", "equity_dd_pct",
-                            "dauer_monate", "trades", "kapitalbasis_usd", "account_currency", "eligible", "grund")}})
-        candidate = {k: entry.get(k) for k in ("signal_ref", "quellen_uid", "id", "quelle", "name",
-                     "platform", "abonnenten", "abo_perzentil", "abo_referenz_n", "katalog_stand",
-                     "rang", "auswahlwert", "retdd_perzentil", "abo_referenz_vollstaendig",
-                     "abo_ausgelassene_positionen", "abo_katalog_geprueft")}
-        if entry.get("abo_auswahl_hinweis"):
-            candidate["abo_auswahl_hinweis"] = entry["abo_auswahl_hinweis"]
+        facts, candidate = evidence_inputs(entry)
         fact_paths = _fact_refs(facts)
         preferred = ("forensik.stats.trades", "forensik.stats.monthly_net_by_close", "equity.status",
                      "forensik.forensics.martingale.flag", "retdd_jahr", "retdd_zeitraum",
@@ -442,6 +457,9 @@ class AnalyseKI:
             raise llm_client.LlmError("Dynamische KI-Segmentierung deckt nicht alle Trades genau ab")
         return blocks
 
+    def _validate_custom_answer(self, answer, entry, *, key, processing, trade_data, comparison=None):
+        """Workflow subclasses validate extra JSON before cache reuse/retries."""
+
     def _ask(self, key, entry, processing, trade_data, parts, *, short=None, comparison=None):
         if self.should_stop():
             raise Angehalten("Stop angefordert")
@@ -459,7 +477,7 @@ class AnalyseKI:
         model = prompts.prompt_model(key, self.settings)
         deep = key == "abonnenten_top5"
         limit = int(self.settings.get("llm_max_total_tokens", 10_000_000))
-        max_tokens = 16_384
+        max_tokens = FINAL_OUTPUT_TOKENS if deep and self.profile.get("endpruefung_auto") else 16_384
         reasoning_effort = "high" if deep else "low"
         response_format = {"type": "json_object"}
         # Preserve the existing UTF-8 input bound. It is not a claim about a
@@ -478,6 +496,8 @@ class AnalyseKI:
             validate_evidence(answer, allowed)
             if deep and processing == "segment" and any(not isinstance(ref, str) or ref not in allowed for ref in answer["beleg_refs"]):
                 raise llm_client.LlmError("Unbekannter Code-/Tradebeleg im Top-5-Segment")
+            self._validate_custom_answer(answer, entry, key=key, processing=processing,
+                                         trade_data=trade_data, comparison=comparison)
             return answer
         previous = self.store.calls(self.run_id, base)
         for saved in previous:
@@ -591,9 +611,112 @@ class AnalyseKI:
         return answer
 
 
+def abschluss_anhang(entry: dict) -> str:
+    """Keep the final evidence and adjudication visible in exported reports."""
+    if not any(entry.get(key) for key in ("abo_trend", "ki_pruefentscheidungen", "endpruefung_status")):
+        return ""
+    lines = ["## Messgrundlage und abschließende Prüfung", ""]
+    trend = entry.get("abo_trend") or {}
+    if trend:
+        delta = trend.get("delta_7")
+        if trend.get("verified") is True and isinstance(delta, (int, float)) and not isinstance(delta, bool):
+            lines.extend([
+                f"Abonnenten: gemessene Netto-Bestandsänderung im 7-Tage-Vergleich {delta:+g}; "
+                f"Messabstand {trend.get('messabstand_7_tage', 'unbekannt')} Tage. "
+                "Dies ist keine Messung der Bruttozuwanderung.",
+                f"Vergleichspunkt: {trend.get('basis_7_ts', 'unbekannt')} "
+                f"({trend.get('basis_7', 'unbekannt')}); letzter Messpunkt: "
+                f"{trend.get('aktuell_ts', 'unbekannt')} ({trend.get('aktuell', 'unbekannt')}).",
+            ])
+        else:
+            lines.append("Abonnentenzufluss nicht belastbar gemessen; fehlende Vergleichswerte sind keine Nulländerung.")
+        if trend.get("grund"):
+            lines.append("Historienhinweis: " + str(trend["grund"]))
+        average = entry.get("abo_quellen_durchschnitt")
+        scaled = entry.get("abo_zufluss_skaliert")
+        if (isinstance(average, (int, float)) and not isinstance(average, bool) and average > 0
+                and isinstance(scaled, (int, float)) and not isinstance(scaled, bool)
+                and math.isfinite(average) and math.isfinite(scaled)):
+            lines.append(f"Quellenskalierung: Nettoänderung / durchschnittlicher Abonnentenbestand "
+                         f"{average:.4g} = {scaled:.4g}. Referenz: "
+                         f"{entry.get('abo_quellen_referenz_n', 'unbekannt')} positive Anbieter der "
+                         "eingefrorenen Quellenauswahl, kein belegter Durchschnitt der gesamten Plattform.")
+    measured = entry.get("equity_dd_pct")
+    retdd = entry.get("retdd_jahr")
+    profit = (entry.get("forensik") or {}).get("stats", {}).get("net")
+    duration = entry.get("dauer_monate")
+    if isinstance(duration, (int, float)) and not isinstance(duration, bool) and math.isfinite(duration):
+        lines.append(f"Gemessene Handelshistorie: {duration:.3g} Monate.")
+        if duration < 12:
+            lines.append("Jahresrendite und Jahres-RetDD sind aus weniger als zwölf Monaten geometrisch "
+                         "annualisiert. Sie sind kein beobachtetes Jahresergebnis und keine Ertragsprognose.")
+    for title, value, unit in (("Maximaler gemessener Equity-DD", measured, " %"),
+                               ("Jahres-RetDD", retdd, ""), ("Exportierter Nettogewinn", profit, " USD")):
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value):
+            lines.append(f"{title}: {value:.4g}{unit}.")
+    lines.append("Die Equity-Messung umfasst Floating an H1-Bar-Schlüssen im Exportfenster; "
+                 "vollständige Intrabar-Tiefs und aktuell offene Positionen sind damit nicht belegt.")
+    equity = entry.get("equity") or {}
+    coverage = equity.get("abdeckung_pct_raw", equity.get("abdeckung_pct"))
+    if isinstance(coverage, (int, float)) and not isinstance(coverage, bool) and math.isfinite(coverage):
+        lines.append(f"Belegte Abdeckung des H1-Rasters: {coverage:.4g} %. "
+                     "Eine akzeptierte Messung ist damit nicht automatisch lückenlos.")
+    without_bar_end = equity.get("trades_ohne_h1_floating_messpunkt")
+    if isinstance(without_bar_end, int) and not isinstance(without_bar_end, bool):
+        lines.append(f"Exporttrades ohne H1-Floating-Messpunkt: {without_bar_end} "
+                     f"von {equity.get('trades_total', entry.get('trades', 'unbekannt'))}. "
+                     "Zwischen deren Öffnung und Schließung liegt kein H1-Barende; "
+                     "das ist eine Rastergrenze und kein eigenständiger Beweis fehlender Symbolkurse.")
+    if "original_broker" in equity and not equity.get("original_broker"):
+        lines.append("Der Bezug der Referenzkurse zum ursprünglichen Broker ist nicht belegt; "
+                     "die Messung ist kein exakter Drawdown-Nachweis des ursprünglichen Brokerkontos.")
+    lines.append("Closing-Balance und H1-Equity sind verschiedene Kurven. Ein Balance-Tief bei "
+                 "offenen Positionen belegt ohne deren Floating-Wert keine Equity-Untergrenze.")
+    if entry.get("bericht_redaktion_verlangt"):
+        if entry.get("bericht_redaktion_status") == "geprueft":
+            lines.append("Abschließende Faktenredaktion durchgeführt. Die ursprüngliche KI-Antwort "
+                         "bleibt im Audit erhalten; die nachstehenden Korrekturen sind im Bericht berücksichtigt.")
+        else:
+            lines.append("**Abschließende Faktenredaktion nicht freigegeben; kein fertiger Endbericht.**")
+    for correction in entry.get("bericht_redaktion_korrekturen") or []:
+        register = entry.get("bericht_redaktion_beleg_register") or {}
+        evidence = [f"{ref}: {register[ref]}" if ref in register else str(ref)
+                    for ref in correction.get("beleg_refs") or []]
+        lines.extend(["", "### Nachgewiesene Textkorrektur", "Ursprüngliche Aussage: " + str(correction.get("alt", "")),
+                      "Geprüfte Fassung: " + str(correction.get("neu", "")),
+                      "Begründung: " + str(correction.get("begruendung", "")),
+                      "Belege: " + ", ".join(evidence)])
+    decisions = entry.get("ki_pruefentscheidungen") or []
+    if entry.get("ki_klaerung_gesperrt"):
+        lines.append("**Bewertungsgrundlage unzureichend: keine Freigabe als Endkandidat.**")
+    elif entry.get("review_pending"):
+        lines.append("**Prüfhinweise noch offen: Endprüfung nicht abgeschlossen.**")
+    elif decisions:
+        lines.append("Die folgenden ursprünglichen Prüfhinweise sind abschließend eingeordnet; "
+                     "dokumentierte Risiken bleiben bestehen.")
+    for decision in decisions:
+        hint = decision.get("hinweis") or {}
+        lines.extend(["", f"### {hint.get('text', 'Ursprünglicher Prüfhinweis')}",
+                      "Entscheidung: " + str(decision.get("entscheidung", "unbekannt")) + ". "
+                      + "Auswirkung: " + str(decision.get("auswirkung", "unbekannt")) + ".",
+                      str(decision.get("begruendung") or "Begründung fehlt."),
+                      "Belege: " + ", ".join(str(ref) for ref in decision.get("beleg_refs") or [])])
+        origins = decision.get("herkunft") or []
+        if isinstance(origins, dict):
+            origins = [origins]
+        for origin in origins:
+            if isinstance(origin, dict):
+                lines.append("Ursprünglicher Bericht: " + str(origin.get("bericht_stufe") or "unbekannt")
+                             + "; Basis: " + str(origin.get("bericht_basis") or "unbekannt") + ".")
+    return "\n".join(lines)
+
+
 def report_pdf(entry: dict, run_id: str) -> str:
     from . import pdf_reports
     body = entry["bericht_markdown"]
+    appendix = abschluss_anhang(entry)
+    if appendix:
+        body += "\n\n---\n\n" + appendix
     if entry.get("abo_referenz_vollstaendig") is False:
         warning = entry.get("abo_auswahl_hinweis") or "Der Quellenkatalog enthält ausgelassene API-Positionen."
         body = (f"**Auswahlhinweis:** {warning} "

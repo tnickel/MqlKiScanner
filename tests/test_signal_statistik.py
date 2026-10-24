@@ -46,7 +46,9 @@ def test_monate_geom_pf_winrate_konsistent(tmp_path):
     assert erg["fehler"] is None
     # Nutzer-Regel 05.10.: keine implizite Basis mehr — 10k virtuell, markiert
     assert erg["kapitalbasis_usd"] == pytest.approx(10_000.0)
-    assert erg["kapitalbasis_quelle"] == "virtuelle_annahme"
+    assert erg["kapitalbasis_quelle"] == "modell_fallback_10000"
+    assert erg["kapitalbasis_modell"] is True
+    assert erg["kapitalbasis_details"]["unsicherheit"]
     # Kanonische Produzenten liefern dieselben Werte (keine Zweitrechnung).
     monate = portfolio_statistik.monatsrenditen(pfad, erg["kapitalbasis_usd"])
     assert erg["monate_pct"] == pytest.approx(monate)
@@ -92,23 +94,25 @@ def test_kapitalbasis_kaskade_seite_vor_virtuell(tmp_path):
     # 2) Nur Web-Balance (früher implizit): fällt DURCH auf virtuell.
     basis, quelle = signal_statistik.kapitalbasis_kaskade(
         pfad, {"balance_usd": 9950.0, "kapitalbasis_virtual_usd": 10_000.0})
-    assert (basis, quelle) == (10_000.0, "virtuelle_annahme")
+    assert (basis, quelle) == (10_000.0, "modell_fallback_10000")
     # 3) Virtuell als letzte Stufe (Quellen-Annahme).
     basis, quelle = signal_statistik.kapitalbasis_kaskade(
         pfad, {"kapitalbasis_virtual_usd": 10_000.0})
-    assert (basis, quelle) == (10_000.0, "virtuelle_annahme")
-    # 4) Gar nichts: keine Basis, ehrlich None.
-    assert signal_statistik.kapitalbasis_kaskade(pfad, {}) == (None, "signalseite_initial_deposit")
+    assert (basis, quelle) == (10_000.0, "modell_fallback_10000")
+    # 4) Fehlender Beleg: markierter letzter Modellfallback, keine echte Basis.
+    assert signal_statistik.kapitalbasis_kaskade(pfad, {}) == (10_000.0, "modell_fallback_10000")
 
 
-def test_ohne_kapitalbasis_keine_prozentwerte_aber_usd(tmp_path):
+def test_ohne_belegte_kapitalbasis_markierter_modellfallback(tmp_path):
     pfad = _csv(tmp_path / "t.csv", [_trade("2026.01.05 10:00", 10, "EURUSD", 1.1, 1.11, 50.0)])
     erg = signal_statistik.berechne(pfad, {})
     assert erg["fehler"] is None
-    assert erg["kapitalbasis_ok"] is False
-    assert erg["ertrag_monat_geom_pct"] is None
-    assert erg["monate_pct"] == {}
-    assert erg["kurve"] == []
+    assert erg["kapitalbasis_ok"] is True
+    assert erg["kapitalbasis_modell"] is True
+    assert erg["kapitalbasis_quelle"] == "modell_fallback_10000"
+    assert erg["kapitalbasis_usd"] == 10000
+    assert erg["monate_pct"]
+    assert erg["kurve"][-1][1] == 10050
     assert erg["monate_usd"]["2026-01"] == pytest.approx(50.0)  # USD bleibt messbar
     assert erg["trades"] == 1
 

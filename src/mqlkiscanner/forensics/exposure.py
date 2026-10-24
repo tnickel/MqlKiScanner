@@ -250,7 +250,9 @@ def _snapshot(net_by_symbol: dict[str, float], long_vol: float, short_vol: float
 
 def run(parsed: ParsedExport, stress_move: float | None = None,
         broker: str | None = None, kapitalbasis_usd: float | None = None,
-        kapitalbasis_quelle: str | None = None, kursanbieter=None) -> dict:
+        kapitalbasis_quelle: str | None = None, kursanbieter=None, *,
+        kapital_kontext: dict | None = None, quellen_stats: dict | None = None,
+        kapitalentscheidung: dict | None = None) -> dict:
     trades = parsed.trades
     if not trades:
         return {"test": "exposure", "flag": False, "temporal_risk_available": False}
@@ -339,15 +341,18 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
     # Ein Close verbucht sein Netto erst beim Entfernen der Position; damit
     # kann spaeterer Gewinn die historische Belastung nicht verkleinern.
     first_open = min(t.open_time for t in trades)
-    # Externe Kapitalbasis (Signalseite "Initial Deposit"): greift NUR, wenn
-    # der Export keine Einzahlung vor dem ersten Trade enthaelt. Sie wird als
-    # Buchung VOR dem ersten Open gefuehrt (kind 0 schlaegt kind 1), damit
-    # Schock-in-Prozent gegen das reale Konto gerechnet wird.
-    startkapital_quelle = "csv_einzahlungen"
-    if kapitalbasis_usd is not None and kapitalbasis_usd > 0 \
-            and not any(b.amount > 0 and b.time <= first_open for b in parsed.balances):
-        events.append((first_open, 0, 0, float(kapitalbasis_usd)))
-        startkapital_quelle = kapitalbasis_quelle or "extern"
+    from .. import kapitalbasis
+    decision = kapitalentscheidung if kapitalentscheidung is not None else kapitalbasis.aufloesen(
+        parsed, stats=quellen_stats, kapitalbasis_usd=kapitalbasis_usd,
+        kapitalbasis_quelle=kapitalbasis_quelle, broker=broker, kontext=kapital_kontext)
+    injection = float(decision["injektion_usd"])
+    preflows = math.fsum(b.amount for b in parsed.balances if b.time <= first_open)
+    if not math.isfinite(injection) or not math.isclose(
+            preflows + injection, float(decision["kapital"]), rel_tol=1e-10, abs_tol=1e-8):
+        raise ValueError("Kapitalentscheidung passt nicht zu den Vorstartbuchungen des Exports.")
+    startkapital_quelle = decision["quelle"]
+    if injection:
+        events.append((first_open, 0, 0, injection))
     events.sort(key=lambda e: (e[0], e[1]))
 
     open_count = 0
@@ -360,12 +365,11 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
     risk_snap: dict | None = None
     relative_snap: dict | None = None
     account = 0.0
-    initial_capital = math.fsum(b.amount for b in parsed.balances if b.time <= first_open)
-    if startkapital_quelle != "csv_einzahlungen":
-        initial_capital += float(kapitalbasis_usd)
+    initial_capital = preflows + injection
     initial_capital += math.fsum(c.amount for c in getattr(parsed, "costs", []) if c.time < first_open)
-    capital_history_complete = initial_capital > 0
-    temporal_risk_available = capital_history_complete and conversion_complete
+    capital_available = initial_capital > 0
+    capital_history_complete = capital_available and not decision.get("modell")
+    temporal_risk_available = capital_available and conversion_complete
     account_dipped_negative = False
 
     for (time, kind), grouped in groupby(events, key=lambda e: (e[0], e[1])):
@@ -417,7 +421,7 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
     assert count_snap is not None
     # Kapitalbasis-Diagnose: konkreter Grund statt Sammel-Meldung. Ohne
     # belastbares Konto ist der Schock-in-Prozent (30-%-Regel) nicht berechenbar.
-    if not capital_history_complete:
+    if not capital_available:
         seiten_hinweis = ""
         if kapitalbasis_usd is not None and kapitalbasis_usd <= 0:
             seiten_hinweis = (
@@ -437,6 +441,9 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
             "Kontostand war bei offenen Positionen <= 0 (z. B. Auszahlung mitten "
             "im Handel): kein belastbarer Bezugswert — Schockanteil in Prozent "
             "und die konfigurierte Drawdown-Schranke sind nicht berechenbar.")
+    if decision.get("modell"):
+        warnings.append("Modellkapital: " + kapitalbasis.beschreibung(decision)
+                        + "; relative Schockwerte sind Szenariowerte, keine belegten Kontokennzahlen.")
     # Fremdwaehrungs-Quotes: complete nur, wenn jeder Snapshot einen belegten
     # EZB-Kurs fand. Sonst Warnung mit konkretem Grund (Datei fehlt/Luecke).
     ezb = fx_rates.status()
@@ -540,6 +547,9 @@ def run(parsed: ParsedExport, stress_move: float | None = None,
         "test": "exposure",
         "startkapital": round(initial_capital, 2),
         "startkapital_quelle": startkapital_quelle,
+        "kapitalbasis_details": decision,
+        "kapitalbasis_modell": bool(decision.get("modell")),
+        "model_capital_available": capital_available and bool(decision.get("modell")),
         "peak_open_positions": peak_count,
         "peak_count_time": (count_snap["time"].isoformat(sep=" ")
                             if count_snap["time"] else None),

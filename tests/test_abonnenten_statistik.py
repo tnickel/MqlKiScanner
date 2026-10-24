@@ -630,7 +630,7 @@ def test_seite_mehrfachauswahl_sammel_beobachten():
     assert db.list_beobachtungen() == set()
 
 
-def test_zeilen_berichte_und_seite_hat_ber_spalte():
+def test_zeilen_erhalten_berichte_aber_datenseite_blendet_sie_aus():
     # workflow_zeilen tragen die Analyse-Felder (list_catalog-Form) + ref
     ident = db.resolve_identity(77, quelle="fake", create=True)
     zeilen = abo.zeilen(workflow_zeilen=[{
@@ -649,13 +649,12 @@ def test_zeilen_berichte_und_seite_hat_ber_spalte():
     at.run()
     assert not at.exception
     df = at.dataframe(key="abonnenten_tabelle_alle").value
-    assert "Ber." in df.columns
+    assert "Ber." not in df.columns
     assert set(df["ID"].tolist()) == {77}
 
 
-def test_doku_spalte_und_kein_none_in_delta_spalten(tmp_path):
-    """Doku (Testreport-PDFs) in Spalte + Detail; Δ-Spalten bleiben float
-    (Int64-pd.NA renderte als Text „None" — Nutzer-Screenshot 20.10.)."""
+def test_dokumente_ausgeblendet_und_delta_spalten_weiterhin_numerisch(tmp_path):
+    """Datenseite blendet erhaltene PDFs aus; unbekannte Δ-Werte bleiben leer."""
     db.store_downloader_report(1, "mql5", "mqlki-test.pdf", str(tmp_path / "r.pdf"),
                                quelle="fake")
     (tmp_path / "r.pdf").write_bytes(b"%PDF-1.4 test")
@@ -664,35 +663,32 @@ def test_doku_spalte_und_kein_none_in_delta_spalten(tmp_path):
     at.run()
     assert not at.exception
     df = at.dataframe(key="abonnenten_tabelle_alle").value
-    assert "Doku" in df.columns
-    assert df[df["ID"] == 1].iloc[0]["Doku"] == "📑×1"
+    assert "Doku" not in df.columns
+    assert (tmp_path / "r.pdf").exists()
     # None-Fix: Δ 30 Tage ist float (NaN → leere Zelle), nicht Int64
     assert str(df["Δ 30 Tage"].dtype) != "Int64"
     assert df["Δ 30 Tage"].isna().all() or (df["Δ 30 Tage"] == 3).any()
-    # Detail: Zeile wählen → Dokumente-Expander mit Download-Button
+    # Zeilenauswahl öffnet keine historischen Dokumente mehr.
     at.session_state["abonnenten_tabelle_alle"] = {"selection": {"rows": [0]}}
     at.run()
     expander = [e.label for e in at.expander]
-    assert any("Dokumente" in (t or "") for t in expander)
+    assert not any("Dokumente" in (t or "") for t in expander)
 
 
 def test_hilfsspalten_sind_alle_ausgeblendet():
-    """_doku (JSON-Rohliste) darf wie _ref/_ampel nie sichtbar sein
-    (Nutzer-Screenshot 20.10.: _doku-Spalte erschien mit []). AppTest
-    liefert den Original-df (mit Hilfsspalten) — die Anzeige-Ausblendung
-    steckt in der column_config der Seite, also wird die geprüft."""
+    """Interne Referenz/Stilmarker bleiben verborgen; Dokumenten-JSON entfällt."""
     _reihe_seed()
     seiten_quelle = SEITE.read_text(encoding="utf-8")
-    for hilfs in ("'_ref': None", "'_ampel': None", "'_doku': None"):
+    for hilfs in ("'_ref': None", "'_ampel': None"):
         assert hilfs in seiten_quelle
+    assert "'_doku':" not in seiten_quelle
     at = AppTest.from_file(SEITE, default_timeout=30)
     at.run()
     assert not at.exception
 
 
-def test_doku_leser_und_gehoert_zur_gewaehlten_zeile(tmp_path):
-    """Regression: Doku-Block las vorher die LETZTE Tabellenzeile (globales
-    z); jetzt gehört der Expander zur gewählten Zeile und zeigt st.pdf."""
+def test_dokumente_auch_bei_zeilenauswahl_verborgen_und_dateien_erhalten(tmp_path):
+    """Historische Dateien bleiben erhalten, ohne PDF-Bedienung auf Stufe 1."""
     pdf = tmp_path / "rep.pdf"
     pdf.write_bytes(b"%PDF-1.4 test")
     # ZWEI Signale; Doku NUR bei Signal 1 (NICHT die letzte Zeile)
@@ -714,13 +710,12 @@ def test_doku_leser_und_gehoert_zur_gewaehlten_zeile(tmp_path):
     assert not at.exception
     expander = [e.label for e in at.expander]
     dok = [t for t in expander if "Dokumente" in (t or "")]
-    assert dok and "(1)" in dok[0], expander  # GENAU die Doku von Alpha #1
-    # Nachladen-Button vorhanden
-    assert at.button(key="abonnenten_doku_laden_"
-                          + str(db.resolve_identity(1, quelle="fake").signal_ref))
+    assert not dok, expander
+    assert pdf.exists(), "Historical artifacts remain saved"
+    assert not any(str(button.key).startswith("abonnenten_doku_") for button in at.button)
 
 
-def test_doku_nachladen_button_ruft_sync(monkeypatch):
+def test_datenseite_bietet_keinen_dokumenten_download(monkeypatch):
     _reihe_seed()
     ident = db.resolve_identity(1, quelle="fake", create=True)
     import mqlkiscanner.downloader_sync as dsync
@@ -731,11 +726,11 @@ def test_doku_nachladen_button_ruft_sync(monkeypatch):
     at = AppTest.from_file(SEITE, default_timeout=30)
     at.session_state["abonnenten_tabelle_alle"] = {"selection": {"rows": [0]}}
     at.run()
-    at.button(key=f"abonnenten_doku_laden_{ident.signal_ref}").click().run()
-    assert aufgerufen == [(1, "mql5", {"quelle": "fake"})]
+    assert not any(str(button.key).startswith("abonnenten_doku_") for button in at.button)
+    assert aufgerufen == []
 
 
-def test_beobachten_batch_doku(monkeypatch):
+def test_beobachten_ohne_dokumenten_batch(monkeypatch):
     _reihe_seed()
     db.setze_beobachtung(1, True, quelle="fake")
     import mqlkiscanner.downloader_sync as dsync
@@ -744,8 +739,8 @@ def test_beobachten_batch_doku(monkeypatch):
                         lambda sid, platform, **kw: aufgerufen.append(sid) or [])
     at = AppTest.from_file(SEITE, default_timeout=30)
     at.run()
-    at.button(key="abonnenten_doku_batch").click().run()
-    assert aufgerufen == [1]
+    assert not any(button.key == "abonnenten_doku_batch" for button in at.button)
+    assert aufgerufen == []
 
 
 def test_berichte_mergen_bei_katalog_und_workflow_zeile():

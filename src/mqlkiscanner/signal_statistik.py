@@ -13,9 +13,9 @@ bleibt exklusiv bei der Equity-Studie). Der Drawdown dieser Vorstufe heißt
 gekennzeichnete VORBWERTUNG, kein RetDD (dessen Nenner darf nur die
 floating-inklusive Kursmessung sein).
 
-Kapitalbasis-Kaskade (Nutzer-Regel 05.10.2026): Signalseite
-„Initial Deposit“ → virtuelle Annahme aus dem Quellen-Monitor; CSV-
-Einzahlungen im Export schlagen jede Injektion (drawdown.run entscheidet).
+Kapitalbasis: gemeinsamer Resolver mit belegten Werten vor Lotschätzung,
+grober Lotschätzung und gekennzeichnetem 10.000-USD-Fallback. CSV-
+Einzahlungen im Export behalten Vorrang; Modellwerte sind keine Kontobelege.
 Die Kurve ist die REALE Kontokurve inkl. Ein-/Auszahlungen (Auszahlungen
 erzeugen keinen Drawdown — Peak-Anpassung).
 """
@@ -24,33 +24,21 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
-from . import stats as stats_mod
+from . import kapitalbasis, stats as stats_mod
 from .forensics import drawdown, martingale
 from .parser import load_export
-from .pipeline import (
-    KAPITALBASIS_QUELLE_VIRTUELL,
-    _virtuelle_kapitalbasis,
-)
 from .portfolio_statistik import _monatsserie, effizienz_kennzahlen
 
 
 def kapitalbasis_kaskade(trades_pfad: str, stats: dict,
                          plattform_positions: float | None = None
                          ) -> tuple[float | None, str]:
-    """Externe Kapitalbasis-Kandidatin wie im Scan — OHNE CSV-Entscheidung.
-
-    Nutzer-Regel 05.10.2026: Signalseite „Initial Deposit“ → virtuelle
-    Annahme (10.000 USD, markiert). Die implizite Basis ist entfallen.
-    Rückgabe (basis, quelle); basis kann None sein. Ob am Ende CSV-
-    Einzahlungen gewinnen, entscheidet drawdown.run.
-    """
-    basis = stats.get("initial_deposit_usd")
-    quelle = "signalseite_initial_deposit"
-    if basis is None:
-        virtuell = _virtuelle_kapitalbasis(stats.get("kapitalbasis_virtual_usd"))
-        if virtuell is not None:
-            return virtuell, KAPITALBASIS_QUELLE_VIRTUELL
-    return basis, quelle
+    """Verfügbare Vorstartbasis und Herkunft aus der gemeinsamen Methodik."""
+    parsed = load_export(trades_pfad, plattform_positions=plattform_positions)
+    entscheid = kapitalbasis.aufloesen(parsed, stats=stats,
+        broker=stats.get("broker_server"), kontext={**stats, "trades_path": trades_pfad})
+    return (entscheid.get("kapital") if entscheid.get("gueltig") else None,
+            entscheid.get("quelle") or "unbekannt")
 
 
 def _monats_usd(parsed) -> dict[str, float]:
@@ -260,12 +248,11 @@ def berechne(trades_pfad: str | None, stats: dict | None) -> dict | None:
                 "monate_usd": _monats_usd(parsed),
                 "kapitalbasis_ok": False}
 
-    basis, basis_quelle = kapitalbasis_kaskade(
-        trades_pfad, stats, plattform_positions=plattform_positions)
-    dd = drawdown.run(parsed, kapitalbasis_usd=basis,
-                      kapitalbasis_quelle=basis_quelle or None)
+    entscheid = kapitalbasis.aufloesen(parsed, stats=stats,
+        broker=stats.get("broker_server"), kontext={**stats, "trades_path": trades_pfad})
+    dd = drawdown.run(parsed, kapitalentscheidung=entscheid)
     startkapital = dd.get("startkapital")
-    basis_ok = (isinstance(startkapital, (int, float))
+    basis_ok = (entscheid.get("gueltig") is True and isinstance(startkapital, (int, float))
                 and math.isfinite(startkapital) and startkapital > 0)
     trading_dd = dd.get("trading_dd") or {}
 
@@ -296,7 +283,9 @@ def berechne(trades_pfad: str | None, stats: dict | None) -> dict | None:
         "identische_tradezeilen": grund.get("identische_tradezeilen", 0),
         "kapitalbasis_ok": basis_ok,
         "kapitalbasis_usd": float(startkapital) if basis_ok else None,
-        "kapitalbasis_quelle": dd.get("startkapital_quelle") or basis_quelle or "",
+        "kapitalbasis_quelle": dd.get("startkapital_quelle") or entscheid.get("quelle") or "",
+        "kapitalbasis_details": dd.get("kapitalbasis_details") or entscheid,
+        "kapitalbasis_modell": kapitalbasis.ist_modellquelle(entscheid),
         "netto_gesamt_usd": netto,
         "kontokosten_anzahl": len(parsed.costs),
         "kontokosten_usd": math.fsum(c.amount for c in parsed.costs),

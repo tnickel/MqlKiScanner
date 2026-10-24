@@ -464,7 +464,8 @@ def _fake_studie_daten() -> dict:
     }
 
 
-def test_equity_studie_seite_rendert_ende_zu_ende(tmp_path, monkeypatch):
+@pytest.mark.parametrize('modell', [False, True])
+def test_equity_studie_seite_rendert_ende_zu_ende(tmp_path, monkeypatch, modell):
     """Die eigene Seite durchspielt den kompletten GUI-Pfad: Auswahl →
     (gefake) Berechnung → Kennzahlen, Plotly-Chart, Risiko-Texte und
     Symbol-Diagnose. Die echte Messung testen die Modul-Tests oben."""
@@ -480,8 +481,12 @@ def test_equity_studie_seite_rendert_ende_zu_ende(tmp_path, monkeypatch):
         trades_path=str(csv_pfad), dd_equity_pct=12.0,
         martingale_flag=False, peak_positionen=7)
     monkeypatch.setattr(pipeline, "results_from_db", lambda: [probe])
-    monkeypatch.setattr(equity_studie_ui, "berechne",
-                        lambda result, progress: _fake_studie_daten())
+    daten = _fake_studie_daten()
+    if modell:
+        daten['meta'].update(startkapital_quelle='modell_lot_pnl', kapitalbasis_details={
+            'quelle': 'modell_lot_pnl', 'modell': True, 'kapital': 10000,
+            'unsicherheit': 'Schätzung aus begrenzter Lot-/PnL-Historie'})
+    monkeypatch.setattr(equity_studie_ui, "berechne", lambda result, progress: daten)
 
     root = _Path(__file__).resolve().parents[1]
     at = AppTest.from_file(str(root / "app_pages" / "equity_studie.py"),
@@ -507,6 +512,9 @@ def test_equity_studie_seite_rendert_ende_zu_ende(tmp_path, monkeypatch):
     assert "Max-Drawdown beim Kopieren" in text
     assert "3.814" in text or "3.814" in text.replace(",", ".") or "3814" in text
     assert "Kontostand heute (simuliert)" in text
+    if modell:
+        assert 'Virtuelle Modellstudie' in text
+        assert any('begrenzter Lot-/PnL-Historie' in str(item.value) for item in at.json)
 
 
 def test_anker_klemmt_an_ersten_messpunkt_bei_kuerzerer_kurshistorie():

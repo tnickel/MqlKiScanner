@@ -1,4 +1,40 @@
-# Ein Button: Strategien bewerten, Kandidatenliste und Top-5-Analysen
+# Abonnentenstatistik: Daten sammeln und Kennzahlen vergleichen
+
+**Aktueller Nutzerauftrag ab 24.10.2026, 09:55 MESZ:** Zunächst ausschließlich
+Stufe 1 ohne KI: vollständige verfügbare Trades und benötigte Quelldaten
+beschaffen, Gewinn, maximalen gemessenen Floating-Equity-DD vom Hochpunkt,
+RetDD und quellenbezogen skalierten Abonnentenzufluss in einer Tabelle zeigen.
+Die vorherige KI-Endarbeit ist gestoppt und die KI-Bedienung auf dieser Seite
+entfällt vorerst. Die folgenden KI-Konzept-/Umsetzungsabschnitte beschreiben
+historische Iterationen, keine Wiederaufnahmefreigabe. Neue Stufe 1 siehe
+`reviews/2026-10-24_abonnenten_daten_stufe1/README.md`.
+
+**Ergänzende Nutzerentscheidung 24.10.2026:** Fehlende Startkapitalwerte
+dürfen für eine ausdrücklich bezeichnete Modellrechnung geschätzt werden:
+belastbarer bekannter Kapitalbeleg zuerst, sonst nachvollziehbares
+Lots-/Trade-Modell, grobe Lotskalibrierung und zuletzt 10.000 USD.
+Die Rechnung nimmt keine Ein-/Auszahlungen an und zeigt Kapitalherkunft,
+Modell-DD und Modell-RetDD. Sie ersetzt keine ursprünglichen Kontomessungen.
+Die Untersuchung und Umsetzung stehen unter
+`reviews/2026-10-24_abonnenten_modellkapital/README.md`.
+Produktiv abgeschlossen ist der getrennte Modellauftrag
+`77feecf051a94836ae21f724d7dca7b8`: 800 Kapitalbasen mit Herleitung,
+567 Modellgewinne, 356 Modell-DD und 325 Modell-RetDD. Die ursprünglichen
+110 DD-/51 RetDD-Messwerte bleiben erhalten. Fehlende Trades, unbelegte
+Einheiten und Kurslücken bleiben ausdrücklich Datenlücken; der Ablauf ist
+beendet, die Daten sind damit nicht vollständig.
+
+**Programmweite Erweiterung (spätere Nutzerentscheidung 24.10.2026):**
+`kapitalbasis.aufloesen` vereinheitlicht die Kapitalentscheidung für Scanner,
+Engine, Statistik, Kontostudien und Risikorechner. Der Schätzalgorithmus bleibt
+derselbe; neue Berechnungen lesen einen gemeinsamen, per SHA geprüften lokalen
+Kalibrierungssnapshot. Bekannte Kapitalbewegungen bleiben außerhalb der oben
+beschriebenen Abonnenten-Modellkopie erhalten. Modelle bekommen Herkunft,
+Unsicherheit und getrennte Vollständigkeitsmerkmale; sie werden nicht zu
+belegter Kontoforensik oder automatischen Grün-Freigaben. Forensikversion 22
+kennzeichnet die geänderte Berechnungsgrundlage. Bestehende eingefrorene
+Aufträge bleiben unverändert. Details:
+`reviews/2026-10-24_kapitalbasis_programmweit/README.md`.
 
 Abgleich 24.10.2026: Der initiale Implementierungsstand unten ist historisch;
 der inzwischen laufende KI-Auftrag ist in Abschnitt 8 eingeordnet. Abschnitt 9
@@ -324,3 +360,97 @@ damaligen Review-Abschluss waren die neuen nativen Pakete noch nicht aktiviert.
 Die anschließend ausdrücklich beauftragte Aktivierung ist separat dokumentiert:
 `reviews/2026-10-24_native_aktivierung/README.md`. Kritische Einordnung aller
 49 GLM-Befunde: `reviews/2026-10-24_glm53_nachpruefung/README.md`.
+
+## 10. Normierter Zufluss und verbindliche Endprüfung (Nutzerentscheidung 24.10.2026 morgens)
+
+Der Nutzer hat für den bestehenden Rechercheauftrag ausdrücklich 800 Millionen
+Tokens je Lauf, Tag und Monat freigegeben. Die Freigabe bleibt auf dessen
+`budget_settings` beschränkt; globale Einstellungen werden nicht erhöht.
+
+Neue Auswahl: 70 % Zufluss, 30 % Jahres-RetDD. Eine Quelle bezeichnet die
+Plattform, beispielsweise Pelican Trading, ZuluTrade oder MQL5. Der Zufluss
+ist die native Netto-Bestandsänderung im ungefähr siebentägigen Messfenster,
+keine beobachtete Bruttozuwanderung. Er wird durch die durchschnittliche
+positive Abonnentenzahl der eingefrorenen ursprünglichen Auswahl derselben
+Quelle geteilt. Der Durchschnitt umfasst die bekannten positiven Anbieter
+dieser Auswahl bis maximal 200; er ist kein belegtes Plattformvollmittel.
+Quellenmittel, Referenzgröße, Auswahlhash und ursprünglicher Datenstand werden
+gespeichert. Erst die normierten Werte gehen in ein gemeinsames Perzentil ein;
+dessen Gewicht ist 70 %, das RetDD-Perzentil erhält 30 %. Bei gleichem Wert
+folgen kapitalbezogene Rendite, RetDD und anschließend gemessener Nettogewinn.
+
+Der Trend-Snapshot liest ausschließlich native Anbieterhistorien per GET.
+Messzeitpunkte und GET-Zeit werden getrennt gespeichert; alte Scannerpunkte
+ohne Herkunftsnachweis werden nicht als native Trendbelege verwendet. Stichtag,
+Quellen-UID, Anbieter, Plattformversion, Originalpunkte und Hash bleiben
+laufgebunden. Für den 7-Tage-Vergleich müssen sowohl Vergleichspunkt zum
+Stichtag als auch tatsächlicher Messabstand innerhalb der bestehenden
+Drei-Tage-Toleranz liegen. Fehlende oder widersprüchliche Vergleichswerte
+bleiben unbekannt und erhalten keinen Rang; sie werden weder Null noch durch
+den absoluten Abonnentenbestand ersetzt.
+
+Kurz-KI ist in diesem Modus ein optionaler Zusatz. Fehlende Kurzberichte
+blockieren weder die Vorauswahl noch die fünf Endprüfungen. Veraltete
+Kurzberichte werden nicht als aktuelle Belege in einen Tiefenbericht übernommen.
+Vorauswahl und ausstehende Endprüfung bleiben in der Oberfläche unterscheidbar.
+
+Die Endkandidaten benötigen unverändert belastbare Daten und Equity-Messung.
+Ihre ursprünglichen Hinweise werden mit Herkunft, Berichtsbasis und Trade-SHA
+erhalten und anhand gelieferter Fakten inhaltlich entschieden. Entscheidungen
+lauten widerlegt, bestätigt oder nicht beurteilbar, jeweils mit Begründung und
+exakten Belegreferenzen. Bestätigte normale Risiken erzeugen keine neue
+DD-/SL-/Calmar-Schranke. Fehlende notwendige Bewertungsgrundlagen sperren den
+Endkandidaten; der nächste Kandidat rückt nach. Ein bloßer SHA-Nachweis klärt
+keinen Sachverhalt. Budget-, Anbieter- und Stopfehler bleiben fortsetzbare
+Unterbrechungen und werden nicht als fachliche Entscheidung umgedeutet.
+
+Nach jedem Nachrücken werden Vergleich und Berichtsgrundlage erneut geprüft.
+Erst fünf passende ausführliche Berichte mit abgeschlossener Hinweisklärung
+und vorhandenen aktuellen PDFs erfüllen den Workflowabschluss. Weniger als
+fünf belegbare Kandidaten erfüllen ihn nicht. `workflow_abgeschlossen` und
+`daten_vollstaendig` sind getrennt: Der alte Vantage-Auswahlfehler und bestehende
+Quelle-/Datenlücken werden durch erfolgreiche Endberichte nicht vollständig.
+Der Status darf in diesem Fall korrekt `teilweise` bleiben.
+
+Die H1-Messung erfasst weiterhin Floating an Bar-Schlüssen im Exportfenster,
+keine vollständigen Intrabar-Tiefs oder aktuell offenen Positionen. Diese
+Grenze bleibt auch im PDF sichtbar. Private Aktivierungs- und Laufbelege:
+`data/runs/abonnenten_abschluss_20261024_082414/`. Der tatsächliche Endstand ist
+aus den dortigen Betriebsbelegen nachzuweisen, nicht aus dieser Spezifikation.
+
+Die erste produktive Endanfrage wurde mit 16.384 Ausgabetokens abgeschnitten;
+die bestehende Verdopplung traf anschließend auf das bisherige 300-Sekunden-
+Transportlimit. Der automatische Endprüfmodus startet deshalb mit 32.768
+Ausgabetokens und mindestens 900 Sekunden Transportzeit. Reasoning bleibt für
+Endanalysen `high`. Eine einzelne Anfragesteuerung prüft den Stop auch zwischen
+Transportversuchen. Kurz-KI, Legacy-Endanalysen und globale Clientdefaults
+werden dadurch nicht geändert. Abgeschnittene Antworten und bei Transportfehlern
+unbestätigte Kosten bleiben im Audit und Budget erhalten.
+
+Die produktive Nachprüfung des ersten Tiefenberichts zeigte zusätzlich fehlenden
+Vergleichskontext im Klärungsschritt sowie sachlich falsche Textaussagen trotz
+formal gültiger Belege. Der ursprüngliche Vergleich wird deshalb mit dem
+Tiefenbericht und jeder Hinweisherkunft gespeichert. Für den bereits bezahlten
+Bericht wurde er ausschließlich über exakt passenden v3-Berichtshash
+rekonstruiert; keine alte V-Referenz wird an eine nachgerückte Rangliste gebunden.
+
+Hinweisentscheidungen unterscheiden Pflichtgrundlagen und zusätzliche
+Risikofragen. Nicht beurteilbare Pflichtgrundlagen bleiben gesperrt. Fragen zu
+Zukunftsertrag, unbekannter Betreiberverwandtschaft oder nicht exportierten
+Stops werden bei erfüllten Pflichtkriterien als zusätzliche Unsicherheit
+abschließend dokumentiert; sie erfinden keine neue Rangsperre. Ihre tatsächliche
+Antwort bleibt dabei unbekannt, nicht günstig umgedeutet.
+
+Vor PDF und Endfreigabe erfolgt eine eigene Faktenredaktion mit dem vorhandenen
+budgetierten, gespeicherten Kurzmodellpfad. Sie erhält Codefakten, explizite
+Währungsprovenienz, den ursprünglichen Vergleich, DD-Maxima mit ihren getrennten
+Basen, Originalbericht und Hinweisentscheidungen. Korrekturen ersetzen nur
+eindeutige Originalpassagen mit Begründung und exakten Belegen. Originalantwort,
+Korrekturen, Belegregister und Fakten-/Texthashes bleiben erhalten. Änderungen
+von Fakten oder Text machen die Freigabe ungültig. Fehlende wesentliche Grundlagen
+blockieren weiterhin. Die PDF zeigt die geprüfte Fassung samt Korrekturprotokoll.
+
+649 betroffene Tests bestanden nach diesen Korrekturen. Der bestehende Auftrag
+wurde am 24.10. um 09:39:17 MESZ mit unveränderten 800 Datenversuchen und dem
+freigegebenen 800-Millionen-Budget fortgesetzt. Auch dieser Start ersetzt nicht
+den noch separat nachzuweisenden Abschluss der fünf Endberichte.

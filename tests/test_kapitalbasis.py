@@ -35,13 +35,15 @@ _TRADES = [
 ]
 
 
-def test_ohne_kapitalbasis_bleibt_es_die_ehrliche_vorpruefung(tmp_path):
+def test_ohne_belegtes_kapital_entsteht_ein_gekennzeichnetes_modell(tmp_path):
     report = analyze(_orderbook(tmp_path, _TRADES), broker="ICMarketsSC-Live15")
     expo = report["forensics"]["exposure"]
     assert expo["capital_history_complete"] is False
-    assert any("Kapitalbasis unbekannt" in w for w in expo["warnings"])
-    assert expo["startkapital"] == 0.0
-    assert expo["startkapital_quelle"] == "csv_einzahlungen"
+    assert any("Modellkapital" in w for w in expo["warnings"])
+    assert expo["startkapital"] == 10000.0
+    assert expo["startkapital_quelle"] == "modell_fallback_10000"
+    assert expo["kapitalbasis_modell"] is True
+    assert report["forensics"]["drawdown"]["startkapital"] == expo["startkapital"]
 
 
 def test_kapitalbasis_wird_injiziert_und_schranke_wird_berechenbar(tmp_path):
@@ -177,9 +179,10 @@ def test_negativer_initial_deposit_wird_im_befund_erwaehnt(tmp_path):
                      kapitalbasis_quelle="signalseite_initial_deposit")
     expo = report["forensics"]["exposure"]
     assert expo["capital_history_complete"] is False
-    warnung = next(w for w in expo["warnings"] if "Kapitalbasis unbekannt" in w)
-    assert "keine nutzbare Kapitalbasis" in warnung
-    assert "-461.33" in warnung
+    assert expo["kapitalbasis_modell"] is True
+    ignored = expo["kapitalbasis_details"]["beleg"]["ignorierte_angaben"]
+    assert any(row.get("originalwert") == -461.33 for row in ignored)
+    assert any("Modellkapital" in w for w in expo["warnings"])
 
 
 # ------------------------------------------------- Rote Regel: Basis negativ

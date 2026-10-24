@@ -10,6 +10,8 @@ import datetime as dt
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from mqlkiscanner import kursdaten
 from mqlkiscanner import risiko_rechner as rr
 
@@ -53,6 +55,31 @@ def test_closed_dd_anwendung_senkt_peak():
     dd = rr.closed_dd(parsed, 1000.0)
     assert dd is not None
     assert abs(dd - 100.0 / 600.0) < 1e-9
+
+
+@pytest.mark.parametrize('offset, capital, expected', [(-1, 900, 0), (0, 1000, .1), (1, 1000, .1)])
+def test_closed_dd_kosten_vor_am_und_nach_ersten_open(offset, capital, expected):
+    start = dt.datetime(2026, 1, 1)
+    parsed = SimpleNamespace(
+        trades=[_trade('XAUUSD', 'buy', start, start + dt.timedelta(hours=4), 2000, 2000, pnl=0)],
+        balances=[], costs=[SimpleNamespace(time=start + dt.timedelta(hours=offset), amount=-100)])
+    assert rr.closed_dd(parsed, capital) == pytest.approx(expected)
+
+
+def test_closed_dd_kosten_sind_verlust_und_bekannte_kapitalfluesse_bleiben_einmalig():
+    start = dt.datetime(2026, 1, 1)
+    parsed = SimpleNamespace(
+        trades=[_trade('XAUUSD', 'buy', start, start + dt.timedelta(hours=4), 2000, 2000, pnl=72)],
+        balances=[SimpleNamespace(time=start-dt.timedelta(hours=1), amount=1000),
+                  SimpleNamespace(time=start+dt.timedelta(hours=1), amount=90),
+                  SimpleNamespace(time=start+dt.timedelta(hours=2), amount=-180)],
+        costs=[SimpleNamespace(time=start-dt.timedelta(minutes=1), amount=-100),
+               SimpleNamespace(time=start, amount=-90),
+               SimpleNamespace(time=start+dt.timedelta(hours=3), amount=-72)])
+    # Start900 includes deposit1000 and pre-open cost100 exactly once.
+    # Open cost:810/peak900; deposit:900/peak990; withdrawal:720/peak810;
+    # later cost:648/peak810 => maximum loss162/810 =20%.
+    assert rr.closed_dd(parsed, 900) == pytest.approx(.2)
 
 
 def test_statistik_liefert_netto_serie_winrate():
@@ -127,20 +154,37 @@ def test_berechne_csv_mit_fake_kursen(tmp_path, monkeypatch):
     assert meldungen  # Fortschritt wurde gemeldet
 
 
-def test_berechne_csv_ohne_kapitalbasis_fordert_manuelle_eingabe(tmp_path, monkeypatch):
+def test_berechne_csv_ohne_kapitalbasis_verwendet_gekennzeichnetes_modell(tmp_path, monkeypatch):
     import mqlkiscanner.agenten.lock as lock_mod
+    from mqlkiscanner import equity_studie as es
 
     monkeypatch.setattr(lock_mod, "lauf_lock", lambda *_a, **_k: contextlib.nullcontext())
+    monkeypatch.setattr(es, "ermittle_gmt_je_symbol", lambda *_: {"offsets": {"XAUUSD": 0}, "befunde": []})
+    bars = _bars("XAUUSD", dt.datetime(2025, 12, 31), 72)
+    monkeypatch.setattr(kursdaten, "KursDaten", lambda _s: _FakeAnbieter({"XAUUSD": bars}))
     csv = tmp_path / "trades.csv"
     csv.write_text(
         CSV_KOPF
         + "2026.01.01 00:01:00;Buy;0.01;XAUUSD;2000;0.01;2026.01.01 05:01:00;2010;0;0;100\n",
         encoding="utf-8")
-    try:
-        rr.berechne_csv(csv)
-        raise AssertionError("RuntimeError erwartet")
-    except RuntimeError as exc:
-        assert "Startkapital" in str(exc)
+    daten = rr.berechne_csv(csv)
+    assert daten["kennzahlen"]["startkapital"] == 10000
+    assert daten["meta"]["startkapital_quelle"] == "modell_fallback_10000"
+    assert daten["kapitalbasis_modell"] is True
+    assert daten["meta"]["kapitalbasis_details"]["unsicherheit"]
+
+
+@pytest.mark.parametrize('manual', [0, -1, float('nan'), float('inf'), True])
+def test_explizit_ungueltiges_startkapital_wird_nicht_als_modell_eingesetzt(tmp_path, monkeypatch, manual):
+    import mqlkiscanner.agenten.lock as lock_mod
+    monkeypatch.setattr(lock_mod, 'lauf_lock', lambda *_a, **_k: contextlib.nullcontext())
+    monkeypatch.setattr(kursdaten, 'KursDaten', lambda _: pytest.fail('Invalid capital must stop before terminal access'))
+    csv = tmp_path / 'manual.csv'
+    csv.write_text(CSV_KOPF +
+        '2026.01.01 00:01:00;Buy;0.01;XAUUSD;2000;0.01;2026.01.01 05:01:00;2010;0;0;100\n',
+        encoding='utf8')
+    with pytest.raises(ValueError, match='manuelle.*positiv|manuelles.*positiv'):
+        rr.berechne_csv(csv, startkapital_manuell=manual)
 
 
 # ------------------------------------------------------------------- PDF
@@ -189,6 +233,21 @@ def test_pdf_entsteht_mit_warnhinweis(tmp_path):
     assert "15,00 %" in text.replace(" 15,00 %", " 15,00 %") or "15,0" in text
 
 
+def test_pdf_kennzeichnet_modellkapital_herkunft_unsicherheit_und_beleg(tmp_path):
+    from pypdf import PdfReader
+    daten = _minimal_daten()
+    daten['meta'].update(startkapital_quelle='modell_lot_pnl', kapitalbasis_details={
+        'quelle': 'modell_lot_pnl', 'modell': True, 'kapital': 1000,
+        'unsicherheit': 'Begrenzte Volumenhistorie',
+        'beleg': {'trades_sha256': 'ab'*32, 'spaetere_flows_bleiben_erhalten': True}})
+    path, _ = rr.baue_pdf(daten, tmp_path / 'model.pdf')
+    text = '\n'.join(page.extract_text() or '' for page in PdfReader(path).pages)
+    normal = ' '.join(text.split())
+    assert 'Virtuelle Modellstudie' in normal and 'keine nachgewiesenen Kontokennzahlen' in normal
+    assert 'Lot-/PnL-Regression' in normal and 'Begrenzte Volumenhistorie' in normal
+    assert 'ab'*32 in text.replace('\n', '')
+
+
 def test_seite_rendered_app():
     from streamlit.testing.v1 import AppTest
 
@@ -196,3 +255,5 @@ def test_seite_rendered_app():
     at = AppTest.from_file(str(pfad), default_timeout=90)
     at.run()
     assert not at.exception
+    assert any('Bei geschätztem Startkapital sind Drawdown und Renditen Modellwerte' in item.value
+               and 'Methode und Unsicherheit stehen im Ergebnis' in item.value for item in at.markdown)

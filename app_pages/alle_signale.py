@@ -33,7 +33,7 @@ from mqlkiscanner.signal_identity import identity_key, stable_identity_key
 
 from mqlkiscanner import db, downloader_client, downloader_sync, katalog, pipeline, scan_worker
 from mqlkiscanner import quellen
-from mqlkiscanner import signal_statistik, studien_batch
+from mqlkiscanner import kapitalbasis, signal_statistik, studien_batch
 from mqlkiscanner import tiefen_batch
 from mqlkiscanner import alle_signale_ui as tabellen_ui
 from mqlkiscanner.alle_signale_ui import render_detail, tabellen_zeile
@@ -147,22 +147,11 @@ _workflow_stats = katalog.workflow_stats_bulk(
 stats_je_identitaet = {katalog.signal_identitaet(r): _workflow_stats.get(identity_key(r), {})
                      for r in gescannte}
 stats_je_identitaet.update(katalog_stats)
-# Virtuelle Studien (Batch, 08.10.): die 10k-Annahme in die Vorstufen-
-# Statistik koppeln — so rechnet Gewinn %/M und Trading-DD % sinnvoll statt
-# verzerrt ohne Basis (klar als „Basis: virtuell" gekennzeichnet).
-for _resultat in alle:
-    _studie = _studien.get(identity_key(_resultat)) or {}
-    _studien_sha = _studie.get('trades_sha') or ''
-    _trades_sha = getattr(_resultat, 'trades_sha256', '') or ''
-    if (_studie.get('virtuell') and _studien_sha and _trades_sha
-            and _studien_sha == _trades_sha):
-        _basis_stats = stats_je_identitaet.setdefault(katalog.signal_identitaet(_resultat), {})
-        # Gespeicherte Workflow-Stats enthalten oft explizit None:
-        # setdefault würde dann die virtuelle Studienbasis NICHT ergänzen.
-        # Eine echte oder bereits gesetzte Basis bleibt maßgeblich.
-        if (_basis_stats.get('initial_deposit_usd') is None
-                and _basis_stats.get('kapitalbasis_virtual_usd') is None):
-            _basis_stats['kapitalbasis_virtual_usd'] = 10_000.0
+_, _kapital_kalibrierbeleg = kapitalbasis.lade_kalibrierung_mit_beleg()
+_kapital_kalibrierschluessel = tuple(_kapital_kalibrierbeleg.get(key) for key in
+                                   ('status', 'sha256', 'datei_sha256'))
+# Die Vorstufenstatistik löst die Kapitalbasis zentral auf. Gespeicherte
+# Studien behalten ihre eigene belegte Basis; keine pauschale 10k-Injektion.
 
 with st.container(horizontal=True):
     suche = st.text_input('🔍 Suchen — Name oder Signal-ID',
@@ -193,7 +182,9 @@ with st.container(horizontal=True):
 @st.cache_data(persist='disk', show_spinner=False)
 def _statistik_cached(trades_pfad: str, sha: str, stats_json: str,
                       rechenversion: str) -> dict | None:
-    return signal_statistik.berechne(trades_pfad, json.loads(stats_json or '{}'))
+    stats = json.loads(stats_json or '{}')
+    stats['trades_sha256'] = sha
+    return signal_statistik.berechne(trades_pfad, stats)
 
 
 def _statistik_fuer(result) -> dict | None:
@@ -203,14 +194,19 @@ def _statistik_fuer(result) -> dict | None:
     pfad = getattr(result, 'trades_path', '') or ''
     if not pfad or not Path(pfad).exists():
         return None
-    rohstats = stats_je_identitaet.get(katalog.signal_identitaet(result), {})
+    rohstats = dict(stats_je_identitaet.get(katalog.signal_identitaet(result), {}))
+    for feld in ('quelle', 'quellen_uid', 'signal_ref', 'id'):
+        rohstats[feld] = getattr(result, feld, None)
+    for feld in ('account_currency', 'broker_server'):
+        rohstats.setdefault(feld, getattr(result, feld, None))
     # SHA im Cache-Schlüssel: Quellen-Artefakte werden bei Neu-Lieferung am
     # GLEICHEN Pfad überschrieben — ohne SHA bliebe die Statistik nach einem
     # Re-Download im Disk-Cache veraltet (Scan-Snapshots sind unveränderlich,
     # Katalog-Nachladungen nicht).
     return _statistik_cached(pfad, getattr(result, 'trades_sha256', '') or '',
                              json.dumps(rohstats, sort_keys=True, default=str),
-                             f'2026-10-16-forex{pipeline.FORENSICS_VERSION}-roh-dd-flow-evidenz-v5')
+                             f'2026-10-24-forex{pipeline.FORENSICS_VERSION}-kapitalmodell-v{kapitalbasis.VERSION}'
+                             f'-{_kapital_kalibrierschluessel!r}')
 
 
 suche_cf = (suche or '').strip().casefold()
@@ -547,8 +543,8 @@ def _tabelle_rendern(schluessel: str, tab_paare, dateiname: str) -> None:
         'Geom. %/M': _prozent(
             'Geom. %/M',
             help='Geometrisches Monatsmittel der EIGENEN Kurve '
-                 '(zinseszins-wahr). Basis „virtuell“ bedeutet die explizite '
-                 '10.000-USD-Annahme, keine belegte Kontorendite. Entfällt '
+                 '(zinseszins-wahr). Eine Modellbasis ist geschätzt, '
+                 'keine belegte Kontorendite. Herkunft und Unsicherheit stehen daneben. Entfällt '
                  'ohne positive Kapitalbasis, bei nichtpositivem Endkapital '
                  'oder ohne positive Messdauer.'),
         'TrueRetDD': st.column_config.NumberColumn(
@@ -586,12 +582,13 @@ def _tabelle_rendern(schluessel: str, tab_paare, dateiname: str) -> None:
         'Basis': st.column_config.TextColumn('Basis', width=64, help='Kapitalbasis: CSV = '
                                  'Einzahlungen im Export · Seite = Signalseite '
                                  '„Initial Deposit“ · implizit = Web-Balance − '
-                                 'Trade-Netto · virtuell = 10.000-USD-Annahme'),
+                                 'Trade-Netto (historisch) · Lot/PnL = Lotschätzung · '
+                                 'Lots grob = kalibrierte Lotschätzung · 10k-Modell = letzter Fallback'),
         'Forensik': st.column_config.TextColumn('Forensik', width=62),
         'Messstatus': st.column_config.TextColumn(
             'Messstatus', width=220,
             help='Basis und Qualität der gespeicherten Kursmessung. Virtuell '
-                 'bedeutet 10.000-USD-Modellkapital, keine nachgewiesene '
+                 'bedeutet geschätztes Modellkapital, keine nachgewiesene '
                  'Kontobasis. Vorbehalt nennt den konkreten Grund für eine '
                  'unvollständige oder gescheiterte Messung.'),
         })

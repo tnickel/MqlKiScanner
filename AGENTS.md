@@ -13,6 +13,103 @@ Dieser Block und die aktuellen Design-Regeln ordnen die datierten
 Umsetzungsnotizen unten ein. Frühere Testzahlen, Bewertungen und inzwischen
 abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
 
+- **Programmweite Kapitalermittlung (Nutzerentscheidung 24.10.2026):**
+  Die Kapitalabschätzung gilt jetzt für alle Anbieter-Rechenwege. Zentrale
+  Entscheidung in `kapitalbasis.aufloesen`: belegte CSV-/Quellenbasis oder
+  explizite manuelle Angabe, danach geprüfte Lots-/PnL-Schätzung bzw.
+  unabhängiger Closing-DD-Anker, grobe vergleichbare Lots und zuletzt
+  10.000 USD. Scanner, Engine, Statistik, Kontostudien und Risikorechner
+  verwenden dieselbe Entscheidung mit Methode, Beleg und Unsicherheit.
+  Gemeinsamer lokaler Kalibrierungssnapshot: 111 belegte USD-Referenzen;
+  Referenzen mit identischer Trade-SHA werden nicht als Eigenbeleg verwendet.
+  Geschätzte Basis bleibt Modell, liefert keine echte Kontoforensik und
+  erlaubt keine automatische Grün-Freigabe. Bekannte Kapitalbewegungen und
+  Kosten bleiben in regulären Rechenwegen erhalten; nur die ausdrücklich
+  angeforderte Abonnenten-Modellrechnung ignoriert Flows in einer Kopie.
+  Fehlende Währungs-/Kurs-/Kontraktbelege bleiben fehlend. Forensikversion 22
+  verhindert die ungeprüfte Wiederverwendung alter kapitalabhängiger Befunde.
+  Historische Ergebnisse und eingefrorene Aufträge werden durch diese
+  Codeänderung nicht neu berechnet. Nachweis:
+  `doc/reviews/2026-10-24_kapitalbasis_programmweit/README.md`.
+
+- **Modellkapital für Abonnentenstatistik (Nutzerentscheidung 24.10.2026):**
+  Der Nutzer erlaubt für diese Vorauswertung ausdrücklich eine geschätzte
+  Kapitalbasis: Untersuchung der Lots-/Tradeentwicklung, danach grobe
+  Lotschätzung, zuletzt 10.000 USD. Bereits belegtes USD-Startkapital wird
+  bevorzugt. Die hier zunächst auf Abonnenten beschränkte Schätzung wurde
+  durch die obige spätere Nutzerentscheidung programmweit erweitert;
+  Modellwerte bleiben von echter Kontoforensik getrennt. Modellannahme
+  dieser Abonnenten-Vorauswertung: keine Ein- oder
+  Auszahlungen; vorhandene Kapitalbewegungen werden ausschließlich in einer
+  Berechnungskopie ignoriert und ihre Anzahl ausgewiesen. Startkapital,
+  Herleitung, Unsicherheit, Modell-DD und Modell-RetDD erscheinen getrennt
+  von ursprünglichen Messwerten. Lots allein identifizieren Kapital nicht;
+  eigene bereits kapitalabhängige Closing-DD-Werte dürfen keinen zirkulären
+  Kapitalbeleg liefern. Fehlende Trades, Währungs-/Kontrakt-/Kursbelege werden
+  durch eine Kapitalannahme nicht vollständig. Kein KI-Aufruf. Neue
+  Bestandsrechnung verwendet einen separaten Auftrag und vorhandene Exporte,
+  H1- und FX-Caches; Originalaufträge und Quellenmesszeiten bleiben erhalten.
+  Produktiver Modellbestand `77feecf051a94836ae21f724d7dca7b8`: 800 Kapitalbasen
+  mit Herkunft (149 belegt, 293 grob aus Lots, 358 Annahme 10.000 USD),
+  567 Modellgewinne, 356 Modell-DD und 325 Modell-RetDD. Dafür wurden
+  294 sichere vorhandene native Exporte ergänzt; Originalaufträge, echte
+  110 DD/51 RetDD und KI-Kosten bleiben unverändert. Berechnung beendet,
+  Datenbestand weiterhin teilweise: insbesondere Robo-Einheiten, fehlerhafte
+  Trades und Kurs-/Kontraktlücken werden durch Kapitalannahmen nicht behoben.
+  Nachweis: `doc/reviews/2026-10-24_abonnenten_modellkapital/README.md`.
+
+- **Abonnentenstatistik Stufe 1 ohne KI (Nutzerentscheidung 24.10.2026,
+  09:55 MESZ):** Die zuvor laufende KI-Endanalyse wurde ausdrücklich gestoppt.
+  Worker 814192 ist nach PID-/Startzeitprüfung bestätigt beendet; Antworten
+  und unbestätigte Kostenreservierungen bleiben erhalten. Keine automatische
+  Wiederaufnahme der KI, keine weitere Hinweisklärung oder Berichtsredaktion
+  für diese Seite. Aktueller Auftrag: Daten und vollständige verfügbare Trades
+  sammeln, ohne KI bewerten und als erste Tabelle darstellen: quellenbezogen
+  skalierter Abonnentenzufluss, Gewinn/Rendite, maximaler gemessener Equity-DD
+  vom Hochpunkt einschließlich Floating und RetDD. Bekannte Datenlücken bleiben
+  sichtbar; H1 ist kein exakter Intrabar-/Originalbroker-DD. Die bisherige
+  70-%-Zufluss-/30-%-RetDD-Gewichtung bleibt eine deterministische Vorauswertung.
+  Neue Datenaufträge sind von historischen KI-Aufträgen getrennt; bestehende
+  Daten werden ohne Modellaufruf in einen neuen Datenstand übernommen.
+  Neue Beschaffung/Berechnung erfolgt ausdrücklich über den Daten-Button,
+  niemals durch bloßes Öffnen der Seite. Die KI-Bedienung der
+  Abonnentenstatistik entfällt vorerst; andere Scanner-KI-Workflows bleiben
+  davon getrennt. Belege: `doc/reviews/2026-10-24_abonnenten_daten_stufe1/`;
+  Stop: `data/runs/abonnenten_abschluss_20261024_082414/USER_STOP_NO_KI.json`.
+  Abnahme: 707 betroffene Tests bestanden. Neuer Datenauftrag
+  `9bd0327cec304a33a4639cc6eea516a8` übernimmt um 10:24 MESZ 800 vorhandene
+  Anbieter ohne Worker-/Download-/KI-Start; Originaldaten und Kostenledger
+  bleiben unverändert. 237 USD-Nettogewinn-, 110 DD- und 51 RetDD-Werte sind
+  vorhanden, Datenlücken und die alte fehlende Vantage-Auswahl bleiben sichtbar.
+  Keine neue Vollerfassung behaupten. Bedienung und ausgewählter Datenstand
+  sind in der laufenden Seite geprüft; neue Beschaffung nur ausdrücklich.
+
+- **Zufluss und Endanalysen (Nutzerentscheidung 24.10.2026 morgens):**
+  Für den bestehenden Rechercheauftrag gelten nun ausdrücklich 800 Mio.
+  Tokens je Lauf, Tag und Monat, weiterhin nur dessen `budget_settings`.
+  Neue Rechercheauswahl: 70 % normierter Abonnentenzufluss und 30 % RetDD.
+  Eine Quelle ist die Plattform (MQL5, Pelican, Zulu usw.). Normierung:
+  native Nettoänderung im 7-Tage-Vergleich / durchschnittlicher positiver
+  Abonnentenbestand der ursprünglichen eingefrorenen Auswahl derselben Quelle;
+  anschließend gemeinsames Perzentil. Referenzumfang und ursprünglicher Stand
+  bleiben sichtbar, kein behaupteter Durchschnitt der gesamten Plattform.
+  Kurz-KI ist ausdrücklich optional und kein Gesamtworkflow-Gate. Verbindlich
+  sind fünf aktuelle Endanalysen mit vollständigen Daten, inhaltlich
+  entschiedenen Hinweisen und passenden PDFs. Fehlende Bewertungsgrundlagen
+  bleiben gesperrt; bestätigte normale Risiken erfinden keine neue Schranke.
+  Legacy-Aufträge ohne die neuen Modusfelder behalten ihr bisheriges Verhalten.
+  571 betroffene Tests bestanden, weitere UI-/Rangregressionen separat geprüft.
+  Der vorhandene Auftrag wurde nach geprüftem Workerende um 08:41:51 MESZ mit
+  unveränderten 800 Datenversuchen und Quellensnapshots in die Endphase
+  fortgesetzt. Das ist noch kein Abschlussnachweis. Dokumentation: doc/26;
+  private Betriebsbelege: `data/runs/abonnenten_abschluss_20261024_082414/`.
+  Nach produktiver Nachprüfung sind Originalvergleich und Hinweisherkunft
+  explizit gebunden; unbekannte Zusatzrisiken sind kein neues Pflicht-Gate.
+  Eine beleggebundene Faktenredaktion ist vor End-PDF/Freigabe verbindlich und
+  erhält die ursprüngliche KI-Antwort. 649 betroffene Tests bestanden; derselbe
+  Auftrag wurde um 09:39:17 MESZ mit diesen Korrekturen fortgesetzt. Tatsächliche
+  fünf Endabschlüsse bleiben separat nachzuweisen.
+
 - **GLM-Review-Nachprüfung (24.10.2026, Quellcode):** Katalog-REST trennt
   `catalogScope=full` und `subscribers`; unbekannte Altbestände werden nicht
   als vollständig ausgegeben. Unbestätigte/partielle Antworten dürfen im
@@ -331,7 +428,7 @@ abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
   `doc/reviews/2026-10-18_download_datenfluss_pruefung/fremdreview_nachpruefung/`.
 - **Maßgebliche Codeorte:** `pipeline.ampel_for`, `ScanResult.refresh_efficiency`,
   `config.DEFAULT_SETTINGS`, `portfolio_statistik.MIN_HISTORIE_MONATE` und
-  `analysis_version.FORENSICS_VERSION` (aktuell 21). Produktive Settings
+  `analysis_version.FORENSICS_VERSION` (aktuell 22). Produktive Settings
   ausschließlich `config/app_settings.json`.
 - **GLM-Gegenprüfung 16.10.2026:** Direkte MQL-USD-Forensik und Kontostudien
   benötigen belegte USD-Kontowährung; native Beträge bleiben im Audit erhalten.

@@ -79,6 +79,13 @@ demselben Equity-DD (Calmar), NICHT retdd_monat mal zwoelf.
 Nenne equity_messung_status und die gelieferte Kapitalbasis, Zeitspanne und
 Abdeckung; H1-Schlusskurse erfassen keine Intrabar-Extrema. Eine virtuelle
 Kapitalbasis ist eine Modellannahme, keine Messung des echten Kontoverlaufs.
+`kapitalbasis_verwendet.details` liefert Herkunft, Methode, Beleg und
+Unsicherheit. Wenn `kapitalbasis_verwendet.modell=true`, sind DD, Rendite,
+Schockprozente und RetDD Szenariowerte auf geschaetztem Kapital. Eine
+vollstaendige `modellpruefung` ist kein Nachweis vollstaendiger
+Kontokapitalhistorie und berechtigt niemals zu Gruen oder einer Empfehlung.
+Nenne die tatsaechliche Schaetzmethode; eine komplexe Schaetzung darf nicht
+pauschal als 10.000-USD-Annahme oder als belegtes Initial Deposit erscheinen.
 Bei fehlenden/veralteten Werten: nicht berechenbar, KEINE eigene Division
 oder Ersatzrechnung. Nur Engine-Gruen und ALLE eingesetzten Nutzer-Kriterien
 erlauben eine Empfehlung: Calmar (retdd_jahr = CAGR / gemessener Max-Equity-DD) mindestens an der konfigurierten min_calmar_jahr-Schwelle (Default 3,0 — Nutzer-Entscheid 05.10.; unter 3 Monaten Trade-Historie gilt Calmar als nicht bestimmbar), geometrische Monatsrendite

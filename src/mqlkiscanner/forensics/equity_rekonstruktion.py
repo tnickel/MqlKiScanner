@@ -446,10 +446,11 @@ class H1UsdUmrechnung:
     Der USDCNH-Kehrwert stammt ausschliesslich aus der eigenen Handelsbar.
     """
 
-    def __init__(self, kurse, von, bis, broker=None, resolve_symbol=None):
+    def __init__(self, kurse, von, bis, broker=None, resolve_symbol=None, *, fx_lookup=None):
         self.kurse, self.von, self.bis = kurse, von, bis
         self.broker = broker
         self.resolve_symbol = resolve_symbol or _resolve_symbol
+        self.fx_lookup = fx_rates.usd_per if fx_lookup is None else fx_lookup
         self.closes, self.fx_closes, self.feeds = {}, {}, {}
         self.tages_cache, self.h1_cache, self.quotes = {}, {}, {}
 
@@ -488,7 +489,7 @@ class H1UsdUmrechnung:
             return 1.0
         key = (quote, tag)
         if key not in self.tages_cache:
-            kurs = fx_rates.usd_per(quote, tag)
+            kurs = self.fx_lookup(quote, tag)
             self.tages_cache[key] = kurs["rate"] if kurs else None
         if self.tages_cache[key] is not None:
             return self.tages_cache[key]
@@ -581,7 +582,8 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
 
 
 def rekonstruiere(parsed, kurse, startkapital: float,
-                  broker: str | None = None, *, gmt_offset_h: int | None = None) -> dict:
+                  broker: str | None = None, *, gmt_offset_h: int | None = None,
+                  fx_lookup=None, include_curve: bool = False) -> dict:
     """Equity-Kurve auf H1-Raster + maximaler Equity-Drawdown.
 
     kurse: Anbieter mit hole_h1(symbol, von, bis, gmt_offset_s) (kursdaten.
@@ -610,7 +612,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     fenster_von = von + min(GMT_KANDIDATEN_S)
     fenster_bis = bis + max(GMT_KANDIDATEN_S)
     fehlende_symbole: list[str] = []
-    umrechnung = H1UsdUmrechnung(kurse, fenster_von, fenster_bis, broker)
+    umrechnung = H1UsdUmrechnung(kurse, fenster_von, fenster_bis, broker,
+                               fx_lookup=fx_lookup)
     _hole_handelsbars = umrechnung.hole_handelsbars
 
     for s in symbole:
@@ -1058,4 +1061,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         if not zeitbasis.verlaesslich:
             gruende.extend(zeitbasis.metadata()["gruende"])
         ergebnis["grund"] = " · ".join(gruende)
+    if include_curve:
+        # Explicit opt-in for the separate no-flow model. Default reports and
+        # their persisted forensic schema remain unchanged.
+        ergebnis["_curve"] = curve
     return ergebnis

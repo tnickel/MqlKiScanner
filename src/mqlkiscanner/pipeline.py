@@ -9,6 +9,7 @@ Lauf-Ergebnisse landen in data/runs/{zeitstempel}/results.json.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 import hashlib
 import json
 import math
@@ -23,7 +24,7 @@ from typing import Callable
 
 import requests
 
-from . import ampel_verlauf, config, fix_signale, portfolio_statistik, scoring
+from . import ampel_verlauf, config, fix_signale, portfolio_statistik, scoring, kapitalbasis
 from . import db
 from . import downloader_client
 from . import fx_rates
@@ -41,47 +42,35 @@ from .mql5.session import Mql5Session
 ProgressCb = Callable[[int, int, str], None]
 LogCb = Callable[[str], None]
 
-# Quellen-Label der virtuellen Kapitalbasis (Nutzer-Wunsch 28.09.2026): Ein
-# Monitor ohne Initial-Deposit-Daten (z. B. PelicanMonitor) kann eine klar
-# markierte Annahme liefern ("InitialDepositVirtual"). Sie gibt der Forensik
-# ein Startkapital (DD-/Schock-Prozente), gilt aber ausdrücklich NICHT als
-# belegtes Initial Deposit: kein Cent-Abgleich gegen die Web-Balance, keine
-# rote Kapitalbasis-Regel, transparent im Urteil.
+# Historical source code remains readable in archived results. New scans
+# resolve capital centrally in engine/kapitalbasis; no local 10k injection.
 KAPITALBASIS_QUELLE_VIRTUELL = "virtuelle_annahme"
-# Nutzer-Regel 05.10.2026 (ersetzt B3): Die IMPLIZITE Basis (Web-Balance −
-# Σ Trade-Netto) ist seit Flows-in-der-Kurve mathematisch falsch — sie
-# zählt Ein-/Auszahlungen als Startkapital (LadyTrader1: 41.577 statt der
-# echten 9.000 USD). Kaskade jetzt: CSV-Einzahlungen (gewinnen in
-# drawdown.run) → Signalseite „Initial Deposit" → virtuelle Annahme
-# (10.000 USD aus dem Quellen-Monitor), deutlich im Urteil markiert.
 
 
-def _virtuelle_kapitalbasis(wert, log: LogCb | None = None) -> float | None:
-    """InitialDepositVirtual strikt pruefen: endliche, positive JSON-Zahl.
+def _kapitalbefund_uebernehmen(result, forensics):
+    dd = forensics.get("drawdown") or {}
+    result.kapitalbasis_verwendet_usd = dd.get("startkapital_raw", dd.get("startkapital"))
+    result.kapitalbasis_verwendet_quelle = dd.get("startkapital_quelle") or ""
+    details = dd.get("kapitalbasis_details") or forensics.get("kapitalbasis") or {}
+    result.kapitalbasis_befund = deepcopy(details) if isinstance(details, dict) else {}
 
-    Der Quellen-Vertrag (z. B. PelicanMonitor) liefert eine JSON-Zahl.
-    Infinity (JSON 1e309 parst als inf) wuerde jede DD-/Schock-Prozent-
-    Rechnung zu 0 machen und damit eine vollstaendige, risikofreie
-    Forensik vortaeuschen; Strings (auch numerische) sind ein Vertrags-
-    verstoess und werden abgewiesen statt geraten. Ungueltige Werte
-    liefern None — dann gibt es KEINE Basis und die Forensik bleibt
-    unvollständig (keine positive Bewertung aus einer Annahme).
-    """
-    if isinstance(wert, bool) or not isinstance(wert, (int, float)):
-        if log and wert is not None:
-            log(f"Kapitalbasis: InitialDepositVirtual ist keine JSON-Zahl "
-                f"({wert!r}) — Annahme ignoriert, Forensik ohne Basis.")
-        return None
-    zahl = float(wert)
-    if not math.isfinite(zahl) or zahl <= 0:
-        if log:
-            log(f"Kapitalbasis: InitialDepositVirtual ungueltig ({wert!r}) — "
-                "Annahme ignoriert, Forensik ohne Basis.")
-        return None
-    if log:
-        log(f"Kapitalbasis: virtuelle Annahme {zahl:,.0f} USD aus der Datenquelle "
-            "(kein Plattformwert — DD-/Schock-Prozente damit gerechnet).")
-    return zahl
+
+def _kapitalmodell(result):
+    return (kapitalbasis.ist_modellquelle(getattr(result, "kapitalbasis_befund", {}))
+            or kapitalbasis.ist_modellquelle(getattr(result, "kapitalbasis_verwendet_quelle", "")))
+
+
+def _kapitaltext(result):
+    return kapitalbasis.beschreibung(getattr(result, "kapitalbasis_befund", {})
+                                    or getattr(result, "kapitalbasis_verwendet_quelle", ""))
+
+
+def _kapitalpayload(result):
+    details = getattr(result, "kapitalbasis_befund", {}) or {}
+    return {"usd": getattr(result, "kapitalbasis_verwendet_usd", None),
+            "quelle": getattr(result, "kapitalbasis_verwendet_quelle", "") or details.get("quelle") or "unbekannt",
+            "modell": _kapitalmodell(result), "beschreibung": _kapitaltext(result),
+            "details": details}
 
 
 @dataclass
@@ -168,6 +157,8 @@ class ScanResult:
     # durch Persistenz, DB-Laden und Prompt-JSON geführt — die KI muss wissen,
     # ob DD-/Schock-Prozente gegen eine Annahme gerechnet sind.
     kapitalbasis_verwendet_usd: float | None = None
+    kapitalbasis_befund: dict = field(default_factory=dict)
+    modellpruefung_vorhanden: bool = False
     # Equity-DD-Rekonstruktion aus Kursdaten (nur bei verlässlicher Abdeckung
     # gesetzt; geht dann als viertes Maximum in die Drawdown-Schranke ein)
     equity_dd_rekonstruiert_pct: float | None = None
@@ -211,6 +202,13 @@ class ScanResult:
     true_dd_basis_virtuell: bool = False
     true_dd_virtuell_vorbehalt: bool = False
     true_dd_virtuell_grund: str = ""
+    # A stored study has its own capital/return basis. Never combine it with
+    # the engine's newer or older capital decision.
+    true_dd_kapitalbasis_details: dict = field(default_factory=dict)
+    true_dd_kapitalbasis_quelle: str = ""
+    true_dd_kapitalbasis_usd: float | None = None
+    true_dd_cagr_jahr_pct: float | None = None
+    true_dd_ertrag_monat_geom_pct: float | None = None
     studie_anzeige_dd_pct: float | None = None
     studie_anzeige_vorbehalt: bool = False
     studie_anzeige_grund: str = ""
@@ -279,6 +277,14 @@ class ScanResult:
             return f"GMT {self.equity_rekon_gmt_h:+d} h"
         return "GMT unbelegt"
 
+    @property
+    def kapitalbasis_ist_modell(self) -> bool:
+        return _kapitalmodell(self)
+
+    @property
+    def kapitalbasis_text(self) -> str:
+        return _kapitaltext(self)
+
     def _equity_messwerte(self) -> dict[str, float]:
         """Identische gültige Quellen für den Maximalwert und dessen Status.
 
@@ -289,7 +295,9 @@ class ScanResult:
         aber Nenner von RetDD/„Max-Drawdown" nicht mehr sein.
         """
         kurse = None if self.forensik_stale else self.equity_dd_rekonstruiert_pct
-        quellen = {"Kurse (H1, virtuelle Trading-Equity)": kurse}
+        label = ("Modellszenario (H1, geschätzte Kapitalbasis)" if self.kapitalbasis_ist_modell
+                 else "Kurse (H1, virtuelle Trading-Equity)")
+        quellen = {label: kurse}
         return {quelle: wert for quelle, wert in quellen.items()
                 if isinstance(wert, (int, float)) and not isinstance(wert, bool)
                 and math.isfinite(wert) and wert >= 0}
@@ -401,7 +409,8 @@ class ScanResult:
                   "rendite_nicht_berechenbar" if self.ertrag_monat_geom_pct is None else
                   "ohne_equity_dd" if dd is None else
                   "equity_dd_null" if dd == 0 else
-                  "retdd_nicht_berechenbar" if self.retdd_jahr is None else "ok")
+                  "retdd_nicht_berechenbar" if self.retdd_jahr is None else
+                  "modellrechnung" if self.kapitalbasis_ist_modell else "ok")
         self.effizienz_befund = {
             **self.effizienz_befund,
             "effizienz_status": status,
@@ -415,7 +424,9 @@ class ScanResult:
             "retdd_vorbehalt_grund": self.retdd_vorbehalt_grund or None,
             "retdd_vorbehalt_nenner": self.equity_dd_rekon_roh_pct
             if self.retdd_monat_vorbehalt is not None else None,
-            "retdd_basis": "gemessener_max_equity_drawdown_inkl_floating",
+            "retdd_basis": ("h1_modellszenario_mit_geschaetztem_kapital" if self.kapitalbasis_ist_modell
+                            else "gemessener_max_equity_drawdown_inkl_floating"),
+            "kapitalbasis_modell": self.kapitalbasis_ist_modell,
             "equity_messung": self.equity_messung_status,
             "formel_monat": "ertrag_monat_geom_pct / dd_max_equity_pct",
             "formel_jahr": "cagr_jahr_pct / dd_max_equity_pct",
@@ -430,7 +441,7 @@ class ScanResult:
     def equity_messung_status(self) -> str:
         quellen = self._equity_messwerte()
         if quellen:
-            return "Gemessen: " + " / ".join(quellen)
+            return ("Modellrechnung: " if self.kapitalbasis_ist_modell else "Gemessen: ") + " / ".join(quellen)
         if self.forensik_stale and (self.equity_rekon_status
                                    or self.equity_dd_rekonstruiert_pct is not None):
             return ("Kurs-Nachmessung veraltet — erneute Prüfung erforderlich"
@@ -454,6 +465,9 @@ class ScanResult:
             "Balance-DD % (Plattform)": self.dd_balance_pct,
             "Max-Drawdown %": self.max_drawdown_equity_pct,
             "Gewinn %/Monat": self.ertrag_monat_geom_pct,
+            "Kapitalbasis": self.kapitalbasis_text,
+            "Kapitalbasis USD": self.kapitalbasis_verwendet_usd,
+            "Kapitalbasis Modell": self.kapitalbasis_ist_modell,
             # Nutzer-Wunsch 05.10.2026 (TrueRetDD) + Calmar-Umstellung: EINE
             # Spalte für die Effizienz gegen den ECHTEN Max-Drawdown (Equity
             # inkl. Floating, aus Kursen) — seit dem Calmar-Gate zeigt sie
@@ -555,6 +569,12 @@ def results_from_db(settings: dict | None = None, *, catalog_rows=None,
             # Before v19 the REST path assigned USD without a unit proof. An
             # old value must not authorize a fresh USD study on native money.
             currency = None
+        stored_capital = f.get("kapitalbasis") if isinstance(f.get("kapitalbasis"), dict) else {}
+        capital_details = stored_capital.get("details") or stats.get("kapitalbasis_befund") or {}
+        if not capital_details and "gueltig" in stored_capital:
+            capital_details = stored_capital
+        if not isinstance(capital_details, dict):
+            capital_details = {}
         res = ScanResult(
             id=int(row["signal_id"]),
             signal_ref=row.get("signal_ref"),
@@ -633,10 +653,10 @@ def results_from_db(settings: dict | None = None, *, catalog_rows=None,
                 "symbole_ohne_kurse") or [],
             equity_rekon_ohne_kontrakt=(f.get("equity_rekonstruktion") or {}).get(
                 "symbole_ohne_kontrakt") or [],
-            kapitalbasis_verwendet_usd=(f.get("kapitalbasis") or {}).get("usd")
-            if isinstance(f.get("kapitalbasis"), dict) else None,
-            kapitalbasis_verwendet_quelle=(f.get("kapitalbasis") or {}).get("quelle") or ""
-            if isinstance(f.get("kapitalbasis"), dict) else "",
+            kapitalbasis_verwendet_usd=stored_capital.get("usd"),
+            kapitalbasis_verwendet_quelle=stored_capital.get("quelle") or capital_details.get("quelle") or "",
+            kapitalbasis_befund=deepcopy(capital_details),
+            modellpruefung_vorhanden=bool(f.get("modellpruefung_vollstaendig")) and not forensik_stale,
             broker_server=stats.get("broker_server"),
             symbole=f.get("symbole") or "",
             score=None if forensik_stale else f.get("score"),
@@ -656,6 +676,11 @@ def results_from_db(settings: dict | None = None, *, catalog_rows=None,
             tiefenanalyse_model=row.get("tiefe_model") or "",
             fehler=last_fehler or "",
         )
+        if res.kapitalbasis_ist_modell and res.forensik_vorhanden:
+            # Old payloads may have called a numerical model "complete".
+            # They are never proof of a measured account capital history.
+            res.modellpruefung_vorhanden = True
+            res.forensik_vorhanden = False
         if trades_stale:
             # Auch rohe Anzeige-/USD-Kanaele duerfen keinen Befund eines
             # anderen Exports zeigen. Eine separat SHA-passende Studie darf
@@ -760,8 +785,23 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
     # Keine Uebertragung in bewertende Forensikfelder dieses Sonderwegs.
     sha = studie.get("trades_sha") or ""
     report = studie.get("report") or {}
+    if sha and res.trades_sha256 and sha != res.trades_sha256:
+        return
+    details = report.get("kapitalbasis_details") or {}
+    if not isinstance(details, dict):
+        details = {}
+    study_model = bool(studie.get("virtuell") or report.get("kapitalbasis_modell")
+                       or kapitalbasis.ist_modellquelle(details))
+    if study_model and (not sha or not res.trades_sha256):
+        return  # a new model capital cannot be bound by provider ID alone
+    res.true_dd_kapitalbasis_details = deepcopy(details)
+    res.true_dd_kapitalbasis_quelle = report.get("startkapital_quelle") or details.get("quelle") or (
+        KAPITALBASIS_QUELLE_VIRTUELL if studie.get("virtuell") else "")
+    res.true_dd_kapitalbasis_usd = report.get("kapitalbasis_usd", report.get("startkapital"))
+    res.true_dd_cagr_jahr_pct = studie.get("cagr_jahr_pct")
+    res.true_dd_ertrag_monat_geom_pct = studie.get("ertrag_monat_geom_pct")
     if (res.forensik_stale and sha and sha == res.trades_sha256
-            and not studie.get("basislos") and not studie.get("virtuell")):
+            and not studie.get("basislos") and not study_model):
         dd = report.get("equity_dd_pct_raw", report.get("equity_dd_pct"))
         if isinstance(dd, (int, float)) and not isinstance(dd, bool) and math.isfinite(dd) and dd >= 0:
             res.studie_anzeige_dd_pct = dd
@@ -770,7 +810,7 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
             res.studie_anzeige_grund = (report.get("teilmessung_hinweis")
                                        or report.get("grund") or "Unabhaengige H1-Studie")
             res.true_dd_usd = studie.get("dd_usd")
-    if res.forensik_stale and not studie.get("virtuell"):
+    if res.forensik_stale and not study_model:
         return
     if (res.max_drawdown_equity_pct is not None
             or res.equity_dd_rekon_roh_pct is not None):
@@ -794,8 +834,8 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
     res.equity_rekon_ohne_kurse = report.get("symbole_ohne_kurse") or []
     res.equity_rekon_ohne_kontrakt = report.get("symbole_ohne_kontrakt") or []
     res.true_dd_usd = studie.get("dd_usd")
-    if studie.get("virtuell"):
-        # Virtuelle 10k-Basis: Prozente NUR als Anzeige in separaten Feldern —
+    if study_model:
+        # Model capital: percentages stay in separate display fields;
         # equity_dd_rekonstruiert_pct bleibt frei (Schranke/Ampel unberührt).
         dd = report.get("equity_dd_pct_raw")
         if dd is None:
@@ -816,6 +856,13 @@ def studie_anwenden(res: ScanResult, studien: dict) -> None:
         return  # alte nur-USD-Studien (werden als virtuell neu gerechnet)
     roh = report.get("equity_dd_pct_raw", report.get("equity_dd_pct"))
     if roh is None:
+        return
+    engine_capital, study_capital = res.kapitalbasis_verwendet_usd, res.true_dd_kapitalbasis_usd
+    if (isinstance(engine_capital, (int, float)) and isinstance(study_capital, (int, float))
+            and not math.isclose(engine_capital, study_capital, rel_tol=1e-12, abs_tol=1e-9)):
+        res.studie_anzeige_dd_pct = roh
+        res.studie_anzeige_vorbehalt = True
+        res.studie_anzeige_grund = "Gespeicherte Studie und Engine haben verschiedene Kapitalbasen; getrennte Anzeige, keine RetDD-Vermischung."
         return
     res.equity_dd_rekon_roh_pct = roh
     if report.get("verlaesslich") and roh is not None:
@@ -865,7 +912,16 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
         return "⛔", f"Ausgeschlossen (Liste): {excluded[result.signal_key].get('grund', '')}"
     if result.martingale_flag:
         return "🔴", "Martingale-Signatur nachgewiesen (Ablehnung)"
-    if result.kapitalbasis_usd is not None and result.kapitalbasis_usd <= 0:
+    capital_decision = getattr(result, "kapitalbasis_befund", {}) or {}
+    proven_nonpositive = (capital_decision.get("gueltig") is False
+                          and capital_decision.get("quelle") in {"csv_einzahlungen", "manuell"}
+                          and isinstance(capital_decision.get("kapital"), (int, float))
+                          and not isinstance(capital_decision.get("kapital"), bool)
+                          and capital_decision["kapital"] <= 0)
+    if proven_nonpositive:
+        return "🔴", "Belegte verfügbare Startkapitalbasis ist nicht positiv; Prozent- und Schockprüfung sind nicht freigegeben."
+    if (not capital_decision and result.kapitalbasis_usd is not None
+            and result.kapitalbasis_usd <= 0):
         betrag = f"{result.kapitalbasis_usd:+,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         return "🔴", (
             f"Kapitalbasis negativ: die Signalseite nennt einen Initial Deposit "
@@ -884,12 +940,19 @@ def ampel_for(result: ScanResult, settings: dict) -> tuple[str, str]:
         plattform_dd = scoring.dd_maximum(result.dd_equity_pct,
                                           result.dd_balance_pct,
                                           result.monitor_trade_eq_dd_pct)
-        if plattform_dd > limit or result.forensik_vorhanden:
+        if plattform_dd > limit or result.forensik_vorhanden or getattr(result, "modellpruefung_vorhanden", False):
+            if plattform_dd <= limit and _kapitalmodell(result):
+                return "🔴", (f"Modellszenario überschreitet die Drawdown-Schranke {limit:g} %; "
+                              "geschätzte Kapitalbasis, keine Messung des realen Konto-DD.")
             return "🔴", f"Schranke verletzt: Drawdown > {limit:g} % (harte Ablehnung)"
     if result.fehler and not result.forensik_vorhanden:
         return "⚪", f"Fehler: {result.fehler}"
     if result.fehler:
         return "⚪", f"Prüfung mit Fehler: {result.fehler}"
+    if _kapitalmodell(result) and (getattr(result, "modellpruefung_vorhanden", False) or result.forensik_vorhanden):
+        return "🟡", (f"Modellprüfung auf {_kapitaltext(result)}; "
+                      "Kontokapital nicht belegt, keine automatische Grünfreigabe. "
+                      "DD, Rendite und RetDD gelten nur unter dieser Kapitalannahme.")
     if result.forensik_vorhanden:
         # Nutzer-Regel 28.09.2026: Fehlender SL-Nachweis ist NEUTRAL — die
         # meisten Broker übertragen keinen SL. Kandidat entscheidet sich über
@@ -1087,7 +1150,8 @@ def _forensik_json(r: ScanResult) -> str:
         # obwohl die Engine vollstaendig=true gespeichert hatte. Und die
         # Kapitalbasis IMMER liefern (auch belegt per CSV): null wurde als
         # "fehlende Basis" missdeutet.
-        "forensik_vollstaendig": bool(r.forensik_vorhanden and not r.fehler),
+        "forensik_vollstaendig": bool(r.forensik_vorhanden and not r.fehler and not _kapitalmodell(r)),
+        "modellpruefung_vollstaendig": bool(getattr(r, "modellpruefung_vorhanden", False) and not r.fehler),
         **({"trade_datenqualitaet": {
             "identische_tradezeilen": r.identische_tradezeilen,
             "behandlung": (
@@ -1100,15 +1164,13 @@ def _forensik_json(r: ScanResult) -> str:
             **({"plattform_trades": r.plattform_trades}
                if r.plattform_trades is not None else {})}}
            if r.identische_tradezeilen else {}),
-        "kapitalbasis_verwendet": (
-            {"usd": r.kapitalbasis_verwendet_usd,
-             "quelle": r.kapitalbasis_verwendet_quelle or "csv_einzahlungen"}
-            if r.kapitalbasis_verwendet_usd is not None else None),
+        "kapitalbasis_verwendet": _kapitalpayload(r),
         # K1: Optionale Messungen brauchen einen STATUS statt stiller null —
         # null heißt jetzt ausdrücklich "Messung nicht verfügbar/geskippt",
         # nicht "Pflicht fehlt".
         "status_optionaler_messungen": {
             "reko_eq_dd": ("veraltet — erneute Pruefung erforderlich" if r.forensik_stale
+                           else "Modellszenario mit H1-Kursen" if _kapitalmodell(r) and r.equity_dd_rekonstruiert_pct is not None
                            else "gemessen" if r.equity_dd_rekonstruiert_pct is not None
                            else r.equity_messung_status + " — OPTIONAL, kein Pflichtteil"),
             "monitor_eq_dd": ("gemessen" if r.monitor_trade_eq_dd_pct is not None
@@ -1211,7 +1273,8 @@ def _kapitalbasis_abgleich(drawdown_befund: dict, stats: dict) -> tuple[bool, st
     der Nutzer-Regel 05.10.2026 ersatzlos entfallen.
     """
     quelle = drawdown_befund.get("startkapital_quelle", "csv_einzahlungen")
-    if quelle in ("csv_einzahlungen", KAPITALBASIS_QUELLE_VIRTUELL):
+    if quelle == "csv_einzahlungen" or kapitalbasis.ist_modellquelle(
+            drawdown_befund.get("kapitalbasis_details") or quelle):
         return True, ""
     web_kontostand = stats.get("balance_usd")
     real = drawdown_befund.get("end_balance_real")
@@ -1303,11 +1366,12 @@ def _kennezeichne_virtuelle_kapitalbasis(result: ScanResult) -> None:
     bauen das Urteil neu — ohne diese Zentrierung wuerde der Hinweis
     vor dem Prompt verschwinden).
     """
-    # Text bewusst UNVERÄNDERT (idempotent gegenüber Alt-Urteilen im Bestand).
-    hinweis = "Kapitalbasis virtuell (Annahme der Datenquelle)"
-    if (result.kapitalbasis_verwendet_quelle == KAPITALBASIS_QUELLE_VIRTUELL
-            and result.forensik_vorhanden and not result.fehler
-            and hinweis not in (result.urteil or "")):
+    # Retain the historical phrase for old records, label all new model
+    # methods with their actual provenance instead of calling each one 10k.
+    hinweis = ("Kapitalbasis virtuell (Annahme der Datenquelle)"
+               if result.kapitalbasis_verwendet_quelle == KAPITALBASIS_QUELLE_VIRTUELL else
+               "Kapitalbasis als Modell: " + _kapitaltext(result))
+    if (_kapitalmodell(result) and hinweis not in (result.urteil or "")):
         result.urteil = (result.urteil or "") + " · " + hinweis
 
 
@@ -1800,20 +1864,9 @@ class ScanPipeline:
                     else "nicht verfuegbar (offline?) — FX-Kreuze bleiben ohne USD-Schock"))
                 # Broker mitgeben: cross_broker=false-Kontraktspecs (z. B. Oel)
                 # gelten nur fuer den gelisteten Broker des Signals.
-                # Kapitalbasis (Nutzer-Regel 05.10.2026): 1) CSV-Einzahlungen
-                # im Export (entscheiden in drawdown.run — Robo/MT4-Orderbuch
-                # liefern sie), 2) Signalseite "Initial Deposit" (belegt,
-                # Cent-Abgleich), 3) virtuelle Annahme 10.000 USD aus dem
-                # Quellen-Monitor — deutlich im Urteil markiert. Die implizite
-                # Basis (Web-Balance − Netto) ist ENTFALLEN: Sie zählt Flows
-                # als Startkapital und war 4,6× daneben (LadyTrader1).
-                kapitalbasis = stats.get("initial_deposit_usd")
-                kapitalbasis_quelle = "signalseite_initial_deposit"
-                if kapitalbasis is None:
-                    virtuell = _virtuelle_kapitalbasis(stats.get("kapitalbasis_virtual_usd"), log)
-                    if virtuell is not None:
-                        kapitalbasis = virtuell
-                        kapitalbasis_quelle = KAPITALBASIS_QUELLE_VIRTUELL
+                # The engine resolves once from the original export and native
+                # metadata. Derived source fields are not manual confirmations;
+                # old InitialDepositVirtual is not injected before estimation.
                 if res.monitor_trade_eq_dd_pct is not None:
                     # Review 04.10. (Paket D): TradeEqDrawdownPct ist eine
                     # Closing-Kurve (plus höchstens HEUTIGEM Floating-Endpunkt),
@@ -1847,8 +1900,12 @@ class ScanPipeline:
                 res.plattform_trades = stats.get("trades")
                 report = analyze_export(
                     path, broker=res.broker_server,
-                    kapitalbasis_usd=kapitalbasis,
-                    kapitalbasis_quelle=kapitalbasis_quelle,
+                    quellen_stats=stats,
+                    kapital_kontext={"quelle": res.quelle, "quellen_uid": res.quellen_uid,
+                                     "signal_ref": res.signal_ref, "id": res.id,
+                                     "quelle_version": res.quelle_version,
+                                     "trades_sha256": res.trades_sha256,
+                                     "account_currency": res.account_currency},
                     kursanbieter=kursanbieter,
                     plattform_positions=res.plattform_trades)
             except Mql5CredentialsMissingError:
@@ -1856,6 +1913,7 @@ class ScanPipeline:
                     "Vorprüfung ohne Forensik. Login im Admin-Bereich ergänzen.")
             if report is not None:
                 st, fx = report["stats"], report["forensics"]
+                _kapitalbefund_uebernehmen(res, fx)
                 if not st.get("trades"):
                     raise ValueError("Forensik unvollständig: keine abgeschlossenen Trades im Export.")
                 # Deckung auf den Cent (AGENTS.md): Wurde die Kapitalbasis von
@@ -1872,9 +1930,7 @@ class ScanPipeline:
                 # echte CSV-Einzahlung schlaegt jede Injektion — nur diese Quelle
                 # darf die "virtuell"-Kennzeichnung steuern (Live-Urteil, DB,
                 # Prompt-JSON; siehe _kennezeichne_virtuelle_kapitalbasis).
-                res.kapitalbasis_verwendet_usd = fx["drawdown"].get(
-                    "startkapital_raw", fx["drawdown"].get("startkapital"))
-                res.kapitalbasis_verwendet_quelle = fx["drawdown"].get("startkapital_quelle") or ""
+                _kapitalbefund_uebernehmen(res, fx)
                 td = fx["drawdown"]["trading_dd"]
                 # Risiko-/Ampel-% = max. relativer DD; USD-Anker bleibt dd_usd.
                 res.trading_dd_pct = scoring._trading_dd_for_risk(td)
@@ -2001,7 +2057,8 @@ class ScanPipeline:
                 res.score = ev["score"]
                 res.schranke_verletzt = bool(ev["schranke_eq_dd_verletzt"])
                 res.forensik_vorhanden = bool(ev["forensics_complete"])
-                if not res.forensik_vorhanden:
+                res.modellpruefung_vorhanden = bool(ev.get("model_forensics_complete"))
+                if not res.forensik_vorhanden and not res.modellpruefung_vorhanden:
                     raise ValueError(f"Forensik unvollständig: {_incomplete_forensics_reason(expo)}")
                 res.forensik_version = FORENSICS_VERSION
                 self._register_mql5_outcome(ok=True)
@@ -2046,6 +2103,8 @@ class ScanPipeline:
                 "broker_server": res.broker_server,
                 # Expliziter Vollstaendigkeitsstatus (verhindert Gruen aus alter Forensik).
                 "forensik_ok": bool(res.forensik_vorhanden),
+                "modellpruefung_ok": bool(res.modellpruefung_vorhanden),
+                "kapitalbasis_befund": res.kapitalbasis_befund,
                 "forensik_version": res.forensik_version,
                 # Webseiten-Kontobasis (Audit: woher die Kapitalbasis kommt)
                 "initial_deposit_usd": stats.get("initial_deposit_usd"),
@@ -2069,7 +2128,7 @@ class ScanPipeline:
                 stats_payload["last_fehler"] = res.fehler
             else:
                 stats_payload["last_fehler"] = None
-            if not res.forensik_vorhanden and not res.fehler:
+            if not res.forensik_vorhanden and not res.modellpruefung_vorhanden and not res.fehler:
                 stats_payload["export_skipped"] = "no_credentials_or_no_export"
             ampel, grund = ampel_for(res, self.settings)
             res.ampel = ampel
@@ -2094,6 +2153,7 @@ class ScanPipeline:
                     "version": FORENSICS_VERSION,
                     "trades_sha256": res.trades_sha256,
                     "vollstaendig": bool(res.forensik_vorhanden),
+                    "modellpruefung_vollstaendig": bool(res.modellpruefung_vorhanden),
                     "trading_dd": {"pct": res.trading_dd_pct, "usd": res.trading_dd_usd},
                     "winrate_pct": res.winrate_pct,
                     # B26 (02.10.): Bezugsgrößen für Winrate/DD — ohne n ist
@@ -2137,13 +2197,15 @@ class ScanPipeline:
                         "quelle": fx["drawdown"].get("startkapital_quelle"),
                         "end_balance_real": fx["drawdown"].get("end_balance_real"),
                         "webseite_balance_usd": stats.get("balance_usd"),
+                        "modell": res.kapitalbasis_ist_modell,
+                        "details": res.kapitalbasis_befund,
                     },
                     # Equity-DD-Rekonstruktion aus Kursen (Audit-Snapshot)
                     "equity_rekonstruktion": fx.get("equity_rekonstruktion"),
                     "fx_kursquelle": expo.get("fx_conversion", {}).get("quelle"),
                     # Score nur bei vollstaendiger Forensik — Design-Regel:
                     # kein Score vor bestandener Batterie.
-                    "score": res.score if res.forensik_vorhanden else None,
+                    "score": res.score if res.forensik_vorhanden or res.modellpruefung_vorhanden else None,
                     # Ampel-Matrix als Audit-Snapshot: je Testkriterium die
                     # Zellen-Ampel samt exakter Berechnung (Nachvollzieh-
                     # barkeit; Anzeige rechnet aus den Werten aktuell neu).
@@ -2442,9 +2504,7 @@ class ScanPipeline:
             r.stop_nachweis = _stop_evidence_text(stops)
             r.stop_evidence = stops.get("stop_evidence")
             r.stop_befund = stops
-            r.kapitalbasis_verwendet_usd = fx["drawdown"].get(
-                "startkapital_raw", fx["drawdown"].get("startkapital"))
-            r.kapitalbasis_verwendet_quelle = fx["drawdown"].get("startkapital_quelle") or ""
+            _kapitalbefund_uebernehmen(r, fx)
             eff = portfolio_statistik.effizienz_kennzahlen(
                 path, r.kapitalbasis_verwendet_usd, r.max_drawdown_equity_pct,
                 plattform_positions=st.get("trades"))
@@ -2457,8 +2517,9 @@ class ScanPipeline:
             r.score = ev["score"]
             r.schranke_verletzt = ev["schranke_eq_dd_verletzt"]
             r.forensik_vorhanden = bool(ev["forensics_complete"])
-            r.forensik_version = FORENSICS_VERSION if r.forensik_vorhanden else None
-            if not r.forensik_vorhanden:
+            r.modellpruefung_vorhanden = bool(ev.get("model_forensics_complete"))
+            r.forensik_version = FORENSICS_VERSION if r.forensik_vorhanden or r.modellpruefung_vorhanden else None
+            if not r.forensik_vorhanden and not r.modellpruefung_vorhanden:
                 r.fehler = f"Forensik unvollständig: {_incomplete_forensics_reason(fx['exposure'])}"
             if sid in meta:
                 r.name = meta[sid].get("name", r.name)

@@ -166,7 +166,7 @@ def test_b3_nachfolger_nur_balance_ergibt_keine_implizite_basis(tmp_path):
     from mqlkiscanner import signal_statistik
     basis, quelle = signal_statistik.kapitalbasis_kaskade(
         str(csv_pfad), {"balance_usd": 998.0, "kapitalbasis_virtual_usd": 10_000.0})
-    assert (basis, quelle) == (10_000.0, "virtuelle_annahme")
+    assert (basis, quelle) == (10_000.0, "modell_fallback_10000")
     assert not hasattr(pipeline, "_implizite_kapitalbasis")
     assert not hasattr(pipeline, "KAPITALBASIS_QUELLE_IMPLIZIT")
 
@@ -437,7 +437,8 @@ def test_k1_forensik_payload_nennt_vollstaendigkeit_und_basis():
     payload = _json.loads(pipeline._forensik_json(r))
     assert payload["forensik_vollstaendig"] is True
     basis = payload["kapitalbasis_verwendet"]
-    assert basis == {"usd": 3116.0, "quelle": "csv_einzahlungen"}
+    assert basis['usd'] == 3116.0 and basis['quelle'] == 'csv_einzahlungen'
+    assert basis['modell'] is False and basis['details'] == {}
     status = payload["status_optionaler_messungen"]
     assert "OPTIONAL" in status["reko_eq_dd"]
     assert "OPTIONAL" in status["monitor_eq_dd"]

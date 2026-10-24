@@ -111,12 +111,19 @@ def test_relative_peak_is_independent_of_dollar_peak():
 @pytest.mark.parametrize("flows", [(), ((-1, 0),), ((-1, 1000), (2, -1000))])
 def test_unavailable_capital_is_not_reported_as_safe(flows):
     result = exposure.run(parsed([trade()], flows))
-    assert result["temporal_risk_available"] is False
-    assert result["shock_pct_max"] is None
+    if any(amount > 0 for _, amount in flows):
+        assert result["temporal_risk_available"] is False
+        assert result["shock_pct_max"] is None
+    else:
+        assert result["kapitalbasis_modell"] is True
+        assert result["capital_history_complete"] is False
+        assert result["model_capital_available"] is True
+        assert result["temporal_risk_available"] is True
     report = {"forensics": {"exposure": result, "martingale": {"flag": False},
                               "stops": {"clustered": False}, "drawdown": {"test": "drawdown"}}}
     evaluation = scoring.evaluate(report)
-    assert evaluation["dimensions"]["margin"] == 10
+    if not result["kapitalbasis_modell"]:
+        assert evaluation["dimensions"]["margin"] == 10
     assert evaluation["forensics_complete"] is False
     assert evaluation["urteil_gueltig"] is False
 

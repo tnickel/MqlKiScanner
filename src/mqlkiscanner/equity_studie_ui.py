@@ -19,7 +19,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from . import config, kursdaten, parser, scan_worker
+from . import config, kapitalbasis, kursdaten, parser, scan_worker
 from .equity_studie import studie
 from .forensics import drawdown
 
@@ -42,9 +42,13 @@ def _cache_key(result) -> str:
     currency = getattr(result, "account_currency", None) or "unknown"
     kind = getattr(result, "source_kind", "live")
     identity = (stable_identity_key(result),) + tuple(str(getattr(result, field, None) or "") for field in
-                     ("quelle", "quelle_version", "platform", "broker_server"))
+                     ("quelle", "quelle_version", "platform", "broker_server", "kapitalbasis_usd",
+                      "kapitalbasis_verwendet_usd", "kapitalbasis_verwendet_quelle", "kapitalbasis_befund"))
+    _, calibration_proof = kapitalbasis.lade_kalibrierung_mit_beleg()
+    identity += (calibration_proof.get("status"), calibration_proof.get("sha256"),
+                 calibration_proof.get("datei_sha256"))
     scope = hashlib.sha256(repr(identity).encode("utf-8")).hexdigest()[:16]
-    return f"eqdd_studie_v{FORENSICS_VERSION}_{result.id}_{sha[:12] or 'nosha'}_{kind}_{currency}_{scope}"
+    return f"eqdd_studie_kapitalmodell_v{kapitalbasis.VERSION}_v{FORENSICS_VERSION}_{result.id}_{sha[:12] or 'nosha'}_{kind}_{currency}_{scope}"
 
 
 def berechne(result, progress) -> dict:
@@ -86,22 +90,31 @@ def _berechne_exklusiv(result, progress) -> dict:
         pfad, plattform_positions=getattr(result, "plattform_trades", None))
 
     progress(0.08, "Kapitalbasis ermitteln …")
-    # Dieselbe Auflösung wie die Forensik: CSV-Einzahlungen gewinnen, sonst
-    # der extern belegte Wert (Initial Deposit Signalseite bzw. die von der
-    # Pipeline tatsächlich verwendete Basis aus dem Forensik-Snapshot).
-    extern = getattr(result, "kapitalbasis_verwendet_usd", None) \
-        or getattr(result, "kapitalbasis_usd", None)
-    if extern is None:
-        extern = katalog.metrics_stats(result).get("initial_deposit_usd")
-    if getattr(result, "kapitalbasis_verwendet_usd", None) is not None and parsed.trades:
-        # Verwendete Basis ist bereits der Netto-Startsaldo. drawdown.run
-        # erwartet dagegen die externe Basis VOR separaten Kontokosten.
+    stats = katalog.metrics_stats(result)
+    verwendet = getattr(result, "kapitalbasis_verwendet_usd", None)
+    quelle = getattr(result, "kapitalbasis_verwendet_quelle", "")
+    # Alte Modellannahmen sind keine bekannten Einzahlungen. Neue Modelle
+    # werden mit derselben Methodik wie Scan und Batch erneut aufgelöst.
+    if kapitalbasis.ist_modellquelle(getattr(result, "kapitalbasis_befund", None) or quelle):
+        verwendet = None
+        quelle = ""
+    extern = verwendet if verwendet is not None else getattr(result, "kapitalbasis_usd", None)
+    if verwendet is not None and parsed.trades:
+        # Verwendete Basis ist bereits der Netto-Startsaldo. Der Resolver
+        # erwartet den externen Anker neben Vorstartbuchungen und Kosten.
         erste = min(t.open_time for t in parsed.trades)
         extern -= math.fsum(c.amount for c in parsed.costs if c.time < erste)
-    quelle = getattr(result, "kapitalbasis_verwendet_quelle", "") \
-        or "signalseite_initial_deposit"
-    dd = drawdown.run(parsed, kapitalbasis_usd=extern, kapitalbasis_quelle=quelle)
+        extern -= math.fsum(b.amount for b in parsed.balances if b.time <= erste)
+    entscheid = kapitalbasis.aufloesen(parsed, stats=stats, kapitalbasis_usd=extern,
+        kapitalbasis_quelle=quelle or "signalseite_initial_deposit",
+        broker=getattr(result, "broker_server", None) or stats.get("broker_server"),
+        kontext={**{key: getattr(result, key, None) for key in (
+            "quelle", "quellen_uid", "id", "signal_ref", "trades_sha256", "account_currency")},
+            "trades_path": pfad})
+    dd = drawdown.run(parsed, kapitalentscheidung=entscheid)
     startkapital = float(dd.get("startkapital") or 0.0)
+    if not entscheid.get("gueltig") or startkapital <= 0:
+        raise RuntimeError("Kapitalbasis nicht verwendbar: " + str(entscheid.get("grund") or "kein positives Startkapital"))
 
     progress(0.10, "MT5-Referenzterminal verbinden (Kurse, kann einige Sekunden dauern) …")
     settings = config.load_settings()
@@ -124,7 +137,15 @@ def _berechne_exklusiv(result, progress) -> dict:
         "trades_pfad": pfad,
         "startkapital_quelle": dd.get("startkapital_quelle") or "unbekannt",
         "account_currency": getattr(result, "account_currency", None),
+        "kapitalbasis_details": dd.get("kapitalbasis_details") or entscheid,
+        "kapitalbasis_modell": kapitalbasis.ist_modellquelle(entscheid),
     }
+    daten["kapitalbasis_details"] = daten["meta"]["kapitalbasis_details"]
+    daten["kapitalbasis_modell"] = daten["meta"]["kapitalbasis_modell"]
+    if daten["kapitalbasis_modell"]:
+        daten["methodik"] = ("Modellkurve mit geschätztem Startkapital und vorhandenen Kapitalflüssen: "
+                             "Startkapital + realisiertes Netto + gelieferte spätere Ein-/Auszahlungen "
+                             "+ Floating an H1-Bar-Schlüssen; keine belegte Kontokurve")
     return daten
 
 
@@ -216,12 +237,19 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
     return fig
 
 
+def _daten_ist_modell(daten: dict) -> bool:
+    meta = daten.get("meta") or {}
+    return kapitalbasis.ist_modellquelle(meta.get("kapitalbasis_details") or daten.get("kapitalbasis_details")
+                                        or meta.get("startkapital_quelle"))
+
+
 def _kennzahlen_karten(daten: dict, schranke: float) -> None:
     k = daten["kennzahlen"]
     pct = k.get("equity_dd_pct")
+    modell = _daten_ist_modell(daten)
     with st.container(horizontal=True):
         st.metric(
-            "Max-Drawdown (H1, reale Kontokurve)",
+            "Modell-Max-Drawdown (H1)" if modell else "Max-Drawdown (H1, Kontokurve)",
             f"{pct:.1f} %" if pct is not None else "—",
             # Zeitraum des Maximalrückfalls nennen (Nutzer-Fall ATong
             # 04.10.: 64,9 % stammte aus Aug/Sep 2021 — ohne Datum wirkte
@@ -244,11 +272,8 @@ def _kennzahlen_karten(daten: dict, schranke: float) -> None:
                   f"{k.get('unterwasser_tage_max', 0.0):.0f} Tage",
                   border=True)
         st.metric("Abdeckung", f"{k.get('abdeckung_pct', 0.0):.0f} %", border=True)
-    # Brücke zur MQL5-Website (Nutzer-Fall ATong 04.10.: „Website schwankt
-    # 1-10 %, eure Kurve 1-2 %"): Entnimmt der Anbieter laufend Kapital,
-    # ist das ECHTE Konto kleiner als die virtuelle Trading-Kurve —
-    # dieselben USD-Schwankungen sind dort prozentual größer. Die
-    # kapitalflussneutrale Messung liefert die vergleichbare Prozentzahl.
+    # Separate Renditeindex-Diagnostik neutralisiert gelieferte Kapitalflüsse.
+    # Eine geschätzte Basis wird dadurch nicht zum belegten Kontostand.
     konto = daten.get("konto_studie") or {}
     kto = konto.get("kennzahlen") or {}
     konto_pct = kto.get("konto_equity_dd_pct")
@@ -257,23 +282,20 @@ def _kennzahlen_karten(daten: dict, schranke: float) -> None:
     if konto_pct is not None:
         with st.container(horizontal=True):
             st.metric(
-                "Konto-DD (kapitalflussneutral)",
+                "Modell-DD (kapitalflussneutral)" if modell else "Konto-DD (kapitalflussneutral)",
                 ("≈ " if not konto.get("verlaesslich") else "")
                 + f"{konto_pct:.1f} %",
-                help="Auf das ECHTE Konto bezogen (Ein-/Auszahlungen neutralisiert) "
-                     "— diese Zahl ist mit der MQL5-Equity-Grafik vergleichbar. "
-                     "Der Max-Drawdown oben misst die virtuelle Trading-Kurve "
-                     "(Startkapital + alle Gewinne, ohne Entnahmen) und ist dadurch "
-                     "prozentual KLEINER bei abstreichenden Anbietern.",
+                help="Rückfall des Renditeindex nach Neutralisierung bekannter Ein-/Auszahlungen. "
+                     "Eine geschätzte Kapitalbasis bleibt auch hier eine Modellannahme; "
+                     "abweichende DD-Definitionen und Exportfenster verhindern einen direkten Plattformvergleich.",
                 border=True)
     if (k.get("kapitalfluesse_nach_start") or 0) > 0:
         st.info(
             f"Der Anbieter hat **{k['kapitalfluesse_nach_start']} Ein-/Auszahlungen "
-            "nach Handelsstart** getätigt — das echte MQL5-Konto ist dadurch kleiner "
-            "als die virtuelle Trading-Kurve dieser Studie. MQL5-Prozente der "
-            "Website beziehen sich auf das echte Konto und fallen deshalb HÖHER "
-            "aus. **Direkt vergleichbar sind die USD-Werte** (Rückfall USD, "
-            "offener Betrag USD).", icon=":material/compare_arrows:")
+            "nach Handelsstart** im Export. Diese bleiben in der Kurve enthalten; "
+            "Einzahlungen heben den Stand, Auszahlungen passen den bisherigen Höchststand an. "
+            "Die zusätzliche Renditeindex-Kurve neutralisiert diese Kapitalflüsse.",
+            icon=":material/compare_arrows:")
 
 
 def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
@@ -284,6 +306,12 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
     if pct is None:
         st.info("Keine belastbare Kapitalbasis — Prozentwerte entfallen. Die "
                 "USD-Verläufe zeigen die verfügbaren H1-Messpunkte.", icon=":material/info:")
+    elif _daten_ist_modell(daten):
+        (st.info if vollstaendig else st.warning)(
+            f"**Modellszenario:** {pct:.1f} % H1-Equity-Rückfall auf geschätztem Startkapital. "
+            + ("Die Kursbasis erfüllt die hinterlegten Qualitätsprüfungen. " if vollstaendig else "Die Kursbasis hat offene Messpunkte. ")
+            + f"Die konfigurierte Schranke von {schranke:.0f} % dient hier nur der Orientierung; "
+            "das Modell ersetzt keinen belegten Konto-DD und keine Workflow-Freigabe.")
     elif not vollstaendig:
         st.warning(f"**Unvollständige H1-Nachmessung:** {pct:.1f} % in den "
                    "verfügbaren Messpunkten. Fehlende Kurse oder ungeklärte "
@@ -678,8 +706,16 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
     meta = daten.get("meta", {})
     _kennzahlen_karten(daten, schranke)
 
-    basis_text = (f"{meta.get('startkapital_quelle', 'unbekannt')} · "
+    basis_details = meta.get("kapitalbasis_details") or daten.get("kapitalbasis_details")
+    basis_modell = kapitalbasis.ist_modellquelle(basis_details or meta.get("startkapital_quelle"))
+    basis_text = (f"{kapitalbasis.beschreibung(basis_details or meta.get('startkapital_quelle'))} · "
                   f"{k['startkapital']:,.0f} USD".replace(",", "."))
+    if basis_modell:
+        st.warning("Virtuelle Modellstudie: Kapitalbasis geschätzt; Prozent-DD und Renditen "
+                   "sind Modellwerte, keine nachgewiesenen Kontokennzahlen.")
+    if basis_details:
+        with st.expander("Kapitalbasis: Herkunft, Unsicherheit und Belege"):
+            st.json(basis_details)
     zeitraum = ""
     if daten["punkte"]:
         erster = _als_datetime(daten["punkte"][0]["t"])
@@ -693,10 +729,11 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
         f"vollständigen Kursen · Abdeckung {k['abdeckung_pct']:.0f} %")
     st.caption(
         "Equity = Startkapital + realisiertes Netto + Ein-/Auszahlungen + "
-        "Summe des offenen PnL aller Positionen im Export — die reale "
-        "Kontokurve des Betreibers (Nutzer-Regel 05.10.: Auszahlungen "
+        "Summe des offenen PnL aller Positionen im Export — "
+        + ("Modellkurve mit geschätztem Anfangskapital. " if basis_modell else "rekonstruierte Kontokurve. ")
+        + "Bekannte spätere Kapitalflüsse bleiben enthalten: Auszahlungen "
         "erzeugen keinen Drawdown, Einzahlungen heben Kurve und Peak, weil "
-        "der Betreiber danach größer handelt). Der Kopierer mit "
+        "der Betreiber danach größer handelt. Der Kopierer mit "
         "proportionaler Lot-Skalierung erlebt Einzahlungen als neutral — "
         "dafür gibt es unten die kapitalflussneutrale Kopier-Simulation.")
     st.caption(

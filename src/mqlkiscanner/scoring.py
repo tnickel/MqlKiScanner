@@ -247,25 +247,44 @@ def evaluate(report: dict, platform: dict | None = None,
     else:
         barrier_dd = dd_maximum(real_dd, eq_dd, bal_dd, reko_dd, monitor_dd)
     barrier = barrier_dd > float(schranke_eq_dd_pct)
+    capital_model = _kapital_modell(report)
+    complete = _forensics_complete(report)
+    model_complete = capital_model and _forensics_complete(report, allow_model=True)
     return {
         "dimensions": dims,
         "weights": {**DEFAULT_WEIGHTS, **(weights or {})},
         "score": score(dims, weights),
         "schranke_eq_dd_verletzt": barrier,
         "schranke_dd_pct": round(barrier_dd, 2),
-        "forensics_complete": _forensics_complete(report),
-        "urteil_gueltig": _forensics_complete(report) and not barrier,
+        "forensics_complete": complete,
+        "model_forensics_complete": model_complete,
+        "kapitalbasis_modell": capital_model,
+        "urteil_gueltig": complete and not barrier and not capital_model,
     }
 
 
-def _forensics_complete(report: dict) -> bool:
+def _kapital_modell(report):
+    from .kapitalbasis import ist_modellquelle
+    f = report.get("forensics") or {}
+    dd, expo = f.get("drawdown") or {}, f.get("exposure") or {}
+    return (dd.get("kapitalbasis_modell") is True or expo.get("kapitalbasis_modell") is True
+            or any(ist_modellquelle(value) for value in (
+                f.get("kapitalbasis"), dd.get("kapitalbasis_details"), dd.get("startkapital_quelle"),
+                expo.get("kapitalbasis_details"), expo.get("startkapital_quelle"))))
+
+
+def _forensics_complete(report: dict, *, allow_model=False) -> bool:
     f = report.get("forensics", {})
     expo = f.get("exposure", {})
+    model = _kapital_modell(report)
+    if model and not allow_model:
+        return False
     shock_pct = expo.get("shock_pct_max")
     if (not isinstance(shock_pct, (int, float)) or isinstance(shock_pct, bool)
             or not math.isfinite(shock_pct) or shock_pct < 0):
         return False
-    if (expo.get("capital_history_complete") is False
+    if ((expo.get("capital_history_complete") is False
+             and not (allow_model and model and expo.get("model_capital_available") is True))
             or expo.get("contract_complete") is False
             or expo.get("conversion_complete") is False
             or expo.get("temporal_risk_available") is False

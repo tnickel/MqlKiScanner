@@ -17,16 +17,21 @@ from .forensics import baskets, drawdown, equity_rekonstruktion, exposure, marti
 def analyze(path: str, stress_move: float | None = None,
             broker: str | None = None, kapitalbasis_usd: float | None = None,
             kapitalbasis_quelle: str | None = None,
-            kursanbieter=None, plattform_positions: float | None = None) -> dict:
+            kursanbieter=None, plattform_positions: float | None = None,
+            kapital_kontext: dict | None = None, quellen_stats: dict | None = None,
+            kapitalentscheidung: dict | None = None) -> dict:
     """Vollstaendige Analyse eines Trade-Exports -> Befund-Dictionary.
 
     broker: Broker-/Serverkennung des Signals (z. B. "PepperstoneKE-MT5-Live01").
     Sie schraenkt Broker-abhaengige Kontraktspecs ein (data/contract_specs.json,
     cross_broker=false) — ohne Angabe gelten nur brancheneinheitliche Kontrakte.
-    kapitalbasis_usd: Startkapital von der Signalseite ("Initial Deposit").
-    Greift NUR, wenn der Export keine Einzahlung vor dem ersten Trade enthaelt
-    (MT4-Orderbuch beginnt mit der Signalhistorie); Schranke und Schock-in-
-    Prozent sind sonst nicht berechenbar.
+    kapitalbasis_usd: explizit angegebenes Anfangskapital. CSV-Einzahlungen
+    haben Vorrang. Ohne belegte Basis ermittelt kapitalbasis.aufloesen das
+    Modellkapital aus Lots/PnL, Referenz-Lots oder zuletzt 10.000 USD.
+    Alle Berechnungen erhalten dieselbe Entscheidung mit Herkunft und
+    Unsicherheit; bekannte Kapitalbewegungen und Kosten bleiben erhalten.
+    kapital_kontext/quellen_stats: Identitaet, Trade-SHA und Quellenbelege
+    einschliesslich Kontowaehrung fuer diese gemeinsame Entscheidung.
     kursanbieter: optional (kursdaten.KursDaten o. ä.). Liefert er H1-Kurse,
     wird die Equity-Kurve samt floating PnL rekonstruiert und der Equity-DD
     nachgemessen (Auto-GMT per Preisabgleich); sonst entfällt der Test still.
@@ -35,14 +40,24 @@ def analyze(path: str, stress_move: float | None = None,
     nur bei exakter Deckung ohne die Mehrfachzeilen).
     """
     parsed = parser.load_export(path, plattform_positions=plattform_positions)
+    from . import kapitalbasis
+    from hashlib import sha256
+    context = dict(kapital_kontext or {})
+    context.setdefault("trades_sha256", sha256(Path(path).read_bytes()).hexdigest())
+    decision = kapitalentscheidung if kapitalentscheidung is not None else kapitalbasis.aufloesen(
+        parsed, stats=quellen_stats, kapitalbasis_usd=kapitalbasis_usd,
+        kapitalbasis_quelle=kapitalbasis_quelle, broker=broker, kontext=context)
     forensics = {
+        "kapitalbasis": decision,
         "martingale": martingale.run(parsed),
         "exposure": exposure.run(parsed, stress_move=stress_move, broker=broker,
                                  kapitalbasis_usd=kapitalbasis_usd,
-                                 kapitalbasis_quelle=kapitalbasis_quelle),
+                                 kapitalbasis_quelle=kapitalbasis_quelle,
+                                 kapitalentscheidung=decision),
         "stops": stops.run(parsed),
         "drawdown": drawdown.run(parsed, kapitalbasis_usd=kapitalbasis_usd,
-                                 kapitalbasis_quelle=kapitalbasis_quelle),
+                                 kapitalbasis_quelle=kapitalbasis_quelle,
+                                 kapitalentscheidung=decision),
         "baskets": baskets.run(parsed),
         "news": news.run(parsed),
     }
@@ -61,7 +76,9 @@ def analyze(path: str, stress_move: float | None = None,
                         for s in forensics["exposure"].get("per_symbol_scenarios", {}).values())):
             forensics["exposure"] = exposure.run(parsed, stress_move=stress_move, broker=broker,
                 kapitalbasis_usd=kapitalbasis_usd, kapitalbasis_quelle=kapitalbasis_quelle,
-                kursanbieter=kursanbieter)
+                kursanbieter=kursanbieter, kapitalentscheidung=decision)
+        forensics["equity_rekonstruktion"].update(
+            kapitalbasis_details=decision, kapitalbasis_modell=bool(decision.get("modell")))
     report = {
         "source": str(path),
         "source_format": parsed.source_format,

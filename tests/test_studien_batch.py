@@ -417,3 +417,37 @@ def test_direkte_mql5_seitenbasis_nur_positiv_und_nach_cached_metrics(
     studien_batch._rechne_ein_signal(result, {'skipped_gruende': []}, _FakeKurse(), False)
     assert captured['capital'] == erwartete_basis
     assert bool(db.get_equity_studie(result.id)['virtuell']) is virtuell
+
+
+def test_modellstudie_ersetzt_keine_sha_passende_echte_studie(tmp_path, monkeypatch):
+    from mqlkiscanner.forensics import equity_rekonstruktion
+    result = pipeline.ScanResult(id=991122, quelle='mql5', account_currency='USD',
+        trades_path=_csv(tmp_path / 'frozen.csv'), trades_sha256='frozen')
+    original_report = {'verlaesslich': True, 'equity_dd_pct': 7, 'equity_dd_usd': 350,
+                       'kapitalbasis_usd': 5000, 'startkapital_quelle': 'signalseite_initial_deposit'}
+    db.store_equity_studie(result.id, 'frozen', original_report,
+        cagr_jahr_pct=21, dd_usd=350, basislos=False, virtuell=False, quelle='mql5')
+    before = db.get_equity_studie(result.id, quelle='mql5')
+    monkeypatch.setattr(studien_batch.katalog, 'metrics_stats', lambda _: {})
+    monkeypatch.setattr(equity_rekonstruktion, 'rekonstruiere',
+                        lambda *a, **kw: pytest.fail('Existing real study must be preserved before H1 access'))
+    control = {'skipped_gruende': []}
+    assert studien_batch._rechne_ein_signal(result, control, _FakeKurse(), False) is False
+    assert db.get_equity_studie(result.id, quelle='mql5') == before
+    assert 'echte SHA-passende Studie' in control['skipped_gruende'][0]
+
+
+def test_modellstudie_speichert_genaue_herkunft_und_tatsaechliche_basis(tmp_path, monkeypatch):
+    from mqlkiscanner.forensics import equity_rekonstruktion
+    result = pipeline.ScanResult(id=991123, quelle='mql5', account_currency='USD',
+        trades_path=_csv(tmp_path / 'model.csv'), trades_sha256='model-sha')
+    monkeypatch.setattr(studien_batch.katalog, 'metrics_stats', lambda _: {})
+    monkeypatch.setattr(equity_rekonstruktion, 'rekonstruiere', lambda p, a, k, **kw: {
+        'verlaesslich': True, 'equity_dd_pct': 8, 'equity_dd_usd': k*.08})
+    assert studien_batch._rechne_ein_signal(result, {'skipped_gruende': []}, _FakeKurse(), False)
+    saved = db.get_equity_studie(result.id, quelle='mql5')
+    assert saved['virtuell']
+    assert saved['report']['kapitalbasis_usd'] == 10000
+    assert saved['report']['kapitalbasis_details']['quelle'] == 'modell_fallback_10000'
+    assert saved['report']['kapitalbasis_details']['beleg']['trades_sha256'] == 'model-sha'
+    assert saved['report']['kapitalbasis_modell'] is True

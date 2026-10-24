@@ -18,8 +18,8 @@ Laufprinzip:
   (katalog.lade_signal_daten, SHA-geprüfter Cache).
 - Fortschritt in einem plain dict (control): fertig/gesamt/aktuell/Ø-Dauer/
   Restzeit-Schätzung + Abbruch-Flag (geprüft zwischen zwei Signalen).
-- Fehlt eine belegte Kapitalbasis, wird die vereinbarte virtuelle
-  10.000-USD-Basis verwendet und ausdrücklich als Annahme markiert.
+- Fehlt eine belegte Kapitalbasis, folgen die gemeinsame Lotschätzung,
+  grobe Lotschätzung und zuletzt der markierte 10.000-USD-Fallback.
   Ungültige echte Kapitaldaten werden dadurch nicht repariert.
 """
 from __future__ import annotations
@@ -367,7 +367,7 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
     """Ein Signal: Trades sicherstellen → Statistik → Equity-Reko → persistieren.
     Rückgabe True = Studie gespeichert, False = übersprungen (mit Grund in
     control["skipped_gruende"])."""
-    from . import parser, signal_statistik
+    from . import kapitalbasis, parser, signal_statistik
     from .forensics import drawdown, equity_rekonstruktion
     pipeline.require_usd_account(res)
 
@@ -384,11 +384,8 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
         res.trades_sha256 = (artefakt or {}).get("sha256") or ""
 
     # 2) Vorstufen-Statistik (Kapitalbasis, CAGR, Geom-Ertrag — ohne LLM).
-    #    Ohne jede erkennbare Kapitalbasis (typisch Vantage: keine Ein-
-    #    zahlungszeilen, kein Initial Deposit) rechnet der Batch mit der
-    #    VIRTUELLEN 10.000-USD-Annahme — klar markiert (virtuell=True),
-    #    dieselbe Konvention wie beim PelicanMonitor. Virtuelle Werte gehen
-    #    NIE in die Workflow-Schranken (studie_anwenden trennt das).
+    #    Gemeinsame Kapitalmethodik; geschätzte Werte bleiben virtuell und
+    #    gehen nie in die Workflow-Schranken (studie_anwenden trennt das).
     stats = katalog.metrics_stats(res)
     parsed = parser.load_export(res.trades_path,
                                 plattform_positions=stats.get("trades"))
@@ -418,13 +415,15 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
             and isinstance(seitenbasis, (int, float)) and not isinstance(seitenbasis, bool)
             and math.isfinite(seitenbasis) and seitenbasis > 0):
         stats["initial_deposit_usd"] = seitenbasis
-    if not (stats.get("initial_deposit_usd") or stats.get("kapitalbasis_virtual_usd")):
-        stats["kapitalbasis_virtual_usd"] = 10_000.0
+    stats = {**stats, "quelle": identity_key(res)[0],
+             "broker_server": getattr(res, "broker_server", None) or stats.get("broker_server")}
+    stats.setdefault("account_currency", getattr(res, "account_currency", None))
+    for key in ("id", "quellen_uid", "signal_ref", "trades_sha256"):
+        stats[key] = getattr(res, key, None)
     statistik = signal_statistik.berechne(res.trades_path, stats) or {}
     # Die TATSAECHLICH verwendete Quelle entscheidet: Quellenannahmen sind
     # ebenfalls virtuell, echte CSV-Einzahlungen schlagen jeden Fallback.
-    virtuell_basis = (statistik.get("kapitalbasis_quelle")
-                      == pipeline.KAPITALBASIS_QUELLE_VIRTUELL)
+    virtuell_basis = kapitalbasis.ist_modellquelle(statistik.get("kapitalbasis_quelle"))
     res.trades_sha256 = res.trades_sha256 or ""
     startkapital = statistik.get("kapitalbasis_usd")
     cagr = statistik.get("cagr_jahr_pct")
@@ -432,6 +431,12 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
 
     vorher = db.get_equity_studie(int(res.id), quelle=identity_key(res)[0]) or {}
     alter_report = vorher.get("report") or {}
+    if (virtuell_basis and vorher and not vorher.get("virtuell") and not vorher.get("basislos")
+            and res.trades_sha256 and vorher.get("trades_sha") == res.trades_sha256):
+        control.setdefault("skipped_gruende", []).append(
+            f"[{identity_key(res)[0]}] #{res.id}: bestehende echte SHA-passende Studie "
+            "bleibt erhalten; eine Modellbasis ersetzt keinen Kontobeleg.")
+        return False
     alter_broker = (alter_report.get("original_broker")
                    if res.trades_sha256 and vorher.get("trades_sha") == res.trades_sha256
                    else None)
@@ -444,6 +449,14 @@ def _rechne_ein_signal(res, control, anbieter, trades_nachladen: bool) -> None:
         report = _rekonstruiere_mit_feed_fallback(
             parsed, anbieter, float(startkapital), broker)
         report["account_currency"] = getattr(res, "account_currency", None)
+        report["kapitalbasis_details"] = statistik.get("kapitalbasis_details") or {}
+        report["kapitalbasis_modell"] = virtuell_basis
+        report["startkapital_quelle"] = statistik.get("kapitalbasis_quelle")
+        report["startkapital"] = startkapital
+        report["kapitalbasis_usd"] = startkapital
+        if virtuell_basis:
+            report["methodik"] = ("Modellkurve mit geschätztem Startkapital und vorhandenen Kapitalflüssen; "
+                                  "realisiertes Netto und Floating an H1-Bar-Schlüssen, keine belegte Kontokurve")
         alter_dd = alter_report.get("equity_dd_pct")
         if alter_dd is None:
             alter_dd = alter_report.get("equity_dd_pct_raw")

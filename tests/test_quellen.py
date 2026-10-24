@@ -429,10 +429,9 @@ def test_kandidaten_aus_quellen_sortiert_groesste_zuerst(monkeypatch):
 
 def test_pelican_ende_zu_ende_wird_akzeptiert(monkeypatch):
     """PelicanMonitor: Version „pelican“, BOM + Punkt-Zeitstempel in trades.csv,
-    FX-Kennzeichnung in metrics und InitialDepositVirtual als Kapitalbasis.
-    Ohne die virtuelle Annahme bliebe die Forensik unvollständig (Quellen-CSVs
-    haben keine Einzahlungszeilen) — mit ihr wird sie vollständig, OHNE je als
-    echtes InitialDeposit zu gelten (kein Cent-Abgleich, keine rote Regel)."""
+    FX-Kennzeichnung und historischem InitialDepositVirtual-Metafeld.
+    Die zentrale Schätzung liefert ein numerisch nutzbares Modell; das alte
+    Metafeld wird nicht injiziert und das Modell ist keine Kontoforensik."""
     quelle = _quelle("pelik", "http://pelican:8090")
     # Wie der echte Server: \ufeff-BOM, 11 Spalten, Kommission/Swap im Netto-PnL.
     peli_csv = (
@@ -462,22 +461,22 @@ def test_pelican_ende_zu_ende_wird_akzeptiert(monkeypatch):
     pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
     result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
     assert result.quelle == "pelik" and result.platform == "pelican"
-    # Kern der Integration: Forensik wird VOLLSTÄNDIG (virtuelle Kapitalbasis)
+    # Numeric model tests complete; this is not proven account forensics.
     assert not result.fehler, result.fehler
-    assert result.forensik_vorhanden
+    assert not result.forensik_vorhanden and result.modellpruefung_vorhanden
     assert result.trading_dd_pct is not None and result.shock_pct_max is not None
     # Virtuelle Basis ist kein Initial Deposit: rote Regel unberührt (kein Wert),
     # Urteil nennt die Annahme transparent.
     assert result.kapitalbasis_usd is None
-    assert "Kapitalbasis virtuell" in result.urteil
+    assert "Kapitalbasis als Modell" in result.urteil
     artefakt = db.get_quellen_artefakt(quelle["id"], 2014074, "pelican", "trades")
     assert artefakt and artefakt["path"].replace("\\", "/").endswith(
         "pelican_2014074_trades.csv")
     assert db.get_signal(2014074)["quelle"] == "pelik"
     # Audit in der DB: Forensik-Snapshot führt Quelle+Höhe der Basis mit.
     neu = [r for r in pipeline.results_from_db() if r.id == 2014074][0]
-    assert "Kapitalbasis virtuell" in neu.urteil
-    gespeichert = neu.fehler == "" and neu.forensik_vorhanden
+    assert "Kapitalbasis als Modell" in neu.urteil
+    assert neu.modellpruefung_vorhanden and not neu.forensik_vorhanden
 
 
 def test_virtuelle_kapitalbasis_ohne_balance_ohne_abgleich(monkeypatch):
@@ -495,7 +494,7 @@ def test_virtuelle_kapitalbasis_ohne_balance_ohne_abgleich(monkeypatch):
     pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
     result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
     assert not result.fehler, result.fehler
-    assert result.forensik_vorhanden
+    assert not result.forensik_vorhanden and result.modellpruefung_vorhanden
     assert "unbestätigt" not in (result.urteil or "")
 
 
@@ -515,16 +514,15 @@ def test_echte_kapitalbasis_hat_vorrang_vor_virtueller(monkeypatch):
 
 # ---------------------------- Virtuelle Kapitalbasis: Review-Befunde 28.09.
 
-def test_virtuelle_kapitalbasis_ungueltige_werte_verhindern_forensik(monkeypatch):
-    """Review-Befund 1: Infinity/1e309, numerische Strings, 0/negativ, bool
-    dürfen NIEMALS als Basis gelten — sonst lügt die Forensik 0 % Risiko
-    (inf-Basis) oder stürzt beim Log-Format ab (String). Ungültig = keine
-    Basis = unvollständige Forensik = keine positive Bewertung."""
+def test_legacy_virtual_values_are_ignored_before_central_model_fallback(monkeypatch):
+    """A malformed legacy assumption never supplies the numeric denominator.
+
+    The new global resolver can independently choose an explicit model; that
+    permits numerical model outputs, never proven account forensics or green.
+    """
     quelle = _quelle("pelik", "http://pelican:8090")
-    # '10000' ist seit 04.10. KEIN ungültiger Fall mehr: ingest parst
-    # Quellen-Strings robust (_zahl, realer Fall '9,10' beim EQ-DD) — ein
-    # parsebarer String ist eine gültige Basis; die übrigen Fälle (inf,
-    # 0/negativ, bool, None, unparsebar) bleiben verboten.
+    # These values never enter arithmetic. The new estimator independently
+    # falls back to its labelled model instead of trusting source defaults.
     for wert in (float("inf"), float("-inf"), "abc", "", 0, -5.0, True, None):
         metrics = {"metrics": {"EquityDrawdown": 8.0, "Average3MonthProfit": 5.5,
                                "InitialDepositVirtual": wert}}
@@ -538,11 +536,13 @@ def test_virtuelle_kapitalbasis_ungueltige_werte_verhindern_forensik(monkeypatch
         result = pipe.analyze_candidate(None, kandidat, logs.append)
         assert not result.forensik_vorhanden, f"mit {wert!r} dürfte es keine Forensik geben"
         assert "Kapitalbasis virtuell" not in (result.urteil or ""), wert
-        assert result.ampel == "⚪", wert
+        assert result.ampel == "🟡", wert
         assert result.kapitalbasis_verwendet_quelle != pipeline.KAPITALBASIS_QUELLE_VIRTUELL, wert
-        assert "Forensik unvollständig" in result.fehler, wert
+        assert result.kapitalbasis_verwendet_quelle == "modell_fallback_10000", wert
+        assert result.kapitalbasis_verwendet_usd == 10000, wert
+        assert result.modellpruefung_vorhanden and not result.fehler, wert
 
-    # String-Basis wird jetzt robust geparsed (04.10.): '10000' gilt.
+    # Even a parseable old fixed-value string is not the selected evidence.
     metrics = {"metrics": {"EquityDrawdown": 8.0, "Average3MonthProfit": 5.5,
                            "InitialDepositVirtual": "10.000,00"}}
     _verdrahte(monkeypatch, {
@@ -552,7 +552,7 @@ def test_virtuelle_kapitalbasis_ungueltige_werte_verhindern_forensik(monkeypatch
          "subscribers": 1, "weeks": 40}])[0]
     pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
     result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
-    assert result.forensik_vorhanden
+    assert result.modellpruefung_vorhanden and not result.forensik_vorhanden
     assert result.kapitalbasis_verwendet_usd == 10_000.0
 
 
@@ -572,26 +572,29 @@ def test_virtuelle_kapitalbasis_reicht_bis_ki_prompt_und_reload(monkeypatch):
          "subscribers": 996, "weeks": 96}])[0]
     pipe = pipeline.ScanPipeline(settings={"listen_modus": "quellen"})
     result = pipe.analyze_candidate(None, kandidat, lambda *_: None)
-    assert result.kapitalbasis_verwendet_quelle == pipeline.KAPITALBASIS_QUELLE_VIRTUELL
+    assert result.kapitalbasis_verwendet_quelle == "modell_fallback_10000"
     assert result.kapitalbasis_verwendet_usd == 10000.0
 
     # Strukturierter Befund im Forensik-Prompt-JSON (KI sieht die Annahme)
     forensik = _json.loads(pipeline._forensik_json(result))
-    assert forensik["kapitalbasis_verwendet"] == {
-        "usd": 10000.0, "quelle": "virtuelle_annahme"}
+    assert forensik["kapitalbasis_verwendet"]["usd"] == 10000.0
+    assert forensik["kapitalbasis_verwendet"]["quelle"] == "modell_fallback_10000"
+    assert forensik["kapitalbasis_verwendet"]["modell"] is True
+    assert forensik["kapitalbasis_verwendet"]["details"] == result.kapitalbasis_befund
 
     # llm_runner/run_portfolio rufen vor dem Prompt refresh_report_verdict —
     # das Urteil wird NEU gebaut, die Kennzeichnung muss überleben
     pipeline.refresh_report_verdict(result, {})
-    assert "Kapitalbasis virtuell" in result.urteil
+    assert "Kapitalbasis als Modell" in result.urteil
     kandidat_json = _json.loads(pipeline._kandidat_json(result))
-    assert "Kapitalbasis virtuell" in kandidat_json["urteil"]
+    assert "Kapitalbasis als Modell" in kandidat_json["urteil"]
 
     # DB-Reload: Felder aus dem Forensik-Snapshot, Kennzeichnung im Urteil
     neu = [r for r in pipeline.results_from_db() if r.id == 2014074][0]
-    assert neu.kapitalbasis_verwendet_quelle == pipeline.KAPITALBASIS_QUELLE_VIRTUELL
+    assert neu.kapitalbasis_verwendet_quelle == "modell_fallback_10000"
     assert neu.kapitalbasis_verwendet_usd == 10000.0
-    assert "Kapitalbasis virtuell" in neu.urteil
+    assert "Kapitalbasis als Modell" in neu.urteil
+    assert neu.kapitalbasis_befund == result.kapitalbasis_befund
 
 
 def test_berichtsbasis_unterscheidet_virtuelle_von_belegter_kapitalbasis():
@@ -646,8 +649,10 @@ def test_csv_einzahlung_schlaegt_virtuelle_annahme(monkeypatch):
     # missdeutet). Der Annahme-Vermerk im URTEIL bleibt trotzdem weg.
     import json as _json
     forensik = _json.loads(pipeline._forensik_json(result))
-    assert forensik["kapitalbasis_verwendet"] == {
-        "usd": 1000.0, "quelle": "csv_einzahlungen"}
+    assert forensik["kapitalbasis_verwendet"]["usd"] == 1000.0
+    assert forensik["kapitalbasis_verwendet"]["quelle"] == "csv_einzahlungen"
+    assert forensik["kapitalbasis_verwendet"]["modell"] is False
+    assert forensik["kapitalbasis_verwendet"]["details"]["gueltig"] is True
     assert forensik["forensik_vollstaendig"] is True
 
 

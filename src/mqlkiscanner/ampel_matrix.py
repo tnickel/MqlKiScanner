@@ -55,6 +55,12 @@ def _num(wert: float | None, nachkommastellen: int = 2) -> str:
     return f"{wert:.{nachkommastellen}f}".replace(".", ",")
 
 
+def _modell(r):
+    from .kapitalbasis import ist_modellquelle
+    return (ist_modellquelle(getattr(r, "kapitalbasis_befund", {}))
+            or ist_modellquelle(getattr(r, "kapitalbasis_verwendet_quelle", "")))
+
+
 KRITERIEN: list[Kriterium] = [
     Kriterium(
         "dd_schranke", "Drawdown-Schranke",
@@ -166,8 +172,8 @@ def _dd_zelle(r, settings) -> Zelle:
     # Geschlossene Trades und Equity inklusive Floating getrennt benennen.
     werte = {"Drawdown (Plattform)": r.dd_equity_pct,
              "Balance-DD (Plattform)": r.dd_balance_pct,
-             "Trading-DD (geschlossen)": r.trading_dd_pct,
-             "Max-DD (Kurse)": getattr(r, "equity_dd_rekonstruiert_pct", None),
+             "Trading-DD (Modell)" if _modell(r) else "Trading-DD (geschlossen)": r.trading_dd_pct,
+             "Max-DD (H1-Modell)" if _modell(r) else "Max-DD (Kurse)": getattr(r, "equity_dd_rekonstruiert_pct", None),
              "Closing-DD (Monitor)": getattr(r, "monitor_trade_eq_dd_pct", None)}
     vorhanden = {k: v for k, v in werte.items() if v is not None}
     if not vorhanden:
@@ -186,6 +192,10 @@ def _dd_zelle(r, settings) -> Zelle:
         return Zelle(ROT, f"{_num(relevant)} % > {limit:g} %",
                      f"{herleitung} liegt ÜBER der Schranke von {limit:g} % "
                      f"(harte Ablehnung).{vorbehalt}")
+    if _modell(r):
+        return Zelle(GELB, "Modell unter Schranke",
+                     f"{herleitung} ≤ {limit:g} % unter der geschätzten Kapitalbasis. "
+                     "Kein Nachweis, dass der reale Konto-DD die Schranke einhält." + vorbehalt)
     puffer = limit - relevant
     if puffer < 5:
         return Zelle(GELB, f"Puffer nur {_num(puffer)} Punkte",
@@ -265,6 +275,10 @@ def _ertrag_zelle(r, settings) -> Zelle:
                          "eigener Kapitalbasis — Selbstauskunft, nicht "
                          "maßgeblich.")
     if wert >= minimum:
+        if _modell(r):
+            return Zelle(GELB, f"Modell {_num(wert, 1)} %/Monat",
+                         "Geometrische Szenariorendite auf geschätztem Kapital; "
+                         "kein belegter Kontoertrag und keine Grünfreigabe." + basis_hinweis)
         return Zelle(GRUEN, f"{_num(wert, 1)} %/Monat",
                      f"{_num(wert, 1)} %/Monat ≥ Mindestschwelle "
                      f"{minimum:g} %/Monat (eigene geometrische Rendite)."
@@ -286,6 +300,9 @@ def _score_zelle(r) -> Zelle:
                      "Risiko-Score nicht berechnet — vollständige Forensik-"
                      "Batterie fehlt (kein Score vor bestandener Batterie).")
     if r.score < 5.0:
+        if _modell(r):
+            return Zelle(GELB, f"Modellscore {_num(r.score, 1)}",
+                         "Numerischer Risiko-Score mit geschätzter Kapitalbasis; keine belegte Kontobewertung.")
         return Zelle(GRUEN, f"Score {_num(r.score, 1)}",
                      f"Engine-Risiko-Score {_num(r.score, 1)} von 10 — "
                      "unter der Kandidaten-Schwelle 5.")
@@ -310,8 +327,11 @@ def _schock_zelle(r) -> Zelle:
     zeit = (f"am {r.shock_pct_peak_time}" if r.shock_pct_peak_time
             else "am Expositionspeak")
     kontext = (f"50-USD-Schock über Peak-Netto-Lots ≈ {_num(r.shock_usd, 0)} USD "
-               f"= {_num(wert, 1)} % des Kontos {zeit}")
+               f"= {_num(wert, 1)} % des {'Modellkontos' if _modell(r) else 'Kontos'} {zeit}")
     if wert < 30:
+        if _modell(r):
+            return Zelle(GELB, f"Modell {_num(wert, 1)} %",
+                         kontext + " — geschätztes Kapital; Stress-Szenario, keine reale Kontomessung.")
         return Zelle(GRUEN, f"{_num(wert, 1)} %",
                      f"{kontext} — beherrschbar. Stress-Szenario, kein "
                      "gemessener Verlust.")
@@ -378,6 +398,11 @@ def _retdd_zelle(r, settings: dict | None = None) -> Zelle:
     r.refresh_efficiency()
     min_calmar = config.min_calmar_jahr(settings)
     wert = getattr(r, "retdd_jahr", None)
+    if wert is not None and _modell(r):
+        return Zelle(GELB, f"Modell {wert:g} / Jahr",
+                     f"Szenario-CAGR {_num(r.cagr_jahr_pct)} % ÷ H1-Modell-DD "
+                     f"{_num(r.max_drawdown_equity_pct)} % = {wert:g}. "
+                     "Die Kapitalbasis ist geschätzt; keine belegte Kontoeffizienz und kein Grün-Gate.")
     if wert is None:
         # Vorbehaltlicher Calmar (Nutzer 05.10. „besser als nix"): die Kurs-
         # Messung existiert, hat die Verlässlichkeitsprüfung aber nicht

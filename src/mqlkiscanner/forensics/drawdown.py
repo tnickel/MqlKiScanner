@@ -119,7 +119,9 @@ def _max_drawdown(points: list[tuple], start: float) -> dict:
 
 
 def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
-        kapitalbasis_quelle: str | None = None) -> dict:
+        kapitalbasis_quelle: str | None = None, *, kapital_kontext: dict | None = None,
+        quellen_stats: dict | None = None, kapitalentscheidung: dict | None = None,
+        broker: str | None = None) -> dict:
     trades = parsed.trades
     if not trades:
         return {"test": "drawdown"}
@@ -129,22 +131,15 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
     # Bereits vor Handelsbeginn entnommenes Kapital stand nie fuer Trades
     # bereit. Nur spaetere Flows bleiben aus der virtuellen Kurve heraus.
     deposits_start = math.fsum(b.amount for b in balances if b.time <= first_open)
-    # Externe Kapitalbasis (Signalseite "Initial Deposit"): greift NUR, wenn
-    # der Export selbst keine Einzahlung vor dem ersten Trade enthaelt
-    # (MT4-Orderbuch beginnt mit der Signalhistorie). Die Webseite belegt
-    # das Startkapital des Signal-Kontos unabhaengig davon.
-    # Dieselbe Bedingung wie in forensics/exposure.py (F1, Review T1/2
-    # 29.09.): frueher reichte hier netto <= 0 — Einzahlung +100/Auszahlung
-    # -200 vor dem ersten Trade injizierte NUR im Drawdown, Exposure rechnete
-    # mit -100: derselbe Report mit zwei verschiedenen Startkapitalen.
-    hat_einzahlung_vor_start = any(
-        b.amount > 0 and b.time <= first_open for b in balances)
-    injected = 0.0
-    startkapital_quelle = "csv_einzahlungen"
-    if (not hat_einzahlung_vor_start and kapitalbasis_usd is not None
-            and kapitalbasis_usd > 0):
-        injected = float(kapitalbasis_usd)
-        startkapital_quelle = kapitalbasis_quelle or "extern"
+    from .. import kapitalbasis
+    decision = kapitalentscheidung if kapitalentscheidung is not None else kapitalbasis.aufloesen(
+        parsed, stats=quellen_stats, kapitalbasis_usd=kapitalbasis_usd,
+        kapitalbasis_quelle=kapitalbasis_quelle, broker=broker, kontext=kapital_kontext)
+    injected = float(decision["injektion_usd"])
+    startkapital_quelle = decision["quelle"]
+    if not math.isfinite(injected) or not math.isclose(
+            deposits_start + injected, float(decision["kapital"]), rel_tol=1e-10, abs_tol=1e-8):
+        raise ValueError("Kapitalentscheidung passt nicht zu den Vorstartbuchungen des Exports.")
     kosten_vor_start = math.fsum(c.amount for c in getattr(parsed, "costs", []) if c.time < first_open)
     startkapital = deposits_start + injected + kosten_vor_start
     deposits_total = sum(b.amount for b in balances if b.amount > 0)
@@ -180,6 +175,8 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
         "startkapital": round(startkapital, 2),
         "startkapital_raw": startkapital,
         "startkapital_quelle": startkapital_quelle,
+        "kapitalbasis_details": decision,
+        "kapitalbasis_modell": bool(decision.get("modell")),
         "kontokosten_vor_start_usd": kosten_vor_start,
         "kontokosten_usd": math.fsum(c.amount for c in getattr(parsed, "costs", [])),
         "deposits_total": round(deposits_total, 2),

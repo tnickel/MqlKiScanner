@@ -170,9 +170,27 @@ def result_snapshot_token(result) -> str:
 
 def result_pdf_spec(result, kind: str) -> tuple[PdfReport, str]:
     """Build immutable PDF inputs for one exact result snapshot."""
+    body = getattr(result, kind, "")
+    details = getattr(result, "kapitalbasis_befund", {}) or {}
+    source = getattr(result, "kapitalbasis_verwendet_quelle", "")
+    from .kapitalbasis import ist_modellquelle, beschreibung
+    model_capital = ist_modellquelle(details) or ist_modellquelle(source)
+    if (body or "").strip() and (details or model_capital):
+        used = getattr(result, "kapitalbasis_verwendet_usd", None)
+        amount = "nicht angegeben" if used is None else f"{used:,.2f} USD"
+        body += ("\n\n## Kapitalbasis — Codebefund\n\n"
+                 f"{beschreibung(details or source)} ({source or details.get('quelle') or 'unbekannt'}). "
+                 f"Verwendete Forensikbasis: {amount}.\n\n")
+        if model_capital:
+            body += ("**Modellszenario:** Kapitalgröße geschätzt. DD, Rendite, Schockprozente und RetDD "
+                     "sind keine belegten Kontowerte und erlauben keine automatische Grünfreigabe.\n\n")
+        if details.get("unsicherheit"):
+            body += "Unsicherheit: " + str(details["unsicherheit"]) + "\n\n"
+        if details.get("annahmen"):
+            body += "Annahmen: " + "; ".join(str(x) for x in details["annahmen"]) + "\n"
     report = PdfReport(
         kind=kind,
-        body=getattr(result, kind, ""),
+        body=body,
         signal_id=getattr(result, "id", None),
         signal_name=getattr(result, "name", ""),
         created_at=getattr(result, f"{kind}_at", "") or None,
@@ -258,6 +276,11 @@ def _anhang_markdown(ergebnisse, portfolio_text: str, *, empfehlungen=None) -> s
         return kopf + ["", str(text)]
 
     for nummer, r in enumerate(empfehlungen, 1):
+        from .kapitalbasis import ist_modellquelle, beschreibung
+        capital_details = getattr(r, "kapitalbasis_befund", {}) or {}
+        capital_source = getattr(r, "kapitalbasis_verwendet_quelle", "")
+        capital_model = ist_modellquelle(capital_details) or ist_modellquelle(capital_source)
+        capital_description = beschreibung(capital_details or capital_source)
         refresh = getattr(r, "refresh_efficiency", None)
         if callable(refresh):
             refresh()
@@ -278,6 +301,11 @@ def _anhang_markdown(ergebnisse, portfolio_text: str, *, empfehlungen=None) -> s
             _true_text = f"{_true:.2f}".replace(".", ",")
         if _monat is not None:
             _true_text += f" / Monat {_monat:.2f}".replace(".", ",")
+        if capital_model and _true is not None:
+            _true_text += " (Modellkapital; keine belegte Kontoeffizienz)"
+        equity_label = "Equity-DD (H1-Modellszenario)" if capital_model else "Max-Drawdown (Equity, gemessen)"
+        return_label = "Modellrendite %/Monat (geometrisch)" if capital_model else "Gewinn %/Monat (geometrisch)"
+        calmar_label = "Modell-RetDD (Jahres-CAGR / H1-DD)" if capital_model else "TrueRetDD (Jahres-Calmar = CAGR / Max-Equity-DD inkl. Floating)"
         teile += [
             "\\pagebreak",
             f"# Strategie {nummer}: {r.name} (#{r.id})",
@@ -287,17 +315,31 @@ def _anhang_markdown(ergebnisse, portfolio_text: str, *, empfehlungen=None) -> s
             f"| Quelle / Plattform | {getattr(r, 'quelle', 'mql5')} / {r.platform} |",
             f"| Engine-Ampel | {r.ampel} |",
             f"| Risiko-Score (Engine, 1-10) | {_f(r.score, 1)} |",
-            f"| Gewinn %/Monat (geometrisch) | {_f(getattr(r, 'ertrag_monat_geom_pct', None), 2, ' %')} |",
-            f"| Max-Drawdown (Equity, gemessen) | {_f(getattr(r, 'max_drawdown_equity_pct', None), 2, ' %')} |",
-            f"| TrueRetDD (Jahres-Calmar = CAGR / Max-Equity-DD inkl. Floating) | {_true_text} |",
+            f"| {return_label} | {_f(getattr(r, 'ertrag_monat_geom_pct', None), 2, ' %')} |",
+            f"| {equity_label} | {_f(getattr(r, 'max_drawdown_equity_pct', None), 2, ' %')} |",
+            f"| {calmar_label} | {_true_text} |",
             f"| Ertrag/Monat (linear, Forensik-Basis) | {_f(getattr(r, 'ertrag_monat_pct_forensik', None), 2, ' %')} |",
             f"| Ertrag/Monat (Plattform meldet) | {_f(r.ertrag_monat_pct, 2, ' %')} |",
             f"| Drawdown-Maximum (Schranke) | {_f(max(filter(None, [r.dd_equity_pct, r.dd_balance_pct, r.trading_dd_pct, getattr(r, 'equity_dd_rekonstruiert_pct', None), getattr(r, 'monitor_trade_eq_dd_pct', None)]), default=0.0), 2, ' %')} |",
             f"| Abonnenten / Wochen | {r.abonnenten if r.abonnenten is not None else '—'} / {r.wochen if r.wochen is not None else '—'} |",
-            f"| Kapitalbasis | {getattr(r, 'kapitalbasis_verwendet_quelle', '') or '—'}"
+            f"| Kapitalbasis | {capital_description}"
             f" ({_f(getattr(r, 'kapitalbasis_verwendet_usd', None), 0, ' USD')}) |",
             f"| Stop-Befund | {r.stop_nachweis or '—'} |",
         ]
+        if capital_details:
+            uncertainty = str(capital_details.get("unsicherheit") or "—").replace("|", "\\|").replace("\n", " ")
+            assumptions = "; ".join(str(value) for value in capital_details.get("annahmen") or [])
+            proof = capital_details.get("beleg") or {}
+            teile.extend((
+                f"| Kapitalunsicherheit | {uncertainty} |",
+                "| Kapitalnachweis | " + str(proof.get("usd_basis") or "siehe Forensik-Befund")
+                + f"; erste Exportposition {proof.get('erster_trade') or 'unbekannt'} |",
+            ))
+            if assumptions:
+                teile.append("| Kapitalannahmen | " + assumptions.replace("|", "\\|").replace("\n", " ") + " |")
+        if capital_model:
+            teile += ["", "**Modellszenario:** Die Kapitalgröße ist geschätzt. DD, Rendite und RetDD "
+                      "sind keine gemessenen Kontowerte und erlauben keine automatische Grünfreigabe.", ""]
         # Nutzer-Wunsch 03.10.: Fehlende Kursdaten im Bericht sichtbar
         # machen — der Nutzer will wissen, woran er arbeiten kann.
         ohne_kurse = getattr(r, "equity_rekon_ohne_kurse", None) or []

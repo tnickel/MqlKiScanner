@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from mqlkiscanner import katalog, pipeline  # noqa: E402
+from mqlkiscanner import kapitalbasis, katalog, pipeline  # noqa: E402
 from mqlkiscanner.risiko_rechner import baue_pdf, berechne_csv, berechne_signal  # noqa: E402
 from mqlkiscanner.ui_design import apply_theme, page_header  # noqa: E402
 
@@ -35,7 +35,9 @@ with st.expander('Wie wird gemessen?', expanded=False, icon=':material/science:'
         '(floating) aller damals offenen Positionen, bewertet zum H1-Bar-Schluss. '
         'Der maximale Rückfall dieser Kurve ist der gesuchte Max-DD. GMT-Versatz '
         'je Symbol per Preisabgleich; Kursdaten kommen über das gemeinsame '
-        'Lauf-Lock aus den konfigurierten MetaTrader-Terminals (Cache zuerst).')
+        'Lauf-Lock aus den konfigurierten MetaTrader-Terminals (Cache zuerst). '
+        'Bei geschätztem Startkapital sind Drawdown und Renditen Modellwerte; '
+        'Methode und Unsicherheit stehen im Ergebnis.')
     st.markdown(
         '**Was der Closed-DD übersieht.** Eine geschlossene Kurve kann 2 % zeigen, '
         'während offene Positionen zwischenzeitlich 30 % des Kontos unter Wasser '
@@ -59,7 +61,7 @@ with tab_import:
         name = st.text_input('Bezeichnung (frei, für den Bericht)', value='',
                              key='mrr_name')
         start_manuell = st.number_input(
-            'Startkapital USD — 0 = automatisch aus den Einzahlungs-Zeilen der CSV',
+            'Startkapital USD — 0 = automatisch: Beleg, Lotschätzung, grobe Schätzung, 10k-Fallback',
             min_value=0.0, value=0.0, step=100.0, key='mrr_startkap')
     broker = st.text_input('Broker-Server (optional — beeinflusst Kontraktgrößen)',
                            value='', key='mrr_broker')
@@ -82,7 +84,9 @@ with tab_import:
 
                     ergebnis = berechne_csv(
                         pfad,
-                        startkapital_manuell=start_manuell or None,
+                        # Only this form uses 0 as the explicit "automatic"
+                        # sentinel. The calculation API uses None instead.
+                        startkapital_manuell=None if start_manuell == 0 else start_manuell,
                         name=name or datei.name,
                         broker=broker or None,
                         progress=p)
@@ -144,6 +148,16 @@ ergebnis = st.session_state.get(_ZIEL)
 if ergebnis is not None:
     k = ergebnis.get('kennzahlen') or {}
     st.subheader(f"Ergebnis · {ergebnis.get('meta', {}).get('name', '—')}")
+    capital_meta = ergebnis.get('meta') or {}
+    capital_details = capital_meta.get('kapitalbasis_details') or ergebnis.get('kapitalbasis_details')
+    capital_source = capital_details or capital_meta.get('startkapital_quelle')
+    st.caption('Kapitalbasis: ' + kapitalbasis.beschreibung(capital_source))
+    if kapitalbasis.ist_modellquelle(capital_source):
+        st.warning('Virtuelle Modellstudie: Prozent-DD und Renditen beruhen auf geschätztem '
+                   'Startkapital, keine nachgewiesenen Kontokennzahlen.')
+    if capital_details:
+        with st.expander('Kapitalbasis: Herkunft, Unsicherheit und Belege'):
+            st.json(capital_details)
     if ergebnis.get('status') != 'ok':
         st.warning(f"Messung nicht vollständig: {ergebnis.get('grund') or ergebnis.get('status')}",
                    icon=':material/warning:')

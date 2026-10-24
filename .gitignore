@@ -25,6 +25,7 @@ data/stats/
 data/trades/
 data/trade_snapshots/
 data/abonnenten_analyse/
+data/kapitalbasis/
 data/identity_migration/
 data/runs/
 data/reports/

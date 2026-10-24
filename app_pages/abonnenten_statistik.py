@@ -5,11 +5,11 @@ Nutzer-Wunsch 20.10.2026: zentrale Übersicht der Abonnentenzahlen ALLER
 Quellen-Clients mit Zuwächsen (seit letzter Messung / 7 Tage / 30 Tage),
 je Quelle ein Tab plus „Alle“. Vorbild ist das Abonnentenstatistik-Fenster
 des MqlDownloader, inklusive der Sparkline-Minigrafik „Verlauf 30 T“;
-bewusst abweichend: kein manuelles Risiko-Feld (statt dessen die
-offizielle Engine-Ampel als reine Anzeige).
+Die aktuelle Oberfläche zeigt Messwerte und Datenlücken; weitere Beschaffung
+beginnt ausschließlich nach einer ausdrücklichen Schaltflächenaktion.
 
-Die Statistik beobachtet und misst. Ein separater Rechercheauftrag über
-„Strategien bewerten“ beschafft und bewertet Strategien nach eigenem Laufprofil.
+Die Statistik beobachtet und misst. Stufe 1 beschafft Daten und Trades und
+berechnet Zufluss, Profitabilität, Floating-Equity-DD und RetDD.
 Refresh-Modell
 (Nutzer-Entscheidung 20.10.2026): Stufe A „nur neu lesen“ (Kataloge +
 Historien der Clients spiegeln) und Stufe B „frisch messen ohne
@@ -20,7 +20,6 @@ tradelisten=false, katalogMaxAlterH=0 erzwingt die Neumessung trotz
 from __future__ import annotations
 
 import base64
-import json
 import sys
 from pathlib import Path
 
@@ -31,36 +30,25 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from mqlkiscanner import abonnenten_statistik, client_updates, db, quellen, scan_worker
-from mqlkiscanner import downloader_client, downloader_sync, katalog, pipeline
+from mqlkiscanner import downloader_client, katalog, pipeline
 from mqlkiscanner import abonnenten_analyse_ui
-from mqlkiscanner.ui_design import apply_theme, info_button, page_header
+from mqlkiscanner.ui_design import apply_theme, page_header
 
 apply_theme()
 page_header('ABONNENTENSTATISTIK', 'Wohin laufen die Nutzer?',
             'Aktuelle Abonnentenzahlen aller Client-Quellen mit Zuwachs '
             'seit letzter Messung, über 7 Tage und über 30 Tage — sortiert '
-            'nach dem größten 30-Tage-Zuwachs. „Strategien bewerten“ startet '
-            'eine gesonderte Recherche mit Trades, Equity-DD, RetDD und KI. '
-            'Zuwachs allein ist kein Qualitätsnachweis; die Workflow-Ampel '
-            'bleibt vom Rechercheergebnis getrennt.')
+            'nach dem größten 30-Tage-Zuwachs. Stufe 1 sammelt Daten und '
+            'Trades für die gemeinsame Tabelle aus Zufluss, Nettogewinn, '
+            'Rendite, Floating-Equity-DD und RetDD. Ein getrennt gekennzeichnetes '
+            'Startkapital-Modell lässt sich aus vorhandenen Daten berechnen; '
+            'echte Messungen und Modellwerte bleiben unterscheidbar. '
+            'Fehlende Werte und offene Datenpunkte bleiben sichtbar.')
 with st.container(horizontal=True, vertical_alignment='center'):
     st.caption('Datenbasis: gespeicherte Abonnenten-Historien. Neue Messpunkte '
                'stammen aus den Client-Historien; bloßes Neulesen bestätigt '
                'keine neue Messung. '
                'Mindestens ein Abonnent ist Anzeige-Standard.')
-    info_button('abonnentenstatistik', key='abonnenten_statistik_info')
-
-# ── Erster Start: einmalig spiegeln (Katalog + Historien) ─────────────────
-# Session-Flag statt reinem Datenstand-Check: Ohne aktive Quellen wäre der
-# Sync ein No-Op und ein nacktes st.rerun() würde endlos erneut auslösen
-# (AppTest-Falle „Rerun-Kette"; im Browser zusätzlich bei Client-Ausfall).
-if (not db.katalog_sync_status() and not db.subscriber_history_alle()
-        and not st.session_state.get('_abonnenten_erststart_gelaufen')):
-    st.session_state['_abonnenten_erststart_gelaufen'] = True
-    with st.spinner('Abonnenten-Kataloge und Historien der Clients laden '
-                    '(erster Start, einmalig) …'):
-        abonnenten_statistik.sync()
-    st.rerun()
 
 # ── Refresh: Dialog (Stufe A lesen / Stufe B frisch messen) ───────────────
 
@@ -211,7 +199,7 @@ with st.container(horizontal=True, vertical_alignment='center'):
                       'dann NUR Katalog/Abonnenten neu. Tradelisten lädt '
                        'dieser Zählerrefresh nicht.'):
         _refresh_dialog()
-    abonnenten_analyse_ui.render_start_button()
+    abonnenten_analyse_ui.render_daten_start_button()
     stand = db.katalog_sync_status()
     if stand:
         st.caption('Katalog-Stand: '
@@ -221,13 +209,11 @@ with st.container(horizontal=True, vertical_alignment='center'):
                      f"{max((w.get('gelaufen_am') or '')[:16] for w in stand.values())}")
 
 _refresh_fortschritt()
-abonnenten_analyse_ui.render_results()
+abonnenten_analyse_ui.render_daten_results()
 
 # ── Daten ─────────────────────────────────────────────────────────────────
-_doku_liste = db.downloader_reports_liste_alle()
-_berichte_zaehler = db.analyses_zaehler_alle()
-zeilen = abonnenten_statistik.zeilen(dokumente=_doku_liste,
-                                     berichte_zaehler=_berichte_zaehler)
+st.subheader('Gespeicherte Abonnentenverläufe')
+zeilen = abonnenten_statistik.zeilen(dokumente={}, berichte_zaehler={}, ampeln={})
 _abonnenten_stufen = abonnenten_statistik.mit_zuwachs_ampel(zeilen)
 _beobachtet_refs = db.list_beobachtungen()
 for _z in zeilen:
@@ -337,14 +323,9 @@ def _tabellen_daten(tab_zeilen: list[dict], mit_quelle: bool) -> pd.DataFrame:
         'Verlauf 30 T': _sparkline_url(z),
         'Letzte Messung': (z['stand'].strftime('%d.%m. %H:%M')
                            if z['stand'] else None),
-        'Ampel (Risiko)': z['ampel'] or '',
-        'Ber.': ('📄' if z.get('berichte') == 1
-                 else f"📄×{z['berichte']}" if z.get('berichte') else ''),
-        'Doku': (f"📑×{len(z['doku'])}" if z.get('doku') else ''),
         'URL': quellen.oeffnen_url(z['quelle'], z['signal_id'], z['url']),
         '_ref': z['signal_ref'],
         '_ampel': z.get('zuwachs_ampel') or '',
-        '_doku': json.dumps(z.get('doku') or [], ensure_ascii=False),
     } for z in tab_zeilen]
     df = pd.DataFrame(daten)
     if df.empty:
@@ -411,9 +392,8 @@ def _tabelle_rendern(tab_zeilen: list[dict], schluessel: str,
                ':orange[🟠 Verlust] · :red[🔴 starker Verlust > 10 % des '
                'Bestands] · leer = unverändert/kein Vergleichspunkt. '
                'Absolute Δ-Zahlen: :green[grün] = Zuwachs, :red[rot] = '
-               'Verlust. Die Spalte „Ampel (Risiko)“ bleibt die Workflow-'
-               'Bewertung — viele neue Abonnenten machen ein Signal NICHT '
-               'risiko-grün.')
+               'Verlust. Zuwachs allein belegt keine geringe Verlustgefahr; '
+               'die gemessenen Risikokennzahlen stehen in der Datentabelle oben.')
     df = _tabellen_daten(tab_zeilen, mit_quelle)
 
     def _delta_zeilen_stil(zeile):
@@ -500,29 +480,11 @@ def _tabelle_rendern(tab_zeilen: list[dict], schluessel: str,
                  'Punkte übernehmen den Messzeitpunkt des Clients. Frühere '
                  'Scanner-Sync-Punkte bleiben historisch erhalten und '
                  'werden durch Neulesen nicht erneut bestätigt.'),
-        'Ber.': st.column_config.TextColumn(
-            'Ber.', width=52,
-            help='📄 = KI-Analysen vorhanden (Trade-/Risiko-Analyse, '
-                 'Gesamtbericht, Tiefenanalyse; 📄×N = N davon) — geöffnet '
-                 'wird der Bericht über „Alle Signale“/Ergebnisse. '
-                 'Katalog-Signale ohne Scan haben noch keine Analysen.'),
-        'Ampel (Risiko)': st.column_config.TextColumn(
-            'Risiko', width=60,
-            help='Risiko-Bewertung des Scanner-WORKFLOWS (🟢 Kandidat · '
-                 '🟡 Beobachtung · 🔴 Risiko-Flag · ⛔ ausgeschlossen) — hat '
-                 'NICHTS mit Abonnenten zu tun und wird hier nie neu '
-                 'berechnet. Zuwachs ≠ Qualität: Die riskantesten Signale '
-                 'haben oft die meisten Abonnenten.'),
         'URL': st.column_config.LinkColumn('Anbieter', width=74,
                                            display_text='öffnen ↗'),
-        'Doku': st.column_config.TextColumn(
-            'Doku', width=64,
-            help='📑 = gespiegelte Testreport-PDFs (Testreports des '
-                 'MqlDownloader) — Anzahl ×N. Öffnen: Zeile anklicken → '
-                 'Abschnitt „Dokumente“ unter der Tabelle.'),
         # Hilfsspalten verstecken (None = Spalte ausblenden): _ref für die
         # Detail-Zuordnung, _ampel als Stil-Marker für die %-Zelle.
-        '_ref': None, '_ampel': None, '_doku': None,
+        '_ref': None, '_ampel': None,
     }
     if mit_quelle:
         konfig['Quelle'] = st.column_config.TextColumn('Quelle', width=80)
@@ -547,29 +509,6 @@ for _tab_nr, (_tab_key, _tab_zeilen, _tab_mit_quelle) in enumerate(tab_definitio
                        'klicken. Beobachtete Signale bleiben hier sichtbar, '
                        'auch wenn sie auf 0 Abonnenten fallen.')
         else:
-            if _tab_key == 'beobachten':
-                if st.button('📑 Doku für ALLE beobachteten nachladen',
-                             key='abonnenten_doku_batch',
-                             icon=':material/cloud_download:',
-                             help='Fordert je beobachtetem Signal die '
-                                  'Testreport-PDFs beim zugehörigen Client '
-                                  'an (ohne Tradelisten, ohne Trades).'):
-                    gelungen, fehler, neu_pdfs = 0, [], 0
-                    fortschritt = st.progress(0.0, text='Doku laden …')
-                    for _nr, _bz in enumerate(beobachtungs_zeilen, 1):
-                        fortschritt.progress(_nr / len(beobachtungs_zeilen),
-                                             text=f'Doku {_bz["name"][:40]} …')
-                        try:
-                            neu_pdfs += len(downloader_sync.sync_reports(
-                                int(_bz['signal_id']), str(_bz['version']),
-                                quelle=str(_bz['quelle'])))
-                            gelungen += 1
-                        except downloader_client.DownloaderError as exc:
-                            fehler.append(f"{_bz['name'][:30]}: {exc}")
-                    fortschritt.empty()
-                    st.toast(f'Doku-Nachladen: {gelungen} ok, '
-                             f'{neu_pdfs} neue PDF(s), {len(fehler)} Fehler.')
-                    st.rerun()
             _tabelle_rendern(_tab_zeilen, _tab_key, mit_quelle=_tab_mit_quelle)
 
 # ── Auswahl: EINE Zeile → Detail · MEHRERE → Sammel-Beobachten ─────────────
@@ -635,8 +574,7 @@ if _gewaehlt is not None:
             abo = (int(zeile['Abonnenten'])
                    if pd.notna(zeile['Abonnenten']) else '—')
             st.caption(f"Quelle {zeile['Quelle']} · Plattform "
-                       f"{zeile['Plattform']} · {abo} Abonnenten · "
-                       f"Ampel (Risiko): {zeile['Ampel (Risiko)'] or '—'}")
+                       f"{zeile['Plattform']} · {abo} Abonnenten")
         with right:
             # Beobachten-Schalter (Nutzer-Wunsch 20.10.): Widget-Key enthält
             # den Zustand — nach dem Umschalten entsteht ein frisches Widget
@@ -686,74 +624,9 @@ if _gewaehlt is not None:
                              expanded=False):
                 st.dataframe(detail_df, hide_index=True, height=260,
                              key=f'abonnenten_punkte_{signal_ref}')
-        # Doku GEHÖRT zur gewählten Zeile — aus der _doku-JSON-Spalte des
-        # Detail-DataFrames (nicht aus einem globalen Schleifenrest; der
-        # alte z.get-Zugriff las die LETZTE Tabellenzeile, Nutzer-Befund).
-        try:
-            doku = json.loads(zeile['_doku']) if zeile['_doku'] else []
-        except (KeyError, TypeError, ValueError):
-            doku = []
-        with st.expander(f'📑 Dokumente ({len(doku)}) — Testreport-PDFs',
-                         expanded=bool(doku)):
-            for _d in doku:
-                _pdf = _d.get('path') or ''
-                if _pdf and Path(_pdf).exists():
-                    st.pdf(Path(_pdf).read_bytes(), height=420,
-                           key=f"abonnenten_doku_view_{signal_ref}_"
-                               f"{_d.get('version')}_{_d.get('name')}")
-                    st.download_button(
-                        f"⬇ {_d.get('version')}/{_d.get('name')}",
-                        data=Path(_pdf).read_bytes(),
-                        file_name=_d.get('name') or 'report.pdf',
-                        mime='application/pdf',
-                        key=f"abonnenten_doku_{signal_ref}_"
-                            f"{_d.get('version')}_{_d.get('name')}")
-                else:
-                    st.caption(f"⚠ fehlt lokal: {_d.get('name')}")
-            if st.button('📑 Doku von der Quelle nachladen',
-                         key=f'abonnenten_doku_laden_{signal_ref}',
-                         icon=':material/cloud_download:',
-                         help='Fordert die Testreport-PDFs beim Client dieser '
-                              'Quelle an (reiner REST-Download — funktioniert '
-                              'auch OHNE Trades. Die KI-Berichte „Ber.“ '
-                              'brauchen dagegen die Forensik/Trades).'):
-                try:
-                    with st.spinner('Doku von der Quelle laden …'):
-                        neue = downloader_sync.sync_reports(
-                            int(zeile['ID']), str(zeile['Plattform']),
-                            quelle=str(zeile['Quelle']))
-                    if neue:
-                        st.success(f'{len(neue)} neue PDF(s) gespiegelt.')
-                    else:
-                        st.info('Die Quelle hat keine (weiteren) PDFs für '
-                                'dieses Signal.')
-                    st.rerun()
-                except downloader_client.DownloaderError as exc:
-                    st.warning(f'Nachladen fehlgeschlagen — {exc}',
-                               icon=':material/warning:')
         if not punkte:
             st.caption('Keine Messpunkte gespeichert — Zahlen stammen allein '
                        'aus dem Katalog („Aktualisieren“ holt die Historie).')
-        # ── Tiefenanalyse lesen (Nutzer-Befund 20.10.: Batch-Analysen von
-        # Katalog-Signalen ohne Scan waren über list_catalog unsichtbar) ──
-        try:
-            _ta = db.get_latest_analysis(int(zeile['ID']), 'tiefenanalyse',
-                                         quelle=str(zeile['Quelle']))
-        except (db.IdentityError, db.AmbiguousSignalIdentity):
-            _ta = None
-        if _ta and _ta.get("text"):
-            with st.expander('📄 Tiefenanalyse lesen (KI)', expanded=False):
-                st.caption(f"Modell {_ta.get('model') or '?'} · "
-                           f"{_ta.get('created_at') or '?'} · "
-                           f"{(_ta.get('tokens') or 0):,} Tokens".replace(',', '.'))
-                st.markdown(_ta["text"])
-                st.download_button(
-                    '⬇ Tiefenanalyse als Markdown',
-                    data=_ta["text"].encode("utf-8"),
-                    file_name=(f"tiefenanalyse-{zeile['Quelle']}-"
-                               f"{int(zeile['ID'])}.md"),
-                    mime='text/markdown',
-                    key=f'abonnenten_ta_dl_{signal_ref}')
         # ── Trades als CSV (Nutzer-Wunsch 20.10.) ─────────────────────────
         # Dieselbe SHA-geprüfte On-demand-Kette wie „Alle Signale“: Klick
         # lädt den Trade-Export der Quelle (Cache), danach Download-Button.

@@ -58,9 +58,11 @@ def test_fehlender_gmt_ist_keine_format_exception():
 
 
 def test_studien_cache_verwendet_neue_methodikversion():
+    from mqlkiscanner import kapitalbasis
     from mqlkiscanner.analysis_version import FORENSICS_VERSION
     result = pipeline.ScanResult(id=2349227, trades_sha256="a" * 64)
-    assert _cache_key(result).startswith(f"eqdd_studie_v{FORENSICS_VERSION}_2349227_aaaaaaaaaaaa_live_unknown_")
+    assert _cache_key(result).startswith(
+        f"eqdd_studie_kapitalmodell_v{kapitalbasis.VERSION}_v{FORENSICS_VERSION}_2349227_aaaaaaaaaaaa_live_unknown_")
     assert not _cache_key(result).startswith("eqdd_studie_h1_ende_v2_")
 
 

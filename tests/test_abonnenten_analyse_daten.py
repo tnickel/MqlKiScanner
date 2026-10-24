@@ -230,7 +230,12 @@ def test_keine_kurse_ohne_belegte_usd_waehrung(service_env, currency):
     assert not providers
 
 
-def test_virtuelle_10k_basis_bleibt_gesperrt(service_env):
+def test_virtuelle_basis_wird_separat_als_modell_berechnet(service_env, monkeypatch):
+    from mqlkiscanner import abonnenten_modellrechnung
+    monkeypatch.setattr(abonnenten_modellrechnung, "berechne_modell",
+                        lambda entry, capital, **kw: {"startkapital_usd": capital["kapital"],
+                            "trade_sha256": entry["trades_sha256"], "status": "berechnet",
+                            "equity_dd_pct": 8, "retdd_jahr": 2, "grund": "Synthetisches H1-Modell"})
     entry, client, providers, _, _ = service_env
     client.answer["metrics"].pop("InitialDeposit")
     client.answer["metrics"]["InitialDepositVirtual"] = 10_000
@@ -238,8 +243,11 @@ def test_virtuelle_10k_basis_bleibt_gesperrt(service_env):
         result = service.berechne(entry)
     assert not result["eligible"]
     assert result["kapitalbasis_usd"] is None
-    assert "10.000" in result["grund"]
-    assert not providers
+    assert result["modell"]["startkapital_usd"] == 10000
+    assert result["modell"]["equity_dd_pct"] == 8
+    assert result["equity_dd_pct"] is result["retdd_jahr"] is None
+    assert result["kapitalbasis_details"]["quelle"] == "modell_fallback_10000"
+    assert providers[0].starts == providers[0].closes == 1
 
 
 @pytest.mark.parametrize("reason", ["martingale", "ausschlussliste"])
@@ -262,7 +270,8 @@ def test_belegter_ausschluss_bleibt_bei_fehlendem_kapital_erhalten(service_env, 
     assert not result["eligible"] and not result["data_complete"]
     assert result["hard_excluded"] is True
     assert "Martingale" in result["ausschlussgrund"] if reason == "martingale" else "Belegter Ausschluss" in result["ausschlussgrund"]
-    assert "10.000" in result["grund"]
+    assert result["modell"]["startkapital_usd"] == 10000
+    assert result["kapitalbasis_modell"] is True
     assert result["equity_dd_pct"] is None and result["retdd_jahr"] is None
     assert not providers
 

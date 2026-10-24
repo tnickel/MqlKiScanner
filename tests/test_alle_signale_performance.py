@@ -118,12 +118,12 @@ def test_seite_zeigt_gezählte_phasen_und_geschaetzte_restzeit(monkeypatch):
 
 @pytest.mark.parametrize('study_sha,trade_sha,initial,expected_basis', [
     ('same', 'same', None, 10_000.0),
-    ('old', 'new', None, None),
-    ('', 'same', None, None),
-    ('same', '', None, None),
+    ('old', 'new', None, 10_000.0),
+    ('', 'same', None, 10_000.0),
+    ('same', '', None, 10_000.0),
     ('same', 'same', 20_000.0, 20_000.0),
 ])
-def test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades(
+def test_frische_statistikbasis_zentral_statt_historischer_studieninjektion(
         monkeypatch, tmp_path, study_sha, trade_sha, initial, expected_basis):
     from pathlib import Path
     from streamlit.testing.v1 import AppTest
@@ -156,6 +156,9 @@ def test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades(
     at = AppTest.from_file(str(page), default_timeout=30).run()
     assert not at.exception
     assert computed and computed[-1]['kapitalbasis_usd'] == expected_basis
+    assert computed[-1]['kapitalbasis_modell'] is (initial is None)
+    assert computed[-1]['kapitalbasis_quelle'] == (
+        'modell_fallback_10000' if initial is None else 'signalseite_initial_deposit')
     geom = at.dataframe[0].value.iloc[0]['Geom. %/M']
     if expected_basis is None:
         assert geom != geom  # numeric empty cell / NaN

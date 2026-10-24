@@ -21,6 +21,7 @@ from pathlib import Path
 from . import config, kursdaten, parser
 from .equity_studie import studie
 from .forensics import drawdown
+from . import kapitalbasis
 
 JAHR_TAGE = 365.2425
 MONAT_TAGE = JAHR_TAGE / 12.0
@@ -72,7 +73,9 @@ def closed_dd(parsed, startkapital: float) -> float | None:
     startkapital kommt bereits vom Kapitalbasis-Löser (drawdown.run) und
     enthält die Kontobewegungen BIS zum ersten Trade-Open — hier laufen nur
     noch die SPÄTEREN Kontoflüsse als Ereignisse durch die Kurve (sonst
-    wären Einzahlungen doppelt gezählt)."""
+    wären Einzahlungen doppelt gezählt). Separate Kosten VOR dem ersten
+    Open stecken bereits im Startsaldo; ab dem Open sind sie Ergebnis,
+    niemals zu neutralisierende Kapitalflüsse."""
     if startkapital is None or startkapital <= 0 or not parsed.trades:
         return None
     erster_open = min(t.open_time for t in parsed.trades)
@@ -81,8 +84,8 @@ def closed_dd(parsed, startkapital: float) -> float | None:
         if b.time > erster_open:
             events.append((b.time, float(b.amount), "flow"))
     for c in (getattr(parsed, "costs", None) or []):
-        if c.time > erster_open:
-            events.append((c.time, float(c.amount), "flow"))
+        if c.time >= erster_open:
+            events.append((c.time, float(c.amount), "cost"))
     events.sort(key=lambda e: e[0])
     equity = peak = float(startkapital)
     dd = 0.0
@@ -106,6 +109,8 @@ def berechne_csv(pfad, *, startkapital_manuell: float | None = None,
                  progress=None) -> dict:
     """Max-Risiko für eine Trade-CSV (MT5-Positions- oder MT4-Orderbuch-
     Export). Beträge müssen USD sein (Forensik-Basis).
+    startkapital_manuell=None wählt die automatische Kapitalauflösung;
+    eine explizite manuelle Eingabe muss positiv und endlich sein.
 
     Wirft RuntimeError mit klarem Text (Datei unlesbar, keine Kapitalbasis,
     Kurs-Terminal nicht verfügbar bzw. Lauf bereits belegt). Die gemeinsame
@@ -133,19 +138,18 @@ def _berechne_exklusiv(pfad, startkapital_manuell, name, broker, p) -> dict:
     if not parsed.trades:
         raise RuntimeError("Die Datei enthält keine Trade-Zeilen.")
     p(0.08, "Kapitalbasis ermitteln …")
-    dd = drawdown.run(
-        parsed,
-        kapitalbasis_usd=float(startkapital_manuell) if startkapital_manuell else None,
-        kapitalbasis_quelle="manuell_eingabe" if startkapital_manuell else None,
-    )
+    entscheid = kapitalbasis.aufloesen(parsed,
+        kapitalbasis_usd=startkapital_manuell,
+        kapitalbasis_quelle="manuell_eingabe" if startkapital_manuell is not None else None,
+        broker=broker or None, kontext={"quelle": "import", "trades_path": str(pfad),
+            "trades_sha256": sha256(pfad.read_bytes()).hexdigest()})
+    dd = drawdown.run(parsed, kapitalentscheidung=entscheid)
     startkapital = float(dd.get("startkapital") or 0.0)
-    if startkapital <= 0:
+    if not entscheid.get("gueltig") or startkapital <= 0:
         raise RuntimeError(
-            "Keine Kapitalbasis belegt: Die CSV enthält keine Einzahlungs-/"
-            "Kontobewegungs-Zeilen. Bitte das Startkapital im Formular manuell "
-            "eingeben (Forensik-Regel: kein 10.000-USD-Modell).")
+            "Kapitalbasis nicht verwendbar: " + str(entscheid.get("grund") or "kein positives Startkapital"))
     quelle = dd.get("startkapital_quelle") or (
-        "manuell_eingabe" if startkapital_manuell else "unbekannt")
+        "manuell_eingabe" if startkapital_manuell is not None else "unbekannt")
     p(0.10, "Kurs-Terminal verbinden (kann einige Sekunden dauern) …")
     anbieter = kursdaten.KursDaten(config.load_settings())
     try:
@@ -164,7 +168,15 @@ def _berechne_exklusiv(pfad, startkapital_manuell, name, broker, p) -> dict:
         "datei_sha256": sha256(pfad.read_bytes()).hexdigest(),
         "startkapital_quelle": quelle,
         "broker": broker or None,
+        "kapitalbasis_details": dd.get("kapitalbasis_details") or entscheid,
+        "kapitalbasis_modell": kapitalbasis.ist_modellquelle(entscheid),
     }
+    daten["kapitalbasis_details"] = daten["meta"]["kapitalbasis_details"]
+    daten["kapitalbasis_modell"] = daten["meta"]["kapitalbasis_modell"]
+    if daten["kapitalbasis_modell"]:
+        daten["methodik"] = ("Modellkurve mit geschätztem Startkapital und vorhandenen Kapitalflüssen: "
+                             "realisiertes Netto + gelieferte spätere Ein-/Auszahlungen + Floating "
+                             "an H1-Bar-Schlüssen; keine belegte Kontokurve")
     daten["statistik"] = statistik(parsed)
     daten["closed_dd_pct"] = closed_dd(parsed, startkapital)
     return daten
@@ -382,13 +394,20 @@ def baue_pdf(daten: dict, ziel: Path | None = None) -> tuple[Path, int]:
         ["Trade-Datei", Path(meta.get("trades_pfad") or "—").name],
         ["Datei-SHA256", (meta.get("datei_sha256") or "—")[:32] + " …"],
         ["Erstellt", heute.strftime("%d.%m.%Y %H:%M")],
-        ["Messstatus", f"{daten.get('status')} · "
+        ["Kurs-/Zeitbasis", f"{daten.get('status')} · "
                        + ("belastbar" if k.get("verlaesslich") else "mit Vorbehalten (Abdeckung/Zeitbasis)")],
         ["Startkapital", f"{_de(k.get('startkapital'), 2, 1, ' USD')} "
-                         f"(Quelle: {meta.get('startkapital_quelle') or '—'})"],
+                         f"({kapitalbasis.beschreibung(meta.get('kapitalbasis_details') or meta.get('startkapital_quelle'))})"],
         ["Trades / Symbole", f"{st.get('n_trades', k.get('trades_total'))} / "
                              f"{len(st.get('symbole') or daten.get('symbole_mit_kursen') or [])}"],
     ]
+    capital_details = meta.get("kapitalbasis_details") or daten.get("kapitalbasis_details") or {}
+    if kapitalbasis.ist_modellquelle(capital_details or meta.get("startkapital_quelle")):
+        deck.append(["Kapitalmodell", "Virtuelle Modellstudie: Prozent-DD und Renditen beruhen auf "
+                     "geschätztem Startkapital; keine nachgewiesenen Kontokennzahlen."])
+    if capital_details:
+        deck.append(["Unsicherheit", str(capital_details.get("unsicherheit") or "nicht angegeben")])
+        deck.append(["Kapitalbeleg", str(capital_details.get("beleg") or "nicht angegeben")])
     story.append(tabelle([[a, Paragraph(esc(b), text)] for a, b in deck], [55 * mm, 115 * mm]))
     story.append(PageBreak())
 
@@ -477,15 +496,18 @@ def baue_pdf(daten: dict, ziel: Path | None = None) -> tuple[Path, int]:
     # 5. Methodik + Disclaimer
     P("Methodik, Grenzen, Disclaimer", h2)
     P("<b>Messung:</b> Für jede Stunde der Export-Historie wird eine virtuelle Trading-Equity "
-      "nachgebaut: Startkapital + realisierte Netto-Ergebnisse (geschlossene Trades) + offener "
+      "nachgebaut: Startkapital + realisierte Netto-Ergebnisse (geschlossene Trades) "
+      "+ gelieferte spätere Ein-/Auszahlungen + offener "
       "Betrag (floating) aller damals offenen Exportpositionen, bewertet zum echten H1-Bar-Schluss "
       "am Bar-Ende je Symbol. Der maximale Rückfall dieser Kurve ist der berichtete Max-DD — im "
       "Gegensatz zum Closed-DD schließt er Verluste ein, die Positionen zwischendurch hatten. "
       "GMT-Versatz je Symbol durch Preisabgleich (Open/Close in der High-Low-Spanne der "
-      "getroffenen Bar). Kapitalbasis: Einzahlungs-Zeilen der CSV oder manuelle Eingabe.")
+      "getroffenen Bar). Kapitalbasis: belegte Einzahlungen oder explizite Basis, sonst gemeinsame "
+      "Lotschätzung, grobe Lotschätzung oder gekennzeichneter 10.000-USD-Fallback. "
+      "Bekannte spätere Ein-/Auszahlungen bleiben in der Kontokurve erhalten.")
     P("<b>Grenzen:</b> H1-Schlusskurse — Verluste INNERHALB einer Stunde (Intrabar-Tiefs) bleiben "
       "unbekannt, der echte DD kann höher sein. Aktuell offene Positionen fehlen im Export. "
-      "Spätere Ein-/Auszahlungen fehlen in der virtuellen Trading-Kurve. Beträge müssen USD sein. "
+      "Eine geschätzte Kapitalbasis bleibt eine Modellannahme. Beträge müssen USD sein. "
       "Kopiergebühren, Slippage und Spread-Differenzen sind nicht enthalten. Diese Berechnung "
       "bewertet nichts — Ampel und Urteil der Engine bleiben unberührt.")
     P("<b>Disclaimer:</b> Datengestützte Kontrollauswertung, keine Anlageberatung. Historische "

@@ -39,4 +39,8 @@ Bei Änderungen an Pflichtprüfungen oder Bewertungsregeln erhöhen: Live-Befund
 # 21: Exakt belegte Vantage-Kontrakte Nikkei225 (JPY) und Soybean-C (USD),
 # historische CNH-/ETH-Umrechnung im Exposure nur mit geschlossenem H1-Bar,
 # belegter Tradezeit und identischem Terminal-/Serverfeed. Kein CNH=CNY.
-FORENSICS_VERSION = 21
+# 22: One shared capital decision for drawdown/exposure/equity. Prefer proven
+# starting capital; otherwise retain an explicit complex model estimate with
+# provenance/uncertainty. Model percentages never authorize automatic green.
+# Old capital-dependent evidence stays archived and stale until an explicit run.
+FORENSICS_VERSION = 22
