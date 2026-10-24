@@ -54,10 +54,10 @@ def test_closed_dd_anwendung_senkt_peak():
     # Peak-Senkung wäre der DD (1200-500)/1200 = 58,3 %.
     dd = rr.closed_dd(parsed, 1000.0)
     assert dd is not None
-    assert abs(dd - 100.0 / 600.0) < 1e-9
+    assert abs(dd - 100.0 / 600.0 * 100) < 1e-9
 
 
-@pytest.mark.parametrize('offset, capital, expected', [(-1, 900, 0), (0, 1000, .1), (1, 1000, .1)])
+@pytest.mark.parametrize('offset, capital, expected', [(-1, 900, 0), (0, 1000, 10), (1, 1000, 10)])
 def test_closed_dd_kosten_vor_am_und_nach_ersten_open(offset, capital, expected):
     start = dt.datetime(2026, 1, 1)
     parsed = SimpleNamespace(
@@ -77,9 +77,9 @@ def test_closed_dd_kosten_sind_verlust_und_bekannte_kapitalfluesse_bleiben_einma
                SimpleNamespace(time=start, amount=-90),
                SimpleNamespace(time=start+dt.timedelta(hours=3), amount=-72)])
     # Start900 includes deposit1000 and pre-open cost100 exactly once.
-    # Open cost:810/peak900; deposit:900/peak990; withdrawal:720/peak810;
-    # later cost:648/peak810 => maximum loss162/810 =20%.
-    assert rr.closed_dd(parsed, 900) == pytest.approx(.2)
+    # Open cost:810/peak900; deposit:900/peak900; withdrawal:720/peak720;
+    # later cost:648/peak720 => maximum loss72/720 =10%.
+    assert rr.closed_dd(parsed, 900) == pytest.approx(10)
 
 
 def test_statistik_liefert_netto_serie_winrate():
@@ -116,7 +116,8 @@ class _FakeAnbieter:
         return self._bars.get(symbol)
 
 
-def test_berechne_csv_mit_fake_kursen(tmp_path, monkeypatch):
+@pytest.mark.parametrize('capital', [1000.0, 1000.12345678])
+def test_berechne_csv_mit_fake_kursen(tmp_path, monkeypatch, capital):
     from mqlkiscanner import equity_studie as es
 
     monkeypatch.setattr(es, "ermittle_gmt_je_symbol",
@@ -139,18 +140,21 @@ def test_berechne_csv_mit_fake_kursen(tmp_path, monkeypatch):
     def progress(a, t):
         meldungen.append(t)
 
-    daten = rr.berechne_csv(csv, startkapital_manuell=1000.0, name="Testimport",
+    daten = rr.berechne_csv(csv, startkapital_manuell=capital, name="Testimport",
                             progress=progress)
     assert daten["status"] == "ok"
     k = daten["kennzahlen"]
     assert k["equity_dd_usd"] >= 0
-    assert k["startkapital"] == 1000.0
+    assert k["startkapital"] == round(capital, 2)
+    assert daten['punkte'][0]['equity'] == capital
     assert daten["meta"]["name"] == "Testimport"
     assert daten["meta"]["startkapital_quelle"] == "manuell_eingabe"
     assert len(daten["meta"]["datei_sha256"]) == 64
     assert daten["statistik"]["n_trades"] == 2
     assert daten["statistik"]["netto_gesamt"] == -100.0
-    assert daten["closed_dd_pct"] is not None
+    assert daten['closed_dd_pct'] == pytest.approx(200 / (capital + 100) * 100, rel=1e-12)
+    assert daten['closed_dd_unit'] == 'percent'
+    assert daten['closed_dd_version'] == rr.CLOSED_DD_VERSION
     assert meldungen  # Fortschritt wurde gemeldet
 
 

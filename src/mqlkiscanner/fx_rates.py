@@ -170,9 +170,10 @@ def _refresh(max_age_days: float = REFRESH_DAYS, force: bool = False) -> None:
                 pass
 
 
-def load() -> dict[str, tuple[list[str], list[float]]]:
-    """Kurstabelle (mit Download-Versuch, falls noetig); ohne Datei: leer."""
-    _refresh()
+def load(*, offline: bool = False) -> dict[str, tuple[list[str], list[float]]]:
+    """Kurstabelle; offline=True liest nur die vorhandene Datei, ohne Refresh."""
+    if not offline:
+        _refresh()
     path = config.FX_RATES_DIR / CSV_NAME
     try:
         key = (str(path), path.stat().st_mtime_ns)
@@ -213,21 +214,37 @@ def can_convert(currency: str) -> bool:
     return currency == "EUR" or currency in table
 
 
-def usd_per(currency: str, when: date) -> dict | None:
+def usd_per(currency: str, when: date, *, offline: bool = False) -> dict | None:
     """Wie viel USD ist 1 Einheit `currency` am Handelstag `when` wert?
 
-    Rueckgabe {"rate": faktor, "date": verkuendigungstag} oder None
-    (Waehrung unbekannt, kein Kurs im 10-Tage-Fenster, vor 1999).
+    Rueckgabe {"rate": faktor, "date": verkuendigungstag} oder None.
+    offline=True liest nur vorhandene Kurse und benoetigt fuer USD keine
+    externe Kurstabelle. Der bisherige Online-Vertrag bleibt unveraendert.
     """
     currency = (currency or "").upper()
     if not currency:
         return None
-    table = load()
+    table = load(offline=True) if offline else load()
+    return usd_per_table(currency, when, table, require_usd_table=not offline)
+
+
+def usd_per_table(currency: str, when: date, table: dict, *,
+                  require_usd_table: bool = False) -> dict | None:
+    """Pure USD cross-rate lookup in one supplied historical table.
+
+    No load, refresh, network request or storage mutation occurs here. Both
+    live and offline consumers use the same day matching and ten-day limit.
+    USD is identity conversion without a table unless the legacy online
+    caller explicitly requests its historical table-presence requirement.
+    """
+    currency = str(currency or "").upper()
+    if not currency:
+        return None
     usd_series = table.get("USD")
+    if currency == "USD" and (usd_series or not require_usd_table):
+        return {"rate": 1.0, "date": when.isoformat()}
     if not usd_series:
         return None
-    if currency == "USD":
-        return {"rate": 1.0, "date": when.isoformat()}
     # EUR ist die Basis der EZB-Datei: "1 EUR = X USD" steht in der USD-Spalte.
     series = usd_series if currency == "EUR" else table.get(currency)
     if not series:

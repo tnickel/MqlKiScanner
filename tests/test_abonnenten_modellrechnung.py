@@ -71,6 +71,7 @@ def test_snapshot_and_real_forensics_remain_unchanged_while_flows_are_ignored(tm
     assert result["annahme_kapitalfluesse"] == "keine"
     assert seen[0][0].balances == [] and seen[0][1] == 1000
     assert seen[0][2]["include_curve"] is True
+    assert seen[0][2]["compute_dd"] is False  # One DD pass with the model's own pre-cost anchor.
     assert entry == before and (tmp_path/"trades.csv").read_bytes() == raw
     assert len(parser.load_export(tmp_path/"trades.csv").balances) == 2
     assert "_curve" not in result["equity"]

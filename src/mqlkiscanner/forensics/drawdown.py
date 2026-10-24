@@ -23,6 +23,7 @@ import math
 from itertools import groupby
 
 from ..models import ParsedExport
+from .drawdown_core import max_drawdown_aus_kurve
 
 
 def unterwasser_verlauf(staende: list, fluesse: list) -> list:
@@ -34,21 +35,11 @@ def unterwasser_verlauf(staende: list, fluesse: list) -> list:
     kein Drawdown (Nutzer-Regel 05.10.2026). Flüsse an Nicht-Messpunkten
     werden bis zum nächsten Messpunkt mitgeführt, nicht verworfen.
     """
-    hoch = None
-    offen = 0.0
-    verlauf: list = []
-    for wert, fluss in zip(staende, fluesse):
-        offen += fluss or 0.0
-        if wert is None:
-            verlauf.append(None)
-            continue
-        if offen < 0 and hoch is not None:
-            hoch = max(wert, hoch + offen)
-        offen = 0.0
-        if hoch is None or wert > hoch:
-            hoch = wert
-        verlauf.append((wert / hoch - 1.0) * 100.0 if hoch > 0 else 0.0)
-    return verlauf
+    result = max_drawdown_aus_kurve(
+        ((index, wert, wert is not None, fluss)
+         for index, (wert, fluss) in enumerate(zip(staende, fluesse))), verlauf=True)
+    return [punkt["unterwasser_pct"] if punkt is not None else None
+            for punkt in result["verlauf"]]
 
 
 def floating_dd_verlauf(balancen: list, floatings: list) -> list:
@@ -78,44 +69,56 @@ def _max_drawdown(points: list[tuple], start: float) -> dict:
     Ereignis (Cent-Anker / verify_engine). dd_pct_max_rel: Maximum aller
     relativen Rueckgaenge — fuer Risiko-Score und Schranke.
     """
-    bal = peak = float(start)
-    max_dd = max_dd_pct = 0.0
-    max_rel = 0.0
-    when = when_rel = None
+    bal = float(start)
+    curve = []
     # CSV timestamps do not establish an order inside a second. Book each
     # timestamp together rather than manufacture row-order-dependent peaks.
-    for _time, batch in groupby(sorted(points, key=lambda p: p[0]), key=lambda p: p[0]):
-        delta = math.fsum(point[1] for point in batch)
-        bal += delta
-        if bal > peak:
-            peak = bal
-        dd = peak - bal
-        if peak > 0:
-            rel = dd / peak * 100
-        elif dd > 0:
-            # Kein positives Peak-Kapital (fehlende Einzahlung) — Verlust trotzdem
-            # als 100 % relativ werten, damit Score/Schranke nicht blind bleiben.
-            rel = 100.0
-        else:
-            rel = 0.0
-        if dd > max_dd:
-            max_dd = dd
-            max_dd_pct = rel
-            when = _time
-        if rel > max_rel:
-            max_rel = rel
-            when_rel = _time
+    for time, batch in groupby(sorted(points, key=lambda p: p[0]), key=lambda p: p[0]):
+        bal += math.fsum(point[1] for point in batch)
+        curve.append((time, bal, True, 0.0))
+    return _closing_result(max_drawdown_aus_kurve(
+        curve, start=start, nichtpositiver_peak_pct=100.0))
+
+
+def _closing_result(result: dict) -> dict:
+    """The legacy closing schema, formatted once at the output boundary."""
+    when, when_rel = result["dd_time"], result["dd_time_max_rel"]
     return {
-        "dd_usd": round(max_dd, 2),
-        "dd_pct": round(max_dd_pct, 2),
-        "dd_pct_max_rel": round(max_rel, 2),
-        "dd_pct_raw": max_dd_pct,
-        "dd_pct_max_rel_raw": max_rel,
+        "dd_usd": round(result["dd_usd_raw"], 2),
+        "dd_usd_raw": result["dd_usd_raw"],
+        "dd_pct": round(result["dd_pct_raw"], 2),
+        "dd_pct_max_rel": round(result["dd_pct_max_rel_raw"], 2),
+        "dd_pct_raw": result["dd_pct_raw"],
+        "dd_pct_max_rel_raw": result["dd_pct_max_rel_raw"],
         "dd_date": when.date().isoformat() if when else None,
         "dd_date_max_rel": when_rel.date().isoformat() if when_rel else None,
-        "end_balance": round(bal, 2),
-        "peak_balance": round(peak, 2),
+        "end_balance": round(result["end_balance_raw"], 2),
+        "peak_balance": round(result["peak_balance_raw"], 2),
     }
+
+
+def _konto_ereignisse(parsed, erster_open=None) -> tuple[list, list]:
+    """Net results from first open and later external flows, each once."""
+    if erster_open is None:
+        erster_open = min((t.open_time for t in parsed.trades), default=None)
+    if erster_open is None:
+        return [], []
+    trading = [(t.close_time, t.net) for t in parsed.trades] + [
+        (c.time, c.amount) for c in getattr(parsed, "costs", []) if c.time >= erster_open]
+    flows = [(b.time, b.amount) for b in getattr(parsed, "balances", []) if b.time > erster_open]
+    return trading, flows
+
+
+def konto_drawdown(parsed, startkapital: float) -> dict:
+    """Closing DD with a resolved start balance, including later known flows.
+
+    The supplied balance already includes pre-start flows and pre-start costs.
+    Percentage outputs use percent units; ``dd_pct_max_rel_raw`` is unrounded.
+    This adapter does not resolve capital again or modify the export.
+    """
+    trading, flows = _konto_ereignisse(parsed)
+    return (_max_drawdown_konto(trading, flows, startkapital) if flows else
+            _max_drawdown(trading, startkapital))
 
 
 def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
@@ -146,8 +149,7 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
     withdrawals_total = sum(b.amount for b in balances if b.amount < 0)
 
     # Nur Kosten VOR dem ersten Open stecken bereits im Startsaldo.
-    trading_points = [(t.close_time, t.net) for t in trades] + [
-        (c.time, c.amount) for c in getattr(parsed, "costs", []) if c.time >= first_open]
+    trading_points, flows_nach_start = _konto_ereignisse(parsed, first_open)
     trading_virtuell = _max_drawdown(trading_points, startkapital)
 
     # Balance-Kurve: CSV-Buchungen buchen sich selbst; die injizierte Basis
@@ -159,7 +161,6 @@ def run(parsed: ParsedExport, kapitalbasis_usd: float | None = None,
     # KONTO-Kurve (HAUPTWERT, Nutzer-Regel 05.10.2026): Trades PLUS Flows
     # nach Handelsbeginn. Einzahlungen heben den Peak, Auszahlungen senken
     # ihn um ihren Betrag — Auszahlungen erzeugen keinen Drawdown.
-    flows_nach_start = [(b.time, b.amount) for b in balances if b.time > first_open]
     if flows_nach_start:
         trading = _max_drawdown_konto(trading_points, flows_nach_start, startkapital)
         kurve = "real_mit_flows"
@@ -215,41 +216,11 @@ def _max_drawdown_konto(trade_points: list[tuple], flow_points: list[tuple],
     for zeit, betrag in flow_points:
         je_zeitpunkt[zeit][1] += betrag
 
-    bal = peak = float(start)
-    max_dd = max_dd_pct = 0.0
-    max_rel = 0.0
-    when = when_rel = None
+    bal = float(start)
+    curve = []
     for zeit in sorted(je_zeitpunkt):
         trade_delta, flow_delta = je_zeitpunkt[zeit]
         bal += trade_delta + flow_delta
-        # Auszahlung: Peak mitigieren, BEVOR der Rueckgang gezaehlt wird.
-        if flow_delta < 0:
-            peak = max(bal, peak + flow_delta)
-        if bal > peak:
-            peak = bal
-        dd = peak - bal
-        if peak > 0:
-            rel = dd / peak * 100
-        elif dd > 0:
-            rel = 100.0
-        else:
-            rel = 0.0
-        if dd > max_dd:
-            max_dd = dd
-            max_dd_pct = rel
-            when = zeit
-        if rel > max_rel:
-            max_rel = rel
-            when_rel = zeit
-    return {
-        "dd_usd": round(max_dd, 2),
-        "dd_pct": round(max_dd_pct, 2),
-        "dd_pct_max_rel": round(max_rel, 2),
-        "dd_pct_raw": max_dd_pct,
-        "dd_pct_max_rel_raw": max_rel,
-        "dd_date": when.date().isoformat() if when else None,
-        "dd_date_max_rel": when_rel.date().isoformat() if when_rel else None,
-        "end_balance": round(bal, 2),
-        "peak_balance": round(peak, 2),
-    }
-
+        curve.append((zeit, bal, True, flow_delta))
+    return _closing_result(max_drawdown_aus_kurve(
+        curve, start=start, nichtpositiver_peak_pct=100.0))

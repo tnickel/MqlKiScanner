@@ -154,8 +154,8 @@ def test_mixed_portfolio_sums_converted_and_usd_symbols(tmp_path):
 
 
 # ------------------------------------------------------- Verweigerungsfaelle
-def test_no_deposits_before_first_trade_names_the_reason(tmp_path, monkeypatch):
-    """Belegfall Signal #2308093: Startkapital 0 -> konkrete Warnung."""
+def test_no_deposits_before_first_trade_remains_a_labelled_capital_model(tmp_path, monkeypatch):
+    """Fehlender Kapitalbeleg erlaubt seit Version22 nur eine Modellprüfung."""
     trade = Trade(open_time=datetime(2024, 1, 3, 10),
                   close_time=datetime(2024, 1, 3, 11),
                   direction="Buy", volume=1.0, symbol="EURUSD",
@@ -165,8 +165,10 @@ def test_no_deposits_before_first_trade_names_the_reason(tmp_path, monkeypatch):
                           balances=[BalanceRow(datetime(2024, 2, 1), 500.0)])  # spaeter
     result = exposure.run(parsed)
     assert result["capital_history_complete"] is False
-    assert result["temporal_risk_available"] is False
-    assert any("Kapitalbasis unbekannt" in w for w in result["warnings"])
+    assert result["temporal_risk_available"] is True
+    assert result["model_capital_available"] is True
+    assert result["startkapital_quelle"] == "modell_fallback_10000"
+    assert any("Modellkapital" in w for w in result["warnings"])
 
 
 def test_withdrawal_during_trading_names_the_reason(tmp_path):

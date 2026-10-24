@@ -25,6 +25,7 @@ from . import kapitalbasis
 
 JAHR_TAGE = 365.2425
 MONAT_TAGE = JAHR_TAGE / 12.0
+CLOSED_DD_VERSION = 2  # Prozentvertrag und gemeinsame Flow-/Zeitgruppenregel.
 
 # ------------------------------------------------------------ eigene Zahlen
 
@@ -67,8 +68,7 @@ def statistik(parsed) -> dict:
 
 
 def closed_dd(parsed, startkapital: float) -> float | None:
-    """Eigener DD der geschlossenen Kurve (Nutzer-Regel: Auszahlung senkt den
-    Peak, nie unter den Kontostand). Untergrenze — floating fehlt.
+    """Maximaler relativer Closing-DD in PROZENT, nicht als Anteil.
 
     startkapital kommt bereits vom Kapitalbasis-Löser (drawdown.run) und
     enthält die Kontobewegungen BIS zum ersten Trade-Open — hier laufen nur
@@ -78,27 +78,25 @@ def closed_dd(parsed, startkapital: float) -> float | None:
     niemals zu neutralisierende Kapitalflüsse."""
     if startkapital is None or startkapital <= 0 or not parsed.trades:
         return None
-    erster_open = min(t.open_time for t in parsed.trades)
-    events = [(t.close_time, float(t.net), "trade") for t in parsed.trades]
-    for b in (getattr(parsed, "balances", None) or []):
-        if b.time > erster_open:
-            events.append((b.time, float(b.amount), "flow"))
-    for c in (getattr(parsed, "costs", None) or []):
-        if c.time >= erster_open:
-            events.append((c.time, float(c.amount), "cost"))
-    events.sort(key=lambda e: e[0])
-    equity = peak = float(startkapital)
-    dd = 0.0
-    for _z, delta, art in events:
-        if art == "flow":
-            equity += delta
-            peak = max(equity, peak + delta)
-        else:
-            equity += delta
-            peak = max(peak, equity)
-        if peak > 0:
-            dd = max(dd, (peak - equity) / peak)
-    return dd
+    return drawdown.konto_drawdown(parsed, startkapital)["dd_pct_max_rel_raw"]
+
+
+def closed_dd_prozent(daten: dict) -> float | None:
+    """Read current percent values or explicitly adapt pre-v2 session results.
+
+    New outputs always carry percent units. Only old, untagged in-memory
+    results used fractions; their conversion lives at this one boundary.
+    This does not recalculate or upgrade their historical DD methodology.
+    """
+    value = daten.get("closed_dd_pct")
+    if value is None:
+        return None
+    unit = daten.get("closed_dd_unit")
+    if unit == "percent":
+        return value
+    if unit is None and daten.get("closed_dd_version", 1) == 1:
+        return value * 100.0
+    raise ValueError(f"Unbekannte Closing-DD-Einheit: {unit}")
 
 
 # ------------------------------------------------------------- Berechnung
@@ -144,7 +142,7 @@ def _berechne_exklusiv(pfad, startkapital_manuell, name, broker, p) -> dict:
         broker=broker or None, kontext={"quelle": "import", "trades_path": str(pfad),
             "trades_sha256": sha256(pfad.read_bytes()).hexdigest()})
     dd = drawdown.run(parsed, kapitalentscheidung=entscheid)
-    startkapital = float(dd.get("startkapital") or 0.0)
+    startkapital = float(dd.get("startkapital_raw", dd.get("startkapital")) or 0.0)
     if not entscheid.get("gueltig") or startkapital <= 0:
         raise RuntimeError(
             "Kapitalbasis nicht verwendbar: " + str(entscheid.get("grund") or "kein positives Startkapital"))
@@ -178,7 +176,9 @@ def _berechne_exklusiv(pfad, startkapital_manuell, name, broker, p) -> dict:
                              "realisiertes Netto + gelieferte spätere Ein-/Auszahlungen + Floating "
                              "an H1-Bar-Schlüssen; keine belegte Kontokurve")
     daten["statistik"] = statistik(parsed)
-    daten["closed_dd_pct"] = closed_dd(parsed, startkapital)
+    daten["closed_dd_pct"] = dd["trading_dd"]["dd_pct_max_rel_raw"]
+    daten["closed_dd_unit"] = "percent"
+    daten["closed_dd_version"] = CLOSED_DD_VERSION
     return daten
 
 
@@ -198,6 +198,8 @@ def berechne_signal(result, progress=None) -> dict:
     else:
         daten["statistik"] = {}
         daten["closed_dd_pct"] = None
+    daten["closed_dd_unit"] = "percent"
+    daten["closed_dd_version"] = CLOSED_DD_VERSION
     return daten
 
 
@@ -295,8 +297,8 @@ def kurve_png(pfad: Path, punkte: list, startkapital: float) -> None:
     uwp = [(X(p["t"]), Y_unten(p["_uw"])) for p in punkte]
     if len(uwp) > 1:
         img.line(uwp, fill=(198, 40, 40), width=2)
-    img.text((ml, 8), "Equity (grün, H1-Messpunkte) und realisiert (grau) · "
-                      "unten: Unterwasser-Anteil am laufenden Peak", font=f, fill=(30, 30, 30))
+    img.text((ml, 8), "H1-Equity (grün), realisiert (grau); unten: Rückgang vom Hochpunkt",
+             font=f, fill=(30, 30, 30))
     t0 = _epoch_text(punkte[0]["t"]) if punkte else "—"
     t1 = _epoch_text(punkte[-1]["t"]) if punkte else "—"
     img.text((ml, h - mb + 48), f"{t0} (UTC)  …  {t1} (UTC)", font=fk, fill=(90, 90, 90))
@@ -338,6 +340,7 @@ def monate_png(pfad: Path, monats_netto: dict) -> None:
 def baue_pdf(daten: dict, ziel: Path | None = None) -> tuple[Path, int]:
     """Ausführlichen PDF-Bericht erzeugen. Rückgabe (Pfad, Seitenzahl)."""
     import html
+    closing_pct = closed_dd_prozent(daten)
 
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -417,7 +420,7 @@ def baue_pdf(daten: dict, ziel: Path | None = None) -> tuple[Path, int]:
         ["Kennzahl", "Wert"],
         ["Max-DD inkl. offener Trades", _de(k.get("equity_dd_pct"), 2, 1, " %")],
         ["Max-DD in USD", _de(k.get("equity_dd_usd"), 2, 1, " USD")],
-        ["Rückfallzeitraum (USD-Maximum)", f"{_epoch_text(k.get('dd_von'))} → {_epoch_text(k.get('dd_bis'))}"],
+        ["Rückfallzeitraum (USD-Maximum)", f"{_epoch_text(k.get('dd_von'))} bis {_epoch_text(k.get('dd_bis'))}"],
         ["Relatives Maximum", _de(k.get("dd_pct_max_rel"), 2, 1, " %")
          + f" (ab {_epoch_text(k.get('dd_rel_von'))})"],
         ["Stärkster offener Verlust (floating)", _de(k.get("floating_min_usd"), 2, 1, " USD")
@@ -426,14 +429,16 @@ def baue_pdf(daten: dict, ziel: Path | None = None) -> tuple[Path, int]:
         ["Längste Unterwasser-Phase", _de(k.get("unterwasser_tage_max"), 1, 1, " Tage")],
         ["Kurs-Abdeckung der aktiven Stunden", _de(k.get("abdeckung_pct"), 1, 1, " %")],
         ["Eigener Closed-DD (nur geschlossene Trades)",
-         _de(daten.get("closed_dd_pct"), 2, 100, " %") + " — Untergrenze"],
+         _de(closing_pct, 2, 1, " %") + " — Untergrenze"],
     ]
     story.append(tabelle(kenn, [95 * mm, 75 * mm]))
-    if (daten.get("closed_dd_pct") is not None and k.get("equity_dd_pct") is not None
-            and k["equity_dd_pct"] - daten["closed_dd_pct"] * 100.0 > 10.0):
+    if closing_pct is not None and daten.get("closed_dd_version", 1) < CLOSED_DD_VERSION:
+        P("Closed-DD aus einer älteren Berechnung; neue Berechnungen verwenden die gemeinsame Drawdown-Methodik.", text)
+    if (closing_pct is not None and k.get("equity_dd_pct") is not None
+            and k["equity_dd_pct"] - closing_pct > 10.0):
         story.append(Spacer(1, 6))
         P('<font color="#C62828"><b>Wichtiger Befund:</b> Die geschlossene Kurve unterschätzt '
-          f"das Risiko massiv — Closed-DD {_de(daten['closed_dd_pct'], 1, 100, ' %')} gegenüber "
+          f"das Risiko massiv — Closed-DD {_de(closing_pct, 1, 1, ' %')} gegenüber "
           f"Max-DD {_de(k.get('equity_dd_pct'), 1, 1, ' %')} inklusive offener Trades.</font>", text)
     story.append(Spacer(1, 6))
     p1 = tmp / "mrr_kurve.png"
@@ -452,7 +457,7 @@ def baue_pdf(daten: dict, ziel: Path | None = None) -> tuple[Path, int]:
             ["Kennzahl", "Wert"],
             ["Netto-PnL gesamt", _de(st.get("netto_gesamt"), 2, 1, " USD")],
             ["Zeitspanne", f"{_de(st.get('spanne_monate'), 1, 1, ' Monate')} · "
-                           f"{st.get('erster_trade', '—')[:10]} → {st.get('letzter_trade', '—')[:10]}"],
+                           f"{st.get('erster_trade', '—')[:10]} bis {st.get('letzter_trade', '—')[:10]}"],
             ["Anzahl Trades", str(st.get("n_trades"))],
             ["Winrate", _de(st.get("winrate"), 1, 100, " %")],
             ["längste Verlustserie", f"{st.get('max_verlustserie')} Trades"],

@@ -40,6 +40,8 @@ from .forensics.equity_rekonstruktion import (
     _aktive_marktpausen,
 )
 from .forensics.exposure import _resolve_symbol
+from .forensics.drawdown_core import max_drawdown_aus_kurve
+from .forensics.feed_auswahl import ergaenze_fehlende_symbole
 from .forensics.equity_kapitalfluesse import diagnostik as konto_diagnostik
 
 # Ein Symbol braucht so viele Trade-Proben, um seinen GMT-Versatz SELBST zu
@@ -272,22 +274,8 @@ def studie(parsed, kurse, startkapital: float,
     # MT5-Python ist pro Prozess ein Singleton: sequentiell wechseln und
     # nur fehlende Symbole laden. Ein fehlgeschlagener Wechsel beendet
     # den Fallback, damit derselbe Terminal nicht endlos versucht wird.
-    while ohne_kurse and hasattr(kurse, 'hat_weiteren_terminal') and kurse.hat_weiteren_terminal():
-        ok, msg = kurse.wechsle_terminal()
-        if not ok:
-            break
-        noch_offen = []
-        for s in ohne_kurse:
-            bars = umrechnung.hole_handelsbars(s)
-            if bars:
-                bars_je_symbol[s] = bars
-            else:
-                noch_offen.append(s)
-        ohne_kurse = noch_offen
-    # Fallback-Wechsel nicht kleben lassen (siehe equity_rekonstruktion):
-    # zurück auf Quelle 0, damit Folge-Aufrufe am richtigen Terminal landen.
-    if hasattr(kurse, 'zurueck_zum_ersten_terminal')             and getattr(kurse, 'terminal_idx', 0) != 0:
-        kurse.zurueck_zum_ersten_terminal()
+    ohne_kurse = ergaenze_fehlende_symbole(
+        kurse, bars_je_symbol, ohne_kurse, umrechnung.hole_handelsbars)
 
     # Kontrakt-/Quote-Auflösung — NUR mit Beleg (kein erfundener Faktor;
     # dieselbe Regel wie die produktive Reko, Review 29.09. Befund 4).
@@ -536,49 +524,24 @@ def studie(parsed, kurse, startkapital: float,
     if any(p["messpunkt"] and not math.isfinite(p["equity"]) for p in punkte):
         return {"status": "skipped", "grund": "NaN/Inf in der Equity-Kurve",
                 "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {}}
-    hoch = None
-    dd_usd = 0.0
-    dd_pct_am_usd_max = 0.0
-    dd_pct_max_rel = 0.0
-    dd_von = dd_bis = None
-    dd_rel_von = dd_rel_bis = None
-    dd_usd_am_rel_max = 0.0
+    measured_dd = max_drawdown_aus_kurve(
+        ((p["t"], p["equity"], p["messpunkt"], p.get("flow_delta", 0.0))
+         for p in punkte), verlauf=True)
+    dd_usd = measured_dd["dd_usd_raw"]
+    dd_pct_am_usd_max = measured_dd["dd_pct_raw"]
+    dd_pct_max_rel = measured_dd["dd_pct_max_rel_raw"]
+    dd_von, dd_bis = measured_dd["dd_peak_time"], measured_dd["dd_time"]
+    dd_rel_von, dd_rel_bis = measured_dd["dd_peak_time_max_rel"], measured_dd["dd_time_max_rel"]
+    dd_usd_am_rel_max = measured_dd["dd_usd_am_rel_max_raw"]
     floating_min = 0.0
     floating_min_t = None
     floating_max = 0.0
-    hoch_t = None
     unter_wasser_seit = None
     unter_wasser_max_h = 0
-    offener_fluss = 0.0
-    for p in punkte:
-        if not p["messpunkt"]:
-            # Fluss an einem Punkt ohne Kurse nicht verwerfen, sondern am
-            # naechsten Messpunkt buchen — sonst zaehlte eine Auszahlung
-            # in einer Kursluecke als Drawdown.
-            offener_fluss += p.get("flow_delta", 0.0)
+    for p, watermark in zip(punkte, measured_dd["verlauf"]):
+        if watermark is None:
             continue
-        wert = p["equity"]
-        fluss = p.get("flow_delta", 0.0) + offener_fluss
-        offener_fluss = 0.0
-        # Nutzer-Regel 05.10.2026: Auszahlungen sind keine Verluste — Peak
-        # um den Auszahlungsbetrag senken (nie unter den Stand), bevor der
-        # Rueckfall gezaehlt wird. Einzahlungen heben Kurve und Peak.
-        if fluss < 0:
-            hoch = max(wert, hoch + fluss) if hoch is not None else wert
-        if hoch is None or wert > hoch:
-            hoch = wert
-            hoch_t = p["t"]
-        rueckfall = hoch - wert
-        if rueckfall > dd_usd:
-            dd_usd = rueckfall
-            dd_pct_am_usd_max = (rueckfall / hoch * 100.0) if hoch > 0 else 0.0
-            dd_von, dd_bis = hoch_t, p["t"]
-        if hoch > 0:
-            rel = rueckfall / hoch * 100.0
-            if rel > dd_pct_max_rel:
-                dd_pct_max_rel = rel
-                dd_usd_am_rel_max = rueckfall
-                dd_rel_von, dd_rel_bis = hoch_t, p["t"]
+        wert, hoch, hoch_t = watermark["value"], watermark["peak"], watermark["peak_time"]
         # Floating-Extreme nur mit offenen Positionen bewerten (floating=0
         # ohne offene Positionen ist kein Extremwert).
         if p["floating"] is not None:

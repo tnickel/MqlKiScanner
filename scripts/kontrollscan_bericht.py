@@ -169,25 +169,14 @@ def eigene_analyse(pe, *, stats=None, kontext=None, broker=None, calibration=Non
     events += [(z, a, "flow") for z, a in fluesse if z > erster_open]
     events.sort(key=lambda e: (e[0], 0 if e[2] == "flow" else 1))
 
-    # Eigener DD der geschlossenen Kurve. Nutzer-Regel: Einzahlung hebt den
-    # Peak, Auszahlung senkt ihn mit — nie unter den Kontostand.
+    # Gemeinsame Closing-DD-Regel; dieses alte Ausgabeformat nutzt Anteile.
     max_dd_pct = None
     max_dd_usd = None
     if basis_verwendbar:
-        equity = startkapital
-        peak = startkapital
-        max_dd_usd = 0.0
-        max_dd_pct = 0.0
-        for _zeit, delta, art in events:
-            if art == "flow":
-                equity += delta
-                peak = max(equity, peak + delta)
-            else:
-                equity += delta
-                peak = max(peak, equity)
-            if peak > 0:
-                max_dd_usd = max(max_dd_usd, peak - equity)
-                max_dd_pct = max(max_dd_pct, (peak - equity) / peak)
+        from mqlkiscanner.forensics.drawdown import konto_drawdown
+        closing = konto_drawdown(pe, startkapital)
+        max_dd_usd = closing["dd_usd_raw"]
+        max_dd_pct = closing["dd_pct_max_rel_raw"] / 100.0
 
     monatsrenditen: dict[str, float] = {}
     cagr = None

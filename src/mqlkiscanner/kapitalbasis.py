@@ -16,6 +16,7 @@ from pathlib import Path
 
 from . import abonnenten_modellkapital as schaetzer
 from . import config
+from .zahlen import ist_endliche_zahl as _number
 
 VERSION = 1
 _CACHE = {}
@@ -36,10 +37,6 @@ _DESCRIPTIONS = {
     "modell_fallback_10000": "Modellannahme 10.000 USD mangels tragfaehigerer Kapitalbasis",
     "modell_closing_dd_anker": "Modellkapital aus unabhaengigem Closing-DD-Anker; keine belegte Kontogroesse",
 }
-
-
-def _number(value):
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
 def _audit_value(value):

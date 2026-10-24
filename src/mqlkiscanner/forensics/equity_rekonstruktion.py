@@ -29,6 +29,8 @@ import os
 from .. import fx_rates
 from ..symbols import normalize_symbol
 from .exposure import _resolve_symbol
+from .drawdown_core import max_drawdown_aus_kurve
+from .feed_auswahl import ergaenze_fehlende_symbole
 
 # Kandidaten-Shifts: ganze Stunden, wie Forex-Serverzeiten üblich.
 GMT_KANDIDATEN_S = tuple(h * 3600 for h in range(-14, 15))
@@ -583,13 +585,18 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
 
 def rekonstruiere(parsed, kurse, startkapital: float,
                   broker: str | None = None, *, gmt_offset_h: int | None = None,
-                  fx_lookup=None, include_curve: bool = False) -> dict:
+                  fx_lookup=None, include_curve: bool = False, compute_dd: bool = True) -> dict:
     """Equity-Kurve auf H1-Raster + maximaler Equity-Drawdown.
 
     kurse: Anbieter mit hole_h1(symbol, von, bis, gmt_offset_s) (kursdaten.
     KursDaten oder Fake). Rückgabe mit equity_dd_pct/dd_usd nur bei
     ausreichender Abdeckung; sonst Grund im Feld "grund".
+    ``compute_dd=False`` requires ``include_curve=True``: return coverage and
+    the constructed curve without calculating or emitting drawdown metrics.
+    Used by explicit scenarios whose pre-cost anchor differs from this curve.
     """
+    if not compute_dd and not include_curve:
+        raise ValueError("compute_dd=False erfordert include_curve=True")
     trades = [t for t in parsed.trades if t.close_time and t.open_time]
     if not trades:
         return {"test": "equity_rekonstruktion", "status": "skipped",
@@ -635,25 +642,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # (Terminal) hat ein anderes Symbol-Angebot (Tickmill: FX-Kreuze +
     # Cash-Indizes; Vantage: XAUUSD+/CL-OIL/VIX/CHINA50 nativ; …); erst wenn
     # KEINE Quelle mehr übrig ist, gilt ein Symbol als ohne Kurse.
-    while fehlende_symbole and hasattr(kurse, 'hat_weiteren_terminal')             and kurse.hat_weiteren_terminal():
-        ok, msg = kurse.wechsle_terminal()
-        if not ok:
-            break
-        noch_fehlend = []
-        for s in fehlende_symbole:
-            bars = _hole_handelsbars(s)
-            if bars:
-                bars_je_symbol[s] = bars
-            else:
-                noch_fehlend.append(s)
-        fehlende_symbole = noch_fehlend
-
-    # Der Fallback-Wechsel darf NICHT kleben: Nach der Rekonstruktion wieder
-    # auf Quelle 0 zurück — sonst binden die Kurse eines Signals alle Folge-
-    # signale ans falsche Terminal (08.10., NAS100FT-Fall). Gilt auch für den
-    # Workflow-Scan, der den Anbieter über den ganzen Lauf cached.
-    if hasattr(kurse, 'zurueck_zum_ersten_terminal')             and getattr(kurse, 'terminal_idx', 0) != 0:
-        kurse.zurueck_zum_ersten_terminal()
+    fehlende_symbole = ergaenze_fehlende_symbole(
+        kurse, bars_je_symbol, fehlende_symbole, _hole_handelsbars)
 
     # Kontrakt-/Quote-Auflösung je Symbol (einmalig) — NUR mit Beleg. Ohne
     # Spec/Klassenkontrakt wäre jeder Faktor erfunden (der frühere stille
@@ -920,41 +910,19 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         return {"test": "equity_rekonstruktion", "status": "skipped",
                 "grund": "NaN/Inf in der Equity-Kurve (Kursdaten unbrauchbar)"}
 
-    hoch = curve[0][1]
-    dd_usd = 0.0
-    dd_pct = 0.0      # relative Groesse am USD-Maximum (Anker)
-    dd_pct_max = 0.0  # F1 (Fremd-Review 01.10.): MAXIMALES RELATIVES DD —
-                      # getrennt fuehren wie drawdown._max_drawdown. Vorher
-                      # ersetzte ein spaeterer groesserer USD-Rueckfall bei
-                      # gewachsenem Konto einen frueheren groesseren
-                      # PROZENTVerlust (1000->600->2000->1500 meldete 25 %
-                      # statt 40 %) — genau die Zahl, die in die Schranke geht.
-    offener_fluss = 0.0
-    for _t, wert, messpunkt, flow_delta in curve:
-        if not messpunkt:
-            # F2: unvollstaendige Punkte sind keine Messpunkte — ihr Fluss
-            # wird aber am naechsten Messpunkt gebucht (sonst zaehlte eine
-            # Auszahlung in einer Kursluecke als Drawdown).
-            offener_fluss += flow_delta
-            continue
-        flow_delta += offener_fluss
-        offener_fluss = 0.0
-        # Nutzer-Regel 05.10.2026: Auszahlungen sind keine Verluste — der
-        # Peak wird um den Auszahlungsbetrag gesenkt (nie unter den Stand),
-        # BEVOR der Rueckfall gezaehlt wird. Einzahlungen heben die Kurve
-        # und damit den Peak ganz natuerlich.
-        if flow_delta < 0:
-            hoch = max(wert, hoch + flow_delta)
-        if wert > hoch:
-            hoch = wert
-        rueckfall = hoch - wert
-        if rueckfall > dd_usd:
-            dd_usd = rueckfall
-            dd_pct = (rueckfall / hoch * 100.0) if hoch > 0 else 0.0
-        if hoch > 0:
-            rel = rueckfall / hoch * 100.0
-            if rel > dd_pct_max:
-                dd_pct_max = rel
+    dd_fields = {}
+    if compute_dd:
+        measured_dd = max_drawdown_aus_kurve(curve)
+        dd_usd = measured_dd["dd_usd_raw"]
+        dd_pct = measured_dd["dd_pct_raw"]
+        dd_pct_max = measured_dd["dd_pct_max_rel_raw"]
+        dd_fields = {
+            "equity_dd_pct_raw": max(dd_pct, dd_pct_max),
+            "equity_dd_pct": round(max(dd_pct, dd_pct_max), 2),
+            "equity_dd_pct_am_usd_max": round(dd_pct, 2),
+            "equity_dd_pct_max_rel": round(dd_pct_max, 2),
+            "equity_dd_usd": round(dd_usd, 2),
+        }
 
     offen_gesamt = punkte_mit_kurs + punkte_ohne_kurs
     # F5: Nenner = aktive Stunden laut Trade-Zeiten abzueglich Marktpausen
@@ -1002,13 +970,9 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         "gmt_trefferquote": gmt["trefferquote"],
         "gmt_pruefung": dict(gmt),
         "zeitbasis": zeitbasis.metadata(),
-        # Bewertungs-/RetDD-Nenner ohne Anzeige-Rundung: 10,004 % darf
-        # nicht als 10,00 % eine Effizienz von 10,001/10,00 >= 1 erzeugen.
-        "equity_dd_pct_raw": max(dd_pct, dd_pct_max),
-        "equity_dd_pct": round(max(dd_pct, dd_pct_max), 2),
-        "equity_dd_pct_am_usd_max": round(dd_pct, 2),
-        "equity_dd_pct_max_rel": round(dd_pct_max, 2),
-        "equity_dd_usd": round(dd_usd, 2),
+        # Keep raw percentages for the assessment denominator. A curve-only
+        # caller supplies its own explicit anchor and does not receive fake DDs.
+        **dd_fields,
         "abdeckung_pct": round(abdeckung * 100, 1),
         "abdeckung_pct_raw": abdeckung * 100,
         "rasterpunkte": len(curve),

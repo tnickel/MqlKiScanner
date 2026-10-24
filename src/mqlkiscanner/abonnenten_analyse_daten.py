@@ -9,13 +9,13 @@ from __future__ import annotations
 
 import datetime as dt
 import math
-from collections.abc import Mapping
 
 from . import config, db, engine, ingest, kursdaten, parser, portfolio_statistik, quellen
 from .forensics import exposure
 from .pipeline import _kapitalbasis_abgleich
 from .signal_identity import identity_key
 from .studien_batch import _rekonstruiere_mit_feed_fallback
+from .zahlen import endliche_zahl as _zahl, json_sicher as _json_sicher
 
 POLICY_VERSION = "abonnenten_recherche_v1"
 MIN_MONATE = 2.0
@@ -27,12 +27,6 @@ MESSHINWEIS = (
     "Jahres-RetDD ist annualisiert aus der ausgewiesenen Trade-Zeitspanne; "
     "zwei Monate und 50 Trades garantieren keine statistische Belastbarkeit."
 )
-
-
-def _zahl(value):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    return float(value) if math.isfinite(value) else None
 
 
 def _validiere_metrics(raw: dict, sid: int, version: str) -> dict:
@@ -162,25 +156,6 @@ def _daten_effizienz(result, path, kapital, dd):
         "kein beobachtetes Jahresergebnis und keine künftige Renditezusage. "
         "Die 2-Monate-/50-Trade-Regel betrifft nur die Recherche-Rangtauglichkeit.")
     return eff
-
-
-def _json_sicher(value):
-    """Keine NaN/Inf, Datetime- oder NumPy-Objekte im persistenten Ergebnis."""
-    if value is None or isinstance(value, (str, bool, int)):
-        return value
-    if isinstance(value, float):
-        return value if math.isfinite(value) else None
-    if isinstance(value, (dt.datetime, dt.date)):
-        return value.isoformat()
-    if isinstance(value, Mapping):
-        return {str(key): _json_sicher(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple, set)):
-        return [_json_sicher(item) for item in value]
-    if hasattr(value, "tolist"):
-        return _json_sicher(value.tolist())
-    if hasattr(value, "item"):
-        return _json_sicher(value.item())
-    return str(value)
 
 
 class _Abbruch(RuntimeError):

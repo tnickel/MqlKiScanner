@@ -10,15 +10,12 @@ import bisect
 import math
 import statistics
 from collections import Counter, defaultdict
+from .zahlen import ist_endliche_zahl as _number
 
 VERSION = 1
 FALLBACK_USD = 10_000.0
 MIN_FIT_TRADES = 50
 MIN_REFERENCE_PROFILES = 5
-
-
-def _number(value):
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
 def _currency_claims(entry):

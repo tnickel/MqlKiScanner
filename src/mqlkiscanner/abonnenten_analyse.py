@@ -18,6 +18,7 @@ from .abonnenten_analyse_store import Store, now
 from .abonnenten_analyse_ki import AnalyseKI, Angehalten, FACTS_PAYLOAD_VERSION, digest, report_pdf
 from .abonnenten_analyse_parallel import AdaptiveHttpGate
 from .analysis_version import FORENSICS_VERSION
+from .zahlen import ist_endliche_zahl as _finite
 from .llm import prompts
 from .llm.client import LlmBudgetError, LlmError, LlmNoBalanceError, LlmRateLimitError
 
@@ -42,10 +43,6 @@ _FINAL_REVIEW_FIELDS = (
     "endpruefung_fehler", "endpruefung_at", "top5_comparison", "top5_comparison_basis",
     *_REDACTION_FIELDS,
 )
-
-
-def _finite(value) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
 def percentile(values: dict) -> dict:

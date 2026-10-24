@@ -1,0 +1,215 @@
+================================================================================
+KI-REPORT: Drawdown-Mechanismus (High-Watermark aus MT5-Kursen) + Duplikate
+================================================================================
+Datum:      2026-10-24 (Nachmittag) | Autor: GLM-5.3 (ZCode), NUR-LEsendes Review
+Basis:      Commit 1728fad ("Add data-only subscriber analysis and shared capital
+            estimates"), Arbeitsbaum sauber. Zeilennummern = dieser Stand.
+Auftrag:    (1) Review DD-Mechanismus: Max-Drawdown per High-Watermark, Kurse aus
+            MetaTrader, Nachrechnung. (2) Prüfen, dass diese Berechnungen NICHT
+            mehrfach an verschiedenen Stellen erfolgen. (3) Weitere doppelte
+            Funktionen/Vereinfachungen finden. Nutzer-Ziel: eindeutiger Code,
+            gleiche Funktion genau einmal.
+ 
+L E S E - A N W E I S U N G E N   F U E R   D I E   V E R A R B E I T E N D E   K I
+--------------------------------------------------------------------------------
+1. Befunde der Reihe nach abarbeiten; Prioritäten P1-P4 im JSON-Block am Ende.
+2. Es ist ein REFACTORING-Auftrag: Die fachliche Regel (Nutzer-Regel 05.10.2026,
+   siehe Abschnitt "DIE REGEL") darf NICHT geändert werden — nur ihre
+   Kodierungsanzahl. Die Regel soll EINMAL im Code existieren.
+3. Absicherung: Vor jedem Umbug die bestehenden Orakel-/Regressionstests laufen
+   lassen (verify_engine/Cent-Anker, tests/test_equity_*, test_drawdown*,
+   test_twr_ertrag, GS-MT5-Fälle). Sie sind der Beweis, dass die Vereinheitlichung
+   die Zahlen nicht veraendert.FORENSICS_VERSION nur erhoehen, wenn sich ein
+   Ergebniszahlen-Wert wirklich aendert (Soll: nein).
+4. Anker: Zeilen driften; jedes Funktion-Zitat als stabilen Anker nehmen.
+ 
+================================================================================
+D I E   R E G E L   ( N I C H T   A E N D E R N ,   N U R   E I N M A L   C O D E N )
+================================================================================
+High-Watermark-Max-Drawdown auf einer Equity-Kurve (Nutzer-Regel 05.10.2026):
+- Erster Punkt ist der Anker (Startkapital vor dem ersten Handelsereignis).
+- Einzahlung: hebt die Kurve und damit den Peak natuerlich.
+- Auszahlung (negativer Flow): senkt den Peak um ihren Betrag —
+  peak = max(wert, peak + fluss) — VOR der Rueckfallmessung, nie unter den Stand.
+- Flow an einem NICHT-Messpunkt (Kursluecke): nicht verwerfen, sondern zum
+  naechsten Messpunkt mitfuehren (sonst waere eine Auszahlung in einer Luecke ein
+  Drawdown).
+- Nur vollstaendige Punkte zaehlen (F2: Punkte mit offener Position ohne
+  vollstaendiges Floating sind keine Messpunkte).
+- Zwei Maxima getrennt fuehren: dd_usd/dd_pct am groessten USD-Rueckfall und
+  dd_pct_max_rel = Maximum der RELATIVEN Rueckfaelle (F1; letzteres geht in
+  Schranke/Score; equity_dd_pct_raw = max(beide)).
+- Raster: H1-Bar-Ende (MT5-time = Bar-Anfang, Close gehoert ans Intervallende);
+  keine Intrabar-Tiefs; GMT-Versatz preisbelegt (wochenweise, Zeitbasis).
+ 
+================================================================================
+K E R N B E F U N D :   D I E   R E G E L   I S T   7 M A L   K O D I E R T
+================================================================================
+# Datei                                             Funktion/Zei  Variante
+1 src/mqlkiscanner/forensics/drawdown.py:74         _max_drawdown        Closing-DD ohne Flows (Timestamp-Gruppen)
+2 src/mqlkiscanner/forensics/drawdown.py:198        _max_drawdown_konto  Closing-DD mit Flows + Mitigation
+3 src/mqlkiscanner/forensics/drawdown.py:28         unterwasser_verlauf  Chart-Pfad derselben Regel (Flow-Carry)
+4 src/mqlkiscanner/forensics/equity_rekonstruktion.py:923-957  inline in rekonstruiere  H1-Equity-DD (Messpunkt-Skip+Flow-Carry+Mitigation) — DER Mechanismus "Kurse vom MT5, nachgerechnet"
+5 src/mqlkiscanner/equity_studie.py:539-597         inline in berechne  Dieselbe H1-DD-Logik + zusaetzlich dd_von/dd_bis, Floating-Extrema, Unterwasser-Dauer
+6 src/mqlkiscanner/abonnenten_modellrechnung.py:218-244  _modell_dd   No-Flow-Modellvariante: rechnet DD aus der _curve von rekonstruiere NEU (Anker K0 vor Vorstart-Kosten), OHNE Mitigation (No-Flow: balances geleert)
+7 src/mqlkiscanner/risiko_rechner.py:69-101         closed_dd            Duplikat von _max_drawdown_konto, anderses Interface, Rueckgabe als BRUCHTEIL (0-1) statt Prozent!
+ 
+Bewusst KEIN Duplikat (nicht "vereinheitlichen"):
+- src/mqlkiscanner/abonnenten_modellkapital.py:273-305 _dd_anchor: Inversion
+  eines UNABHAENGIG gelieferten Closing-DD-Prozents im PnL-Raum zur
+  Kapitalschaetzung (K0=max((PeakPnL-PnL)/(DDpct/100)-PeakPnL)). Andere Frage-
+  stellung (Schaetzer), dokumentiert.
+ 
+Regel-Konsistenz der 7 Stellen: 1-5 implementieren die Mitigations- und
+Anker-Regel identisch (geprueft: Formel peak = max(wert, hoch+fluss) bzw.
+max(equity, peak+delta), Anker erster Punkt, rel. Maximum getrennt). 6 weicht
+dokumentiert ab (No-Flow-Szenario, explizit vom Nutzer so angefordert — README
+doc/reviews/2026-10-24_abonnenten_modellkapital). 7 ist inhaltlich identisch
+mit 2, aber Einheit + Interface weichen ab (D1).
+ 
+================================================================================
+E I N Z E L B E F U N D E
+================================================================================
+D1 [P1] closed_dd im Risikorechner: Duplikat + Einheitenfalle
+  Datei: src/mqlkiscanner/risiko_rechner.py:69-101 (def closed_dd),
+         Verbraucher :181, :197, Anzeige :429-437; app_pages/risiko_rechner.py:174-181
+  Was: closed_dd reimplementiert _max_drawdown_konto (drawdown.py:198) fuer das
+       Ereignisformat (zeit, delta, art) und liefert einen BRUCHTEIL (0-1)
+       zurueck, der im Feld "closed_dd_pct" landet. Jeder Verbraucher multi-
+       pliziert manuell mit 100 ("* 100.0", "_de(..., 100, ' %')").
+  Risiko: Feldname sagt Prozent, Wert ist Anteil — klassische Einheiten-Falle;
+       der manuelle *100 muss an JEDER neuen Anzeige wieder erinnert werden.
+  Fix: closed_dd streichen; stattdessen drawdown.run(...) bzw. _max_drawdown_
+       konto verwenden und dessen "dd_pct_max_rel" als Prozent uebernehmen
+       (Kapitalentscheidung via kapitalbasis.aufloesen wie es Zeile 146 schon
+       macht). Alternativ: closed_dd delegiert an _max_drawdown_konto und
+       liefert Prozent. Anzeige-/Vergleichscode (Differenz Equity-DD vs.
+       Closed-DD > 10 pp) bleibt inhaltlich gleich.
+ 
+D2 [P2] Die H1-Equity-DD-Schleife existiert doppelt: rekonstruiere vs. Studie
+  Datei: src/mqlkiscanner/forensics/equity_rekonstruktion.py:923-957
+         src/mqlkiscanner/equity_studie.py:539-597
+  Was: Beide bauen dieselbe Kurve (realisiert + Flows + Floating auf H1-Raster,
+       Messpunkt-Skip, offener Fluss) und rechnen dieselbe Peak-Schleife. Die
+       Studie reichert an (dd_von/dd_bis, floating_min/max, Unterwasser-Dauer,
+       Lueckenpunkte, Anker-Logik bei kurzer Terminalhistorie) — der Kern ist
+       aber 1:1 derselbe Algorithmus. Bereits GETEILT werden H1UsdUmrechnung,
+       _aktive_marktpausen, Zeitbasis, ermittle_gmt_offset (Studie importiert
+       sie, equity_studie.py:33-41) — nur der Kurven-/DD-Kern ist doppelt.
+  Risiko: Regel-Fixes (F1 rel. Maximum, F2 Messpunkte, Flow-Carry) muessen
+       zweimal gepflegt werden; die Historie zeigt, dass genau diese Stellen
+       mehrfach nachgebessert wurden.
+  Fix-Richtung: EINE Kurvenfunktion in equity_rekonstruktion (oder forensics/
+       equity_kurve.py), die (punkte mit messpunkt/flow_delta) liefert, plus
+       EINE Funktion max_drawdown_aus_kurve(punkte) -> {dd_usd, dd_pct,
+       dd_pct_max_rel, ...}. rekonstruiere und Studie nutzen beide; die Studie
+       behält ihre Anreicherungen als zusätzliche Auswertung ÜBER den Punkten.
+ 
+D3 [P2] _modell_dd verwirft das DD-Ergebnis von rekonstruiere und rechnet neu
+  Datei: src/mqlkiscanner/abonnenten_modellrechnung.py:218-244 (_modell_dd),
+         Aufruf :255-265 (include_curve=True, report.pop("_curve")), Anker-
+         Semantik "K0 als Peak vor Kosten" ist dokumentiert und gewollt.
+  Was: rekonstruiere berechnet inline bereits DD derselben Kurve (mit Flow-
+       Mitigation — hier irrelevant, da No-Flow); _modell_dd ueberschreibt die
+       Felder (equity_dd_pct_raw/... ) mit einer fuenften Kodierung der Peak-
+       Regel (Vorstart-Kostenpunkte vorangestellt, nur measured points).
+  Fix-Richtung: _modell_dd mit der gemeinsamen Kurven-DD-Funktion aus D2
+       fuettern (Punkte = Kostenpunkte + gemessene Kurvenpunkte) statt eigene
+       Schleife; rekonstruiere rechnet den DD dann gar nicht mit (Parameter
+       kurve_mit/o. compute_dd=False fuer den include_curve-Fall), damit nichts
+       doppelt gerechnet und verworfen wird.
+ 
+D4 [P3] drawdown.py: drei Varianten, zwei identische Result-Dict-Bloecke
+  Datei: src/mqlkiscanner/forensics/drawdown.py:74-118 (_max_drawdown),
+         :198-254 (_max_drawdown_konto), :28-51 (unterwasser_verlauf)
+  Was: _max_drawdown und _max_drawdown_konto unterscheiden sich NUR in der
+       Flow-Mitigation; der Rueckgabe-Dict-Bau (dd_usd/dd_pct/dd_pct_max_rel/
+       *_raw/dd_date/end_balance/peak_balance) ist 2x wortgleich kopiert.
+       unterwasser_verlauf kodiert die Regel fuer Charts ein drittes Mal.
+  Fix-Richtung: _max_drawdown_konto kann _max_drawdown fuer den Fall
+       flow_delta==0 je Timestamp ersetzen bzw. beide auf EINE Kernschleife
+       (punkte: (zeit, trade_delta, flow_delta)) zurueckfuehren; Result-Dict
+       EINMAL bauen. unterwasser_verlauf bleibt eigenes Interface (Chart),
+       aber dieselbe Kernfunktion nutzen (gibt ohnehin dieselbe Regel her).
+ 
+D5 [P3] Multi-Terminal-/Feed-Fallback ist 3x kodiert
+  Datei: 1) src/mqlkiscanner/forensics/equity_rekonstruktion.py:638-656
+            (interner while-Loop hat_weiteren_terminal/wechsle_terminal +
+            zurueck_zum_ersten_terminal-Reset in rekonstruiere)
+         2) src/mqlkiscanner/studien_batch.py:~300-360
+            (_rekonstruiere_mit_feed_fallback: eigener Loop um rekonstruiere,
+             Reset, feed_identitaet, qualitaet())
+         3) src/mqlkiscanner/abonnenten_modellrechnung.py:247-288 (_equity:
+            providers-Liste, quality()-Auswahl, versuche-Protokoll)
+  Was: Drei Strategien "versuche weitere Kursquellen bis Messqualitaet reicht",
+       jeweils eigene Qualitaets- und Reset-Logik. (modellrechnung ist bewusst
+       read-only ohne Terminalstart — die STRATEGIE ist trotzdem doppelt/dreifach.)
+  Fix-Richtung: EINE Hilfsfunktion/Generator (z.B. in kursdaten.py oder
+       equity_rekonstruktion) "iteriere_feeds(anbieter)" plus EINE
+       qualitaetsfunktion; studien_batch und modellrechnung konsumieren sie.
+       Der interne Loop in rekonstruiere (1) sollte mit (2) zusammenfallen —
+       heute ruft (2) rekonstruiere auf, das SELBST wieder Feeds durchprobiert:
+       verschachtelte Fallbacks, schwer begruendbar welche Kombination greift.
+  Vorsicht: Verhalten der Produktionspfade nicht aendern (Nutzer-Logik 08.10.:
+       "so lange through die Quellen probieren, bis die Kurse da sind").
+ 
+D6 [P4] Doppelte Hilfsfunktionen (Verhalten pruefen, dann konsolidieren)
+  - _zahl/_number/_finite-Zahlenaufsicht 9x: abonnenten_analyse.py:47 (_finite),
+    abonnenten_analyse_daten.py:32 (_zahl), abonnenten_modellrechnung.py:38,
+    abonnenten_modellkapital.py:20, kapitalbasis.py:41, abonnenten_analyse_ui.py:466,
+    abonnenten_native_cache_import.py:68, ingest.py:408, mql5/signal_stats.py:40.
+    Fast alle: "isinstance((int,float)) and not bool and isfinite". Konsolidieren
+    in EIN Modul (z.B. src/mqlkiscanner/zahlen.py); String-Parsing bleibt bei
+    scoring._platform_float (robust '9,10').
+  - _json_sicher 2x identisch: abonnenten_analyse_daten.py:167 und
+    abonnenten_modellrechnung.py:48 → eine gemeinsame Funktion.
+  - OfflineFx (abonnenten_modellrechnung.py:60-98) reimplementiert fx_rates.
+    usd_per als Offline-Variante (kein GET, 10-Tage-Walkback). Pruefen, ob
+    fx_rates eine reine Lese-Variante anbieten kann (Parameter offline=True);
+    sonst bewusst lassen und im Docstring auf die Kopie verweisen.
+  - abonnenten_modellworkflow.py:75 haertet Pfade per __file__-Liste — pruefen,
+    ob ein zentrales Import-/Pfadmodul das ersetzen kann (niedrig).
+  Positiv (bereits vereinheitlicht, NICHT zurueckbauen): kapitalbasis.aufloesen
+  ist DIE eine Kapitalentscheidung (Engine/Studie/Risikorechner/Statistik nutzen
+  sie); scoring.dd_maximum ist die EINE Schrankendefinition; pipeline.
+  _equity_messwerte/true_max_drawdown_pct die EINE Lesart; equity_studie
+  importiert H1UsdUmrechnung/_aktive_marktpausen/Zeitbasis zentral.
+ 
+================================================================================
+S C H U T Z I N V A R I A N T E N   (   N I C H T   A E N D E R N   )
+================================================================================
+- Die Mitigations-/Anker-Regel selbst (Abschnitt DIE REGEL) — Nutzer-Regel
+  05.10.2026; Refactoring aendert nur die ANZAHL ihrer Kodierungen.
+- No-Flow-Modellkopie in abonnenten_modellrechnung (explizit angefordert; README
+  2026-10-24_abonnenten_modellkapital + kapitalbasis_programmweit).
+- Messpunkt-/F2-Regel, Abdeckungs-Nenner F5, Teilmessung, Zeitbasis-Regeln
+  (3 Proben/90 %/Vererbung) — produktionsbewaehrte Forensik-Schutzkanten.
+- dd_maximum (scoring.py:95) als einzige Schranken-Maximums-Definition.
+- Erst Refactoring + Tests gruen, DANN erst der naechste Befund; keine
+  Funk-/Semantik- und Strukturumzuege in einem Schritt vermischen.
+ 
+================================================================================
+A B S C H L I E S S E N D E R   J S O N - B L O C K   ( P A R S E B A R )
+================================================================================
+{
+  "report": "drawdown_duplikate_review",
+  "datum": "2026-10-24",
+  "basis": {"commit": "1728fad"},
+  "kernbefund": "High-Watermark-Max-Drawdown-Regel ist 7x kodiert (6 Dateien); konsolidierung auf EINE Kurven-DD-Funktion empfohlen",
+  "regel_unveraenderlich": "Anker=Startkapital; Einzahlung hebt Peak; Auszahlung senkt Peak max(wert,peak+fluss) vor Messung; Flow-Carry an Luecken; nur Messpunkte; dd_pct vs dd_pct_max_rel getrennt; H1-Bar-Ende-Raster",
+  "befunde": [
+    {"id": "D1", "prio": "P1", "titel": "closed_dd Duplikat + Einheitenfalle (Bruchteil statt Prozent im Feld closed_dd_pct)", "datei": "src/mqlkiscanner/risiko_rechner.py", "zeile": [69, 181, 197, 429], "duplikat_von": "src/mqlkiscanner/forensics/drawdown.py:198 _max_drawdown_konto", "fix": "drawdown.run/_max_drawdown_konto nutzen und dd_pct_max_rel (Prozent) uebernehmen; manuelle *100-Multiplikatoren entfernen", "autonom_fixbar": true},
+    {"id": "D2", "prio": "P2", "titel": "H1-Equity-DD-Schleife doppelt: rekonstruiere inline vs equity_studie", "datei": ["src/mqlkiscanner/forensics/equity_rekonstruktion.py", "src/mqlkiscanner/equity_studie.py"], "zeile": [[923, 939], [539, 597]], "fix": "Gemeinsame Kurven-+DD-Funktion (max_drawdown_aus_kurve); Studie behaelt Anreicherungen als Zusatzauswertung", "autonom_fixbar": true, "absicherung": "Orakel-/Regressionstests muessen unveraendert gruen bleiben"},
+    {"id": "D3", "prio": "P2", "titel": "_modell_dd rechnet DD der rekonstruiere-Kurve neu und verwirft deren DD", "datei": "src/mqlkiscanner/abonnenten_modellrechnung.py", "zeile": [218, 261], "fix": "Gemeinsame DD-Funktion mit Vorstart-Kostenpunkten fuettern; rekonstruiere mit compute_dd=False fuer include_curve-Fall", "autonom_fixbar": true, "semantik": "Anker K0-vor-Kosten bleibt erhalten (dokumentierte Modellsemantik)"},
+    {"id": "D4", "prio": "P3", "titel": "drawdown.py: _max_drawdown/_max_drawdown_konto fast identisch, Result-Dict 2x kopiert; unterwasser_verlauf 3. Variante", "datei": "src/mqlkiscanner/forensics/drawdown.py", "zeile": [74, 198, 28], "fix": "Eine Kernschleife (zeit, trade_delta, flow_delta); Result-Dict einmal bauen; unterwasser_verlauf nutzt Kernfunktion", "autonom_fixbar": true},
+    {"id": "D5", "prio": "P3", "titel": "Multi-Feed-Fallback 3x kodiert (reko-intern, studien_batch, modellrechnung) inkl. verschachtelter Fallbacks", "datei": ["src/mqlkiscanner/forensics/equity_rekonstruktion.py", "src/mqlkiscanner/studien_batch.py", "src/mqlkiscanner/abonnenten_modellrechnung.py"], "zeile": [[638, 656], [300, 360], [247, 288]], "fix": "EINE Feed-Iterierung + EINE Qualitaetsfunktion; inneren Loop aus rekonstruiere herausloesen", "autonom_fixbar": true, "vorsicht": "Verhalten der Produktionspfade (Quellen-durchprobieren bis Kurse da) nicht aendern"},
+    {"id": "D6", "prio": "P4", "titel": "Helfer-Duplikate: _zahl/_number/_finite 9x, _json_sicher 2x, OfflineFx-Kopie von fx_rates.usd_per", "datei": ["abonnenten_analyse.py:47", "abonnenten_analyse_daten.py:32", "abonnenten_modellrechnung.py:38", "abonnenten_modellkapital.py:20", "kapitalbasis.py:41", "abonnenten_analyse_ui.py:466", "abonnenten_native_cache_import.py:68", "ingest.py:408", "mql5/signal_stats.py:40"], "fix": "Ein gemeinsames Zahl-/JSON-Hilfsmodul; fx_rates Offline-Lesevariode pruefen; String-Parsing bleibt scoring._platform_float", "autonom_fixbar": true}
+  ],
+  "kein_duplikat_nicht_entfernen": ["abonnenten_modellkapital.py:273 _dd_anchor (Inversions-Schaetzer)", "No-Flow-Modellkopie abonnenten_modellrechnung (explizit beauftragt)"],
+  "schutinvarianten": ["Mitigations-/Anker-Regel 05.10.2026", "F2-Messpunkte/F5-Abdeckung/Teilmessung/Zeitbasis", "scoring.dd_maximum als einzige Schrankendefinition", "pipeline._equity_messwerte als einzige Lesart", "zuvor importierte zentrale Teile der Studie (H1UsdUmrechnung, _aktive_marktpausen, Zeitbasis)"],
+  "reihenfolge": ["D1", "D2", "D3", "D4", "D5", "D6"]
+}
+================================================================================
+ENDE
+================================================================================
+ 

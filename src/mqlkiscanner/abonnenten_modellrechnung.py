@@ -5,10 +5,9 @@ the price cache. Its numbers are scenarios, not measured account forensics.
 """
 from __future__ import annotations
 
-import bisect
 from copy import deepcopy
 from contextlib import contextmanager
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from functools import lru_cache
 import hashlib
 from itertools import groupby
@@ -20,6 +19,9 @@ import sqlite3
 
 from . import config, fx_rates, parser
 from .forensics import drawdown, equity_rekonstruktion
+from .forensics.drawdown_core import max_drawdown_aus_kurve
+from .forensics.feed_auswahl import Einzelfeed as _NurLesen, qualitaet, ausreichend
+from .zahlen import endliche_zahl as _zahl, json_sicher as _json_sicher
 from .symbols import alias_fuer_symbol, normalize_symbol
 
 VERSION = 1
@@ -35,28 +37,6 @@ KAPITAL_METHODEN = {
 }
 
 
-def _zahl(value):
-    if not isinstance(value, (int, float)) or isinstance(value, bool):
-        return None
-    try:
-        number = float(value)
-        return number if math.isfinite(number) else None
-    except (OverflowError, ValueError):
-        return None
-
-
-def _json_sicher(value):
-    if isinstance(value, float):
-        return value if math.isfinite(value) else None
-    if isinstance(value, dict):
-        return {k: _json_sicher(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_json_sicher(v) for v in value]
-    if isinstance(value, (datetime, date)):
-        return value.isoformat()
-    return value
-
-
 class OfflineFx:
     """The existing ECB file, with its normal 10-day historical rule; no GET."""
 
@@ -67,32 +47,12 @@ class OfflineFx:
 
     def usd_per(self, currency, when):
         currency = str(currency or "").upper()
-        if currency == "USD":
-            return {"rate": 1.0, "date": when.isoformat()}
-        usd = self.table.get("USD")
-        series = usd if currency == "EUR" else self.table.get(currency)
-        if not usd or not series:
-            return None
-        idx = bisect.bisect_right(series[0], when.isoformat()) - 1
-        if idx < 0:
-            return None
-        day, denominator = series[0][idx], series[1][idx]
-        lag = (when - date.fromisoformat(day)).days
-        if not 0 <= lag <= fx_rates.MAX_WALKBACK_DAYS or denominator <= 0:
-            return None
-        if currency == "EUR":
-            factor = denominator
-        else:
-            usd_idx = bisect.bisect_right(usd[0], day) - 1
-            if usd_idx < 0 or usd[0][usd_idx] != day:
-                return None
-            factor = usd[1][usd_idx] / denominator
-        if not math.isfinite(factor) or factor <= 0:
-            return None
-        result = {"rate": factor, "date": day}
+        result = fx_rates.usd_per_table(currency, when, self.table)
+        if result is None or currency == "USD":
+            return result
         self.belege[(currency, when.isoformat())] = {
             "waehrung": currency, "ereignistag": when.isoformat(),
-            "kursdatum": day, "usd_je_einheit": factor,
+            "kursdatum": result["date"], "usd_je_einheit": result["rate"],
             "quelle": "lokale ECB-Referenzkursdatei", "datei": str(self.path),
         }
         return result
@@ -223,23 +183,18 @@ def _modell_dd(report, capital, prior_costs):
     points, balance = [], capital
     for when, events in groupby(sorted(prior_costs, key=lambda c: c.time), key=lambda c: c.time):
         balance += math.fsum(c.amount for c in events)
-        points.append((when.isoformat()+" (Exportzeit)", balance))
-    points.extend((datetime.fromtimestamp(epoch, timezone.utc).isoformat(), value)
+        points.append((when.isoformat()+" (Exportzeit)", balance, True, 0.0))
+    points.extend((datetime.fromtimestamp(epoch, timezone.utc).isoformat(), value, True, 0.0)
                   for epoch, value, measured, _flow in curve if measured)
-    peak, max_abs, max_rel, at_abs = capital, 0.0, 0.0, 0.0
+    dd = max_drawdown_aus_kurve(points, start=capital)
     minimum, minimum_when = capital, None
-    for when, value in points:
-        peak = max(peak, value)
-        absolute = peak-value
-        relative = absolute/peak*100
-        if absolute > max_abs:
-            max_abs, at_abs = absolute, relative
-        max_rel = max(max_rel, relative)
+    for when, value, _measured, _flow in points:
         if value < minimum:
             minimum, minimum_when = value, when
+    max_rel = dd["dd_pct_max_rel_raw"]
     report.update(equity_dd_pct_raw=max_rel, equity_dd_pct=round(max_rel, 2),
                   equity_dd_pct_max_rel=round(max_rel, 2),
-                  equity_dd_pct_am_usd_max=round(at_abs, 2), equity_dd_usd=round(max_abs, 2),
+                  equity_dd_pct_am_usd_max=round(dd["dd_pct_raw"], 2), equity_dd_usd=round(dd["dd_usd_raw"], 2),
                   min_equity_usd=minimum, min_equity_zeit=minimum_when,
                   modell_insolvent=minimum <= 0, modell_kurve_geprueft=True)
 
@@ -247,11 +202,7 @@ def _modell_dd(report, capital, prior_costs):
 def _equity(parsed, capital, broker, providers, lookup):
     best, attempts = None, []
     def quality(report):
-        complete = (report.get("status") == "ok" and report.get("verlaesslich") is True
-                    and report.get("trades_mit_kurs_und_kontrakt") == len(parsed.trades)
-                    and not report.get("fx_luecke") and not report.get("teilmessung"))
-        return (complete, _zahl(report.get("abdeckung_pct_raw")) or 0,
-                _zahl(report.get("trades_mit_kurs_und_kontrakt")) or 0)
+        return qualitaet(report, modus="modell", trades_n=len(parsed.trades))
     for provider in providers:
         try:
             first_trade = min(t.open_time for t in parsed.trades)
@@ -260,7 +211,7 @@ def _equity(parsed, capital, broker, providers, lookup):
             # A wrapper deliberately exposes no terminal-switch/start methods.
             report = equity_rekonstruktion.rekonstruiere(
                 parsed, _NurLesen(provider), trading_capital, broker=broker,
-                fx_lookup=lookup, include_curve=True)
+                fx_lookup=lookup, include_curve=True, compute_dd=False)
             report = dict(report)
             _modell_dd(report, capital, prior_costs)
             report["cache_feed"] = getattr(provider, "feed", None)
@@ -275,7 +226,7 @@ def _equity(parsed, capital, broker, providers, lookup):
                               "abdeckung_pct_raw", "grund", "symbol_mapping")})
             if best is None or quality(report) > quality(best):
                 best = report
-            if quality(report)[0] and quality(report)[1] >= 100:
+            if ausreichend(report, modus="modell", trades_n=len(parsed.trades)):
                 break
         except (ValueError, TypeError, OSError, sqlite3.Error, ArithmeticError) as error:
             attempts.append({"cache_feed": getattr(provider, "feed", None),
@@ -286,24 +237,6 @@ def _equity(parsed, capital, broker, providers, lookup):
     result["kapitalfluesse"] = "Modellszenario: alle Ein-/Auszahlungen absichtlich ignoriert."
     result["modell"] = True
     return result
-
-
-class _NurLesen:
-    """No multi-terminal lifecycle methods are delegated to the kernel."""
-
-    def __init__(self, provider):
-        self.provider = provider
-
-    @property
-    def terminal_pfad(self):
-        return getattr(self.provider, "terminal_pfad", None)
-
-    @property
-    def terminal_herkunft(self):
-        return getattr(self.provider, "terminal_herkunft", {})
-
-    def hole_h1(self, *args, **kwargs):
-        return self.provider.hole_h1(*args, **kwargs)
 
 
 def berechne_modell(entry, kapital, kurse=None):

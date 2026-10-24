@@ -31,6 +31,7 @@ from collections import deque
 from pathlib import Path
 
 from . import config, db, katalog, pipeline, scan_worker, signal_statistik
+from .forensics.feed_auswahl import Einzelfeed as _AktuellerFeed
 
 
 def _neu_aufloesbare_kontrakte(res, studie: dict | None) -> bool:
@@ -226,24 +227,6 @@ def _laufe(jobs: list, control: dict, settings: dict,
         control["restzeit_s"] = 0
 
 
-class _AktuellerFeed:
-    """Nur der aktuelle Feed; verhindert gemischte Bars beim Vergleich."""
-
-    def __init__(self, anbieter):
-        self.anbieter = anbieter
-
-    @property
-    def terminal_pfad(self):
-        return getattr(self.anbieter, "terminal_pfad", None)
-
-    @property
-    def terminal_herkunft(self):
-        return getattr(self.anbieter, "terminal_herkunft", {})
-
-    def hole_h1(self, *args, **kwargs):
-        return self.anbieter.hole_h1(*args, **kwargs)
-
-
 def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
     """Auch Teilhistorie oder unbrauchbare Zeitbasis an weiteren Brokern pruefen.
 
@@ -251,22 +234,11 @@ def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
     bestandene Messung, werden weitere Terminals als ganze, getrennte Feeds
     verglichen. Kein Zusammenkleben ihrer Zeitreihen, kein Auffuellen von Bars.
     """
-    from .forensics import equity_rekonstruktion
+    from .forensics import equity_rekonstruktion, feed_auswahl
 
     versuche = []
     best = None
     erster_fehler = None
-
-    def qualitaet(report):
-        dd = report.get("equity_dd_pct_raw", report.get("equity_dd_pct"))
-        messbar = (isinstance(dd, (int, float)) and not isinstance(dd, bool)
-                   and math.isfinite(dd) and dd >= 0)
-        abdeckung = report.get("abdeckung_pct_raw", report.get("abdeckung_pct"))
-        if (not isinstance(abdeckung, (int, float)) or isinstance(abdeckung, bool)
-                or not math.isfinite(abdeckung) or abdeckung < 0):
-            abdeckung = 0
-        return (report.get("verlaesslich") is True and messbar, messbar,
-                abdeckung, not bool(report.get("fx_luecke")), dd if messbar else 0)
 
     def erfasst(report, modus):
         feed = getattr(anbieter, "terminal_pfad", None)
@@ -297,19 +269,7 @@ def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
                         "status": status, "grund": f"{type(error).__name__}: {error}"})
 
     def reset():
-        if (getattr(anbieter, "terminal_idx", 0) != 0
-                and hasattr(anbieter, "zurueck_zum_ersten_terminal")):
-            try:
-                ok, grund = anbieter.zurueck_zum_ersten_terminal()
-                if not ok:
-                    versuche.append({"terminal": getattr(anbieter, "terminal_pfad", None),
-                                    "status": "reset_fehlgeschlagen", "grund": grund})
-            except Exception as error:
-                fehler(error, "reset_fehlgeschlagen")
-
-    def feed_identitaet():
-        return (getattr(anbieter, "terminal_idx", None),
-                getattr(anbieter, "terminal_pfad", None))
+        feed_auswahl.reset_feed(anbieter, meldung=versuche.append, fehler=fehler)
 
     try:
         try:
@@ -317,39 +277,23 @@ def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
                 parsed, anbieter, kapital, broker=broker), "symbol_fallback")
         except Exception as error:
             fehler(error, "berechnung_fehlgeschlagen")
-        if best is None or not qualitaet(best)[0]:
+        if best is None or not feed_auswahl.ausreichend(best):
             # Auch nach einem Fehler innerhalb des ersten Symbolfallbacks
             # die weiteren Feeds von Quelle0 aus getrennt versuchen.
             reset()
-        besucht = {feed_identitaet()}
-        while ((best is None or not qualitaet(best)[0])
-               and hasattr(anbieter, "hat_weiteren_terminal")
-               and anbieter.hat_weiteren_terminal()):
-            try:
-                ok, grund = anbieter.wechsle_terminal()
-            except Exception as error:
-                fehler(error, "verbindung_fehlgeschlagen")
-                ok, grund = False, None
-            identitaet = feed_identitaet()
-            if identitaet in besucht:
-                versuche.append({"terminal": getattr(anbieter, "terminal_pfad", None),
-                                "status": "kein_feed_fortschritt",
-                                "grund": "Terminalwechsel hat keine neue Quelle erreicht"})
-                break
-            besucht.add(identitaet)
-            if not ok:
-                if grund is not None:
-                    versuche.append({"terminal": getattr(anbieter, "terminal_pfad", None),
-                                    "status": "verbindung_fehlgeschlagen", "grund": grund})
-                continue
-            try:
-                kandidat = erfasst(equity_rekonstruktion.rekonstruiere(
-                    parsed, _AktuellerFeed(anbieter), kapital, broker=broker), "einzelfeed")
-            except Exception as error:
-                fehler(error, "berechnung_fehlgeschlagen")
-                continue
-            if best is None or qualitaet(kandidat) > qualitaet(best):
-                best = kandidat
+            for _ in feed_auswahl.iteriere_weitere_feeds(
+                    anbieter, weiter_nach_verbindungsfehler=True,
+                    meldung=versuche.append, fehler=fehler):
+                try:
+                    kandidat = erfasst(equity_rekonstruktion.rekonstruiere(
+                        parsed, _AktuellerFeed(anbieter), kapital, broker=broker), "einzelfeed")
+                except Exception as error:
+                    fehler(error, "berechnung_fehlgeschlagen")
+                    continue
+                if best is None or feed_auswahl.qualitaet(kandidat) > feed_auswahl.qualitaet(best):
+                    best = kandidat
+                if feed_auswahl.ausreichend(best):
+                    break
     except Exception as error:
         fehler(error, "feed_fallback_fehlgeschlagen")
     finally:

@@ -16,7 +16,8 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from mqlkiscanner import kapitalbasis, katalog, pipeline  # noqa: E402
-from mqlkiscanner.risiko_rechner import baue_pdf, berechne_csv, berechne_signal  # noqa: E402
+from mqlkiscanner.risiko_rechner import (  # noqa: E402
+    baue_pdf, berechne_csv, berechne_signal, closed_dd_prozent, CLOSED_DD_VERSION)
 from mqlkiscanner.ui_design import apply_theme, page_header  # noqa: E402
 
 apply_theme()
@@ -171,14 +172,17 @@ if ergebnis is not None:
               '—' if k.get('abdeckung_pct') is None else f"{k['abdeckung_pct']:.1f} %")
     m4.metric('Stärkster Floating-Verlust',
               '—' if k.get('floating_min_usd') is None else f"{k['floating_min_usd']:,.0f} USD")
-    if ergebnis.get('closed_dd_pct') is not None and k.get('equity_dd_pct') is not None:
-        if k['equity_dd_pct'] - ergebnis['closed_dd_pct'] * 100.0 > 10.0:
+    closing_pct = closed_dd_prozent(ergebnis)
+    if closing_pct is not None and ergebnis.get('closed_dd_version', 1) < CLOSED_DD_VERSION:
+        st.caption('Gespeicherter Closed-DD aus einer älteren Berechnung; neue Berechnungen verwenden die gemeinsame Drawdown-Methodik.')
+    if closing_pct is not None and k.get('equity_dd_pct') is not None:
+        if k['equity_dd_pct'] - closing_pct > 10.0:
             st.error(f"⚠️ Die geschlossene Kurve unterschätzt das Risiko massiv: "
-                     f"Closed-DD {ergebnis['closed_dd_pct'] * 100:.1f} % gegenüber "
+                     f"Closed-DD {closing_pct:.1f} % gegenüber "
                      f"Max-DD {k['equity_dd_pct']:.1f} % inklusive offener Trades.",
                      icon=':material/report:')
         else:
-            st.caption(f"Vergleich: eigener Closed-DD {ergebnis['closed_dd_pct'] * 100:.2f} %.")
+            st.caption(f"Vergleich: eigener Closed-DD {closing_pct:.2f} %.")
     ohne = ergebnis.get('symbole_ohne_kurse') or []
     if ohne:
         st.warning(f"Symbole ohne Kurse (floating unbekannt, DD kann unterschätzt sein): "

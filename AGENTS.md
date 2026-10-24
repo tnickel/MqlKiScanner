@@ -13,6 +13,20 @@ Dieser Block und die aktuellen Design-Regeln ordnen die datierten
 Umsetzungsnotizen unten ein. Frühere Testzahlen, Bewertungen und inzwischen
 abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
 
+- **Drawdown-Review und Konsolidierung (24.10.2026):** Gemeinsamer Peak-/Flow-
+  Kern in `forensics/drawdown_core.py` für Closing, H1, Studie, Diagramm und
+  Modell. Die unterschiedliche Kurvenbildung/Abdeckungsprüfung bleibt
+  ausdrücklich erhalten; Modell-DD wird nur einmal gerechnet. Risikorechner
+  und Kontrollbericht korrigieren künstliche Peaks bei Einzahlungen sowie
+  Reihenfolgeartefakte gleicher Zeitstempel. Neue Risikorechnerwerte sind
+  Prozent mit `closed_dd_version=2`; ungetaggte Altwerte werden an einer
+  Lesegrenze umgerechnet und als historisch markiert. Gemeinsame Feed-,
+  Zahlen-/JSON- und Offline-FX-Helfer; Provenienzliste ergänzt. 1.614 betroffene
+  Tests und neun abschließende Integrationsfälle bestanden; 15.600 synthetische
+  Alt-/Neu-Vergleiche bestätigen unveränderte Scanner-/H1-Ergebnisse.
+  Forensikversion bleibt 22. Keine produktive Neuberechnung oder KI-Aktivierung.
+  Nachweis: `doc/reviews/2026-10-24_drawdown_konsolidierung/README.md`.
+
 - **Programmweite Kapitalermittlung (Nutzerentscheidung 24.10.2026):**
   Die Kapitalabschätzung gilt jetzt für alle Anbieter-Rechenwege. Zentrale
   Entscheidung in `kapitalbasis.aufloesen`: belegte CSV-/Quellenbasis oder
