@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-18T17:00:52.0966365Z",
+  "source": "mql5",
+  "old_pid": 1351644,
+  "new_pid": 1351120,
+  "reason": "completed failed job; preserve configured Log4j file at initial JVM startup for real inner error evidence",
+  "job_before": "u-5fa5177d-4892-42c0-8e45-23e93f92ba84",
+  "failed_providers_before": 48
+}

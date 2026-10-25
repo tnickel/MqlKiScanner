@@ -1,0 +1,417 @@
+{
+  "checked_at_utc": "2026-10-19T08:13:16.644542+00:00",
+  "scope": "Urgent read-only Robo catalog platform triage. Only GET providers/metrics and SQLite mode=ro/query_only SELECTs, local native backups and Git/source reads. No DB/source changes, catalog sync, scan, trade CSV request, terminal access, test or model.",
+  "finding": "Confirmed historical source REST platform mislabelling of RStocks as MT4. The newly explicit rst API claim conflicts with three old catalog metadata rows; no actual provider-platform transition, owner reassignment or Scanner trade-parser relabelling is evidenced.",
+  "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+  "source_id": 4,
+  "api_scope": {
+    "rows": 200,
+    "unique_provider_ids": 200,
+    "versions": {
+      "mql4": 137,
+      "mql5": 60,
+      "rst": 3
+    },
+    "conflicting_existing_refs": 3
+  },
+  "items": [
+    {
+      "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+      "source_id": 4,
+      "signal_id": 93128696,
+      "signal_ref": 1099,
+      "name": "TradingGoldTrade",
+      "native_source_id": "ccca",
+      "current_api_version": "rst",
+      "current_api_source_platform": "rst",
+      "trade_history_supported": false,
+      "old_catalog_platform": "mt4",
+      "old_catalog_version": "mql4",
+      "old_catalog_updated_at": "2026-10-18 18:58:02",
+      "workflow_row_present": false,
+      "old_artifacts": [
+        {
+          "version": "mql4",
+          "art": "metrics",
+          "fetched_at": "2026-10-09 00:00:52",
+          "sha256": "6b30a74a199fd36236657b945a226312e64da65ef1df239398e67ca8bc0714ef",
+          "bytes_match_registry": true,
+          "filename": "mql4_93128696_metrics.json"
+        }
+      ]
+    },
+    {
+      "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+      "source_id": 4,
+      "signal_id": 93019895,
+      "signal_ref": 1102,
+      "name": "TrendInvestSignal",
+      "native_source_id": "ccca",
+      "current_api_version": "rst",
+      "current_api_source_platform": "rst",
+      "trade_history_supported": false,
+      "old_catalog_platform": "mt4",
+      "old_catalog_version": "mql4",
+      "old_catalog_updated_at": "2026-10-18 18:58:02",
+      "workflow_row_present": false,
+      "old_artifacts": [
+        {
+          "version": "mql4",
+          "art": "metrics",
+          "fetched_at": "2026-10-09 00:00:52",
+          "sha256": "a40e23690cfbab209879c9ff8fb74e3993b41767d05bcc344ba0fc0ce48a32fc",
+          "bytes_match_registry": true,
+          "filename": "mql4_93019895_metrics.json"
+        }
+      ]
+    },
+    {
+      "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+      "source_id": 4,
+      "signal_id": 93156209,
+      "signal_ref": 1161,
+      "name": "SP500ETF",
+      "native_source_id": "ccca",
+      "current_api_version": "rst",
+      "current_api_source_platform": "rst",
+      "trade_history_supported": false,
+      "old_catalog_platform": "mt4",
+      "old_catalog_version": "mql4",
+      "old_catalog_updated_at": "2026-10-18 18:58:02",
+      "workflow_row_present": false,
+      "old_artifacts": [
+        {
+          "version": "mql4",
+          "art": "metrics",
+          "fetched_at": "2026-10-08 20:21:00",
+          "sha256": "98d9ae1e6669f2a717bce9469c3af0314efa0629ec328c9642b62c32b1c8256a",
+          "bytes_match_registry": true,
+          "filename": "mql4_93156209_metrics.json"
+        }
+      ]
+    }
+  ],
+  "historical_cause": {
+    "source_commit": "731466670dec1c6038b83c567a1642d3afebd64b",
+    "source_file": "src/main/java/de/robomonitor/rest/RestApiServer.java",
+    "source_sha256": "cc1dfa5b869cb3b803af1de7473e895058d43615a862c6e176139d518a5c4263",
+    "method_start_line": 659,
+    "method_lines": [
+      "    private static String versionVon(SignalAccount s) {",
+      "        return \"mt5\".equalsIgnoreCase(s.getPlatform()) ? \"mql5\" : \"mql4\";",
+      "    }"
+    ],
+    "explanation": "The earlier binary branch mt5 ? mql5 : mql4 labelled every non-mt5 platform, including rst, as mql4. Current explicit branch preserves rst. Scanner normalizes the supplied mql4 version to mt4, so the older stored claim follows the old source API contract.",
+    "current_source_file": "../roboforex/src/main/java/de/robomonitor/rest/RestApiServer.java",
+    "current_source_lines": "692-700"
+  },
+  "native_counterevidence": [
+    {
+      "backup_label": "pre-update 20261018T163932Z",
+      "sha256": "85019de3fe5eb0c41f5cf87814d52f188ccea5b806df866b659039d6b8f77572",
+      "providers": [
+        {
+          "Login": "93128696",
+          "SourceId": "ccca",
+          "Name": "TradingGoldTrade",
+          "Plattform": "rst",
+          "Startdatum": "2024-09-20"
+        },
+        {
+          "Login": "93019895",
+          "SourceId": "ccca",
+          "Name": "TrendInvestSignal",
+          "Plattform": "rst",
+          "Startdatum": "2022-11-11"
+        },
+        {
+          "Login": "93156209",
+          "SourceId": "ccca",
+          "Name": "SP500ETF",
+          "Plattform": "rst",
+          "Startdatum": "2025-06-26"
+        }
+      ]
+    },
+    {
+      "backup_label": "after-initial 20261018T184509Z",
+      "sha256": "9e9830a88e193ee7db927da43a20677e3fb4d5206f8ce69d8f1f01feb124ab13",
+      "providers": [
+        {
+          "Login": "93128696",
+          "SourceId": "ccca",
+          "Name": "TradingGoldTrade",
+          "Plattform": "rst",
+          "Startdatum": "2024-09-20"
+        },
+        {
+          "Login": "93019895",
+          "SourceId": "ccca",
+          "Name": "TrendInvestSignal",
+          "Plattform": "rst",
+          "Startdatum": "2022-11-11"
+        },
+        {
+          "Login": "93156209",
+          "SourceId": "ccca",
+          "Name": "SP500ETF",
+          "Plattform": "rst",
+          "Startdatum": "2025-06-26"
+        }
+      ]
+    },
+    {
+      "backup_label": "current native source",
+      "sha256": "9e9830a88e193ee7db927da43a20677e3fb4d5206f8ce69d8f1f01feb124ab13",
+      "providers": [
+        {
+          "Login": "93128696",
+          "SourceId": "ccca",
+          "Name": "TradingGoldTrade",
+          "Plattform": "rst",
+          "Startdatum": "2024-09-20"
+        },
+        {
+          "Login": "93019895",
+          "SourceId": "ccca",
+          "Name": "TrendInvestSignal",
+          "Plattform": "rst",
+          "Startdatum": "2022-11-11"
+        },
+        {
+          "Login": "93156209",
+          "SourceId": "ccca",
+          "Name": "SP500ETF",
+          "Plattform": "rst",
+          "Startdatum": "2025-06-26"
+        }
+      ]
+    }
+  ],
+  "native_current_byte_equal_to_20261018_after_initial": true,
+  "current_metrics_evidence": [
+    {
+      "signal_id": 93128696,
+      "TradingPlatform": "rst",
+      "TradeHistorySupported": false,
+      "TradeExportAvailable": false,
+      "Currency": null,
+      "CurrencyEvidence": null,
+      "RatingCurrency": "USD",
+      "Balance": null,
+      "NativeMoneyCurrency": null,
+      "TradeUnitStatus": "unverified"
+    },
+    {
+      "signal_id": 93019895,
+      "TradingPlatform": "rst",
+      "TradeHistorySupported": false,
+      "TradeExportAvailable": false,
+      "Currency": null,
+      "CurrencyEvidence": null,
+      "RatingCurrency": "USD",
+      "Balance": null,
+      "NativeMoneyCurrency": null,
+      "TradeUnitStatus": "unverified"
+    },
+    {
+      "signal_id": 93156209,
+      "TradingPlatform": "rst",
+      "TradeHistorySupported": false,
+      "TradeExportAvailable": false,
+      "Currency": null,
+      "CurrencyEvidence": null,
+      "RatingCurrency": "USD",
+      "Balance": null,
+      "NativeMoneyCurrency": null,
+      "TradeUnitStatus": "unverified"
+    }
+  ],
+  "dependency_counts_all_tables_with_signal_ref": {
+    "signal_identitaeten": {
+      "1099": 1,
+      "1102": 1,
+      "1161": 1
+    },
+    "signal_fixierungen": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "signals": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "trade_files": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "forensik": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "analyses": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "subscriber_history": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "downloader_reports": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "ampel_verlauf": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "ampel_wechsel": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "quellen_artefakte": {
+      "1099": 1,
+      "1102": 1,
+      "1161": 1
+    },
+    "katalog_signale": {
+      "1099": 1,
+      "1102": 1,
+      "1161": 1
+    },
+    "signal_kommentare": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "signal_markierungen": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "equity_studien": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "agenten_laeufe": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "dossier_profil": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "dossier_beobachtungen": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "trade_deltas": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    }
+  },
+  "dependency_summary": {
+    "existing_rows_only_in": [
+      "signal_identitaeten",
+      "katalog_signale",
+      "quellen_artefakte"
+    ],
+    "identity_rows": 3,
+    "catalog_rows": 3,
+    "artifact_rows": 3,
+    "artifact_kinds": "metrics only, all historical mql4 and SHA verified",
+    "workflow_forensics_trades_studies_analyses_or_other_active_dependencies": 0,
+    "qualification": "Checks cover all current schema tables with signal_ref. Unassigned historical quarantine is not reattributed; owner UID and references remain unchanged."
+  },
+  "robo_workflow33": {
+    "workflow_heads": 33,
+    "present_in_current_api_and_same_platform": 30,
+    "present_but_conflicting": [],
+    "absent_from_current_api": [
+      {
+        "signal_id": 21571829,
+        "signal_ref": 165,
+        "stored_platform": "mt4"
+      },
+      {
+        "signal_id": 47136529,
+        "signal_ref": 186,
+        "stored_platform": "mt4"
+      },
+      {
+        "signal_id": 72166122,
+        "signal_ref": 187,
+        "stored_platform": "mt4"
+      }
+    ],
+    "rst_collisions_intersect_workflow33": false,
+    "note": "The three absent old MT4 workflows are missing current providers, not platform-change collisions. Source availability/unit guards still apply to any negative refresh; this read-only review starts none."
+  },
+  "targeted_correction_assessment": {
+    "historical_mt4_claim_refuted": true,
+    "same_owner_same_provider_refs_supported": true,
+    "general_platform_guard_must_remain": true,
+    "safe_scope_for_parent_review": "Exactly three catalog-only metadata records under the named UID/refs. Parent may separately review an explicit copy trial, before-backup and lossless old row/artifact export, keeping UID/ref unchanged and old mql4 metrics preserved as inactive historical artifacts; this is not permission for arbitrary platform changes. No production action was taken here.",
+    "artifact_inactivity_basis": "katalog.katalog_resultate/metrics_stats use exact current version for quellen_artefakte lookup, not any older version. A catalog corrected to rst does not select old mql4 metrics.",
+    "rst_platform_mapping_limit": "ingest._PLATTFORM lacks rst, so ordinary normalization yields platform empty and version rst. This is an unsupported metadata-only source platform; do not map it to MT4/MT5 or create a trade-export fallback."
+  },
+  "private_evidence": [
+    {
+      "path": "data/runs/liveabschluss_20261019/plans/robo_platform_conflicts_20261019.json",
+      "sha256": "593d32870939282df5d995ea7f9ce0c6b1b3ae250e615d471417a23a8481bde7"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/plans/robo_rst_dependencies_20261019.json",
+      "sha256": "a3a0a11b13ac16c08493bff192953ab7fe19a5c6b35905608257912eb698cdc6"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/plans/robo_rst_platform_provenance_20261019.json",
+      "sha256": "110cb7e1d13299fe2e748f2622f225c9115e5aebd1bb07c53319495c21cad61e"
+    }
+  ],
+  "code_references": [
+    "src/mqlkiscanner/db.py:597-611 source-qualified platform guard",
+    "src/mqlkiscanner/db.py:1256-1280 atomic catalog replacement",
+    "src/mqlkiscanner/katalog.py:29-51 normalization",
+    "src/mqlkiscanner/katalog.py:127-211 exact version artifact lookup",
+    "src/mqlkiscanner/katalog.py:214-260 exact metrics version/SHA/id guard",
+    "src/mqlkiscanner/ingest.py:32 platform mapping",
+    "../roboforex/src/main/java/de/robomonitor/rest/RestApiServer.java:692-705 explicit rst unsupported handling"
+  ],
+  "source_project_historical_reports": {
+    "qualification": "No Scanner report dependencies does not mean no historical native-source report files. These source-project originals remain outside this metadata correction and must stay untouched.",
+    "files_per_provider": [
+      {
+        "signal_id": 93128696,
+        "pdf": 1,
+        "markdown": 1
+      },
+      {
+        "signal_id": 93019895,
+        "pdf": 0,
+        "markdown": 0
+      },
+      {
+        "signal_id": 93156209,
+        "pdf": 2,
+        "markdown": 2
+      }
+    ],
+    "private_manifest": "data/runs/liveabschluss_20261019/plans/robo_rst_source_historical_reports_20261019.json",
+    "private_manifest_sha256": "5c743dacd2d8c4a48f60f716b9de7d3c83f75695f7815ffea42d236d2bc7d08c"
+  }
+}

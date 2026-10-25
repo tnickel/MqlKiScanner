@@ -1,0 +1,11 @@
+{
+  "observed_utc": "2026-10-19T08:32:18.527Z",
+  "window_title": "ZuluMonitor v1.2.0 (07.10.2026) – ZuluTrade",
+  "window_id": 3673518,
+  "regular_gui_visible": true,
+  "action": "Activated existing minimized ZuluMonitor window; no download/update/model control invoked",
+  "status_text": "Text Bereit – 200 Trader aus lokalem Cache geladen, davon 26 Zombie-Trader (rot markiert). ID: JavaFX1041",
+  "accessibility_sha256": "ab8f1e848b996373d4ffe7284751765dacb41a3f9f90a958b4d28bdd0fa95499",
+  "runtime_pid": 181568,
+  "scope_unchanged": true
+}

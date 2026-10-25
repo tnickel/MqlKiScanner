@@ -1,0 +1,7 @@
+{
+  "utc": "2026-10-18T16:41:17.0881543Z",
+  "vantage_pid": 1350380,
+  "mql_pid": 1351644,
+  "robo_pid": 1351408,
+  "method": "Start-Process Hidden; Vantage/Robo same direct Java args, MQL tested fat JAR; same working directories and settings"
+}

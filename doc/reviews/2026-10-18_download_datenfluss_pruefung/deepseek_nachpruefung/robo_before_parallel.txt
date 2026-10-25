@@ -1,0 +1,52 @@
+-------------------------------------------------------------------------------
+Test set: de.robomonitor.ReviewDataIntegrityTest
+-------------------------------------------------------------------------------
+Tests run: 11, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.371 s <<< FAILURE! -- in de.robomonitor.ReviewDataIntegrityTest
+de.robomonitor.ReviewDataIntegrityTest.parallelDailyStoresPublishVerifiableWholeBundles(Path) -- Time elapsed: 0.025 s <<< ERROR!
+java.util.concurrent.ExecutionException: java.lang.RuntimeException: java.nio.file.AccessDeniedException: C:\Users\tnickel\AppData\Local\Temp\junit14490867277514610348\daily\.daily_1.csv.6588575355079603374.tmp -> C:\Users\tnickel\AppData\Local\Temp\junit14490867277514610348\daily\daily_1.csv
+	at java.base/java.util.concurrent.FutureTask.report(FutureTask.java:124)
+	at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:207)
+	at de.robomonitor.ReviewDataIntegrityTest.parallelDailyStoresPublishVerifiableWholeBundles(ReviewDataIntegrityTest.java:84)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	Suppressed: java.io.IOException: Failed to delete temp directory C:\Users\tnickel\AppData\Local\Temp\junit14490867277514610348. The following paths could not be deleted (see suppressed exceptions for details): <root>
+		at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)
+		at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+		at java.base/java.util.stream.SortedOps$RefSortingSink.end(SortedOps.java:395)
+		at java.base/java.util.stream.Sink$ChainedReference.end(Sink.java:261)
+		at java.base/java.util.stream.Sink$ChainedReference.end(Sink.java:261)
+		at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:571)
+		at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+		at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+		at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+		at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+		at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+		... 2 more
+		Suppressed: java.nio.file.DirectoryNotEmptyException: C:\Users\tnickel\AppData\Local\Temp\junit14490867277514610348
+			at java.base/sun.nio.fs.WindowsFileSystemProvider.implDelete(WindowsFileSystemProvider.java:266)
+			at java.base/sun.nio.fs.AbstractFileSystemProvider.delete(AbstractFileSystemProvider.java:105)
+			at java.base/java.nio.file.Files.delete(Files.java:1052)
+			at java.base/java.nio.file.Files.walkFileTree(Files.java:2560)
+			at java.base/java.nio.file.Files.walkFileTree(Files.java:2609)
+			... 13 more
+Caused by: java.lang.RuntimeException: java.nio.file.AccessDeniedException: C:\Users\tnickel\AppData\Local\Temp\junit14490867277514610348\daily\.daily_1.csv.6588575355079603374.tmp -> C:\Users\tnickel\AppData\Local\Temp\junit14490867277514610348\daily\daily_1.csv
+	at de.robomonitor.ReviewDataIntegrityTest.lambda$parallelDailyStoresPublishVerifiableWholeBundles$0(ReviewDataIntegrityTest.java:82)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+Caused by: java.nio.file.AccessDeniedException: C:\Users\tnickel\AppData\Local\Temp\junit14490867277514610348\daily\.daily_1.csv.6588575355079603374.tmp -> C:\Users\tnickel\AppData\Local\Temp\junit14490867277514610348\daily\daily_1.csv
+	at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:89)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
+	at java.base/sun.nio.fs.WindowsFileCopy.move(WindowsFileCopy.java:310)
+	at java.base/sun.nio.fs.WindowsFileSystemProvider.move(WindowsFileSystemProvider.java:287)
+	at java.base/java.nio.file.Files.move(Files.java:1319)
+	at de.robomonitor.store.FileTransactions.write(FileTransactions.java:19)
+	at de.robomonitor.store.DataStore.writeAtomic(DataStore.java:342)
+	at de.robomonitor.store.DataStore.writeAtomic(DataStore.java:338)
+	at de.robomonitor.store.DataStore.saveDaily(DataStore.java:174)
+	at de.robomonitor.ReviewDataIntegrityTest.lambda$parallelDailyStoresPublishVerifiableWholeBundles$0(ReviewDataIntegrityTest.java:80)
+	... 5 more
+

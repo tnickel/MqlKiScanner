@@ -1,0 +1,12 @@
+{
+  "unchanged": true,
+  "versions": {
+    "numpy": "2.4.6",
+    "streamlit": "1.63.0",
+    "pytest": "9.1.1",
+    "MetaTrader5": "5.0.5735",
+    "pandas": "2.3.3",
+    "requests": "2.32.5"
+  },
+  "python_version": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]"
+}

@@ -1,0 +1,73 @@
+{
+  "scope": "Eight originally scoped core/app/maintenance files plus the newly approved source resolver fix",
+  "core_checks": [
+    {
+      "path": "src/mqlkiscanner/tradeserver_client.py",
+      "syntax_valid": true,
+      "sha256": "d44a834e109e82ba96b1380633eade4badeb9cd7a652f0e7c0b341d616f427a0",
+      "same_as_prior_full": true
+    },
+    {
+      "path": "src/mqlkiscanner/tradeserver_sync.py",
+      "syntax_valid": true,
+      "sha256": "60193615aedb1053b185c438472390bef3f71ea2c099f03e48e1706f5aa42415",
+      "same_as_prior_full": true
+    },
+    {
+      "path": "scripts/reference/live_abschluss.py",
+      "syntax_valid": true,
+      "sha256": "47095719fb66930d7608afc4ca0bcc95021fe31c69d28ece11734ee5a06c051f",
+      "same_as_prior_full": true
+    },
+    {
+      "path": "app_pages/scan.py",
+      "syntax_valid": true,
+      "sha256": "d78769b232a8d97044a0ce0f46ed8e474551ffd2510bbb6b295c6c68405a2d13",
+      "same_as_prior_full": true
+    },
+    {
+      "path": "app_pages/alle_signale.py",
+      "syntax_valid": true,
+      "sha256": "8069ffaa00ac8df70a83c8be9b471738c4a58a9b202c9b90497ebb5242b3cf6d",
+      "same_as_prior_full": true
+    },
+    {
+      "path": "src/mqlkiscanner/alle_signale_ui.py",
+      "syntax_valid": true,
+      "sha256": "d4face5a8f0477065a3e687f22d9cadccbfbea91b9d4b8e6beecea2055f36782",
+      "same_as_prior_full": true
+    },
+    {
+      "path": "src/mqlkiscanner/kursdaten.py",
+      "syntax_valid": true,
+      "sha256": "07c5d806c95ec6f8fc546fb9ee65d9f8ff13eb6b1c5eba7eff1b17a788543505",
+      "same_as_prior_full": true
+    },
+    {
+      "path": "src/mqlkiscanner/kurs_cache.py",
+      "syntax_valid": true,
+      "sha256": "392dd7f3c89a4350c2b34a7e991a1ca647ac31925e9aebde98b4935446e770b7",
+      "same_as_prior_full": true
+    },
+    {
+      "path": "src/mqlkiscanner/katalog.py",
+      "syntax_valid": true,
+      "sha256": "293374096748253684702b3298cdfd96d353a66dab830e70ce8fc7068032d75c",
+      "same_as_prior_full": false
+    }
+  ],
+  "readmes_checked": 9,
+  "missing_local_markdown_targets": [],
+  "json_evidence_valid": [
+    "scanner_final_bundled_summary.json",
+    "scanner_final_bundled_hash_comparison.json",
+    "scanner_final_bundled_runtime_comparison.json",
+    "server_ui_h1_fixes.json",
+    "server_v2_live_sync.json",
+    "server_tests_manifest.json",
+    "root_scanner_bundled_restart.json"
+  ],
+  "only_core_change_since_prior_full": [
+    "src/mqlkiscanner/katalog.py"
+  ]
+}

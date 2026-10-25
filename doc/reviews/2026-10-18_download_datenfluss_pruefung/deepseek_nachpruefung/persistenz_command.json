@@ -1,0 +1,15 @@
+{
+  "args": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_download_datenfluss_pruefung\\deepseek_nachpruefung\\persistenz_probe.py"
+  ],
+  "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner",
+  "started_utc": "2026-10-18T15:05:20.429853+00:00",
+  "child_env_overrides": {
+    "PYTHONIOENCODING": "utf-8",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "access": "SQLite URI mode=ro, query_only=ON, one read transaction; no schema/PDF writes",
+  "exit_code": 0,
+  "finished_utc": "2026-10-18T15:05:21.288300+00:00"
+}

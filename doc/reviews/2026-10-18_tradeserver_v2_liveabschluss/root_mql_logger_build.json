@@ -1,0 +1,22 @@
+{
+  "utc": "2026-10-18T18:22:21.877123+00:00",
+  "tests": {
+    "tests": 154,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "forked_bad_location_test": true,
+  "fat_jar_probe": {
+    "old_default_context_method_exit": 1,
+    "new_owning_logger_context_method_exit": 0
+  },
+  "scope": "isolated full Maven build, no deployment/restart of active source job",
+  "sources": {
+    "src\\logging\\LoggerManager.java": "b08c5ddc7517264802ec5db2ea1a5d5dbe6926470762ea4e654193e4f00884f9",
+    "tests\\logging\\LoggerManagerTest.java": "4aaf442b314497e054397944152d6f3093d0ea2939722a361c5b7068242450f4",
+    "target\\MqlDownloader-0.0.35-SNAPSHOT-jar-with-dependencies.jar": "692fc1e796dd6667e7d42310187d7fb1fc040ef0241d85fca5c658b352a01a8e"
+  },
+  "future_restart_property": "-Dlog4j.configurationFile=file:///C:/Forex/MqlAnalyzer/config/log4j2.xml",
+  "activation": "pending combined pagination repair and verified idle source restart"
+}

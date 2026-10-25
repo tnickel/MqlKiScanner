@@ -1,0 +1,9 @@
+[
+  "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "--junitxml=doc\\reviews\\2026-10-18_download_datenfluss_pruefung\\fremdreview_nachpruefung\\scanner_full.xml"
+]

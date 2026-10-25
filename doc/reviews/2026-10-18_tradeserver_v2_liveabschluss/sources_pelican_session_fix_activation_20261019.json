@@ -1,0 +1,49 @@
+{
+  "started_utc": "2026-10-19T08:02:15.661720+00:00",
+  "old_pid": 41072,
+  "new_pid": 13632,
+  "new_jar_sha256": "1192137d7dba2c85cd13f33af570de8fffd86e841c110da78ea1646d0db949f2",
+  "old_jar_sha256": "1d89883cac256fc5253092d39677fdec949e73b45504f57ed0a0549025dfacd3",
+  "old_workers_absent": true,
+  "old_gui_normal_exit": true,
+  "port8090_free_before_start": true,
+  "reader_idle_window_confirmed_by_root": true,
+  "offline_backup_sqlite_integrity": [
+    {
+      "name": "abonnenten.db",
+      "integrity": "ok"
+    },
+    {
+      "name": "live_trading.db",
+      "integrity": "ok"
+    },
+    {
+      "name": "strategien.db",
+      "integrity": "ok"
+    }
+  ],
+  "historical_tests": {
+    "tests": 183,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "source_update_post": false,
+  "checked_utc": "2026-10-19T08:02:17.839453+00:00",
+  "health": {
+    "status": "ok",
+    "service": "PelicanTrading",
+    "instance": "Ryzen7950X",
+    "apiVersion": "v1",
+    "uptimeSeconds": 0,
+    "serverTime": "2026-10-19T10:02:17.2196538",
+    "providers": 641,
+    "tokenRequired": false
+  },
+  "native_closed_files_hash_unchanged": 4604,
+  "extra2086522_export_sha_unchanged": true,
+  "old200_job_receipt_preserved": true,
+  "old_extra_scope_receipt_preserved": true,
+  "activation_successful": true,
+  "live_chrome_renewal_not_retriggered": true
+}

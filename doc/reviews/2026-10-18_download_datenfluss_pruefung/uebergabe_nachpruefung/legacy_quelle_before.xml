@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="6" time="0.757" timestamp="2026-10-18T13:31:55.246138+02:00" hostname="Ryzen7950X"><testcase classname="tests.test_source_identity_contract" name="test_legacy_empty_source_only_allows_explicit_mql5_update[null-upsert_signal]" time="0.106"><failure message="Failed: DID NOT RAISE ValueError">api = 'upsert_signal', legacy_source = None
+
+    @pytest.mark.parametrize("api", ["upsert_signal", "store_scan_result"])
+    @pytest.mark.parametrize("legacy_source", [None, "", " "], ids=["null", "empty", "space"])
+    def test_legacy_empty_source_only_allows_explicit_mql5_update(api, legacy_source):
+        db.init_db()
+        db.store_scan_result(123, {"name": "Original", "quelle": "mql5",
+                                   "stats": {"original": True}},
+                             forensik={"audit_marker": "original"})
+        with db._connect() as connection:
+            connection.execute("UPDATE signals SET quelle=? WHERE signal_id=123",
+                               (legacy_source,))
+            before_finding = dict(connection.execute(
+                "SELECT * FROM forensik WHERE signal_id=123").fetchone())
+        before_signal = db.get_signal(123)
+    
+        def update(source, name):
+            payload = {"name": name, "quelle": source, "stats": {"updated": True}}
+            if api == "upsert_signal":
+                db.upsert_signal(123, **payload)
+            else:
+                db.store_scan_result(123, payload, forensik={"audit_marker": name})
+    
+        # A missing legacy label denotes MQL5, never an unclaimed identity.
+&gt;       with pytest.raises(ValueError, match="ID-Kollision abgewehrt"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_source_identity_contract.py:56: Failed</failure></testcase><testcase classname="tests.test_source_identity_contract" name="test_legacy_empty_source_only_allows_explicit_mql5_update[null-store_scan_result]" time="0.094"><failure message="Failed: DID NOT RAISE ValueError">api = 'store_scan_result', legacy_source = None
+
+    @pytest.mark.parametrize("api", ["upsert_signal", "store_scan_result"])
+    @pytest.mark.parametrize("legacy_source", [None, "", " "], ids=["null", "empty", "space"])
+    def test_legacy_empty_source_only_allows_explicit_mql5_update(api, legacy_source):
+        db.init_db()
+        db.store_scan_result(123, {"name": "Original", "quelle": "mql5",
+                                   "stats": {"original": True}},
+                             forensik={"audit_marker": "original"})
+        with db._connect() as connection:
+            connection.execute("UPDATE signals SET quelle=? WHERE signal_id=123",
+                               (legacy_source,))
+            before_finding = dict(connection.execute(
+                "SELECT * FROM forensik WHERE signal_id=123").fetchone())
+        before_signal = db.get_signal(123)
+    
+        def update(source, name):
+            payload = {"name": name, "quelle": source, "stats": {"updated": True}}
+            if api == "upsert_signal":
+                db.upsert_signal(123, **payload)
+            else:
+                db.store_scan_result(123, payload, forensik={"audit_marker": name})
+    
+        # A missing legacy label denotes MQL5, never an unclaimed identity.
+&gt;       with pytest.raises(ValueError, match="ID-Kollision abgewehrt"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_source_identity_contract.py:56: Failed</failure></testcase><testcase classname="tests.test_source_identity_contract" name="test_legacy_empty_source_only_allows_explicit_mql5_update[empty-upsert_signal]" time="0.096"><failure message="Failed: DID NOT RAISE ValueError">api = 'upsert_signal', legacy_source = ''
+
+    @pytest.mark.parametrize("api", ["upsert_signal", "store_scan_result"])
+    @pytest.mark.parametrize("legacy_source", [None, "", " "], ids=["null", "empty", "space"])
+    def test_legacy_empty_source_only_allows_explicit_mql5_update(api, legacy_source):
+        db.init_db()
+        db.store_scan_result(123, {"name": "Original", "quelle": "mql5",
+                                   "stats": {"original": True}},
+                             forensik={"audit_marker": "original"})
+        with db._connect() as connection:
+            connection.execute("UPDATE signals SET quelle=? WHERE signal_id=123",
+                               (legacy_source,))
+            before_finding = dict(connection.execute(
+                "SELECT * FROM forensik WHERE signal_id=123").fetchone())
+        before_signal = db.get_signal(123)
+    
+        def update(source, name):
+            payload = {"name": name, "quelle": source, "stats": {"updated": True}}
+            if api == "upsert_signal":
+                db.upsert_signal(123, **payload)
+            else:
+                db.store_scan_result(123, payload, forensik={"audit_marker": name})
+    
+        # A missing legacy label denotes MQL5, never an unclaimed identity.
+&gt;       with pytest.raises(ValueError, match="ID-Kollision abgewehrt"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_source_identity_contract.py:56: Failed</failure></testcase><testcase classname="tests.test_source_identity_contract" name="test_legacy_empty_source_only_allows_explicit_mql5_update[empty-store_scan_result]" time="0.094"><failure message="Failed: DID NOT RAISE ValueError">api = 'store_scan_result', legacy_source = ''
+
+    @pytest.mark.parametrize("api", ["upsert_signal", "store_scan_result"])
+    @pytest.mark.parametrize("legacy_source", [None, "", " "], ids=["null", "empty", "space"])
+    def test_legacy_empty_source_only_allows_explicit_mql5_update(api, legacy_source):
+        db.init_db()
+        db.store_scan_result(123, {"name": "Original", "quelle": "mql5",
+                                   "stats": {"original": True}},
+                             forensik={"audit_marker": "original"})
+        with db._connect() as connection:
+            connection.execute("UPDATE signals SET quelle=? WHERE signal_id=123",
+                               (legacy_source,))
+            before_finding = dict(connection.execute(
+                "SELECT * FROM forensik WHERE signal_id=123").fetchone())
+        before_signal = db.get_signal(123)
+    
+        def update(source, name):
+            payload = {"name": name, "quelle": source, "stats": {"updated": True}}
+            if api == "upsert_signal":
+                db.upsert_signal(123, **payload)
+            else:
+                db.store_scan_result(123, payload, forensik={"audit_marker": name})
+    
+        # A missing legacy label denotes MQL5, never an unclaimed identity.
+&gt;       with pytest.raises(ValueError, match="ID-Kollision abgewehrt"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_source_identity_contract.py:56: Failed</failure></testcase><testcase classname="tests.test_source_identity_contract" name="test_legacy_empty_source_only_allows_explicit_mql5_update[space-upsert_signal]" time="0.088"><failure message="ValueError: ID-Kollision abgewehrt: Signal 123 gehört Quelle ' '; Schreibversuch aus Quelle 'mql5' verworfen (bis Composite-Identität, doc/20 Stufe 2).">api = 'upsert_signal', legacy_source = ' '
+
+    @pytest.mark.parametrize("api", ["upsert_signal", "store_scan_result"])
+    @pytest.mark.parametrize("legacy_source", [None, "", " "], ids=["null", "empty", "space"])
+    def test_legacy_empty_source_only_allows_explicit_mql5_update(api, legacy_source):
+        db.init_db()
+        db.store_scan_result(123, {"name": "Original", "quelle": "mql5",
+                                   "stats": {"original": True}},
+                             forensik={"audit_marker": "original"})
+        with db._connect() as connection:
+            connection.execute("UPDATE signals SET quelle=? WHERE signal_id=123",
+                               (legacy_source,))
+            before_finding = dict(connection.execute(
+                "SELECT * FROM forensik WHERE signal_id=123").fetchone())
+        before_signal = db.get_signal(123)
+    
+        def update(source, name):
+            payload = {"name": name, "quelle": source, "stats": {"updated": True}}
+            if api == "upsert_signal":
+                db.upsert_signal(123, **payload)
+            else:
+                db.store_scan_result(123, payload, forensik={"audit_marker": name})
+    
+        # A missing legacy label denotes MQL5, never an unclaimed identity.
+        with pytest.raises(ValueError, match="ID-Kollision abgewehrt"):
+            update("vant", "Foreign replacement")
+        assert db.get_signal(123) == before_signal
+        with db._connect() as connection:
+            assert dict(connection.execute(
+                "SELECT * FROM forensik WHERE signal_id=123").fetchone()) == before_finding
+    
+&gt;       update("mql5", "Explicit MQL5 update")
+
+tests\test_source_identity_contract.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_source_identity_contract.py:51: in update
+    db.upsert_signal(123, **payload)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+signal_id = 123, name = 'Explicit MQL5 update', platform = '', url = ''
+autor = '', abo_preis = None, abonnenten = None, wochen = None
+stats = {'updated': True}, quelle = 'mql5', _connection = None
+
+    def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str = "",
+                      autor: str = "", abo_preis=None, abonnenten=None, wochen=None,
+                      stats: dict | None = None, quelle: str | None = None, *,
+                      _connection=None) -&gt; None:
+        """Store metadata only for an explicitly claimed, matching source.
+    
+        Missing sources are compatible with initial legacy MQL imports only.
+        Updates may never infer their claimed source from the existing record.
+        Until composite identities are implemented, conflicting numeric IDs must
+        be rejected rather than relabelled or overwritten.
+        """
+        with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
+            # Standalone callers need the same read/write serialization as the
+            # complete scan transaction; a SELECT before acquiring the writer
+            # lock would allow two new sources to both observe a missing ID.
+            if not conn.in_transaction:
+                conn.execute("BEGIN IMMEDIATE")
+            alt = conn.execute("SELECT quelle FROM signals WHERE signal_id=?",
+                               (signal_id,)).fetchone()
+            if alt is not None and (not isinstance(quelle, str) or not quelle.strip()):
+                raise ValueError(
+                    f"ID-Kollision abgewehrt: Signal {signal_id} existiert bereits; "
+                    "ein Update benötigt eine explizite Quelle.")
+            if quelle is None:
+                quelle = "mql5"
+            elif not isinstance(quelle, str) or not quelle.strip():
+                raise ValueError("Signalquelle muss ein nichtleeres Kürzel sein")
+            alt_quelle = alt[0] if alt is not None else None
+            if alt_quelle and alt_quelle != quelle:
+&gt;               raise ValueError(
+                    f"ID-Kollision abgewehrt: Signal {signal_id} gehört "
+                    f"Quelle {alt_quelle!r}; Schreibversuch aus Quelle "
+                    f"{quelle!r} verworfen (bis Composite-Identität, doc/20 Stufe 2).")
+E               ValueError: ID-Kollision abgewehrt: Signal 123 gehört Quelle ' '; Schreibversuch aus Quelle 'mql5' verworfen (bis Composite-Identität, doc/20 Stufe 2).
+
+src\mqlkiscanner\db.py:313: ValueError</failure></testcase><testcase classname="tests.test_source_identity_contract" name="test_legacy_empty_source_only_allows_explicit_mql5_update[space-store_scan_result]" time="0.092"><failure message="ValueError: ID-Kollision abgewehrt: Signal 123 gehört Quelle ' '; Schreibversuch aus Quelle 'mql5' verworfen (bis Composite-Identität, doc/20 Stufe 2).">api = 'store_scan_result', legacy_source = ' '
+
+    @pytest.mark.parametrize("api", ["upsert_signal", "store_scan_result"])
+    @pytest.mark.parametrize("legacy_source", [None, "", " "], ids=["null", "empty", "space"])
+    def test_legacy_empty_source_only_allows_explicit_mql5_update(api, legacy_source):
+        db.init_db()
+        db.store_scan_result(123, {"name": "Original", "quelle": "mql5",
+                                   "stats": {"original": True}},
+                             forensik={"audit_marker": "original"})
+        with db._connect() as connection:
+            connection.execute("UPDATE signals SET quelle=? WHERE signal_id=123",
+                               (legacy_source,))
+            before_finding = dict(connection.execute(
+                "SELECT * FROM forensik WHERE signal_id=123").fetchone())
+        before_signal = db.get_signal(123)
+    
+        def update(source, name):
+            payload = {"name": name, "quelle": source, "stats": {"updated": True}}
+            if api == "upsert_signal":
+                db.upsert_signal(123, **payload)
+            else:
+                db.store_scan_result(123, payload, forensik={"audit_marker": name})
+    
+        # A missing legacy label denotes MQL5, never an unclaimed identity.
+        with pytest.raises(ValueError, match="ID-Kollision abgewehrt"):
+            update("vant", "Foreign replacement")
+        assert db.get_signal(123) == before_signal
+        with db._connect() as connection:
+            assert dict(connection.execute(
+                "SELECT * FROM forensik WHERE signal_id=123").fetchone()) == before_finding
+    
+&gt;       update("mql5", "Explicit MQL5 update")
+
+tests\test_source_identity_contract.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_source_identity_contract.py:53: in update
+    db.store_scan_result(123, payload, forensik={"audit_marker": name})
+src\mqlkiscanner\db.py:435: in store_scan_result
+    upsert_signal(signal_id, **signal, _connection=conn)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+signal_id = 123, name = 'Explicit MQL5 update', platform = '', url = ''
+autor = '', abo_preis = None, abonnenten = None, wochen = None
+stats = {'updated': True}, quelle = 'mql5'
+_connection = &lt;sqlite3.Connection object at 0x00000224AA18A4D0&gt;
+
+    def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str = "",
+                      autor: str = "", abo_preis=None, abonnenten=None, wochen=None,
+                      stats: dict | None = None, quelle: str | None = None, *,
+                      _connection=None) -&gt; None:
+        """Store metadata only for an explicitly claimed, matching source.
+    
+        Missing sources are compatible with initial legacy MQL imports only.
+        Updates may never infer their claimed source from the existing record.
+        Until composite identities are implemented, conflicting numeric IDs must
+        be rejected rather than relabelled or overwritten.
+        """
+        with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
+            # Standalone callers need the same read/write serialization as the
+            # complete scan transaction; a SELECT before acquiring the writer
+            # lock would allow two new sources to both observe a missing ID.
+            if not conn.in_transaction:
+                conn.execute("BEGIN IMMEDIATE")
+            alt = conn.execute("SELECT quelle FROM signals WHERE signal_id=?",
+                               (signal_id,)).fetchone()
+            if alt is not None and (not isinstance(quelle, str) or not quelle.strip()):
+                raise ValueError(
+                    f"ID-Kollision abgewehrt: Signal {signal_id} existiert bereits; "
+                    "ein Update benötigt eine explizite Quelle.")
+            if quelle is None:
+                quelle = "mql5"
+            elif not isinstance(quelle, str) or not quelle.strip():
+                raise ValueError("Signalquelle muss ein nichtleeres Kürzel sein")
+            alt_quelle = alt[0] if alt is not None else None
+            if alt_quelle and alt_quelle != quelle:
+&gt;               raise ValueError(
+                    f"ID-Kollision abgewehrt: Signal {signal_id} gehört "
+                    f"Quelle {alt_quelle!r}; Schreibversuch aus Quelle "
+                    f"{quelle!r} verworfen (bis Composite-Identität, doc/20 Stufe 2).")
+E               ValueError: ID-Kollision abgewehrt: Signal 123 gehört Quelle ' '; Schreibversuch aus Quelle 'mql5' verworfen (bis Composite-Identität, doc/20 Stufe 2).
+
+src\mqlkiscanner\db.py:313: ValueError</failure></testcase></testsuite></testsuites>

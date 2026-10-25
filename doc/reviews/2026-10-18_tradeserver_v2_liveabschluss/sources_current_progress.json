@@ -1,0 +1,352 @@
+{
+  "checked_utc": "2026-10-19T00:11:11.375161+00:00",
+  "meaning": "Latest known attempts; an active or partial job is never accepted as a completed source update.",
+  "initial_batch_history": "sources_live_progress.json",
+  "sources": {
+    "mql5": {
+      "quelle_id": 1,
+      "kuerzel": "mql5",
+      "name": "MqlDownloader (übernommen)",
+      "base_url": "http://localhost:8089",
+      "status": "unreachable",
+      "phase": "download",
+      "detail": "Fertig — Datenstand 2026-10-18T19:56:07.450860900",
+      "done": 4500,
+      "total": 4500,
+      "job_id": "u-a5fbde7a-7c49-489a-8127-36cc55acf02d",
+      "dauer_s": 1278.6,
+      "datenstand": "2026-10-18T19:56:07.450860900",
+      "signale_geliefert": 96,
+      "tradelisten_neu": 0,
+      "tradelisten_aktualisiert": 96,
+      "tradelisten_fehler": 0,
+      "tradelisten_abgebrochen": false,
+      "katalog_uebersprungen": false,
+      "hinweise": [
+        "Katalog-Discovery nach konfigurierten MQL4-/MQL5-Limits; bei frischem Katalog werden dessen bekannte Anbieter aktualisiert."
+      ],
+      "fehler": "",
+      "geaendert": "2026-10-18T19:56:11",
+      "evidence_file": "sources_mql_conversion_update_progress.json",
+      "attempt_kind": "latest_explicit_retry",
+      "previous_observed_status": "fertig",
+      "current_status_read_error": "MqlDownloader unter http://localhost:8089/api/v1 nicht erreichbar (ConnectionError). Läuft der Downloader und stimmen Host/Port?"
+    },
+    "zulu": {
+      "status": "done",
+      "phase": "tradelisten",
+      "done": 200,
+      "total": 200,
+      "job_id": "u-20261018-195000-c347a8c1",
+      "detail": "Tradelisten: 0 neu, 171 aktualisiert, 29 Fehler",
+      "ergebnis": {
+        "signaleGeliefert": 200,
+        "tradelistenNeu": 0,
+        "tradelistenAktualisiert": 171,
+        "tradelistenFehler": 29,
+        "tradelistenAbgebrochen": false,
+        "katalogUebersprungen": false,
+        "datenstand": "2026-10-18T23:13:07",
+        "hinweise": [
+          "29 Tradelisten-Downloads fehlgeschlagen (Details: data/zulumonitor.log)",
+          "10 offene Positionen nicht aktualisiert (nicht blockierend)"
+        ],
+        "tradeDownload": {
+          "providerId": 430701,
+          "loaded": 245,
+          "total": 190,
+          "updatedAt": "2026-10-18T21:13:06.995031600Z"
+        }
+      },
+      "error": null,
+      "started_at": "2026-10-18T19:50:00",
+      "finished_at": "2026-10-18T23:13:07",
+      "attempt_kind": "actual_current_local_api_attempt",
+      "evidence_source": "read-only GET /api/v1/update/status",
+      "transition_evidence": "zulu_live_transition_status.json"
+    },
+    "vant": {
+      "status": "repair_complete_waiting_restart_verification",
+      "server": "GET-only REST8092 while unrelated full-history repair continues",
+      "selected_providers": 19,
+      "identity_basis": "historyRecordId",
+      "phases": [
+        {
+          "phase": "ft",
+          "latest_progress": "FERTIG: 5 neu geladen, 0 übersprungen, 0 Fehler in 7 min"
+        },
+        {
+          "phase": "other_workflow",
+          "latest_progress": "FERTIG: 14 neu geladen, 0 übersprungen, 0 Fehler in 160 min"
+        }
+      ],
+      "ft_exit": {
+        "utc": "2026-10-18T17:44:51.2118647Z",
+        "selected_ids": "178177,1231244,504191,692325,762452",
+        "full": true,
+        "force": true,
+        "identity_basis": "historyRecordId",
+        "exit_code": 0
+      },
+      "other_workflow_exit": {
+        "utc": "2026-10-18T20:25:25.1311077Z",
+        "selected_ids": "538344,762414,776728,805275,954691,964411,998837,1010186,1024672,1052261,1096166,1121175,1121200,1286742",
+        "full": true,
+        "force": true,
+        "identity_basis": "historyRecordId",
+        "exit_code": 0
+      },
+      "attempt_kind": "explicit_source_scoped_full_repair",
+      "evidence_file": "sources_vantage_repair_plan.json",
+      "verified_ft_scope_only": [
+        178177,
+        1231244,
+        504191,
+        692325,
+        762452
+      ],
+      "verified_ft_evidence": "sources_vantage_ft_readonly_acceptance.json",
+      "post_update_disabled": true,
+      "readonly_api_reachable": true
+    },
+    "pelik": {
+      "status": "done",
+      "phase": "tradelisten",
+      "done": 200,
+      "total": 200,
+      "job_id": "u-87984d97-7ff7-4527-976e-2d5752e05f71",
+      "detail": "Tradelisten: 0 neu, 199 aktualisiert, 1 frisch, 0 Fehler",
+      "ergebnis": {
+        "signaleGeliefert": null,
+        "tradelistenNeu": 0,
+        "tradelistenAktualisiert": 199,
+        "tradelistenFehler": 0,
+        "tradelistenAbgebrochen": false,
+        "katalogUebersprungen": true,
+        "datenstand": "2026-10-18T19:34:58",
+        "hinweise": [],
+        "tradelistenDeckelUebersprungen": 441,
+        "tradelistenOhneAbonnentenUebersprungen": 1549
+      },
+      "evidence_file": "root_pelican_live_acceptance.json",
+      "verification_errors": [],
+      "attempt_kind": "latest_verified_repair_update"
+    },
+    "robo": {
+      "source": "robo",
+      "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+      "status": "user_paused_controller_stopped_current_native_writer_finishing",
+      "phase": "paused_no_followups",
+      "initial_job_id": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+      "initial_pid": 1351408,
+      "attempt_kind": "targeted_full_renewal",
+      "completed": [
+        {
+          "signal_id": 72166283,
+          "rows": 22785,
+          "unique_ids": 22785,
+          "csv_sha256": "02ba5f6501cc0021174450762388ba2206d6ff6c8bf2201e13b20ff558065758",
+          "meta_sha256": "888f2aa31de33f5a0578525f0ea84d6618688737985b705dd25f25bfa029e395",
+          "fetched_at": "2026-10-18T18:46:02Z",
+          "fetch_id": "d9ca6381-c589-4c2f-8f69-96b2af2e5c29",
+          "platform": "mt4",
+          "provider_source_id": "aaac",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_72166283.csv_3862941413550818832",
+              "original_csv_sha256": "0da85f094ea5cf2769fbe34f17c58f4381fe4ac5b5141ceaba7fb936343e978f",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 37293345,
+          "rows": 54056,
+          "unique_ids": 54056,
+          "csv_sha256": "d2b48213b7d1abf2df6b7983826f44b085338c57172319b61c5ba2c19bb5507a",
+          "meta_sha256": "905afb065bdad58085e0c1b59a319e4db74c2fbca73724c6cbfc307fc7ce44c7",
+          "fetched_at": "2026-10-18T18:53:24Z",
+          "fetch_id": "689626bc-fce5-4821-8094-f0283ae560a7",
+          "platform": "mt5",
+          "provider_source_id": "bbba",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_37293345.csv_678850962965140589",
+              "original_csv_sha256": "be4d7bc5f9fcb9c1945206dd60f034805f42c54828d841940a9178e7441ef24f",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 27406010,
+          "rows": 35999,
+          "unique_ids": 35999,
+          "csv_sha256": "8ab2eba362f0035fe777e2dd806dab05dfb4d193ece9e47151559d180f167cf8",
+          "meta_sha256": "7b2b070504bd415ce3ba664427feaf5f3f8f86209edaff837b1fafcf9bfd213b",
+          "fetched_at": "2026-10-18T18:57:53Z",
+          "fetch_id": "88942937-1bea-47a5-a917-28304786c12e",
+          "platform": "mt5",
+          "provider_source_id": "bbba",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_27406010.csv_2490192089902171958",
+              "original_csv_sha256": "4ba4fb06179bf28ee4d83bc8017522cf73ac7aa0b1b8a17961fe277f66a27b87",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 7776453,
+          "rows": 1644,
+          "unique_ids": 1644,
+          "csv_sha256": "9023abd2d91b8c0a9f6b7cef30388c7cb90ebb24272770939443a13d91b361d6",
+          "meta_sha256": "870e43a8e2476182130b41a74fa1a2dbdeda9b4832eb3f46053d9eabe9a258bb",
+          "fetched_at": "2026-10-18T18:58:07Z",
+          "fetch_id": "936a3cd4-380d-4ab5-9fdf-f0dd044cd9f1",
+          "platform": "mt5",
+          "provider_source_id": "bbbb",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_7776453.csv_11347934815822031899",
+              "original_csv_sha256": "aa132f77c9ed9245773e3859bfe0e2cdf3343cd2da0b7338cefe4ef3cb1c7848",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 37371407,
+          "rows": 40060,
+          "unique_ids": 40060,
+          "csv_sha256": "ae6d109b3b9a99ddf031041937eefb9c540a123e7ce70cec50a776cca5ab3ce9",
+          "meta_sha256": "716c3b521686549413deda6e0a4f52392de4d4507d12f0070e5c2c95b557a9d3",
+          "fetched_at": "2026-10-18T19:03:20Z",
+          "fetch_id": "12a24084-9dd5-47ea-89d7-306a8ed9bc72",
+          "platform": "mt5",
+          "provider_source_id": "bbba",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_37371407.csv_10426569590690375084",
+              "original_csv_sha256": "5b3a24fdbf07020dad301e095cc3fa4164b1e6479cd66a0d1a699c43d14e8efd",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 34150222,
+          "rows": 17882,
+          "unique_ids": 17882,
+          "csv_sha256": "e59234b6f9865ddc9d15392ff5a63c8e860e9b61807f0bdd25161e45490375e1",
+          "meta_sha256": "4c455b61490bdca8eaae0d09fe54c84959bd9b8dbd44be49ea0531bb9f8ad39c",
+          "fetched_at": "2026-10-18T19:03:47Z",
+          "fetch_id": "56b56df2-556b-49e4-bbc0-ea3842841cd8",
+          "platform": "mt4",
+          "provider_source_id": "aaar",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_34150222.csv_7119534231614409476",
+              "original_csv_sha256": "15911249b7ebf803df81cf71a0c8560fd5ad3b1b0e158acb71267c348fb3dfea",
+              "original_meta_preserved": true
+            }
+          ]
+        }
+      ],
+      "failures": [],
+      "accepted": false,
+      "initial_status": {
+        "jobId": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+        "state": "done",
+        "phase": "deals",
+        "done": 200,
+        "total": 200,
+        "message": "Deals: 4 neu, 176 aktualisiert, 20 Fehler",
+        "startedAt": "2026-10-18T18:42:00",
+        "finishedAt": "2026-10-18T20:34:17",
+        "ergebnis": {
+          "signaleGeliefert": 200,
+          "tradelistenNeu": 4,
+          "tradelistenAktualisiert": 176,
+          "tradelistenFehler": 20,
+          "tradelistenAbgebrochen": false,
+          "katalogUebersprungen": false,
+          "datenstand": "2026-10-18T20:34:17",
+          "hinweise": [
+            "20 Deal-Downloads fehlgeschlagen (Details: data/robomonitor.log)"
+          ],
+          "tradelistenOhneAbonnenten": 0
+        },
+        "error": null
+      },
+      "checked_utc": "2026-10-18T19:05:59.564573+00:00",
+      "repair_ids": [
+        72166283,
+        37293345,
+        27406010,
+        7776453,
+        37371407,
+        34150222,
+        37232470,
+        37155456,
+        77004108,
+        37173630,
+        37009091,
+        7752268,
+        37346461,
+        37275457,
+        37107389,
+        37353857,
+        27215488
+      ],
+      "unsupported": [
+        {
+          "signal_id": 93128696,
+          "name": "TradingGoldTrade",
+          "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+          "observed_local_time": "2026-10-18 19:28:28"
+        },
+        {
+          "signal_id": 93019895,
+          "name": "TrendInvestSignal",
+          "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+          "observed_local_time": "2026-10-18 19:31:56"
+        },
+        {
+          "signal_id": 93156209,
+          "name": "SP500ETF",
+          "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+          "observed_local_time": "2026-10-18 19:51:48"
+        }
+      ],
+      "total": 17,
+      "done": 6,
+      "repair_started_utc": "2026-10-18T18:45:26.049211+00:00",
+      "current_provider": 37232470,
+      "current_cli_pid": 1771524,
+      "coordinator_pid": 1764128,
+      "coordinator_ended": true,
+      "automatic_gui_restart_disabled": true,
+      "automatic_next_provider_disabled": true,
+      "resume_only_after_explicit_user_instruction": true,
+      "current_native_writer_allowed_to_finish": true,
+      "pause_receipt": "sources_robo_user_pause_receipt.json",
+      "evidence_file": "sources_robo_repair_progress.json"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "process_id": 52084,
+  "class_histogram_all_objects": {
+    "de.zulumonitor.model.Trade": 68800
+  },
+  "scope": "process-wide including old/other-provider/uncollected objects, not current provider loaded count",
+  "provider_page_size": 100,
+  "minimum_request_spacing_ms": 350,
+  "history_total_probe": 48396,
+  "pages_probe": 484,
+  "minimum_spacing_seconds": 169.04999999999998,
+  "current_provider_loaded_count": null,
+  "eta_seconds": null,
+  "reason": "Running old adapter drops per-page callbacks and has no per-provider progress endpoint. Retry/network latency makes wall-clock extrapolation unreliable.",
+  "recorded_utc": "2026-10-18T17:08:43.720200+00:00"
+}

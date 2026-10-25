@@ -1,0 +1,36 @@
+{
+  "scope": "Synthetic temporary DB only; no production database, network, secrets or app startup",
+  "store_scan_result_without_source": {
+    "blocked": true,
+    "error_class": "ValueError"
+  },
+  "upsert_signal_without_source": {
+    "blocked": false
+  },
+  "low_level_changed_name_without_claiming_source": true,
+  "explicit_other_source": {
+    "blocked": true,
+    "error_class": "ValueError"
+  },
+  "signals_primary_key": [
+    "signal_id"
+  ],
+  "catalogue_collision": {
+    "input_identities": [
+      [
+        "mql5",
+        7
+      ],
+      [
+        "vant",
+        7
+      ]
+    ],
+    "displayed_identities": [
+      [
+        "mql5",
+        7
+      ]
+    ]
+  }
+}

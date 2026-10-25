@@ -1,0 +1,14 @@
+{
+  "time": "2026-10-18T20:04:36.3319988+02:00",
+  "health_pending": false,
+  "reason": "Recover unexpected exit; load final UI and H1 changes",
+  "runtime": "C:\\Users\\tnickel\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+  "new_pid": 1639856,
+  "user_site_packages_preserved": true,
+  "health_status": 200,
+  "health_body": "ok",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "streamlit": "1.63.0",
+  "numpy": "2.4.6",
+  "metatrader5": "5.0.5735"
+}

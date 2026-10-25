@@ -1,0 +1,22 @@
+{
+  "checked_utc": "2026-10-19T07:55:06.420151+00:00",
+  "tests": {
+    "tests": 183,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "test_classes": 28,
+  "isolated_full_build": true,
+  "new_jar_sha256": "1192137d7dba2c85cd13f33af570de8fffd86e841c110da78ea1646d0db949f2",
+  "active_old_jar_sha256": "1d89883cac256fc5253092d39677fdec949e73b45504f57ed0a0549025dfacd3",
+  "productive_target_jar_sha256": "1d89883cac256fc5253092d39677fdec949e73b45504f57ed0a0549025dfacd3",
+  "productive_target_and_active_package_unchanged": true,
+  "changed_source_hashes": {
+    "src/main/java/de/pelicanmonitor/auth/ChromeLoginFallback.java": "a297d3d38a299c742e508d09025fb0920059006f9d6cc875787028ac00cca7f3",
+    "src/test/java/de/pelicanmonitor/ChromeSessionPublicationTest.java": "5aa5969bc785a657c0b10821fce6cf54b9f44d1b3cd50f3db959eb10d0deb377"
+  },
+  "regression": "Verified Chrome session replaces global stale cookie manager; next native client transfer reaches protected local history GET. Failed verification changes neither global manager nor persistence.",
+  "actual_credentials_or_sessions_in_tests": false,
+  "activation_pending_reader_idle_window": true
+}

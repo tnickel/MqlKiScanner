@@ -1,0 +1,336 @@
+{
+  "reviewed_at": "2026-10-19T07:50:10.323376+00:00",
+  "scope": "Independent read-only review of three current green Pelican workflow heads after normal source scan. Only this receipt is written. No code/UI, DB/settings changes, tests, scans, live source requests, model calls or terminal accesses.",
+  "database_access": "SQLite mode=ro/query_only=ON; isolated process replaces every db._connect; materialize_pdfs=False and studien={} inspect workflow without study overlay.",
+  "criteria_snapshot": {
+    "forensics_version": 21,
+    "schranke_eq_dd_pct": 50.0,
+    "min_calmar_jahr": 3.0,
+    "min_ertrag_pct_monat": 0.0
+  },
+  "conclusion": {
+    "confirmed_fact": "All three green results use the explicitly sourced virtual USD10000 workflow capital fallback. Their H1 reconstruction passes the implemented H1/reference-price/closed-export-position checks; annual return and Calmar use that same virtual basis. None proves actual real-account Equity-DD.",
+    "gate_contract_review": "No confirmed newly introduced green-gate violation found. Repository records attribute the source virtual fallback to the user on 2026-09-28, document Pelican green candidates after H1 rescan on 2026-10-04, and retain this model with explicit comparison limits on 2026-10-16. Current rules require reliable own H1 measurement, without a separately explicit ban on virtual workflow capital. Historical user decisions are supported by repository records/tests, not independently available raw conversation transcripts.",
+    "no_new_rule": "A universal real-capital requirement would be a new or clarified valuation policy. No new gate, threshold or FORENSICS_VERSION change is introduced.",
+    "separate_overlay": "true_dd_basis_virtuell marks a separately applied virtual study, not global capital provenance. False here does not assert real workflow capital. Workflow origin is kapitalbasis_verwendet_quelle / persisted kapitalbasis.quelle. Virtual study fields do not populate workflow Calmar/DD gates.",
+    "labelling": "All three hydrated verdicts and candidate prompts contain the virtual-capital notice. Forensic prompt JSON carries usd10000 and quelle virtuelle_annahme. Existing tests ensure report hashes distinguish a virtual from a proven basis even when the amount is identical.",
+    "presentation_limits": [
+      "Generic True-DD/TrueRetDD terminology and retdd_basis gemessener_max_equity_drawdown_inkl_floating do not alone mean actual real-account measurement; capital provenance must accompany these values.",
+      "verlaesslich=True refers to implemented reconstruction/coverage checks, not proof of actual deposit history, current open positions, execution spread, intrabar minima or the full live account.",
+      "The separate study-overlay boolean cannot serve as a global real/virtual flag.",
+      "No internal H1 floating measurement point exists for HRC103/109, GOLD Tokyo297/521 and BULL10/367 trades. This is a concrete H1 sampling limitation already covered by the verdict warning about missing intrabar lows and closed-export positions.",
+      "Persisted kapitalbasis.end_balance_real is a legacy name: for these three records its value is virtual end capital, not website balance or a verified real-account balance."
+    ]
+  },
+  "items": [
+    {
+      "source_uid": "a6bbb58c-510f-4ec5-a4cb-aa127eca126f",
+      "source": "pelik",
+      "platform": "pelican",
+      "signal_id": 2053240,
+      "signal_ref": 85,
+      "name": "HRC Algo",
+      "trade_sha256": "7734a5ac1d567bac0381b2c2c01e34dd3c0c3fec1e0a2d076107cc9318c81050",
+      "sha_matches_workflow": true,
+      "balances_in_csv": 0,
+      "separate_costs_in_csv": 0,
+      "closed_trades_in_csv": 109,
+      "initial_deposit_usd": null,
+      "source_virtual_capital_usd": 10000.0,
+      "used_capital": {
+        "usd": 10000.0,
+        "quelle": "virtuelle_annahme",
+        "end_balance_real": 13070.25,
+        "webseite_balance_usd": 1125.3
+      },
+      "equity": {
+        "status": "ok",
+        "verlaesslich": true,
+        "methodik": "virtuelle_trading_equity_h1_schlusskurse",
+        "kapitalfluesse": "Startkapital; keine Kontobewegungen im Export (virtuelle Kurve, klar markiert)",
+        "positionsbasis": "nur abgeschlossene Positionen des Exports; aktuell offene fehlen",
+        "raster": "H1-Bar-Schluss (Bar-Ende), keine Intrabar-Extrema",
+        "abdeckung_pct": 100.0,
+        "equity_dd_pct_raw": 0.44665807317686695,
+        "equity_dd_usd": 58.56,
+        "trades_ohne_h1_floating_messpunkt": 103
+      },
+      "efficiency": {
+        "rendite_basis": "virtuelle_trade_netto_kurve",
+        "retdd_basis": "gemessener_max_equity_drawdown_inkl_floating",
+        "effizienz_status": "ok",
+        "netto_gesamt_usd": 3070.25,
+        "endkapital_virtuell_usd": 13070.25,
+        "zeit_von": "2025-11-11T23:38:00",
+        "zeit_bis": "2026-10-06T08:48:09",
+        "dauer_monate": 10.788954142339222,
+        "dauer_jahre": 0.8990795118616017,
+        "ertrag_monat_geom_pct": 2.512789338360375,
+        "cagr_jahr_pct": 34.69038931549534,
+        "dd_max_equity_pct": 0.44665807317686695,
+        "retdd_jahr": 77.66654494512784,
+        "retdd_jahr_vorbehalt": null
+      },
+      "arithmetic_read_only": {
+        "cagr_formula": "100*expm1(log1p(netto_gesamt_usd/10000)/dauer_jahre)",
+        "cagr_pct": 34.69038931549534,
+        "calmar_formula": "cagr_jahr_pct/dd_max_equity_pct",
+        "calmar": 77.66654494512784,
+        "matches_persisted": true
+      },
+      "hydrated": {
+        "ampel": "🟢",
+        "forensik_current": true,
+        "forensik_version": 21,
+        "capital_source": "virtuelle_annahme",
+        "capital_usd": 10000.0,
+        "study_overlay_true_dd_basis_virtuell": false,
+        "max_drawdown_equity_pct": 0.44665807317686695,
+        "retdd_jahr": 77.66654494512784,
+        "urteil": "Kandidat: Forensik bestanden, Ertrag ok (geom. 2.51279 %/M), Calmar 77.6665, RetDD 5.62576/M, Risiko-Score 5.3 · SL nicht übertragen (neutral — KI schätzt ab) · H1-Modell: keine Intrabar-Tiefs; nur exportierte geschlossene Positionen, Referenzkurse ohne Ausführungsspread. DD kann unterschätzt, Calmar überschätzt sein; keine garantierte Untergrenze des echten Konto-DD. · Kapitalbasis virtuell (Annahme der Datenquelle) · Max-DD aus Kursen 0.44665807317686695 % (GMT +3 h)",
+        "verdict_contains_virtual_notice": true,
+        "candidate_prompt_contains_virtual_notice": true,
+        "forensic_prompt_capital": {
+          "usd": 10000.0,
+          "quelle": "virtuelle_annahme"
+        }
+      },
+      "real_account_equity_dd_proven": false
+    },
+    {
+      "source_uid": "a6bbb58c-510f-4ec5-a4cb-aa127eca126f",
+      "source": "pelik",
+      "platform": "pelican",
+      "signal_id": 2022770,
+      "signal_ref": 73,
+      "name": "BULL FX Copytrading",
+      "trade_sha256": "5889bdee1e3022407449aa7a9afb91730cd0df26c6a1d0500f1ab9d50dacb1e9",
+      "sha_matches_workflow": true,
+      "balances_in_csv": 0,
+      "separate_costs_in_csv": 0,
+      "closed_trades_in_csv": 367,
+      "initial_deposit_usd": null,
+      "source_virtual_capital_usd": 10000.0,
+      "used_capital": {
+        "usd": 10000.0,
+        "quelle": "virtuelle_annahme",
+        "end_balance_real": 10190.68,
+        "webseite_balance_usd": 5269.78
+      },
+      "equity": {
+        "status": "ok",
+        "verlaesslich": true,
+        "methodik": "virtuelle_trading_equity_h1_schlusskurse",
+        "kapitalfluesse": "Startkapital; keine Kontobewegungen im Export (virtuelle Kurve, klar markiert)",
+        "positionsbasis": "nur abgeschlossene Positionen des Exports; aktuell offene fehlen",
+        "raster": "H1-Bar-Schluss (Bar-Ende), keine Intrabar-Extrema",
+        "abdeckung_pct": 100.0,
+        "equity_dd_pct_raw": 1.407239401643875,
+        "equity_dd_usd": 141.79,
+        "trades_ohne_h1_floating_messpunkt": 10
+      },
+      "efficiency": {
+        "rendite_basis": "virtuelle_trade_netto_kurve",
+        "retdd_basis": "gemessener_max_equity_drawdown_inkl_floating",
+        "effizienz_status": "ok",
+        "netto_gesamt_usd": 190.68,
+        "endkapital_virtuell_usd": 10190.68,
+        "zeit_von": "2026-06-22T08:30:02",
+        "zeit_bis": "2026-10-16T17:13:38",
+        "dauer_monate": 3.8231129546351625,
+        "dauer_jahre": 0.3185927462195969,
+        "ertrag_monat_geom_pct": 0.4952828106274201,
+        "cagr_jahr_pct": 6.1079979909859,
+        "dd_max_equity_pct": 1.407239401643875,
+        "retdd_jahr": 4.340411435219058,
+        "retdd_jahr_vorbehalt": null
+      },
+      "arithmetic_read_only": {
+        "cagr_formula": "100*expm1(log1p(netto_gesamt_usd/10000)/dauer_jahre)",
+        "cagr_pct": 6.107997990985892,
+        "calmar_formula": "cagr_jahr_pct/dd_max_equity_pct",
+        "calmar": 4.340411435219052,
+        "matches_persisted": true
+      },
+      "hydrated": {
+        "ampel": "🟢",
+        "forensik_current": true,
+        "forensik_version": 21,
+        "capital_source": "virtuelle_annahme",
+        "capital_usd": 10000.0,
+        "study_overlay_true_dd_basis_virtuell": false,
+        "max_drawdown_equity_pct": 1.407239401643875,
+        "retdd_jahr": 4.340411435219058,
+        "urteil": "Kandidat: Forensik bestanden, Ertrag ok (geom. 0.495283 %/M), Calmar 4.34041, RetDD 0.351953/M, Risiko-Score 4.3 · SL nicht übertragen (neutral — KI schätzt ab) · H1-Modell: keine Intrabar-Tiefs; nur exportierte geschlossene Positionen, Referenzkurse ohne Ausführungsspread. DD kann unterschätzt, Calmar überschätzt sein; keine garantierte Untergrenze des echten Konto-DD. · Kapitalbasis virtuell (Annahme der Datenquelle) · Max-DD aus Kursen 1.407239401643875 % (GMT +3 h)",
+        "verdict_contains_virtual_notice": true,
+        "candidate_prompt_contains_virtual_notice": true,
+        "forensic_prompt_capital": {
+          "usd": 10000.0,
+          "quelle": "virtuelle_annahme"
+        }
+      },
+      "real_account_equity_dd_proven": false
+    },
+    {
+      "source_uid": "a6bbb58c-510f-4ec5-a4cb-aa127eca126f",
+      "source": "pelik",
+      "platform": "pelican",
+      "signal_id": 2072334,
+      "signal_ref": 92,
+      "name": "GOLD Tokyo Scalping",
+      "trade_sha256": "993dd145883efb803095b8590bff70d44e493e3b6a085d4f1ef247205af21967",
+      "sha_matches_workflow": true,
+      "balances_in_csv": 0,
+      "separate_costs_in_csv": 0,
+      "closed_trades_in_csv": 521,
+      "initial_deposit_usd": null,
+      "source_virtual_capital_usd": 10000.0,
+      "used_capital": {
+        "usd": 10000.0,
+        "quelle": "virtuelle_annahme",
+        "end_balance_real": 11040.55,
+        "webseite_balance_usd": 2808.19
+      },
+      "equity": {
+        "status": "ok",
+        "verlaesslich": true,
+        "methodik": "virtuelle_trading_equity_h1_schlusskurse",
+        "kapitalfluesse": "Startkapital; keine Kontobewegungen im Export (virtuelle Kurve, klar markiert)",
+        "positionsbasis": "nur abgeschlossene Positionen des Exports; aktuell offene fehlen",
+        "raster": "H1-Bar-Schluss (Bar-Ende), keine Intrabar-Extrema",
+        "abdeckung_pct": 99.3,
+        "equity_dd_pct_raw": 2.4582104228121926,
+        "equity_dd_usd": 261.25,
+        "trades_ohne_h1_floating_messpunkt": 297
+      },
+      "efficiency": {
+        "rendite_basis": "virtuelle_trade_netto_kurve",
+        "retdd_basis": "gemessener_max_equity_drawdown_inkl_floating",
+        "effizienz_status": "ok",
+        "netto_gesamt_usd": 1040.55,
+        "endkapital_virtuell_usd": 11040.55,
+        "zeit_von": "2026-03-07T06:53:11",
+        "zeit_bis": "2026-10-19T01:34:01",
+        "dauer_monate": 7.417921730843967,
+        "dauer_jahre": 0.6181601442369973,
+        "ertrag_monat_geom_pct": 1.3434114043954395,
+        "cagr_jahr_pct": 17.367061715982985,
+        "dd_max_equity_pct": 2.4582104228121926,
+        "retdd_jahr": 7.064920706061878,
+        "retdd_jahr_vorbehalt": null
+      },
+      "arithmetic_read_only": {
+        "cagr_formula": "100*expm1(log1p(netto_gesamt_usd/10000)/dauer_jahre)",
+        "cagr_pct": 17.367061715982995,
+        "calmar_formula": "cagr_jahr_pct/dd_max_equity_pct",
+        "calmar": 7.064920706061883,
+        "matches_persisted": true
+      },
+      "hydrated": {
+        "ampel": "🟢",
+        "forensik_current": true,
+        "forensik_version": 21,
+        "capital_source": "virtuelle_annahme",
+        "capital_usd": 10000.0,
+        "study_overlay_true_dd_basis_virtuell": false,
+        "max_drawdown_equity_pct": 2.4582104228121926,
+        "retdd_jahr": 7.064920706061878,
+        "urteil": "Kandidat: Forensik bestanden, Ertrag ok (geom. 1.34341 %/M), Calmar 7.06492, RetDD 0.5465/M, Risiko-Score 5.4 · SL nicht übertragen (neutral — KI schätzt ab) · H1-Modell: keine Intrabar-Tiefs; nur exportierte geschlossene Positionen, Referenzkurse ohne Ausführungsspread. DD kann unterschätzt, Calmar überschätzt sein; keine garantierte Untergrenze des echten Konto-DD. · Kapitalbasis virtuell (Annahme der Datenquelle) · Max-DD aus Kursen 2.4582104228121926 % (GMT abschnittsweise (+2 h, +3 h))",
+        "verdict_contains_virtual_notice": true,
+        "candidate_prompt_contains_virtual_notice": true,
+        "forensic_prompt_capital": {
+          "usd": 10000.0,
+          "quelle": "virtuelle_annahme"
+        }
+      },
+      "real_account_equity_dd_proven": false
+    }
+  ],
+  "source_references": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "e7f3630897ebbbab525a75507ecfef5cac3fd1e6aa9fd848aa4b221f60b14491",
+      "references": {
+        "current_green_rules": "53-66",
+        "recorded_user_source_fallback_20260928": "531-537",
+        "recorded_pelican_green_decision_20261004": "1129-1141"
+      }
+    },
+    {
+      "path": "doc/20_konzept-multi-source-hub.md",
+      "sha256": "15a3fbffdd15ef1685ec9b81d4bbd37847398278a6255267457be70de3e19e73",
+      "references": {
+        "source_virtual_contract": "176-196"
+      }
+    },
+    {
+      "path": "doc/03_forensik-tests.md",
+      "sha256": "26b0164eae2f75b2c965e96e8b00238aec2ef228655665ae28d3db1164d17ad7",
+      "references": {
+        "current_green_rules": "3-18",
+        "basis_cascade": "436-448"
+      }
+    },
+    {
+      "path": "doc/reviews/codereview_2026-10-04/report.md",
+      "sha256": "e38146c0878b670dd208143b3bf4495963856d0472ad5dd733276ef85749aea3",
+      "references": {
+        "pelican_green_after_h1_rescan": "93"
+      }
+    },
+    {
+      "path": "doc/reviews/2026-10-16_deepseek_pruefung/nachweise/hub.md",
+      "sha256": "dd3311a94b9983f1ecc2c40c3394732a80610761776a7d074fc15287b41ad629",
+      "references": {
+        "known_virtual_real_comparison_limit": "42"
+      }
+    },
+    {
+      "path": "tests/test_quellen.py",
+      "sha256": "795bfbd42dcab111294ea7c1b032a2d2579a3768984b48b11fd03a775e64b37e",
+      "references": {
+        "virtual_source_complete_and_labelled": "430-479",
+        "prompt_reload_notice": "559-594",
+        "report_hash_distinguishes_proven_basis": "597-614",
+        "csv_deposit_wins": "617-643"
+      }
+    },
+    {
+      "path": "tests/test_ampel_matrix.py",
+      "sha256": "4b38935871d7810c723e93b00e70ef06f0aeb06189bd1f87a2cf3821e9826f63",
+      "references": {
+        "hrc_score_not_gate": "420-434"
+      }
+    },
+    {
+      "path": "tests/test_studien_batch.py",
+      "sha256": "489e9728ac168a92c23306742795a1ee36913ae8bee0bdb74174ded0d85d7628",
+      "references": {
+        "virtual_study_not_gate": "163-188"
+      }
+    },
+    {
+      "path": "src/mqlkiscanner/pipeline.py",
+      "sha256": "fd99e24b761400317b2c100540ded90ff017f27b02a8793347c1245199a6df0a",
+      "references": {
+        "workflow_origin": "44-56",
+        "study_only_fields": "200-211",
+        "h1_denominator": "282-307",
+        "retdd_computation": "342-427",
+        "reload_origin": "636-639",
+        "reload_notice": "698-709",
+        "virtual_study_overlay": "797-814",
+        "green_gate": "850-961",
+        "forensic_prompt_origin": "1103-1106",
+        "virtual_verdict_notice": "1296-1311",
+        "source_fallback": "1803-1816",
+        "h1_admission": "1914-1920",
+        "persisted_origin": "2133-2142"
+      }
+    }
+  ],
+  "new_tests_run": 0,
+  "models_called": 0,
+  "scanner_database_written": false,
+  "rating_or_ui_changes": false
+}

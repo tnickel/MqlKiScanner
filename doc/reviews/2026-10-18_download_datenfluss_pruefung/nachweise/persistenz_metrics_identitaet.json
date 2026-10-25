@@ -1,0 +1,39 @@
+{
+  "scope": "Consistent SQLite snapshot mode=ro, cached Metrics files read only, counts and public signal IDs only",
+  "counts": {
+    "metrics_artifacts": 1550,
+    "readable_json": 1550,
+    "json_objects": 1550,
+    "metrics_is_object": 1550,
+    "signal_id_match": 1550,
+    "version_match": 1550
+  },
+  "by_source": {
+    "mql5": {
+      "metrics_artifacts": 166,
+      "signal_id_match": 166,
+      "version_match": 166
+    },
+    "pelik": {
+      "metrics_artifacts": 636,
+      "signal_id_match": 636,
+      "version_match": 636
+    },
+    "vant": {
+      "metrics_artifacts": 348,
+      "signal_id_match": 348,
+      "version_match": 348
+    },
+    "robo": {
+      "metrics_artifacts": 200,
+      "signal_id_match": 200,
+      "version_match": 200
+    },
+    "zulu": {
+      "metrics_artifacts": 200,
+      "signal_id_match": 200,
+      "version_match": 200
+    }
+  },
+  "exceptions": []
+}

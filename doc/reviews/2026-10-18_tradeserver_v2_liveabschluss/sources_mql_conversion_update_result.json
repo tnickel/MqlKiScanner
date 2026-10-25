@@ -1,0 +1,30 @@
+{
+  "started_utc": "2026-10-18T17:34:52.630620+00:00",
+  "finished_utc": "2026-10-18T17:56:11.262038+00:00",
+  "catalogue_max_age_h": 72,
+  "source": {
+    "quelle_id": 1,
+    "kuerzel": "mql5",
+    "name": "MqlDownloader (übernommen)",
+    "base_url": "http://localhost:8089",
+    "status": "fertig",
+    "phase": "download",
+    "detail": "Fertig — Datenstand 2026-10-18T19:56:07.450860900",
+    "done": 4500,
+    "total": 4500,
+    "job_id": "u-a5fbde7a-7c49-489a-8127-36cc55acf02d",
+    "dauer_s": 1278.6,
+    "datenstand": "2026-10-18T19:56:07.450860900",
+    "signale_geliefert": 96,
+    "tradelisten_neu": 0,
+    "tradelisten_aktualisiert": 96,
+    "tradelisten_fehler": 0,
+    "tradelisten_abgebrochen": false,
+    "katalog_uebersprungen": false,
+    "hinweise": [
+      "Katalog-Discovery nach konfigurierten MQL4-/MQL5-Limits; bei frischem Katalog werden dessen bekannte Anbieter aktualisiert."
+    ],
+    "fehler": "",
+    "geaendert": "2026-10-18T19:56:11"
+  }
+}

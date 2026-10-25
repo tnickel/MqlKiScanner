@@ -1,0 +1,28 @@
+{
+  "command": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_alle_signale_batch_refresh.py",
+    "tests/test_alle_signale_performance.py",
+    "tests/test_alle_signale_seite.py",
+    "tests/test_alle_signale_waehrungsfehler.py",
+    "tests/test_app.py",
+    "tests/test_ergebnis_gewinn_retdd_ui.py",
+    "tests/test_equity_studie.py",
+    "tests/test_fremdreview_katalog.py",
+    "tests/test_tradeserver_sync.py",
+    "tests/test_report_pdf_ui.py",
+    "tests/test_portfolio_step.py",
+    "tests/test_ui_source_identity.py",
+    "tests/test_pdf_reports.py",
+    "tests/test_portfolio_statistik.py",
+    "--junitxml=doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ui_pages.xml"
+  ],
+  "environment": {
+    "PYTHONIOENCODING": "utf-8"
+  }
+}

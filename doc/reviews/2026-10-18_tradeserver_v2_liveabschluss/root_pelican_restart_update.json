@@ -1,0 +1,35 @@
+{
+  "time": "2026-10-18T19:29:47.935837",
+  "old_pid": 65584,
+  "new_pid": 1520324,
+  "backup_receipt": "root_pelican_build_backup.json",
+  "status_before": {
+    "state": "idle"
+  },
+  "start": {
+    "jobId": "u-87984d97-7ff7-4527-976e-2d5752e05f71",
+    "status": "gestartet",
+    "bereitsLaufend": false
+  },
+  "status_after": {
+    "jobId": "u-87984d97-7ff7-4527-976e-2d5752e05f71",
+    "state": "running",
+    "phase": "start",
+    "done": 0,
+    "total": 0,
+    "message": "Update wird gestartet …",
+    "startedAt": "2026-10-18T19:29:47",
+    "finishedAt": null,
+    "ergebnis": {
+      "signaleGeliefert": null,
+      "tradelistenNeu": null,
+      "tradelistenAktualisiert": null,
+      "tradelistenFehler": 0,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": false,
+      "datenstand": null,
+      "hinweise": []
+    },
+    "error": null
+  }
+}

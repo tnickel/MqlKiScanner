@@ -1,0 +1,253 @@
+{
+  "recorded_utc": "2026-10-19T08:29:24.572527+00:00",
+  "source": "zulu",
+  "quellen_uid": "49f40802-d00d-486b-b262-32b89b666a29",
+  "status": "partial_source_acceptance_with_178_verified_exports_and_explicit_legacy_rest_gap",
+  "catalog": {
+    "total": 200,
+    "request_minSubscribers": 0,
+    "version": "zulu"
+  },
+  "original_night_job": {
+    "job_id": "u-20261018-195000-c347a8c1",
+    "state": "done",
+    "started_at_local": "2026-10-18T19:50:00",
+    "finished_at_local": "2026-10-18T23:13:07",
+    "provided_catalog": 200,
+    "trade_lists_updated": 171,
+    "trade_list_errors": 29,
+    "acceptance": "partial: 171 updated and 29 failed, not 200 successful histories"
+  },
+  "separate_20261019_recoveries": {
+    "count": 7,
+    "rows": 79084,
+    "records": [
+      {
+        "provider": 13396,
+        "rows": 2900,
+        "sha256": "278436096fccd76816e64399b9014530807a1737afe2fa7373974e234187569c",
+        "api_total_last_observed": 2988,
+        "downloaded_unique_valid": 2900,
+        "downloaded_minus_last_total": -88,
+        "pages": 30,
+        "reached_api_end": true,
+        "observed_utc": "2026-10-19T08:11:46.747024600Z",
+        "difference_cause": "Not attributable from stored receipt: source totals can change between pages; client also deduplicates IDs and ignores proven zero-volume/zero-net pseudo positions. No per-page raw count trace is retained here.",
+        "static_snapshot_completeness_proven": false
+      },
+      {
+        "provider": 15310,
+        "rows": 1229,
+        "sha256": "f07c64d9537c85714e6f37e4d9d0cc7aefe0e235c776e133777943870073103d",
+        "api_total_last_observed": 1196,
+        "downloaded_unique_valid": 1229,
+        "downloaded_minus_last_total": 33,
+        "pages": 13,
+        "reached_api_end": true,
+        "observed_utc": "2026-10-19T08:11:33.398603100Z",
+        "difference_cause": "Not attributable from stored receipt: source totals can change between pages; client also deduplicates IDs and ignores proven zero-volume/zero-net pseudo positions. No per-page raw count trace is retained here.",
+        "static_snapshot_completeness_proven": false
+      },
+      {
+        "provider": 33126,
+        "rows": 2219,
+        "sha256": "51cee00ccd0dffa06d54be37a507aa3f7582753dea073a5a756558504116200f",
+        "api_total_last_observed": 2370,
+        "downloaded_unique_valid": 2219,
+        "downloaded_minus_last_total": -151,
+        "pages": 24,
+        "reached_api_end": true,
+        "observed_utc": "2026-10-19T08:11:56.000927Z",
+        "difference_cause": "Not attributable from stored receipt: source totals can change between pages; client also deduplicates IDs and ignores proven zero-volume/zero-net pseudo positions. No per-page raw count trace is retained here.",
+        "static_snapshot_completeness_proven": false
+      },
+      {
+        "provider": 104770,
+        "rows": 1224,
+        "sha256": "ea768058f1761d2e8fb9037368c3b89534db4a9b6ba0d852236fdc7cc5f65d19",
+        "api_total_last_observed": 1200,
+        "downloaded_unique_valid": 1224,
+        "downloaded_minus_last_total": 24,
+        "pages": 13,
+        "reached_api_end": true,
+        "observed_utc": "2026-10-19T08:06:55.421562100Z",
+        "difference_cause": "Not attributable from stored receipt: source totals can change between pages; client also deduplicates IDs and ignores proven zero-volume/zero-net pseudo positions. No per-page raw count trace is retained here.",
+        "static_snapshot_completeness_proven": false
+      },
+      {
+        "provider": 201752,
+        "rows": 3776,
+        "sha256": "2d2919c418bf1c422847e0cdc189dd69ff7f741266620030d16b39a389046323",
+        "api_total_last_observed": 3756,
+        "downloaded_unique_valid": 3776,
+        "downloaded_minus_last_total": 20,
+        "pages": 39,
+        "reached_api_end": true,
+        "observed_utc": "2026-10-19T08:12:16.498433500Z",
+        "difference_cause": "Not attributable from stored receipt: source totals can change between pages; client also deduplicates IDs and ignores proven zero-volume/zero-net pseudo positions. No per-page raw count trace is retained here.",
+        "static_snapshot_completeness_proven": false
+      },
+      {
+        "provider": 205489,
+        "rows": 14863,
+        "sha256": "a858f571cfda3087d849a120fdf448ce15d8a08164222329c29d3e8ddd1d81aa",
+        "api_total_last_observed": 14918,
+        "downloaded_unique_valid": 14863,
+        "downloaded_minus_last_total": -55,
+        "pages": 150,
+        "reached_api_end": true,
+        "observed_utc": "2026-10-19T08:11:28.718907600Z",
+        "difference_cause": "Not attributable from stored receipt: source totals can change between pages; client also deduplicates IDs and ignores proven zero-volume/zero-net pseudo positions. No per-page raw count trace is retained here.",
+        "static_snapshot_completeness_proven": false
+      },
+      {
+        "provider": 429960,
+        "rows": 52873,
+        "sha256": "246d95217eba1f914227ddd3d499dc159c6a89f2d1a2447bd46b57241c42495a",
+        "api_total_last_observed": 52858,
+        "downloaded_unique_valid": 52873,
+        "downloaded_minus_last_total": 15,
+        "pages": 529,
+        "reached_api_end": true,
+        "observed_utc": "2026-10-19T08:06:50.315373900Z",
+        "difference_cause": "Not attributable from stored receipt: source totals can change between pages; client also deduplicates IDs and ignores proven zero-volume/zero-net pseudo positions. No per-page raw count trace is retained here.",
+        "static_snapshot_completeness_proven": false
+      }
+    ],
+    "original_legacy_files_preserved": 14,
+    "scope": "Separate native client downloads completed serially; not retroactive success of the original night job."
+  },
+  "offline_integrity": {
+    "selected_generations": 178,
+    "rows": 729509,
+    "old_171_exact_records_and_shas_unchanged": true,
+    "old_171_receipt_sha256": "2ddd31e07544831cdee7760bdcf62d9eaeb251854c9cc000525d20d60ff4415b",
+    "old_171_receipt_preserved_copy": "data/runs/liveabschluss_20261019/zulu_recovery/offline_generations_before_178.json",
+    "unique_positive_trade_ids": true,
+    "positive_finite_prices_and_volumes": true,
+    "receipt_provider_sha_count_and_utc_valid": true,
+    "utc_epoch_ms_match_Europe_Berlin_human_text": true,
+    "all_selected_native_files_unchanged_after_rest": true,
+    "legacy_14_original_files_and_backups_sha_identical": true
+  },
+  "runtime": {
+    "started_utc": "2026-10-19T08:26:21.590186+00:00",
+    "pid": 181568,
+    "launch_manifest": ".tmp\\zulu_deployment\\20261018T173153Z\\launch.json",
+    "launch_manifest_sha256": "00f046516b5ce17eea5882bdc85f667c6eb688b638839f2c90fe5d4982133468",
+    "jar_sha256": "a176d947f14c5564c4995ac58648d1599e528f1a7581a36c8e3b464725270828",
+    "regular_javafx_visible_start": true,
+    "jdk_exe": "C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot\\bin\\java.exe",
+    "helper_pid_50360_absent": true,
+    "no_other_zulu_writer_or_application": true,
+    "port_8093_free_before_start": true,
+    "no_build_or_update_post": true,
+    "service": "ZuluMonitor",
+    "instance": "Ryzen7950X",
+    "rest_update_state_before_and_after": "idle",
+    "frozen_test_receipt": {
+      "tests": 149,
+      "failures": 0,
+      "errors": 0,
+      "source": "zulu_build_snapshot.json",
+      "rerun": false
+    }
+  },
+  "normal_rest_get_acceptance": {
+    "verified_exports": 178,
+    "rows": 729509,
+    "all_rest_metrics_match_current_native_receipts": true,
+    "all_csv_rows_match_native_core_fields_and_declared_usd_rates": true,
+    "all_verified_csv_shas_recorded_privately": true,
+    "current_pointers_csv_meta_receipts_unchanged": true
+  },
+  "remaining_current_update_failures": {
+    "count": 22,
+    "negative_total_ids": [
+      429230,
+      430893
+    ],
+    "invalid_schema_ids": [
+      385732,
+      408444,
+      419789,
+      425666,
+      426712,
+      426987,
+      427986,
+      428131,
+      428298,
+      428586,
+      428708,
+      429044,
+      429555,
+      429985,
+      430016,
+      430074,
+      430472,
+      430608,
+      430904,
+      431040
+    ],
+    "fresh_end_receipts": 0,
+    "excluded_from_verified_scanner_scope": true,
+    "rest_csv_404_invalid_schema_count": 20,
+    "stale_legacy_flat_rest_exports_after_failed_fresh_download": [
+      {
+        "provider_id": 429230,
+        "rest_status": 200,
+        "rows": 21,
+        "legacy_native_sha256": "a881220dd496487ec52aa98115c7ef974f795404cc53fd4c72fc4893e06e9809",
+        "legacy_mtime_utc": "2026-10-07T12:53:57.105218+00:00",
+        "rest_csv_sha256": "e47acef6e2e7df32bced0f927b5df02619c0cb49fe39a6c540bb7d50922cf65d",
+        "history_end_receipt": null,
+        "excluded_from_verified_scanner_scope": true
+      },
+      {
+        "provider_id": 430893,
+        "rest_status": 200,
+        "rows": 29,
+        "legacy_native_sha256": "a2c5a852f45edce6629ba5141e5ea2086d2e4e0d87ad73551aa23c9703e8dacf",
+        "legacy_mtime_utc": "2026-10-07T12:50:01.789361+00:00",
+        "rest_csv_sha256": "dcd95ef4592371595e22d1d5d021bfda7c6b934e06a772e7c1506451e6228842",
+        "history_end_receipt": null,
+        "excluded_from_verified_scanner_scope": true
+      }
+    ],
+    "guard_gap": "Frozen REST permits legacy meta/SHA-valid flat archives without current HistoryReceipt. Thus two stale exports remain HTTP200 despite failed fresh negative-total downloads. No source guard was changed."
+  },
+  "completeness_contract": {
+    "proven": "SHA-bound valid unique archived rows, fetched through the API last-page marker.",
+    "not_proven": "One static upstream full-history snapshot. API totalElements can differ from downloaded unique valid count.",
+    "client": "Last observed totalElements; deduplicate TradeId; ignore only lots=0/netPnl=0 pseudo positions; invalid regular rows fail closed.",
+    "seven_difference_causes": "Per-provider attribution is unavailable from retained receipts; no normalization or count-equality assumption."
+  },
+  "limitations": [
+    "reachedEnd proves traversal to API end with validated unique trades, not one atomic immutable upstream snapshot",
+    "Native epoch milliseconds carry UTC instants; human-readable native/REST date strings are Europe/Berlin local time without zone.",
+    "No upstream retry was performed for the remaining 22 failures during this acceptance."
+  ],
+  "private_evidence": [
+    {
+      "path": "data/runs/liveabschluss_20261019/zulu_recovery/acceptance_offline_private.json",
+      "sha256": "f8bcbb83ab612f66002197f0dc22cf98a447af89d6a01cda79fa02acc9f7f3cc"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/zulu_recovery/acceptance_rest_private.json",
+      "sha256": "8830d2117505eaeb678c889de59f11ba244c021576992b3146468032f388532f"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/zulu_recovery/finished.json",
+      "sha256": "aa90ef06e9504a15737ba04e9dddbddb29913fb11abea226870fb506b902a238"
+    }
+  ],
+  "actions": {
+    "build": false,
+    "source_update_post": false,
+    "model_call": false,
+    "scanner_db_open_or_mutation": false,
+    "raw_or_legacy_byte_rewrite": false,
+    "scope_widening": false
+  },
+  "whole_top200_histories_complete": false
+}

@@ -1,0 +1,88 @@
+{
+  "created_utc": "2026-10-18T16:57:59.762547+00:00",
+  "scope": "Additional contracts, non-ECB H1 exposure conversion, explicit ECB update; no runtime databases, trade caches or credentials",
+  "tests_passed": 342,
+  "test_exit_code": 0,
+  "files": [
+    {
+      "path": "data/contract_specs.json",
+      "sha256": "8db2ef11700b769c58efc10d7e640afff41da39df60714cf0c67e08c9bfc85c5"
+    },
+    {
+      "path": "src/mqlkiscanner/engine.py",
+      "sha256": "22ba32ea43f2e98c7c7adc5bdfe3419e43d939eaf37fe4ff44fa10c3906d16ab"
+    },
+    {
+      "path": "src/mqlkiscanner/forensics/exposure.py",
+      "sha256": "dc68e85c1f6df5b20699d2fe2d92fd2930b739ce3dbeb65e130bbb6f781aea84"
+    },
+    {
+      "path": "src/mqlkiscanner/forensics/exposure_fx.py",
+      "sha256": "8f028fe2ab703a871ddf66340c52c0b4ff9e533322ad7a0d2bf744f62b9e91cd"
+    },
+    {
+      "path": "src/mqlkiscanner/symbols.py",
+      "sha256": "56c3c9938d3c070c1b2cb52a6d62d4e6ffd357a934c3f8ffbd99aff26877f03d"
+    },
+    {
+      "path": "tests/test_remaining_contracts_h1_exposure.py",
+      "sha256": "f1ca3942e1513e8c1a283c6c5a3c991924094e2e3eb20f3af85b3e251a2e134f"
+    },
+    {
+      "path": "tests/test_remaining_contract_beleg.py",
+      "sha256": "cb9fd2758eff361607c640d3f9bca02c09787ad262f6bd0ae05c9f996c40d705"
+    },
+    {
+      "path": "scripts/reference/remaining_contract_beleg.py",
+      "sha256": "e648e33c438155f377ff327d02709cb1a6ee072afe74d13f4c0d4cef7f18c0be"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_btceth_gap_diagnosis.json",
+      "sha256": "0dd600232527f4a59ebcfd333ff9d806a51b95e65b44ebdd5f09c130e70c8525"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_btceth_gap_diagnosis.py",
+      "sha256": "adf8fc494879ac1fe9f5b7412577ce3c6b7360efbb33820743c0053e56e8ba93"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_ecb_update.json",
+      "sha256": "4a002c3e51622ebd0be93d026c4bd14ee3f47ae3c8c138a1be0361ad451b0343"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_live_recalculation.json",
+      "sha256": "491ca140b8760d20c4533d994e7a0b5e8543bc3991e713de543f0eef23c2100c"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_live_recalculation.py",
+      "sha256": "8c3977f2a69822422df77d86324e4f8ca4b1ba27367518c72b4e164b787e62f3"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_live_recalculation_initial.json",
+      "sha256": "08ddcb9c397f2c59ed9738f0e27a26c301e909b1448c2acef9241fcf960c2bb4"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_README.md",
+      "sha256": "54e1e0fbaef5c85ecc0952c024617827a48db2ede58f45ec2d30fee4291a3b11"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_terminal_spec.json",
+      "sha256": "6d85234d7bd20e4d5ca8c17af613f3591f5b21277ba956a50bf396695a00f890"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_tests.log",
+      "sha256": "fdc19e358024466979c28be03eb4fb4a05efd004754c31385e1e436160d065bb"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_tests.xml",
+      "sha256": "a2e94faf0e4a0b26825ea64b5cabb4bdae5b9fbe57d1ec072383b151f14546fa"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_tests_command.json",
+      "sha256": "cf4ab1d9dbd976eac81512d21ff20c285e1925091af45a3bfd6d703415639754"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_tests_exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    }
+  ]
+}

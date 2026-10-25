@@ -1,0 +1,334 @@
+{
+  "at_utc": "2026-10-18T15:05:53.664375+00:00",
+  "scope": "20 bounded GETs: health plus three one-item local catalogue queries per source",
+  "platform_requests": 0,
+  "trade_endpoint_requests": 0,
+  "auth_read": false,
+  "sources": {
+    "mql5": {
+      "port": 8089,
+      "health": {
+        "at_utc": "2026-10-18T15:05:53.292900+00:00",
+        "endpoint": "/health",
+        "http": 200,
+        "bytes": 182,
+        "status": "ok",
+        "service": "MqlDownloader",
+        "apiVersion": "v1",
+        "uptimeSeconds": 18262,
+        "providers": 236,
+        "tokenRequired": false
+      },
+      "default": {
+        "at_utc": "2026-10-18T15:05:53.430974+00:00",
+        "endpoint": "/providers?limit=1&offset=0",
+        "http": 200,
+        "bytes": 618,
+        "total": 216,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "2265877",
+          "version": "mql5"
+        },
+        "first_weeks_field_present": false,
+        "first_weeks_proven": false
+      },
+      "all_local": {
+        "at_utc": "2026-10-18T15:05:53.517861+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0",
+        "http": 200,
+        "bytes": 618,
+        "total": 236,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "2265877",
+          "version": "mql5"
+        },
+        "first_weeks_field_present": false,
+        "first_weeks_proven": false
+      },
+      "all_local_unknown_control": {
+        "at_utc": "2026-10-18T15:05:53.605876+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0&quellenProbeUnknown=1",
+        "http": 200,
+        "bytes": 618,
+        "total": 236,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "2265877",
+          "version": "mql5"
+        },
+        "first_weeks_field_present": false,
+        "first_weeks_proven": false
+      },
+      "additional_local_records": 20,
+      "unknown_parameter_ignored_in_probe": true
+    },
+    "pelik": {
+      "port": 8090,
+      "health": {
+        "at_utc": "2026-10-18T15:05:53.292900+00:00",
+        "endpoint": "/health",
+        "http": 200,
+        "bytes": 187,
+        "status": "ok",
+        "service": "PelicanTrading",
+        "apiVersion": "v1",
+        "uptimeSeconds": 18265,
+        "providers": 640,
+        "tokenRequired": false
+      },
+      "default": {
+        "at_utc": "2026-10-18T15:05:53.383198+00:00",
+        "endpoint": "/providers?limit=1&offset=0",
+        "http": 200,
+        "bytes": 697,
+        "total": 640,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "2014074",
+          "version": "pelican"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "all_local": {
+        "at_utc": "2026-10-18T15:05:53.516860+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0",
+        "http": 200,
+        "bytes": 698,
+        "total": 2188,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "2014074",
+          "version": "pelican"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "all_local_unknown_control": {
+        "at_utc": "2026-10-18T15:05:53.605876+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0&quellenProbeUnknown=1",
+        "http": 200,
+        "bytes": 698,
+        "total": 2188,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "2014074",
+          "version": "pelican"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "additional_local_records": 1548,
+      "unknown_parameter_ignored_in_probe": true
+    },
+    "robo": {
+      "port": 8091,
+      "health": {
+        "at_utc": "2026-10-18T15:05:53.292900+00:00",
+        "endpoint": "/health",
+        "http": 200,
+        "bytes": 184,
+        "status": "ok",
+        "service": "RoboMonitor",
+        "apiVersion": "v1",
+        "uptimeSeconds": 18266,
+        "providers": 200,
+        "tokenRequired": false
+      },
+      "default": {
+        "at_utc": "2026-10-18T15:05:53.383198+00:00",
+        "endpoint": "/providers?limit=1&offset=0",
+        "http": 200,
+        "bytes": 711,
+        "total": 200,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "21596244",
+          "version": "mql4"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "all_local": {
+        "at_utc": "2026-10-18T15:05:53.464353+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0",
+        "http": 200,
+        "bytes": 711,
+        "total": 200,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "21596244",
+          "version": "mql4"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "all_local_unknown_control": {
+        "at_utc": "2026-10-18T15:05:53.568875+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0&quellenProbeUnknown=1",
+        "http": 200,
+        "bytes": 711,
+        "total": 200,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "21596244",
+          "version": "mql4"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "additional_local_records": 0,
+      "unknown_parameter_ignored_in_probe": true
+    },
+    "vant": {
+      "port": 8092,
+      "health": {
+        "at_utc": "2026-10-18T15:05:53.293899+00:00",
+        "endpoint": "/health",
+        "http": 200,
+        "bytes": 187,
+        "status": "ok",
+        "service": "VantageMonitor",
+        "apiVersion": "v1",
+        "uptimeSeconds": 18266,
+        "providers": 199,
+        "tokenRequired": false
+      },
+      "default": {
+        "at_utc": "2026-10-18T15:05:53.383198+00:00",
+        "endpoint": "/providers?limit=1&offset=0",
+        "http": 200,
+        "bytes": 735,
+        "total": 199,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "1419494",
+          "version": "vantage"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "all_local": {
+        "at_utc": "2026-10-18T15:05:53.463352+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0",
+        "http": 200,
+        "bytes": 735,
+        "total": 200,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "1419494",
+          "version": "vantage"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "all_local_unknown_control": {
+        "at_utc": "2026-10-18T15:05:53.535862+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0&quellenProbeUnknown=1",
+        "http": 200,
+        "bytes": 735,
+        "total": 200,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "1419494",
+          "version": "vantage"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "additional_local_records": 1,
+      "unknown_parameter_ignored_in_probe": true
+    },
+    "zulu": {
+      "port": 8093,
+      "health": {
+        "at_utc": "2026-10-18T15:05:53.293899+00:00",
+        "endpoint": "/health",
+        "http": 200,
+        "bytes": 184,
+        "status": "ok",
+        "service": "ZuluMonitor",
+        "apiVersion": "v1",
+        "uptimeSeconds": 18266,
+        "providers": 200,
+        "tokenRequired": false
+      },
+      "default": {
+        "at_utc": "2026-10-18T15:05:53.382198+00:00",
+        "endpoint": "/providers?limit=1&offset=0",
+        "http": 200,
+        "bytes": 662,
+        "total": 200,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "402995",
+          "version": "zulu"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "all_local": {
+        "at_utc": "2026-10-18T15:05:53.464353+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0",
+        "http": 200,
+        "bytes": 662,
+        "total": 200,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "402995",
+          "version": "zulu"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "all_local_unknown_control": {
+        "at_utc": "2026-10-18T15:05:53.535862+00:00",
+        "endpoint": "/providers?limit=1&offset=0&minSubscribers=0&quellenProbeUnknown=1",
+        "http": 200,
+        "bytes": 662,
+        "total": 200,
+        "count": 1,
+        "offset": 0,
+        "actual_items": 1,
+        "first_identity": {
+          "signalId": "402995",
+          "version": "zulu"
+        },
+        "first_weeks_field_present": true,
+        "first_weeks_proven": true
+      },
+      "additional_local_records": 0,
+      "unknown_parameter_ignored_in_probe": true
+    }
+  }
+}

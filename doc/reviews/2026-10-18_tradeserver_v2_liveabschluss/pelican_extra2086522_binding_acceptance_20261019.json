@@ -1,0 +1,70 @@
+{
+  "checked_at_utc": "2026-10-19T08:26:13.315323+00:00",
+  "scope": "Only separately refreshed Pelican2086522; separate from prior Peli32/MQL45 audit and FT5. SQLite mode=ro/query_only, no API/terminal/model/scan/database mutation.",
+  "status": "verified",
+  "source_uid": "a6bbb58c-510f-4ec5-a4cb-aa127eca126f",
+  "source": "pelik",
+  "signal_id": 2086522,
+  "signal_ref": 100,
+  "platform": "pelican",
+  "forensics_version": 21,
+  "source_native_rows": 531,
+  "exported_scanner_trades": 531,
+  "study_started": "2026-10-19T10:11:33",
+  "study_finished": "2026-10-19T10:11:51",
+  "study_updated_at": "2026-10-19 10:11:43",
+  "study_within_completed_run": true,
+  "scan_complete": true,
+  "refresh": {
+    "total": 1,
+    "fetched": 1,
+    "failed": []
+  },
+  "study_workflow_forensic_source_rest_and_actual_file_sha256": "244440d8dfe2c7514008a7ac7d4e9024e05bd2ce392c34d768624abe621af274",
+  "all_sha_bindings_and_two_actual_files_match": true,
+  "all_record_owners_match": true,
+  "account_currency": "USD",
+  "study_virtual": true,
+  "study_basisless": false,
+  "real_initial_deposit_proven": false,
+  "workflow_capital_basis": {
+    "usd": 10000.0,
+    "quelle": "virtuelle_annahme",
+    "end_balance_real": 13299.59,
+    "webseite_balance_usd": 14236.55
+  },
+  "study_status": "ok",
+  "study_reliable": true,
+  "study_method": "virtuelle_trading_equity_h1_schlusskurse",
+  "capital_flow_label": "Startkapital; keine Kontobewegungen im Export (virtuelle Kurve, klar markiert)",
+  "workflow_ampel": "🟢",
+  "workflow_annual_calmar": 8.424397060548221,
+  "workflow_h1_status": "ok",
+  "workflow_h1_method": "virtuelle_trading_equity_h1_schlusskurse",
+  "real_account_dd_freigabe": false,
+  "rating_or_gate_changes": false,
+  "interpretation": "Fresh owner/version/TradeSHA binding verified. The virtual study and virtual10k workflow model do not prove a real-account DD; model-green semantics remain the previously documented contract.",
+  "sql_total_changes": 0,
+  "source_and_run_receipts": [
+    {
+      "path": "data/runs/liveabschluss_20261019/pelican_extra2086522_studies/studies_pelik.json",
+      "sha256": "44667448e1e50303f58269efad0155f19448d8449a4ffb4b02f0512ba95d2b39"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/pelican_extra2086522_studies/study_refresh.json",
+      "sha256": "26b4fc29ecb34956d2fe7f7d901606afa05ca36fb89e73f969f8bc032b6307b0"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/pelican_extra2086522_source-scan/source-scan_pelik.json",
+      "sha256": "a1b82a2d2a14ccc1709b9f25e70ee0fcaa70b3c411fcff6b042aa076c0f067f0"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/pelican_extra2086522_finished.json",
+      "sha256": "bd059d7bc270713bc384799f52b1cf17634213eebae53f85130ef039b3182053"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/pelican/extra2086522_acceptance.json",
+      "sha256": "59dfc1f27793f63afe3a7747073ad4f37dc1682529735cdaac136ce3431ba619"
+    }
+  ]
+}

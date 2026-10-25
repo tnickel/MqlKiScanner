@@ -1,0 +1,11 @@
+{
+  "utc": "2026-10-18T18:16:46.913963+00:00",
+  "database": ":memory:",
+  "production_database_written": false,
+  "checks": {
+    "same_owner_job_status_appended_once": true,
+    "running_history_retained": true,
+    "different_source_namespace_preserved": true
+  },
+  "passed": 3
+}

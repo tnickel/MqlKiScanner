@@ -1,0 +1,30 @@
+{
+  "main/MqlDownloaderApp.class": {
+    "present": true,
+    "matches_compiled_class": true
+  },
+  "gui/ClientUpdateRunner.class": {
+    "present": true,
+    "matches_compiled_class": true
+  },
+  "gui/ClientUpdateRunner$Services.class": {
+    "present": true,
+    "matches_compiled_class": true
+  },
+  "gui/DownloadManager.class": {
+    "present": true,
+    "matches_compiled_class": true
+  },
+  "gui/MqlDownloaderGui.class": {
+    "present": true,
+    "matches_compiled_class": true
+  },
+  "downloader/SignalDownloader.class": {
+    "present": true,
+    "matches_compiled_class": true
+  },
+  "org/openqa/selenium/chrome/ChromeDriver.class": {
+    "present": true,
+    "matches_compiled_class": null
+  }
+}

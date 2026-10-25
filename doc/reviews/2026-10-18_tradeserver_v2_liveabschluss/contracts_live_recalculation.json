@@ -1,0 +1,200 @@
+{
+  "started_utc": "2026-10-18T16:48:26.238566+00:00",
+  "forensics_version": 21,
+  "database_access": "read_only",
+  "signal_verdict_writes": false,
+  "trade_updates": false,
+  "inputs": "existing SHA-verified FT snapshots; source history completeness not certified here",
+  "fx_cache_sha256": "657984b9cbe43e25c83481d0f05bc62435c5f54dda13f181091a8d18dd6f8673",
+  "registry_sha256": "8db2ef11700b769c58efc10d7e640afff41da39df60714cf0c67e08c9bfc85c5",
+  "signals": [
+    {
+      "quelle": "vant",
+      "external_id": 178177,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "trade_sha256": "ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84",
+      "trade_count": 1091,
+      "contract_complete": true,
+      "conversion_complete": true,
+      "temporal_risk_available": false,
+      "capital_history_complete": false,
+      "shock_usd": 40726.05,
+      "fx_conversion": {
+        "quelle": null,
+        "letzte_kursdatum": "2026-10-16",
+        "kurse_am_flag_peak": {},
+        "h1_umrechnung": {
+          "regel": "Letzter abgeschlossener H1-Close vor/am preisbelegt abgebildeten Ereignis; Alter kleiner als eine Stunde, keine Lueckenfortschreibung, gleicher Terminal/Serverfeed",
+          "verwendete_ereignisse": 17,
+          "feeds": [
+            "[\"c:\\\\forex\\\\mt5\\\\vantage\\\\terminal64.exe\", \"VantageMarkets-Live 10\"]"
+          ],
+          "instrumente": [
+            "USDCNH"
+          ],
+          "zeitbelege": {
+            "USDCNH": {
+              "scope": "Gemeinsame Ereigniszeit desselben Exports und Referenzfeeds",
+              "instruments": [
+                "HK50FT",
+                "JPN225FT",
+                "USDCNH",
+                "VIX",
+                "XAGUSD"
+              ],
+              "trade_count": 12,
+              "offset_s": 3600
+            }
+          },
+          "unbelegte_instrumente": {}
+        }
+      },
+      "warnings": [
+        "Kapitalbasis unbekannt: keine Einzahlungen vor dem ersten Trade im Export (Startkapital +0.00 \u2014 z. B. Historie gekuerzt oder Auszahlung vor Handelsbeginn). Schockanteil in Prozent und die konfigurierte Drawdown-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorpr\u00fcfung."
+      ],
+      "status": "computed"
+    },
+    {
+      "quelle": "vant",
+      "external_id": 1231244,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "trade_sha256": "37f03ae2891a6a474484cc0a19b3acece9fb76b2b8a1179e49429c1f88f1e27f",
+      "trade_count": 248,
+      "contract_complete": true,
+      "conversion_complete": true,
+      "temporal_risk_available": false,
+      "capital_history_complete": false,
+      "shock_usd": 12500.0,
+      "fx_conversion": {
+        "quelle": null,
+        "letzte_kursdatum": "2026-10-16",
+        "kurse_am_flag_peak": {}
+      },
+      "warnings": [
+        "Kapitalbasis unbekannt: keine Einzahlungen vor dem ersten Trade im Export (Startkapital +0.00 \u2014 z. B. Historie gekuerzt oder Auszahlung vor Handelsbeginn). Schockanteil in Prozent und die konfigurierte Drawdown-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorpr\u00fcfung."
+      ],
+      "status": "computed"
+    },
+    {
+      "quelle": "vant",
+      "external_id": 504191,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "trade_sha256": "a2bfac766b902580f925a7a410bd0e1927902ab8ca64d7801f6568de8c52b631",
+      "trade_count": 1486,
+      "contract_complete": true,
+      "conversion_complete": false,
+      "temporal_risk_available": false,
+      "capital_history_complete": false,
+      "shock_usd": null,
+      "fx_conversion": {
+        "quelle": null,
+        "letzte_kursdatum": "2026-10-16",
+        "kurse_am_flag_peak": {},
+        "h1_umrechnung": {
+          "regel": "Letzter abgeschlossener H1-Close vor/am preisbelegt abgebildeten Ereignis; Alter kleiner als eine Stunde, keine Lueckenfortschreibung, gleicher Terminal/Serverfeed",
+          "verwendete_ereignisse": 350,
+          "feeds": [
+            "[\"c:\\\\forex\\\\mt5\\\\vantage\\\\terminal64.exe\", \"VantageMarkets-Live 10\"]"
+          ],
+          "instrumente": [
+            "BTCETH",
+            "USDCNH"
+          ],
+          "zeitbelege": {
+            "BTCETH": {
+              "scope": "Instrument desselben Exports",
+              "instruments": [
+                "BTCETH"
+              ],
+              "trade_count": 37,
+              "offset_s": 3600
+            },
+            "USDCNH": {
+              "scope": "Gemeinsame Ereigniszeit desselben Exports und Referenzfeeds",
+              "instruments": [
+                "BTCUSD",
+                "EURUSD",
+                "USDCAD",
+                "USDCNH",
+                "USDJPY",
+                "XAUUSD"
+              ],
+              "trade_count": 8,
+              "offset_s": 3600
+            }
+          },
+          "unbelegte_instrumente": {
+            "BTCETH": "Aktiver Trade ohne passenden Open-/Close-Preisbeleg"
+          }
+        }
+      },
+      "warnings": [
+        "Kapitalbasis unbekannt: keine Einzahlungen vor dem ersten Trade im Export (Startkapital +0.00 \u2014 z. B. Historie gekuerzt oder Auszahlung vor Handelsbeginn). Schockanteil in Prozent und die konfigurierte Drawdown-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorpr\u00fcfung.",
+        "Keine belegte historische Umrechnung nach USD fuer: BTCETH (ETH). Kein EZB-Kurs im 10-Tage-Fenster zum Handelstag (Kalenderdeckung der Kursdatei: bis 2026-10-16). Auch der belegte H1-Umrechnungskanal ist fuer diese Ereignisse unvollstaendig."
+      ],
+      "status": "computed"
+    },
+    {
+      "quelle": "vant",
+      "external_id": 692325,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "trade_sha256": "be46ec64c0c40d4299e5c773066f3e718ad86ac58f6a013040cae4208a62e32f",
+      "trade_count": 279,
+      "contract_complete": true,
+      "conversion_complete": true,
+      "temporal_risk_available": false,
+      "capital_history_complete": false,
+      "shock_usd": 30624.95,
+      "fx_conversion": {
+        "quelle": "EZB-Euro-Referenzkurse (eurofxref-hist), Cross-Kurs ueber EUR/USD am Handelstag",
+        "letzte_kursdatum": "2026-10-16",
+        "kurse_am_flag_peak": {
+          "CHFJPY": {
+            "quote": "JPY",
+            "usd_pro_einheit": 0.00676408,
+            "ezb_kursdatum": "2025-09-22"
+          }
+        }
+      },
+      "warnings": [
+        "Kapitalbasis unbekannt: keine Einzahlungen vor dem ersten Trade im Export (Startkapital +0.00 \u2014 z. B. Historie gekuerzt oder Auszahlung vor Handelsbeginn). Schockanteil in Prozent und die konfigurierte Drawdown-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorpr\u00fcfung."
+      ],
+      "status": "computed"
+    },
+    {
+      "quelle": "vant",
+      "external_id": 762452,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "trade_sha256": "9eecde901e91f4d53499d7944368d4fe516891e47f89785db6f40af1aaae47fa",
+      "trade_count": 196,
+      "contract_complete": true,
+      "conversion_complete": true,
+      "temporal_risk_available": false,
+      "capital_history_complete": false,
+      "shock_usd": 4092.81,
+      "fx_conversion": {
+        "quelle": "EZB-Euro-Referenzkurse (eurofxref-hist), Cross-Kurs ueber EUR/USD am Handelstag",
+        "letzte_kursdatum": "2026-10-16",
+        "kurse_am_flag_peak": {
+          "USDJPY": {
+            "quote": "JPY",
+            "usd_pro_einheit": 0.00651454,
+            "ezb_kursdatum": "2025-11-04"
+          }
+        }
+      },
+      "warnings": [
+        "Kapitalbasis unbekannt: keine Einzahlungen vor dem ersten Trade im Export (Startkapital +0.00 \u2014 z. B. Historie gekuerzt oder Auszahlung vor Handelsbeginn). Schockanteil in Prozent und die konfigurierte Drawdown-Schranke sind nicht berechenbar; Crawling-Ergebnis bleibt Vorpr\u00fcfung."
+      ],
+      "status": "computed"
+    }
+  ],
+  "terminal_was_running": false,
+  "connection_message": "portabel selbstgestartet; Datenpfad gepr\u00fcft, verbunden",
+  "reference_feed": "[\"c:\\\\forex\\\\mt5\\\\vantage\\\\terminal64.exe\", \"VantageMarkets-Live 10\"]",
+  "terminal_running_after_cleanup": false,
+  "finished_utc": "2026-10-18T16:55:32.533128+00:00",
+  "fx_cache_sha256_after": "657984b9cbe43e25c83481d0f05bc62435c5f54dda13f181091a8d18dd6f8673",
+  "fx_cache_unchanged_during_final_run": true,
+  "acceptance_scope": "Live H1/exposure recalculation of five old FT snapshots; no study, current provider-history or verdict certification."
+}

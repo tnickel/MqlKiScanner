@@ -1,0 +1,15 @@
+{
+  "command": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_identity_migration_review.py",
+    "--junitxml=doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ui_migration_review_initial.xml"
+  ],
+  "environment": {
+    "PYTHONIOENCODING": "utf-8"
+  }
+}

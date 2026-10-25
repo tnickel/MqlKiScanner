@@ -1,0 +1,158 @@
+{
+  "created_at": "2026-10-18T16:48:42.097677+00:00",
+  "repo": "D:\\AntiGravitySoftware\\GitWorkspace\\MqlTradeMonitor",
+  "tests_command": "JAVA_HOME=C:/Program Files/Java/jdk-21; mvn -q test",
+  "tests": [
+    {
+      "class": "de.trademonitor.controller.ApiControllerSecurityTest",
+      "tests": 22,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.controller.KiScannerApiControllerTest",
+      "tests": 15,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.controller.KiScannerMigrationTest",
+      "tests": 2,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.controller.KiScannerV2Test",
+      "tests": 8,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.model.AccountDrawdownTest",
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.service.AccountManagerDrawdownTest",
+      "tests": 2,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.service.AccountManagerHistoryRepairTest",
+      "tests": 2,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.service.CsvImportServiceTest",
+      "tests": 3,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.service.ExportServiceTest",
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.service.HomeyServiceTest",
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "class": "de.trademonitor.service.TradeStorageHistoryRepairTest",
+      "tests": 13,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    }
+  ],
+  "totals": {
+    "tests": 70,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "war_sha256": "9e3df338a7ce2f75bd98540dd03563a8b6594ecb27d9997ec2e6a9161117d620",
+  "source_files": [
+    {
+      "path": "Doku/MqlKiScanner_Integration.md",
+      "sha256": "1e30e66779a5253e94498850d34447b88029560f760b978bce910b55653c9a36"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/controller/DashboardController.java",
+      "sha256": "c340b858e386a5571514220d54f9ca8f44eafbacb0275300f96019ca2a843dc8"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/controller/KiScannerApiController.java",
+      "sha256": "e080fc81e9f303febe3888a61cb3ccd089c11d1e039fa4302bc61ee8df327569"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/dto/KiScannerDtos.java",
+      "sha256": "c79936b9e89edb9b41d03dbce955d01554fa3f53b0bd485e6ce625839da09732"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/entity/KiDocumentEntity.java",
+      "sha256": "3982315a30d161ecd2be744187964a7d18572d08cbb1b7cd5bb9e90c9da4feac"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/entity/KiSignalEntity.java",
+      "sha256": "cc65c37eb2a64b2b744e07cf5436b693b6da68d60b869c20a6cf0e8e32b2ea01"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/repository/KiDocumentRepository.java",
+      "sha256": "ff73654d3e70314868b9f9c541e0bcfd8c14cfafccb660f27fc078a928ff725c"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/repository/KiSignalRepository.java",
+      "sha256": "11187746bb0690ea5d8d44b4b4b546a3ef56d4f4f2d40116f3bd5a01c4eabc35"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/repository/KiSyncRunRepository.java",
+      "sha256": "669ff86cdf2cf10e8e0cf32ef7fb4d6e0250bf1813cddb5650dc3cfe7f491065"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/service/KiScannerService.java",
+      "sha256": "70f6dbf3342b0e8e05ca1c26cc62fe057ab68dc937da006b9800b8a58d060e7c"
+    },
+    {
+      "path": "server/src/main/resources/templates/kiscanner.html",
+      "sha256": "55ff666352af3ae51f761fa614c3a38f8b0145d43c13121668d7d471e866ed2e"
+    },
+    {
+      "path": "server/src/test/java/de/trademonitor/controller/KiScannerApiControllerTest.java",
+      "sha256": "8eb923cc535e6fdd8f6e4a7931aea4b6726ebe19a01dec7966ebedee3affdd73"
+    },
+    {
+      "path": "server/src/main/java/de/trademonitor/service/KiScannerSchemaMigration.java",
+      "sha256": "b4710c94f29665f02d82de3b517caa3f03499a7a422e102f537147394211cfe4"
+    },
+    {
+      "path": "server/src/test/java/de/trademonitor/controller/KiScannerMigrationTest.java",
+      "sha256": "90676613ab31423bf055618e6d27063e647e9df8fd96cc8160d86f0b97961b24"
+    },
+    {
+      "path": "server/src/test/java/de/trademonitor/controller/KiScannerV2Test.java",
+      "sha256": "1d8e05dd641786411190f106a955bd5d6abf043248d6bbb53ba8d0bbc59d062f"
+    }
+  ],
+  "production_preflight": {
+    "signals": 32,
+    "documents": 313,
+    "legacy_columns_compatible": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": 66,
+  "ts": "2026-10-18 20:52:37",
+  "quelle_id": 4,
+  "kuerzel": "robo",
+  "job_id": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+  "status": "teilweise",
+  "dauer_s": 6737.0,
+  "signale_geliefert": 200,
+  "tradelisten_neu": 4,
+  "tradelisten_aktualisiert": 176,
+  "datenstand": "2026-10-18T20:34:17",
+  "fehler": "20 Deal-Downloads fehlgeschlagen:17 unzulaessige Altbestands-Duplikate,3 nicht unterstuetzte RStocks. Keine Gesamtfreigabe.",
+  "hinweise": [
+    "20 Deal-Downloads fehlgeschlagen (Details: data/robomonitor.log)",
+    "Nachtraeglicher wahrer Abschluss nach Ende des alten Python-Beobachters; Originaljob bleibt teilweise.",
+    "Native Einheiten sind unbelegt; CSV/ClosingDD bleiben im neuen Build gesperrt. Gezielt gestartete Vollerneuerungen sind ein separater CLI-Versuch."
+  ]
+}

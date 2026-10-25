@@ -1,0 +1,101 @@
+{
+  "checked_utc": "2026-10-18T18:15:34.067853+00:00",
+  "status": "verified_5ft_readonly_full_repair_running",
+  "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+  "server": "GET-only temporary REST on existing8092; GUI remains stopped",
+  "verified_scope_only": [
+    178177,
+    1231244,
+    504191,
+    692325,
+    762452
+  ],
+  "all_19_workflow_repairs_complete": false,
+  "top200_update_complete": false,
+  "same_original_service_and_instance": true,
+  "health": {
+    "status": "ok",
+    "service": "VantageMonitor",
+    "instance": "Ryzen7950X",
+    "apiVersion": "v1",
+    "uptimeSeconds": 118,
+    "serverTime": "2026-10-18T20:15:33.056648",
+    "providers": 157,
+    "tokenRequired": false
+  },
+  "post_update_status": 405,
+  "get_update_status": 404,
+  "immutable_trade_provider_and_subscriber_files_unchanged": true,
+  "providers": [
+    {
+      "signal_id": 178177,
+      "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "native_rows": 1091,
+      "rest_csv_rows": 1091,
+      "rest_csv_sha256": "6662234a20ac4241d72bce833dbd2d7e12aaa8ea2d54ebd56e699b73bea73283",
+      "provider_total": 1091,
+      "native_currency": "USD",
+      "export_currency": "USD",
+      "truncated": false,
+      "time_basis": "UTC",
+      "all_fields_compared": true,
+      "historical_ecb_factors_independently_compared": false
+    },
+    {
+      "signal_id": 1231244,
+      "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "native_rows": 254,
+      "rest_csv_rows": 254,
+      "rest_csv_sha256": "56f21c7ec540a25d3b2617370346136431ea8b2329746d8b0d6fc4abba13039b",
+      "provider_total": 254,
+      "native_currency": "USD",
+      "export_currency": "USD",
+      "truncated": false,
+      "time_basis": "UTC",
+      "all_fields_compared": true,
+      "historical_ecb_factors_independently_compared": false
+    },
+    {
+      "signal_id": 504191,
+      "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "native_rows": 1503,
+      "rest_csv_rows": 1503,
+      "rest_csv_sha256": "7986cce2fc3243a8ab3c4cb911ad3f0b1851915d8392326ef68b5fdb2669494b",
+      "provider_total": 1503,
+      "native_currency": "HKD",
+      "export_currency": "USD",
+      "truncated": false,
+      "time_basis": "UTC",
+      "all_fields_compared": true,
+      "historical_ecb_factors_independently_compared": true
+    },
+    {
+      "signal_id": 692325,
+      "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "native_rows": 279,
+      "rest_csv_rows": 279,
+      "rest_csv_sha256": "49661f0a47012cee3caa21bdcb2ee1af6841e19ae07d794387cf2e88e4de5db8",
+      "provider_total": 279,
+      "native_currency": "USD",
+      "export_currency": "USD",
+      "truncated": false,
+      "time_basis": "UTC",
+      "all_fields_compared": true,
+      "historical_ecb_factors_independently_compared": false
+    },
+    {
+      "signal_id": 762452,
+      "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "native_rows": 196,
+      "rest_csv_rows": 196,
+      "rest_csv_sha256": "cf665a784aea045f49cb3eb3fe136750e65243be6177841ebb4db9846d6e5201",
+      "provider_total": 196,
+      "native_currency": "USD",
+      "export_currency": "USD",
+      "truncated": false,
+      "time_basis": "UTC",
+      "all_fields_compared": true,
+      "historical_ecb_factors_independently_compared": false
+    }
+  ]
+}

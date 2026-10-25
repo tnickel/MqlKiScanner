@@ -1,0 +1,7 @@
+{
+  "new_pid": 1542804,
+  "time": "2026-10-18T19:35:05.3342914+02:00",
+  "old_pid": 1395100,
+  "reason": "atomic DB initialization and current report export guard",
+  "background_workflows_active": false
+}

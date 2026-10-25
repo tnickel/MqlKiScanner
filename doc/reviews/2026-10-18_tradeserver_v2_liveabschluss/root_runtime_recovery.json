@@ -1,0 +1,21 @@
+{
+  "time": "2026-10-18T20:04:14.041014",
+  "old_scan_pid": 1546832,
+  "old_scan_exit_code": 1,
+  "old_scan_no_success_receipt": true,
+  "root_cause": "unresolved; no source helper signal was sent",
+  "stale_lock_recovered_by_normal_liveness_guard": true,
+  "orphan_terminal_pid": 1582876,
+  "orphan_terminal_closed": true,
+  "database_checks": {
+    "mqlkiscanner.db": {
+      "integrity": "ok",
+      "fk_errors": 0
+    },
+    "kursdaten.db": {
+      "integrity": "ok",
+      "fk_errors": 0
+    }
+  },
+  "restart_runtime": "bundled CPython3.12.14 with same user site packages"
+}

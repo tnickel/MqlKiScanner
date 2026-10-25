@@ -1,0 +1,37 @@
+[
+  {
+    "Name": "mql5",
+    "UpdateClassSha256": "73252F528B7FCDB341BA9676AEB4E31A89820350AF9583D3E95FE9B853A5DB54",
+    "ModifiedUtc": "2026-10-17T13:22:51.8772889Z",
+    "TradelistenFehler": true,
+    "TradelistenAbgebrochen": true
+  },
+  {
+    "Name": "pelican",
+    "UpdateClassSha256": "27EBA20E610A8AC6CF4861F940053A8AC5CCA59A255946B20CF2E04100B14980",
+    "ModifiedUtc": "2026-10-16T21:43:21.6078016Z",
+    "TradelistenFehler": true,
+    "TradelistenAbgebrochen": true
+  },
+  {
+    "Name": "robo",
+    "UpdateClassSha256": "A150437273A2DFE3BEAF20EB66144E5A4FA127E9226D9FA5A2125DACCBD8C268",
+    "ModifiedUtc": "2026-10-16T21:43:19.6027079Z",
+    "TradelistenFehler": true,
+    "TradelistenAbgebrochen": true
+  },
+  {
+    "Name": "vantage",
+    "UpdateClassSha256": "CDC4382D53543345A4B677989F14C49C17BB09664DB5C82CBD971A8F420C6BC8",
+    "ModifiedUtc": "2026-10-16T21:43:20.0101316Z",
+    "TradelistenFehler": true,
+    "TradelistenAbgebrochen": true
+  },
+  {
+    "Name": "zulu",
+    "UpdateClassSha256": "EFB99D072C5280E664521D1ED0541188059BB6F82FA15A0104CE76B9A753FBE1",
+    "ModifiedUtc": "2026-10-16T21:43:21.0629973Z",
+    "TradelistenFehler": true,
+    "TradelistenAbgebrochen": true
+  }
+]

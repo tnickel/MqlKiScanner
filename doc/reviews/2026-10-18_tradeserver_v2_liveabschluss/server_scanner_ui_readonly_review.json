@@ -1,0 +1,72 @@
+{
+  "reviewed_at": "2026-10-18T19:46:00+02:00",
+  "scope": "Readonly browser acceptance of running http://localhost:8504 plus code review of H1 gap fetching",
+  "methods": ["Chrome via CUA", "source reads", "results_from_db(materialize_pdfs=False)"],
+  "mutating_actions": [],
+  "screenshots_published": false,
+  "observed_counts": {"workflow_signals": 194, "all_signals": 3049, "catalog_only": 2855, "trade_cache_available": 1327},
+  "confirmed": [
+    "Alle Signale and Ergebnisse render without an exception",
+    "Sources are displayed beside provider IDs; Workflow and Katalog origins are distinguished",
+    "Requested Gold Spike mql5:2349227 displays current H1 DD 9.703850349480817 percent and annual Calmar 34.04",
+    "Results detail identifies the source and ID and links to the correct provider detail URL",
+    "Sidebar shows configured DD limit 50 percent and annual Calmar minimum 3",
+    "Unbound old own reports are explained as historical; current PDF actions are disabled",
+    "Stale sample remains white, has no trusted True-DD or Calmar, and exposes the old raw DD only in the approximate column",
+    "The sample non-MQL source link is specific to the provider signal"
+  ],
+  "findings": [
+    {
+      "severity": "minor",
+      "location": "app_pages/scan.py:489",
+      "finding": "Fix-list explanatory text renders Python source/ID tuples using f'#{i}' instead of a readable qualified identity",
+      "fix": "Format source and provider ID explicitly"
+    },
+    {
+      "severity": "minor",
+      "location": "src/mqlkiscanner/alle_signale_ui.py:274",
+      "finding": "True-DD USD reads only the separate study field. The current requested workflow result has equity_dd_rekonstruiert_usd present, while the table USD field remains empty",
+      "fix": "Consider current, valid workflow USD measurement as a fallback; preserve existing stale, currency, and partial-statistics guards"
+    },
+    {
+      "severity": "minor",
+      "location": "app_pages/alle_signale.py:438",
+      "finding": "For a stale result with only approximate DD present, the orange style colors the empty trusted DD cell; the actual approximate value remains white",
+      "fix": "Style the approximate marker as well, or select the populated cell explicitly"
+    },
+    {
+      "severity": "cosmetic",
+      "location": "Streamlit dataframe numeric null rendering",
+      "finding": "Missing numeric cells are visually displayed as gray None despite the pandas empty na_rep formatting",
+      "fix": "Use a supported null-display configuration if available; retain numeric sorting and CSV types"
+    }
+  ],
+  "performance_review": {
+    "conclusion": "Bundling only historical interior missing ranges into bounded SDK query windows is a reasonable optimization under the listed invariants; no speedup has been measured",
+    "current_behavior": "Each missing range invokes an initial SDK request plus up to three retries, with a total of six seconds sleep for persistently empty responses",
+    "invariants": [
+      "Group only exact feed, server, symbol, and timeframe matches",
+      "Use finalized cached bar boundaries present before the query; exclude open or provisional boundaries",
+      "Keep edge ranges and isolated long ranges on their existing path",
+      "Bound combined windows to at most 31 days",
+      "Clip the returned bars to the original missing subranges before in-memory merging",
+      "Store and record attempts per original subrange, never as the full combined bridge window",
+      "Do not overwrite cached bars in the bridge between gaps",
+      "Preserve 24-hour interior attempt TTL and 60-second edge/provisional refresh behavior",
+      "Requests and negative attempt records do not prove bar coverage",
+      "Do not interrupt the active production run or assume already-imported code has changed"
+    ],
+    "required_regressions": [
+      "test_erweiterung_laesst_vorhandenen_innenbereich_aus unchanged",
+      "Reduced SDK query count for many small internal gaps",
+      "No cached bridge-bar overwrite even if SDK returns different OHLC",
+      "Empty and partial responses preserve bars and per-original-range TTL",
+      "Feed isolation, stale provisional bars, request boundaries, and missing coverage remain unchanged"
+    ]
+  },
+  "limits": [
+    "No scan, update, study, sync, terminal start, CSV download, or external provider navigation was triggered",
+    "This is a UI snapshot during an ongoing source refresh, not evidence that every source has completed",
+    "No core source edits were made for this read-only review"
+  ]
+}

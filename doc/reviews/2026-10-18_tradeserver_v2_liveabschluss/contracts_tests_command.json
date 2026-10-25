@@ -1,0 +1,22 @@
+[
+  "-m",
+  "pytest",
+  "tests/test_remaining_contracts_h1_exposure.py",
+  "tests/test_remaining_contract_beleg.py",
+  "tests/test_ft_contract_specs.py",
+  "tests/test_ft_kontrakt_beleg.py",
+  "tests/test_contract_specs.py",
+  "tests/test_fx_rates.py",
+  "tests/test_exposure_percent_scenarios.py",
+  "tests/test_equity_h1_umrechnung.py",
+  "tests/test_equity_h1_paritaet.py",
+  "tests/test_external_review_engine.py",
+  "tests/test_review15_engine.py",
+  "tests/test_review17_engine.py",
+  "tests/test_review18_engine.py",
+  "tests/test_review_engine_fixes.py",
+  "tests/test_second_review_engine.py",
+  "tests/test_activtrades_symbolnamen.py",
+  "-q",
+  "--junitxml=doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/contracts_tests.xml"
+]

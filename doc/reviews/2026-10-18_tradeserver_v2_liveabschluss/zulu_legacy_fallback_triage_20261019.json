@@ -1,0 +1,184 @@
+{
+  "recorded_utc": "2026-10-19T08:31:22.314062+00:00",
+  "source": "zulu",
+  "scope": "Read-only triage of frozen 149-test runtime; no source edit/build/restart",
+  "actual_api": [
+    {
+      "provider_id": 429230,
+      "catalog_item_keys": [
+        "currencyCode",
+        "demo",
+        "lastUpdated",
+        "latestChange",
+        "links",
+        "monthChange",
+        "risk",
+        "rowColor",
+        "signalId",
+        "signalName",
+        "subscribers",
+        "url",
+        "version",
+        "weekChange",
+        "weeks",
+        "weeksSource"
+      ],
+      "tradeHistoryAvailable_field_present": false,
+      "catalog_lastUpdated": "2026-10-07T12:53:57.105217800Z",
+      "rest_csv_status": 200,
+      "native_rows": 21,
+      "native_columns": 17,
+      "native_csv_sha256": "a881220dd496487ec52aa98115c7ef974f795404cc53fd4c72fc4893e06e9809",
+      "native_meta_sha256": "eb612063040e81fa6f5c29caaafd0e0a47db6f53be07c0eaaa07f48204b301c9",
+      "native_mtime_utc": "2026-10-07T12:53:57.105218+00:00",
+      "rest_csv_sha256": "e47acef6e2e7df32bced0f927b5df02619c0cb49fe39a6c540bb7d50922cf65d",
+      "metrics_history_complete": null,
+      "metrics_history_observed_utc": null,
+      "metrics_downloaded": null,
+      "metrics_note": "Kein SHA-gebundener History-Endbeleg. Katalog-Handelsstatistik ist keine History-Zeilenanzahl.",
+      "current_pointer_present": false,
+      "history_receipt_present": false,
+      "stale_after_failed_fresh_negative_total_download": true,
+      "files_unchanged": true
+    },
+    {
+      "provider_id": 430893,
+      "catalog_item_keys": [
+        "currencyCode",
+        "demo",
+        "lastUpdated",
+        "latestChange",
+        "links",
+        "monthChange",
+        "risk",
+        "rowColor",
+        "signalId",
+        "signalName",
+        "subscribers",
+        "url",
+        "version",
+        "weekChange",
+        "weeks",
+        "weeksSource"
+      ],
+      "tradeHistoryAvailable_field_present": false,
+      "catalog_lastUpdated": "2026-10-07T12:50:01.789361100Z",
+      "rest_csv_status": 200,
+      "native_rows": 29,
+      "native_columns": 17,
+      "native_csv_sha256": "a2c5a852f45edce6629ba5141e5ea2086d2e4e0d87ad73551aa23c9703e8dacf",
+      "native_meta_sha256": "363eabe77831ed03c7d685486c7ac13c7da9283ba7f78af2dc048485024be893",
+      "native_mtime_utc": "2026-10-07T12:50:01.789361+00:00",
+      "rest_csv_sha256": "dcd95ef4592371595e22d1d5d021bfda7c6b934e06a772e7c1506451e6228842",
+      "metrics_history_complete": null,
+      "metrics_history_observed_utc": null,
+      "metrics_downloaded": null,
+      "metrics_note": "Kein SHA-gebundener History-Endbeleg. Katalog-Handelsstatistik ist keine History-Zeilenanzahl.",
+      "current_pointer_present": false,
+      "history_receipt_present": false,
+      "stale_after_failed_fresh_negative_total_download": true,
+      "files_unchanged": true
+    }
+  ],
+  "snapshot_test_sources": [
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/api/ClosedTradeContractTest.java",
+      "sha256": "cb852b15283d4200a956fe88ac8a04f22434cbda0c84bf185145e8d039fc0cc1",
+      "matches_149_test_snapshot": true
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/api/ZuluTradeClientLocalTest.java",
+      "sha256": "10f8e55582d33b3e5da3dc5a1e47165a8c5c220af180e2e6d434cdb446502630",
+      "matches_149_test_snapshot": true
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/RestApiServerTest.java",
+      "sha256": "e4def72c7bf227cde9c6462665fa67d7c53ce481676399d2258a777199fefdd4",
+      "matches_149_test_snapshot": true
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/DataStoreIntegrityTest.java",
+      "sha256": "3147697f524af6b810b4e0c41b3e323d2db5293d7dfaf3f3e3c2b80981ef0bea",
+      "matches_149_test_snapshot": true
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/TradeArchivePublicationTest.java",
+      "sha256": "279a62bb8936f43e8361ebbf9f32529cad044f3b750bf714bfd8d5f62912d2be",
+      "matches_149_test_snapshot": true
+    }
+  ],
+  "verified_meta_meaning": "Local byte hash, parseability, owner, row-count/uniqueness/valid positions and requested limit. No original completeness or freshness proof. There is no literal Meta.verify boolean.",
+  "canonical_flow": [
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/store/DataStore.java",
+      "line": 451,
+      "fact": "Missing .current selects unchanged flat CSV/meta/history."
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/store/DataStore.java",
+      "line": 417,
+      "fact": "readVerifiedArchive validates meta/hash/rows/owner but accepts null readReceipt."
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/store/DataStore.java",
+      "line": 319,
+      "fact": "hasTrades only requires positive verified count, no history end receipt."
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/rest/RestApiServer.java",
+      "line": 488,
+      "fact": "tradesCsv rejects missing/empty verifiedArchive; does not reject null receipt."
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/rest/RestApiServer.java",
+      "line": 442,
+      "fact": "Metrics honestly expose history total/complete/download time as null without receipt."
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/api/ZuluTradeClient.java",
+      "line": 340,
+      "fact": "Negative API totalElements throws before publishing a new HistoryDownload."
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/update/UpdateJobRunner.java",
+      "line": 243,
+      "fact": "Provider download failure logs/counts error; no persisted per-provider failed-refresh export state."
+    }
+  ],
+  "contract_counterposition": {
+    "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_cancel_README.md",
+    "line": 96,
+    "fact": "History end is explicitly an additional paging diagnostic, separate from input integrity and forensic gates. Legacy readability is intentional. A new unconditional end-receipt requirement would change the existing REST contract."
+  },
+  "tests_reviewed": [
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/DataStoreIntegrityTest.java",
+      "line": 61,
+      "fact": "Valid marker/hash makes hasTrades true without receipt; damage makes false."
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/TradeArchivePublicationTest.java",
+      "line": 161,
+      "fact": "Explicitly tests readable untouched flat legacy archive."
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/RestApiServerTest.java",
+      "line": 81,
+      "fact": "REST fixture stores verified trades without history receipt; CSV succeeds."
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/RestApiServerTest.java",
+      "line": 321,
+      "fact": "Unknown history diagnostics null is tested, independently of local verified trade rows."
+    }
+  ],
+  "gap": "Fresh liveabschluss could mistake a successful historical CSV GET for a successful current download when it ignores null HistoryReceipt and preceding provider errors. The API does not literally claim tradeHistoryAvailable=true; that field is absent. Concrete exposure is HTTP200 stale bytes.",
+  "smallest_safe_option_now": "Use the completed SHA-bound exact178 scope; keep 429230/430893 excluded. Preserve old CSV/meta bytes and label them stale after failed fresh download. No deployment is needed.",
+  "durable_option_for_separate_change": "Expose persistent per-provider last refresh attempt/result separately from archive integrity, and enforce a requested fresh-snapshot export mode against the SHA-bound successful receipt/generation. Existing historical-read mode can remain explicit and stale-labelled. If choosing to require a receipt in every normal CSV/JSON export, treat it as an intentional contract change and update tests, rather than silently redefining hasTrades.",
+  "no_new_gate": "Do not turn TradesHistoryComplete into a global forensic green gate or require downloaded==total. API end still is not an atomic snapshot completeness proof.",
+  "missing_combined_regression": "No inspected test composes valid flat legacy archive + failed fresh negative-total request + normal REST GET. Existing tests intentionally allow the first and unknown paging metrics.",
+  "tests_run_now": false,
+  "production_changes": false,
+  "frozen_scope_path": "data/runs/liveabschluss_20261019/zulu_recovery/verified_scanner_export_scope.json",
+  "frozen_scope_sha256": "6353bd0f72430c73e797600ae40ed3d2f50c817ff4540714c73a9974218a332c"
+}

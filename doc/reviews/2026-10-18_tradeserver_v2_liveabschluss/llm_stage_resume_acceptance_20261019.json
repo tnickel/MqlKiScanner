@@ -1,0 +1,100 @@
+{
+  "checkedUtc": "2026-10-19T11:53:57.136577+00:00",
+  "status": "targeted_resume_regressions_passed",
+  "sourceChanged": "src/mqlkiscanner/llm_runner.py",
+  "sha256": {
+    "src/mqlkiscanner/llm_runner.py": "b744128d75634f3a7c3f1587abc9e06c291bbf4ddedf801972b3d7c3929fdacf",
+    "tests/test_llm_resume_stages.py": "24627b8e5e2aaf36e6fb786fc0cbc5251e2e7055076445ddbc864282ad08cd0e",
+    "tests/test_review15_llm.py": "0d7188c280cf2315428135685462a4caf98bbd280fd02724f8cf1dfc748d57c2"
+  },
+  "validation": {
+    "passed": 91,
+    "failed": 0,
+    "durationSeconds": 21.34,
+    "testFiles": [
+      "tests/test_llm_resume_stages.py",
+      "tests/test_review15_llm.py",
+      "tests/test_pipeline_progress.py",
+      "tests/test_review_pipeline_fixes.py",
+      "tests/test_review17_pipeline.py",
+      "tests/test_review18_pipeline.py",
+      "tests/test_second_review_pipeline.py",
+      "tests/test_pipeline_export_retry.py"
+    ],
+    "command": "python -B -m pytest -q -p no:cacheprovider <testFiles>",
+    "networkModelsOrProductionDatabaseAccessedByTests": false,
+    "storage": "pytest isolated temporary databases; HTTP blocked by test fixtures",
+    "diffWhitespaceCheckPassed": true
+  },
+  "resumeSemantics": [
+    "Reuse only persisted nonempty individual stages bound to the exact owner and current report basis.",
+    "Only missing trade/risk stages call models; the overall report requires both successfully persisted input analyses.",
+    "total/completed/failed/skipped and progress count newly scheduled work only; existing stages are not synthetic successes or skips.",
+    "Unsaved in-memory answers, blank rows and stale report bases never qualify as cache hits.",
+    "Stop and model/storage failures preserve existing and paid answers; no synthesis from unsuccessful input storage.",
+    "Daily/monthly/per-run token limits are outside the report basis; increasing them preserves otherwise-current stages."
+  ],
+  "targetedCases": [
+    "saved trade only",
+    "saved risk only",
+    "both inputs without overall report",
+    "all stages already saved",
+    "old basis requires new stages",
+    "unsaved/blank parts do not qualify",
+    "model error",
+    "input/overall-report storage failure",
+    "stop before missing stage or before synthesis",
+    "restart after stop reuses newly saved input",
+    "real report basis stable under10M token limits"
+  ],
+  "userAuthorizedProductionContinuation": {
+    "launchedByRoot": true,
+    "thisAgentStartedAnyPhase": false,
+    "pendingSignals": 73,
+    "missingStages": 218,
+    "limits": {
+      "day": 10000000,
+      "month": 10000000,
+      "run": 10000000
+    },
+    "oneShot": true,
+    "scheduledAutomation": false,
+    "planSha256": "b23df7a8624699426ec69a3c99aafd138d7cf77dd68f03c9ac226f40010e1a60"
+  },
+  "independentLiveReadOnlyObservation": {
+    "observedUtc": "2026-10-19T11:53:57.135578+00:00",
+    "currentTradeAnalysisDuplicateCount": 0,
+    "existingTradeAnalysisUnchanged": true,
+    "riskRequestRecomputedHashMatchesStoredLedger": true,
+    "outstandingReservations": 1,
+    "budgetPeriods": {
+      "2026-10-19": {
+        "attempts": 20,
+        "settled_tokens": 395809,
+        "outstanding_reserved": 59246,
+        "outstanding_count": 1,
+        "legacy_tokens": 0,
+        "used_or_reserved": 455055,
+        "remaining_guarded": 9544945
+      },
+      "2026-10": {
+        "attempts": 20,
+        "settled_tokens": 395809,
+        "outstanding_reserved": 59246,
+        "outstanding_count": 1,
+        "legacy_tokens": 102018,
+        "used_or_reserved": 557073,
+        "remaining_guarded": 9442927
+      }
+    },
+    "productionDatabaseWrites": 0,
+    "rawPromptsResponsesOrPrivateLogsPublished": false,
+    "priorRun14TradeBodyBasisAndTradeShaUnchanged": true
+  },
+  "limits": [
+    "The91tests use mocks/temp databases and are not a claim that the running production report queue has finished.",
+    "The running queue and requests were started by Root; this verification performs no API/model/phase start.",
+    "Budget figures are a single consistent read-only snapshot; later calls may reserve or settle more tokens.",
+    "Unpersisted paid answers remain outside the reusable analysis cache; no claim of recovering failed storage from request audit is made."
+  ]
+}

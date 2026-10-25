@@ -1,0 +1,8 @@
+{
+  "utc": "2026-10-18T17:33:54.5493593Z",
+  "source": "mql5",
+  "old_pid": 1431592,
+  "new_pid": 1432312,
+  "reason": "tested subscriber-mode unknown-3MPDD metadata conversion repair; previous failed job preserved",
+  "jar_sha256": "7ac31a566650836e8a7d785dddd896180a4b6cf5c5a9c9b8b3d288fb20eed5c8"
+}

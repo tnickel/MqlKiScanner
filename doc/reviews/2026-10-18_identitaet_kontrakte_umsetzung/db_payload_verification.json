@@ -1,0 +1,184 @@
+{
+  "signals": {
+    "before": 194,
+    "active": 194,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "704690ce390370cd2aa31fac171e43439add432f0faa2d73a9a4315e5d9d8199"
+  },
+  "trade_files": {
+    "before": 193,
+    "active": 193,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "8b55355f663557a5e825aa01f2ff0ed3499efaf6662c14ec782c507463c5346f"
+  },
+  "forensik": {
+    "before": 163,
+    "active": 163,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "574fc7e63eee2f5cc1f9637b8477fb1e008b42edfe78f2c618491910e7599c7f"
+  },
+  "analyses": {
+    "before": 2282,
+    "active": 2279,
+    "quarantine": 3,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "34d25d034366b741b52717c5851e5683d2eaebbd3298daba0293ddb04e1af781"
+  },
+  "subscriber_history": {
+    "before": 1305,
+    "active": 0,
+    "quarantine": 1305,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "0b20949920beb0af05eeaa0e552dbe1b2e4c8ff90256fccf1c37aed78ae59fb8"
+  },
+  "downloader_reports": {
+    "before": 68,
+    "active": 0,
+    "quarantine": 68,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "5c7f40fa206f9b97624f339e62b792c127afa5e5d5c810b80c6916e15df7d3ef"
+  },
+  "tradeserver_sync_runs": {
+    "before": 8,
+    "active": 8,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "e5da8c3db65fb85b8505f0122a115d9e44f9294a198689b2ee586d3774a8994a"
+  },
+  "ampel_verlauf": {
+    "before": 834,
+    "active": 0,
+    "quarantine": 834,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "9ffa78247c976d39805e2487b7ab7e5961a864885299fe03dcfeae64fca31939"
+  },
+  "ampel_wechsel": {
+    "before": 240,
+    "active": 0,
+    "quarantine": 240,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "122c418a0d1a302b88d93dc7d29d321076733919297fc6fc312d1a258243d01b"
+  },
+  "agenten_laeufe": {
+    "before": 352,
+    "active": 268,
+    "quarantine": 84,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "6fce6dc449e0714998be91e1192606c2063e4bf2abf0cb73c466d03a323c9c94"
+  },
+  "agenten_schritte": {
+    "before": 565,
+    "active": 352,
+    "quarantine": 213,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "5ef7cedd0fc686ba05e79c9deb517f715e8b03d2eb13c6a0c0c099ffae60f95a"
+  },
+  "agenten_meldungen": {
+    "before": 230,
+    "active": 230,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "0b54d9f876d2f1a77b1a9f99120e89c0e19d62774b09d7c0a68c561948c03165"
+  },
+  "agenten_steuerung": {
+    "before": 10,
+    "active": 10,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "45a1b9edd2760872bbd1e7921aed88e67cbe1cd21c70c98c2043acccca1ac3a3"
+  },
+  "dossier_profil": {
+    "before": 19,
+    "active": 0,
+    "quarantine": 19,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "eff477c01f44e2ddf7a6a84a30db1f32d3aea16462b4c22d4e14ecf77a543063"
+  },
+  "dossier_beobachtungen": {
+    "before": 71,
+    "active": 0,
+    "quarantine": 71,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "5019b0f0d744c214efe5068aea02e5f2bc8f836bb424a915837327d71569fe47"
+  },
+  "trade_deltas": {
+    "before": 45,
+    "active": 0,
+    "quarantine": 45,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "3fec24377ea530bd1e04aeca0047bce9de74d2992f1184489b9db007eb35d4ec"
+  },
+  "markt_kontext": {
+    "before": 10,
+    "active": 10,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "334c57eba99e9256bb927baf55459711dcfbb4fc519bccec0c886d3beb412905"
+  },
+  "datenquellen": {
+    "before": 5,
+    "active": 5,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "baceee5e1c25359299d2f056881a82658dd3db660b83fba05f04ab7e3a23a4ed"
+  },
+  "quellen_artefakte": {
+    "before": 3094,
+    "active": 3094,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "affe8b41b31d7630c6c13c6d25c64f8078d3b149414e5d34e74264f61e7c31d9"
+  },
+  "client_updates": {
+    "before": 41,
+    "active": 41,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "73d16cdc27a7e2f70303c3e724936b5de95147ce13aa321eaa539dfe2277bee1"
+  },
+  "katalog_signale": {
+    "before": 1454,
+    "active": 1454,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "cba9315834faa65f603362779617c78e124f98902ebf5717238f31defac3ecde"
+  },
+  "katalog_sync": {
+    "before": 5,
+    "active": 5,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "6a4d815cd9d52f0552a22cc281d24d96baaacef64afc28af7049fe16e7acc835"
+  },
+  "equity_studien": {
+    "before": 1572,
+    "active": 0,
+    "quarantine": 1572,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "aa1369c2ebabaf595c9dc5a5013e6d25de2f22b4f4ec33ce3c7c44247e793002"
+  },
+  "signal_markierungen": {
+    "before": 0,
+    "active": 0,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "signal_kommentare": {
+    "before": 4,
+    "active": 0,
+    "quarantine": 4,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "fa4e16f8a01625e46ad38b582918ab1002a83d6936916cbefa224ed372e452ee"
+  },
+  "llm_attempts": {
+    "before": 0,
+    "active": 0,
+    "quarantine": 0,
+    "all_original_values_preserved": true,
+    "payload_multiset_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  }
+}

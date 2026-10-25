@@ -1,0 +1,163 @@
+{
+  "atUtc": "2026-10-18T15:07:21.7114154Z",
+  "scope": "Port owners and sanitized process metadata; current disk hashes do not hash already loaded JVM bytecode",
+  "productiveProcessesChanged": false,
+  "sources": [
+    {
+      "port": 8089,
+      "project": "MqlDownloader",
+      "listening": true,
+      "pid": 54460,
+      "createdUtc": "2026-10-18T10:01:21.6387500Z",
+      "mainClass": "main.MqlDownloaderApp",
+      "usesMavenExec": true,
+      "projectTargetClassesMentioned": false,
+      "files": [
+        {
+          "relative": "src/rest/RestApiServer.java",
+          "modifiedUtc": "2026-10-18T11:05:04.5730472Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "29cc4b5ed4fc5460b73a1b4187f1ef2ab47dec4b32132261170c3d91f1abc157"
+        },
+        {
+          "relative": "src/gui/ClientUpdateRunner.java",
+          "modifiedUtc": "2026-10-18T10:42:49.6041667Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "f9a75d68aa3431cb3152334a7c3d125bc66e6087d16eea56ac646576259be053"
+        },
+        {
+          "relative": "src/gui/MqlDownloaderGui.java",
+          "modifiedUtc": "2026-10-18T10:37:46.0256444Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "0258dc62b6a95f8546f1dd1d94b813b20877e006ae1095711e6901f9c13a4b6e"
+        },
+        {
+          "relative": "target/classes/rest/RestApiServer.class",
+          "modifiedUtc": "2026-10-18T11:10:03.4966643Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "752940cda8acd4a99e82b4cca888c2f388b0e2cfbc1c13e3bcc1930f7cad5562"
+        },
+        {
+          "relative": "target/classes/gui/ClientUpdateRunner.class",
+          "modifiedUtc": "2026-10-18T11:10:03.6242060Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "4e51747aa4cd6d8b84d405036caafa285483c98cdc764f675b3a4859aae3df7e"
+        }
+      ]
+    },
+    {
+      "port": 8090,
+      "project": "PelicanTrading",
+      "listening": true,
+      "pid": 65584,
+      "createdUtc": "2026-10-18T10:01:25.1889080Z",
+      "mainClass": "de.pelicanmonitor.PelicanMonitorApp",
+      "usesMavenExec": false,
+      "projectTargetClassesMentioned": true,
+      "files": [
+        {
+          "relative": "src/main/java/de/pelicanmonitor/rest/RestApiServer.java",
+          "modifiedUtc": "2026-10-16T17:59:01.9990300Z",
+          "modifiedAfterJvmStart": false,
+          "sha256": "6ba36044d27c271748b18d0de6a36bfb02e526f93e27bb0d2a6118dfa350bc93"
+        },
+        {
+          "relative": "target/classes/de/pelicanmonitor/rest/RestApiServer.class",
+          "modifiedUtc": "2026-10-16T21:43:21.4716784Z",
+          "modifiedAfterJvmStart": false,
+          "sha256": "96e1c9368d115a6746bb46106749a71bccd1c4c006cec52d9b7324c04ab962fa"
+        }
+      ]
+    },
+    {
+      "port": 8091,
+      "project": "roboforex",
+      "listening": true,
+      "pid": 64096,
+      "createdUtc": "2026-10-18T10:01:24.8943480Z",
+      "mainClass": "de.robomonitor.RoboMonitorApp",
+      "usesMavenExec": false,
+      "projectTargetClassesMentioned": true,
+      "files": [
+        {
+          "relative": "src/main/java/de/robomonitor/rest/RestApiServer.java",
+          "modifiedUtc": "2026-10-16T18:26:44.4003232Z",
+          "modifiedAfterJvmStart": false,
+          "sha256": "c94ab6ee17d42df275f60121c5f71b04a448cdcf2e1e2202eedcd0fa0964ccdf"
+        },
+        {
+          "relative": "target/classes/de/robomonitor/rest/RestApiServer.class",
+          "modifiedUtc": "2026-10-16T21:43:20.4338231Z",
+          "modifiedAfterJvmStart": false,
+          "sha256": "a1ffd5316ea399da4420fa473f53e3a3cf95e6b56e557b42f5981d481cc3592a"
+        }
+      ]
+    },
+    {
+      "port": 8092,
+      "project": "vantage",
+      "listening": true,
+      "pid": 58420,
+      "createdUtc": "2026-10-18T10:01:24.8364210Z",
+      "mainClass": "de.vantagemonitor.VantageMonitorApp",
+      "usesMavenExec": false,
+      "projectTargetClassesMentioned": true,
+      "files": [
+        {
+          "relative": "src/main/java/de/vantagemonitor/store/HistoryFiles.java",
+          "modifiedUtc": "2026-10-18T10:49:37.4227887Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "a66e25baf4cf4d9c7b73389989845d16f230c9318cee4dc405ee291647cd75e0"
+        },
+        {
+          "relative": "src/main/java/de/vantagemonitor/store/TradeStore.java",
+          "modifiedUtc": "2026-10-18T10:44:25.6995589Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "c3f80324ef08458e36a32343b946aeb41de087e7032dd67fa7b6283abc58f98a"
+        },
+        {
+          "relative": "src/main/java/de/vantagemonitor/VantageMonitorApp.java",
+          "modifiedUtc": "2026-10-18T10:44:25.7005561Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "fe7375a39db24857c4fbf2373dac562c2a2f6e1e0cb05aac4dd097f07878a98e"
+        },
+        {
+          "relative": "target/classes/de/vantagemonitor/VantageMonitorApp.class",
+          "modifiedUtc": "2026-10-18T10:49:40.1740273Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "e5a2b3ecb073682a6276a7360293e6abb3cfc6da8ee3268226c38d7a3f4f71f5"
+        },
+        {
+          "relative": "target/classes/de/vantagemonitor/store/HistoryFiles.class",
+          "modifiedUtc": "2026-10-18T10:49:39.8750484Z",
+          "modifiedAfterJvmStart": true,
+          "sha256": "ab506001a39d667ebe6a4640571bee191852b7eef89143c2ccbc4c96e158c156"
+        }
+      ]
+    },
+    {
+      "port": 8093,
+      "project": "zulumonitor",
+      "listening": true,
+      "pid": 52084,
+      "createdUtc": "2026-10-18T10:01:24.8733950Z",
+      "mainClass": "de.zulumonitor.ZuluMonitorApp",
+      "usesMavenExec": false,
+      "projectTargetClassesMentioned": true,
+      "files": [
+        {
+          "relative": "src/main/java/de/zulumonitor/rest/RestApiServer.java",
+          "modifiedUtc": "2026-10-16T17:54:40.1298120Z",
+          "modifiedAfterJvmStart": false,
+          "sha256": "6c725167b2361748a0330365e61ad87cb368f0903767b9c3647d86a102814700"
+        },
+        {
+          "relative": "target/classes/de/zulumonitor/rest/RestApiServer.class",
+          "modifiedUtc": "2026-10-16T21:43:20.9664722Z",
+          "modifiedAfterJvmStart": false,
+          "sha256": "b541d4374e0d15c298c4fc3e9ee19df48e48dfe33e04a968d4fa194539a07b99"
+        }
+      ]
+    }
+  ]
+}

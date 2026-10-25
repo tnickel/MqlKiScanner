@@ -1,0 +1,17 @@
+{
+  "foreign_engine_path_exists": false,
+  "actual_engine_path_exists": true,
+  "exposure.py": {
+    "claimed_function": "calculate_exposure",
+    "claimed_function_exists": false,
+    "actual_run_exists": true
+  },
+  "drawdown.py": {
+    "claimed_function": "calculate_drawdown",
+    "claimed_function_exists": false,
+    "actual_run_exists": true
+  },
+  "months_3_days": 91.310625,
+  "months_3_weeks": 13.044375,
+  "weeks_12_days": 84
+}

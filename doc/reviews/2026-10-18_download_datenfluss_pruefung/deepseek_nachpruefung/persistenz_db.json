@@ -1,0 +1,166 @@
+{
+  "read_utc": "2026-10-18T15:05:21.213779+00:00",
+  "access": {
+    "uri_mode": "ro",
+    "query_only": 1,
+    "single_read_transaction": true,
+    "schema_initialization_suppressed": true,
+    "materialize_pdfs": false,
+    "network_or_terminal_calls": false
+  },
+  "forensics_version": 19,
+  "risk_settings_only": {
+    "schranke_eq_dd_pct": 50.0,
+    "min_ertrag_pct_monat": 0.0,
+    "min_calmar_jahr": 3.0
+  },
+  "counts": {
+    "signals": 194,
+    "forensik": 163,
+    "katalog_signale": 1454,
+    "trade_files": 193,
+    "quellen_artefakte": 3094,
+    "equity_studien": 1572
+  },
+  "workflow_sources": {
+    "mql5": 71,
+    "pelik": 37,
+    "robo": 33,
+    "vant": 16,
+    "zulu": 37
+  },
+  "catalog_sources": {
+    "mql5": 215,
+    "pelik": 640,
+    "robo": 200,
+    "vant": 199,
+    "zulu": 200
+  },
+  "identity_union": {
+    "same_source_id_overlap": 171,
+    "catalog_without_workflow": 1283,
+    "union_rows": 1477,
+    "cross_source_numeric_collisions": 0
+  },
+  "workflow_forensics": {
+    "versions": {
+      "11": 3,
+      "14": 10,
+      "15": 104,
+      "16": 15,
+      "7": 27,
+      "None": 4
+    },
+    "version_count_sum": 163,
+    "completeness_flags": {
+      "False": 32,
+      "None": 9,
+      "True": 122
+    },
+    "stored_dates_by_version": [
+      {
+        "version": null,
+        "stored_day": "2026-09-05",
+        "count": 1
+      },
+      {
+        "version": null,
+        "stored_day": "2026-09-07",
+        "count": 3
+      },
+      {
+        "version": 7,
+        "stored_day": "2026-09-08",
+        "count": 5
+      },
+      {
+        "version": 7,
+        "stored_day": "2026-09-20",
+        "count": 6
+      },
+      {
+        "version": 7,
+        "stored_day": "2026-09-27",
+        "count": 2
+      },
+      {
+        "version": 7,
+        "stored_day": "2026-09-30",
+        "count": 12
+      },
+      {
+        "version": 7,
+        "stored_day": "2026-10-01",
+        "count": 1
+      },
+      {
+        "version": 7,
+        "stored_day": "2026-10-02",
+        "count": 1
+      },
+      {
+        "version": 11,
+        "stored_day": "2026-10-04",
+        "count": 3
+      },
+      {
+        "version": 14,
+        "stored_day": "2026-10-05",
+        "count": 10
+      },
+      {
+        "version": 15,
+        "stored_day": "2026-10-08",
+        "count": 104
+      },
+      {
+        "version": 16,
+        "stored_day": "2026-10-16",
+        "count": 15
+      }
+    ]
+  },
+  "independent_studies": {
+    "current_readable_studies": 1354,
+    "stored_versions": [
+      [
+        0,
+        218
+      ],
+      [
+        19,
+        1354
+      ]
+    ]
+  },
+  "actual_reload": {
+    "rows": 194,
+    "ampel": {
+      "\u26aa": 99,
+      "\u26d4": 18,
+      "\ud83d\udd34": 77
+    },
+    "stale": 161,
+    "current_complete": 0,
+    "not_stale": 33,
+    "not_stale_missing_forensic_payload": 31,
+    "not_stale_incomplete_forensic_payload": 2,
+    "green_or_yellow": 0,
+    "nonempty_fields": {
+      "Score": 0,
+      "Max-Drawdown %": 0,
+      "TrueRetDD": 0,
+      "TrueRetDD (Vorbehalt)": 0
+    },
+    "separate_study_display_values": 0,
+    "account_currency": {
+      "None": 194
+    }
+  },
+  "code_sha256": {
+    "src/mqlkiscanner/pipeline.py": "3727dc32e07ad4c6091476a1f9aae9a176bcffe844d26d5064160e1e39da1bfc",
+    "src/mqlkiscanner/db.py": "408fffdb0e6466b148a88886a70729665b58aed3700930084b9f81c7fd3b8cbb",
+    "src/mqlkiscanner/app_ui.py": "306140dabebc1527d1f7773a0c5c4dae27f161ef78609cd39b02ae178622426c",
+    "src/mqlkiscanner/downloader_sync.py": "b95c5330ed4c522b7ce0553d6d9580684bcc584ec1bf994557ff2b63ba345024"
+  }
+}

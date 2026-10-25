@@ -1,0 +1,810 @@
+{
+  "mql5": {
+    "catalogue_http": 200,
+    "rows": 216,
+    "scanner_cached_rows": 165,
+    "samples": [
+      {
+        "signal_id": "2265877",
+        "version": "mql5",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": null,
+        "completeness": {
+          "Trades": null,
+          "TradesStored": null,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 81336,
+        "sha256": "a87c7519e01b0af1c1b84b2ff99b2f1ae21238e19b7bdd377f815e42fdddec7e",
+        "parsed": {
+          "format": "positions",
+          "trades": 895,
+          "balances": 2,
+          "costs": 0,
+          "duplicate_rows_kept": 2,
+          "first_open": "2024-10-29 03:33:21",
+          "last_close": "2026-10-09 08:30:56",
+          "net": 5350.22
+        },
+        "scanner_trade_file": {
+          "file_sha_matches_live": false,
+          "fetched_at": "2026-10-08 12:59:39"
+        },
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "2379208",
+        "version": "mql5",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "JPY",
+        "normalization": null,
+        "completeness": {
+          "Trades": null,
+          "TradesStored": null,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 373774,
+        "sha256": "166426e5dd7f33e69ac2ea31e00b80754a8ef3d48630693a754f54685eaa8c4a",
+        "parsed": {
+          "format": "positions",
+          "trades": 4346,
+          "balances": 92,
+          "costs": 0,
+          "duplicate_rows_kept": 0,
+          "first_open": "2025-03-05 16:46:58",
+          "last_close": "2026-10-15 17:31:00",
+          "net": 790198.0
+        },
+        "scanner_trade_file": {
+          "file_sha_matches_live": false,
+          "fetched_at": "2026-09-30 00:02:33"
+        },
+        "net_currency": "JPY"
+      },
+      {
+        "signal_id": "2245675",
+        "version": "mql5",
+        "scanned_in_snapshot": false,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": null,
+        "completeness": {
+          "Trades": null,
+          "TradesStored": null,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 72661,
+        "sha256": "e6284bfec40ed34a2640ae4056c7bffda2445e33c851040964db50933df80371",
+        "parsed": {
+          "format": "positions",
+          "trades": 718,
+          "balances": 218,
+          "costs": 0,
+          "duplicate_rows_kept": 0,
+          "first_open": "2024-07-16 05:12:54",
+          "last_close": "2026-10-09 17:00:01",
+          "net": 5708.0
+        },
+        "net_currency": "USD"
+      }
+    ]
+  },
+  "pelican": {
+    "catalogue_http": 200,
+    "rows": 640,
+    "scanner_cached_rows": 636,
+    "samples": [
+      {
+        "signal_id": "2014074",
+        "version": "pelican",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": {
+          "status": "ok",
+          "providerCurrency": "USD",
+          "sourceCurrencies": [
+            "USD"
+          ],
+          "sourceCurrency": "USD",
+          "targetCurrency": "USD",
+          "method": "fixed_usd_usc",
+          "dateBasis": "exported_source_close_date",
+          "source": "USD unchanged; USC fixed /100",
+          "maxWalkbackDays": 10,
+          "fieldsScaled": [
+            "RealisedProfit"
+          ],
+          "tradesStored": 15599,
+          "note": "Je Trade CurrencyCode, sonst Providerwaehrung; USD unveraendert, USC genau einmal /100. EZB-Tagesreferenz, kein Ausfuehrungskurs. Preise und Lots unveraendert. Gespeicherte Anzahl beweist keine vollstaendige API-Lebenszeithistorie."
+        },
+        "completeness": {
+          "Trades": 30690,
+          "TradesStored": 15599,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": "Trades/Wins/Losses sind Plattformaggregate, TradesStored zaehlt verifizierte lokale CSV-Zeilen. Unterschiede beweisen weder Trunkierung noch fehlende Trades; auch Gleichheit beweist keine vollstaendige Lebenszeithistorie.",
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "Trades/Wins/Losses sind Plattformaggregate, TradesStored zaehlt verifizierte lokale CSV-Zeilen. Unterschiede beweisen weder Trunkierung noch fehlende Trades; auch Gleichheit beweist keine vollstaendige Lebenszeithistorie.",
+        "trades_http": 200,
+        "bytes": 1331886,
+        "sha256": "a155bf59d26de3e1b285e9a14ae43bbfe69cb86e2e16db3f11719bb9b29aa596",
+        "parsed": {
+          "format": "positions",
+          "trades": 15599,
+          "balances": 0,
+          "costs": 0,
+          "duplicate_rows_kept": 4281,
+          "first_open": "2022-12-08 14:20:00",
+          "last_close": "2026-10-16 17:02:08",
+          "net": 65980.79
+        },
+        "scanner_source_cache": {
+          "fetched_at": "2026-09-30 00:05:09",
+          "file_exists": true,
+          "db_sha_matches_live": false,
+          "file_sha_matches_db": true,
+          "file_sha_matches_live": false,
+          "parsed": {
+            "format": "positions",
+            "trades": 15340,
+            "balances": 0,
+            "costs": 0,
+            "duplicate_rows_kept": 4197,
+            "first_open": "2022-12-08 14:20:00",
+            "last_close": "2026-09-28 06:00:12",
+            "net": 64537.45
+          }
+        },
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "2000028",
+        "version": "pelican",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": {
+          "status": "ok",
+          "providerCurrency": "USD",
+          "sourceCurrencies": [
+            "USD"
+          ],
+          "sourceCurrency": "USD",
+          "targetCurrency": "USD",
+          "method": "fixed_usd_usc",
+          "dateBasis": "exported_source_close_date",
+          "source": "USD unchanged; USC fixed /100",
+          "maxWalkbackDays": 10,
+          "fieldsScaled": [
+            "RealisedProfit"
+          ],
+          "tradesStored": 3342,
+          "note": "Je Trade CurrencyCode, sonst Providerwaehrung; USD unveraendert, USC genau einmal /100. EZB-Tagesreferenz, kein Ausfuehrungskurs. Preise und Lots unveraendert. Gespeicherte Anzahl beweist keine vollstaendige API-Lebenszeithistorie."
+        },
+        "completeness": {
+          "Trades": 6764,
+          "TradesStored": 3342,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": "Trades/Wins/Losses sind Plattformaggregate, TradesStored zaehlt verifizierte lokale CSV-Zeilen. Unterschiede beweisen weder Trunkierung noch fehlende Trades; auch Gleichheit beweist keine vollstaendige Lebenszeithistorie.",
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "Trades/Wins/Losses sind Plattformaggregate, TradesStored zaehlt verifizierte lokale CSV-Zeilen. Unterschiede beweisen weder Trunkierung noch fehlende Trades; auch Gleichheit beweist keine vollstaendige Lebenszeithistorie.",
+        "trades_http": 200,
+        "bytes": 286522,
+        "sha256": "0ec436ea72daa1431c45d80c2277dbd5de0448850baccda66a3d24e8d429b1cf",
+        "parsed": {
+          "format": "positions",
+          "trades": 3342,
+          "balances": 0,
+          "costs": 0,
+          "duplicate_rows_kept": 213,
+          "first_open": "2023-07-19 02:15:00",
+          "last_close": "2026-10-16 17:13:37",
+          "net": 13754.39
+        },
+        "scanner_source_cache": {
+          "fetched_at": "2026-10-02 02:02:33",
+          "file_exists": true,
+          "db_sha_matches_live": false,
+          "file_sha_matches_db": true,
+          "file_sha_matches_live": false,
+          "parsed": {
+            "format": "positions",
+            "trades": 3304,
+            "balances": 0,
+            "costs": 0,
+            "duplicate_rows_kept": 213,
+            "first_open": "2023-07-19 02:15:00",
+            "last_close": "2026-10-01 06:32:18",
+            "net": 13439.64
+          }
+        },
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "2061344",
+        "version": "pelican",
+        "scanned_in_snapshot": false,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": {
+          "status": "ok",
+          "providerCurrency": "USD",
+          "sourceCurrencies": [
+            "USD"
+          ],
+          "sourceCurrency": "USD",
+          "targetCurrency": "USD",
+          "method": "fixed_usd_usc",
+          "dateBasis": "exported_source_close_date",
+          "source": "USD unchanged; USC fixed /100",
+          "maxWalkbackDays": 10,
+          "fieldsScaled": [
+            "RealisedProfit"
+          ],
+          "tradesStored": 105,
+          "note": "Je Trade CurrencyCode, sonst Providerwaehrung; USD unveraendert, USC genau einmal /100. EZB-Tagesreferenz, kein Ausfuehrungskurs. Preise und Lots unveraendert. Gespeicherte Anzahl beweist keine vollstaendige API-Lebenszeithistorie."
+        },
+        "completeness": {
+          "Trades": 681,
+          "TradesStored": 105,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": "Trades/Wins/Losses sind Plattformaggregate, TradesStored zaehlt verifizierte lokale CSV-Zeilen. Unterschiede beweisen weder Trunkierung noch fehlende Trades; auch Gleichheit beweist keine vollstaendige Lebenszeithistorie.",
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "Trades/Wins/Losses sind Plattformaggregate, TradesStored zaehlt verifizierte lokale CSV-Zeilen. Unterschiede beweisen weder Trunkierung noch fehlende Trades; auch Gleichheit beweist keine vollstaendige Lebenszeithistorie.",
+        "trades_http": 200,
+        "bytes": 9035,
+        "sha256": "a84b936313dd82a7e0e7d9e6518928a839eb919edb7ecd1db90ccbd439342a54",
+        "parsed": {
+          "format": "positions",
+          "trades": 105,
+          "balances": 0,
+          "costs": 0,
+          "duplicate_rows_kept": 0,
+          "first_open": "2026-06-26 14:00:00",
+          "last_close": "2026-09-25 09:27:37",
+          "net": -860.32
+        },
+        "scanner_source_cache": {
+          "fetched_at": "2026-10-08 20:35:00",
+          "file_exists": true,
+          "db_sha_matches_live": true,
+          "file_sha_matches_db": true,
+          "file_sha_matches_live": true,
+          "parsed": {
+            "format": "positions",
+            "trades": 105,
+            "balances": 0,
+            "costs": 0,
+            "duplicate_rows_kept": 0,
+            "first_open": "2026-06-26 14:00:00",
+            "last_close": "2026-09-25 09:27:37",
+            "net": -860.32
+          }
+        },
+        "net_currency": "USD"
+      }
+    ]
+  },
+  "robo": {
+    "catalogue_http": 200,
+    "rows": 200,
+    "scanner_cached_rows": 197,
+    "samples": [
+      {
+        "signal_id": "21596244",
+        "version": "mql4",
+        "scanned_in_snapshot": false,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": null,
+        "completeness": {
+          "Trades": null,
+          "TradesStored": null,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": true,
+          "TradeHistoryQualityReasons": [],
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 3344,
+        "sha256": "931e4d357036a17f9bc3d5e6284a4655f3d8a7b079918b1444c4bc28d5947f88",
+        "parsed": {
+          "format": "positions",
+          "trades": 38,
+          "balances": 1,
+          "costs": 0,
+          "duplicate_rows_kept": 0,
+          "first_open": "2026-09-01 08:03:03",
+          "last_close": "2026-10-14 15:41:54",
+          "net": 14093.5
+        },
+        "scanner_source_cache": {
+          "fetched_at": "2026-10-08 20:16:26",
+          "file_exists": true,
+          "db_sha_matches_live": false,
+          "file_sha_matches_db": true,
+          "file_sha_matches_live": false,
+          "parsed": {
+            "format": "positions",
+            "trades": 20,
+            "balances": 1,
+            "costs": 0,
+            "duplicate_rows_kept": 0,
+            "first_open": "2026-09-01 08:03:03",
+            "last_close": "2026-09-25 14:01:38",
+            "net": 8747.4
+          }
+        },
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "38041279",
+        "version": "mql4",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": null,
+        "completeness": {
+          "Trades": null,
+          "TradesStored": null,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": true,
+          "TradeHistoryQualityReasons": [],
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 1042955,
+        "sha256": "c1087c66141a2cd192b1ebbc766e280d4fef20f29947e52fba34a90f3a9f02a3",
+        "parsed": {
+          "format": "positions",
+          "trades": 11816,
+          "balances": 86,
+          "costs": 0,
+          "duplicate_rows_kept": 156,
+          "first_open": "2025-01-21 18:07:33",
+          "last_close": "2026-10-16 16:03:26",
+          "net": 208.8324
+        },
+        "scanner_source_cache": {
+          "fetched_at": "2026-10-05 22:23:11",
+          "file_exists": true,
+          "db_sha_matches_live": false,
+          "file_sha_matches_db": true,
+          "file_sha_matches_live": false,
+          "parsed": {
+            "format": "positions",
+            "trades": 11574,
+            "balances": 84,
+            "costs": 0,
+            "duplicate_rows_kept": 150,
+            "first_open": "2025-01-21 18:07:33",
+            "last_close": "2026-09-25 17:39:44",
+            "net": 220.87
+          }
+        },
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "27158991",
+        "version": "mql5",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": null,
+        "completeness": {
+          "Trades": null,
+          "TradesStored": null,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": true,
+          "TradeHistoryQualityReasons": [],
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 136188,
+        "sha256": "dd664655b43cd3005e641ef9602e40faab2e03bbe9e881def9db0c2147e6f7d9",
+        "parsed": {
+          "format": "positions",
+          "trades": 1229,
+          "balances": 765,
+          "costs": 0,
+          "duplicate_rows_kept": 0,
+          "first_open": "2024-01-11 11:49:20",
+          "last_close": "2026-10-14 13:43:57",
+          "net": 2227.2400000000002
+        },
+        "scanner_source_cache": {
+          "fetched_at": "2026-10-05 22:23:14",
+          "file_exists": true,
+          "db_sha_matches_live": false,
+          "file_sha_matches_db": true,
+          "file_sha_matches_live": false,
+          "parsed": {
+            "format": "positions",
+            "trades": 1205,
+            "balances": 764,
+            "costs": 0,
+            "duplicate_rows_kept": 0,
+            "first_open": "2024-01-11 11:49:20",
+            "last_close": "2026-09-25 11:16:29",
+            "net": 2189.48
+          }
+        },
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "24229925",
+        "version": "mql4",
+        "scanned_in_snapshot": false,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": null,
+        "completeness": {
+          "Trades": null,
+          "TradesStored": null,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": true,
+          "TradeHistoryQualityReasons": [],
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 50201,
+        "sha256": "2e454db5bea548fee91995cefac67eb644f8d449636d220d6fa1e37287dfaa0e",
+        "parsed": {
+          "format": "positions",
+          "trades": 402,
+          "balances": 377,
+          "costs": 0,
+          "duplicate_rows_kept": 0,
+          "first_open": "2025-08-18 08:00:00",
+          "last_close": "2026-10-16 03:48:15",
+          "net": 150.7
+        },
+        "net_currency": "USD"
+      }
+    ]
+  },
+  "vantage": {
+    "catalogue_http": 200,
+    "rows": 199,
+    "scanner_cached_rows": 347,
+    "samples": [
+      {
+        "signal_id": "1419494",
+        "version": "vantage",
+        "scanned_in_snapshot": false,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": {
+          "reason": "Trade-Zeitbasis nicht als UTC belegt; Altbestand bleibt erhalten und darf nicht gemischt werden",
+          "status": "unavailable"
+        },
+        "completeness": {
+          "Trades": null,
+          "TradesStored": 0,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 404,
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "1286742",
+        "version": "vantage",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": {
+          "reason": "Trade-Zeitbasis nicht als UTC belegt; Altbestand bleibt erhalten und darf nicht gemischt werden",
+          "status": "unavailable"
+        },
+        "completeness": {
+          "Trades": null,
+          "TradesStored": 0,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 404,
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "1010186",
+        "version": "vantage",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": {
+          "reason": "Trade-Zeitbasis nicht als UTC belegt; Altbestand bleibt erhalten und darf nicht gemischt werden",
+          "status": "unavailable"
+        },
+        "completeness": {
+          "Trades": null,
+          "TradesStored": 0,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 404,
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "1096166",
+        "version": "vantage",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": {
+          "reason": "Trade-Zeitbasis nicht als UTC belegt; Altbestand bleibt erhalten und darf nicht gemischt werden",
+          "status": "unavailable"
+        },
+        "completeness": {
+          "Trades": null,
+          "TradesStored": 0,
+          "TradesTotalAvailable": null,
+          "TradesTruncated": null,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": null
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 404,
+        "net_currency": "USD"
+      }
+    ]
+  },
+  "zulu": {
+    "catalogue_http": 200,
+    "rows": 200,
+    "scanner_cached_rows": 199,
+    "samples": [
+      {
+        "signal_id": "402995",
+        "version": "zulu",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "EUR",
+        "normalization": {
+          "status": "ok",
+          "sourceCurrency": "EUR",
+          "storedPnlCurrency": "EUR",
+          "targetCurrency": "USD",
+          "method": "historical_ecb_trade_close_date",
+          "source": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.zip",
+          "maxWalkbackDays": 10,
+          "fieldsScaled": [
+            "netPnl"
+          ],
+          "closeDateBasis": "UTC bei vorhandenem API-Instant; sonst Datum des Legacy-Zeitstempels",
+          "note": "Tagesreferenzkurs, kein Ausfuehrungskurs. Preise, Lots und Rohcache bleiben unveraendert."
+        },
+        "completeness": {
+          "Trades": 5533,
+          "TradesStored": 5725,
+          "TradesTotalAvailable": 5533,
+          "TradesTruncated": false,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": "Total aus Trader-Katalogsnapshot; kleinerer Cache kann gekappt oder aelter sein. Auch gleiche Anzahl beweist keine vollstaendige Historie."
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 539518,
+        "sha256": "28ac71be19f504c52825d479c8088c84d44e0889637fc87825ba143c04541f5a",
+        "parsed": {
+          "format": "positions",
+          "trades": 5725,
+          "balances": 0,
+          "costs": 0,
+          "duplicate_rows_kept": 20,
+          "first_open": "2020-06-16 23:16:05",
+          "last_close": "2026-10-16 13:31:54",
+          "net": 5405.212723
+        },
+        "scanner_source_cache": {
+          "fetched_at": "2026-10-10 21:01:19",
+          "file_exists": true,
+          "db_sha_matches_live": false,
+          "file_sha_matches_db": true,
+          "file_sha_matches_live": false,
+          "parsed": {
+            "format": "positions",
+            "trades": 5717,
+            "balances": 0,
+            "costs": 0,
+            "duplicate_rows_kept": 20,
+            "first_open": "2020-06-16 23:16:05",
+            "last_close": "2026-10-06 16:53:52",
+            "net": 5391.624149
+          }
+        },
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "404656",
+        "version": "zulu",
+        "scanned_in_snapshot": true,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": {
+          "status": "ok",
+          "sourceCurrency": "USD",
+          "storedPnlCurrency": "USD",
+          "targetCurrency": "USD",
+          "method": "already_usd",
+          "source": "USD/USC feste Einheit",
+          "maxWalkbackDays": 10,
+          "fieldsScaled": [],
+          "closeDateBasis": "UTC bei vorhandenem API-Instant; sonst Datum des Legacy-Zeitstempels",
+          "note": "Tagesreferenzkurs, kein Ausfuehrungskurs. Preise, Lots und Rohcache bleiben unveraendert."
+        },
+        "completeness": {
+          "Trades": 4889,
+          "TradesStored": 5006,
+          "TradesTotalAvailable": 4889,
+          "TradesTruncated": false,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": "Total aus Trader-Katalogsnapshot; kleinerer Cache kann gekappt oder aelter sein. Auch gleiche Anzahl beweist keine vollstaendige Historie."
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 452937,
+        "sha256": "4efdca84c1669b424919c630d0bdadb3d33ad32b37e71c578904131d52fc29a9",
+        "parsed": {
+          "format": "positions",
+          "trades": 5006,
+          "balances": 0,
+          "costs": 0,
+          "duplicate_rows_kept": 0,
+          "first_open": "2018-12-20 19:00:00",
+          "last_close": "2026-09-29 17:12:22",
+          "net": 5358.62
+        },
+        "scanner_source_cache": {
+          "fetched_at": "2026-10-08 13:07:48",
+          "file_exists": true,
+          "db_sha_matches_live": false,
+          "file_sha_matches_db": true,
+          "file_sha_matches_live": false,
+          "parsed": {
+            "format": "positions",
+            "trades": 5006,
+            "balances": 0,
+            "costs": 0,
+            "duplicate_rows_kept": 0,
+            "first_open": "2018-12-20 19:00:00",
+            "last_close": "2026-09-29 17:12:22",
+            "net": 5358.62
+          }
+        },
+        "net_currency": "USD"
+      },
+      {
+        "signal_id": "430306",
+        "version": "zulu",
+        "scanned_in_snapshot": false,
+        "metrics_http": 200,
+        "account_currency": "USD",
+        "normalization": {
+          "status": "ok",
+          "sourceCurrency": "USD",
+          "storedPnlCurrency": "USD",
+          "targetCurrency": "USD",
+          "method": "already_usd",
+          "source": "USD/USC feste Einheit",
+          "maxWalkbackDays": 10,
+          "fieldsScaled": [],
+          "closeDateBasis": "UTC bei vorhandenem API-Instant; sonst Datum des Legacy-Zeitstempels",
+          "note": "Tagesreferenzkurs, kein Ausfuehrungskurs. Preise, Lots und Rohcache bleiben unveraendert."
+        },
+        "completeness": {
+          "Trades": 8992,
+          "TradesStored": 1164,
+          "TradesTotalAvailable": 8992,
+          "TradesTruncated": true,
+          "TradeHistoryComplete": null,
+          "TradeHistoryQualityReasons": null,
+          "CompletenessNote": null,
+          "TradesCompletenessNote": "Total aus Trader-Katalogsnapshot; kleinerer Cache kann gekappt oder aelter sein. Auch gleiche Anzahl beweist keine vollstaendige Historie."
+        },
+        "mapped_completeness_note": "",
+        "trades_http": 200,
+        "bytes": 99329,
+        "sha256": "be63eb05caaafcba2c25af525fc71135d7a0ed25322a89a1a7d0697cbddb6f5b",
+        "parsed": {
+          "format": "positions",
+          "trades": 1164,
+          "balances": 0,
+          "costs": 0,
+          "duplicate_rows_kept": 0,
+          "first_open": "2025-05-22 14:35:11",
+          "last_close": "2025-11-28 16:07:22",
+          "net": 5686.61
+        },
+        "scanner_source_cache": {
+          "fetched_at": "2026-10-08 20:30:08",
+          "file_exists": true,
+          "db_sha_matches_live": true,
+          "file_sha_matches_db": true,
+          "file_sha_matches_live": true,
+          "parsed": {
+            "format": "positions",
+            "trades": 1164,
+            "balances": 0,
+            "costs": 0,
+            "duplicate_rows_kept": 0,
+            "first_open": "2025-05-22 14:35:11",
+            "last_close": "2025-11-28 16:07:22",
+            "net": 5686.61
+          }
+        },
+        "net_currency": "USD"
+      }
+    ]
+  },
+  "probed_at": "2026-10-18T10:06:42.269896+00:00"
+}

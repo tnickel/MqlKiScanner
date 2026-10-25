@@ -1,0 +1,183 @@
+{
+  "gesichert_utc": "2026-10-18T19:05:19.728808+00:00",
+  "nutzerentscheidung": {
+    "status": "KI-Arbeit unterbrochen",
+    "fortsetzen": "AusschlieÃŸlich nach ausdrÃ¼cklicher neuer Nutzeraufforderung. Kein Termin, keine automatische Wiederaufnahme.",
+    "automation_angelegt": false,
+    "geplante_uhrzeit": null,
+    "laufende_native_downloads": "Nicht hart unterbrechen; bereits laufende Writer dÃ¼rfen sicher auslaufen. Keine neuen KI-PrÃ¼fphasen, POSTs, ScannerlÃ¤ufe, Deployments oder Modellaufrufe."
+  },
+  "auftrag": "Tradeserver-Protokoll um QuellenidentitÃ¤t erweitern, Ã¼brige bestÃ¤tigte Datenflussfehler beheben, reale Quellenupdates und anschlieÃŸende neue Berechnungen/Tabellen/Sync prÃ¼fen.",
+  "abgeschlossen": {
+    "tradeserver": {
+      "protokoll": 2,
+      "produktiv": true,
+      "atomare_uid_signal_snapshots": true,
+      "letzter_verifizierter_run": 13,
+      "signale": 199,
+      "aktuelle_pdfs": 0,
+      "offene_runs": 0,
+      "legacy_originale_erhalten": {
+        "signale": 32,
+        "pdfs": 313
+      },
+      "beleg": "server_v2_run13_checkpoint.json"
+    },
+    "scanner_tests": {
+      "passed": 2803,
+      "skipped": 1,
+      "skip_grund": "Windows-Symlinkprivileg",
+      "llm_deselected": 4,
+      "produktive_hashes_unveraendert": 112,
+      "testdateien_unveraendert": 190,
+      "junit": "scanner_final_transport_bundled_full.xml",
+      "summary": "scanner_final_transport_bundled_summary.json"
+    },
+    "transport_restore": "Exakte Quellen-UID lÃ¶st gespeicherte WorkflowkÃ¶pfe auch ohne Katalogzeile wieder auf; im finalen Volltest enthalten.",
+    "pelican": {
+      "backend_top_scope": 200,
+      "erneuert": 199,
+      "frisch": 1,
+      "downloadfehler": 0,
+      "scanner_versuche": 39,
+      "vollstaendige_forensik": 33,
+      "gespeichert": 39,
+      "rest": "3 unbelegte Axi-Kontraktspezifikationen, 3 nicht mehr von Quelle angebotene alte WorkflowkÃ¶pfe",
+      "beleg": "root_pelican_live_acceptance.json"
+    },
+    "ft_fuenf": {
+      "ids": [
+        178177,
+        1231244,
+        504191,
+        692325,
+        762452
+      ],
+      "native_historien_neu_und_geprueft": true,
+      "aktuelle_ampeln": "Alle 5 rot wegen belegter Martingale-/DD-Regeln; zusÃ¤tzlich fehlende echte Kapitalbasis. Keine positive Freigabe aus virtuellen Studien.",
+      "erster_studienlauf": {
+        "fertig": true,
+        "gerechnet": 5,
+        "fehler": [],
+        "hinweis": "5 frische SourceScan-Eingaben gerechnet, aber phaseeigener Refresh fetched=0 wegen inzwischen behobenem Transportresolver. Strikten Folgelauf getrennt nachholen.",
+        "privater_beleg": "data/runs/liveabschluss_20261018/studies_vant.json"
+      }
+    }
+  },
+  "laufende_oder_vorbereitete_quellen": {
+    "mql5": {
+      "pid": 1663784,
+      "job": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+      "stand": "MT4 92 Exporte auf 2 echten Tabellenseiten erfolgreich; MT5 lÃ¤uft. Noch kein Gesamtabschluss/Endkonvertierungsnachweis.",
+      "checkpoint": "mql_zulu_checkpoint_20261018.json",
+      "fortschritt": "mql_corrected_watch_status.json",
+      "neuer_api_guard": {
+        "tests": 163,
+        "aktiviert": false,
+        "jar": ".tmp/source_maintenance/mql_guard_stage_20261018T184418Z/target/MqlDownloader-0.0.35-SNAPSHOT-jar-with-dependencies.jar",
+        "sha256": "59b6a9996628c040bfdcb36042eeecf1e68c52437ef1a3003a4f5fc138db37a7"
+      },
+      "warnung": "Vor Guard-Neustart exakten Jobabschluss und alle CSV/Metrics sichern; RAM-Status geht bei Neustart verloren. Erst danach Writer-Abwesenheit, normaler Exit, Backup, Ersatzpaket. Keine laufende JAR/target/classes Ã¼berschreiben."
+    },
+    "zulu": {
+      "pid": 1595272,
+      "job": "u-20261018-195000-c347a8c1",
+      "stand": "Echter Top200-Backendjob lÃ¤uft mit atomaren Archivgenerationen und UTC-/SHA-Endbelegen. Kein Gesamtabschluss.",
+      "tests": 149,
+      "belege": [
+        "zulu_cancel_README.md",
+        "zulu_live_generation_verified.json",
+        "sources_current_progress.json"
+      ]
+    },
+    "vantage": {
+      "cli_pid": 1580932,
+      "readonly_api_pid": 1670220,
+      "readonly_port": 8092,
+      "stand": "5 FT abgeschlossen; bereits laufende 14er-Vollreparatur darf auslaufen. GET-only-Dienst, kein Update-POST. Kein automatischer GUI-/Folgejobstart.",
+      "belege": [
+        "sources_vantage_ft_readonly_acceptance.json",
+        "sources_vantage_repair_plan.json",
+        "sources_current_progress.json"
+      ],
+      "naechster_normaler_scope": "Erst nach ausdrÃ¼cklichem Fortsetzen: readonly Listener per eigenem Stopfile regulÃ¤r schlieÃŸen, Portende bestÃ¤tigen, normale GUI starten. Bestehender frischer Katalog plus aufgelÃ¶ste Profile voraussichtlich 215 statt 200; normale72h-Frist bewahrt zusÃ¤tzliche15Profile. TatsÃ¤chlichen Umfang und neueJobID dokumentieren."
+    },
+    "robo": {
+      "alter_backendjob": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+      "alter_backendjob_status": "Teilweise: 200 beendet,180 frische Historien,17 Duplicate-Cachefehler und3 echte RStocks-UnterstÃ¼tzungsgrenzen. Chronik append-only ergÃ¤nzt.",
+      "alter_pid_beendet": 1351408,
+      "api": "Offline wÃ¤hrend Reparatur; neuer195-Test-Einheitenvertrag noch nicht als normale API aktiviert.",
+      "laufender_reparatur_koordinator": null,
+      "pause_aktion": "Eigener Nichtwriter-Koordinator nach PID/Startzeit/Commandline/Wait-Stack-Prüfung gezielt beendet. Keine weiteren Provider-/GUI-Starts. Aktive Java-CLI1771524 bleibt unabhängig am Leben; Logfortschritt nach Pause belegt.",
+      "stand_aus_progress": {
+        "fertige_reparaturen": 6,
+        "geplant": 17,
+        "aktive_cli_pid_beim_pausebeleg": 1771524,
+        "aktiver_provider_beim_pausebeleg": 37232470,
+        "noch_nicht_gestartet_nach_aktuellem_provider": 10,
+        "hinweis": "Aktuelle CLI darf auslaufen. Ihr tatsächliches Ergebnis bei Fortsetzung anhand Artefakten/Log prüfen; Parent schreibt danach keinen neuen Fortschritt mehr."
+      },
+      "tests": 195,
+      "stage_jar_sha256": "47fa66fc692b3d92f49ffeb1c194ffd31f1607e52ac9589ab075c7b44ad6a0e1",
+      "unit_sperre": "Native Geld-/Volumeneinheiten nicht providerbezogen belegt. Keine pauschale LotsÃ—10/MT5-Hundertstel=1Lot-/Rohgeld=USD-Annahme. Neuer Vertrag: Currency/ClosingDD unbekannt, CSV404 unverified_trade_units, Rating-USD separat. Rohhistorien/Altbytes bleiben erhalten. Alte ScannerkÃ¶pfe spÃ¤ter strikt erneut prÃ¼fen; Exportguard allein korrigiert sie nicht.",
+      "belege": [
+        "sources_robo_units_build_receipt.json",
+        "sources_robo_initial_exit_backup.json",
+        "sources_robo_repair_progress.json",
+        "sources_robo_initial_trace_append.json",
+        "sources_robo_user_pause_receipt.json",
+        "sources_pause_checkpoint.json"
+      ],
+      "beendeter_koordinator_pid": 1764128
+    }
+  },
+  "fortsetzung_reihenfolge_nur_nach_nutzerfreigabe": [
+    "AGENTS.md, dieses JSON, README und beide Quellen-Checkpoints lesen. Prozess-/JobzustÃ¤nde und entstandene Endreceipts neu prÃ¼fen. Alte PIDs und laufende ZwischenstÃ¤nde sind keine Abschlussbelege.",
+    "Quellwriter nicht doppelt starten und keine aktive JAR/target/classes neu bauen/Ã¼berschreiben. Kein Ctrl+C oder globales Konsolensignal. AusschlieÃŸlich passende inaktive Pakete Ã¼ber normalen belegten Leerlauf ersetzen.",
+    "Robo-Pausereceipt prÃ¼fen; fertige Einzelreparaturen plus letzte unabhÃ¤ngig ausgelaufene Java-CLI anhand CSV/Metadaten prÃ¼fen, fehlende IDs gezielt fortsetzen. Stage195-Vertrag aktivieren und echte API-Sperren/GUI/Reports abnehmen. Kein Raten der Einheiten.",
+    "MQL exakten u355-Endstatus, beide Plattformen, alle erfolgreichen Exportgenerationen und frische Konvertierungen vor Guard-Neustart sichern. Danach Stage163 im Leerlauf aktivieren, gefilterte API und unverÃ¤nderte Generationen prÃ¼fen, erst dann fertig-Chronik.",
+    "Vantage14er-Ende und19 Einzelbelege prÃ¼fen, dann regulÃ¤re Dienstaktivierung/normalen lokalen Katalogscope und neues Update samt JobID binden. Zulu echten200er-Endstatus und Generationen/UTC/CSV getrennt abnehmen.",
+    "FT5 strikten Studienfolgelauf in separatem output data/runs/liveabschluss_20261018/ft_strict starten: --source vant --ids 178177,1231244,504191,692325,762452. Vorher alle5 Transporte verfÃ¼gbar; refresh.total==5==fetched und failed==[], Threadende, Besitzer/Version/TradeSHA prÃ¼fen. Alte Inputs nicht als frischen GET umetikettieren.",
+    "Pro fertiger Quelle Katalog/Source-Scan nur innerhalb belegtem echten Updateumfang. Studien immer mit expliziten IDs der tatsÃ¤chlich geprÃ¼ften Workflow-Auswahl; studies --source Q ohne IDs wÃ¼rde den ganzen Katalog rechnen. Kandidaten-/TopN-/Bewertungsregeln bleiben normal. Alte KÃ¶pfe auÃŸerhalb Umfang stale halten oder separat als Nichtfreigabe prÃ¼fen.",
+    "Neue gÃ¼ltige Berichte innerhalb bestehender Budgets erzeugen, Tabellen/DB/Studienbindungen prÃ¼fen, abschlieÃŸenden v2-Sync und Remote-Abnahme durchfÃ¼hren. Run13 ist nur der bereits bestÃ¤tigte Zwischenstand."
+  ],
+  "laufzeit": {
+    "python": "C:/Users/tnickel/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe",
+    "PYTHONPATH": "src;C:/Users/tnickel/AppData/Local/Packages/PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0/LocalCache/local-packages/Python312/site-packages",
+    "cli": "scripts/reference/live_abschluss.py",
+    "richtige_argumente": [
+      "--live",
+      "--expected-version",
+      "21",
+      "--output",
+      "data/runs/liveabschluss_20261018/<phase>"
+    ],
+    "syntax_hinweis": "--expected-version 21 mit Leerzeichen; die Form --expected-version21 in Ã¤lteren Design-/Checkpointexten ist ungÃ¼ltig.",
+    "private_belege": "data/runs/liveabschluss_20261018/",
+    "oberflaeche_pid": 1639856,
+    "oberflaeche_port": 8504
+  },
+  "bewertungsregeln_erhalten": {
+    "forensik_version": 21,
+    "produktive_dd_schranke_pct": 50,
+    "mindest_jahres_calmar": 3,
+    "min_ertrag_pct_monat": 0,
+    "fehlender_sl": "neutral",
+    "automatik_scanner_agenten_enabled": false,
+    "quarantaene_altstudien": 1572,
+    "mqlrealmonitor_integration": "weiter zurÃ¼ckgestellt",
+    "commits_pushes": "nicht ausgefÃ¼hrt; keine Freigabe"
+  },
+  "offene_beleggrenzen": [
+    "Echte FT-Einzahlungen/Kapitalbasis fehlen. Virtuelle Studien sind keine gemessene Workflow-Effizienz.",
+    "BTCETH-Preisereignisse und unbelegte Axi-Kontrakte nicht durch gelockerte Toleranzen freigeben.",
+    "Robo native Einheiten fehlen; drei RStocks liefern am vorhandenen MT-Endpunkt keine Historie.",
+    "Fulltest/Deployment/Source-Job/Studien/Reports/PDF/Finalsync sind getrennte Belege. Keine pauschale Behauptung alles behoben."
+  ],
+  "unverbindlicher_letzter_quellenstand": {
+    "zeit_aus_beobachter": "2026-10-18T19:02:37.851253+00:00",
+    "datei": "sources_current_progress.json",
+    "hinweis": "verÃ¤nderlicher Beobachter; bei Wiederaufnahme erneut lesen, nicht als finalen Hashnachweis behandeln"
+  },
+  "pause_sicherungsstatus": "Abgeschlossen: keine Wiederaufnahme-Automation, keine festgelegte Uhrzeit, kein Robo-Folgephasenkoordinator mehr aktiv. Bereits laufende native Downloads und reine Beobachter bleiben bestehen."
+}

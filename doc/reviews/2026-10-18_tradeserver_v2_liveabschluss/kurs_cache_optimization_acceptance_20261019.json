@@ -1,0 +1,44 @@
+{
+  "checkedUtc": "2026-10-19T09:39:31.648811+00:00",
+  "status": "implemented_and_targeted_regressions_passed",
+  "previousSourceSha256": "392dd7f3c89a4350c2b34a7e991a1ca647ac31925e9aebde98b4935446e770b7",
+  "currentSourceSha256": "b9087b0f2945dc7305cd23b77345e995ebe4f7ee47bdfffd9509f3a2e9625a5e",
+  "testSha256": "25d608da52bed5d46f25f585537d24153474d49f07eb63fc1f5865cc1c021fc0",
+  "targetedTests": {
+    "tests": 235,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "junit": {
+    "path": "data\\runs\\liveabschluss_20261019\\parser_checks\\cache_optimization.xml",
+    "sha256": "76ece96079ff32a40ad2d6a92ae49d2d2ff94341e086317fdbbf8c885d7bb756"
+  },
+  "appliedAfterZuluBatchEnd": "2026-10-19T09:34:16.937637Z",
+  "changes": [
+    "Two primary-key edge lookups replace combined full-symbol MIN/MAX scan",
+    "Expiry index accelerates unchanged global <=now retry cleanup"
+  ],
+  "rulesChanged": false,
+  "forensicsVersionChanged": false,
+  "preserved": [
+    "Exact terminal/server/symbol feed isolation",
+    "Original OHLC and final/provisional classification",
+    "60-second and24-hour TTLs",
+    "No synthetic bars/calendar/coverage",
+    "Same global expiry cleanup predicate"
+  ],
+  "productionCacheCheck": {
+    "mode": "ro",
+    "queryOnly": true,
+    "totalChanges": 0,
+    "expiryIndexCurrentlyPresent": false
+  },
+  "indexActivation": "Normal next KursCache constructor under its usual workflow; Root did not force production cache DDL",
+  "limits": [
+    "Targeted235 regressions after this SQL change, not a repeated full suite",
+    "Full2817-pass suite preceded this SQL optimization",
+    "Synthetic query timings do not establish an end-to-end study speedup",
+    "The already completed Zulu35 batch used the previous code"
+  ]
+}

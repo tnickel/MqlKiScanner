@@ -1,0 +1,13 @@
+{
+  "time": "2026-10-18T19:46:53.669389",
+  "tests": {
+    "tests": 153,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "jar_sha256": "b0184ff4337fdb768cbc423c6894ed7b7e0fd79215bb41fe4a88f82b0ba933b7",
+  "pagination_source_sha256": "3e7ba1671276027a6658b0d57db585f861d62713fe42862b1b84d05b8cd7156b",
+  "pagination_test_sha256": "f9763cf81c172bdfd52bdf724cac1d1a1c46dc01210b518424769e2d603c82d1",
+  "runtime_activation_pending": true
+}

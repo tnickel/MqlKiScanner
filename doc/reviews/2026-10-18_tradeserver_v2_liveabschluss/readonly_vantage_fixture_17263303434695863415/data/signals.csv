@@ -1,0 +1,2 @@
+﻿StrategyId;Name;StrategieNr;Waehrung;Return30dProzent;WinRateProzent;RiskBand;Kopierer;MaxKopierer;AumUsd;Kategorien;Monate;TotalScore;ReturnGesamtProzent;MaxDDGesamtProzent;ProfitFaktorGesamt;GewinnerTradesGesamt;VerliererTradesGesamt;KopiererPnlUsdGesamt;RiskLevelGesamt;RankingMetricsWindow;OverviewMetricsWindow;DrawdownMetricsWindow;ProfitFactorMetricsWindow;DrawdownSource
+7;synthetic immutable FT;;USD;0.0;0.0;0;1;0;0.0;;0;0;20.0;0.0;0.0;0;0;0.0;0;unknown;unknown;unknown;unknown;unknown

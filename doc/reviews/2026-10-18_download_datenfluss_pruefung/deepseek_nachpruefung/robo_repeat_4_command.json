@@ -1,0 +1,41 @@
+{
+  "args": [
+    "D:\\DevelopmentTools\\apache-maven-3.9.6\\bin\\mvn.cmd",
+    "-o",
+    "-q",
+    "-Dtest=ReviewDataIntegrityTest#parallelDailyStoresPublishVerifiableWholeBundles,DataStoreBundleReadLockTest",
+    "test"
+  ],
+  "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\roboforex",
+  "offline_maven": true,
+  "started_utc": "2026-10-18T15:14:13.506241+00:00",
+  "source_sha256": {
+    "src/main/java/de/robomonitor/store/DataStore.java": "0b920a4e6de92e5a6de4542ec2ed716d8c7825e3037937b80bc61cf68e74bcf3",
+    "src/main/java/de/robomonitor/store/FileTransactions.java": "8ee91d6262895f64ee8ffea993f4c9a8ecc76a1592248d9b3e5fe23308c12c77",
+    "src/test/java/de/robomonitor/ReviewDataIntegrityTest.java": "107cb6c6f34b8aae991343a9c52a87de273bbb3da55b01b64aabe06e4c666e1b",
+    "src/test/java/de/robomonitor/DataStoreBundleReadLockTest.java": "46d59f789a8ddcfea99ac7ebed29b1ee8eef055ff60435e5459fc4c686e725b3"
+  },
+  "child_env_overrides": {
+    "JAVA_HOME": "C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot",
+    "PATH_prefix": "C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot\\bin"
+  },
+  "exit_code": 0,
+  "elapsed_seconds": 2.58,
+  "finished_utc": "2026-10-18T15:14:16.085063+00:00",
+  "source_hashes_unchanged_during_run": true,
+  "compiled_class_sha256": {
+    "de/robomonitor/store/DataStore.class": "2dca963f8e43ab079476d28d7cc01e72844729da705deec35089b3e79fe67ce8",
+    "de/robomonitor/store/FileTransactions.class": "0c3515c906c9d0ade526fa0e1ebb83e7fe0519a0c5c6e21fc8bd48cb3eb64431"
+  },
+  "xml_sha256": {
+    "robo_repeat_4_TEST-de.robomonitor.DataStoreBundleReadLockTest.xml": "1a394db424a68bbdee21130ec56e7442b7af31487869e71c0ff66ba4a8b31373",
+    "robo_repeat_4_TEST-de.robomonitor.ReviewDataIntegrityTest.xml": "c658f4b51ef3095ec69d09f0f6b538404435a2bb0892ef41b31c7af35d7c1bfd"
+  },
+  "tests": {
+    "cases": 3,
+    "passed": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

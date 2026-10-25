@@ -1,0 +1,43 @@
+{
+  "checked_utc": "2026-10-19T09:19:31.287730+00:00",
+  "done": 37,
+  "total": 215,
+  "elapsed_hours": 1.9814267597222222,
+  "exact_single_provider_durations_count": 37,
+  "progress_sample_resolution_seconds": 15,
+  "completed_provider_minutes": {
+    "min": 0.25019625,
+    "median": 4.0036838,
+    "max": 5.256236983333333
+  },
+  "pace_scenarios": [
+    {
+      "window_completed_providers": 37,
+      "minutes_per_provider": 3.1522539963963965,
+      "remaining_hours_if_same_pace": 9.351686855975975,
+      "total_job_hours_if_same_pace": 11.333113615698197
+    },
+    {
+      "window_completed_providers": 20,
+      "minutes_per_provider": 3.215950976666667,
+      "remaining_hours_if_same_pace": 9.540654564111112,
+      "total_job_hours_if_same_pace": 11.522081323833333
+    },
+    {
+      "window_completed_providers": 10,
+      "minutes_per_provider": 3.3281794133333333,
+      "remaining_hours_if_same_pace": 9.873598926222224,
+      "total_job_hours_if_same_pace": 11.855025685944446
+    },
+    {
+      "window_completed_providers": 5,
+      "minutes_per_provider": 2.802475456666666,
+      "remaining_hours_if_same_pace": 8.314010521444443,
+      "total_job_hours_if_same_pace": 10.295437281166665
+    }
+  ],
+  "limits": [
+    "Observed pace extrapolations, not an ETA or statistical confidence interval",
+    "Future provider sizes, rate limits, retries and failures may change the pace"
+  ]
+}

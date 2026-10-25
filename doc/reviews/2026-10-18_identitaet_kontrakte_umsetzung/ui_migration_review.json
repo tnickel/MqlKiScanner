@@ -1,0 +1,59 @@
+{
+  "recorded_at_utc": "2026-10-18T16:19:47.698412+00:00",
+  "reviewed_files": [
+    "src/mqlkiscanner/identity_migration.py",
+    "src/mqlkiscanner/signal_identity.py",
+    "src/mqlkiscanner/db.py"
+  ],
+  "production_access": false,
+  "scope": "Unabhaengige Lesegpruefung; ausschliesslich neue synthetische TempDB-Repros. DB- und Migrationsfixes beim DB-Agent. Separat autorisierter Consumerfix fuer UID-Mirror in downloader_sync.py und katalog.py.",
+  "confirmed_findings": [
+    {
+      "finding": "Schema-V2-Marker ohne zentrale UNIQUE(quellen_uid,externe_id) wurde als already_current akzeptiert.",
+      "initial_evidence": "ui_migration_review_initial.xml, test_current_marker_does_not_authorize_missing_central_identity_unique",
+      "owner_fix": "DB-Agent: PK-/NOT-NULL-/vollstaendige UNIQUE-Indexsignaturen in _check_schema",
+      "final": "Im abschliessenden Reviewtest gesperrt, Test gruen."
+    },
+    {
+      "finding": "MAX(id) nichtautoincrementeller Alttabellen musste beim neuen AUTOINCREMENT ebenfalls beruecksichtigt werden.",
+      "initial_evidence": "Repro aus supported legacy INTEGER PRIMARY KEY-Journal; wurde waehrend paralleler Gegenpruefung vom DB-Agent bereits behoben, deshalb kein roter Erstlaufbeleg dieses Repros.",
+      "owner_fix": "DB-Agent: Maximum aus alter sqlite_sequence und originalem MAX(id).",
+      "final": "Naechste Journal-IDs liegen ueber allen quarantänisierten Original-IDs."
+    },
+    {
+      "finding": "Aktiver ausdruecklicher UID-Mirror war nach Archivierung des primaeren Transports fuer den ScopedClient unsichtbar.",
+      "initial_evidence": "ui_migration_review_initial.xml, test_explicit_uid_mirror_can_supply_history_after_primary_transport_archived",
+      "owner_fix": "Autorisierter Consumerfix: UID-Auswahl und kanonische Katalogverbindungslookups.",
+      "final": "Historie, Katalog-Cache, Workflowstats, Einzelabruf, Fix, Rename und Sync ueber alten Alias gruen."
+    }
+  ],
+  "positive_evidence": [
+    "migrate_copy schreibt private konsistente SQLite-Backup-/Kandidatendateien und aktiviert nie automatisch. Vorhandene Ziele werden nicht ueberschrieben; Veroeffentlichung ist exklusiv.",
+    "Unqualifizierte nicht workflowverankerte Historie wird nicht aus aktueller Eindeutigkeit, gleichem SHA oder gleicher Plattform geraten. Originalpayload bleibt in migration_quarantaene erhalten; verwaiste abhaengige Journal-/Dossierzeilen werden ebenfalls gesichert.",
+    "Alle Originaltabellen werden per before=migrated+quarantined bilanziert. Eigener synthetischer Test bestaetigt globale BLOBs, quarantänisierte BLOBs und unveraenderte aktive CSV-Pfad-/SHA-Referenz sowie unveraenderte Quelldateien.",
+    "Quellen-UID und signal_ref bleiben von Aliasrename und Transportarchivierung unabhaengig. Wiederverwendung reservierter Aliase braucht ausdrueckliche passende UID. Fremde ref/source/id-Kombinationen werden abgewiesen.",
+    "Codepruefung der vom DB-Agent ergaenzten Kostenbelege: Quarantaene von Journal-Schritten entfernt bekannte Kosten nicht aus dem Budget. Periodische spent/used_or_reserved-Vergleiche sind ein Migrationsgate. Kein zusaetzlicher unabhaengiger Produktivkostenvergleich durch diesen Agenten.",
+    "Die UI zeigt alte agenten_meldungen-Quellstrings weiterhin woertlich als Text und bindet signal#123 nicht an einen heute zufaellig eindeutigen Besitzer."
+  ],
+  "limits": [
+    "Workflow-Kinder (trade_files/forensik/analyses) werden nach ihrem originalen signals-Elternsatz zugeordnet; der Review erfindet keine unabhaengigen historischen Quellenbelege fuer diese Eltern.",
+    "Dateipruefung von migrate_copy prueft Referenzen und Hashs fuer trade_files/quellen_artefakte und meldet bereits fehlende oder abweichende Originaldateien. Sie repariert diese nicht; missing/sha_mismatch sind Berichtswerte, keine automatische Dateireparatur.",
+    "Dieser Agent pruefte keine produktive Migration und keine Aktivierung. Einheitliche globale Testfreigabe erfolgt ueber die anschliessende Root-Vollregression."
+  ],
+  "final_test": {
+    "prefix": "ui_migration_review_final",
+    "cases": 5,
+    "passed": 5,
+    "failed": 0,
+    "exit": 0,
+    "note": "5 bestandene unabhaengige Repros; Exit0"
+  },
+  "source_hashes": {
+    "src/mqlkiscanner/identity_migration.py": "3d53462cd9ffd450c368aa203d869150c467692c16e114c2284d1ddc50a46a2d",
+    "src/mqlkiscanner/signal_identity.py": "04b755866c8503835b2dcce580f83582fb2100fbdee42e338efd8af7fd51fc3a",
+    "src/mqlkiscanner/db.py": "d6e971f47ddaf7af8114a9bdc552ee2fcb3045d22a51a004e4195fc363f3140b",
+    "src/mqlkiscanner/downloader_sync.py": "9cb6770333cea24993d3f5cb25b37d0a60a2386a425508fbbde9ff724be02c9a",
+    "src/mqlkiscanner/katalog.py": "8737b3adee43b6c410a16f6bec3e69203442fe9d6d1844c09b0c3bbe119abad4",
+    "tests/test_identity_migration_review.py": "047203b93dde14ad3711fa161abd70d0e543f62b21d4f11da3ecf329b02753ca"
+  }
+}

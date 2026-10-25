@@ -1,0 +1,117 @@
+{
+  "checked_utc": "2026-10-18T17:38:39.889214+00:00",
+  "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+  "providers": [
+    {
+      "strategy_id": "178177",
+      "started_utc": "2026-10-18T17:28:57.738379400Z",
+      "invalid_examples": [
+        {
+          "record_id": "3270135",
+          "order_id": "null",
+          "reason": "ungueltige Felder=[tradeOrderId]"
+        },
+        {
+          "record_id": "3270010",
+          "order_id": "null",
+          "reason": "ungueltige Felder=[tradeOrderId]"
+        },
+        {
+          "record_id": "3270000",
+          "order_id": "null",
+          "reason": "ungueltige Felder=[tradeOrderId]"
+        },
+        {
+          "record_id": "3269792",
+          "order_id": "null",
+          "reason": "ungueltige Felder=[tradeOrderId]"
+        },
+        {
+          "record_id": "3269648",
+          "order_id": "null",
+          "reason": "ungueltige Felder=[tradeOrderId]"
+        }
+      ],
+      "cursor_end": true,
+      "finished_utc": "2026-10-18T17:31:04.439108800Z",
+      "raw_rows": 1091,
+      "unique_record_ids": 1091,
+      "unique_order_ids": 883,
+      "repeated_record_ids": 0,
+      "repeated_order_ids": 208,
+      "pages": 55,
+      "reported_total": 1091,
+      "old_parser_rejected_rows": 200,
+      "different_raw_payloads_sharing_order_ticket": 208,
+      "explanation": "Raw payload comparison includes history id; repeated order tickets do not prove duplicate or conflicting history rows."
+    },
+    {
+      "strategy_id": "762452",
+      "started_utc": "2026-10-18T17:31:04.452114700Z",
+      "invalid_examples": [],
+      "cursor_end": true,
+      "finished_utc": "2026-10-18T17:31:29.754566600Z",
+      "raw_rows": 196,
+      "unique_record_ids": 196,
+      "unique_order_ids": 182,
+      "repeated_record_ids": 0,
+      "repeated_order_ids": 14,
+      "pages": 10,
+      "reported_total": 196,
+      "old_parser_rejected_rows": 0,
+      "different_raw_payloads_sharing_order_ticket": 14,
+      "explanation": "Raw payload comparison includes history id; repeated order tickets do not prove duplicate or conflicting history rows."
+    },
+    {
+      "strategy_id": "692325",
+      "started_utc": "2026-10-18T17:31:29.755567700Z",
+      "invalid_examples": [],
+      "cursor_end": true,
+      "finished_utc": "2026-10-18T17:32:04.264878100Z",
+      "raw_rows": 279,
+      "unique_record_ids": 279,
+      "unique_order_ids": 255,
+      "repeated_record_ids": 0,
+      "repeated_order_ids": 24,
+      "pages": 14,
+      "reported_total": 279,
+      "old_parser_rejected_rows": 0,
+      "different_raw_payloads_sharing_order_ticket": 24,
+      "explanation": "Raw payload comparison includes history id; repeated order tickets do not prove duplicate or conflicting history rows."
+    },
+    {
+      "strategy_id": "1231244",
+      "started_utc": "2026-10-18T17:32:04.265879100Z",
+      "invalid_examples": [],
+      "cursor_end": true,
+      "finished_utc": "2026-10-18T17:32:36.490544200Z",
+      "raw_rows": 254,
+      "unique_record_ids": 254,
+      "unique_order_ids": 250,
+      "repeated_record_ids": 0,
+      "repeated_order_ids": 4,
+      "pages": 13,
+      "reported_total": 254,
+      "old_parser_rejected_rows": 0,
+      "different_raw_payloads_sharing_order_ticket": 4,
+      "explanation": "Raw payload comparison includes history id; repeated order tickets do not prove duplicate or conflicting history rows."
+    },
+    {
+      "strategy_id": "504191",
+      "started_utc": "2026-10-18T17:32:36.490544200Z",
+      "invalid_examples": [],
+      "cursor_end": true,
+      "finished_utc": "2026-10-18T17:35:33.668293100Z",
+      "raw_rows": 1503,
+      "unique_record_ids": 1503,
+      "unique_order_ids": 1501,
+      "repeated_record_ids": 0,
+      "repeated_order_ids": 2,
+      "pages": 76,
+      "reported_total": 1503,
+      "old_parser_rejected_rows": 0,
+      "different_raw_payloads_sharing_order_ticket": 2,
+      "explanation": "Raw payload comparison includes history id; repeated order tickets do not prove duplicate or conflicting history rows."
+    }
+  ]
+}

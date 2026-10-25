@@ -1,0 +1,130 @@
+{
+  "started_utc": "2026-10-18T17:46:53.372063+00:00",
+  "attach": {
+    "started_utc": "2026-10-18T17:46:53.423087+00:00",
+    "before": {
+      "jobId": "u-20261018-184200-b328fbb6",
+      "state": "running",
+      "phase": "tradelisten",
+      "done": 10,
+      "total": 200,
+      "message": "Tradelisten: 0 neu, 10 aktualisiert, 0 Fehler",
+      "startedAt": "2026-10-18T18:42:00",
+      "finishedAt": null,
+      "ergebnis": {
+        "signaleGeliefert": 200,
+        "tradelistenNeu": null,
+        "tradelistenAktualisiert": null,
+        "tradelistenFehler": 0,
+        "tradelistenAbgebrochen": false,
+        "katalogUebersprungen": false,
+        "datenstand": null,
+        "hinweise": []
+      },
+      "error": null
+    },
+    "agent_sha256": "aeacbaffdf1da229f1a4e92adb116c9d651b5549dc2209a52d8ac4a64d842594",
+    "finished_utc": "2026-10-18T17:46:55.016193+00:00",
+    "after": {
+      "jobId": "u-20261018-184200-b328fbb6",
+      "state": "error",
+      "phase": "tradelisten",
+      "done": 15,
+      "total": 200,
+      "message": "Tradelisten: 0 neu, 10 aktualisiert, 5 Fehler",
+      "startedAt": "2026-10-18T18:42:00",
+      "finishedAt": "2026-10-18T19:46:54",
+      "ergebnis": {
+        "signaleGeliefert": 200,
+        "tradelistenNeu": 0,
+        "tradelistenAktualisiert": 10,
+        "tradelistenFehler": 5,
+        "tradelistenAbgebrochen": true,
+        "katalogUebersprungen": false,
+        "datenstand": null,
+        "hinweise": [
+          "Tradelisten nach 5 Fehlern in Folge abgebrochen (ZuluTrade-API gestÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¶rt?)",
+          "5 Tradelisten-Downloads fehlgeschlagen (Details: data/zulumonitor.log)",
+          "Altjob manuell kooperativ abgebrochen; kein erfolgreicher Gesamtdatenstand"
+        ]
+      },
+      "error": "Altjob manuell kooperativ abgebrochen; kein erfolgreicher Gesamtdatenstand"
+    },
+    "worker_thread_absent": true,
+    "archive_hashes_identical": true
+  },
+  "close": {
+    "utc": "2026-10-18T17:47:47.843717+00:00",
+    "normal_window_close": true,
+    "old_pid_exited": true,
+    "forced_termination": false
+  },
+  "backup": {
+    "utc": "2026-10-18T17:47:57.687632+00:00",
+    "file_count": 756,
+    "bytes": 152747766,
+    "private_only": true,
+    "all_copied_hashes_verified": true
+  },
+  "new_process": {
+    "utc": "2026-10-18T17:49:55.914416+00:00",
+    "pid": 1595272,
+    "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\zulumonitor",
+    "frozen_jar_sha256": "a176d947f14c5564c4995ac58648d1599e528f1a7581a36c8e3b464725270828",
+    "health": {
+      "status": "ok",
+      "service": "ZuluMonitor",
+      "instance": "Ryzen7950X",
+      "apiVersion": "v1",
+      "uptimeSeconds": 78,
+      "serverTime": "2026-10-18T19:49:55.9144164",
+      "providers": 200,
+      "tokenRequired": false
+    },
+    "hidden_launch": true
+  },
+  "new_update": {
+    "utc": "2026-10-18T17:50:00.072775+00:00",
+    "request": {
+      "target": 200,
+      "tradelisten": true,
+      "katalogMaxAlterH": 0
+    },
+    "response": {
+      "jobId": "u-20261018-195000-c347a8c1",
+      "status": "gestartet",
+      "bereitsLaufend": false
+    }
+  },
+  "latest_status": {
+    "utc": "2026-10-18T17:52:52.722940+00:00",
+    "status": {
+      "jobId": "u-20261018-195000-c347a8c1",
+      "state": "running",
+      "phase": "tradelisten",
+      "done": 4,
+      "total": 200,
+      "message": "AF Gold Hunter Pro (429450): Lade Trade-Historie (Seite 3) …",
+      "cancellationRequested": false,
+      "startedAt": "2026-10-18T19:50:00",
+      "finishedAt": null,
+      "ergebnis": {
+        "signaleGeliefert": 200,
+        "tradelistenNeu": null,
+        "tradelistenAktualisiert": null,
+        "tradelistenFehler": 0,
+        "tradelistenAbgebrochen": false,
+        "katalogUebersprungen": false,
+        "datenstand": null,
+        "hinweise": [],
+        "tradeDownload": {
+          "providerId": 429450,
+          "loaded": 200,
+          "total": 48396,
+          "updatedAt": "2026-10-18T17:52:50.418438500Z"
+        }
+      },
+      "error": null
+    }
+  }
+}

@@ -66,3 +66,7 @@ tmp/
 doc/reviews/**/_seiten/
 .zcode/
 output/
+
+# Review-Fixtures mit echtem REST-Token niemals committen (Nutzer-Regel: Zugangsdaten ausgeschlossen)
+doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/readonly_vantage_fixture_*/data/rest_api.json
+doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/readonly_vantage_fixture_*/data/abonnenten.db

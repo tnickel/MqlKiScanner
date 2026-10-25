@@ -1,0 +1,27 @@
+{
+  "command": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_identity_core_workflow.py",
+    "tests/test_ui_source_identity.py",
+    "--junitxml=D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\db_regression_followup.xml"
+  ],
+  "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner",
+  "child_environment_override": {
+    "PYTHONIOENCODING": "utf-8"
+  },
+  "sha256_before": {
+    "tests/test_identity_core_workflow.py": "4643e51c74c138d169a80ed940e7b75fce8f8534bb3c431c827e3210feae79a0",
+    "tests/test_ui_source_identity.py": "8dbae418dc17b983c8bca267722de8c2dc8d278f2ccc02f2546559416c2dfe76"
+  },
+  "exit_code": 0,
+  "sha256_after": {
+    "tests/test_identity_core_workflow.py": "4643e51c74c138d169a80ed940e7b75fce8f8534bb3c431c827e3210feae79a0",
+    "tests/test_ui_source_identity.py": "8dbae418dc17b983c8bca267722de8c2dc8d278f2ccc02f2546559416c2dfe76"
+  },
+  "tested_files_unchanged": true
+}

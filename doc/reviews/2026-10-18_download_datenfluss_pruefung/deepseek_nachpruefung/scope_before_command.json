@@ -1,0 +1,20 @@
+{
+  "args": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "tests/test_deepseek_catalog_scope.py",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_download_datenfluss_pruefung\\deepseek_nachpruefung\\scope_before.xml"
+  ],
+  "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner",
+  "started_utc": "2026-10-18T15:06:24.073941+00:00",
+  "source_sha256": {
+    "src/mqlkiscanner/downloader_client.py": "8b9c24c4948ac8a2fd39c7f8af674b6a2c23c2ed1014e1f5fbad8e6b76159a27",
+    "src/mqlkiscanner/ingest.py": "153ee5481988800cad33ea96e483c52893897a7950f207920d49549a38caa049",
+    "src/mqlkiscanner/katalog.py": "dc13b4be4be7cb965b7c0dca9d4be6a2d86dc9760c1a45bb042fe395ff241112",
+    "tests/test_deepseek_catalog_scope.py": "37abaa566d9397a0f032ef815aa941edc7755aa6e9ebd674cc6d9095fd4a787c"
+  }
+}

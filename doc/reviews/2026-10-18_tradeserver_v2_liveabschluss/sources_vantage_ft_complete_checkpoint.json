@@ -1,0 +1,202 @@
+{
+  "checked_utc": "2026-10-18T17:46:53.538270+00:00",
+  "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+  "upstream_full_pagination_exit": 0,
+  "api_status": "offline while14 other workflow IDs repair; REST exports not yet accepted",
+  "providers": [
+    {
+      "signal_id": 178177,
+      "stores": [
+        {
+          "store": "trades",
+          "rows": 1091,
+          "sha256": "f25b8081b62784f3cbdfb1843b22c096d74e4a39fcb6cd33553e3e53c7ddfdff",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 1091,
+          "missing_order_tickets": 200,
+          "repeated_nonblank_order_tickets": 9,
+          "csv_mtime_utc": "2026-10-18T17:39:43.026259+00:00",
+          "provider_total": 1091,
+          "complete": true,
+          "earliest_open": "2023-09-22T10:57:06",
+          "latest_close": "2026-09-07T01:27:29.744",
+          "original_private_backup_sha256": "61e0e26ccd765a99d2a59d16d4b15d639c7cee961a02c016a27bdf31fe756211",
+          "original_bytes_preserved_in_quarantine": true
+        },
+        {
+          "store": "tradelisten",
+          "rows": 1091,
+          "sha256": "7c4ecd693b63475755c593e12a39b0730a79954d898a6390fc39a2f2a6ece852",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 1091,
+          "missing_order_tickets": 200,
+          "repeated_nonblank_order_tickets": 9,
+          "csv_mtime_utc": "2026-10-18T17:39:43.004282+00:00",
+          "original_private_backup_sha256": "60af13d9e5a5b4146e4861c8a47ec6f05ab6dd6d5eb0170de37d8746e8c805f8",
+          "original_bytes_preserved_in_quarantine": true
+        }
+      ],
+      "verified": true
+    },
+    {
+      "signal_id": 1231244,
+      "stores": [
+        {
+          "store": "trades",
+          "rows": 254,
+          "sha256": "e280cc03f532c8249d9ca271aefb80bcb877aca6b9742add637d0ebda719cd66",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 254,
+          "missing_order_tickets": 0,
+          "repeated_nonblank_order_tickets": 4,
+          "csv_mtime_utc": "2026-10-18T17:43:32.874539+00:00",
+          "provider_total": 254,
+          "complete": true,
+          "earliest_open": "2026-03-12T12:57:39",
+          "latest_close": "2026-10-16T16:02:41.445",
+          "original_private_backup_sha256": "0998a17d88965bc2643a11e59f9accc9a3e1bb8b0aa57481e52b671655c7c37b",
+          "original_bytes_preserved_in_quarantine": true
+        },
+        {
+          "store": "tradelisten",
+          "rows": 254,
+          "sha256": "b05ce14fc966a4b1151e922cec5165116117bfbaff23d6c8e8c88402fa3af208",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 254,
+          "missing_order_tickets": 0,
+          "repeated_nonblank_order_tickets": 4,
+          "csv_mtime_utc": "2026-10-18T17:43:32.860518+00:00"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "signal_id": 504191,
+      "stores": [
+        {
+          "store": "trades",
+          "rows": 1503,
+          "sha256": "7e945a705334ae3638239c34d7ee2dade458b7ca7af8e56fefc70347bb90a279",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 1503,
+          "missing_order_tickets": 0,
+          "repeated_nonblank_order_tickets": 2,
+          "csv_mtime_utc": "2026-10-18T17:42:51.597055+00:00",
+          "provider_total": 1503,
+          "complete": true,
+          "earliest_open": "2024-10-07T17:49:43",
+          "latest_close": "2026-10-16T16:02:40.032",
+          "original_private_backup_sha256": "38a34997d2b18ba8bf79e45b35d6d17bfe32305b234540d8309c00a08fcdceb7",
+          "original_bytes_preserved_in_quarantine": true
+        },
+        {
+          "store": "tradelisten",
+          "rows": 1503,
+          "sha256": "b5cfbdcff0b329cc78667c07c574e761a25c1f03eaae22877da8f66dcfcfcf8c",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 1503,
+          "missing_order_tickets": 0,
+          "repeated_nonblank_order_tickets": 2,
+          "csv_mtime_utc": "2026-10-18T17:42:51.578549+00:00",
+          "original_private_backup_sha256": "a3bf5810f94e95353d11118a57df74acb340f2fbee9edfbc4d25012b8b037616",
+          "original_bytes_preserved_in_quarantine": true
+        }
+      ],
+      "verified": true
+    },
+    {
+      "signal_id": 692325,
+      "stores": [
+        {
+          "store": "trades",
+          "rows": 279,
+          "sha256": "dc5d4889f14ab86023d193093fb68bb823fb42d821de22c4f8c084151aad4ddf",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 279,
+          "missing_order_tickets": 0,
+          "repeated_nonblank_order_tickets": 24,
+          "csv_mtime_utc": "2026-10-18T17:44:16.561360+00:00",
+          "provider_total": 279,
+          "complete": true,
+          "earliest_open": "2025-09-11T00:53:26.6",
+          "latest_close": "2026-07-30T13:36:27.895",
+          "original_private_backup_sha256": "c4f125f7dd9a0ce3e4600bc39206712a4544d8befbd88d823a23189ca0641aa7",
+          "original_bytes_preserved_in_quarantine": true
+        },
+        {
+          "store": "tradelisten",
+          "rows": 279,
+          "sha256": "e6c8c550d771ec5ecd552f05c2845e90405794948598e16760e64dbe548f2dec",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 279,
+          "missing_order_tickets": 0,
+          "repeated_nonblank_order_tickets": 24,
+          "csv_mtime_utc": "2026-10-18T17:44:16.558353+00:00"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "signal_id": 762452,
+      "stores": [
+        {
+          "store": "trades",
+          "rows": 196,
+          "sha256": "b6f053f155132160038ab0edee39e62829281bc38996dee4ed9c0ae2c38e3209",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 196,
+          "missing_order_tickets": 0,
+          "repeated_nonblank_order_tickets": 14,
+          "csv_mtime_utc": "2026-10-18T17:44:51.051038+00:00",
+          "provider_total": 196,
+          "complete": true,
+          "earliest_open": "2025-11-03T15:59:24.026",
+          "latest_close": "2026-09-21T14:02:26.18",
+          "original_private_backup_sha256": "3a39c7fd4df99086d197a66dfb2cc80235ba24c0d98249956c0dd8d04b2c0863",
+          "original_bytes_preserved_in_quarantine": true
+        },
+        {
+          "store": "tradelisten",
+          "rows": 196,
+          "sha256": "3b4908df97dfefff5216a97c4a9e4e43d24070419f524e48ab9cd9c7b6950e64",
+          "sha_matches": true,
+          "count_matches": true,
+          "utc": true,
+          "identity_basis": "historyRecordId",
+          "unique_record_ids": 196,
+          "missing_order_tickets": 0,
+          "repeated_nonblank_order_tickets": 14,
+          "csv_mtime_utc": "2026-10-18T17:44:51.048038+00:00"
+        }
+      ],
+      "verified": true
+    }
+  ]
+}

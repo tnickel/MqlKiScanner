@@ -1,0 +1,14 @@
+{
+  "created_utc": "2026-10-18T15:16:11.154501+00:00",
+  "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\roboforex\\target\\robomonitor-1.2.0.jar",
+  "bytes": 313415,
+  "sha256": "75e303a14a64b7487b739462ac749912a2bd07c6f1d36b38f69662fb922d047d",
+  "changed_class": "de/robomonitor/store/DataStore.class",
+  "class_sha256": "2dca963f8e43ab079476d28d7cc01e72844729da705deec35089b3e79fe67ce8",
+  "matches_tested_class": true,
+  "matches_current_target_class": true,
+  "package_exit": 0,
+  "application_started": false,
+  "runtime_restarted": false,
+  "scope": "Normal Maven package only; no package/start of other projects"
+}

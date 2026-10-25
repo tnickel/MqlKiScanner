@@ -1,0 +1,16 @@
+{
+  "checked_date": "2026-10-18",
+  "primary_sources": [
+    {
+      "url": "https://partners.vantagemarkets.com/pdf/Vantage_Introducing_Broker_Prospectus.pdf",
+      "relevant_page_zero_based": 12,
+      "supports": "Lists GER40ft and UK100ft; the product list does not specify their per-lot point values or profit currencies."
+    },
+    {
+      "url": "https://www.vantagemarkets.com/en-ng/indices-trading/",
+      "supports": "Labels the GER40 cash CFD in EUR and UK100 cash CFD in GBP; these are not the specific historical FT instruments."
+    }
+  ],
+  "inference": "These sources do not resolve the exact historical FT-contract identity; do not invent or substitute a contract factor.",
+  "registry_changed": false
+}

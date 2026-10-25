@@ -1,0 +1,210 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/D:/DevelopmentTools/apache-maven-3.9.6/lib/jansi-2.4.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/D:/DevelopmentTools/apache-maven-3.9.6/lib/guava-32.0.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< MqlDownloader:MqlDownloader >---------------------
+[INFO] Building MqlDownloader 0.0.35-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ MqlDownloader ---
+[INFO] skip non existing resourceDirectory D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\MqlDownloader\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.8.1:compile (default-compile) @ MqlDownloader ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 60 source files to D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\MqlDownloader\target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ MqlDownloader ---
+[INFO] Copying 0 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.8.1:testCompile (default-testCompile) @ MqlDownloader ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 26 source files to D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\MqlDownloader\target\test-classes
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/MqlDownloader/tests/rest/SubscriberDefaultTest.java: Einige Eingabedateien verwenden oder überschreiben eine veraltete API.
+[INFO] /D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/MqlDownloader/tests/rest/SubscriberDefaultTest.java: Wiederholen Sie die Kompilierung mit -Xlint:deprecation, um Details zu erhalten.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ MqlDownloader ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running calculators.MPDDDataQualityTest
+Okt. 18, 2026 1:10:05 PM utils.HtmlDatabase getMonthlyProfitPercentages
+WARNUNG: Keine Monatsdetails für C:\Users\tnickel\AppData\Local\Temp\junit6739642010251412758\mql4\Synthetic_101_root.html gefunden
+Okt. 18, 2026 1:10:05 PM calculators.MPDDCalculator calculateAverageMonthlyProfit
+WARNUNG: Keine monatlichen Profite für C:\Users\tnickel\AppData\Local\Temp\junit6739642010251412758\mql4\Synthetic_101_root.html gefunden
+2026-10-18T11:10:05.912915500Z main ERROR Equity Drawdown konnte nicht extrahiert werden für Datei: C:\Users\tnickel\AppData\Local\Temp\junit6739642010251412758\mql4\Synthetic_101_root.html
+2026-10-18T11:10:05.913915200Z main ERROR Fehler beim Extrahieren des Equity Drawdown für C:\Users\tnickel\AppData\Local\Temp\junit6739642010251412758\mql4\Synthetic_101_root.html: Equity Drawdown konnte nicht extrahiert werden für Datei: C:\Users\tnickel\AppData\Local\Temp\junit6739642010251412758\mql4\Synthetic_101_root.html
+java.lang.RuntimeException: Equity Drawdown konnte nicht extrahiert werden für Datei: C:\Users\tnickel\AppData\Local\Temp\junit6739642010251412758\mql4\Synthetic_101_root.html
+	at utils.DataExtractor.getEquityDrawdown(DataExtractor.java:265)
+	at utils.HtmlParser.getEquityDrawdown(HtmlParser.java:49)
+	at utils.HtmlDatabase.getEquityDrawdown(HtmlDatabase.java:69)
+	at calculators.MPDDCalculator.getEquityDrawdown(MPDDCalculator.java:168)
+	at calculators.MPDDCalculator.calculateMPDD(MPDDCalculator.java:57)
+	at calculators.MPDDCalculator.calculate3MPDD(MPDDCalculator.java:36)
+	at converter.HtmlConverter.calculate3MPDD(HtmlConverter.java:292)
+	at converter.HtmlConverter.convertHtmlFile(HtmlConverter.java:172)
+	at converter.HtmlConverter.processDirectory(HtmlConverter.java:122)
+	at converter.HtmlConverter.convertAllHtmlFiles(HtmlConverter.java:88)
+	at calculators.MPDDDataQualityTest.unknownMpddPreservesHtmlCsvAndPreviousMetrics(MPDDDataQualityTest.java:37)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:218)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:214)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:139)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+
+Okt. 18, 2026 1:10:05 PM utils.HtmlDatabase getEquityDrawdown
+WARNUNG: Could not get equity drawdown for C:\Users\tnickel\AppData\Local\Temp\junit6739642010251412758\mql4\Synthetic_101_root.html: Fehler beim Extrahieren des Equity Drawdown für C:\Users\tnickel\AppData\Local\Temp\junit6739642010251412758\mql4\Synthetic_101_root.html: Equity Drawdown konnte nicht extrahiert werden für Datei: C:\Users\tnickel\AppData\Local\Temp\junit6739642010251412758\mql4\Synthetic_101_root.html
+Okt. 18, 2026 1:10:05 PM calculators.MPDDCalculator calculateFinalMPDD
+WARNUNG: Equity Drawdown ist 0 oder negativ: NaN
+Okt. 18, 2026 1:10:05 PM utils.HtmlDatabase getMonthlyProfitPercentages
+SCHWERWIEGEND: Fehler beim Laden der monatlichen Profite für synthetic: Ungueltiger Monatswert: 2026/07:bad
+Okt. 18, 2026 1:10:05 PM calculators.MPDDCalculator getMonthlyProfitPercentages
+WARNUNG: HtmlDatabase ist null - kann monatliche Profite nicht laden
+Okt. 18, 2026 1:10:05 PM calculators.MPDDCalculator calculateAverageMonthlyProfit
+WARNUNG: Keine monatlichen Profite für missing gefunden
+Okt. 18, 2026 1:10:05 PM calculators.MPDDCalculator getEquityDrawdown
+WARNUNG: HtmlDatabase ist null - kann Equity Drawdown nicht laden
+Okt. 18, 2026 1:10:05 PM calculators.MPDDCalculator calculateFinalMPDD
+WARNUNG: Equity Drawdown ist 0 oder negativ: NaN
+Okt. 18, 2026 1:10:05 PM calculators.MPDDCalculator calculateFinalMPDD
+WARNUNG: Equity Drawdown ist 0 oder negativ: 0.0
+Okt. 18, 2026 1:10:05 PM calculators.MPDDCalculator calculateFinalMPDD
+WARNUNG: Equity Drawdown ist 0 oder negativ: NaN
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.268 s -- in calculators.MPDDDataQualityTest
+[INFO] Running config.ConfigurationManagerTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in config.ConfigurationManagerTest
+[INFO] Running database.DatabaseManagerTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.618 s -- in database.DatabaseManagerTest
+[INFO] Running downloader.DownloadFilesTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in downloader.DownloadFilesTest
+[INFO] Running downloader.SignalUpdateModeTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in downloader.SignalUpdateModeTest
+[INFO] Running gui.ClientUpdateRunnerTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.056 s -- in gui.ClientUpdateRunnerTest
+[INFO] Running gui.ReportCellLayoutTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.244 s -- in gui.ReportCellLayoutTest
+[INFO] Running gui.ReportFilesTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in gui.ReportFilesTest
+[INFO] Running gui.RiskCellEditorTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in gui.RiskCellEditorTest
+[INFO] Running gui.RiskEditingTableTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in gui.RiskEditingTableTest
+[INFO] Running gui.SubscriberStatisticsClickHandlerTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in gui.SubscriberStatisticsClickHandlerTest
+[INFO] Running gui.SubscriberStatisticsDialogTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.589 s -- in gui.SubscriberStatisticsDialogTest
+[INFO] Running gui.SubscriberStatisticsRenderingTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in gui.SubscriberStatisticsRenderingTest
+[INFO] Running gui.UpdateVermerkTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in gui.UpdateVermerkTest
+[INFO] Running rest.CsvParserTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in rest.CsvParserTest
+[INFO] Running rest.JsonWriterTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in rest.JsonWriterTest
+[INFO] Running rest.MetricsParserTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in rest.MetricsParserTest
+[INFO] Running rest.ProviderAgeTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.097 s -- in rest.ProviderAgeTest
+[INFO] Running rest.ProviderFilesTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.318 s -- in rest.ProviderFilesTest
+[INFO] Running rest.RestApiServerTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.322 s -- in rest.RestApiServerTest
+[INFO] Running rest.ReviewFollowupRestTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.524 s -- in rest.ReviewFollowupRestTest
+[INFO] Running rest.SubscriberDefaultTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.086 s -- in rest.SubscriberDefaultTest
+[INFO] Running rest.UpdateEndpointTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.126 s -- in rest.UpdateEndpointTest
+[INFO] Running utils.AccountMoneyReviewTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in utils.AccountMoneyReviewTest
+[INFO] Running utils.AutoSchedulerManagerTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in utils.AutoSchedulerManagerTest
+[INFO] Running utils.FileUtilsTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.029 s -- in utils.FileUtilsTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 148, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  13.082 s
+[INFO] Finished at: 2026-10-18T13:10:14+02:00
+[INFO] ------------------------------------------------------------------------
+
+COMMAND: mvn test
+EXITCODE: 0

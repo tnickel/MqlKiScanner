@@ -1,0 +1,420 @@
+================================================================================
+NACHPRÜFUNGS-REPORT — SIND DIE FEHLER BEHOBEN? NEUE FEHLER?
+Stand: 2026-10-24 (2. Runde) · Prüf-KI (GLM) auf Nutzeraufforderung
+Bezug: KI_REPORT_FINDINGS.txt (1. Runde, gleicher Ordner) — Befund-IDs dort.
+================================================================================
+
+## 0. ANWEISUNGEN FÜR DIE LESENDE KI
+
+- Diese Datei verifiziert den Stand NACH den Fix-Commits der Fix-KI gegen die
+  Befunde der 1. Runde (KI_REPORT_FINDINGS.txt, Abschnitt 0 erklärt das
+  ID-Schema). Statuswerte je Befund: BEHOBEN (mit Codebeleg verifiziert) |
+  TEILWEISE (Kern behoben, Rest benannt) | NICHT BEHOBEN | ENTSCHÄRFT
+  (Gegenstelle behandelt das Fehlen ehrlich, Ursache bleibt) | UNVERÄNDERT.
+- Neue Befunde dieser Runde: NF-<REPO>-<n> bzw. S-N1 (Scanner).
+- WICHTIG — BEWEGTES ZIEL: Die Fix-KI committete WÄHREND dieser Nachprüfung
+  weiter (24.10. 04:36–05:32). Verifizierte Stände je Repo stehen in
+  Abschnitt 1. Zwei sehr neue Commits sind nur teilweise geprüft (7.3).
+- Wieder gilt: alle Prüfungen offline/isoliert; grüne Tests ≠ produktiver
+  Gesamtablaus-Nachweis; keine Plattform-/LLM-/Produktivzugriffe.
+
+## 1. VERIFIZIERTE COMMITS JE REPO (Arbeitsbaum jeweils sauber)
+
+  Repo             1. Runde    Fix-Commits (verifiziert)              Tests (offline)
+  SignalKiScanner  81f8329     7e4e82f, 5f91676, 0075c41 = HEAD       645 bestanden (Abonnenten-/Fix-Suiten; -m "not llm")
+  MqlDownloader    442bb60     296891f, 33bce22 = HEAD                194 bestanden (mvn -o)
+  PelicanTrading   1f7d12d     3c442ea = HEAD                          222 bestanden (mvn -o)
+  robomonitor      f104396     aaee448, 9d2b6b6 (+6164b30 im mvn-Lauf) 222 bestanden (mvn -o, auf HEAD inkl. 6164b30)
+  vantagemonitor   7d26a4d     b64d5fc, 29a9d44, afbb32f (+ad4a9d7*)  154 bestanden (mvn -o) + 23 (pytest)
+  zulumonitor      e44b1fb     b6de894, e38079d                        180 bestanden (mvn -o, auf HEAD)
+  MqlTradeMonitor  0eda6b0     3fa62fd = HEAD                          29 bestanden (Commitscope KiScanner-Tests)
+  *) ad4a9d7 „Use coherent fifty-row pagination" (05:32) — nur statisch
+     gesehen, inhaltlich NICHT geprüft (siehe 7.3).
+
+## 2. STATUS DER BEFUNDE AUS RUNDE 1
+
+GRENZÜBERSCHREITEND
+  XR-1 [HOCH] Katalog-Schrumpf ............ BEHOBEN (alle Repos). Neuer
+    Vertrag: Query-Param catalogScope=full|subscribers (ungültig → 400),
+    Antwortfeld catalogScope ∈ {full, subscribers, unknown} auf JEDER Seite,
+    SHA-256-Receipt bindet den Full-Beleg an exakte Katalog-Bytes
+    (nur regulärer Volllimport begründet „full“; bewahrende Schreibwege
+    löschen den Beleg; Altdaten bleiben „unknown“). Scanner (0075c41):
+    hole_katalog sendet/validiert den Scope seitenstabil; katalog.sync und
+    Abonnentenstatistik löschen nur bei belegtem „full“
+    (db.katalog_upsert_many fehlende_loeschen=False sonst + Hinweis);
+    Workflow-Kandidaten (kandidaten_aus_quellen) skippen nicht-full;
+    Recherche fordert ausdrücklich „subscribers“ und verwirft eine
+    Voll-Antwort (abonnenten_analyse.py:389-391). Vgl. ABER NF-ROBO-1:
+    Der Löschpfad selbst bleibt scharf, sobald ein (auch falscher)
+    Full-Beleg vorliegt — Robo kann einen weiterhin liefern.
+    BETRIEBS-HINWEIS: Der Schutz braucht GEPAARTE Ausrollung. Neuer Native
+    + ALT-Scanner (kennt catalogScope nicht, Default = Auswahl ≤200 ohne
+    dass er das Feld liest) = altes Löschmuster. Fix-KI dokumentierte
+    selbst, dass die laufenden Produktiv-Clients noch ALT sind — bis zum
+    gepaarten Neustart scheitert die MQL-Recherche absichtlich
+    (subscriberSelectionProof fehlt → NICHT_UNTERSTÜTZT) statt still zu
+    verfälschen; Katalog-Löschungen passieren in dieser Kombination nicht
+    (Scanner neu, Natives alt: Antwort ohne catalogScope → unknown →
+    keine Löschung).
+  XR-2 [MITTEL] Abdeckungsbeleg ........... BEHOBEN/ENTSCHÄRFT.
+    MQL: neuer, hart validierter Auswahlbeleg subscriberSelectionVerified/
+    -Target/-Platforms{mql4,mql5:{collected,targetReached,zeroBoundaryReached}}
+    — Ziel 1..200, Größe ≤ Ziel, Größe < Ziel nur mit Nullgrenze, Duplikat-
+    freiheit, absteigende Zähler; Scanner prüft inkl. signaleGeliefert-
+    Konsistenz (client_updates._mql_abonnenten_auswahl) und verlangt
+    health.subscriberSelectionProof für MQL-Zählerläufe. Robo/Pelican/
+    Zulu liefern weiterhin KEINE subscriberCatalog*-Felder → Scanner
+    führt „Abonnentenauswahl/Abdeckung unbestätigt“ jetzt bis TEILWEISE,
+    Eintragsfeld abo_auswahl_hinweis, KI-Prompt, PDF und CSV durch
+    (kurztest_basis enthält den Hinweis; report_pdf übernimmt ihn).
+    Kein falscher Beleg — die Abdeckung bleibt dort aber unbelegbar.
+
+MQDOWNLOADER
+  MD-F1 Leerseite=Ende ........... TEILWEISE. Semantik bleibt hart und ist
+    jetzt im README dokumentiert („leere Seite = unbelegte Antwort, nicht
+    automatisch Listenende“); der Zählerlauf endet regulär nur über Zielzahl
+    oder belegte Nullgrenze (SignalPaginationTest erzwingt ERROR statt
+    DONE bei fehlendem Beleg). Der geforderte Weg „ohne toten Code“ ist
+    NICHT erfüllt: :544-548 weiterhin unerreichbar, :593-598 vergleicht
+    eine nirgends geworfene Meldung.
+  MD-R1 stille Unterversorgung . BEHOBEN (im Auswahlbeleg enthalten; kein
+    DONE ohne Ziel-/Nullgrenzenbeweis mehr).
+  MD-R2 Duplikat-Abbruch ....... NICHT BEHOBEN, VERSCHÄRFT → NF-MD-1.
+  MD-R3 NaN-Überschreibung ..... BEHOBEN laut Fix-Angabe (falsche ID/
+    Plattform/Login-HTML vor Persistenz abgewiesen, fehlende Kennzahlen
+    bleiben unbekannt); von dieser Runde nur stichprobenartig gegengelesen,
+    nicht vollständig eigenverifiziert.
+  MD-R5 ID-Muster .............. BEHOBEN ([1-9][0-9]*, konsistent; Test).
+  MD-R4 unverändert (NIEDRIG).
+
+PELICANTRADING
+  PT-F1 .gitignore ............. BEHOBEN (inkl. neuer Receipt-Datei).
+  PT-R1 Overlay-Race .......... BEHOBEN (statisches catalogLock; Fallback
+    auf Vollbestand; 200+scope=unknown statt 500; Race-Test über Instanzen).
+  PT-R5 Basis-Merkmal .......... BEHOBEN (catalogScope-Vertrag wie XR-1;
+    503 bei subscribers ohne Overlay).
+  PT-R6 SessionException×2 .... BEHOBEN im Katalog-/nurAbonnenten-Pfad
+    (→ login_required + Dialog); Geschwisterpfad Tradelisten-Phase bleibt
+    generisch (NF-PT-3).
+  PT-R7 Start-Snapshot ......... BEHOBEN (Start zeigt nur noch; Startup-
+    Test belegt keine Neu-Datierung). Gleiches Thema jetzt auch in Vantage
+    (afbb32f), Zulu (e38079d), Robo (6164b30) — alle grün, Robo/Zulu-Commit
+    inhaltlich nur über Testläufe/mvns mitgedeckt.
+  PT-R2/R3/R4 unverändert (NIEDRIG, teils bewusst fail-closed).
+
+VANTAGEMONITOR
+  VT-F1 Doku ................... BEHOBEN (Festes Fenster months=1 + 1223-
+    Isolierung dokumentiert; 3/6/12-Logik grep-negativ).
+  VT-F2 health-Flag ............ BEHOBEN (updateStarter!=null; Test). Fix
+    laut Fix-Doku analog in Robo/Pelican/Zulu (Vantage verifiziert).
+  VT-R1 kurze Mittelseite ...... BEHOBEN (Nachverifikation des Fensters
+    über Teilerketten; beobachtete ID/Zähler müssen bestätigt werden;
+    Verifikation darf nur erweitern; 10402 bleibt hart; Budget geteilt).
+    Restrisiko: LEERE Mittelseiten (0 Zeilen bei existierenden Folgeseiten)
+    gelten weiter als Ende — bewusst gelassen (offene Frage).
+  VT-R3 Overlay ................ BEHOBEN (catalogScope + Receipt; Detail-
+    Batch löscht Overlay nicht mehr: saveUpdatedSignals statt saveSignals).
+  VT-R5 History-Lesefenster .... BEHOBEN in-process (TradeStore.verified-
+    Snapshot unter Pfadlock; genau eine eingefrorene Generation je REST-
+    Response; neuer Regressionstest mit konkurrierendem Writer). Hartes
+    Kill -9 zwischen Moves → lauter 404, kein Stillverlesen.
+  VT-R2/R4/R6 unverändert (NIEDRIG).
+
+ROBOMONITOR
+  RB-R1 Leerseite Zählerpfad ... BEHOBEN (more muss boolesch sein; leer+
+    more=true → ApiException VOR jedem Speichern; „alle Zähler 0“ bleibt
+    legitim; Tests decken auch mid-pagination). ABER NF-ROBO-1: gleiche
+    Lücke besteht im VOLL-Katalogpfad weiter — jetzt mit Full-Beleg.
+  RB-R2 0.0 vs. unbekannt ...... BEHOBEN (optionalFinite → NaN-Marker →
+    CSV-Leerfeld → REST null; echte 0 bleibt 0; Scanner-Grenze korrekt;
+    RatingProfitNullTest deckt Parse/CSV/Reload/API/Payload/Filter).
+  RB-R4 stale Plattform ........ BEHOBEN (gültige aktuelle Plattform wird
+    übernommen; Trade-Cache bleibt an alter Identität; Test).
+  RB-R5 unlocked Meta-Leser .... BEHOBEN für die geprüften Pfade (alle REST-
+    Nutzer unter Pfadlock; Rest-shaVon fail-safe sequenziell).
+  RB-R3 Coverage-Felder ........ NICHT BEHOBEN nativ; ENTSCHÄRFT scanner-
+    seitig (unbestätigt-Behandlung, siehe XR-2).
+
+ZULUMONITOR
+  ZU-F1 Zähler-Inversion ....... BEHOBEN (ProviderRefresh.saveFreshProfile
+    persistiert den FRISCHEN Trader komplett; verbliebene withSubscriber-
+    Counts-Aufrufe alle in richtiger Richtung old.withSubscriberCounts(fresh);
+    platformRefreshed erst nach erfolgreichem Speichern; kein Historien-
+    Snapshot mit falschem Datum).
+  ZU-R1 leere Seite 0 .......... BEHOBEN (IOException VOR jedem speichereTrader
+    in beiden Wegen; genau ein Request; Tests).
+  ZU-R2 „cancelled“ ............ BEHOBEN scannerseitig (client_updates
+    behandelt state=cancelled → ABGEBROCHEN mit Grund).
+  XR-1 zulu .................... BEHOBEN (Union-Katalog + separate Auswahl-
+    datei + Receipt; catalogScope-Vertrag; Archiv).
+  ZU-R3…R8 unverändert (NIEDRIG).
+
+MQLTRADEMONITOR
+  TMM-E1 v1-Randpfad/Totcode .. BEHOBEN (tote Zeilen entfernt; 400-Verhalten
+    dokumentiert + echter-Service-Test; bewusste Verhärtung, kein 200-Fallback).
+  TMM-R2 leeres Complete ....... NICHT BEHOBEN (serverseitig). Ein leeres,
+    zählerkonsistentes Snapshot löscht weiterhin Gesamtabspiegel inkl. PDFs.
+  TMM-R3 Portfolio-Löschung .... NICHT BEHOBEN serverseitig; ENTSCHÄRFT
+    scannerseitig: tradeserver_sync bricht jetzt VOR register ab, wenn die
+    Dokumentensammlung Fehler hat (u. a. Portfolio-PDF-Generierung fehl-
+    geschlagen) — Serverbestand bleibt unverändert. Restrisiko: Portfolio
+    wird absichtlich nicht mitgegeben.
+  TMM-R1/R4–R7 unverändert (NIEDRIG).
+
+SIGNALKISCANNER (Selbstbefunde Runde 1)
+  S-R1 budget_resume_refs ...... UNVERÄNDERT (weiterhin kein produktiver
+    Setz-Weg; dokumentierter manueller Hebel).
+  S-R2 mql4/mql5-ID-Kollision .. UNVERÄNDERT (ganze Quelle schlägt fehl
+    statt einzelner Datenpunkt; fail-closed).
+  S-R3 Identitätszeilen ........ UNVERÄNDERT (bewusst).
+
+## 3. NEUE FUNTIONALITÄT SEIT RUNDE 1 (geprüft, kein bestätigter Fehler)
+
+  KI-Parallelisierung (5f91676 + Nutzerentscheidung 24.10.):
+  - Nur die KI-Kurzanalysen laufen parallel (ThreadPool, 1..10, Default 10
+    für NEUE Läufe; Alt-Läufe behalten 1). Daten-/Equity-Phase bleibt
+    SEQUENZIELL (KursDaten/MT5-Singleton geschützt); Top-5 bleibt seriell.
+  - Koordinator-Muster sauber: nur der Koordinator mutiert Entries; jeder
+    Task besitzt eigenen AnalyseKI/GlmClient (deepcopy von settings/profile/
+    entry); Entry-Merge bezahlter Antworten erfolgt mit Erhalt-Garantie
+    (save_task vor _check_hints); fatal vs. non-fatal getrennt (_KeinKiSchluessel
+    stoppt Dispatch, ohne jede Strategie zu failed zu markieren); Drain vor
+    Rückkehr/Raise; echte Fehlerursache schlägt peer-induzierten Stop.
+  - AdaptiveHttpGate: Zulassung vor Budget-Ticket (kein verlorener Ticket-
+    Slot bei Drossel-Wartezeit), 429/Code 1302 → Limit-Halbierung +
+    Exponential-Cooldown (15..60 s) + Retry-After (auch HTTP-Datum),
+    langsame Erholung; Stop prüft in Warteschleifen (kein Slot-Leak);
+    Kostenabrechnung: known_not_sent → 0 Token, unsicherer Transport →
+    Reservierung bleibt (Test deckt beides ab).
+  - Tests: Parallel-Koordinator (13 Fälle: Bounded Concurrency, Private
+    State, Stop-Drain, Fatal-vs-nonfatal, Paid-Survival, Cache-Hits ohne
+    Client-Neuschöpfung) und HTTP-Gate (16 Fälle inkl. 10-Client-Budget-
+    Abstimmung und SQL-Caps) — umfangreich und inhaltlich stark.
+  - Store-Concurrency: jede Operation eigene Connection + BEGIN IMMEDIATE;
+    log/update-Read-Modify-Write serialisiert; keine Lost-Updates erkennbar.
+
+  Beweis-/Hinweis-Behandlung (7e4e82f, Grok-Gegenprüfung):
+  - Faktenlisten >100 Einträge jetzt EXPLIZIT als Ausschnitt deklariert
+    (abdeckung.vollstaendig=false + Indizes) statt still gekürzt; Vertrags-
+    text im Belegvertrag; FACTS_PAYLOAD_VERSION=2 invalidiert alte Kurz-
+    tests einmalig (bewusst, Neuberechnung bezahlt).
+  - Prüfhinweise: review_pending=True + sofortiger Rangentzug (rang/
+    auswahlwert/retdd_perzentil=None), Herkunftsbindung an Berichtsbasis
+    (ki_pruefhinweis_quellen), kein automatisches Freigeben. → S-N1 unten.
+
+## 4. NEUE FEHLER DIESER RUNDE
+
+NF-ROBO-1 [HOCH] Voll-Katalogpfad: leere/nicht-Array-Seite bricht STILL ab
+    und schreibt einen LEEREN/GEKÜRZTEN Katalog MIT FULL-BELEG.
+    Fundort: RoboForexClient.java:108-110 (entries kein Array → got=0),
+    :130 (if (got==0 || !more) break) — downloadTopSignals; katalogPhase
+    prüft nicht; saveSignals setzt Full-Beleg + 3-Tage-Marker.
+    Auslöser: /getRating liefert (transient) Seite mit entries:[]/kein
+    Array während eines Vollimports.
+    Wirkung: catalogScope=“full“ über einen leeren/still gekürzten
+    Bestand → derScanner LÖSCHT jetzt wieder Katalogzeilen (XR-1-Lösch-
+    pfad über falschen Beleg wieder offen; schlimmer als RB-R1, das nur
+    die Auswahl betraf). Ursache: Pagination-Validierung nur im Zählerpfad.
+    Fix: dieselbe more/Array-Prüfung in downloadTopSignals; zusätzlich
+    Sanity (result.isEmpty() && count>0 → kein saveSignals).
+    Test: Fake-Client leere Seite(more=true) im Vollpfad → ApiException.
+
+NF-MD-1 [MITTEL] Duplikat-Abbruch verschärft: der Zählerlauf liest jetzt
+    über das sichtbare Fenster hinaus bis Ziel/Nullgrenze (XR-2-Fix);
+    ein Cross-Seiten-Duplikat (Live-Drift) wirft weiterhin CRITICAL und
+    kostet BEIDE Plattformergebnisse des Jobs (Publish erst nach beiden).
+    Fundort: SignalDownloader.java:775-776 (+ :646 failedProvidersCount-
+    Sperre). Fix: bei identischem Zähler bereinigen (Zulu-Muster), bei
+    Unterschied weiter werfen. Tests für beide Fälle fehlen komplett.
+
+NF-ROBO-2 [NIEDRIG] parseOrNull wirft bei „NaN"/„Infinity"-STRINGS in
+    Alt-CSV-Zeilen (f[5]/f[6]/f[9]; der alte Writer konnte das schreiben)
+    → IOException des GESAMTEN Katalog-Lesezugriffs (GUI+REST gebrickt).
+    Fix: nicht-endlich → null statt throw. Test: Altzeile mit „NaN".
+
+NF-VT-1 [MITTEL, Performance] REST-Lesecache ersatzlos entfernt: jede
+    /providers-Anfrage verifiziert jetzt den GESAMTEN Trade-Bestand neu
+    (korrigiereMonate → je Anbieter hasTrades+loadTrades = 2× SHA-256+
+    Parse). Bei Produktivgrößen (Katalog ~6.000, hunderte Historien à bis
+    2.000 Zeilen, Scanner-Pagination 12+ Seiten) deutliche Latenz-/CPU-
+    Regression. Fix: mtime-Cache über beide Dateien+Receipt ODER in
+    aeltestesHistoriesDatum einen verifiedSnapshot-Aufruf statt zwei.
+
+NF-VT-2 [NIEDRIG, dokumentiert] catalogScope=subscribers OHNE Overlay
+    liefert den VOLLbestand mit scope=full → Scanner-Recherche dieser
+    Quelle schlägt bewusst fehl (ValueError) bis zum nächsten Zählerlauf.
+    Reihenfolge Voll-/Zählerlauf im Betrieb beachten (auch Robo/Zulu
+    analog: nach Volllauf braucht die Recherche erst den Zählerlauf).
+
+NF-MD-2 [NIEDRIG] /health failt jetzt hart (500) bei DB-Lesefehler des
+    Katalogzählfelds (vorher tolerant mit Teilbestand) → Scanner-Ver-
+    bindungstest meldet Quelle OFFLINE. Undokumentiert; Fix: degradieren
+    oder dokumentieren.
+NF-MD-3 [NIEDRIG] format=csv kennt keinen Scope-Beleg (Default liefert
+    nach nurAbonnenten die ≤200-Auswahl ohne Kennzeichnung; README nennt
+    die Grenze; kein bekannter Konsument).
+NF-PT-1 [NIEDRIG, Performance] Stats-/Tradelisten-Batches persistieren
+    jetzt JE Anbieter die komplette providers.csv (O(n²) IO bei ~2.000
+    Anbietern; vorher alle 50). Fix: Bündeln.
+NF-PT-2 [NIEDRIG] Detailabruf: ein als STRING geliefertes „Id“-Feld
+    (z. B. "123") scheitert an isIntegralNumber → Provider-Refresh schlägt
+    fail-safe fehl. Fix: numerische Strings akzeptieren. Test fehlt.
+NF-PT-3 [NIEDRIG] PT-R6-Geschwister: zweite SessionException in der
+    TRADELISTEN-Phase (nach „erfolgreichem“ AutoLogin) bleibt generischer
+    Fehler (done+Hinweis statt login_required). Fix analog Hauptpfad.
+S-N1 [MITTEL, Design-Lücke] Prüfhinweise (review_pending) haben KEINEN
+    Klärungshebel: Sobald ein KI-Kurztest ≥1 pruefhinweis liefert, wird
+    der Anbieter dauerhaft aus der Rangfolge genommen (dokumentierte
+    Absicht, „keine automatische Hinweisfreigabe“) und der Lauf kann nie
+    „abgeschlossen“ erreichen — aber es existiert kein UI/CLI/Weg, einen
+    geprüften Hinweis als geklärt zu markieren (nur Data-Basis-Änderung
+    verwirft alte Hinweise). Operativ blockiert jeder noch so kleine
+    Modellhinweis den Abschluss. Fundort: abonnenten_analyse.py:800-823
+    (_check_hints), kein Gegenstück in abonnenten_analyse_ui.py.
+    Fix (minimal): Klärungsaktion je Hinweis („als geprüft markieren“ mit
+    Protokolleintrag) ODER Abschlusszählung ohne review_pending, aber
+    weiter ohne Rang. Test: Hinweis setzen → klären → Rang zurück.
+
+## 5. OFFENE FRAGEN (neu oder fortbestehend, wichtigste)
+
+OQ-A Gepaarte Ausrollung: Wann werden die fünf nativen Clients mit den
+    Fix-Builds neu gestartet? Bis dahin scheitert die MQL-Recherche
+    absichtlich (subscriberSelectionProof fehlt) und alle Kataloge bleiben
+    „unknown“ (kein Löschschutz-Verlust, aber auch kein Full-Bestand).
+    Alt-Scanner + NEUE Clients wäre die gefährliche Kombination (XR-1-
+    Löschmuster über Default-Auswahl) — Reihenfolge: erst Scanner, dann
+    Clients (aktueller Stand ist genau richtig herum).
+OQ-B Robo/Pelican/Zulu: subscriberCatalog*-Coverage-Felder nachziehen
+    (Vantage-Muster) oder ist die scannerseitige „unbestätigt“-Behandlung
+    der Abschluss? (XR-2-Rest)
+OQ-C Vantage: LEERE Mittelseiten gelten weiter als Ende — bewusst?
+    Robo: NF-ROBO-1/NF-ROBO-2 fixen? MD: MD-R2/NF-MD-1 fixen?
+OQ-D TMM-R2: Absichtsschutz für leeres Complete (Empty-Wipe-Flag) —
+    Nutzerentscheidung;Scanner-seitig könnte zusätzlich ein „absichtlich
+    leer“-Kennzeichen gefordert werden.
+OQ-E S-N1: Wie sollen Prüfhinweise geklärt werden (UI/CLI/Prozess)?
+OQ-F review der sehr neuen Commits ad4a9d7 (Vantage 50er-Pagination,
+    Folge eines live reproduzierten Seitengrößen-Inkonsistenz-Befunds)
+    und inhaltliche Tiefe für 6164b30/e38079d — nachgeholt werden.
+
+## 6. GESAMTEINSCHÄTZUNG NACH DIESER RUNDE
+
+Behoben wurden die Kernbefunde der 1. Runde sauber und mit starken Tests:
+XR-1 (Vertrag + Löschschutz), ZU-F1, VT-R1, VT-F1/F2, PT-F1/R1/R5/R6/R7,
+RB-R1(Zählerpfad)/R2/R4/R5, MD-R1/R5, TMM-E1, XR-2 im Kern (MQL-Beleg +
+ehrliche „unbestätigt“-Behandlung). Die Parallelisierung ist sorgfältig
+gebaut und breit getestet — kein bestätigter Fehler.
+
+VOR ZUVERLÄSSIGEM EINSATZ ZU BEHEBEN (neu bewertet):
+  1. NF-ROBO-1 — öffnet den XR-1-Löschpfad über einen falschen Full-Beleg
+     wieder (Robo-Vollimport transient leer).
+  2. NF-MD-1 — Zählerlauf-Totalausfall bei Live-Drift-Duplikaten ist durch
+     den erweiterten Walk WAHRSCHEINLICHER geworden (MQL-Recherche-Quelle
+     fällt dann ganz aus).
+  3. S-N1 — Klärungshebel für Prüfhinweise definieren (sonst bleibt jeder
+     Lauf mit einem Modellhinweis dauerhaft „teilweise“).
+SOLL: TMM-R2 (Empty-Wipe-Schutz), NF-VT-1 (Performance), NF-ROBO-2,
+  NF-PT-1/2/3, NF-MD-2/3, MD-F1-Rest (toter Code), MD-R3 vollständig
+  eigenverifizieren, VT-R2 (1 Retry auf Size-1).
+BETRIEB: gepaarte Ausrollung einplanen (OQ-A); nach jedem Volllauf braucht
+  die Recherche zuerst einen Zählerlauf (NF-VT-2-Muster bei Vantage/Robo/
+  Zulu). Grüne Tests aller Suiten bestätigen die geprüften Fälle; ein
+  produktiver Gesamtrecherchelauf (Abschluss d38440b65c6540b79ce69e7fe7457ab0)
+  ist weiterhin nicht nachgewiesen.
+
+## 7. NICHT AUSGEFÜHRTE PRÜFUNGEN
+
+7.1 Keine echten Plattformzugriffe, Logins, Downloads, produktiven REST-
+    Aufrufe, Neustarts/Deployments, LLM-Aufrufe (pytest -m "not llm").
+7.2 MD-R3 (NaN-Überschreibung): nur Fix-Angabe + stichprobenartiger Gegen-
+    blick, keine vollständige Eigenverifikation. TMM: nur Commitscope-
+    Tests gelaufen (nicht Vollsuite). Scanner: Abonnenten-/Fix-Suiten
+    (645) gelaufen, nicht die komplette ~3.000er-Suite.
+7.3 Sehr neue Commits während der Nachprüfung: vantage ad4a9d7 (50er-
+    Pagination) inhaltlich UNGEPRÜFT; robo 6164b30, zulu e38079d, vantage
+    afbb32f nur über Testläufe/Agentenberichte mitgedeckt (Startup-Cache-
+    Thema, jeweils grün).
+7.4 Live-Verhalten der Plattform-APIs (Sortierung, Nullzähler am Ende der
+    MQL-Liste, Duplikat-Drift, CopyFX-Feld-Omission, Vantage-Seiten-
+    größen-Inkonsistenz) bleibt offline unbelegbar — die zugehörigen
+    strengen Prüfungen machen Abweichungen laut statt still.
+
+================================================================================
+MASCHINENLESBARE STATUSLISTE (JSON). status ∈ behoben|teilweise|nicht_behoben|
+entschaerft|unveraendert|neu. nf = neue Fehler dieser Runde.
+================================================================================
+
+```json
+{
+  "runde": 2,
+  "datum": "2026-10-24",
+  "verifizierte_heads": {
+    "SignalKiScanner": "0075c41", "MqlDownloader": "33bce22",
+    "PelicanTrading": "3c442ea", "robomonitor": "9d2b6b6 (+6164b30 im Testlauf)",
+    "vantagemonitor": "afbb32f (+ad4a9d7 ungeprüft)", "zulumonitor": "e38079d",
+    "MqlTradeMonitor": "3fa62fd"
+  },
+  "status_runde1": [
+    {"id":"XR-1","status":"behoben","hinweis":"catalogScope-Vertrag+Receipt+Scanner-Loeschschutz; gepaarte Ausrollung noetig; NF-ROBO-1 eroeffnet Loeschpfad ueber falschen Full-Beleg wieder"},
+    {"id":"XR-2","status":"behoben","hinweis":"MQL-Auswahlbeleg hart validiert; Robo/Pelican/Zulu ohne Coverage-Felder -> ehrlich 'unbestaetigt' bis KI/PDF/CSV"},
+    {"id":"MD-F1","status":"teilweise","hinweis":"harte Semantik dokumentiert+Ziel/Nullgrenzenbeweis; toter Code :544-548/:593-598 bleibt"},
+    {"id":"MD-R1","status":"behoben"},{"id":"MD-R2","status":"nicht_behoben","hinweis":"verschaerft -> NF-MD-1"},
+    {"id":"MD-R3","status":"behoben","hinweis":"laut Fix-Angabe, nicht vollstaendig eigenverifiziert"},
+    {"id":"MD-R4","status":"unveraendert"},{"id":"MD-R5","status":"behoben"},
+    {"id":"PT-F1","status":"behoben"},{"id":"PT-R1","status":"behoben"},{"id":"PT-R2","status":"unveraendert"},
+    {"id":"PT-R3","status":"unveraendert"},{"id":"PT-R4","status":"unveraendert"},
+    {"id":"PT-R5","status":"behoben"},{"id":"PT-R6","status":"behoben","hinweis":"Hauptpfad; Tradelisten-Geschwister -> NF-PT-3"},
+    {"id":"PT-R7","status":"behoben"},
+    {"id":"VT-F1","status":"behoben"},{"id":"VT-F2","status":"behoben","hinweis":"laut Fix auch Robo/Pelican/Zulu"},
+    {"id":"VT-R1","status":"behoben","hinweis":"leere Mittelseiten bleiben Ende (bewusst)"},
+    {"id":"VT-R2","status":"unveraendert"},{"id":"VT-R3","status":"behoben"},
+    {"id":"VT-R4","status":"unveraendert"},{"id":"VT-R5","status":"behoben","hinweis":"in-process"},
+    {"id":"VT-R6","status":"unveraendert"},
+    {"id":"RB-R1","status":"behoben","hinweis":"nur Zaehlerpfad; Vollpfad -> NF-ROBO-1"},
+    {"id":"RB-R2","status":"behoben"},{"id":"RB-R3","status":"nicht_behoben","hinweis":"scannerseitig entschaerft"},
+    {"id":"RB-R4","status":"behoben"},{"id":"RB-R5","status":"behoben","hinweis":"gepruefte Pfade"},
+    {"id":"ZU-F1","status":"behoben"},{"id":"ZU-R1","status":"behoben"},
+    {"id":"ZU-R2","status":"behoben","hinweis":"scannerseitig (cancelled -> ABGEBROCHEN)"},
+    {"id":"ZU-R3","status":"unveraendert"},{"id":"ZU-R4","status":"unveraendert"},
+    {"id":"ZU-R5","status":"unveraendert"},{"id":"ZU-R6","status":"unveraendert"},
+    {"id":"ZU-R7","status":"unveraendert"},{"id":"ZU-R8","status":"unveraendert"},
+    {"id":"TMM-E1","status":"behoben"},
+    {"id":"TMM-R1","status":"unveraendert"},{"id":"TMM-R2","status":"nicht_behoben"},
+    {"id":"TMM-R3","status":"nicht_behoben","hinweis":"serverseitig offen; scannerseitig entschärft (Abbruch vor register bei Dokumentfehlern)"},
+    {"id":"TMM-R4","status":"unveraendert"},{"id":"TMM-R5","status":"unveraendert"},
+    {"id":"TMM-R6","status":"unveraendert"},{"id":"TMM-R7","status":"unveraendert"},
+    {"id":"S-R1","status":"unveraendert"},{"id":"S-R2","status":"unveraendert"},
+    {"id":"S-R3","status":"unveraendert"}
+  ],
+  "neue_fehler": [
+    {"id":"NF-ROBO-1","schwere":"HOCH","ort":"RoboForexClient.java:108-110,130 (downloadTopSignals); DataStore.saveSignals:123-129","wirkung":"leerer/still gekuerzter Vollkatalog erhaelt FULL-Beleg -> Scanner loescht Katalogzeilen (XR-1-Loeschpfad wieder offen)","fix":"more/Array-Pruefung im Vollpfad + Groessen-Sanity vor saveSignals","test":"Fake-Client leere Seite more=true im Vollpfad -> ApiException"},
+    {"id":"NF-MD-1","schwere":"MITTEL","ort":"SignalDownloader.java:775-776,646","wirkung":"Duplikat bei Live-Drift kostet jetzt WAHRSCHEINLICHER (erweiterter Walk) den GESAMTEN Zaehlerlauf beider Plattformen","fix":"bei identischem Zaehler bereinigen (Zulu-Muster)","test":"Duplikat gleicher/verschiedener Zaehler ueber Seitengrenze"},
+    {"id":"S-N1","schwere":"MITTEL","ort":"abonnenten_analyse.py:800-823; kein Gegenstueck in abonnenten_analyse_ui.py","wirkung":"Pruefhinweis -> dauerhaft ungerankt + Lauf nie 'abgeschlossen'; kein Klärungshebel (nur Data-Basis-Aenderung verwirft Hinweise)","fix":"Klaerungsaktion je Hinweis mit Protokoll","test":"Hinweis setzen -> klaeren -> Rang zurueck"},
+    {"id":"NF-ROBO-2","schwere":"NIEDRIG","ort":"DataStore.java:460-465,215-237","wirkung":"'NaN'/'Infinity'-Altzeilen brickieren Gesamtkatalog-Lesung","fix":"nicht-endlich -> null","test":"Altzeile mit NaN-String"},
+    {"id":"NF-VT-1","schwere":"MITTEL","ort":"RestApiServer.java:682-692; TradeStore.java:298-347","wirkung":"jede REST-Anfrage verifiziert Gesamthistorien (2x SHA+Parse je Anbieter) -> Latenz/CPU-Regression","fix":"mtime-Cache ueber beide Dateien+Receipt bzw. einzelner verifiedSnapshot-Aufruf","test":"Callcount-Regression"},
+    {"id":"NF-VT-2","schwere":"NIEDRIG","ort":"DataStore.java:133-146","wirkung":"subscribers ohne Overlay -> Vollbestand scope=full -> Recherche-Quelle schlaegt bewusst fehl bis naechster Zaehlerlauf","fix":"optional: leere Auswahl mit scope=subscribers","test":"--"},
+    {"id":"NF-MD-2","schwere":"NIEDRIG","ort":"RestApiServer.java:361; DatabaseManager.java:419","wirkung":"/health 500 statt tolerant bei DB-Lesefehler -> Quelle OFFLINE im Verbindungstest","fix":"degradieren oder dokumentieren","test":"--"},
+    {"id":"NF-MD-3","schwere":"NIEDRIG","ort":"RestApiServer.java:409-425","wirkung":"format=csv ohne Scope-Beleg (Default=Auswahl nach nurAbonnenten)","fix":"CSV bei implizitem subscribers verweigern","test":"--"},
+    {"id":"NF-PT-1","schwere":"NIEDRIG","ort":"PelicanMonitorApp.java:1714,1773,1863; DataStore.java:93-95","wirkung":"Batch persistiert je Anbieter komplette providers.csv (O(n^2) IO)","fix":"buendeln","test":"--"},
+    {"id":"NF-PT-2","schwere":"NIEDRIG","ort":"PelicanClient.java:206-212","wirkung":"Id als String -> Detailabruf scheitert fail-safe","fix":"numerische Strings akzeptieren","test":"{\"Id\":\"123\"}"},
+    {"id":"NF-PT-3","schwere":"NIEDRIG","ort":"UpdateJobRunner.java:326-337","wirkung":"zweite SessionException in Tradelisten-Phase bleibt 'error' statt login_required","fix":"SessionException gesondert -> loginErforderlich","test":"analog Hauptpfad"}
+  ],
+  "tests": {
+    "SignalKiScanner": "645 bestanden (Abonnenten-/Fix-Suiten, -m 'not llm')",
+    "MqlDownloader": "194", "PelicanTrading": "222", "robomonitor": "222",
+    "vantagemonitor": "154 + 23 pytest", "zulumonitor": "180",
+    "MqlTradeMonitor": "29 (Commitscope)"
+  },
+  "nicht_ausgefuehrt": [
+    "MD-R3 nicht vollstaendig eigenverifiziert (nur Fix-Angabe+Stichprobe)",
+    "TMM nur Commitscope-Tests; Scanner nicht komplette Suite",
+    "vantage ad4a9d7 inhaltlich ungeprueft; 6164b30/e38079d/afbb32f nur ueber Agentenberichte/Testlaeufe mitgedeckt",
+    "keine Plattform-/Produktiv-/LLM-Zugriffe; produktiver Gesamtrecherchelauf weiterhin nicht nachgewiesen"
+  ]
+}
+```
+
+================================================================================
+ENDE DER NACHPRÜFUNG — Bezug: KI_REPORT_FINDINGS.txt (Runde 1, gleicher Ordner)
+================================================================================

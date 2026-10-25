@@ -1,0 +1,30 @@
+{
+  "utc": "2026-10-18T17:14:08.843383+00:00",
+  "pid": 1350380,
+  "writer_thread_terminated": true,
+  "actual_api_job": {
+    "jobId": "u-20261018-184200-f95ece0",
+    "state": "done",
+    "phase": "tradelisten",
+    "done": 7,
+    "total": 200,
+    "message": "Tradelisten: 6 neu, 0 unver\u00e4ndert, 0 aktualisiert, 1 Fehler",
+    "startedAt": "2026-10-18T18:42:00",
+    "finishedAt": "2026-10-18T19:14:08",
+    "ergebnis": {
+      "signaleGeliefert": 200,
+      "tradelistenNeu": 6,
+      "tradelistenAktualisiert": 0,
+      "tradelistenFehler": 1,
+      "tradelistenAbgebrochen": true,
+      "katalogUebersprungen": false,
+      "datenstand": "2026-10-18T19:14:08",
+      "hinweise": [
+        "Tradelisten-Update unterbrochen; vorhandene Historien bleiben erhalten",
+        "1 Tradelisten-Downloads fehlgeschlagen (Details: data/vantagemonitor.log)"
+      ]
+    },
+    "error": null
+  },
+  "note": "Interrupted cooperatively; actual API outcome retained. Not a successful whole-source update."
+}

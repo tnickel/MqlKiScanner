@@ -1,0 +1,212 @@
+{
+  "observed_utc": "2026-10-18T18:20:49.592812+00:00",
+  "requested_url": "https://www.mql5.com/en/signals/mt4/list/page2?orderby=subscribers",
+  "response_url": "https://www.mql5.com/en/signals/mt4/list/page2?orderby=subscribers",
+  "http_status": 200,
+  "title": "Trading Signals and Social Trading in MetaTrader 4 - Page 2 - Table view",
+  "html_sha256": "d436239f5c3af2f09eff87832c1e17d3079ecb04d3c28e4fa3193707ca0a1da1",
+  "provider_anchor_count": 48,
+  "numeric_provider_count": 48,
+  "positive_subscribers": 44,
+  "explicit_zero_subscribers": 4,
+  "unknown_subscribers": 0,
+  "provider_samples": [
+    {
+      "signal_id": 1750918,
+      "subscriber_text": "1",
+      "parsed_subscribers": 1
+    },
+    {
+      "signal_id": 2373736,
+      "subscriber_text": "1",
+      "parsed_subscribers": 1
+    },
+    {
+      "signal_id": 2043012,
+      "subscriber_text": "1",
+      "parsed_subscribers": 1
+    },
+    {
+      "signal_id": 2334562,
+      "subscriber_text": "1",
+      "parsed_subscribers": 1
+    },
+    {
+      "signal_id": 1997766,
+      "subscriber_text": "1",
+      "parsed_subscribers": 1
+    },
+    {
+      "signal_id": 2370899,
+      "subscriber_text": "1",
+      "parsed_subscribers": 1
+    },
+    {
+      "signal_id": 2201028,
+      "subscriber_text": "1",
+      "parsed_subscribers": 1
+    },
+    {
+      "signal_id": 763292,
+      "subscriber_text": "1",
+      "parsed_subscribers": 1
+    }
+  ],
+  "paginator_links": [
+    {
+      "text": "English",
+      "href": "/en/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "Русский",
+      "href": "/ru/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/ru/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "中文",
+      "href": "/zh/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/zh/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "Español",
+      "href": "/es/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/es/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "Português",
+      "href": "/pt/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/pt/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "日本語",
+      "href": "/ja/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/ja/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "Deutsch",
+      "href": "/de/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/de/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "한국어",
+      "href": "/ko/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/ko/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "Français",
+      "href": "/fr/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/fr/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "Italiano",
+      "href": "/it/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/it/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "Türkçe",
+      "href": "/tr/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/tr/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "Maximum profit",
+      "href": "/en/signals/mt4/list/page1?preset=2",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page1?preset=2"
+    },
+    {
+      "text": "Reliability",
+      "href": "/en/signals/mt4/list/page1?preset=11",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page1?preset=11"
+    },
+    {
+      "text": "Profitable within a month",
+      "href": "/en/signals/mt4/list/page1?preset=3",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page1?preset=3"
+    },
+    {
+      "text": "Intraday",
+      "href": "/en/signals/mt4/list/page1?preset=12",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page1?preset=12"
+    },
+    {
+      "text": "For under 50 USD",
+      "href": "/en/signals/mt4/list/page1?preset=4",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page1?preset=4"
+    },
+    {
+      "text": "Having reviews",
+      "href": "/en/signals/mt4/list/page1?preset=5",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page1?preset=5"
+    },
+    {
+      "text": "Leverage 1:100",
+      "href": "/en/signals/mt4/list/page1?preset=6",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page1?preset=6"
+    },
+    {
+      "text": "Using robots",
+      "href": "/en/signals/mt4/list/page1?preset=7",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page1?preset=7"
+    },
+    {
+      "text": "",
+      "href": "/en/signals/mt4/page1",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/page1"
+    },
+    {
+      "text": "1",
+      "href": "/en/signals/mt4/list/page1?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page1?orderby=subscribers"
+    },
+    {
+      "text": "2",
+      "href": "/en/signals/mt4/list/page2?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page2?orderby=subscribers"
+    },
+    {
+      "text": "3",
+      "href": "/en/signals/mt4/list/page3?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page3?orderby=subscribers"
+    },
+    {
+      "text": "4",
+      "href": "/en/signals/mt4/list/page4?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page4?orderby=subscribers"
+    },
+    {
+      "text": "5",
+      "href": "/en/signals/mt4/list/page5?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page5?orderby=subscribers"
+    },
+    {
+      "text": "6",
+      "href": "/en/signals/mt4/list/page6?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page6?orderby=subscribers"
+    },
+    {
+      "text": "7",
+      "href": "/en/signals/mt4/list/page7?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page7?orderby=subscribers"
+    },
+    {
+      "text": "8",
+      "href": "/en/signals/mt4/list/page8?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page8?orderby=subscribers"
+    },
+    {
+      "text": "9",
+      "href": "/en/signals/mt4/list/page9?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page9?orderby=subscribers"
+    },
+    {
+      "text": "...",
+      "href": "/en/signals/mt4/list/page23?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page23?orderby=subscribers"
+    },
+    {
+      "text": "36",
+      "href": "/en/signals/mt4/list/page36?orderby=subscribers",
+      "absolute_url": "https://www.mql5.com/en/signals/mt4/list/page36?orderby=subscribers"
+    }
+  ]
+}

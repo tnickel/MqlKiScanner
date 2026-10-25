@@ -1,0 +1,120 @@
+{
+  "prepared_utc": "2026-10-19T09:51:40.660510+00:00",
+  "preparation_only_not_final_scope": true,
+  "reader_not_started": false,
+  "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+  "job_id": "u-20261019-092038-e16ea0fc",
+  "schema_version": 2,
+  "finalschema_version": 2,
+  "script": "data\\runs\\liveabschluss_20261019\\vantage\\qualify_partial_exports.py",
+  "script_sha256": "73489933475486209d2873400814de75af43dacb65c4c1162c41c79132631feb",
+  "tests": {
+    "exit_code": 0,
+    "passed": 15,
+    "failed": 0,
+    "cases": [
+      "test_partial_unknown_and_old_http200_never_become_complete",
+      "test_failed_source_404_is_explicitly_blocked",
+      "test_error_counter_mismatch_fails_closed",
+      "test_unexplained_nonrenewal_fails_closed",
+      "test_failed_recent_pair_still_cannot_be_released",
+      "test_fresh_native_export404_is_separate_from_source_job_failure",
+      "test_unbounded_or_unmapped_job_log_fails_closed",
+      "test_unresolved_catalogue_warning_fails_closed",
+      "test_native_mutation_during_export_never_sets_stable_flag",
+      "test_native_corruption_cannot_be_ignored",
+      "test_main_receipt_has_separate_scope_sha_and_native_error_accounting",
+      "test_main_failure_receipt_cannot_release_partial_scope",
+      "test_stop_before_wait_prevents_any_qualification",
+      "test_stop_arriving_during_wait_prevents_qualification",
+      "test_stop_immediately_before_phase_prevents_qualification"
+    ],
+    "test_script_sha256": "e576bd11e34c285c927b66bad4adf2e41b7d7b3c2c2497caad34c0657b8e450c",
+    "synthetic_only": true,
+    "real_native_auditors_and_product_parser": true,
+    "db_terminals_or_live_sources_used": false
+  },
+  "frozen_prior_helpers_unchanged": true,
+  "final_paths": {
+    "eligible_scope.json": "data\\runs\\liveabschluss_20261019\\vantage\\normal-final-partial\\eligible_scope.json",
+    "follower_exit.json": "data\\runs\\liveabschluss_20261019\\vantage\\normal-final-partial\\follower_exit.json",
+    "follower_failure.json": "data\\runs\\liveabschluss_20261019\\vantage\\normal-final-partial\\follower_failure.json",
+    "follower_started.json": "data\\runs\\liveabschluss_20261019\\vantage\\normal-final-partial\\follower_started.json"
+  },
+  "public_final_scope": "sources_vantage_normal_partial_eligible_scope_20261019.json",
+  "public_end_receipt": "sources_vantage_normal_partial_export_receipt_20261019.json",
+  "contract": {
+    "scope_sha_field": "eligible_scope_sha256",
+    "schema_version": 2,
+    "finalschema_version": 2,
+    "required_scope_flags": {
+      "source_job_fully_accepted": false,
+      "bounded_export_scope_accepted": true,
+      "accounting_verified": true,
+      "native_generations_stable_during_read": true
+    },
+    "native_error_counter": "job_error_count",
+    "native_terminal_status": "terminal_job_status",
+    "same_accounting_fields_in_scope_and_receipt": [
+      "normal_native_scope_count",
+      "attempted_count",
+      "attempted_ids",
+      "job_error_count",
+      "native_error_ids",
+      "not_renewed_ids",
+      "native_verified_fresh_count",
+      "native_verified_fresh_ids",
+      "accounting_verified",
+      "blocked_export_ids",
+      "terminal_job_status"
+    ],
+    "set_rules": [
+      "attempted IDs exactly the 215 initial unique IDs",
+      "native_error_ids == not_renewed_ids, length exactly job_error_count",
+      "native_verified_fresh_ids exactly attempted IDs minus native_error_ids",
+      "eligible_scope subset of native_verified_fresh_ids; blocked_export_ids exact complement of eligible_scope"
+    ],
+    "terminal_rules": [
+      "state done; done=total215; error null; no abort",
+      "recorded/current native status exact match before and after read",
+      "exact unique job start/end log segment; error-ID rows match actual error counter",
+      "no unresolved catalogue/metadata warning"
+    ],
+    "eligible_provider_required": [
+      "source_uid",
+      "signal_id",
+      "version",
+      "eligible",
+      "http_status",
+      "parser_ok",
+      "csv_sha256",
+      "csv_rows",
+      "private_csv",
+      "history_scope",
+      "reported_total",
+      "truncated"
+    ],
+    "native_end_time_precision_seconds": 1,
+    "end_bound": "strictly before the next second after serialized finishedAt",
+    "private_csv_folder": "normal_completion_exports",
+    "precondition": "Actual terminal job and the old strict reader terminal receipt, then old strict process ended",
+    "consume": "Only with schema2 exit_code0 receipt, exact eligible_scope_sha256, expected UID/job/version and no partial failure file"
+  },
+  "source_jobs_started": 0,
+  "scanner_runs_started": 0,
+  "production_modules_changed": false,
+  "stop_gate": {
+    "path": "data/runs/liveabschluss_20261019/STOP_AFTER_PHASE",
+    "checked": [
+      "before_wait",
+      "while_waiting",
+      "while_waiting_old_strict_exit",
+      "immediately_before_qualification"
+    ],
+    "receipt": "normal-final-partial/follower_stopped.json",
+    "stopped_reader_creates_no_scope_or_success_receipt": true,
+    "native_writers_untouched": true
+  },
+  "reader_pid": 299388,
+  "reader_started_utc": "2026-10-19T09:51:53.3261070Z"
+}

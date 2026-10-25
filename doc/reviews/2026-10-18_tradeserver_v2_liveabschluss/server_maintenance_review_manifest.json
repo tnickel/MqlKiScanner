@@ -1,0 +1,30 @@
+{
+  "checked_at": "2026-10-18T17:08:01.645703+00:00",
+  "source_scan_tests": 23,
+  "owner_cache_tests": 10,
+  "latest_targeted_passed": 33,
+  "command": "PYTHONPATH=src python -m pytest -q tests/test_ingest_owner_cache.py tests/test_live_abschluss_source_scan.py",
+  "files": [
+    {
+      "path": "scripts/reference/live_abschluss.py",
+      "sha256": "9d4fe942c592efb0156379482a8817a60f829d79bf02d60cae08a99eb3334f92"
+    },
+    {
+      "path": "src/mqlkiscanner/ingest.py",
+      "sha256": "e7dda3adba6dbadd1842c4d93cfb98aaaec3aeccb42eac9558f97d2c6beae704"
+    },
+    {
+      "path": "tests/test_live_abschluss.py",
+      "sha256": "b598fdc0fd9c48b8a916139d9aa66f7161c7a519c324a5a753f844c7314fc0b9"
+    },
+    {
+      "path": "tests/test_live_abschluss_source_scan.py",
+      "sha256": "fff1daf8d79db09d3ffaa1c75a6d5b450687fb7ee48c6c72e518056118eb654e"
+    },
+    {
+      "path": "tests/test_ingest_owner_cache.py",
+      "sha256": "d3e5a9cf6598ee7dcf468dc5bff0d779966d36d82333ad0d52272b3661a09c8e"
+    }
+  ],
+  "scope": "Only ingest._kuerzel_verzeichnis changed; isolated new tests and design; no productive scan/upload"
+}

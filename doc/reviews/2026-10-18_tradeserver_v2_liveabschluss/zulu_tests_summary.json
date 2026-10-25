@@ -1,0 +1,140 @@
+{
+  "command": [
+    "mvn",
+    "test",
+    "-q"
+  ],
+  "suite_count": 18,
+  "tests": 129,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "reports": [
+    {
+      "name": "TEST-de.zulumonitor.api.CataloguePaginationTest.xml",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.api.ClosedTradeContractTest.xml",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.api.WeekEvidenceTest.xml",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.api.ZuluTradeClientLocalTest.xml",
+      "tests": "15",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.config.PromptMigrationTest.xml",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.CoreRegressionTest.xml",
+      "tests": "19",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.FxRatesTest.xml",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.report.DrawdownBasisTest.xml",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.ReportPipelineTest.xml",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.RestApiServerTest.xml",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.SettingsRegressionTest.xml",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.store.DataStoreIntegrityTest.xml",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.store.SubscriberDbTest.xml",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.store.TradeArchiveMergeTest.xml",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.store.TradeListenStoreTest.xml",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.store.UiPrefsTest.xml",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.UpdateJobStufe0Test.xml",
+      "tests": "14",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "TEST-de.zulumonitor.ZuluMonitorUiTest.xml",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ]
+}

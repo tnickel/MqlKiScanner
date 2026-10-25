@@ -1,0 +1,14 @@
+{
+  "checked_utc": "2026-10-18T17:30:44.254152+00:00",
+  "source": "mql5",
+  "source_uid": "0a8faef1-a341-4899-a199-a87166b69079",
+  "signal_id": 2349227,
+  "platform": "mql4",
+  "local_csv_mtime_utc": "2026-10-18T17:04:41.232152+00:00",
+  "local_csv_sha256": "229c90697bd7510020faac0ac1c7c88cb9ae9e44353df6f36d39754034bbda4a",
+  "rest_csv_sha256": "229c90697bd7510020faac0ac1c7c88cb9ae9e44353df6f36d39754034bbda4a",
+  "rest_equals_fresh_local_csv": true,
+  "raw_csv_rows_without_header": 1290,
+  "position_rows": 411,
+  "latest_position_close": "2026.10.09 11:50:34"
+}

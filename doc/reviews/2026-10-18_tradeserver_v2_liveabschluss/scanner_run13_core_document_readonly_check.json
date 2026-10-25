@@ -1,0 +1,62 @@
+{
+  "checked_at_utc": "2026-10-18T18:42:38.607596+00:00",
+  "scope": "Read-only source AST/hash and local document references, after Run13 checkpoint",
+  "core_files": [
+    {
+      "path": "src/mqlkiscanner/tradeserver_client.py",
+      "sha256": "d44a834e109e82ba96b1380633eade4badeb9cd7a652f0e7c0b341d616f427a0",
+      "ast_valid": true
+    },
+    {
+      "path": "src/mqlkiscanner/tradeserver_sync.py",
+      "sha256": "60193615aedb1053b185c438472390bef3f71ea2c099f03e48e1706f5aa42415",
+      "ast_valid": true
+    },
+    {
+      "path": "scripts/reference/live_abschluss.py",
+      "sha256": "47095719fb66930d7608afc4ca0bcc95021fe31c69d28ece11734ee5a06c051f",
+      "ast_valid": true
+    },
+    {
+      "path": "app_pages/scan.py",
+      "sha256": "d78769b232a8d97044a0ce0f46ed8e474551ffd2510bbb6b295c6c68405a2d13",
+      "ast_valid": true
+    },
+    {
+      "path": "app_pages/alle_signale.py",
+      "sha256": "8069ffaa00ac8df70a83c8be9b471738c4a58a9b202c9b90497ebb5242b3cf6d",
+      "ast_valid": true
+    },
+    {
+      "path": "src/mqlkiscanner/alle_signale_ui.py",
+      "sha256": "d4face5a8f0477065a3e687f22d9cadccbfbea91b9d4b8e6beecea2055f36782",
+      "ast_valid": true
+    },
+    {
+      "path": "src/mqlkiscanner/kursdaten.py",
+      "sha256": "07c5d806c95ec6f8fc546fb9ee65d9f8ff13eb6b1c5eba7eff1b17a788543505",
+      "ast_valid": true
+    },
+    {
+      "path": "src/mqlkiscanner/kurs_cache.py",
+      "sha256": "392dd7f3c89a4350c2b34a7e991a1ca647ac31925e9aebde98b4935446e770b7",
+      "ast_valid": true
+    },
+    {
+      "path": "src/mqlkiscanner/katalog.py",
+      "sha256": "293374096748253684702b3298cdfd96d353a66dab830e70ce8fc7068032d75c",
+      "ast_valid": true
+    }
+  ],
+  "readme_count": 9,
+  "missing_local_markdown_links": [],
+  "json_evidence_valid": [
+    "server_v2_run13_checkpoint.json",
+    "scanner_current_tables_readonly.json",
+    "scanner_ft_status_readonly_explanation.json",
+    "scanner_final_transport_bundled_hashes_before.json",
+    "scanner_final_transport_bundled_runtime_during.json"
+  ],
+  "core_changes_made": false,
+  "source_sync_or_terminal_actions": false
+}

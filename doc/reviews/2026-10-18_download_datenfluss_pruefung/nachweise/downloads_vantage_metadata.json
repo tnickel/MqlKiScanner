@@ -1,0 +1,49 @@
+{
+  "meta_count": 611,
+  "versions": [
+    {
+      "version": "1",
+      "timeBasis": null,
+      "count": 611
+    }
+  ],
+  "samples": [
+    {
+      "id": "trades_1010186",
+      "version": "1",
+      "timeBasis": null,
+      "count": "2000",
+      "total": "4470",
+      "csv_exists": true
+    },
+    {
+      "id": "trades_1096166",
+      "version": "1",
+      "timeBasis": null,
+      "count": "193",
+      "total": "193",
+      "csv_exists": true
+    },
+    {
+      "id": "trades_1286742",
+      "version": "1",
+      "timeBasis": null,
+      "count": "1291",
+      "total": "1291",
+      "csv_exists": true
+    },
+    {
+      "id": "trades_1419494",
+      "version": "1",
+      "timeBasis": null,
+      "count": "2000",
+      "total": "2676",
+      "csv_exists": true
+    }
+  ],
+  "live_catalogue": {
+    "count": 199,
+    "legacy": 199,
+    "csv_present": 199
+  }
+}

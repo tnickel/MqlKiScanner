@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "command": "Explicit bundled Python3.12.14 with PYTHONPATH=src;WindowsPython312 User-Site: python -m pytest tests -q -m 'not llm' --tb=short --junitxml=doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/scanner_final_transport_bundled_full.xml",
+  "started_at": "2026-10-18T20:33:53.269986+02:00",
+  "exit_code": 0,
+  "passed": 2803,
+  "skipped": 1,
+  "deselected": 4,
+  "failed": 0,
+  "errors": 0,
+  "elapsed_seconds_console": 1115.3,
+  "elapsed_seconds_junit": 1110.456,
+  "skip_details": [
+    {
+      "test": "tests.test_identity_activation::test_symlink_is_rejected_without_following_target",
+      "reason": "No local symlink privilege: 1314"
+    }
+  ],
+  "runtime_comparison": "scanner_final_transport_bundled_runtime_comparison.json",
+  "hash_comparison": "scanner_final_transport_bundled_hash_comparison.json",
+  "production_files_checked": 112,
+  "test_files_checked": 190,
+  "all_production_and_test_files_unchanged": true,
+  "runtime_packages_and_module_paths_match_baseline_and_during": true,
+  "junit": "scanner_final_transport_bundled_full.xml",
+  "covers_new_workflow_transport_restore": true,
+  "earlier_evidence": "Previous2784full and241focused transport tests remain separate overlapping evidence; counts must not be added",
+  "limits": [
+    "No LLM calls requested;4LLMtests deselected",
+    "Existing conftest isolates test storage and external-service/terminal contracts",
+    "Does not prove completion of live source updates, strict FT refresh, reports or final Tradeserver publication",
+    "No production database sanitation, source sync, terminal operation or process interruption initiated by this full test"
+  ]
+}

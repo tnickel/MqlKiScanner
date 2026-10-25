@@ -1,0 +1,122 @@
+{
+  "reviewed_at_utc": "2026-10-19T08:07:28.983351+00:00",
+  "scope": "Fresh read-only existing H2 TCP audit before the next authorized root publication. No application/data deployment, WildFly interruption, register/upload/POST or Scanner DB mutation.",
+  "method": {
+    "ssh": "Existing configured alias; BatchMode and StrictHostKeyChecking; credentials stay remote/in memory and are not printed or persisted.",
+    "runtime": "Java17 single-source launcher reads seekable Linux memfd passed over SSH stdin; no remote helper source/class file written. Existing /tmp/h2-kiscanner.jar reused.",
+    "owner_checks": "Requires the actual JBoss JVM to own both the existing .mv.db file handle and the existing lock-file TCP listener, and verifies owner/lock identity again after the read. The service MainPID is only a launch shell and was rejected.",
+    "database_connection": "Only explicit jdbc:h2:tcp:// to the verified existing listener; no file/AUTO_SERVER URL, reconnect fallback, backup or copy DB opened.",
+    "sql": "Reviewed literal SELECT statements and executeQuery only; repeatable-read session, JDBC readonly hint, rollback on exit. setReadOnly is not claimed as a standalone H2 write barrier.",
+    "legacy_hash": "Exact prior KiV2Audit algorithm: SELECT * ORDER BY id; JDBC getString UTF8 per non-BLOB column, exact bytes for BLOB; length-colon/null-colon framing then SHA256. Compared directly with the proven Run13 hashes; no second backup connection required.",
+    "rules": "MqlTradeMonitor .agents/AGENTS.md read. No AGENTS.md exists at standard repo/server/ancestor locations. Its EA distribution rules do not authorize or require any such action here."
+  },
+  "current_remote_audit": {
+    "checked_at_utc": "2026-10-19T08:05:52.950896591Z",
+    "connection_mode": "existing WildFly-owned H2 TCP listener only",
+    "h2_version": "2.2.224 (2023-09-17)",
+    "embedded_fallback": false,
+    "backup_database_opened": false,
+    "data_sql": "SELECT only",
+    "KI_SIGNALS_legacy_count": 32,
+    "KI_SIGNALS_legacy_hash": "67aa01bc2f6a7cde79c81d99da9850348c5171795df57cea2abe679901ae3e08",
+    "KI_SIGNALS_run13_hash_equal": true,
+    "KI_DOCUMENTS_legacy_count": 313,
+    "KI_DOCUMENTS_legacy_hash": "4fe1a542d43bcb18f6b91de4abd681127c1916b85552023a2ef510f6d1921d71",
+    "KI_DOCUMENTS_run13_hash_equal": true,
+    "active_signals": 199,
+    "active_documents": 0,
+    "owner_pairs_sha256": "8a3f20d6c4c807dd4f3032757cf7b23061122037033a977868c5a142389322da",
+    "duplicate_signal_pairs": 0,
+    "legacy_owned_active_signals": 0,
+    "invalid_document_owners": 0,
+    "document_blob_hash_mismatches": 0,
+    "last_attempt": [
+      {
+        "id": 13,
+        "status": "ok",
+        "signals_stored": 199,
+        "documents_total": 0,
+        "documents_uploaded": 0,
+        "documents_skipped": 0,
+        "bytes_transferred": 0,
+        "started_at": "2026-10-18 20:36:57.999647",
+        "finished_at": "2026-10-18 20:36:58.882512"
+      }
+    ],
+    "last_success": [
+      {
+        "id": 13,
+        "status": "ok",
+        "signals_stored": 199,
+        "documents_total": 0,
+        "documents_uploaded": 0,
+        "documents_skipped": 0,
+        "bytes_transferred": 0,
+        "started_at": "2026-10-18 20:36:57.999647",
+        "finished_at": "2026-10-18 20:36:58.882512"
+      }
+    ],
+    "open_runs": 0,
+    "protocol_state": [
+      {
+        "migrated": true,
+        "v2_active": true
+      }
+    ],
+    "owner_and_lock_unchanged_after_read": true,
+    "deployed_war_sha256": "89d081fc1190d41589e6a3c6a5548e051715fe4417c1de9e989882ed1e3e2615"
+  },
+  "run13_comparison": {
+    "owner_pairs_unchanged": true,
+    "last_attempt_and_success_still_13": true,
+    "deployed_war_unchanged": true,
+    "legacy_originals_unchanged": true
+  },
+  "private_evidence": {
+    "path": "data/runs/liveabschluss_20261019/plans/tradeserver_v2_remote_tcp_verified_20261019.json",
+    "sha256": "f600b11fac22ad17c2bb1186593969128330f759d498414351db5a2c69e2482d",
+    "contains": "Full private remote signal rows and document metadata, without credentials or lock key."
+  },
+  "private_reusable_call": {
+    "wrapper": "data/runs/liveabschluss_20261019/plans/Invoke-KiV2ReadOnlyAudit.ps1",
+    "source": "data/runs/liveabschluss_20261019/plans/KiV2TcpReadOnlyAudit.java",
+    "usage": "Invoke wrapper with -OutputPath set to a new absolute private plans JSON path. It discovers the current actual JVM, requires a unique owner and never overwrites an earlier receipt. The wrapper is prepared/read for reuse; this audit used the same memory-only Java invocation directly.",
+    "wrapper_executed": false
+  },
+  "helper_sources": [
+    {
+      "path": "data/runs/liveabschluss_20261019/plans/KiV2TcpReadOnlyAudit.java",
+      "sha256": "76a98d90b886a3ae499d4b5b52a6000fa167d97e64f353b5cb0b2fcdefc5ab69"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/plans/Invoke-KiV2ReadOnlyAudit.ps1",
+      "sha256": "5114dfac09faf76cca42843ec80ea0aaad59a206e59aeb0345a6ef3b8a5cf706"
+    },
+    {
+      "path": "D:/AntiGravitySoftware/GitWorkspace/MqlTradeMonitor/server/target/KiV2Audit.java",
+      "sha256": "89f0ce3a2c884b352b9ab05d35c81feffdeede661d6ab7f45111c441a6ded493"
+    },
+    {
+      "path": "D:/AntiGravitySoftware/GitWorkspace/MqlTradeMonitor/.agents/AGENTS.md",
+      "sha256": "cebb9a23ef0d83a4b114ba6d5b2e986544e420b137d85fe9b9c2c63c377488c5"
+    }
+  ],
+  "preflight_attempts": [
+    {
+      "result": "Java launcher refused non-seekable /dev/stdin; source did not execute and no DB connection opened."
+    },
+    {
+      "result": "Owner guard rejected the service launch shell before DB connection."
+    },
+    {
+      "result": "Strict credential-presence guard initially refused an absent environment override before DB connection; deployed existing configuration was then verified in memory. No authentication guessing or raw configuration output."
+    }
+  ],
+  "remaining": "Root must finalize local approved scans/studies/reports, recapture expected v2 rows/PDF bytes, publish, then repeat this TCP audit and compare exact owner set/current PDF metadata+actual BLOB hashes. Current0PDFs cannot prove nonempty live PDF-owner assignment.",
+  "primary_h2_sources": [
+    "https://raw.githubusercontent.com/h2database/h2database/master/h2/src/main/org/h2/engine/SessionRemote.java",
+    "https://raw.githubusercontent.com/h2database/h2database/master/h2/src/main/org/h2/engine/ConnectionInfo.java",
+    "https://raw.githubusercontent.com/h2database/h2database/master/h2/src/main/org/h2/server/TcpServer.java",
+    "https://raw.githubusercontent.com/h2database/h2database/master/h2/src/main/org/h2/engine/Database.java"
+  ]
+}

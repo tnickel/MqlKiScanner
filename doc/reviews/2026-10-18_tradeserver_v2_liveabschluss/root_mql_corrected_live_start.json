@@ -1,0 +1,26 @@
+{
+  "time": "2026-10-18T20:33:43.065308",
+  "source": "mql5",
+  "quellen_uid": "0a8faef1-a341-4899-a199-a87166b69079",
+  "new_pid": 1663784,
+  "jar_sha256": "f343519189c345cac7ed08e1b01b02485f2477bf80f80eabd0ba47359fc09315",
+  "tests": {
+    "tests": 159,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "start": {
+    "jobId": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+    "status": "gestartet",
+    "bereitsLaufend": false
+  },
+  "forced_catalog_discovery": true,
+  "initial_api_catalog_total": 239,
+  "health_service": "MqlDownloader",
+  "health_instance": "Ryzen7950X",
+  "logger_info_live_verified": true,
+  "before_start_catalog_metrics_gold_csv_success": true,
+  "prior_job_not_accepted": true,
+  "normal_idle_restart_and_offline_backup": true
+}

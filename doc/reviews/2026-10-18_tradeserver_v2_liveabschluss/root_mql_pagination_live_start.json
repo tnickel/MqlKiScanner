@@ -1,0 +1,14 @@
+{
+  "time": "2026-10-18T20:04:14.081020",
+  "source": "mql5",
+  "quellen_uid": "0a8faef1-a341-4899-a199-a87166b69079",
+  "new_pid": 1629024,
+  "tests_receipt": "root_mql_pagination_build.json",
+  "start": {
+    "jobId": "u-559dfc47-4a38-4426-b51d-59adf5ffb5db",
+    "status": "gestartet",
+    "bereitsLaufend": false
+  },
+  "forced_catalog_discovery": true,
+  "prior_job_claim_limited_to_first_page_per_platform": true
+}

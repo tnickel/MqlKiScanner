@@ -1,0 +1,463 @@
+{
+  "source": "robo",
+  "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+  "status": "native_supported_scope_complete_api_gui_verified_units_unverified",
+  "phase": "complete",
+  "initial_job_id": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+  "initial_pid": 1351408,
+  "attempt_kind": "targeted_full_renewal",
+  "completed": [
+    {
+      "signal_id": 72166283,
+      "rows": 22785,
+      "unique_ids": 22785,
+      "csv_sha256": "02ba5f6501cc0021174450762388ba2206d6ff6c8bf2201e13b20ff558065758",
+      "meta_sha256": "888f2aa31de33f5a0578525f0ea84d6618688737985b705dd25f25bfa029e395",
+      "fetched_at": "2026-10-18T18:46:02Z",
+      "fetch_id": "d9ca6381-c589-4c2f-8f69-96b2af2e5c29",
+      "platform": "mt4",
+      "provider_source_id": "aaac",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_72166283.csv_3862941413550818832",
+          "original_csv_sha256": "0da85f094ea5cf2769fbe34f17c58f4381fe4ac5b5141ceaba7fb936343e978f",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37293345,
+      "rows": 54056,
+      "unique_ids": 54056,
+      "csv_sha256": "d2b48213b7d1abf2df6b7983826f44b085338c57172319b61c5ba2c19bb5507a",
+      "meta_sha256": "905afb065bdad58085e0c1b59a319e4db74c2fbca73724c6cbfc307fc7ce44c7",
+      "fetched_at": "2026-10-18T18:53:24Z",
+      "fetch_id": "689626bc-fce5-4821-8094-f0283ae560a7",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37293345.csv_678850962965140589",
+          "original_csv_sha256": "be4d7bc5f9fcb9c1945206dd60f034805f42c54828d841940a9178e7441ef24f",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 27406010,
+      "rows": 35999,
+      "unique_ids": 35999,
+      "csv_sha256": "8ab2eba362f0035fe777e2dd806dab05dfb4d193ece9e47151559d180f167cf8",
+      "meta_sha256": "7b2b070504bd415ce3ba664427feaf5f3f8f86209edaff837b1fafcf9bfd213b",
+      "fetched_at": "2026-10-18T18:57:53Z",
+      "fetch_id": "88942937-1bea-47a5-a917-28304786c12e",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_27406010.csv_2490192089902171958",
+          "original_csv_sha256": "4ba4fb06179bf28ee4d83bc8017522cf73ac7aa0b1b8a17961fe277f66a27b87",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 7776453,
+      "rows": 1644,
+      "unique_ids": 1644,
+      "csv_sha256": "9023abd2d91b8c0a9f6b7cef30388c7cb90ebb24272770939443a13d91b361d6",
+      "meta_sha256": "870e43a8e2476182130b41a74fa1a2dbdeda9b4832eb3f46053d9eabe9a258bb",
+      "fetched_at": "2026-10-18T18:58:07Z",
+      "fetch_id": "936a3cd4-380d-4ab5-9fdf-f0dd044cd9f1",
+      "platform": "mt5",
+      "provider_source_id": "bbbb",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_7776453.csv_11347934815822031899",
+          "original_csv_sha256": "aa132f77c9ed9245773e3859bfe0e2cdf3343cd2da0b7338cefe4ef3cb1c7848",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37371407,
+      "rows": 40060,
+      "unique_ids": 40060,
+      "csv_sha256": "ae6d109b3b9a99ddf031041937eefb9c540a123e7ce70cec50a776cca5ab3ce9",
+      "meta_sha256": "716c3b521686549413deda6e0a4f52392de4d4507d12f0070e5c2c95b557a9d3",
+      "fetched_at": "2026-10-18T19:03:20Z",
+      "fetch_id": "12a24084-9dd5-47ea-89d7-306a8ed9bc72",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37371407.csv_10426569590690375084",
+          "original_csv_sha256": "5b3a24fdbf07020dad301e095cc3fa4164b1e6479cd66a0d1a699c43d14e8efd",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 34150222,
+      "rows": 17882,
+      "unique_ids": 17882,
+      "csv_sha256": "e59234b6f9865ddc9d15392ff5a63c8e860e9b61807f0bdd25161e45490375e1",
+      "meta_sha256": "4c455b61490bdca8eaae0d09fe54c84959bd9b8dbd44be49ea0531bb9f8ad39c",
+      "fetched_at": "2026-10-18T19:03:47Z",
+      "fetch_id": "56b56df2-556b-49e4-bbc0-ea3842841cd8",
+      "platform": "mt4",
+      "provider_source_id": "aaar",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_34150222.csv_7119534231614409476",
+          "original_csv_sha256": "15911249b7ebf803df81cf71a0c8560fd5ad3b1b0e158acb71267c348fb3dfea",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37232470,
+      "rows": 13451,
+      "unique_ids": 13451,
+      "csv_sha256": "3c235246f5740b5890f2895063367425e413cc4049b97066e76d3f0ee678c8e8",
+      "meta_sha256": "4c721085664e4d2df4759a357eb06ea92e9c56f7de00474e5f68ccc4482e0090",
+      "fetched_at": "2026-10-18T19:05:22Z",
+      "fetch_id": "70f03a2d-caca-416b-a4f1-94fb3451d497",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37232470.csv_8224605459800039236",
+          "original_csv_sha256": "8ee073a25cc0ffdc225998244181558827e89d2192a0a04e4cb0cb65e2d7ca3f",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37155456,
+      "rows": 14267,
+      "unique_ids": 14267,
+      "csv_sha256": "5ae77cafafed44027b7a903f79d8ea79e6090a3d44351fb3e2bbcdad37279542",
+      "meta_sha256": "552a9ed86cafbaf718de83b94cdeda34d8a4299cbf27df297ce60bfad6491c2e",
+      "fetched_at": "2026-10-19T07:20:03Z",
+      "fetch_id": "52311cfb-4974-44ce-bc52-1385d66fd3db",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37155456.csv_17161802484644418288",
+          "original_csv_sha256": "e80aed3be36a0f254f1a8bb311cf24ba2bea62cbf1100c28dab7043056ce8f2d",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 77004108,
+      "rows": 4434,
+      "unique_ids": 4434,
+      "csv_sha256": "6b8f7269a9dc36f4094b16ed9e2365cf3adb1665681b921e0fab1a05ea697e89",
+      "meta_sha256": "686ff01b3308d62d34b1b0a12f8fcf2ae795149eb5796793b2ae28c07e20a84c",
+      "fetched_at": "2026-10-19T07:20:40Z",
+      "fetch_id": "5528fc30-2131-431f-b840-0090cbfab003",
+      "platform": "mt5",
+      "provider_source_id": "bbbb",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_77004108.csv_183760362864071859",
+          "original_csv_sha256": "9a4e5bcf746a19d0b38ee85277e99924275afce6c126e6b4a82e70f376243261",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37173630,
+      "rows": 48968,
+      "unique_ids": 48968,
+      "csv_sha256": "6814b65fff18aecdd93d1db873e0c67da1c7a3b6f1a6da54835deedca286781c",
+      "meta_sha256": "239d397b6cb7823167c6be185badce41abe33e3a190ed50b3b50daa3eae96cc3",
+      "fetched_at": "2026-10-19T07:28:40Z",
+      "fetch_id": "b8bdccad-32c9-4ca8-97a1-47709a18e866",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37173630.csv_4643166363608389759",
+          "original_csv_sha256": "1a608b69bd02d9beb44774befc9688c54d2dcc1b28a38927bf37066efbe6e634",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37009091,
+      "rows": 6898,
+      "unique_ids": 6898,
+      "csv_sha256": "5d809503505dd3e03cdd72ef7f1dee9b132686dfa9e67375886b04266744d709",
+      "meta_sha256": "3b8fbe5c64f34d63872ea5f1ac85d10a4de0193f9ed8815e80a750b3fdcda3a5",
+      "fetched_at": "2026-10-19T07:29:37Z",
+      "fetch_id": "62b703b8-4534-485a-8008-b5fd394a566d",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37009091.csv_1122216499815240954",
+          "original_csv_sha256": "727f2436647b8837bc3b29d3254910001ba8aea6d39fc4cf487aaff3fa27dd23",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 7752268,
+      "rows": 5375,
+      "unique_ids": 5375,
+      "csv_sha256": "dfb4ffc8eb098ccde55642fd47e677bbf73e83d7ca0ef855bd34fb74acce53c9",
+      "meta_sha256": "f596d7db34e09fff2f940a2af5075911072925dcf4b3901f76ede0c163e79250",
+      "fetched_at": "2026-10-19T07:30:24Z",
+      "fetch_id": "bff01076-b90a-4826-bebb-bfab38be5eb3",
+      "platform": "mt5",
+      "provider_source_id": "bbbb",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_7752268.csv_16954824097054842328",
+          "original_csv_sha256": "0703081e0b570eb7fb6b8ed2c4a431ab8f42c8c5ac6bcae72856917fd9050454",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37346461,
+      "rows": 25241,
+      "unique_ids": 25241,
+      "csv_sha256": "db5a5fa2520afa64d6b539db3b0700e328915a87b64796d34bd5769e426328dd",
+      "meta_sha256": "e81c175447421d14da851bcfab47a9f8329bbe1f717e3dbb2f08f468f689606d",
+      "fetched_at": "2026-10-19T07:34:08Z",
+      "fetch_id": "1bb0d4c3-425e-4bb4-ba7b-30d4cd9b2db5",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37346461.csv_5110212188646036707",
+          "original_csv_sha256": "8344d7b2f3c83abca4d8aeecb57cc852d79e9126056f5eb738286ef14ba1ae63",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37275457,
+      "rows": 30784,
+      "unique_ids": 30784,
+      "csv_sha256": "635c817755065ed75ddbe25b3c64c82d425ef915b30c971680a1146eb9d66bd8",
+      "meta_sha256": "b3b2400eb4574e487f0b07b6e2f5423b4990d26114f009461576fb64ea6c744c",
+      "fetched_at": "2026-10-19T07:38:49Z",
+      "fetch_id": "c5740141-2f47-4b7f-9a7a-ea5296f4b54c",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37275457.csv_17035086021428108431",
+          "original_csv_sha256": "f8dc248862a2350863778304bc41f3a72db3d2ec6bcb2b55c2a0971591bf2a96",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37107389,
+      "rows": 66228,
+      "unique_ids": 66228,
+      "csv_sha256": "2e39d4f2a433802f013ecb7b55b8ab0da17a49787ba09d3a1cdec4c9640321c0",
+      "meta_sha256": "a9bbf4371e221ed14579c6cdd8b3b74b659f9534e3ffbb55ae8972fbf91afb5f",
+      "fetched_at": "2026-10-19T07:50:12Z",
+      "fetch_id": "5ac887fd-9dee-490b-aec4-cfb940090ef5",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37107389.csv_15332861430567225583",
+          "original_csv_sha256": "65ab8897ddb8c95c35d50e30d85752616726612d6647f0becb45c2502de295fd",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 37353857,
+      "rows": 967,
+      "unique_ids": 967,
+      "csv_sha256": "30834080d48655edc0b23161fcf8feb0d2256cf1dd53d3d7c6edb148f4a88e4b",
+      "meta_sha256": "8ab1f5fd75b3bf71a919df3ab9325623a44167451e9a913385c33df9b44124af",
+      "fetched_at": "2026-10-19T07:50:22Z",
+      "fetch_id": "517fbe4a-1498-44aa-a4d6-d8cceac97d9c",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_37353857.csv_12031746192072414140",
+          "original_csv_sha256": "f912c61b7944d853071ff97ecc3dc42896487e7451e24ef7f7055a9872cc2aa8",
+          "original_meta_preserved": true
+        }
+      ]
+    },
+    {
+      "signal_id": 27215488,
+      "rows": 17436,
+      "unique_ids": 17436,
+      "csv_sha256": "58a8415e3be08f288c35ee74e0788202bed1b81c4b850d53784568d899fff7b4",
+      "meta_sha256": "3f66dbcf978ad08496261ea858adf56c4a3f0f05e34f3b5208edc10327962f8b",
+      "fetched_at": "2026-10-19T07:52:55Z",
+      "fetch_id": "0dbfeed7-05a4-4a7a-aea5-84e43db34681",
+      "platform": "mt5",
+      "provider_source_id": "bbba",
+      "pagination_complete": true,
+      "renewed_from_unverified": true,
+      "legacy_included": false,
+      "quarantine": [
+        {
+          "directory": "deals_27215488.csv_15390768306449259251",
+          "original_csv_sha256": "27cbf02be8cd3f3fe4b3cd98b92c49348d49380b5420a3c86959debc8ce13c77",
+          "original_meta_preserved": true
+        }
+      ]
+    }
+  ],
+  "failures": [],
+  "accepted": true,
+  "initial_status": {
+    "jobId": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+    "state": "done",
+    "phase": "deals",
+    "done": 200,
+    "total": 200,
+    "message": "Deals: 4 neu, 176 aktualisiert, 20 Fehler",
+    "startedAt": "2026-10-18T18:42:00",
+    "finishedAt": "2026-10-18T20:34:17",
+    "ergebnis": {
+      "signaleGeliefert": 200,
+      "tradelistenNeu": 4,
+      "tradelistenAktualisiert": 176,
+      "tradelistenFehler": 20,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": false,
+      "datenstand": "2026-10-18T20:34:17",
+      "hinweise": [
+        "20 Deal-Downloads fehlgeschlagen (Details: data/robomonitor.log)"
+      ],
+      "tradelistenOhneAbonnenten": 0
+    },
+    "error": null
+  },
+  "checked_utc": "2026-10-19T07:59:11.202561+00:00",
+  "repair_ids": [
+    72166283,
+    37293345,
+    27406010,
+    7776453,
+    37371407,
+    34150222,
+    37232470,
+    37155456,
+    77004108,
+    37173630,
+    37009091,
+    7752268,
+    37346461,
+    37275457,
+    37107389,
+    37353857,
+    27215488
+  ],
+  "unsupported": [
+    {
+      "signal_id": 93128696,
+      "name": "TradingGoldTrade",
+      "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+      "observed_local_time": "2026-10-18 19:28:28"
+    },
+    {
+      "signal_id": 93019895,
+      "name": "TrendInvestSignal",
+      "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+      "observed_local_time": "2026-10-18 19:31:56"
+    },
+    {
+      "signal_id": 93156209,
+      "name": "SP500ETF",
+      "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+      "observed_local_time": "2026-10-18 19:51:48"
+    }
+  ],
+  "total": 17,
+  "done": 17,
+  "repair_started_utc": "2026-10-18T18:45:26.049211+00:00",
+  "current_provider": null,
+  "current_cli_pid": null,
+  "coordinator_pid": 1764128,
+  "coordinator_ended": true,
+  "automatic_gui_restart_disabled": true,
+  "automatic_next_provider_disabled": false,
+  "resume_only_after_explicit_user_instruction": false,
+  "current_native_writer_allowed_to_finish": true,
+  "pause_receipt": "sources_robo_user_pause_receipt.json",
+  "resumed_utc": "2026-10-19T07:17:56.682057+00:00",
+  "resumed_coordinator_pid": 23900,
+  "new_pid": 114668,
+  "health": {
+    "status": "ok",
+    "service": "RoboMonitor",
+    "instance": "Ryzen7950X",
+    "apiVersion": "v1",
+    "uptimeSeconds": 37,
+    "serverTime": "2026-10-19T09:54:24.0577953",
+    "providers": 200,
+    "tokenRequired": false
+  },
+  "accepted_scope": "native_history_repair_and_fail_closed_api_gui_only",
+  "financial_export_accepted": false,
+  "original_archive_pairs_match_offline_backup": 17,
+  "accepted_receipt": "sources_robo_activation_final_20261019.json"
+}

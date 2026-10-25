@@ -1,0 +1,54 @@
+{
+  "checked_utc": "2026-10-18T18:42:09.049419+00:00",
+  "repository": "roboforex",
+  "isolated_stage": true,
+  "active_target_artifacts_untouched": true,
+  "tests": {
+    "tests": 195,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "jar_sha256": "47fa66fc692b3d92f49ffeb1c194ffd31f1607e52ac9589ab075c7b44ad6a0e1",
+  "classes": 109,
+  "activation": "pending_old_idle_exit_backup_and_targeted_renewal",
+  "contract": "MT4/MT5 native history retained; account currency and volume units unverified; scanner CSV404; no ClosingDD; RatingUSD separate; GUI/LLM/native export labels corrected",
+  "files": [
+    {
+      "path": "src/main/java/de/robomonitor/deals/TradeUnits.java",
+      "sha256": "f5670532ebc277a947beda12b05cb70385dedd6446a8d2c1089faeea27c549f5"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/rest/RestApiServer.java",
+      "sha256": "7b929bc56412c37389f083de77e4aac2856a97227cf5e32449d6440ff220933a"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/RoboMonitorApp.java",
+      "sha256": "281de3333349a3e1b97f9f7671b09ddbf313a1096ffab4a72b5bfb3e8f41a65c"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/store/TradeDdStore.java",
+      "sha256": "c3d104a0e3e2995d83214d094640dd087213e7965163d0accf10addba9615676"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/report/SignalPayloadBuilder.java",
+      "sha256": "a46b645429af090ffbeee5b4e52bc038fa0c39e438a541a631b4dc30215f4ba7"
+    },
+    {
+      "path": "src/main/java/de/robomonitor/report/TradeCurveData.java",
+      "sha256": "132dd06ff228453dd7a7aec19e3138eb28263d77d672017913d16f501f41996b"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/RestApiServerTest.java",
+      "sha256": "eb58e15093b7ee3deecc3095b30030de735e88b4d7a31a8be1f78b1651340b5b"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/TradeDdProvenanceTest.java",
+      "sha256": "1cb369cfe56a6f9947ae73671b5b8bb4a668a5c6ee093adfb9e680b65feee54c"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/DealStoreTest.java",
+      "sha256": "1c3d25e4e216fbc7de8a57a623631d7ee6f29ae4aca588a8b904ac76af9105fe"
+    }
+  ]
+}

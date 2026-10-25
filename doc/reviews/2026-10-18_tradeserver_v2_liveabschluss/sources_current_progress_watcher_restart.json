@@ -1,0 +1,8 @@
+{
+  "utc": "2026-10-18T18:02:37.2312723Z",
+  "python": "bundled3.12",
+  "pid": 1634900,
+  "hidden": true,
+  "read_only": true,
+  "reason": "Previous Windows Store Python observers ended unexpectedly; source Java jobs were not restarted"
+}

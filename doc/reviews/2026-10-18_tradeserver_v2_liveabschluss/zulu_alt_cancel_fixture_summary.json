@@ -1,0 +1,411 @@
+{
+  "recorded_utc": "2026-10-18T17:43:45.158911+00:00",
+  "production_process_modified": false,
+  "agent_jar": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\.tmp\\zulu_alt_cancel_test\\20261018T174320Z\\guard.jar",
+  "agent_sha256": "aeacbaffdf1da229f1a4e92adb116c9d651b5549dc2209a52d8ac4a64d842594",
+  "old_source_ref": "cfcf68834be360b527bb263a5acfe702774123c4",
+  "expectedStoreShape": "45b3957be43f291e8a945f707de1c370e5c41df833146e726f23df8a7ec67298",
+  "expectedJobShape": "cfd4d3a68d01d1668dd7df68a1dc399670c71828384f98709e06f228a32ac4b3",
+  "results": [
+    {
+      "mode": "pending_http",
+      "exit_code": 0,
+      "events": [
+        {
+          "utc": "2026-10-18T17:43:39.484936Z",
+          "phase": "EXISTING_LOCK_NAMESPACE_VERIFIED",
+          "detail": "matchingProviderKeys=7"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.496898600Z",
+          "phase": "PREFLIGHT",
+          "detail": "providers=7; thread=42"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.557651600Z",
+          "phase": "LOADED_CLASS_SHAPE",
+          "detail": "de/zulumonitor/store/DataStore; normalizedSha256=45b3957be43f291e8a945f707de1c370e5c41df833146e726f23df8a7ec67298"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.565160700Z",
+          "phase": "CLASS_GUARDED",
+          "detail": "de/zulumonitor/store/DataStore; methods=3; originalSha256=bbc25c0062e262d775c4459b241413d9e932c75b8a9767e42c338c2bdd83b75d"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.568160400Z",
+          "phase": "LOADED_CLASS_SHAPE",
+          "detail": "de/zulumonitor/update/UpdateJob; normalizedSha256=cfd4d3a68d01d1668dd7df68a1dc399670c71828384f98709e06f228a32ac4b3"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.569160600Z",
+          "phase": "CLASS_GUARDED",
+          "detail": "de/zulumonitor/update/UpdateJob; methods=1; originalSha256=73f378948fb596baad2056e548919f1f83cba51c85790609bc0823e266515983"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.575673400Z",
+          "phase": "GUARD_INSTALLED",
+          "detail": "archiveFiles=14; allProviderLocksHeld=true; activePublicationFrame=false"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.575673400Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "1"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.626715600Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "2"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.677764100Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "3"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.729820800Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "4"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.780363200Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "5"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.781364200Z",
+          "phase": "SUCCESS_SUPPRESSED",
+          "detail": "fixture-pending_http"
+        },
+        {
+          "utc": "2026-10-18T17:43:39.787878300Z",
+          "phase": "WORKER_ENDED_ARCHIVES_IDENTICAL",
+          "detail": "interrupts=5; blockedProviders=0; state=error; aborted=true; dataTimestamp=null"
+        }
+      ],
+      "old_worker_ended": true,
+      "archive_bytes_unchanged_after_guard": true,
+      "guard_rejected_before_any_interrupt": false,
+      "job": {
+        "jobId": "fixture-pending_http",
+        "state": "error",
+        "phase": "tradelisten",
+        "done": 5,
+        "total": 7,
+        "message": "Tradelisten: 0 neu, 0 aktualisiert, 5 Fehler",
+        "startedAt": "2026-10-18T19:43:38",
+        "finishedAt": "2026-10-18T19:43:39",
+        "ergebnis": {
+          "signaleGeliefert": 7,
+          "tradelistenNeu": 0,
+          "tradelistenAktualisiert": 0,
+          "tradelistenFehler": 5,
+          "tradelistenAbgebrochen": true,
+          "katalogUebersprungen": false,
+          "datenstand": null,
+          "hinweise": [
+            "Tradelisten nach 5 Fehlern in Folge abgebrochen (ZuluTrade-API gest\u00c3\u00b6rt?)",
+            "5 Tradelisten-Downloads fehlgeschlagen (Details: data/zulumonitor.log)",
+            "Altjob manuell kooperativ abgebrochen; kein erfolgreicher Gesamtdatenstand"
+          ]
+        },
+        "error": "Altjob manuell kooperativ abgebrochen; kein erfolgreicher Gesamtdatenstand"
+      }
+    },
+    {
+      "mode": "return_race",
+      "exit_code": 0,
+      "events": [
+        {
+          "utc": "2026-10-18T17:43:41.229017900Z",
+          "phase": "EXISTING_LOCK_NAMESPACE_VERIFIED",
+          "detail": "matchingProviderKeys=7"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.240483200Z",
+          "phase": "PREFLIGHT",
+          "detail": "providers=7; thread=42"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.288983800Z",
+          "phase": "LOCKS_HELD_FIXTURE_RACE",
+          "detail": "all provider locks held; HTTP may return before retransform"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.503414700Z",
+          "phase": "LOADED_CLASS_SHAPE",
+          "detail": "de/zulumonitor/store/DataStore; normalizedSha256=45b3957be43f291e8a945f707de1c370e5c41df833146e726f23df8a7ec67298"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.511419900Z",
+          "phase": "CLASS_GUARDED",
+          "detail": "de/zulumonitor/store/DataStore; methods=3; originalSha256=1c7aeac5029d9fe3c9ff49141a054783449e211585e243f76445b398bc3a2722"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.514926600Z",
+          "phase": "LOADED_CLASS_SHAPE",
+          "detail": "de/zulumonitor/update/UpdateJob; normalizedSha256=cfd4d3a68d01d1668dd7df68a1dc399670c71828384f98709e06f228a32ac4b3"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.514926600Z",
+          "phase": "CLASS_GUARDED",
+          "detail": "de/zulumonitor/update/UpdateJob; methods=1; originalSha256=a953b2878b1c19a86d41c8c1069d17142582a47751beb8b54683c5d52ad54218"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.521927200Z",
+          "phase": "GUARD_INSTALLED",
+          "detail": "archiveFiles=14; allProviderLocksHeld=true; activePublicationFrame=false"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.524435300Z",
+          "phase": "PUBLICATION_BLOCKED",
+          "detail": "1"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.536471600Z",
+          "phase": "PUBLICATION_BLOCKED",
+          "detail": "2"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.545979400Z",
+          "phase": "PUBLICATION_BLOCKED",
+          "detail": "3"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.555486100Z",
+          "phase": "PUBLICATION_BLOCKED",
+          "detail": "4"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.564994300Z",
+          "phase": "PUBLICATION_BLOCKED",
+          "detail": "5"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.565994400Z",
+          "phase": "SUCCESS_SUPPRESSED",
+          "detail": "fixture-return_race"
+        },
+        {
+          "utc": "2026-10-18T17:43:41.828101300Z",
+          "phase": "WORKER_ENDED_ARCHIVES_IDENTICAL",
+          "detail": "interrupts=0; blockedProviders=5; state=error; aborted=true; dataTimestamp=null"
+        }
+      ],
+      "old_worker_ended": true,
+      "archive_bytes_unchanged_after_guard": true,
+      "guard_rejected_before_any_interrupt": false,
+      "job": {
+        "jobId": "fixture-return_race",
+        "state": "error",
+        "phase": "tradelisten",
+        "done": 5,
+        "total": 7,
+        "message": "Tradelisten: 0 neu, 0 aktualisiert, 5 Fehler",
+        "startedAt": "2026-10-18T19:43:40",
+        "finishedAt": "2026-10-18T19:43:41",
+        "ergebnis": {
+          "signaleGeliefert": 7,
+          "tradelistenNeu": 0,
+          "tradelistenAktualisiert": 0,
+          "tradelistenFehler": 5,
+          "tradelistenAbgebrochen": true,
+          "katalogUebersprungen": false,
+          "datenstand": null,
+          "hinweise": [
+            "Tradelisten nach 5 Fehlern in Folge abgebrochen (ZuluTrade-API gest\u00c3\u00b6rt?)",
+            "5 Tradelisten-Downloads fehlgeschlagen (Details: data/zulumonitor.log)",
+            "Altjob manuell kooperativ abgebrochen; kein erfolgreicher Gesamtdatenstand"
+          ]
+        },
+        "error": "Altjob manuell kooperativ abgebrochen; kein erfolgreicher Gesamtdatenstand"
+      }
+    },
+    {
+      "mode": "prior_writer",
+      "exit_code": 0,
+      "events": [
+        {
+          "utc": "2026-10-18T17:43:43.384394800Z",
+          "phase": "EXISTING_LOCK_NAMESPACE_VERIFIED",
+          "detail": "matchingProviderKeys=7"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.396589400Z",
+          "phase": "PREFLIGHT",
+          "detail": "providers=7; thread=42"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.473167300Z",
+          "phase": "LOADED_CLASS_SHAPE",
+          "detail": "de/zulumonitor/store/DataStore; normalizedSha256=45b3957be43f291e8a945f707de1c370e5c41df833146e726f23df8a7ec67298"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.481674800Z",
+          "phase": "CLASS_GUARDED",
+          "detail": "de/zulumonitor/store/DataStore; methods=3; originalSha256=1972b9f4cd88cb6b0c90be47d107a3c93e98b7e48d26a0b4526b32027cdc61fa"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.484188200Z",
+          "phase": "LOADED_CLASS_SHAPE",
+          "detail": "de/zulumonitor/update/UpdateJob; normalizedSha256=cfd4d3a68d01d1668dd7df68a1dc399670c71828384f98709e06f228a32ac4b3"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.485186900Z",
+          "phase": "CLASS_GUARDED",
+          "detail": "de/zulumonitor/update/UpdateJob; methods=1; originalSha256=c73ef5857826e84c6c9dcab3366ef9145e1fd9643fb216dc5b9dc4c2420cd44f"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.491186Z",
+          "phase": "GUARD_INSTALLED",
+          "detail": "archiveFiles=14; allProviderLocksHeld=true; activePublicationFrame=false"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.492188Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "1"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.543288900Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "2"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.594837Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "3"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.645875400Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "4"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.697116600Z",
+          "phase": "HTTP_INTERRUPT",
+          "detail": "5"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.699116600Z",
+          "phase": "SUCCESS_SUPPRESSED",
+          "detail": "fixture-prior_writer"
+        },
+        {
+          "utc": "2026-10-18T17:43:43.706627200Z",
+          "phase": "WORKER_ENDED_ARCHIVES_IDENTICAL",
+          "detail": "interrupts=5; blockedProviders=0; state=error; aborted=true; dataTimestamp=null"
+        }
+      ],
+      "old_worker_ended": true,
+      "archive_bytes_unchanged_after_guard": true,
+      "guard_rejected_before_any_interrupt": false,
+      "job": {
+        "jobId": "fixture-prior_writer",
+        "state": "error",
+        "phase": "tradelisten",
+        "done": 5,
+        "total": 7,
+        "message": "Tradelisten: 0 neu, 0 aktualisiert, 5 Fehler",
+        "startedAt": "2026-10-18T19:43:42",
+        "finishedAt": "2026-10-18T19:43:43",
+        "ergebnis": {
+          "signaleGeliefert": 7,
+          "tradelistenNeu": 0,
+          "tradelistenAktualisiert": 0,
+          "tradelistenFehler": 5,
+          "tradelistenAbgebrochen": true,
+          "katalogUebersprungen": false,
+          "datenstand": null,
+          "hinweise": [
+            "Tradelisten nach 5 Fehlern in Folge abgebrochen (ZuluTrade-API gest\u00c3\u00b6rt?)",
+            "5 Tradelisten-Downloads fehlgeschlagen (Details: data/zulumonitor.log)",
+            "Altjob manuell kooperativ abgebrochen; kein erfolgreicher Gesamtdatenstand"
+          ]
+        },
+        "error": "Altjob manuell kooperativ abgebrochen; kein erfolgreicher Gesamtdatenstand"
+      }
+    },
+    {
+      "mode": "shape_mismatch",
+      "exit_code": 0,
+      "events": [
+        {
+          "utc": "2026-10-18T17:43:44.979333100Z",
+          "phase": "EXISTING_LOCK_NAMESPACE_VERIFIED",
+          "detail": "matchingProviderKeys=7"
+        },
+        {
+          "utc": "2026-10-18T17:43:44.991573100Z",
+          "phase": "PREFLIGHT",
+          "detail": "providers=7; thread=42"
+        },
+        {
+          "utc": "2026-10-18T17:43:45.060746600Z",
+          "phase": "LOADED_CLASS_SHAPE",
+          "detail": "de/zulumonitor/store/DataStore; normalizedSha256=45b3957be43f291e8a945f707de1c370e5c41df833146e726f23df8a7ec67298"
+        },
+        {
+          "utc": "2026-10-18T17:43:45.060746600Z",
+          "phase": "TRANSFORM_FAILED",
+          "detail": "java.lang.IllegalStateException: Loaded class differs from tested old code: de/zulumonitor/store/DataStore"
+        },
+        {
+          "utc": "2026-10-18T17:43:45.064257200Z",
+          "phase": "LOADED_CLASS_SHAPE",
+          "detail": "de/zulumonitor/update/UpdateJob; normalizedSha256=cfd4d3a68d01d1668dd7df68a1dc399670c71828384f98709e06f228a32ac4b3"
+        },
+        {
+          "utc": "2026-10-18T17:43:45.071262100Z",
+          "phase": "CLASS_GUARDED",
+          "detail": "de/zulumonitor/update/UpdateJob; methods=1; originalSha256=13d56ef13518a35dbdf96411571cba93c0e24c8e6291e8cf6cd173de65b952fd"
+        },
+        {
+          "utc": "2026-10-18T17:43:45.077772900Z",
+          "phase": "FAILED",
+          "detail": "java.lang.IllegalStateException: Both guards were not generated"
+        }
+      ],
+      "old_worker_ended": true,
+      "archive_bytes_unchanged_after_guard": false,
+      "guard_rejected_before_any_interrupt": true,
+      "job": {
+        "jobId": "fixture-shape_mismatch",
+        "state": "done",
+        "phase": "tradelisten",
+        "done": 7,
+        "total": 7,
+        "message": "Tradelisten: 0 neu, 7 aktualisiert, 0 Fehler",
+        "startedAt": "2026-10-18T19:43:44",
+        "finishedAt": "2026-10-18T19:43:45",
+        "ergebnis": {
+          "signaleGeliefert": 7,
+          "tradelistenNeu": 0,
+          "tradelistenAktualisiert": 7,
+          "tradelistenFehler": 0,
+          "tradelistenAbgebrochen": false,
+          "katalogUebersprungen": false,
+          "datenstand": "2026-10-18T19:43:45",
+          "hinweise": []
+        },
+        "error": null
+      }
+    }
+  ],
+  "sources": [
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_alt_cancel/AltFixture.java",
+      "sha256": "79749943a6bb264727f45e50f2d473c4f6f0ebfc79f3ae6a12cbef9f49bf240f"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_alt_cancel/Attach.java",
+      "sha256": "17f9f5b22653df0ed0a1622428104febc7ba1ba35550168678848ac74f43a8bd"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_alt_cancel/ClassShape.java",
+      "sha256": "b73d3970ab4725bc04403dc63e1e2bfc70d7020e0fa98a7fa1a6c481c76e3832"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_alt_cancel/GuardAgent.java",
+      "sha256": "8e9d7a1258a39dea038912ba8430027880f0b006f9a25dca4aeda03a875b3fc0"
+    }
+  ]
+}

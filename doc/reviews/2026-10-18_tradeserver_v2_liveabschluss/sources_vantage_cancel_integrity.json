@@ -1,0 +1,70 @@
+{
+  "utc": "2026-10-18T17:17:18.431385+00:00",
+  "writer_ended": true,
+  "normal_process_exit": true,
+  "normal_exit_method": "Guarded JavaFX Platform.exit invokes Application.stop; hidden window has no CloseMainWindow handle.",
+  "fixture_busy_exit_rejected": true,
+  "fixture_idle_platform_exit_invoked": true,
+  "exit_agent_sha256": "891b8ae66eea96db6160612985d4a0c0f32fb7ec054e2c22de6572fc9f0acd1a",
+  "exit_agent_source_sha256": "0239d3f7d667e0b8f0e820d448c4a04a1a0dc3301803e70eb9143a3d04157d77",
+  "checked_csv_meta_ledger_files": 3603,
+  "hashes_unchanged_after_writer_end_and_application_stop": true,
+  "fresh_generations": [
+    {
+      "signal_id": 1176428,
+      "time_basis": "UTC",
+      "version": "2",
+      "sha_ok": true,
+      "count_ok": true,
+      "stored": 2000,
+      "total": 4322
+    },
+    {
+      "signal_id": 1202431,
+      "time_basis": "UTC",
+      "version": "2",
+      "sha_ok": true,
+      "count_ok": true,
+      "stored": 2000,
+      "total": 6787
+    },
+    {
+      "signal_id": 1321059,
+      "time_basis": "UTC",
+      "version": "2",
+      "sha_ok": true,
+      "count_ok": true,
+      "stored": 2000,
+      "total": 3351
+    },
+    {
+      "signal_id": 1332546,
+      "time_basis": "UTC",
+      "version": "2",
+      "sha_ok": true,
+      "count_ok": true,
+      "stored": 348,
+      "total": 354
+    },
+    {
+      "signal_id": 1341293,
+      "time_basis": "UTC",
+      "version": "2",
+      "sha_ok": true,
+      "count_ok": true,
+      "stored": 301,
+      "total": 301
+    },
+    {
+      "signal_id": 1445283,
+      "time_basis": "UTC",
+      "version": "2",
+      "sha_ok": true,
+      "count_ok": true,
+      "stored": 2000,
+      "total": 7588
+    }
+  ],
+  "private_post_cancel_backup": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\.tmp\\source_runtime_backup\\20261018T171716Z\\vantage_data",
+  "backup_file_count": 3726
+}

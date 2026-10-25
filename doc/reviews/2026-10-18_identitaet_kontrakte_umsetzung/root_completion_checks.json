@@ -1,0 +1,16 @@
+{
+  "utc": "2026-10-18T16:31:18.610742+00:00",
+  "diff_check_exit": 0,
+  "production_files_unchanged": 112,
+  "server_log_tracebacks": [],
+  "daemon_prior_pid": 29228,
+  "daemon_stop": "cooperative request, confirmed exit",
+  "web_prior_pid": 41100,
+  "web_stop": "verified project cwd and free workflow lock; confirmed exit",
+  "web_new_pid": 1337240,
+  "web_port": 8504,
+  "agenten_enabled": false,
+  "committed": false,
+  "external_updates_started": false,
+  "live_model_calls": false
+}

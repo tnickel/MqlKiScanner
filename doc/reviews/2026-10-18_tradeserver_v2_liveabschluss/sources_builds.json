@@ -1,0 +1,77 @@
+{
+  "utc": "2026-10-18T17:38:43.361810+00:00",
+  "builds": [
+    {
+      "repository": "vantage",
+      "tests": {
+        "tests": 94,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "jars": [
+        {
+          "file": "vantagemonitor-1.2.0.jar",
+          "sha256": "481dab17499d8b930a10e6f60b591fef09a7956c4212690f270b66984f9b4bac",
+          "bytes": 300458
+        }
+      ],
+      "classes_count": 101,
+      "classes_aggregate_sha256": "e15782e152d7fb79d289476ec0fa4982c5179cb801b31a3823db426bb8314786",
+      "activation_note": "94 Maven tests and23 Python tests passed; full repair uses tested classes while GUI remains stopped. Old UTC caches without history-record identity are quarantined, never recertified."
+    },
+    {
+      "repository": "MqlDownloader",
+      "tests": {
+        "tests": 151,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "jars": [
+        {
+          "file": "MqlDownloader-0.0.34-SNAPSHOT-jar-with-dependencies.jar",
+          "sha256": "f2594c11eddecb483ac41e76b6106ce8d274953e17e8b50f9d13eeaac29084a0",
+          "bytes": 57781231
+        },
+        {
+          "file": "MqlDownloader-0.0.34-SNAPSHOT.jar",
+          "sha256": "ee73975bff9b3131d06a45593055dd3c62ede97a7905669aba320e821a8a9111",
+          "bytes": 264212
+        },
+        {
+          "file": "MqlDownloader-0.0.35-SNAPSHOT-jar-with-dependencies.jar",
+          "sha256": "7ac31a566650836e8a7d785dddd896180a4b6cf5c5a9c9b8b3d288fb20eed5c8",
+          "bytes": 51260747
+        },
+        {
+          "file": "MqlDownloader-0.0.35-SNAPSHOT.jar",
+          "sha256": "76f328868aeecec18d1c53c05a5b6a50b67c27f3bda98c4b37b5533203bba00e",
+          "bytes": 296431
+        }
+      ],
+      "classes_count": 100,
+      "classes_aggregate_sha256": "34a7fdfd0e374edb8123c21998115649c384a1301a1fd92b9bac71dd705cb384",
+      "activation_note": "151 Maven tests passed; active PID1432312; all234 local metadata profiles converted with0errors; regular retry remains running."
+    },
+    {
+      "repository": "roboforex",
+      "tests": {
+        "tests": 191,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "jars": [
+        {
+          "file": "robomonitor-1.2.0.jar",
+          "sha256": "aadd36348fa274c982d51251db1daeea2e19dfcaacffc3a372962cfde21857b7",
+          "bytes": 317433
+        }
+      ],
+      "classes_count": 107,
+      "classes_aggregate_sha256": "1e862123910c3d7d2725073602f7a30865a8b8a1df795e857b0094c7497769a5",
+      "activation_note": "191 Maven tests passed; old initial job PID1351408 still writing; renewal build activation waits for writer end."
+    }
+  ]
+}

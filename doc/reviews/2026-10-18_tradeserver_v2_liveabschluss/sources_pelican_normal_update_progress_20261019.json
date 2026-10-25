@@ -1,0 +1,27 @@
+{
+  "checked_utc": "2026-10-19T07:27:54.227626+00:00",
+  "job_id": "u-4445cd80-d661-4698-9450-7d24ae92c118",
+  "status": {
+    "jobId": "u-4445cd80-d661-4698-9450-7d24ae92c118",
+    "state": "done",
+    "phase": "tradelisten",
+    "done": 200,
+    "total": 200,
+    "message": "Tradelisten: 0 neu, 199 aktualisiert, 1 frisch, 0 Fehler",
+    "startedAt": "2026-10-19T09:22:23",
+    "finishedAt": "2026-10-19T09:27:44",
+    "ergebnis": {
+      "signaleGeliefert": null,
+      "tradelistenNeu": 0,
+      "tradelistenAktualisiert": 199,
+      "tradelistenFehler": 0,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": true,
+      "datenstand": "2026-10-19T09:27:44",
+      "hinweise": [],
+      "tradelistenDeckelUebersprungen": 441,
+      "tradelistenOhneAbonnentenUebersprungen": 1549
+    },
+    "error": null
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "MqlDownloader": {
+    "head": "afe507e 2026-10-17T15:32:50+02:00",
+    "status": [
+      " M README.md",
+      " M doc/REST_API_Dokumentation.md",
+      " M src/downloader/SignalDownloader.java",
+      " M src/gui/DownloadManager.java",
+      " M src/gui/MqlDownloaderGui.java",
+      " M src/rest/ProviderFiles.java",
+      " M src/rest/RestApiServer.java",
+      " M tests/rest/RestApiServerTest.java",
+      "?? src/gui/ClientUpdateRunner.java",
+      "?? src/rest/ProviderAge.java",
+      "?? tests/downloader/SignalUpdateModeTest.java",
+      "?? tests/gui/ClientUpdateRunnerTest.java",
+      "?? tests/rest/ProviderAgeTest.java"
+    ]
+  },
+  "PelicanTrading": {
+    "head": "ff883d6 2026-10-16T20:19:52+02:00",
+    "status": []
+  },
+  "roboforex": {
+    "head": "7314666 2026-10-16T21:09:35+02:00",
+    "status": []
+  },
+  "vantage": {
+    "head": "81511b4 2026-10-16T21:09:39+02:00",
+    "status": [
+      " M README.md",
+      " M src/main/java/de/vantagemonitor/VantageMonitorApp.java",
+      " M src/main/java/de/vantagemonitor/store/TradeListStore.java",
+      " M src/main/java/de/vantagemonitor/store/TradeStore.java",
+      " M src/main/java/de/vantagemonitor/update/UpdateJobRunner.java",
+      " M src/test/java/de/vantagemonitor/RestApiServerTest.java",
+      " M src/test/java/de/vantagemonitor/store/TradeIntegrityTest.java",
+      "?? src/main/java/de/vantagemonitor/store/HistoryFiles.java",
+      "?? src/test/java/de/vantagemonitor/LegacyHistoryRenewalTest.java"
+    ]
+  },
+  "zulumonitor": {
+    "head": "cfcf688 2026-10-16T21:09:40+02:00",
+    "status": []
+  }
+}

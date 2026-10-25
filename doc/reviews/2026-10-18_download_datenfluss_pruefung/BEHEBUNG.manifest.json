@@ -1,0 +1,222 @@
+{
+  "generated_utc": "2026-10-18T10:59:00.189853+00:00",
+  "purpose": "Implementation follow-up; original audit remains unchanged",
+  "original_audit_manifest_sha256": "2d3254e0056ce48d196a8402a5d11584b37a10a2ddfd1af54bbbb74bb340a0bf",
+  "original_review_sha256": "765c806465e83f8452fa7d0cd70dea534f2ff79491f1ba0966c64f080c101069",
+  "original_evidence_checked": 50,
+  "original_evidence_hash_mismatches": [],
+  "handoff_sha256": "16a6f48cfc99ce0bf97330b124ad3fd67ca09f3023f2c5aef6c4394e5f8126d3",
+  "implementation_report_sha256": "eb08fc6e6675a4eec1aa5ac3abca12c25cd6d2e8898c4947e092e2e9f458a465",
+  "broken_report_links": [],
+  "test_runs_overlap_do_not_sum": true,
+  "superseded_test_run_note": "Initial runs preserved: fix_scanner_initial_pytest.xml used one nonexistent ScanResult field; fix_tabellen_pytest_initial.xml had one incorrect expectation for a non-stale provisional raw DD. Test assumptions corrected without changing product behavior; final regression runs passed.",
+  "scanner_full_suite_note": "Full suite before additional table/Stufe-0 fixes; final consumer regressions cover subsequent changes.",
+  "xml_test_runs": {
+    "nachweise/fix_persistenz_consumers.xml": {
+      "cases": 174,
+      "passed": 174,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "3443ff8c5b91e81d3ca820ccc23441af82e11cfbe12da244c797242300ca3dda"
+    },
+    "nachweise/fix_persistenz_final.xml": {
+      "cases": 72,
+      "passed": 72,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "4df9e9ae8c303659b97b54d584dcec631c0e95eaf3dc5e0a327ba1df18173046"
+    },
+    "nachweise/fix_persistenz_pytest.xml": {
+      "cases": 58,
+      "passed": 58,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "a086cb5429e664b36e635151a6ba8f57789c74bf7d9e6ad64f4c6a36256b80d1"
+    },
+    "nachweise/fix_scanner_final_consumers.xml": {
+      "cases": 317,
+      "passed": 317,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "d9dfb9f560ab9077b1c88225243e0490fbd46b70cbda7d9ed8a51c46eed4fe47"
+    },
+    "nachweise/fix_scanner_final_regressions.xml": {
+      "cases": 24,
+      "passed": 24,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "970a036092ebb58218bd884d51511225fc0d00001d709ad4b262cbac261d39b3"
+    },
+    "nachweise/fix_scanner_full.xml": {
+      "cases": 2455,
+      "passed": 2455,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "c70435d813b80eb0825637a2cfdc3eb48644762653125408ce3cdb07d5b48e71"
+    },
+    "nachweise/fix_scanner_initial_pytest.xml": {
+      "cases": 122,
+      "passed": 121,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "5a9f5a8ed384e0c9318281447dcde4d9d82d59990540d131bab9c364cae27389"
+    },
+    "nachweise/fix_scanner_regressions.xml": {
+      "cases": 66,
+      "passed": 66,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "fb1c85aa3ed063109bc3b4a7d008af17b2ce76f134adb6e485725d4b29b8eab0"
+    },
+    "nachweise/fix_tabellen_pytest.xml": {
+      "cases": 102,
+      "passed": 102,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "3828b8d309688939e8483d3805da56e8f3260eac47411684f1a28e7d122018af"
+    },
+    "nachweise/fix_tabellen_pytest_initial.xml": {
+      "cases": 102,
+      "passed": 101,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "09d5874b924d49c2ef83b1bb36c301afb34eb0395e347eef2dd3c20690db9b74"
+    }
+  },
+  "java_final_suites": {
+    "MqlDownloader": {
+      "cases": 140,
+      "passed": 140,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "vantage": {
+      "cases": 88,
+      "passed": 88,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "fix_evidence_sha256": {
+    "nachweise/fix_abschluss_pruefen.py": "acfbf698d82e930eef25b9f93a046f654bf163b55b0a05f8541711197df826c8",
+    "nachweise/fix_mql_artifact.json": "c4ea96c6ef71be966f2a0095aeb5c9e68c71ab02c984cb2fb059a55deff22784",
+    "nachweise/fix_mql_jar_contents.json": "0dfd85cf79381297a747071a235e68e0971291423e409bc8801e1f1de1cd50b8",
+    "nachweise/fix_mql_package.txt": "d21aca88563bcd11bf16b09dd58004d2b30f266d056f172503bdfcc6031524b3",
+    "nachweise/fix_mql_README.md": "0ea0476d57c34f02630aee0831fa576ec315527b7565e55b6e87a582b61506f8",
+    "nachweise/fix_mql_targeted_tests.txt": "281b5335ae824f9e004663cb3b7e5ed29beb82c4d32eb69132d10bfa54b8379a",
+    "nachweise/fix_persistenz_consumers.log": "5d7458e0a3d30e8e2b1d81a10400afd66854ca665ce5de5eb8ca8d0129b28c75",
+    "nachweise/fix_persistenz_consumers.xml": "3443ff8c5b91e81d3ca820ccc23441af82e11cfbe12da244c797242300ca3dda",
+    "nachweise/fix_persistenz_consumers_exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "nachweise/fix_persistenz_final.log": "8972c9ad1f219ed83208b25c40b2532887d4069b084ef743129de1844d18b025",
+    "nachweise/fix_persistenz_final.xml": "4df9e9ae8c303659b97b54d584dcec631c0e95eaf3dc5e0a327ba1df18173046",
+    "nachweise/fix_persistenz_final_exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "nachweise/fix_persistenz_pytest.log": "c2e217c9603a0175170dfb1cf7b7c859b52ad1b5420734c38be73469e92b2b6b",
+    "nachweise/fix_persistenz_pytest.xml": "a086cb5429e664b36e635151a6ba8f57789c74bf7d9e6ad64f4c6a36256b80d1",
+    "nachweise/fix_persistenz_pytest_exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "nachweise/fix_persistenz_README.md": "db441edb1bf1123fb06d74381cd55819aeaccb8f345be12bbb5b21cc887f8a76",
+    "nachweise/fix_scanner_final_consumers.log": "eb481c1d39f4d05f0f3b11cf2499137ea578a32c449502ae35dacfd05502f00e",
+    "nachweise/fix_scanner_final_consumers.xml": "d9dfb9f560ab9077b1c88225243e0490fbd46b70cbda7d9ed8a51c46eed4fe47",
+    "nachweise/fix_scanner_final_consumers_command.json": "07c7f1ce1826fa3633a2bacb8b42296cb13b814f14f251b479bf29c8f4925060",
+    "nachweise/fix_scanner_final_consumers_exit.txt": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "nachweise/fix_scanner_final_regressions.xml": "970a036092ebb58218bd884d51511225fc0d00001d709ad4b262cbac261d39b3",
+    "nachweise/fix_scanner_full.log": "4b4f6533625dc43be226413dfbadad0f914d9bd3237baac4cecd3169863790e2",
+    "nachweise/fix_scanner_full.xml": "c70435d813b80eb0825637a2cfdc3eb48644762653125408ce3cdb07d5b48e71",
+    "nachweise/fix_scanner_full_command.json": "cef9a24901731c719c87299f8caf4a50ac51a0ba30f52fd4dfcd491cc54d084c",
+    "nachweise/fix_scanner_full_exit.txt": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "nachweise/fix_scanner_initial_pytest.xml": "5a9f5a8ed384e0c9318281447dcde4d9d82d59990540d131bab9c364cae27389",
+    "nachweise/fix_scanner_regressions.xml": "fb1c85aa3ed063109bc3b4a7d008af17b2ce76f134adb6e485725d4b29b8eab0",
+    "nachweise/fix_stufe0_after.txt": "0201ad85ec2e8dbba4d9680c8be4e13e2b2e77f8e8d6a196ba981763985066f0",
+    "nachweise/fix_stufe0_before.txt": "fa6d8a0d86007478a2e6c181292088d008e2a257be00453466865b610527c994",
+    "nachweise/fix_stufe0_README.md": "d4c3f8d34b8798bec87362793e5c2a81091916d8d3a27ee9750501607559ae2b",
+    "nachweise/fix_tabellen_pytest.log": "b6001ed676b9d502914bbfe6bba2ff7a04c50b670ce5079d030a77c2039998de",
+    "nachweise/fix_tabellen_pytest.xml": "3828b8d309688939e8483d3805da56e8f3260eac47411684f1a28e7d122018af",
+    "nachweise/fix_tabellen_pytest_exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "nachweise/fix_tabellen_pytest_initial.log": "1478090a436840bb195a38dc8aaf550f0ba07c87c2e04e58d404d687c930d4f0",
+    "nachweise/fix_tabellen_pytest_initial.xml": "09d5874b924d49c2ef83b1bb36c301afb34eb0395e347eef2dd3c20690db9b74",
+    "nachweise/fix_tabellen_README.md": "1db67edcd8ece91be53c1bf4680ce67c37db7f16d4de67a3eca14cd6f87a9d4c",
+    "nachweise/fix_vantage_README.md": "57573bd9bce683cf1931771c11ce7f6fb62d29926d7cc8ebad44b15b2b9e2c5f",
+    "nachweise/fix_vantage_tests_build.json": "c22ebb688101e21d351f40861c52b9633f0b02ce02798c170c1431201fa0b5d8"
+  },
+  "source_sha256": {
+    "SignalKiScanner": {
+      "AGENTS.md": "0ebceea4e7a4139c64b96757e6e4cbb39fe7dc4c80307147be83ef70c46d948d",
+      "app_pages/admin.py": "c0f0b0b1ba1aec5eac4f63a6da4e0b1d31c37c7f6f8ef8bd2d9dac1338d26548",
+      "app_pages/ergebnisse.py": "c581f59edf466b506327bc580f62b842803685884b30cfa460c15ad2a5a5aa32",
+      "app_pages/scan.py": "2a13e43f363f1341caf0fa5e39ea805fd2b5b84d52bfaf765ea930d292aa9592",
+      "src/mqlkiscanner/alle_signale_ui.py": "38b5be5ea75ebd54b287703632720785f3d652f091dace1ba9d3102810b408f5",
+      "src/mqlkiscanner/ampel_matrix.py": "7d149a4aca3ac73a306667f40395e48b13c7d60a5d03c8918574d579b59a99ed",
+      "src/mqlkiscanner/app_ui.py": "306140dabebc1527d1f7773a0c5c4dae27f161ef78609cd39b02ae178622426c",
+      "src/mqlkiscanner/client_updates.py": "42896edae3dad5263b63e963d1fe7fb51de5d70ceec89e022c15b4cedf2ffeef",
+      "src/mqlkiscanner/config.py": "23624f5c71e9a3818910866d9db198ca6c7f02121c31cf969ee5bacdcd2f5c44",
+      "src/mqlkiscanner/db.py": "f3287bf18745d61aca38a60c0d3da2622e963e03c801bc5f5d2b52a1157430c1",
+      "src/mqlkiscanner/faq_inhalte.py": "21f65484625f179450189ed498a655f5586a0b455413acf4197ccd6cb47b0bc6",
+      "src/mqlkiscanner/forensics/exposure.py": "4ac16d07097b087f9eabcabe098e9d89b47137cae778a468dbd02bf2f835caf1",
+      "src/mqlkiscanner/help_settings.py": "7c9a1edcb9c0b2b4a3e1c2d55cd341a2da947ad82fc694b95989e298706ca7dc",
+      "src/mqlkiscanner/ingest.py": "72b3d0e96f524337e2de11263f5517ee84137eafdd50fccf9f086645d71a12d5",
+      "src/mqlkiscanner/pipeline.py": "3727dc32e07ad4c6091476a1f9aae9a176bcffe844d26d5064160e1e39da1bfc",
+      "src/mqlkiscanner/regelwerk.py": "58abe9500d42b65b27abfc22a7274328c5b4d714261cbbccb3af907c6ec3bda7",
+      "src/mqlkiscanner/station_dialoge.py": "e650ab838c18d54e7177d75326e23d40d0fbf9ef6de3ce75542f3b5f25815f2a",
+      "tests/test_audit_identitaet_20261018.py": "b782c20bb3c01f29b92995c36433350c9f5170583ab117f30da8f2cd89a451f4",
+      "tests/test_audit_tabellen_20261018.py": "3145139268f6a320acab85489e192722d3c1342dc02dfda0ee3de29a30656355",
+      "tests/test_download_review_fixes.py": "7202b81cd0992c4e2ef35b5d6c4f1693f42c6190dd305f9492f0d27b58c2a363",
+      "tests/test_download_snapshot_integrity.py": "00afaa701dc64f26f1f250dec807ec1ea641b0fe26e7dbac1c02221b78de7100",
+      "tests/test_forensik_trade_sha.py": "3d9a4a93fac07cfa54863ed67129676e06eea5f7cc2a3886309e92e0bf9439b8",
+      "tests/test_review_table_fixes.py": "3e4de6fa4ef5c2360658c68c1cb26002176be63a5f44310ff8ea6a984a5e7632",
+      "tests/test_second_review_storage.py": "756d31a170c26216b6c8161d0873c3e3f846a1d1ee827b78d6f677f1ebca9710",
+      "tests/test_stufe0_abschluss.py": "26c6c94e40a50c21078e7adcc8f7979c33569f2012719c90d9583fd59ab3837a"
+    },
+    "MqlDownloader": {
+      "src/downloader/SignalDownloader.java": "39dc97d85cae62441d41b2bde09d35988e17614da4fec9ffbde9ad855f408d06",
+      "src/gui/ClientUpdateRunner.java": "f9a75d68aa3431cb3152334a7c3d125bc66e6087d16eea56ac646576259be053",
+      "src/gui/DownloadManager.java": "f28c6466f2b282b452ae4a38895e3bb4267efc775277bd8d7a908b9eb53f95ad",
+      "src/gui/MqlDownloaderGui.java": "0258dc62b6a95f8546f1dd1d94b813b20877e006ae1095711e6901f9c13a4b6e",
+      "tests/downloader/SignalUpdateModeTest.java": "b06d653cc7d240637b733a5d727e46537935b9eea228d8239702b406c82ebc2b",
+      "tests/gui/ClientUpdateRunnerTest.java": "195f78c50e2c7fa3abbc1b8f408a679e67ef6d26e0b1c1979bf52e0a15245c0d"
+    },
+    "vantage": {
+      "src/main/java/de/vantagemonitor/VantageMonitorApp.java": "fe7375a39db24857c4fbf2373dac562c2a2f6e1e0cb05aac4dd097f07878a98e",
+      "src/main/java/de/vantagemonitor/store/HistoryFiles.java": "a66e25baf4cf4d9c7b73389989845d16f230c9318cee4dc405ee291647cd75e0",
+      "src/main/java/de/vantagemonitor/store/TradeListStore.java": "02ad7861e949baea8b0611e199d45d926742caac4dd90bedfff602dcf315fdb5",
+      "src/main/java/de/vantagemonitor/store/TradeStore.java": "c3f80324ef08458e36a32343b946aeb41de087e7032dd67fa7b6283abc58f98a",
+      "src/main/java/de/vantagemonitor/update/UpdateJobRunner.java": "a26f4cc3531a86b041f60c8756e0366ae4c7da4d37810c383e0c97bcf6e60e84",
+      "src/test/java/de/vantagemonitor/LegacyHistoryRenewalTest.java": "0cbd96296731480200ee57977bc019d6950e7fdb14e506c69fd85ab15288a95c",
+      "src/test/java/de/vantagemonitor/RestApiServerTest.java": "cbb2722818bac18440e8f80f1254948a15aa0fda3ac54b3133eb0e758fa1d105",
+      "src/test/java/de/vantagemonitor/store/TradeIntegrityTest.java": "985e1175ae4e9864bdd69b9e9135e8488d85f2882fd48b13b70c86f97b837068"
+    }
+  },
+  "build_artifacts": [
+    {
+      "path": "D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/MqlDownloader/target/MqlDownloader-0.0.35-SNAPSHOT-jar-with-dependencies.jar",
+      "bytes": 51256532,
+      "sha256": "9adc331273fbed9ca8a5bc3830792d85d8798dba3ddd4c27796f2b96bf4f8605"
+    },
+    {
+      "path": "D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/vantage/target/vantagemonitor-1.2.0.jar",
+      "bytes": 297908,
+      "sha256": "07fabcacf4f2ef779fecdd7da945cd22f65605adad9ee06b1ce6a5ffb68c7be7"
+    },
+    {
+      "path": "D:/AntiGravitySoftware/GitWorkspace/SIGNALDOWNLOADER/vantage/target/VantageMonitor-1.2.0-utc-renewal-20261018.zip",
+      "bytes": 27308167,
+      "sha256": "cb1e7f51e51f4f604712cd459498bd8b1c389477b9c4a45685a455827d906c33"
+    }
+  ],
+  "runtime_acceptance": {
+    "monitor_restarts_performed": false,
+    "productive_history_renewal_performed": false,
+    "productive_scan_performed": false,
+    "real_llm_calls_performed": false
+  }
+}

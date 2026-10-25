@@ -1,0 +1,27 @@
+{
+  "checked_utc": "2026-10-19T14:35:42.352621+00:00",
+  "job_id": "u-20261019-092038-e16ea0fc",
+  "status": {
+    "jobId": "u-20261019-092038-e16ea0fc",
+    "state": "done",
+    "phase": "tradelisten",
+    "done": 215,
+    "total": 215,
+    "message": "Tradelisten: 192 neu, 5 unverändert, 14 aktualisiert, 4 Fehler",
+    "startedAt": "2026-10-19T09:20:38",
+    "finishedAt": "2026-10-19T16:35:29",
+    "ergebnis": {
+      "signaleGeliefert": 215,
+      "tradelistenNeu": 192,
+      "tradelistenAktualisiert": 14,
+      "tradelistenFehler": 4,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": true,
+      "datenstand": "2026-10-19T16:35:29",
+      "hinweise": [
+        "4 Tradelisten-Downloads fehlgeschlagen (Details: data/vantagemonitor.log)"
+      ]
+    },
+    "error": null
+  }
+}

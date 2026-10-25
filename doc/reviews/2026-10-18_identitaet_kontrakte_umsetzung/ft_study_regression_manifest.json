@@ -1,0 +1,13 @@
+{
+  "generated_utc": "2026-10-18T16:01:33.572440+00:00",
+  "sha256": {
+    "tests/test_studien_spec_nachmessung.py": "6cf7778eeaf705f2ed473781b0f77fa298e9f4aa95ec948bd41bbd61673e977b",
+    "tests/test_stale_independent_study_display.py": "01bb1fff78c724bd7e821c874395ebab81f60f28f85da36b11397aaa587b4dce",
+    "tests/test_virtuelle_messanzeige.py": "e93c198ffb92998e288bcb4948c1f572892c90835e827223999dfd3ee9cf3f71",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_study_regression.log": "c750ce3691582842116ac37f490886c4b43f7e421c031bdcc2c214c9a225d405",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_study_regression.xml": "29207214d85069ea6802342d5cbe7431f4a235107539705f65be3b240207ee86",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_study_regression_command.json": "f4c79905293c0a17eaf02fa2de0585537a6b9ed4cdc34678e8ac7455ef9fbbb8",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_study_regression_exit.txt": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_study_regression_README.md": "44001473501fdff50d534b89b5c76b472568c8a3add4edaf55bc6c5f43c91dbb"
+  }
+}

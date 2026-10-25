@@ -1,0 +1,146 @@
+{
+  "checked_utc": "2026-10-18T18:29:32.663585+00:00",
+  "meaning": "Read-only independent standard USD-quoted FX contract crosscheck for MT5 simple equal-volume IN/OUT pairs; no new fetching or interpretation of open/partial positions. Native API lot basis is compared before the REST tenfold factor.",
+  "providers": [
+    {
+      "signal_id": 27215488,
+      "simple_closed_fx_positions": 1,
+      "median_money_factor": 0.010000000000000044,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 27231841,
+      "simple_closed_fx_positions": 572,
+      "median_money_factor": 0.010000000000000005,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 27476824,
+      "simple_closed_fx_positions": 4,
+      "median_money_factor": 0.010000000000000507,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37009091,
+      "simple_closed_fx_positions": 39,
+      "median_money_factor": 9.999999999999956e-05,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37102008,
+      "simple_closed_fx_positions": 8755,
+      "median_money_factor": 9.999999999999998e-05,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37107389,
+      "simple_closed_fx_positions": 568,
+      "median_money_factor": 0.00010000000000000002,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37155456,
+      "simple_closed_fx_positions": 5,
+      "median_money_factor": 9.99999999999957e-05,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37173630,
+      "simple_closed_fx_positions": 1690,
+      "median_money_factor": 0.00010000000000000002,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37200522,
+      "simple_closed_fx_positions": 647,
+      "median_money_factor": 0.0001,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37227545,
+      "simple_closed_fx_positions": 91,
+      "median_money_factor": 0.00010000000000000038,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37232470,
+      "simple_closed_fx_positions": 353,
+      "median_money_factor": 9.99999999999999e-05,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37310581,
+      "simple_closed_fx_positions": 403,
+      "median_money_factor": 9.999999999999933e-05,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37310976,
+      "simple_closed_fx_positions": 656,
+      "median_money_factor": 9.999999999999988e-05,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37319713,
+      "simple_closed_fx_positions": 1066,
+      "median_money_factor": 0.00010000000000000044,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37347564,
+      "simple_closed_fx_positions": 41,
+      "median_money_factor": 0.00010000000000000079,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 37369713,
+      "simple_closed_fx_positions": 2,
+      "median_money_factor": 9.999999999999129e-05,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 77004108,
+      "simple_closed_fx_positions": 25,
+      "median_money_factor": 0.01000000000000009,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 77007551,
+      "simple_closed_fx_positions": 100,
+      "median_money_factor": 0.010000000000000005,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 7776453,
+      "simple_closed_fx_positions": 154,
+      "median_money_factor": 0.00911516267367471,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 7792744,
+      "simple_closed_fx_positions": 8,
+      "median_money_factor": 0.01000000000000005,
+      "near_10_count": 0,
+      "near_1_count": 0
+    }
+  ]
+}

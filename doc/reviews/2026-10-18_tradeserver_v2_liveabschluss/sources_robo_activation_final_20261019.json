@@ -1,0 +1,84 @@
+{
+  "checked_utc": "2026-10-19T07:59:11.202561+00:00",
+  "source": "robo",
+  "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+  "status": "native_supported_scope_complete_api_gui_verified_units_unverified",
+  "new_pid": 114668,
+  "normal_javafx_gui": true,
+  "gui_window_handle": 206754,
+  "health": {
+    "status": "ok",
+    "service": "RoboMonitor",
+    "instance": "Ryzen7950X",
+    "apiVersion": "v1",
+    "uptimeSeconds": 154,
+    "serverTime": "2026-10-19T09:59:11.1944823",
+    "providers": 200,
+    "tokenRequired": false
+  },
+  "current_backend_status": {
+    "state": "idle"
+  },
+  "initial_job_id": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+  "initial_job_outcome_preserved": "200 attempts: 180 successful native histories,17 invalid old duplicate caches,3 unsupported RStocks",
+  "repair_scope": {
+    "planned": 17,
+    "previously_completed_or_independently_finished_reverified": 7,
+    "renewed_on_resume": 10,
+    "completed": 17,
+    "failures": [],
+    "raw_rows_repaired_total": 406475
+  },
+  "actual_scope": {
+    "local_catalog": 200,
+    "supported_native_verified": 197,
+    "native_platforms": {
+      "mt4": 137,
+      "mt5": 60
+    },
+    "unsupported_rst": 3,
+    "raw_native_rows_verified": 1503461,
+    "financial_raw_json_all_rows_verified": true,
+    "exportable_supported_csv": 0,
+    "all_providers_exportable": false
+  },
+  "contract": {
+    "native_money_currency": "unknown",
+    "native_volume_unit": "unverified",
+    "rating_currency": "USD_separate",
+    "trade_csv_status": 404,
+    "trade_csv_code": "unverified_trade_units",
+    "closing_dd": "unknown",
+    "native_pagination_separate_from_trade_completeness": true
+  },
+  "integrity": {
+    "original_quarantine_csv_and_meta_pairs_match_pre_repair_offline_backup": 17,
+    "non_target_native_files_unchanged": 454,
+    "native_files_unchanged_during_actual_guard_requests": 475,
+    "historical_report_and_index_files_unchanged": 183,
+    "historical_md_pdf_pairs": 91,
+    "running_jar_or_classes_overwritten": false,
+    "scanner_db_or_settings_written": false
+  },
+  "gui": {
+    "persistent_unit_warning_visible": true,
+    "catalog_loaded": 200,
+    "existing_filter_visible_rows": 23,
+    "existing_filter_changed": false,
+    "historical_reports_view_visible": true,
+    "historical_report_dates_remain_historical": true,
+    "new_source_reports_generated": 0,
+    "native_trade_download_started_by_gui": false
+  },
+  "acceptance_files": [
+    "sources_robo_live_acceptance.json",
+    "sources_robo_guard_acceptance_20261019.json",
+    "sources_robo_visible_runtime_20261019.json"
+  ],
+  "scope_limits": [
+    "197 supported raw histories do not establish account currency, standard lots, USD trade PnL or scanner admissibility.",
+    "3 RStocks providers remain unsupported by the available members MT-history endpoint.",
+    "91 historical report pairs are preserved; no current positive finding or new report was inferred from them.",
+    "Old scanner workflow heads require an independent strict refresh; source export guards do not rewrite them."
+  ]
+}

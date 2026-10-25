@@ -1,0 +1,12 @@
+{
+  "generated_utc": "2026-10-18T15:57:09.589643+00:00",
+  "sha256": {
+    "src/mqlkiscanner/pipeline.py": "e9309c6ad621cd000fcafca08f0789c9928382b997a73f856149314a10c876bd",
+    "src/mqlkiscanner/fix_signale.py": "5b2258827cac1e3e4164b8dffdbe0ba7642e3a2ed0c2144d927f568aa1e2ba52",
+    "src/mqlkiscanner/ampel_verlauf.py": "c343caf6f61fd311b936148e4c501cd9aa1665a4cd27d031b659e15edfeb78dd",
+    "src/mqlkiscanner/llm_runner.py": "69a39245e20e1ec2a29d4af9f3f4f187fd747a25e7e24ad18603b226a7ae98cc",
+    "src/mqlkiscanner/ingest.py": "b15b852135b0807d556db922ef500f658c83d70de50c1214e88f95b0b1abba78",
+    "src/mqlkiscanner/db.py": "3e5fb85fa1ed180bca788d785d22f70c236cb0e6ff1b18fa2880f84d7f2022f7",
+    "tests/test_identity_core_review.py": "fbf8a10290bcb75357b469861c103163cf3b5a0dd7536364ca14575f2dd17cf3"
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "checked_utc": "2026-10-19T08:41:56.422575+00:00",
+  "status": "accepted",
+  "scope": "Robo source4/UID only: three catalog-only RStocks corrections, exact normal200 import and33 strictly negative workflow rechecks",
+  "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+  "robo_maintenance_finished_utc": "2026-10-19T08:37:10.855861+00:00",
+  "snapshot_requested_utc": "2026-10-19T08:41:54.291509+00:00",
+  "snapshot_pinned_utc": "2026-10-19T08:41:54.295196+00:00",
+  "snapshot_finished_utc": "2026-10-19T08:41:56.413528+00:00",
+  "concurrent_writer_boundary": "Root Zulu coordinator195040 was separately authorized as the only Scanner writer after Robo completion. Current snapshot verifies the Robo namespace and immutable history only; it does not claim global post-Zulu completion or full-database equality to the earlier backup.",
+  "production_apply_atomic_same_connection_three_updates": true,
+  "apply_changed_only_catalog_table": true,
+  "ordinary_import_result": [
+    200,
+    0
+  ],
+  "current_exact_catalog_200_matches_normalized_fields": true,
+  "uid_ref_registry_and_three_old_metrics_bytes_preserved": true,
+  "targets": [
+    {
+      "id": 93128696,
+      "signal_ref": 1099,
+      "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+      "old_platform": "mt4",
+      "old_version": "mql4",
+      "current_platform": "",
+      "current_version": "rst",
+      "identity_unchanged": true,
+      "historical_metrics_version": "mql4",
+      "metrics_sha256": "6b30a74a199fd36236657b945a226312e64da65ef1df239398e67ca8bc0714ef",
+      "metrics_archive_and_original_bytes_match": true,
+      "dependent_workflow_study_report_user_rows": {
+        "signal_fixierungen": 0,
+        "signals": 0,
+        "trade_files": 0,
+        "forensik": 0,
+        "analyses": 0,
+        "subscriber_history": 0,
+        "downloader_reports": 0,
+        "ampel_verlauf": 0,
+        "ampel_wechsel": 0,
+        "signal_kommentare": 0,
+        "signal_markierungen": 0,
+        "equity_studien": 0,
+        "agenten_laeufe": 0,
+        "dossier_profil": 0,
+        "dossier_beobachtungen": 0,
+        "trade_deltas": 0
+      }
+    },
+    {
+      "id": 93019895,
+      "signal_ref": 1102,
+      "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+      "old_platform": "mt4",
+      "old_version": "mql4",
+      "current_platform": "",
+      "current_version": "rst",
+      "identity_unchanged": true,
+      "historical_metrics_version": "mql4",
+      "metrics_sha256": "a40e23690cfbab209879c9ff8fb74e3993b41767d05bcc344ba0fc0ce48a32fc",
+      "metrics_archive_and_original_bytes_match": true,
+      "dependent_workflow_study_report_user_rows": {
+        "signal_fixierungen": 0,
+        "signals": 0,
+        "trade_files": 0,
+        "forensik": 0,
+        "analyses": 0,
+        "subscriber_history": 0,
+        "downloader_reports": 0,
+        "ampel_verlauf": 0,
+        "ampel_wechsel": 0,
+        "signal_kommentare": 0,
+        "signal_markierungen": 0,
+        "equity_studien": 0,
+        "agenten_laeufe": 0,
+        "dossier_profil": 0,
+        "dossier_beobachtungen": 0,
+        "trade_deltas": 0
+      }
+    },
+    {
+      "id": 93156209,
+      "signal_ref": 1161,
+      "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+      "old_platform": "mt4",
+      "old_version": "mql4",
+      "current_platform": "",
+      "current_version": "rst",
+      "identity_unchanged": true,
+      "historical_metrics_version": "mql4",
+      "metrics_sha256": "98d9ae1e6669f2a717bce9469c3af0314efa0629ec328c9642b62c32b1c8256a",
+      "metrics_archive_and_original_bytes_match": true,
+      "dependent_workflow_study_report_user_rows": {
+        "signal_fixierungen": 0,
+        "signals": 0,
+        "trade_files": 0,
+        "forensik": 0,
+        "analyses": 0,
+        "subscriber_history": 0,
+        "downloader_reports": 0,
+        "ampel_verlauf": 0,
+        "ampel_wechsel": 0,
+        "signal_kommentare": 0,
+        "signal_markierungen": 0,
+        "equity_studien": 0,
+        "agenten_laeufe": 0,
+        "dossier_profil": 0,
+        "dossier_beobachtungen": 0,
+        "trade_deltas": 0
+      }
+    }
+  ],
+  "platform_guard_modified": false,
+  "guard_verification": {
+    "current_guard_ast_sha256": "1c845960dc9432201b877b6f39211084a2dead1b6c2796a07ebef0d6327377ff",
+    "source_file_mtime_utc": "2026-10-18T17:33:00.253452+00:00",
+    "approved_helper_sha_matches": true,
+    "normal_upsert_still_calls_general_guard": true,
+    "copy_late_position200_guard_error_rolled_back_complete_database": true,
+    "independent_rollback_copy_fingerprints_match_original": true
+  },
+  "workflow_heads": 33,
+  "workflow_complete": 0,
+  "workflow_colors": {
+    "⚪": 21,
+    "🔴": 12
+  },
+  "errors": {
+    "native_money_currency_and_volume_unit_unproven": 30,
+    "not_found": [
+      21571829,
+      47136529,
+      72166122
+    ]
+  },
+  "positive_workflow_releases": 0,
+  "current_exportable_own_reports": 0,
+  "historical_report_rows_retained": 116,
+  "historical_report_kinds_retained": {
+    "gesamtbericht": 38,
+    "risiko_analyse": 39,
+    "trade_analyse": 39
+  },
+  "active_robo_studies": 0,
+  "quarantined_old_studies_retained": 1572,
+  "entire_migration_quarantine_unchanged_from_before_backup": true,
+  "migration_quarantine_fingerprint": {
+    "rows": 4458,
+    "sha256": "e3d68a9020c1bcf0efd1fdcb55c23b3e5d585fb666b6c2d519066c5b121ac6b6"
+  },
+  "before_backup_sha256_verified": "d19796edecf4fa44cd675f6fde8ddd6ac1ee01f3a066f29dd2faa04cc8b62c5f",
+  "before_backup_all_table_fingerprints_independently_reproduced": true,
+  "rehearsal_and_late_rollback_databases_independently_verified": true,
+  "scanner_db_opened_uri_mode": "ro",
+  "query_only": true,
+  "sql_total_changes": 0,
+  "apis_models_terminals_accessed": false,
+  "scanner_or_study_phases_started": false,
+  "pdfs_materialized": false,
+  "input_receipt_sha256": {
+    "data\\runs\\liveabschluss_20261019\\plans\\robo_rst_metadata_apply_20261019\\receipt.json": "a6e8405c735e19eb9a08af33265ac123bedc531cbe22d7b9504465089a5598f4",
+    "data\\runs\\liveabschluss_20261019\\catalog_robo_after_rst\\catalog_robo.json": "d375d254192328a41d8c4b92984b7d4592cb92334de4fe0669fd8d746ad4ea0b",
+    "data\\runs\\liveabschluss_20261019\\robo_negative_heads33\\source-scan_robo.json": "7e54d811b54c8429c58e25a6d476f5337275f5dc1915eadc046bf98d63cb51d8",
+    "data\\runs\\liveabschluss_20261019\\robo_maintenance_finished.json": "424ec0cf8d916e37510e14103e0ae15cd1b3c2b17449554598759578ef783fbd",
+    "data\\runs\\liveabschluss_20261019\\plans\\robo_rst_metadata_apply_20261019\\original_target_rows.json": "e37e8cd306f2cc09dc432be3a5998530c92958c4f55bddd53a1ff0c4fccadea7",
+    "data\\runs\\liveabschluss_20261019\\plans\\robo_rst_metadata_apply_20261019\\api200_normalized.json": "2d530ccea8ce84edc7cb640160ca25704c3abc370b00e1b45fad39aee43782b4",
+    "data\\runs\\liveabschluss_20261019\\plans\\robo_workflow33_heads.json": "6984b45429de6c091f063535a47835372e5edaebed386e119a51c60e699a8e7f"
+  }
+}

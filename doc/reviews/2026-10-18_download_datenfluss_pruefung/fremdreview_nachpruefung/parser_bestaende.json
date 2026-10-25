@@ -1,0 +1,20 @@
+[
+  {
+    "signal_id": 2271995,
+    "read_only": true,
+    "sha256": "006fa1adb1e8ef4043fa06d7e4943dd103c5ed002c686046cbdc7b000af8fbf9",
+    "parsed": true,
+    "trades": 2022,
+    "costs": 0,
+    "cashflows": 11
+  },
+  {
+    "signal_id": 2360068,
+    "read_only": true,
+    "sha256": "9a64a060db8d5e9cf8a02164eba60c9fea012bf8a1eaab02f70f0a72803fc0e9",
+    "parsed": true,
+    "trades": 1241,
+    "costs": 138,
+    "cashflows": 34
+  }
+]

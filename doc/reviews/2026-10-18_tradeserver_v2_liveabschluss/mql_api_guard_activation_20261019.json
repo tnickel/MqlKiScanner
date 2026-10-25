@@ -1,0 +1,21 @@
+{
+  "utc": "2026-10-19T07:23:15.0637592Z",
+  "source": "mql5",
+  "source_uid": "0a8faef1-a341-4899-a199-a87166b69079",
+  "prior_job": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+  "old_pid": 1663784,
+  "old_process_already_absent_on_resume": true,
+  "port_free_and_no_source_jvm_before_replacement": true,
+  "offline_backup_hashes_verified": true,
+  "job_status_preserved_from_readonly_observer": true,
+  "generation_count_before_activation": 268,
+  "scanner_parser_error_count": 1,
+  "new_pid": 52344,
+  "previous_jar_sha256": "f343519189c345cac7ed08e1b01b02485f2477bf80f80eabd0ba47359fc09315",
+  "installed_jar_sha256": "59b6a9996628c040bfdcb36042eeecf1e68c52437ef1a3003a4f5fc138db37a7",
+  "active_jar_or_classes_overwritten": false,
+  "source_update_post_sent": false,
+  "scanner_db_or_settings_modified": false,
+  "normal_application_start": true,
+  "process_termination_requested": false
+}

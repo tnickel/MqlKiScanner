@@ -1,0 +1,101 @@
+{
+  "read_utc": "2026-10-18T11:08:44.568841+00:00",
+  "read_only": true,
+  "counts": {
+    "signals": 194,
+    "forensik": 163,
+    "katalog_signale": 1454,
+    "trade_files": 193,
+    "quellen_artefakte": 3094
+  },
+  "sources": [
+    [
+      "mql5",
+      71
+    ],
+    [
+      "pelik",
+      37
+    ],
+    [
+      "robo",
+      33
+    ],
+    [
+      "vant",
+      16
+    ],
+    [
+      "zulu",
+      37
+    ]
+  ],
+  "currency_known_usd": 0,
+  "forensik_metadata_ok": 128,
+  "catalogue_sources": [
+    [
+      "mql5",
+      215
+    ],
+    [
+      "pelik",
+      640
+    ],
+    [
+      "robo",
+      200
+    ],
+    [
+      "vant",
+      199
+    ],
+    [
+      "zulu",
+      200
+    ]
+  ],
+  "catalogue_source_collisions": 0,
+  "foreign_review_sha256": "113a828075c28f7435d6045f44ded8db83264b2a7a42a9e76632facc9c637a6a",
+  "forensik_versions": [
+    [
+      null,
+      4
+    ],
+    [
+      7,
+      27
+    ],
+    [
+      11,
+      3
+    ],
+    [
+      14,
+      10
+    ],
+    [
+      15,
+      104
+    ],
+    [
+      16,
+      15
+    ]
+  ],
+  "forensik_vollstaendig_flags": [
+    [
+      null,
+      9
+    ],
+    [
+      0,
+      32
+    ],
+    [
+      1,
+      122
+    ]
+  ],
+  "source_list_sum_in_foreign_review": 1454,
+  "foreign_review_zulu_explicit_nonusd_ids": 13
+}

@@ -1,0 +1,162 @@
+{
+  "observed_utc": "2026-10-18T17:55:07.619531+00:00",
+  "new_update_status": {
+    "jobId": "u-20261018-195000-c347a8c1",
+    "state": "running",
+    "phase": "tradelisten",
+    "done": 4,
+    "total": 200,
+    "message": "AF Gold Hunter Pro (429450): Lade Trade-Historie (Seite 34) …",
+    "cancellationRequested": false,
+    "startedAt": "2026-10-18T19:50:00",
+    "finishedAt": null,
+    "ergebnis": {
+      "signaleGeliefert": 200,
+      "tradelistenNeu": null,
+      "tradelistenAktualisiert": null,
+      "tradelistenFehler": 0,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": false,
+      "datenstand": null,
+      "hinweise": [],
+      "tradeDownload": {
+        "providerId": 429450,
+        "loaded": 3300,
+        "total": 48396,
+        "updatedAt": "2026-10-18T17:55:03.473141200Z"
+      }
+    },
+    "error": null
+  },
+  "committed_generations": [
+    {
+      "provider_id": 402995,
+      "generation": "79a7b299-687f-4013-a2c7-b4c3d15ca891",
+      "pointer_sha256": "58c1c8fb0db037b69d1a74860281085c39775d53e683f8247bf0d8500b413730",
+      "csv_sha256": "3f79e80954d4b99fe6c0365c7d9a9aac0165091ce063f8a2f09676dca22d702a",
+      "meta_sha256": "bd8c27c2d3280284ca690b474d50128c2873d6a8b68d3c68c989cde97c2b5260",
+      "receipt_sha256": "c55e34c0b19703af91ae96fee026d525870612d96a9a09722a063703c4894169",
+      "archive_rows": 5725,
+      "history_receipt": {
+        "version": "1",
+        "provider": "402995",
+        "sha256": "3f79e80954d4b99fe6c0365c7d9a9aac0165091ce063f8a2f09676dca22d702a",
+        "total": "5650",
+        "downloaded": "5725",
+        "pages": "58",
+        "complete": "true",
+        "observed": "2026-10-18T17:50:47.552375900Z"
+      },
+      "rest_metrics": {
+        "CatalogTrades": 5533,
+        "TradesStored": 5725,
+        "TradesTotalAvailable": 5650,
+        "TradesTruncated": false,
+        "TradesHistoryComplete": true,
+        "TradesHistoryObservedUtc": "2026-10-18T17:50:47.552375900Z",
+        "TradesDownloaded": 5725,
+        "TradesCompletenessNote": "SHA-gebundener History-Endbeleg; Gesamtzahl vom History-Endpunkt. Archiv kann aeltere Zusatzpositionen enthalten."
+      },
+      "export_csv_rows": 5725,
+      "export_csv_sha256": "28ac71be19f504c52825d479c8088c84d44e0889637fc87825ba143c04541f5a",
+      "legacy_flat_csv_unchanged_since_shutdown_backup": true
+    },
+    {
+      "provider_id": 404656,
+      "generation": "98039c06-0810-45ec-af26-06ef6854bf8f",
+      "pointer_sha256": "ab626799b5b6413b001a15f6f6aadeefae08914bba3f27acf1b22ce93c270b4a",
+      "csv_sha256": "4e04314509ab1519db42c5d889f33635d437fea88f0ad2a6b7b36acd952c5b2e",
+      "meta_sha256": "2536d814f411d4a4cbf0a4f4ddc17f9611271120570b0edf943610dd6bdddf95",
+      "receipt_sha256": "f9201d4e3ec31e4ef20b1717ecdd735cf3b6105259054833d209fa408ff28a74",
+      "archive_rows": 5006,
+      "history_receipt": {
+        "version": "1",
+        "provider": "404656",
+        "sha256": "4e04314509ab1519db42c5d889f33635d437fea88f0ad2a6b7b36acd952c5b2e",
+        "total": "4912",
+        "downloaded": "5006",
+        "pages": "51",
+        "complete": "true",
+        "observed": "2026-10-18T17:51:21.595908200Z"
+      },
+      "rest_metrics": {
+        "CatalogTrades": 4889,
+        "TradesStored": 5006,
+        "TradesTotalAvailable": 4912,
+        "TradesTruncated": false,
+        "TradesHistoryComplete": true,
+        "TradesHistoryObservedUtc": "2026-10-18T17:51:21.595908200Z",
+        "TradesDownloaded": 5006,
+        "TradesCompletenessNote": "SHA-gebundener History-Endbeleg; Gesamtzahl vom History-Endpunkt. Archiv kann aeltere Zusatzpositionen enthalten."
+      },
+      "export_csv_rows": 5006,
+      "export_csv_sha256": "4efdca84c1669b424919c630d0bdadb3d33ad32b37e71c578904131d52fc29a9",
+      "legacy_flat_csv_unchanged_since_shutdown_backup": true
+    },
+    {
+      "provider_id": 416568,
+      "generation": "808a184c-d627-4a93-b958-24675fbcf260",
+      "pointer_sha256": "e26b311369a8bf3dbb6d99e2d889bb5ca95535e73746e4fe42f44a4fcfcab891",
+      "csv_sha256": "5fc0afd4808dac8cc5847d9ac75b67b15ede71578e6a91a27c8d529f1bde9c31",
+      "meta_sha256": "4acfb73f911abf6150913550a623b6111b87c8602c8ce6c2205ec9aeb7d22bee",
+      "receipt_sha256": "f2ffc8b22aed87142c09bdf28b800c34ef239546c7298328f34ad18b90cdd510",
+      "archive_rows": 6063,
+      "history_receipt": {
+        "version": "1",
+        "provider": "416568",
+        "sha256": "5fc0afd4808dac8cc5847d9ac75b67b15ede71578e6a91a27c8d529f1bde9c31",
+        "total": "6026",
+        "downloaded": "6063",
+        "pages": "61",
+        "complete": "true",
+        "observed": "2026-10-18T17:52:41.031854100Z"
+      },
+      "rest_metrics": {
+        "CatalogTrades": 88266,
+        "TradesStored": 6063,
+        "TradesTotalAvailable": 6026,
+        "TradesTruncated": false,
+        "TradesHistoryComplete": true,
+        "TradesHistoryObservedUtc": "2026-10-18T17:52:41.031854100Z",
+        "TradesDownloaded": 6063,
+        "TradesCompletenessNote": "SHA-gebundener History-Endbeleg; Gesamtzahl vom History-Endpunkt. Archiv kann aeltere Zusatzpositionen enthalten."
+      },
+      "export_csv_rows": 6063,
+      "export_csv_sha256": "f529ea72cb22ccd0c8d6f3ff1efd0e8cdf6efb0babc13aa5568bb7db8c88f527",
+      "legacy_flat_csv_unchanged_since_shutdown_backup": true
+    },
+    {
+      "provider_id": 424932,
+      "generation": "19aec329-84cd-4889-a863-c7be168fadd0",
+      "pointer_sha256": "4d898d9701f0b05cb7814d0f7517db8473c8734653a8e0637d69584a1f23462b",
+      "csv_sha256": "63fe51682c74717ce2e1367aa601eed84feb18de41e51e66fcf0747bcbf4e303",
+      "meta_sha256": "4af8f4644157a208a68ba51f68c47f2b3a0908d5e660b1493789630691831169",
+      "receipt_sha256": "67f64fc71221a19607e5be3dcae0d75373effb566e2b305c9f91641e172741c5",
+      "archive_rows": 4964,
+      "history_receipt": {
+        "version": "1",
+        "provider": "424932",
+        "sha256": "63fe51682c74717ce2e1367aa601eed84feb18de41e51e66fcf0747bcbf4e303",
+        "total": "4928",
+        "downloaded": "4964",
+        "pages": "50",
+        "complete": "true",
+        "observed": "2026-10-18T17:51:54.111126Z"
+      },
+      "rest_metrics": {
+        "CatalogTrades": 8010,
+        "TradesStored": 4964,
+        "TradesTotalAvailable": 4928,
+        "TradesTruncated": false,
+        "TradesHistoryComplete": true,
+        "TradesHistoryObservedUtc": "2026-10-18T17:51:54.111126Z",
+        "TradesDownloaded": 4964,
+        "TradesCompletenessNote": "SHA-gebundener History-Endbeleg; Gesamtzahl vom History-Endpunkt. Archiv kann aeltere Zusatzpositionen enthalten."
+      },
+      "export_csv_rows": 4964,
+      "export_csv_sha256": "50a8fd019e3bd70427f79f8ce5fde22eb928388ca99024e1c337fea34f4b955a",
+      "legacy_flat_csv_unchanged_since_shutdown_backup": true
+    }
+  ],
+  "whole_top200_update_complete": false
+}

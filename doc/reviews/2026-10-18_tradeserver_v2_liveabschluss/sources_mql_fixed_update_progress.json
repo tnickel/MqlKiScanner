@@ -1,0 +1,25 @@
+{
+  "quelle_id": 1,
+  "kuerzel": "mql5",
+  "name": "MqlDownloader (übernommen)",
+  "base_url": "http://localhost:8089",
+  "status": "fehler",
+  "phase": "konvertieren",
+  "detail": "Fehler beim Update: Konvertierung fehlgeschlagen",
+  "done": 48,
+  "total": 4500,
+  "job_id": "u-e4b10ff6-c9b2-4d6e-8e36-bde9b519e309",
+  "dauer_s": 1399.6,
+  "datenstand": "",
+  "signale_geliefert": 96,
+  "tradelisten_neu": 1,
+  "tradelisten_aktualisiert": 95,
+  "tradelisten_fehler": 0,
+  "tradelisten_abgebrochen": false,
+  "katalog_uebersprungen": false,
+  "hinweise": [
+    "Katalog-Discovery nach konfigurierten MQL4-/MQL5-Limits; bei frischem Katalog werden dessen bekannte Anbieter aktualisiert."
+  ],
+  "fehler": "Konvertierung fehlgeschlagen",
+  "geaendert": "2026-10-18T19:27:14"
+}

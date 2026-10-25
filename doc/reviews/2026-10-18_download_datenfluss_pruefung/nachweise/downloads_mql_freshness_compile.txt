@@ -1,0 +1,13 @@
+D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\SignalKiScanner\doc\reviews\2026-10-18_download_datenfluss_pruefung\nachweise\downloads_MqlFreshnessProof.java:9: Warnung: Unsafe ist eine interne propriet�re API, die in einem zuk�nftigen Release entfernt werden kann
+import sun.misc.Unsafe;
+               ^
+D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\SignalKiScanner\doc\reviews\2026-10-18_download_datenfluss_pruefung\nachweise\downloads_MqlFreshnessProof.java:20: Warnung: Unsafe ist eine interne propriet�re API, die in einem zuk�nftigen Release entfernt werden kann
+        Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+                            ^
+D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\SignalKiScanner\doc\reviews\2026-10-18_download_datenfluss_pruefung\nachweise\downloads_MqlFreshnessProof.java:22: Warnung: Unsafe ist eine interne propriet�re API, die in einem zuk�nftigen Release entfernt werden kann
+        Unsafe unsafe = (Unsafe) unsafeField.get(null);
+        ^
+D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\SignalKiScanner\doc\reviews\2026-10-18_download_datenfluss_pruefung\nachweise\downloads_MqlFreshnessProof.java:22: Warnung: Unsafe ist eine interne propriet�re API, die in einem zuk�nftigen Release entfernt werden kann
+        Unsafe unsafe = (Unsafe) unsafeField.get(null);
+                         ^
+4 Warnungen

@@ -1,0 +1,117 @@
+{
+  "checked_utc": "2026-10-19T08:31:52.746088+00:00",
+  "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+  "job_id": "u-20261019-092038-e16ea0fc",
+  "correction": "scope_position_one_based in the earlier FT5 and current19 proof denotes REST catalogue order, not native job iteration order",
+  "unchanged_evidence": "Native and REST row counts, all field comparisons, file hashes, retained IDs and the FT5-not-republished statement are unaffected",
+  "native_job_order_evidence": {
+    "loader": "UpdateJobRunner.katalogPhase -> Dienste.gespeicherteSignale -> DataStore.loadSignals, file order preserved",
+    "catalog_rows": 215,
+    "same_215_id_set_as_start_receipt": true,
+    "signals_csv_sha256": "72ecca87f5d520b90c7b0b63df13324999327387d248d8e4cc82fbdd97d6fec6",
+    "signals_csv_mtime_utc": "2026-10-18T20:25:24.869448+00:00",
+    "signals_csv_predates_bound_job": true
+  },
+  "providers": [
+    {
+      "signal_id": 1286742,
+      "rest_catalog_position_one_based": 6,
+      "native_job_position_one_based": 9
+    },
+    {
+      "signal_id": 1010186,
+      "rest_catalog_position_one_based": 25,
+      "native_job_position_one_based": 10
+    },
+    {
+      "signal_id": 1121200,
+      "rest_catalog_position_one_based": 52,
+      "native_job_position_one_based": 52
+    },
+    {
+      "signal_id": 1121175,
+      "rest_catalog_position_one_based": 139,
+      "native_job_position_one_based": 123
+    },
+    {
+      "signal_id": 178177,
+      "rest_catalog_position_one_based": 215,
+      "native_job_position_one_based": 201
+    },
+    {
+      "signal_id": 504191,
+      "rest_catalog_position_one_based": 130,
+      "native_job_position_one_based": 202
+    },
+    {
+      "signal_id": 1231244,
+      "rest_catalog_position_one_based": 98,
+      "native_job_position_one_based": 203
+    },
+    {
+      "signal_id": 692325,
+      "rest_catalog_position_one_based": 122,
+      "native_job_position_one_based": 204
+    },
+    {
+      "signal_id": 762452,
+      "rest_catalog_position_one_based": 124,
+      "native_job_position_one_based": 205
+    },
+    {
+      "signal_id": 538344,
+      "rest_catalog_position_one_based": 165,
+      "native_job_position_one_based": 206
+    },
+    {
+      "signal_id": 762414,
+      "rest_catalog_position_one_based": 29,
+      "native_job_position_one_based": 207
+    },
+    {
+      "signal_id": 954691,
+      "rest_catalog_position_one_based": 166,
+      "native_job_position_one_based": 208
+    },
+    {
+      "signal_id": 1024672,
+      "rest_catalog_position_one_based": 149,
+      "native_job_position_one_based": 209
+    },
+    {
+      "signal_id": 776728,
+      "rest_catalog_position_one_based": 123,
+      "native_job_position_one_based": 210
+    },
+    {
+      "signal_id": 964411,
+      "rest_catalog_position_one_based": 167,
+      "native_job_position_one_based": 211
+    },
+    {
+      "signal_id": 1052261,
+      "rest_catalog_position_one_based": 75,
+      "native_job_position_one_based": 212
+    },
+    {
+      "signal_id": 1096166,
+      "rest_catalog_position_one_based": 136,
+      "native_job_position_one_based": 213
+    },
+    {
+      "signal_id": 805275,
+      "rest_catalog_position_one_based": 150,
+      "native_job_position_one_based": 214
+    },
+    {
+      "signal_id": 998837,
+      "rest_catalog_position_one_based": 80,
+      "native_job_position_one_based": 215
+    }
+  ],
+  "historical_proofs_retained_unchanged": [
+    "sources_vantage_ft5_parallel_readiness_20261019.json",
+    "sources_vantage_rest19_snapshot_20261019T080849Z.json"
+  ],
+  "normal_215_completion_claimed": false
+}

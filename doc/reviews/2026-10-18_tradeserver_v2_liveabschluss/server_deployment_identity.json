@@ -1,0 +1,30 @@
+{
+  "checked_at": "2026-10-18T16:50:16.850705+00:00",
+  "deployment": {
+    "host": "84.46.247.222",
+    "service": "wildfly",
+    "status": "active/running",
+    "marker": "ROOT.war.deployed",
+    "external_http_status": 200,
+    "new_war_sha256": "9e3df338a7ce2f75bd98540dd03563a8b6594ecb27d9997ec2e6a9161117d620"
+  },
+  "backup": {
+    "directory": "/opt/trademonitor-backups/kiscanner-v2-20261018T164813Z",
+    "method": "systemctl stop; no H2 file handles; copy WAR and closed H2; compare both SHA256; start",
+    "old_war_sha256": "c0e5844ca0125151799198a6331c40be7bc86453505dc8c60e9d6d96894c045b",
+    "h2_sha256": "4055bd78f612d424d46053b63e079c892217cb68513560704c7ab9bf750f4a8e",
+    "private_permissions": "root-owned directory0700 and files0600"
+  },
+  "production_migration": {
+    "checked_legacy_signals": 32,
+    "checked_legacy_documents": 313,
+    "value_mismatches": 0,
+    "method": "read-only JDBC; every original column including internal IDs; SHA256 for BLOB bytes",
+    "migrated": true,
+    "v2_active_before_first_scanner_sync": false,
+    "legacy_owner": "legacy:v1",
+    "original_tables_unchanged": true
+  },
+  "scanner_sync_executed_by_server_agent": false,
+  "committed": false
+}

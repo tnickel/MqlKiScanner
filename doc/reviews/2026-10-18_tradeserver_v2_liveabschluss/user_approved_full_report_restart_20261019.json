@@ -1,0 +1,64 @@
+{
+  "recordedUtc": "2026-10-19T11:54:07.378787+00:00",
+  "authorization": [
+    "User requested tripling500000to1500000 daily and all pending analyses",
+    "After218missing-stage estimate, user explicitly approved further day/month increases as needed for complete run"
+  ],
+  "productiveBudgets": {
+    "day": 10000000,
+    "month": 10000000,
+    "run": 10000000
+  },
+  "providerQuotaWasNotQueried": true,
+  "localBudgetIsNotZaiAccountBalance": true,
+  "ratingCriteriaUnchanged": {
+    "forensicsVersion": 21,
+    "maxDdPct": 50,
+    "minAnnualCalmar": 3,
+    "minMonthlyReturnPct": 0
+  },
+  "actualReportRestart": {
+    "pid": 422660,
+    "creationUtc": "2026-10-19T11:51:39.8106447Z",
+    "childPid": 427216,
+    "state": "normal_report_queue_running",
+    "pendingSignalCount": 73,
+    "missingNewStages": 218,
+    "mqlProfiles": 45,
+    "pelicanProfiles": 28,
+    "completePelicanTripletsPreserved": 5,
+    "partialCurrentTradeReused": {
+      "source": "mql5",
+      "id": 2320903,
+      "name": "GOLD BR"
+    },
+    "actualFirstLog": "13:51:46 Risiko-Analyse GOLD BR193Trades; cachedTrade not requested again",
+    "planSha256": "b23df7a8624699426ec69a3c99aafd138d7cf77dd68f03c9ac226f40010e1a60",
+    "runnerSha256": "b744128d75634f3a7c3f1587abc9e06c291bbf4ddedf801972b3d7c3929fdacf",
+    "settingsSha256": "66956672566e0874078bad8eec61b2cf95ffe0aa82b97a6bbaf55dada52147de"
+  },
+  "reportResumeRegression": {
+    "passed": 91,
+    "usesPersistedOwnerAndBasisBoundStagesOnly": true,
+    "countsOnlyNewWork": true,
+    "noNewCalculationOrRatingCriteria": true
+  },
+  "oldWaiter311692Superseded": true,
+  "native39932AndSourceReader299388Untouched": true,
+  "oldRun14And500kReceiptsPreserved": true,
+  "newFinalConnectorPreparation": "Separate full10M helpers/labels/pins; awaiting Root review/start, will bind actual new report end and existing SourcePartialReader299388",
+  "recurringOrScheduledAutomation": false,
+  "finalComplete": false,
+  "limits": [
+    "Current record proves restart and authorization, not completion of218stages.",
+    "Estimate~5.4MadditionalTokens is a rough small-sample estimate, not a z.ai quota or guaranteed final usage.",
+    "Profiles without valid current forensic evidence are not converted into analyzable positive candidates."
+  ],
+  "inputSha256": {
+    "data/runs/liveabschluss_20261019/plans/user_budget_1500k_change_20261019.json": "695719827b8eb2849344c607a3740568eb36a23cdb0c7dfea912c63d5b0c3f48",
+    "data/runs/liveabschluss_20261019/plans/user_budget_full_change_20261019.json": "df6697c2a555bfd061c6e6cfcad065c65f752741d3bcc98de5a11340cc0e29fe",
+    "data/runs/liveabschluss_20261019/plans/full_report_queue_launch_20261019.json": "48439d12589cf2c95e1c07e096ecde02ab2028c4ebfc15630d8a1b2b5e16fffa",
+    "data/runs/liveabschluss_20261019/plans/report_scope_full_resume_20261019.json": "b23df7a8624699426ec69a3c99aafd138d7cf77dd68f03c9ac226f40010e1a60",
+    "data/runs/liveabschluss_20261019/plans/vantage_old_waiter_superseded_by_user_budget_20261019.json": "20cad5a50dc4427f528d9ee10f204781e82357bdab9727c33c0c2a1d2190aa9a"
+  }
+}

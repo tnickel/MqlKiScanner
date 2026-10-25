@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-18T18:24:13.2240325Z",
+  "source": "robo",
+  "tests": 193,
+  "failures": 0,
+  "errors": 0,
+  "compiled_class_files": 108,
+  "artifact_manifest_sha256": "7ed5b1264b11976619ece932f612fcb42ecb9c35db06ccc5c78245f62e038feb",
+  "guard_before_normal_exit": true,
+  "full_renewal": "Only failed MT providers, no legacy rows included; original cache bytes quarantined",
+  "unsupported_platform": "rst retained and unavailable; no invented MT fallback"
+}

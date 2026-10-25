@@ -1,0 +1,274 @@
+{
+  "date": "2026-10-18",
+  "repo": "SIGNALDOWNLOADER/vantage",
+  "test_command": "mvn -q test",
+  "test_exit": 0,
+  "tests": 88.0,
+  "failures": 0.0,
+  "errors": 0.0,
+  "skipped": 0.0,
+  "suites": [
+    {
+      "name": "de.vantagemonitor.api.MetricsWindowTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "oneMonthRankingAndAllOverviewKeepDistinctWindowsAcrossPersistence",
+        "legacyCacheAndUnspecifiedTopListWindowStayUnknown"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.api.RankingUnionTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "bothRankingsContributeBelowAtAndAboveOldCopierCap",
+        "curatedPriorityAndOverlappingReturnPagesKeepReservedPlaces"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.api.ReviewFollowupTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "epochTradeTimestampUsesUtcInsteadOfHostTimezoneForFxDate",
+        "rankingApiErrorIsNeverAcceptedAsSuccessfulEmptyCatalog"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.api.TradeContractTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "missingFreshReturnCannotReuseOldRoiForNewTrades",
+        "overlappingPagesDeduplicateAndRepeatedCursorFails",
+        "unknownPositionFieldsAreNeverZeroOrSell"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.config.PromptMigrationTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "onlyExactOldDefaultsAreUpdated"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.FxRatesTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "beliebigeEzbWaehrungsspaltenOhneWhitelistUndMitWechselndenKurstagen",
+        "euroUndHkdNutzenHistorischenSchlusstag",
+        "wochenendeNutztNurVorherigenKurstag",
+        "offlineCacheUndBegrenzterRuecklauf",
+        "crosskursMischtKeineVerschiedenenVerkuendigungstage",
+        "ungueltigeFaktorenOderFehlendesDatumSindKeinKurs",
+        "fetchPersistiertHistorieFuerFolgendeInstanz",
+        "usdUndSchonNormalisierteUscHabenKeineZweiteSkalierung"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.HeadlessTradelistenLoadTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "roheHistorieIstFuerAlleWaehrungenAuswaehlbar"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.LegacyHistoryRenewalTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "secondStoreFailureCannotBeCountedOrSkippedAsCompletedRenewal",
+        "interruptedOptionalDailyRequestMustNotPublishFreshHistory",
+        "failedFreshDownloadLeavesLegacyFilesAndLedgerUntouched",
+        "ordinaryUpdateRenewsBothLegacyStoresWithoutMergingTheirRows"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.report.DrawdownBasisTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "guiUsesSameValidatedEquityBasisRatherThanThePnlPeak",
+        "unknownScopeAndNonpositiveCapitalHaveNoMeasuredDd"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.RestApiServerTest",
+      "tests": 22,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "fehlenderHistorischerFxKursGibt404StattFalschUsd",
+        "maximumOffsetIsAnEmptyPage",
+        "eurKontoLiefertHistorischNachUsdNormalisiertesNetto",
+        "historyLiefertKopiererPunkte",
+        "legacyTradeTimesCannotBeExportedAsVerifiedUtc",
+        "tradesCsvImMql5FormatMitBasisSymbol",
+        "fehlendesSchlussdatumIstFuerJedeKontowaehrungUngueltig",
+        "tokenSchutzWeistOhneTokenAb",
+        "metricsMitGesamtDrawdownUndGemessenerMonatsrendite",
+        "ageUsesExactCurrentHistoryAndUnknownDoesNotBecomeZero",
+        "unbekanntesSignalUndFalscheVersionSind404",
+        "truncationIsUnknownWithoutVerifiedPlatformTotalAndTriStateOtherwise",
+        "uscKontoLiefertTradesCsvNormalisiert",
+        "ohneTradesAntwortet404MitKlaremGrund",
+        "katalogLiefertVantageVersionUndWochen",
+        "waehrungsExportGiltFuerBeliebigeProviderIdsUndTradeDaten",
+        "healthMeldetInstanzUndSignalzahl",
+        "metricsLiefernRekonstruiertenTradeDrawdownAusCacheDatei",
+        "katalogMeldetKeineSignaleOhneKopierer",
+        "invalidDailyApiDatesCannotBecomeRestAgeEvidence",
+        "hkdKontoWirdMitHistorischemGleichdatumCrosskursExportiert",
+        "metricsExposeFieldSpecificWindowsWithoutInventingThreeMonths"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.store.LegacyEpochAgeTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "utcMidnightKeepsAgeBoundaryAndFutureCutoffIndependentOfClockZone",
+        "berlinEpochZeroDailyRowDoesNotBecomeFiftyYearsOfAgeOnNewYorkHost"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.store.TradeIntegrityTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "positiveArchiveAndCorrectionsSurviveSmallerWindows",
+        "failedOrInterruptedFreshDeliveryPreservesUnverifiedBytes",
+        "failedStagingDoesNotReplaceLegacyTradeCsv",
+        "failedPublicationRollsBackLegacyCsvAfterEarlierFilesWereReplaced",
+        "legacyDisplayListCannotBypassTheTimeBasisGuard",
+        "matchingHashDoesNotExcuseInvalidRowsOrCounts",
+        "displayFallbackCannotOverrideVerifiedPrimaryCorrections",
+        "failedLedgerPublicationDoesNotClaimFreshDisplayList",
+        "legacyZonelessArchiveIsPreservedButCannotBeRecertifiedAsUtc",
+        "interruptBetweenPublishedFilesRestoresOldBytesAndInterruptFlag"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.store.TradeListStoreTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "frischerShaMitspeicherterCsvIdentisch",
+        "speichernUndLadenErhaeltAlleFelder",
+        "geladenRegisterUeberlebtNeustart",
+        "shaWechselWirdErkanntUndNeuGespeichert",
+        "ladenOhneDateiGibtLeeresOptional",
+        "hasCachedVerwirftManipulierteCsv"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.store.TradeStoreMonateTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "sentinelAndFutureDailyDatesCannotManufactureAge",
+        "exactTwentySixWeekBoundaryIsNotLostThroughFullMonths",
+        "apiWertGroesserOderOhneHistorieBleibt",
+        "aeltestesHistoriesDatumLiestKleinstesDatum",
+        "historieAelterAlsApiMonateGewinnt",
+        "olderVerifiedTradeWinsOverShorterDailyWindowAndZeroPaddingProvesNoAge"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.store.UiPrefsTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "defektePrefDateiBringtDieAppNichtZumAbsturz",
+        "nieGeladenOederAltIstFaellig",
+        "anzahlUndLadungUeberlebenNeustart",
+        "grenzeLiegtBeiGenau24Stunden"
+      ]
+    },
+    {
+      "name": "de.vantagemonitor.UpdateJobStufe0Test",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "postOhneJsonBodyWird400",
+        "tradelistenAusLaedtNurKatalog",
+        "getStatusVorErstemJobIstIdle",
+        "postAndererPfadBleibt405",
+        "serverOhneStarterLehntPostAb",
+        "kaskadeLaedtKatalogUndTradelistenInkrementell",
+        "unveraenderterShaUebernimmtNichtsNeu",
+        "dreiTageRegelUeberspringtKatalog",
+        "getStatusLiefertJobZustand",
+        "postUpdateStartetUndUebergibtParameter",
+        "dreiTageRegelLiestAuchAltbestandOhneZeitzonenSuffix",
+        "cachedCatalogueDoesNotSkipFreshStatsAndTrades",
+        "structuredFailureAndAbortArePublished"
+      ]
+    }
+  ],
+  "build_command": "mvn -q -DskipTests package dependency:copy-dependencies '-DincludeScope=runtime' '-DoutputDirectory=target/utc-renewal-dependencies'",
+  "build_exit": 0,
+  "archive": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\vantage\\target\\VantageMonitor-1.2.0-utc-renewal-20261018.zip",
+  "archive_bytes": 27308167,
+  "archive_sha256": "CB1E7F51E51F4F604712CD459498BD8B1C389477B9C4A45685A455827D906C33",
+  "jar": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\vantage\\target\\vantagemonitor-1.2.0.jar",
+  "jar_bytes": 297908,
+  "jar_sha256": "07FABCACF4F2EF779FECDD7DA945CD22F65605ADAD9EE06B1CE6A5FFB68C7BE7",
+  "java_dry_run_exit": 0,
+  "productive_apps_started_or_stopped": false,
+  "productive_data_migrated": false,
+  "productive_downloads": false,
+  "limitation": "Build and isolated tests only; running application and existing v1 histories are unchanged.",
+  "full_suite_before_interrupt_refinement": {
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "exit": 0,
+    "command": "mvn -q test",
+    "tests": 87
+  },
+  "distinct_successful_testcases_in_reports": 88.0,
+  "final_full_suite_after_interrupt_refinement": {
+    "skipped": 0,
+    "errors": 0,
+    "exit": 0,
+    "failures": 0,
+    "command": "mvn -q test",
+    "tests": 88.0
+  }
+}

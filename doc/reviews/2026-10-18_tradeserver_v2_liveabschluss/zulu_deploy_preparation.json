@@ -1,0 +1,109 @@
+{
+  "observed_utc": "2026-10-18T17:31:53.021264+00:00",
+  "process_id": 52084,
+  "status": {
+    "jobId": "u-20261018-184200-b328fbb6",
+    "state": "running",
+    "phase": "tradelisten",
+    "done": 10,
+    "total": 200,
+    "message": "Tradelisten: 0 neu, 10 aktualisiert, 0 Fehler",
+    "startedAt": "2026-10-18T18:42:00",
+    "finishedAt": null,
+    "ergebnis": {
+      "signaleGeliefert": 200,
+      "tradelistenNeu": null,
+      "tradelistenAktualisiert": null,
+      "tradelistenFehler": 0,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": false,
+      "datenstand": null,
+      "hinweise": []
+    },
+    "error": null
+  },
+  "completed_archives_privately_copied_and_reverified": [
+    {
+      "provider_id": 402995,
+      "count": 5725,
+      "csv_sha256": "3f79e80954d4b99fe6c0365c7d9a9aac0165091ce063f8a2f09676dca22d702a",
+      "meta_sha256": "bd8c27c2d3280284ca690b474d50128c2873d6a8b68d3c68c989cde97c2b5260",
+      "published_utc": "2026-10-18T16:42:48.332274+00:00"
+    },
+    {
+      "provider_id": 404656,
+      "count": 5006,
+      "csv_sha256": "4e04314509ab1519db42c5d889f33635d437fea88f0ad2a6b7b36acd952c5b2e",
+      "meta_sha256": "2536d814f411d4a4cbf0a4f4ddc17f9611271120570b0edf943610dd6bdddf95",
+      "published_utc": "2026-10-18T16:43:22.057852+00:00"
+    },
+    {
+      "provider_id": 424932,
+      "count": 4964,
+      "csv_sha256": "63fe51682c74717ce2e1367aa601eed84feb18de41e51e66fcf0747bcbf4e303",
+      "meta_sha256": "4af8f4644157a208a68ba51f68c47f2b3a0908d5e660b1493789630691831169",
+      "published_utc": "2026-10-18T16:43:55.395471+00:00"
+    },
+    {
+      "provider_id": 416568,
+      "count": 6063,
+      "csv_sha256": "5fc0afd4808dac8cc5847d9ac75b67b15ede71578e6a91a27c8d529f1bde9c31",
+      "meta_sha256": "4acfb73f911abf6150913550a623b6111b87c8602c8ce6c2205ec9aeb7d22bee",
+      "published_utc": "2026-10-18T16:44:41.263300+00:00"
+    },
+    {
+      "provider_id": 429450,
+      "count": 48396,
+      "csv_sha256": "3800a132a8801be5713f5a8ee6cecd216643ed6b98e5cc4ad296010e29c7ba57",
+      "meta_sha256": "80e7d9ba9cc1f5198ce7f9c0113c73f94b4d623c4fc8ea1006a5c8c327c448f1",
+      "published_utc": "2026-10-18T17:19:39.110367+00:00"
+    },
+    {
+      "provider_id": 415776,
+      "count": 6315,
+      "csv_sha256": "93fdf3b2e3dfe393accb5b7d409bee9b5087c45ab16c434a32c192792cd77de6",
+      "meta_sha256": "42c539ac3d4174309dc5219614feeade9c5487567754d43fa9ef41a06802fd3f",
+      "published_utc": "2026-10-18T17:20:28.437462+00:00"
+    },
+    {
+      "provider_id": 430525,
+      "count": 11186,
+      "csv_sha256": "89204732ff39674db5e628efbf47420cde7cd4f282737238e5cdda84b68075a5",
+      "meta_sha256": "aad1e50838855bc38fc3742f6cddf31c6d2ed6f38ec41cf48a35598b1911c980",
+      "published_utc": "2026-10-18T17:22:38.084012+00:00"
+    },
+    {
+      "provider_id": 418271,
+      "count": 7075,
+      "csv_sha256": "36d265378e229ba2ea95bd95b2fe0dbe83cf0aa9af6092155a949f442fed6fc5",
+      "meta_sha256": "8a834a17b102844888cce14bd469d881b67983628c81527e84a641ef6281f998",
+      "published_utc": "2026-10-18T17:23:39.716586+00:00"
+    },
+    {
+      "provider_id": 424438,
+      "count": 3643,
+      "csv_sha256": "41c2ae09c1f43f090073a4c80c0c5c51398da8bf6f9860f87affceeef9bf8220",
+      "meta_sha256": "b30b7880d26ac39495328529aaab48022c15cf1d61e583db0c39a3361198d7de",
+      "published_utc": "2026-10-18T17:24:00.108495+00:00"
+    },
+    {
+      "provider_id": 410467,
+      "count": 7381,
+      "csv_sha256": "e82acc0eaf9f94d80302416e54e897bb8b2f04bb898c779cf3bbc7369470dc80",
+      "meta_sha256": "f8c1779dc29b1a9b3edc89364f106726a9471afa9df613cf37500c082a772d9b",
+      "published_utc": "2026-10-18T17:25:03.727163+00:00"
+    }
+  ],
+  "remaining_previous_cache_rows": 733590,
+  "remaining_previous_cache_estimated_100row_pages": 7427,
+  "remaining_providers_without_previous_meta": 1,
+  "rest_duration": {
+    "reliable_eta_available": false,
+    "reason": "The old callback discards page progress; remote histories, retry counts and current page are unknown. Previous caches are workload scenarios, not current download coverage.",
+    "at_1_second_per_page_hours": 2.0630555555555556,
+    "at_5_seconds_per_page_hours": 10.315277777777778,
+    "scenario_only_not_eta": true
+  },
+  "active_process_modified": false,
+  "datastore_written": false
+}

@@ -1,0 +1,65 @@
+{
+  "recordedUtc": "2026-10-19T10:13:29.526843+00:00",
+  "status": "finite_existing_job_continuation_started_waiting_for_source",
+  "finalComplete": false,
+  "waiterPid": 311692,
+  "waiterCreationUtc": "2026-10-19T10:12:27.1284253Z",
+  "sourceReaderPid": 299388,
+  "sourceReaderCreationUtc": "2026-10-19T09:51:53.3200742Z",
+  "intermediateRemoteRunId": 14,
+  "intermediateAccepted": true,
+  "intermediateFinishedSha256": "63e612ba3b0a2948733d8f7ccb1d55ca9ffef285f27dd76a4d181d47de51b7a7",
+  "codePins": {
+    "fileCount": 136,
+    "manifestSha256": "6d546b0816b20ec63c3cc5e63aa373e7e28bc4799d3b2667f7c1f37c2e20f502",
+    "sourceWaiterSha256": "5da9eeb84766ac0f2a4f7eadd2f80311ce1f077dc57bbc7983cce4b91337b10b",
+    "parentSha256": "16e9cd49a92fa8edda2730b69034519edc0d4dc3cd2c138d0ea3a81b9e234b1b",
+    "chronicleSha256": "583a89e1ee374d2cd9038dd95770cdf179310c8d357a3253d155a9f68d522577"
+  },
+  "sourceEvidence": {
+    "method": "pid_creation_bound_handle_wait",
+    "pid": 299388,
+    "creationUtc": "2026-10-19T09:51:53.320074+00:00"
+  },
+  "intermediateEvidenceMethod": "completed_actual_receipt",
+  "actualStartup": {
+    "processObservedAlive": true,
+    "stderrBytes": 0,
+    "noPrematureParentOutput": true,
+    "noPrematureNativeChronicleRowAttempt": true
+  },
+  "syntheticChecks": {
+    "partialSelectionPathGuards": 19,
+    "realProducerReceiptAndParentGuards": 21,
+    "chronicleAndPriorWaiterGuards": 30,
+    "newCompletedIntermediateWaiterGuards": 20,
+    "newWaiterUsesRealParentComparisonAcceptance": true
+  },
+  "oneTimeFuturePhases": [
+    "actual native partial chronicle append only",
+    "normal Vantage catalog and bounded TopN/Fix/existing-head selection from fresh eligible scope",
+    "exact selected-source forensic scan",
+    "exact selected-study refresh and calculation",
+    "independent study/source/owner/version/hash binding check",
+    "one new normal mirror/PDF/table/v2 publish and actual TCP-only remote comparison"
+  ],
+  "guardedLimits": [
+    "Existing source process is PID/birth/handle bound; completed intermediate uses real hash-bound receipts, no fabricated intermediate exit code.",
+    "Source failure/STOP/receipt or code mutation stops; no automatic retry. Deadline48h monotonic.",
+    "Source job remains explicitly partial because of confirmed native errors; Jessi376760 must remain blocked.",
+    "No new native update POSTs, model calls or increased budgets.",
+    "Unexpected newly complete forensic scopes stop for Root report plan; no implicit model generation.",
+    "Current and virtual studies do not prove real account capital/drawdown.",
+    "This is a finite local continuation of an already-running authorized job; no recurring or Codex scheduled automation."
+  ],
+  "newModelCalls": false,
+  "newNativePosts": false,
+  "scheduledAutomation": false,
+  "recurring": false,
+  "inputSha256": {
+    "data/runs/liveabschluss_20261019/plans/vantage_final_waiter_launch_20261019.json": "8fcf8bbb91ca3d979b7107a0b51a6ed7250cfe77b434219c8fe89e3891dbb0db",
+    "data/runs/liveabschluss_20261019/plans/vantage_completed_intermediate_guard_checks_20261019.json": "5ba4f6386227eeafd6caefe85f0bd77a62646d974c0d2afdd5a8bf5c2969aac3",
+    "data/runs/liveabschluss_20261019/plans/vantage_final_coordinator_pins_20261019.json": "6d546b0816b20ec63c3cc5e63aa373e7e28bc4799d3b2667f7c1f37c2e20f502",
+    "data/runs/liveabschluss_20261019/plans/intermediate_run14_independent_readonly_check_20261019.json": "48886f53c3afd269a2f887cc4ee40e6deba0fdb6183b3eb57b809a78c62912d4"
+  }
+}

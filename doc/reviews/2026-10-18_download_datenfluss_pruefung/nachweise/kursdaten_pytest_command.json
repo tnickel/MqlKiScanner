@@ -1,0 +1,22 @@
+[
+  "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "--junitxml=doc\\reviews\\2026-10-18_download_datenfluss_pruefung\\nachweise\\kursdaten_pytest.xml",
+  "tests/test_kursdaten_persistenz.py",
+  "tests/test_kursdaten_nachladen.py",
+  "tests/test_kursdaten_terminalwechsel.py",
+  "tests/test_kursdaten_vantage_portable.py",
+  "tests/test_kursdaten_stundengrenze.py",
+  "tests/test_einzelstudie_lauf_lock.py",
+  "tests/test_admin_markt_scan_lock.py",
+  "tests/test_markt_scan_lock.py",
+  "tests/test_equity_zeitbasis_pipeline.py",
+  "tests/test_equity_h1_paritaet.py",
+  "tests/test_equity_skip_diagnose.py",
+  "tests/test_fehlende_kursdaten.py",
+  "tests/test_parser_export_artefakte.py"
+]

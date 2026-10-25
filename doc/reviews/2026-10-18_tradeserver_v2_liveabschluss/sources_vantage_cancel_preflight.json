@@ -1,0 +1,13 @@
+{
+  "utc": "2026-10-18T17:14:08.0191246Z",
+  "pid": 1350380,
+  "expected_thread_id": 80,
+  "process_main_verified": true,
+  "expected_project_directory": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\vantage",
+  "fixture_wrong_id_rejected": true,
+  "fixture_single_worker_terminated": true,
+  "helper_jar_sha256": "d52a9d3d847da6b9ac1036a2366596e2cc2feea87af402c30cb13b859c5f216f",
+  "agent_source_sha256": "be20fe4afb9d9fb20fbfccb660c8b687c389f3cd8d1f088978269fdde2e82802",
+  "launcher_source_sha256": "bc82d909cd8950a6bd482bcda45b07cc1f88aecabf514635bf7a10923e467bbe",
+  "action": "Thread.interrupt then join <=60s; runtime also verifies unique worker, exact thread ID, owner main, cwd, UpdateJobRunner.run stack"
+}

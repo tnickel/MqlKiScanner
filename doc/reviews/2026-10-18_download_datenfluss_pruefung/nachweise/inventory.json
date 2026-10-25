@@ -1,0 +1,1065 @@
+{
+  "observed_utc": "2026-10-18T10:04:06.321801+00:00",
+  "snapshot_root": "C:\\Users\\tnickel\\AppData\\Local\\Temp\\signalkiscanner_download_audit_hktlotkh",
+  "mqlkiscanner.db": {
+    "quick_check": [
+      "ok"
+    ],
+    "foreign_key_check_count": 3,
+    "counts": {
+      "signals": 194,
+      "trade_files": 193,
+      "forensik": 163,
+      "analyses": 2282,
+      "subscriber_history": 1305,
+      "downloader_reports": 68,
+      "tradeserver_sync_runs": 8,
+      "ampel_verlauf": 834,
+      "ampel_wechsel": 240,
+      "agenten_laeufe": 352,
+      "agenten_schritte": 565,
+      "agenten_meldungen": 230,
+      "agenten_steuerung": 10,
+      "dossier_profil": 19,
+      "dossier_beobachtungen": 71,
+      "trade_deltas": 45,
+      "markt_kontext": 10,
+      "datenquellen": 5,
+      "quellen_artefakte": 3094,
+      "client_updates": 41,
+      "katalog_signale": 1454,
+      "katalog_sync": 5,
+      "equity_studien": 1572,
+      "signal_markierungen": 0,
+      "signal_kommentare": 4,
+      "llm_attempts": 0
+    },
+    "columns": {
+      "signals": [
+        "signal_id",
+        "name",
+        "platform",
+        "url",
+        "autor",
+        "abo_preis",
+        "abonnenten",
+        "wochen",
+        "stats_json",
+        "updated_at",
+        "quelle"
+      ],
+      "trade_files": [
+        "signal_id",
+        "path",
+        "sha256",
+        "fetched_at"
+      ],
+      "forensik": [
+        "signal_id",
+        "json",
+        "updated_at"
+      ],
+      "analyses": [
+        "id",
+        "signal_id",
+        "kind",
+        "model",
+        "tokens",
+        "text",
+        "created_at",
+        "basis"
+      ],
+      "subscriber_history": [
+        "signal_id",
+        "version",
+        "ts",
+        "subscribers",
+        "change",
+        "fetched_at"
+      ],
+      "downloader_reports": [
+        "signal_id",
+        "version",
+        "name",
+        "path",
+        "size_bytes",
+        "last_modified",
+        "fetched_at"
+      ],
+      "tradeserver_sync_runs": [
+        "id",
+        "started_at",
+        "finished_at",
+        "base_url",
+        "status",
+        "summary_json"
+      ],
+      "ampel_verlauf": [
+        "signal_id",
+        "ts",
+        "quelle",
+        "ampel",
+        "score",
+        "urteil",
+        "matrix"
+      ],
+      "ampel_wechsel": [
+        "id",
+        "signal_id",
+        "name",
+        "ts",
+        "quelle",
+        "ampel_alt",
+        "ampel_neu",
+        "farbwechsel",
+        "richtung",
+        "gruende"
+      ],
+      "agenten_laeufe": [
+        "id",
+        "rolle",
+        "quelle",
+        "start",
+        "ende",
+        "status",
+        "signal_id",
+        "zusammenfassung",
+        "aktion",
+        "resultat"
+      ],
+      "agenten_schritte": [
+        "id",
+        "lauf_id",
+        "ts",
+        "rolle",
+        "schritt",
+        "status",
+        "prompt",
+        "antwort",
+        "modell",
+        "tokens",
+        "dauer_s",
+        "detail_json",
+        "budget_ledger"
+      ],
+      "agenten_meldungen": [
+        "id",
+        "ts",
+        "typ",
+        "prioritaet",
+        "titel",
+        "text",
+        "quellen_json"
+      ],
+      "agenten_steuerung": [
+        "schluessel",
+        "wert",
+        "geaendert"
+      ],
+      "dossier_profil": [
+        "signal_id",
+        "version",
+        "erstellt",
+        "modell",
+        "profil_json",
+        "profil_text",
+        "aenderungs_grund"
+      ],
+      "dossier_beobachtungen": [
+        "id",
+        "signal_id",
+        "ts",
+        "einordnung",
+        "text",
+        "delta_ref",
+        "schritt_ref"
+      ],
+      "trade_deltas": [
+        "id",
+        "signal_id",
+        "ts",
+        "alt_sha256",
+        "neu_sha256",
+        "neue_trades",
+        "delta_json"
+      ],
+      "markt_kontext": [
+        "id",
+        "ts",
+        "symbole_json",
+        "kennzahlen_json",
+        "lage_text"
+      ],
+      "datenquellen": [
+        "id",
+        "kuerzel",
+        "name",
+        "base_url",
+        "typ",
+        "aktiv",
+        "angelegt_am",
+        "letzte_pruefung"
+      ],
+      "quellen_artefakte": [
+        "quelle_id",
+        "signal_id",
+        "version",
+        "art",
+        "sha256",
+        "path",
+        "fetched_at"
+      ],
+      "client_updates": [
+        "id",
+        "ts",
+        "quelle_id",
+        "kuerzel",
+        "base_url",
+        "job_id",
+        "status",
+        "dauer_s",
+        "signale_geliefert",
+        "tradelisten_neu",
+        "tradelisten_aktualisiert",
+        "datenstand",
+        "fehler",
+        "hinweise"
+      ],
+      "katalog_signale": [
+        "quelle",
+        "signal_id",
+        "name",
+        "platform",
+        "url",
+        "version",
+        "abonnenten",
+        "wochen",
+        "risiko",
+        "updated_at"
+      ],
+      "katalog_sync": [
+        "quelle",
+        "gelaufen_am",
+        "anzahl",
+        "fehler"
+      ],
+      "equity_studien": [
+        "signal_id",
+        "trades_sha",
+        "json",
+        "cagr_jahr_pct",
+        "ertrag_monat_geom_pct",
+        "dd_usd",
+        "basislos",
+        "updated_at",
+        "virtuell",
+        "forensics_version"
+      ],
+      "signal_markierungen": [
+        "signal_id",
+        "farbe",
+        "updated_at"
+      ],
+      "signal_kommentare": [
+        "signal_id",
+        "kommentar",
+        "updated_at"
+      ],
+      "llm_attempts": [
+        "id",
+        "call_id",
+        "attempt",
+        "created_at",
+        "model",
+        "prompt",
+        "content",
+        "response",
+        "usage_json",
+        "http_status",
+        "finish_reason"
+      ]
+    },
+    "sources": [
+      {
+        "id": 1,
+        "kuerzel": "mql5",
+        "name": "MqlDownloader (übernommen)",
+        "base_url": "http://localhost:8089",
+        "typ": "mql5-downloader-v1",
+        "aktiv": 1
+      },
+      {
+        "id": 2,
+        "kuerzel": "pelik",
+        "name": "PelicanTrading",
+        "base_url": "http://localhost:8090",
+        "typ": "mql5-downloader-v1",
+        "aktiv": 1
+      },
+      {
+        "id": 3,
+        "kuerzel": "vant",
+        "name": "VantageMonitor",
+        "base_url": "http://localhost:8092",
+        "typ": "mql5-downloader-v1",
+        "aktiv": 1
+      },
+      {
+        "id": 4,
+        "kuerzel": "robo",
+        "name": "RoboMonitor",
+        "base_url": "http://localhost:8091",
+        "typ": "mql5-downloader-v1",
+        "aktiv": 1
+      },
+      {
+        "id": 5,
+        "kuerzel": "zulu",
+        "name": "ZuluMonitor",
+        "base_url": "http://localhost:8093",
+        "typ": "mql5-downloader-v1",
+        "aktiv": 1
+      }
+    ],
+    "signals_by_source": [
+      {
+        "quelle": "mql5",
+        "count": 71,
+        "oldest_update": "2026-09-05 02:39:14",
+        "newest_update": "2026-10-16 12:45:50"
+      },
+      {
+        "quelle": "pelik",
+        "count": 37,
+        "oldest_update": "2026-09-30 23:44:03",
+        "newest_update": "2026-10-16 12:45:57"
+      },
+      {
+        "quelle": "robo",
+        "count": 33,
+        "oldest_update": "2026-10-08 13:13:16",
+        "newest_update": "2026-10-16 12:45:46"
+      },
+      {
+        "quelle": "vant",
+        "count": 16,
+        "oldest_update": "2026-10-04 01:44:29",
+        "newest_update": "2026-10-16 12:45:57"
+      },
+      {
+        "quelle": "zulu",
+        "count": 37,
+        "oldest_update": "2026-10-05 22:22:39",
+        "newest_update": "2026-10-08 13:13:13"
+      }
+    ],
+    "catalog_by_source": [
+      {
+        "quelle": "mql5",
+        "count": 215,
+        "oldest_update": "2026-10-17 11:35:13",
+        "newest_update": "2026-10-17 11:35:13"
+      },
+      {
+        "quelle": "pelik",
+        "count": 640,
+        "oldest_update": "2026-10-17 11:35:14",
+        "newest_update": "2026-10-17 11:35:14"
+      },
+      {
+        "quelle": "robo",
+        "count": 200,
+        "oldest_update": "2026-10-17 11:35:14",
+        "newest_update": "2026-10-17 11:35:14"
+      },
+      {
+        "quelle": "vant",
+        "count": 199,
+        "oldest_update": "2026-10-17 11:35:14",
+        "newest_update": "2026-10-17 11:35:14"
+      },
+      {
+        "quelle": "zulu",
+        "count": 200,
+        "oldest_update": "2026-10-17 11:35:14",
+        "newest_update": "2026-10-17 11:35:14"
+      }
+    ],
+    "artifacts_by_source": [
+      {
+        "quelle_id": 1,
+        "art": "metrics",
+        "count": 166,
+        "oldest_fetch": "2026-10-08 20:22:01",
+        "newest_fetch": "2026-10-17 15:38:43"
+      },
+      {
+        "quelle_id": 1,
+        "art": "trades",
+        "count": 165,
+        "oldest_fetch": "2026-10-04 15:56:18",
+        "newest_fetch": "2026-10-16 12:45:46"
+      },
+      {
+        "quelle_id": 2,
+        "art": "metrics",
+        "count": 636,
+        "oldest_fetch": "2026-09-30 22:56:45",
+        "newest_fetch": "2026-10-17 14:46:39"
+      },
+      {
+        "quelle_id": 2,
+        "art": "trades",
+        "count": 636,
+        "oldest_fetch": "2026-09-30 00:05:09",
+        "newest_fetch": "2026-10-10 21:47:57"
+      },
+      {
+        "quelle_id": 3,
+        "art": "metrics",
+        "count": 348,
+        "oldest_fetch": "2026-10-04 01:44:24",
+        "newest_fetch": "2026-10-16 12:45:50"
+      },
+      {
+        "quelle_id": 3,
+        "art": "trades",
+        "count": 347,
+        "oldest_fetch": "2026-10-04 01:44:24",
+        "newest_fetch": "2026-10-10 21:01:33"
+      },
+      {
+        "quelle_id": 4,
+        "art": "metrics",
+        "count": 200,
+        "oldest_fetch": "2026-10-08 13:13:13",
+        "newest_fetch": "2026-10-16 12:45:44"
+      },
+      {
+        "quelle_id": 4,
+        "art": "trades",
+        "count": 197,
+        "oldest_fetch": "2026-10-05 22:23:11",
+        "newest_fetch": "2026-10-08 20:21:55"
+      },
+      {
+        "quelle_id": 5,
+        "art": "metrics",
+        "count": 200,
+        "oldest_fetch": "2026-10-04 20:14:17",
+        "newest_fetch": "2026-10-17 12:42:31"
+      },
+      {
+        "quelle_id": 5,
+        "art": "trades",
+        "count": 199,
+        "oldest_fetch": "2026-10-04 20:13:49",
+        "newest_fetch": "2026-10-10 21:01:28"
+      }
+    ],
+    "catalog_sync": [
+      {
+        "quelle": "mql5",
+        "gelaufen_am": "2026-10-17 11:35:13",
+        "anzahl": 215,
+        "has_error": 0
+      },
+      {
+        "quelle": "pelik",
+        "gelaufen_am": "2026-10-17 11:35:14",
+        "anzahl": 640,
+        "has_error": 0
+      },
+      {
+        "quelle": "vant",
+        "gelaufen_am": "2026-10-17 11:35:14",
+        "anzahl": 199,
+        "has_error": 0
+      },
+      {
+        "quelle": "robo",
+        "gelaufen_am": "2026-10-17 11:35:14",
+        "anzahl": 200,
+        "has_error": 0
+      },
+      {
+        "quelle": "zulu",
+        "gelaufen_am": "2026-10-17 11:35:14",
+        "anzahl": 200,
+        "has_error": 0
+      }
+    ],
+    "recent_client_updates": [
+      {
+        "id": 41,
+        "ts": "2026-10-16 23:59:07",
+        "quelle_id": 1,
+        "kuerzel": "mql5",
+        "job_id": "u-b7c84a02-840b-47c8-8f04-ea4f4774ceb9",
+        "status": "fehler",
+        "dauer_s": 917.6,
+        "signale_geliefert": null,
+        "tradelisten_neu": null,
+        "tradelisten_aktualisiert": null,
+        "datenstand": "",
+        "has_error": 1
+      },
+      {
+        "id": 40,
+        "ts": "2026-10-16 23:57:02",
+        "quelle_id": 3,
+        "kuerzel": "vant",
+        "job_id": "u-20261016-234349-931f3818",
+        "status": "teilweise",
+        "dauer_s": 792.4,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-16T23:57:00",
+        "has_error": 0
+      },
+      {
+        "id": 39,
+        "ts": "2026-10-16 23:48:20",
+        "quelle_id": 2,
+        "kuerzel": "pelik",
+        "job_id": "u-cc6ed78a-749d-444d-b137-30ed119fca60",
+        "status": "teilweise",
+        "dauer_s": 271.2,
+        "signale_geliefert": null,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 187,
+        "datenstand": "2026-10-16T23:48:20",
+        "has_error": 0
+      },
+      {
+        "id": 38,
+        "ts": "2026-10-16 12:40:18",
+        "quelle_id": 3,
+        "kuerzel": "vant",
+        "job_id": "u-20261016-105737-21b074d6",
+        "status": "fertig",
+        "dauer_s": 6160.7,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 44,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-16T12:40:14",
+        "has_error": 0
+      },
+      {
+        "id": 37,
+        "ts": "2026-10-16 11:52:09",
+        "quelle_id": 2,
+        "kuerzel": "pelik",
+        "job_id": "u-20261016-105737",
+        "status": "fertig",
+        "dauer_s": 3271.5,
+        "signale_geliefert": 640,
+        "tradelisten_neu": 9,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-16T11:52:08",
+        "has_error": 0
+      },
+      {
+        "id": 36,
+        "ts": "2026-10-16 11:03:34",
+        "quelle_id": 4,
+        "kuerzel": "robo",
+        "job_id": "u-20261016-105737-5267b7d7",
+        "status": "fertig",
+        "dauer_s": 356.4,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 18,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-16T11:03:31",
+        "has_error": 0
+      },
+      {
+        "id": 35,
+        "ts": "2026-10-16 10:58:37",
+        "quelle_id": 1,
+        "kuerzel": "mql5",
+        "job_id": "",
+        "status": "timeout",
+        "dauer_s": 60.0,
+        "signale_geliefert": null,
+        "tradelisten_neu": null,
+        "tradelisten_aktualisiert": null,
+        "datenstand": "",
+        "has_error": 1
+      },
+      {
+        "id": 34,
+        "ts": "2026-10-16 10:57:58",
+        "quelle_id": 5,
+        "kuerzel": "zulu",
+        "job_id": "u-20261016-105737-1b0759cd",
+        "status": "fertig",
+        "dauer_s": 20.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-16T10:57:53",
+        "has_error": 0
+      },
+      {
+        "id": 33,
+        "ts": "2026-10-11 09:31:05",
+        "quelle_id": 1,
+        "kuerzel": "mql5",
+        "job_id": "u-20261011-090802",
+        "status": "fertig",
+        "dauer_s": 1382.8,
+        "signale_geliefert": null,
+        "tradelisten_neu": null,
+        "tradelisten_aktualisiert": null,
+        "datenstand": "",
+        "has_error": 0
+      },
+      {
+        "id": 32,
+        "ts": "2026-10-11 09:08:17",
+        "quelle_id": 5,
+        "kuerzel": "zulu",
+        "job_id": "u-20261011-090802-e3deece9",
+        "status": "fertig",
+        "dauer_s": 15.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-11T09:08:13",
+        "has_error": 0
+      },
+      {
+        "id": 31,
+        "ts": "2026-10-11 09:08:07",
+        "quelle_id": 4,
+        "kuerzel": "robo",
+        "job_id": "u-20261011-090802-7676a085",
+        "status": "fertig",
+        "dauer_s": 5.0,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-11T09:08:03",
+        "has_error": 0
+      },
+      {
+        "id": 30,
+        "ts": "2026-10-11 09:08:07",
+        "quelle_id": 2,
+        "kuerzel": "pelik",
+        "job_id": "u-20261011-090802",
+        "status": "fertig",
+        "dauer_s": 5.1,
+        "signale_geliefert": null,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-11T09:08:06",
+        "has_error": 0
+      },
+      {
+        "id": 29,
+        "ts": "2026-10-11 09:08:07",
+        "quelle_id": 3,
+        "kuerzel": "vant",
+        "job_id": "u-20261011-090802-3357e5aa",
+        "status": "fertig",
+        "dauer_s": 5.0,
+        "signale_geliefert": 400,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-11T09:08:02",
+        "has_error": 0
+      },
+      {
+        "id": 28,
+        "ts": "2026-10-08 12:58:27",
+        "quelle_id": 5,
+        "kuerzel": "zulu",
+        "job_id": "u-20261008-125812-f9b38994",
+        "status": "fertig",
+        "dauer_s": 15.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T12:58:23",
+        "has_error": 0
+      },
+      {
+        "id": 27,
+        "ts": "2026-10-08 12:58:17",
+        "quelle_id": 4,
+        "kuerzel": "robo",
+        "job_id": "u-20261008-125812-ee19369c",
+        "status": "fertig",
+        "dauer_s": 5.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T12:58:13",
+        "has_error": 0
+      },
+      {
+        "id": 26,
+        "ts": "2026-10-08 12:58:17",
+        "quelle_id": 3,
+        "kuerzel": "vant",
+        "job_id": "u-20261008-125812-383f8d0a",
+        "status": "fertig",
+        "dauer_s": 5.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T12:58:13",
+        "has_error": 0
+      },
+      {
+        "id": 25,
+        "ts": "2026-10-08 12:58:17",
+        "quelle_id": 2,
+        "kuerzel": "pelik",
+        "job_id": "u-20261008-125812",
+        "status": "fertig",
+        "dauer_s": 5.1,
+        "signale_geliefert": null,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T12:58:13",
+        "has_error": 0
+      },
+      {
+        "id": 24,
+        "ts": "2026-10-08 12:58:12",
+        "quelle_id": 1,
+        "kuerzel": "mql5",
+        "job_id": "u-20261008-125812",
+        "status": "fertig",
+        "dauer_s": 0.1,
+        "signale_geliefert": null,
+        "tradelisten_neu": null,
+        "tradelisten_aktualisiert": null,
+        "datenstand": "",
+        "has_error": 0
+      },
+      {
+        "id": 23,
+        "ts": "2026-10-08 11:53:48",
+        "quelle_id": 3,
+        "kuerzel": "vant",
+        "job_id": "u-20261008-114125-e797d6cc",
+        "status": "fertig",
+        "dauer_s": 743.0,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 11,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T11:53:45",
+        "has_error": 0
+      },
+      {
+        "id": 22,
+        "ts": "2026-10-08 11:41:40",
+        "quelle_id": 5,
+        "kuerzel": "zulu",
+        "job_id": "u-20261008-114125-462f6d4f",
+        "status": "fertig",
+        "dauer_s": 15.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T11:41:36",
+        "has_error": 0
+      },
+      {
+        "id": 21,
+        "ts": "2026-10-08 11:41:40",
+        "quelle_id": 2,
+        "kuerzel": "pelik",
+        "job_id": "u-20261008-114125",
+        "status": "fertig",
+        "dauer_s": 15.1,
+        "signale_geliefert": null,
+        "tradelisten_neu": 5,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T11:41:39",
+        "has_error": 0
+      },
+      {
+        "id": 20,
+        "ts": "2026-10-08 11:41:30",
+        "quelle_id": 4,
+        "kuerzel": "robo",
+        "job_id": "u-20261008-114125-e228b21",
+        "status": "fertig",
+        "dauer_s": 5.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T11:41:26",
+        "has_error": 0
+      },
+      {
+        "id": 19,
+        "ts": "2026-10-08 11:41:25",
+        "quelle_id": 1,
+        "kuerzel": "mql5",
+        "job_id": "u-20261008-114125",
+        "status": "fertig",
+        "dauer_s": 0.1,
+        "signale_geliefert": null,
+        "tradelisten_neu": null,
+        "tradelisten_aktualisiert": null,
+        "datenstand": "",
+        "has_error": 0
+      },
+      {
+        "id": 18,
+        "ts": "2026-10-08 11:13:14",
+        "quelle_id": 5,
+        "kuerzel": "zulu",
+        "job_id": "u-20261008-111259-99977b8e",
+        "status": "fertig",
+        "dauer_s": 15.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T11:13:14",
+        "has_error": 0
+      },
+      {
+        "id": 17,
+        "ts": "2026-10-08 11:13:04",
+        "quelle_id": 4,
+        "kuerzel": "robo",
+        "job_id": "u-20261008-111259-e30d90b5",
+        "status": "fertig",
+        "dauer_s": 5.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T11:13:01",
+        "has_error": 0
+      },
+      {
+        "id": 16,
+        "ts": "2026-10-08 11:12:59",
+        "quelle_id": 1,
+        "kuerzel": "mql5",
+        "job_id": "u-20261008-111259",
+        "status": "fertig",
+        "dauer_s": 0.1,
+        "signale_geliefert": null,
+        "tradelisten_neu": null,
+        "tradelisten_aktualisiert": null,
+        "datenstand": "",
+        "has_error": 0
+      },
+      {
+        "id": 15,
+        "ts": "2026-10-08 11:10:55",
+        "quelle_id": 2,
+        "kuerzel": "pelik",
+        "job_id": "u-20261008-111050",
+        "status": "fehler",
+        "dauer_s": 5.1,
+        "signale_geliefert": null,
+        "tradelisten_neu": null,
+        "tradelisten_aktualisiert": null,
+        "datenstand": "",
+        "has_error": 1
+      },
+      {
+        "id": 14,
+        "ts": "2026-10-08 11:10:55",
+        "quelle_id": 4,
+        "kuerzel": "robo",
+        "job_id": "u-20261008-111050-66387c97",
+        "status": "fertig",
+        "dauer_s": 5.1,
+        "signale_geliefert": 200,
+        "tradelisten_neu": 0,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T11:10:52",
+        "has_error": 0
+      },
+      {
+        "id": 13,
+        "ts": "2026-10-08 11:10:50",
+        "quelle_id": 1,
+        "kuerzel": "mql5",
+        "job_id": "u-20261008-111050",
+        "status": "fertig",
+        "dauer_s": 0.0,
+        "signale_geliefert": null,
+        "tradelisten_neu": null,
+        "tradelisten_aktualisiert": null,
+        "datenstand": "",
+        "has_error": 0
+      },
+      {
+        "id": 12,
+        "ts": "2026-10-08 10:36:13",
+        "quelle_id": 2,
+        "kuerzel": "pelik",
+        "job_id": "u-20261008-093005",
+        "status": "fertig",
+        "dauer_s": 3968.0,
+        "signale_geliefert": 632,
+        "tradelisten_neu": 6,
+        "tradelisten_aktualisiert": 0,
+        "datenstand": "2026-10-08T10:36:08",
+        "has_error": 0
+      }
+    ],
+    "cross_source_catalog_ids": [],
+    "orphan_counts": {
+      "forensik": 0,
+      "trade_files": 0
+    },
+    "signal_stats_keys": {
+      "eq_dd_pct": 194,
+      "bal_dd_pct": 194,
+      "ertrag_monat_pct": 194,
+      "pf": 194,
+      "growth_pct": 194,
+      "broker_server": 194,
+      "ertrag_monat_pct_forensik": 166,
+      "ertrag_monat_geom_pct": 163,
+      "cagr_jahr_pct": 163,
+      "retdd_monat": 163,
+      "retdd_jahr": 163,
+      "effizienz_befund": 163,
+      "forensik_ok": 193,
+      "forensik_version": 192,
+      "initial_deposit_usd": 182,
+      "balance_usd": 182,
+      "kapitalbasis_virtual_usd": 178,
+      "monitor_trade_eq_dd_pct": 178,
+      "last_fehler": 191,
+      "dd_equity_pct": 2,
+      "dd_balance_pct": 2,
+      "monthly_growth_pct": 2,
+      "subscribers": 2,
+      "quelle_trades_gekappt": 17,
+      "quelle_trades_total_available": 17,
+      "stats_quelle": 2,
+      "usd_normalisierung": 2,
+      "quelle_trades_stored": 15,
+      "quelle_trades_completeness_note": 15
+    },
+    "forensic_keys": {
+      "version": 159,
+      "vollstaendig": 154,
+      "trading_dd": 163,
+      "winrate_pct": 163,
+      "trades_anzahl": 132,
+      "duplikate_entfernt": 132,
+      "identische_tradezeilen": 132,
+      "plattform_trades": 132,
+      "ertrag_monat_geom_pct": 132,
+      "cagr_jahr_pct": 132,
+      "retdd_monat": 132,
+      "retdd_jahr": 132,
+      "effizienz_befund": 132,
+      "max_verlustserie": 163,
+      "verlustserie_usd": 163,
+      "peak_exposure": 163,
+      "martingale_flag": 163,
+      "martingale_evidenz": 159,
+      "stop_nachweis": 163,
+      "stop_evidence": 159,
+      "stop_befund": 132,
+      "symbole": 163,
+      "kapitalbasis": 154,
+      "equity_rekonstruktion": 146,
+      "fx_kursquelle": 156,
+      "score": 163,
+      "kriterien_matrix": 154,
+      "ampel": 163,
+      "trades_sha256": 15
+    },
+    "artifact_integrity": [
+      {
+        "table": "trade_files",
+        "counts": {
+          "total": 193,
+          "hash_ok": 193
+        },
+        "errors": []
+      },
+      {
+        "table": "quellen_artefakte",
+        "counts": {
+          "total": 3094,
+          "hash_ok": 3094
+        },
+        "errors": []
+      }
+    ]
+  },
+  "kursdaten.db": {
+    "quick_check": [
+      "ok"
+    ],
+    "foreign_key_check_count": 0,
+    "counts": {
+      "h1_bars": 10095805,
+      "h1_abrufversuche": 1852
+    },
+    "columns": {
+      "h1_bars": [
+        "feed",
+        "symbol",
+        "zeitrahmen",
+        "epoch",
+        "open",
+        "high",
+        "low",
+        "close",
+        "geladen_am",
+        "abgeschlossen"
+      ],
+      "h1_abrufversuche": [
+        "feed",
+        "symbol",
+        "zeitrahmen",
+        "von",
+        "bis",
+        "geladen_am",
+        "gueltig_bis"
+      ]
+    },
+    "feed_inventory": [
+      {
+        "feed": "[\"c:\\\\forex\\\\mt5\\\\activetrades003\\\\terminal64.exe\", \"ActivTradesMarkets-Server\"]",
+        "symbols": 85,
+        "bars": 4013943,
+        "first_epoch": 1269925200,
+        "last_epoch": 1792094400,
+        "preliminary_bars": 0
+      },
+      {
+        "feed": "[\"c:\\\\forex\\\\mt5\\\\tickmilllifemql5\\\\terminal64.exe\", \"Tickmill-Live\"]",
+        "symbols": 76,
+        "bars": 2680148,
+        "first_epoch": 1269993600,
+        "last_epoch": 1792094400,
+        "preliminary_bars": 0
+      },
+      {
+        "feed": "[\"c:\\\\forex\\\\mt5\\\\vantage\\\\terminal64.exe\", \"VantageMarkets-Live 10\"]",
+        "symbols": 141,
+        "bars": 3401714,
+        "first_epoch": 1269925200,
+        "last_epoch": 1792094400,
+        "preliminary_bars": 0
+      }
+    ],
+    "invalid_bar_counts": [
+      {
+        "unaligned": 0,
+        "invalid_ohlc": 0
+      }
+    ]
+  }
+}

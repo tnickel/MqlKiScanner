@@ -1,0 +1,63 @@
+{
+  "observed_utc": "2026-10-18T15:42:25.988529+00:00",
+  "read_only": true,
+  "network": false,
+  "source_identity": {
+    "quelle": "vant",
+    "signal_id": 178177,
+    "provider_broker_label": "vantage",
+    "original_provider_server": null
+  },
+  "snapshot_path": "data\\trade_snapshots\\ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv",
+  "snapshot_sha256": "ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84",
+  "cached_ecb_path": "data\\fx_rates\\eurofxref-hist.csv",
+  "cached_ecb_sha256": "03cb5389680fc0e761a08ba7a1ea00d9ceffe16cadb163a81079632eab7fb7bb",
+  "formula": "USD net / (direction * lots * price_delta), then divide by cached close-date EURUSD or GBPUSD",
+  "fx_policy": "latest cached ECB date <= CSV close date, maximum 10 calendar days; no refresh",
+  "limits": [
+    "Plausibility only: historical source server is unknown; generic vantage label does not prove it.",
+    "CSV timestamps have no certified timezone; daily reference FX is not the execution conversion rate.",
+    "Zero separate commission/swap fields do not prove absence of embedded fees.",
+    "No raw trades, tickets or account data are written; no exact-cent PnL reconciliation claimed."
+  ],
+  "aggregates": {
+    "GER40FT": {
+      "quote_hypothesis": "EUR",
+      "selected_trades": 9,
+      "usable_trades": 9,
+      "excluded": 0,
+      "first_close": "2023-12-12T01:24:04",
+      "last_close": "2025-03-03T13:23:31",
+      "nonzero_separate_fee_fields": 0,
+      "usd_factor_median": 1.0800278680910393,
+      "usd_factor_quartiles": [
+        1.046623606068727,
+        1.0800278680910393,
+        1.0843239175307962
+      ],
+      "native_factor_median_after_cached_ecb": 1.0003353357503246,
+      "native_factor_min": 0.996456652625911,
+      "native_factor_max": 1.0053056956650022,
+      "maximum_fx_walkback_days_used": 0
+    },
+    "UK100FT": {
+      "quote_hypothesis": "GBP",
+      "selected_trades": 13,
+      "usable_trades": 13,
+      "excluded": 0,
+      "first_close": "2024-05-03T14:30:35",
+      "last_close": "2026-02-27T09:56:24",
+      "nonzero_separate_fee_fields": 0,
+      "usd_factor_median": 1.3501501501501427,
+      "usd_factor_quartiles": [
+        1.265664530278716,
+        1.3501501501501427,
+        1.3556400165699953
+      ],
+      "native_factor_median_after_cached_ecb": 1.002720745723473,
+      "native_factor_min": 0.9975947799756175,
+      "native_factor_max": 1.005247979636348,
+      "maximum_fx_walkback_days_used": 0
+    }
+  }
+}

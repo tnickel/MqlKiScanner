@@ -1,0 +1,9 @@
+{
+  "tested_utc": "2026-10-18T17:45:48.4440187Z",
+  "busy_exit": 1,
+  "busy_exit_rejected": true,
+  "idle_exit": 0,
+  "normal_exit_marker": true,
+  "fixture_ended_normally": true,
+  "agent_sha256": "3ea5628714f4745743050e3ea5364f77c2e7092bd0bce80d25e07559083f8838"
+}

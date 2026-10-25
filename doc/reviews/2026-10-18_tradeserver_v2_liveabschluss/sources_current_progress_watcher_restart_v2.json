@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-18T18:04:22.9241635Z",
+  "python": "bundled3.12",
+  "pid": 1638964,
+  "previous_watcher_pid": 1634900,
+  "hidden": true,
+  "read_only": true,
+  "reason": "Read-only observer now labels offline APIs unreachable and accepts explicit CLI repair receipts"
+}

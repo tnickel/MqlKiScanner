@@ -1,0 +1,52 @@
+{
+  "args": [
+    "D:\\DevelopmentTools\\apache-maven-3.9.6\\bin\\mvn.cmd",
+    "-o",
+    "-q",
+    "test"
+  ],
+  "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\roboforex",
+  "offline_maven": true,
+  "started_utc": "2026-10-18T15:13:37.969009+00:00",
+  "source_sha256": {
+    "src/main/java/de/robomonitor/store/DataStore.java": "0b920a4e6de92e5a6de4542ec2ed716d8c7825e3037937b80bc61cf68e74bcf3",
+    "src/main/java/de/robomonitor/store/FileTransactions.java": "8ee91d6262895f64ee8ffea993f4c9a8ecc76a1592248d9b3e5fe23308c12c77",
+    "src/test/java/de/robomonitor/ReviewDataIntegrityTest.java": "107cb6c6f34b8aae991343a9c52a87de273bbb3da55b01b64aabe06e4c666e1b",
+    "src/test/java/de/robomonitor/DataStoreBundleReadLockTest.java": "46d59f789a8ddcfea99ac7ebed29b1ee8eef055ff60435e5459fc4c686e725b3"
+  },
+  "child_env_overrides": {
+    "JAVA_HOME": "C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot",
+    "PATH_prefix": "C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot\\bin"
+  },
+  "exit_code": 0,
+  "elapsed_seconds": 7.67,
+  "finished_utc": "2026-10-18T15:13:45.654600+00:00",
+  "source_hashes_unchanged_during_run": true,
+  "compiled_class_sha256": {
+    "de/robomonitor/store/DataStore.class": "2dca963f8e43ab079476d28d7cc01e72844729da705deec35089b3e79fe67ce8",
+    "de/robomonitor/store/FileTransactions.class": "0c3515c906c9d0ade526fa0e1ebb83e7fe0519a0c5c6e21fc8bd48cb3eb64431"
+  },
+  "xml_sha256": {
+    "robo_full_TEST-de.robomonitor.ClosingDdDealsTest.xml": "df1891e9beeb2e70333610699caf7041c9002d3eeda86098e368a1c4f0fd8171",
+    "robo_full_TEST-de.robomonitor.CoreRegressionTest.xml": "663ade6302d564965969912a6c9b8871679ee65832fb92a70e547613c6a07504",
+    "robo_full_TEST-de.robomonitor.DataStoreBundleReadLockTest.xml": "6ca02c878ab8b997902af7042c19b9ad2a9d42e7ce7376066027e4e200969cdb",
+    "robo_full_TEST-de.robomonitor.deals.TradeAggregatorTest.xml": "5a4858dcd3be2f8202f8952e42005c91ed8d42835cec082ec4bb091c6415fd38",
+    "robo_full_TEST-de.robomonitor.DealStoreTest.xml": "4ad17b96783dc3a6bad7783a638a66c50bc7d4139762dcafebdfea41fdfb1e0d",
+    "robo_full_TEST-de.robomonitor.LlmSettingsTest.xml": "d02044e8922c46a750dd5526b671f524447457c89de2fd13d4b1fdb27648e6ea",
+    "robo_full_TEST-de.robomonitor.RestApiServerTest.xml": "f53cf41ac06c70ca18b5f8957fac11ea2984118caff20d1f4ef59f179c187f4e",
+    "robo_full_TEST-de.robomonitor.ReviewDataIntegrityTest.xml": "b3926604f504000e0a4aac82a2274cc67f84f5efeba63716a6865eddc9574ad0",
+    "robo_full_TEST-de.robomonitor.SignalFilterTest.xml": "26e5acf9e17b49cb04f095300c766841e9791f03ce79c664d21cdeb39ca95b91",
+    "robo_full_TEST-de.robomonitor.store.UiPrefsTest.xml": "b5f10abda40441371a88ef9e0b17a6cdb5f6de4915ba6a8d598166f34c637bdb",
+    "robo_full_TEST-de.robomonitor.SubscriberDbTest.xml": "894b584585095951ba67aeda935e003229161d3fd39974470bd305798fe3c7c5",
+    "robo_full_TEST-de.robomonitor.TradeDdProvenanceTest.xml": "8af188dfd0a81bc0207cec6f987dc17d6d9a422d2744ea4e44935c4c9c39973b",
+    "robo_full_TEST-de.robomonitor.TradelistenPersistenzTest.xml": "bad394701d9f8fcea9c1c74ac056d097e986e5b2c38da1a60500d424bfab0a3f",
+    "robo_full_TEST-de.robomonitor.UpdateJobStufe0Test.xml": "cbfe8168710595b1c94b5801c3cf1dd2444d635bf157c20983d7b972054c4b59"
+  },
+  "tests": {
+    "cases": 185,
+    "passed": 185,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

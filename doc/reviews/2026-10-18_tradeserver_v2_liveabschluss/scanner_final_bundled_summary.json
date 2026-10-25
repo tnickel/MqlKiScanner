@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "command": "Explicit bundled Python 3.12.14 with PYTHONPATH=src;Windows Python312 User-Site: python -m pytest tests -q -m 'not llm' --tb=short --junitxml=doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/scanner_final_bundled_full.xml",
+  "started_at": "2026-10-18T20:08:12.187893+02:00",
+  "exit_code": 0,
+  "passed": 2784,
+  "skipped": 1,
+  "deselected": 4,
+  "failed": 0,
+  "errors": 0,
+  "elapsed_seconds_console": 856.81,
+  "elapsed_seconds_junit": 856.706,
+  "skip": {
+    "test": "tests.test_identity_activation::test_symlink_is_rejected_without_following_target",
+    "reason": "No local symlink privilege: 1314"
+  },
+  "runtime": "scanner_final_bundled_runtime.json",
+  "runtime_after": "scanner_final_bundled_runtime_after.json",
+  "runtime_comparison": "scanner_final_bundled_runtime_comparison.json",
+  "runtime_packages_and_module_paths_unchanged": true,
+  "core_app_spec_settings_files_checked": 112,
+  "production_files_unchanged": true,
+  "hashes_before": "scanner_final_bundled_hashes_before.json",
+  "hashes_after": "scanner_final_bundled_hashes_after.json",
+  "hash_comparison": "scanner_final_bundled_hash_comparison.json",
+  "junit": "scanner_final_bundled_full.xml",
+  "earlier_evidence": "Older 2760-test full run and 352-test targeted run are retained as separate, overlapping diagnostic evidence; counts must not be summed",
+  "limits": [
+    "Unit and UI tests use the existing isolated storage and mocked external-service contracts",
+    "The full suite does not prove completion of live source jobs, current studies, reports, or final Tradeserver publication",
+    "No source sync, live update, production database sanitization, terminal restart, or interrupt was initiated for this full test"
+  ]
+}

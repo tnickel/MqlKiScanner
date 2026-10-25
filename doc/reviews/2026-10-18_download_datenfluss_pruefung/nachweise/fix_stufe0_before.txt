@@ -1,0 +1,164 @@
+FFFFFFF                                                                  [100%]
+================================== FAILURES ===================================
+___ test_keyboard_interrupt_has_durable_final_state_and_keeps_accepted_job ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024AB3D1DBE0>
+
+    def test_keyboard_interrupt_has_durable_final_state_and_keeps_accepted_job(monkeypatch):
+        def interrupted():
+            raise KeyboardInterrupt("synthetic operator interruption")
+        row = source(monkeypatch, interrupted)
+        with pytest.raises(KeyboardInterrupt):
+            run(row)
+        events = db.list_client_updates()
+>       assert events and events[0]["status"] == cu.ABGEBROCHEN
+E       assert ([])
+
+tests\test_stufe0_abschluss.py:40: AssertionError
+________ test_accepted_job_is_already_durable_before_first_status_poll ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024AB3D1DA60>
+
+    def test_accepted_job_is_already_durable_before_first_status_poll(monkeypatch):
+        evidence = []
+        def poll():
+            evidence.extend(db.list_client_updates())
+            return done()
+        row = source(monkeypatch, poll)
+        result = run(row)
+>       assert evidence and evidence[0]["job_id"] == "accepted-job"
+E       assert ([])
+
+tests\test_stufe0_abschluss.py:52: AssertionError
+___________ test_unexpected_failure_retains_job_and_partial_counts ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024AB3D1EED0>
+
+    def test_unexpected_failure_retains_job_and_partial_counts(monkeypatch):
+        calls = 0
+        def poll():
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                return {"state": "running", "phase": "tradelisten", "done": 3, "total": 10,
+                        "ergebnis": {"tradelistenAktualisiert": 3}}
+            raise ValueError("synthetic protocol failure")
+        row = source(monkeypatch, poll)
+>       result = run(row)
+                 ^^^^^^^^
+
+tests\test_stufe0_abschluss.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_stufe0_abschluss.py:23: in run
+    return cu._update_eine_quelle(row, settings={}, log=None, on_fortschritt=callback,
+src\mqlkiscanner\client_updates.py:245: in _update_eine_quelle
+    info = client.update_status()
+           ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def poll():
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return {"state": "running", "phase": "tradelisten", "done": 3, "total": 10,
+                    "ergebnis": {"tradelistenAktualisiert": 3}}
+>       raise ValueError("synthetic protocol failure")
+E       ValueError: synthetic protocol failure
+
+tests\test_stufe0_abschluss.py:65: ValueError
+_________ test_early_stop_is_persisted_and_final_callback_receives_it _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024AB3D1F200>
+
+    def test_early_stop_is_persisted_and_final_callback_receives_it(monkeypatch):
+        row = source(monkeypatch, done)
+        updates = []
+        result = run(row, callback=updates.append, stopped=lambda: True)
+        assert result["status"] == cu.ABGEBROCHEN
+>       assert updates[-1]["status"] == cu.ABGEBROCHEN
+E       AssertionError: assert 'wartet' == 'abgebrochen'
+E         
+E         - abgebrochen
+E         + wartet
+
+tests\test_stufe0_abschluss.py:80: AssertionError
+______ test_db_failure_writes_durable_ignored_fallback_without_hiding_it ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024AB3D1F8F0>
+caplog = <_pytest.logging.LogCaptureFixture object at 0x0000024AB3D1D100>
+
+    def test_db_failure_writes_durable_ignored_fallback_without_hiding_it(monkeypatch, caplog):
+        row = source(monkeypatch, done)
+        def unavailable(**kw):
+            raise OSError("synthetic database unavailable")
+        monkeypatch.setattr(cu.db, "store_client_update", unavailable)
+        result = run(row)
+        assert result["status"] == cu.FERTIG
+        path = config.DATA_DIR / "client_updates_fallback.log"
+>       events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_stufe0_abschluss.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2155/test_db_failure_writes_durable0/data/client_updates_fallback.log')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\tnickel\\AppData\\Local\\Temp\\pytest-of-tnickel\\pytest-2155\\test_db_failure_writes_durable0\\data\\client_updates_fallback.log'
+
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\pathlib.py:1013: FileNotFoundError
+___________ test_success_has_one_terminal_record_and_a_start_trace ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024AB3D1D250>
+
+    def test_success_has_one_terminal_record_and_a_start_trace(monkeypatch):
+        row = source(monkeypatch, done)
+        run(row)
+        events = db.list_client_updates()
+        assert sum(event["status"] in cu._TERMINAL for event in events) == 1
+>       assert any(event["status"] == cu.WARTET for event in events)
+E       assert False
+E        +  where False = any(<generator object test_success_has_one_terminal_record_and_a_start_trace.<locals>.<genexpr> at 0x0000024AB3E23ED0>)
+
+tests\test_stufe0_abschluss.py:105: AssertionError
+____ test_system_exit_during_client_setup_is_recorded_and_still_propagates ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024AB3E054C0>
+
+    def test_system_exit_during_client_setup_is_recorded_and_still_propagates(monkeypatch):
+        row = source(monkeypatch, done)
+        def terminated(*a, **kw):
+            raise SystemExit(7)
+        monkeypatch.setattr(cu.quellen, "client_fuer_quelle", terminated)
+        with pytest.raises(SystemExit) as error:
+            run(row)
+        assert error.value.code == 7
+>       assert db.list_client_updates()[0]["status"] == cu.ABGEBROCHEN
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: list index out of range
+
+tests\test_stufe0_abschluss.py:116: IndexError
+=========================== short test summary info ===========================
+FAILED tests/test_stufe0_abschluss.py::test_keyboard_interrupt_has_durable_final_state_and_keeps_accepted_job
+FAILED tests/test_stufe0_abschluss.py::test_accepted_job_is_already_durable_before_first_status_poll
+FAILED tests/test_stufe0_abschluss.py::test_unexpected_failure_retains_job_and_partial_counts
+FAILED tests/test_stufe0_abschluss.py::test_early_stop_is_persisted_and_final_callback_receives_it
+FAILED tests/test_stufe0_abschluss.py::test_db_failure_writes_durable_ignored_fallback_without_hiding_it
+FAILED tests/test_stufe0_abschluss.py::test_success_has_one_terminal_record_and_a_start_trace
+FAILED tests/test_stufe0_abschluss.py::test_system_exit_during_client_setup_is_recorded_and_still_propagates
+7 failed in 4.44s
+EXITCODE: 1

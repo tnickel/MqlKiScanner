@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-18T18:12:20.9549123Z",
+  "pid": 1664648,
+  "mode": "GET_OPTIONS_only",
+  "port": 8092,
+  "gui": false,
+  "updateStarter": false,
+  "stopfile": ".tmp/sources_vantage_readonly.stop",
+  "allowed_review_scope": [
+    178177,
+    1231244,
+    504191,
+    692325,
+    762452
+  ],
+  "other_history_writer_pid": 1580932,
+  "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+  "launcher_sha256": "0eb591956075a8eed9b3d34527f03129b34f16a0c0dc26efe7a188c2e9194571"
+}

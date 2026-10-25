@@ -1,0 +1,39 @@
+{
+  "verified_utc": "2026-10-18T18:40:37.576415+00:00",
+  "input_identity_pairs": [
+    [
+      "mql4",
+      "test_1"
+    ],
+    [
+      "mql5",
+      "test_2"
+    ],
+    [
+      "mql4",
+      "page2"
+    ],
+    [
+      "mql5",
+      "page2"
+    ]
+  ],
+  "scan_candidates_after_pure_normalization": 0,
+  "catalog_rows_after_pure_normalization": 0,
+  "scanner_functions": [
+    {
+      "function": "mqlkiscanner.ingest.kandidaten",
+      "path": "src\\mqlkiscanner\\ingest.py",
+      "line": 160,
+      "sha256": "3dc280cffd01b79d1b745f4dbb7204619728cdbc50f8da299fce4f81737e9bd2"
+    },
+    {
+      "function": "mqlkiscanner.katalog._normalisiere",
+      "path": "src\\mqlkiscanner\\katalog.py",
+      "line": 30,
+      "sha256": "293374096748253684702b3298cdfd96d353a66dab830e70ce8fc7068032d75c"
+    }
+  ],
+  "production_db_writes": 0,
+  "claim_scope": "These four actual nonnumeric legacy labels only. No general assertion that every numeric but nonpositive Scanner input is rejected."
+}

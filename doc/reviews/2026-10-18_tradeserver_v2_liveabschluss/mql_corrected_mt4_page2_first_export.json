@@ -1,0 +1,22 @@
+{
+  "observed_utc": "2026-10-18T18:46:11.699276+00:00",
+  "job_id": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+  "pid": 1663784,
+  "actual_browser_page2": {
+    "platform": "mt4",
+    "page": 2,
+    "orderby": "subscribers",
+    "url": "https://www.mql5.com/en/signals/mt4/list/page2?orderby=subscribers",
+    "first_seen_utc": "2026-10-18T18:45:17.064557+00:00",
+    "driver_pid": 1737408
+  },
+  "successful_provider_index": 49,
+  "signal_id": 1750918,
+  "platform": "mql4",
+  "fresh_csv_filename": "Black_Mountain_by_SecureFX_Trader_1750918.csv",
+  "csv_mtime_utc": "2026-10-18T18:45:31.126989+00:00",
+  "csv_sha256": "43be61c543891fe2a2267765bd98dc1e4eff2075e07f555f380b448794924c61",
+  "rest_sha256": "43be61c543891fe2a2267765bd98dc1e4eff2075e07f555f380b448794924c61",
+  "rest_csv_row_count": 2706,
+  "meaning": "Real correct sorted table page2 and first provider after48exported; remaining job/MT5/conversion/catalog guard not yet accepted."
+}

@@ -1,0 +1,322 @@
+{
+  "to_row": {
+    "Ampel": {
+      "expression": "self.ampel",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 438
+    },
+    "ID": {
+      "expression": "self.id",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 438
+    },
+    "Name": {
+      "expression": "self.name",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 438
+    },
+    "Platform": {
+      "expression": "self.platform",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 439
+    },
+    "Quelle": {
+      "expression": "self.quelle or 'mql5'",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 439
+    },
+    "Abo $": {
+      "expression": "self.abo_preis_usd",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 440
+    },
+    "Abos": {
+      "expression": "self.abonnenten",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 441
+    },
+    "Wochen": {
+      "expression": "self.wochen",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 441
+    },
+    "Growth %": {
+      "expression": "self.growth_pct",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 442
+    },
+    "Ertrag/Monat %": {
+      "expression": "self.ertrag_monat_pct",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 442
+    },
+    "PF": {
+      "expression": "self.pf",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 443
+    },
+    "Drawdown % (Plattform)": {
+      "expression": "self.dd_equity_pct",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 446
+    },
+    "Balance-DD % (Plattform)": {
+      "expression": "self.dd_balance_pct",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 447
+    },
+    "Max-Drawdown %": {
+      "expression": "self.max_drawdown_equity_pct",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 448
+    },
+    "Gewinn %/Monat": {
+      "expression": "self.ertrag_monat_geom_pct",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 449
+    },
+    "TrueRetDD": {
+      "expression": "self.true_retdd_jahr",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 456
+    },
+    "TrueRetDD (Vorbehalt)": {
+      "expression": "self.retdd_jahr_vorbehalt",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 457
+    },
+    "RetDD/Monat": {
+      "expression": "self.retdd_monat",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 458
+    },
+    "Trading-DD % (geschlossen)": {
+      "expression": "self.trading_dd_pct",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 459
+    },
+    "Equity-Messung": {
+      "expression": "self.equity_messung_status",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 460
+    },
+    "Winrate %": {
+      "expression": "self.winrate_pct",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 461
+    },
+    "Verlustserie": {
+      "expression": "self.max_verlustserie",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 462
+    },
+    "Peak-Pos": {
+      "expression": "self.peak_positionen",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 463
+    },
+    "Netto-Lots": {
+      "expression": "self.peak_netto_lots",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 464
+    },
+    "Schock $": {
+      "expression": "self.shock_usd",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 465
+    },
+    "Martingale": {
+      "expression": "'JA' if self.martingale_flag else 'nein' if self.martingale_flag is not None else ''",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 466
+    },
+    "Stop": {
+      "expression": "self.stop_nachweis",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 468
+    },
+    "Score": {
+      "expression": "self.score",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 468
+    },
+    "Kurzfassung": {
+      "expression": "self.kurzfassung",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 469
+    },
+    "Urteil": {
+      "expression": "self.urteil",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 469
+    },
+    "Bericht vom": {
+      "expression": "self.gesamtbericht_at or None",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 470
+    },
+    "Fehler": {
+      "expression": "self.fehler",
+      "file": "src/mqlkiscanner/pipeline.py",
+      "line": 471
+    }
+  },
+  "tabellen_zeile": {
+    "Mark.": {
+      "expression": "MARKIERUNG_EMOJI.get(farbe or '', '')",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 230
+    },
+    "Komm.": {
+      "expression": "'📋' if hat_kommentar else ''",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 231
+    },
+    "Ampel": {
+      "expression": "getattr(result, 'ampel', '') or '—'",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 232
+    },
+    "Fix": {
+      "expression": "'📌 FIX' if getattr(result, 'id', None) in (_fix_ids() if fix_ids is None else fix_ids) else ''",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 233
+    },
+    "Name": {
+      "expression": "getattr(result, 'name', '') or str(getattr(result, 'id', ''))",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 235
+    },
+    "Link": {
+      "expression": "quellen.oeffnen_url(getattr(result, 'quelle', ''), getattr(result, 'id', None), getattr(result, 'url', ''))[:500]",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 240
+    },
+    "Quelle": {
+      "expression": "getattr(result, 'quelle', 'mql5') or 'mql5'",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 243
+    },
+    "Herkunft": {
+      "expression": "getattr(result, 'herkunft', 'Workflow') or 'Workflow'",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 244
+    },
+    "Plattform": {
+      "expression": "getattr(result, 'platform', '') or ''",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 245
+    },
+    "ID": {
+      "expression": "getattr(result, 'id', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 246
+    },
+    "Wochen": {
+      "expression": "getattr(result, 'wochen', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 247
+    },
+    "Abonnenten": {
+      "expression": "getattr(result, 'abonnenten', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 248
+    },
+    "Plattform-DD %": {
+      "expression": "getattr(result, 'dd_equity_pct', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 250
+    },
+    "Trading-DD %": {
+      "expression": "statistik.get('trading_dd_pct')",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 251
+    },
+    "True-DD %": {
+      "expression": "getattr(result, 'true_max_drawdown_pct', None) if getattr(result, 'true_max_drawdown_pct', None) is not None else getattr(result, 'true_dd_virtuell_pct', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 254
+    },
+    "True-DD ≈": {
+      "expression": "getattr(result, 'true_dd_virtuell_pct', None) if vorbehalt else getattr(result, 'equity_dd_rekon_roh_pct', None) if getattr(result, 'max_drawdown_equity_pct', None) is None else None",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 258
+    },
+    "True-DD USD": {
+      "expression": "getattr(result, 'true_dd_usd', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 264
+    },
+    "Plattform %/M": {
+      "expression": "getattr(result, 'ertrag_monat_pct', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 266
+    },
+    "Geom. %/M": {
+      "expression": "statistik.get('ertrag_monat_geom_pct')",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 267
+    },
+    "TrueRetDD": {
+      "expression": "getattr(result, 'true_retdd_jahr', None) if getattr(result, 'true_retdd_jahr', None) is not None else getattr(result, 'retdd_virtuell_jahr', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 272
+    },
+    "TrueRetDD ≈": {
+      "expression": "getattr(result, 'retdd_virtuell_jahr', None) if vorbehalt else getattr(result, 'retdd_jahr_vorbehalt', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 275
+    },
+    "RetDD/Monat": {
+      "expression": "getattr(result, 'true_retdd_monat', None) if getattr(result, 'true_retdd_monat', None) is not None else getattr(result, 'retdd_virtuell_monat', None)",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 277
+    },
+    "PF": {
+      "expression": "statistik.get('profit_faktor')",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 280
+    },
+    "Win %": {
+      "expression": "statistik.get('winrate_pct')",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 281
+    },
+    "Trades": {
+      "expression": "statistik.get('trades')",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 282
+    },
+    "Basis": {
+      "expression": "basis_kuerzel(statistik.get('kapitalbasis_quelle')) if statistik.get('kapitalbasis_ok') else '—'",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 283
+    },
+    "Forensik": {
+      "expression": "'✓' if getattr(result, 'forensik_vorhanden', False) else '—'",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 285
+    },
+    "Messstatus": {
+      "expression": "messstatus.strip(' ·')",
+      "file": "src/mqlkiscanner/alle_signale_ui.py",
+      "line": 286
+    }
+  },
+  "result_table_additions": {
+    "Stand": "id in session.refreshed_signal_ids; persisted_this_run only for legacy session state",
+    "Fix": "id in fix_signale.fix_ids()",
+    "Bericht": "static PDF action label; selected ScanResult snapshot",
+    "Studie": "static action label; selected ScanResult snapshot",
+    "Link": "quellen.oeffnen_url(result.quelle, result.id, result.url)",
+    "Abonnenten": "downloader_sync.abo_bilanz(...).abonnenten from subscriber_history, preferred platform",
+    "30 Tage": "abo_bilanz(...).tage30 -> _abo_delta_zelle",
+    "7 Tage": "abo_bilanz(...).tage7 -> _abo_delta_zelle",
+    "Dokumente": "nonempty workflow report fields + db.downloader_report_counts; separate deep-analysis count"
+  },
+  "alle_signale_postprocessing": {
+    "study_display": "studie_anzeige_dd_pct overrides True-DD; current CSV CAGR/DD for >=3 months; orange if study provisional",
+    "usd_or_partial_guard": "USD proof missing / financial-only partial stats clear Trading-DD, True-DD, geom yield and RetDD cells",
+    "formatting": "pd.to_numeric(errors=coerce), df.round(2), Styler na_rep empty; no threshold decision on rounded values"
+  }
+}

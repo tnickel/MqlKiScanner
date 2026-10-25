@@ -1,0 +1,26 @@
+{
+  "args": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "tests/test_source_identity_contract.py",
+    "-k",
+    "legacy_empty_source_only_allows_explicit_mql5_update",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_download_datenfluss_pruefung\\uebergabe_nachpruefung\\legacy_quelle_before.xml"
+  ],
+  "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner",
+  "started_utc": "2026-10-18T11:31:54.555031+00:00",
+  "purpose": "Reproduce legacy empty-source defect before product fix",
+  "child_env_overrides": {
+    "PYTHONIOENCODING": "utf-8"
+  },
+  "source_sha256": {
+    "src/mqlkiscanner/db.py": "f2acf8cef428ff552fe5f147b30935e0f96cc8231628baf39c0ea5b3877538b1",
+    "tests/test_source_identity_contract.py": "d5156527a01e23ee29571a3e37d2cd9a582891cd14a7735eab9df8537240cf06"
+  },
+  "exit_code": 1,
+  "finished_utc": "2026-10-18T11:32:00.564337+00:00"
+}

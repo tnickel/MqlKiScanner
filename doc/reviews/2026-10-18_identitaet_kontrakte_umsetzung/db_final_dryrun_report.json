@@ -1,0 +1,220 @@
+{
+  "migration_version": 1,
+  "schema_version": 2,
+  "backup": {
+    "path": "C:\\Users\\tnickel\\AppData\\Local\\Temp\\scanner_identity_final_ker_nf70\\candidate.db.legacy-backup.sqlite",
+    "sha256": "0f62e457a5361511deac465b1c942f7df9066642a4aa0f8f2c652de879abe405",
+    "size_bytes": 70852608,
+    "source_file_sha256_before": "0f62e457a5361511deac465b1c942f7df9066642a4aa0f8f2c652de879abe405",
+    "source_file_sha256_after": "0f62e457a5361511deac465b1c942f7df9066642a4aa0f8f2c652de879abe405",
+    "source_file_unchanged_during_backup": true
+  },
+  "tables": {
+    "signals": {
+      "before": 194,
+      "migrated": 194,
+      "quarantined": 0
+    },
+    "trade_files": {
+      "before": 193,
+      "migrated": 193,
+      "quarantined": 0
+    },
+    "forensik": {
+      "before": 163,
+      "migrated": 163,
+      "quarantined": 0
+    },
+    "analyses": {
+      "before": 2282,
+      "migrated": 2279,
+      "quarantined": 3
+    },
+    "subscriber_history": {
+      "before": 1305,
+      "migrated": 0,
+      "quarantined": 1305
+    },
+    "downloader_reports": {
+      "before": 68,
+      "migrated": 0,
+      "quarantined": 68
+    },
+    "tradeserver_sync_runs": {
+      "before": 8,
+      "migrated": 8,
+      "quarantined": 0
+    },
+    "ampel_verlauf": {
+      "before": 834,
+      "migrated": 0,
+      "quarantined": 834
+    },
+    "ampel_wechsel": {
+      "before": 240,
+      "migrated": 0,
+      "quarantined": 240
+    },
+    "agenten_laeufe": {
+      "before": 352,
+      "migrated": 268,
+      "quarantined": 84
+    },
+    "agenten_schritte": {
+      "before": 565,
+      "migrated": 352,
+      "quarantined": 213
+    },
+    "agenten_meldungen": {
+      "before": 230,
+      "migrated": 230,
+      "quarantined": 0
+    },
+    "agenten_steuerung": {
+      "before": 10,
+      "migrated": 10,
+      "quarantined": 0
+    },
+    "dossier_profil": {
+      "before": 19,
+      "migrated": 0,
+      "quarantined": 19
+    },
+    "dossier_beobachtungen": {
+      "before": 71,
+      "migrated": 0,
+      "quarantined": 71
+    },
+    "trade_deltas": {
+      "before": 45,
+      "migrated": 0,
+      "quarantined": 45
+    },
+    "markt_kontext": {
+      "before": 10,
+      "migrated": 10,
+      "quarantined": 0
+    },
+    "datenquellen": {
+      "before": 5,
+      "migrated": 5,
+      "quarantined": 0
+    },
+    "quellen_artefakte": {
+      "before": 3094,
+      "migrated": 3094,
+      "quarantined": 0
+    },
+    "client_updates": {
+      "before": 41,
+      "migrated": 41,
+      "quarantined": 0
+    },
+    "katalog_signale": {
+      "before": 1454,
+      "migrated": 1454,
+      "quarantined": 0
+    },
+    "katalog_sync": {
+      "before": 5,
+      "migrated": 5,
+      "quarantined": 0
+    },
+    "equity_studien": {
+      "before": 1572,
+      "migrated": 0,
+      "quarantined": 1572
+    },
+    "signal_markierungen": {
+      "before": 0,
+      "migrated": 0,
+      "quarantined": 0
+    },
+    "signal_kommentare": {
+      "before": 4,
+      "migrated": 0,
+      "quarantined": 4
+    },
+    "llm_attempts": {
+      "before": 0,
+      "migrated": 0,
+      "quarantined": 0
+    }
+  },
+  "files": {
+    "verified": 3287,
+    "missing": 0,
+    "sha_mismatch": 0,
+    "unchanged_references": true,
+    "verification_requested": true
+  },
+  "activated": false,
+  "legacy_pins": {
+    "before": 15,
+    "migrated": 15,
+    "quarantined": 0
+  },
+  "sequence_highwatermarks_preserved": true,
+  "budget_preservation": {
+    "unchanged": true,
+    "before": {
+      "2026-09": {
+        "spent": 483897,
+        "used_or_reserved": 483897
+      },
+      "2026-09-22": {
+        "spent": 316681,
+        "used_or_reserved": 316681
+      },
+      "2026-09-23": {
+        "spent": 167216,
+        "used_or_reserved": 167216
+      },
+      "2026-10": {
+        "spent": 102018,
+        "used_or_reserved": 102018
+      },
+      "2026-10-02": {
+        "spent": 56309,
+        "used_or_reserved": 56309
+      },
+      "2026-10-04": {
+        "spent": 45709,
+        "used_or_reserved": 45709
+      }
+    },
+    "after": {
+      "2026-09": {
+        "spent": 483897,
+        "used_or_reserved": 483897
+      },
+      "2026-09-22": {
+        "spent": 316681,
+        "used_or_reserved": 316681
+      },
+      "2026-09-23": {
+        "spent": 167216,
+        "used_or_reserved": 167216
+      },
+      "2026-10": {
+        "spent": 102018,
+        "used_or_reserved": 102018
+      },
+      "2026-10-02": {
+        "spent": 56309,
+        "used_or_reserved": 56309
+      },
+      "2026-10-04": {
+        "spent": 45709,
+        "used_or_reserved": 45709
+      }
+    },
+    "cost_receipts": 213
+  },
+  "integrity_check": "ok",
+  "foreign_key_errors": 0,
+  "identity_count": 1732,
+  "source_count": 5,
+  "destination": "C:\\Users\\tnickel\\AppData\\Local\\Temp\\scanner_identity_final_ker_nf70\\candidate.db",
+  "destination_sha256": "9ee4718779d5b18c8617ce2234c6e0476d720d6441c11f37b800816d699aa80f"
+}

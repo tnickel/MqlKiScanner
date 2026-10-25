@@ -1,0 +1,30 @@
+{
+  "recorded_utc": "2026-10-18T18:31:11.608743+00:00",
+  "job_id": "u-559dfc47-4a38-4426-b51d-59adf5ffb5db",
+  "raw_source_terminal": {
+    "jobId": "u-559dfc47-4a38-4426-b51d-59adf5ffb5db",
+    "state": "done",
+    "phase": "download",
+    "done": 48,
+    "total": 4500,
+    "message": "Kein Download aktiv",
+    "startedAt": "2026-10-18T20:04:14",
+    "finishedAt": "2026-10-18T20:29:52",
+    "ergebnis": {
+      "signaleGeliefert": 96,
+      "tradelistenNeu": 0,
+      "tradelistenAktualisiert": 96,
+      "tradelistenFehler": 0,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": false,
+      "datenstand": "2026-10-18T20:29:52.922087900",
+      "hinweise": [
+        "Katalog-Discovery nach konfigurierten MQL4-/MQL5-Limits; bei frischem Katalog werden dessen bekannte Anbieter aktualisiert."
+      ]
+    },
+    "error": null
+  },
+  "external_review_status": "teilweise",
+  "pagination_accepted": false,
+  "reason": "MT4 nur48 Exporte, Original-Tabellen-Page2 enthaelt44 weitere abonnierte Provider; kein erfolgreicher Gesamtkatalog"
+}

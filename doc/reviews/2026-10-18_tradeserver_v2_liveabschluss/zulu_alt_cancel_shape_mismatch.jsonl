@@ -1,0 +1,7 @@
+{"utc":"2026-10-18T17:43:44.979333100Z","phase":"EXISTING_LOCK_NAMESPACE_VERIFIED","detail":"matchingProviderKeys=7"}
+{"utc":"2026-10-18T17:43:44.991573100Z","phase":"PREFLIGHT","detail":"providers=7; thread=42"}
+{"utc":"2026-10-18T17:43:45.060746600Z","phase":"LOADED_CLASS_SHAPE","detail":"de/zulumonitor/store/DataStore; normalizedSha256=45b3957be43f291e8a945f707de1c370e5c41df833146e726f23df8a7ec67298"}
+{"utc":"2026-10-18T17:43:45.060746600Z","phase":"TRANSFORM_FAILED","detail":"java.lang.IllegalStateException: Loaded class differs from tested old code: de/zulumonitor/store/DataStore"}
+{"utc":"2026-10-18T17:43:45.064257200Z","phase":"LOADED_CLASS_SHAPE","detail":"de/zulumonitor/update/UpdateJob; normalizedSha256=cfd4d3a68d01d1668dd7df68a1dc399670c71828384f98709e06f228a32ac4b3"}
+{"utc":"2026-10-18T17:43:45.071262100Z","phase":"CLASS_GUARDED","detail":"de/zulumonitor/update/UpdateJob; methods=1; originalSha256=13d56ef13518a35dbdf96411571cba93c0e24c8e6291e8cf6cd173de65b952fd"}
+{"utc":"2026-10-18T17:43:45.077772900Z","phase":"FAILED","detail":"java.lang.IllegalStateException: Both guards were not generated"}

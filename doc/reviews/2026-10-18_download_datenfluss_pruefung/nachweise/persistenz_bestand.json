@@ -1,0 +1,290 @@
+{
+  "scope": "Consistent production snapshot, mode=ro; original CSVs read only; no network/secrets",
+  "forensics_version": 19,
+  "signals": 194,
+  "by_source": {
+    "mql5": 71,
+    "pelik": 37,
+    "robo": 33,
+    "vant": 16,
+    "zulu": 37
+  },
+  "stored_forensics_versions": {
+    "11": 3,
+    "14": 10,
+    "15": 104,
+    "16": 15,
+    "7": 27,
+    "None": 4
+  },
+  "stored_stats_versions": {
+    "11": 2,
+    "14": 6,
+    "15": 80,
+    "16": 13,
+    "7": 26,
+    "None": 67
+  },
+  "stored_forensics_ok": {
+    "False": 65,
+    "None": 1,
+    "True": 128
+  },
+  "currency_evidence_versions": {
+    "None": 194
+  },
+  "currency_values": {
+    "None": 194
+  },
+  "last_error_classes": {
+    "ValueError": 50,
+    "none": 131,
+    "untyped_error": 13
+  },
+  "last_error_categories": {
+    "Forensik unvollst\u00e4ndig": 32,
+    "Kontow\u00e4hrung": 13,
+    "none": 131,
+    "other": 18
+  },
+  "signal_updated_range": [
+    "2026-09-05 02:39:14",
+    "2026-10-16 12:45:57"
+  ],
+  "forensics_updated_range": [
+    "2026-09-05 22:26:17",
+    "2026-10-16 12:45:57"
+  ],
+  "forensics_snapshot_binding": {
+    "match": 15,
+    "missing": 148
+  },
+  "foreign_key_violations": [
+    {
+      "table": "analyses",
+      "rowid": 36,
+      "parent": "signals",
+      "fkid": 0,
+      "record": {
+        "id": 36,
+        "signal_id": 424242,
+        "kind": "trade_analyse",
+        "created_at": "2026-09-05 11:57:38",
+        "basis": null
+      },
+      "visible_in_signal_catalog_join": false
+    },
+    {
+      "table": "analyses",
+      "rowid": 37,
+      "parent": "signals",
+      "fkid": 0,
+      "record": {
+        "id": 37,
+        "signal_id": 424242,
+        "kind": "risiko_analyse",
+        "created_at": "2026-09-05 11:57:38",
+        "basis": null
+      },
+      "visible_in_signal_catalog_join": false
+    },
+    {
+      "table": "analyses",
+      "rowid": 38,
+      "parent": "signals",
+      "fkid": 0,
+      "record": {
+        "id": 38,
+        "signal_id": 424242,
+        "kind": "gesamtbericht",
+        "created_at": "2026-09-05 11:57:38",
+        "basis": null
+      },
+      "visible_in_signal_catalog_join": false
+    }
+  ],
+  "csv_reparse": {
+    "checked": 163,
+    "errors": [],
+    "exact_for_compared_fields": 150,
+    "different": [
+      {
+        "signal_id": 1760039,
+        "source": "mql5",
+        "version": null,
+        "forensics_ok": false,
+        "mismatches": {
+          "winrate_pct": {
+            "stored": 86.3,
+            "from_current_parser": 86.2
+          }
+        }
+      },
+      {
+        "signal_id": 2014626,
+        "source": "pelik",
+        "version": 15,
+        "forensics_ok": true,
+        "mismatches": {
+          "verlustserie_usd": {
+            "stored": -256.31,
+            "from_current_parser": -243.7
+          }
+        }
+      },
+      {
+        "signal_id": 2019075,
+        "source": "pelik",
+        "version": 15,
+        "forensics_ok": true,
+        "mismatches": {
+          "verlustserie_usd": {
+            "stored": -11.55,
+            "from_current_parser": -11.79
+          }
+        }
+      },
+      {
+        "signal_id": 2022770,
+        "source": "pelik",
+        "version": 15,
+        "forensics_ok": true,
+        "mismatches": {
+          "verlustserie_usd": {
+            "stored": -14.1,
+            "from_current_parser": -14.13
+          }
+        }
+      },
+      {
+        "signal_id": 2023944,
+        "source": "pelik",
+        "version": 15,
+        "forensics_ok": true,
+        "mismatches": {
+          "verlustserie_usd": {
+            "stored": -105.54,
+            "from_current_parser": -108.42
+          }
+        }
+      },
+      {
+        "signal_id": 2039057,
+        "source": "pelik",
+        "version": 15,
+        "forensics_ok": true,
+        "mismatches": {
+          "verlustserie_usd": {
+            "stored": -309.5,
+            "from_current_parser": -326.21
+          }
+        }
+      },
+      {
+        "signal_id": 2053240,
+        "source": "pelik",
+        "version": 15,
+        "forensics_ok": true,
+        "mismatches": {
+          "verlustserie_usd": {
+            "stored": -32.73,
+            "from_current_parser": -33.36
+          }
+        }
+      },
+      {
+        "signal_id": 2054437,
+        "source": "pelik",
+        "version": 15,
+        "forensics_ok": true,
+        "mismatches": {
+          "verlustserie_usd": {
+            "stored": -124.2,
+            "from_current_parser": -127.44
+          }
+        }
+      },
+      {
+        "signal_id": 2059368,
+        "source": "pelik",
+        "version": 15,
+        "forensics_ok": true,
+        "mismatches": {
+          "verlustserie_usd": {
+            "stored": -124.11,
+            "from_current_parser": -127.35
+          }
+        }
+      },
+      {
+        "signal_id": 2076949,
+        "source": "pelik",
+        "version": 15,
+        "forensics_ok": true,
+        "mismatches": {
+          "verlustserie_usd": {
+            "stored": -54.65,
+            "from_current_parser": -56.04
+          }
+        }
+      },
+      {
+        "signal_id": 2268766,
+        "source": "mql5",
+        "version": null,
+        "forensics_ok": false,
+        "mismatches": {
+          "winrate_pct": {
+            "stored": 51.9,
+            "from_current_parser": 52.2
+          }
+        }
+      },
+      {
+        "signal_id": 2281256,
+        "source": "mql5",
+        "version": 7,
+        "forensics_ok": true,
+        "mismatches": {
+          "max_verlustserie": {
+            "stored": 7,
+            "from_current_parser": 4
+          },
+          "verlustserie_usd": {
+            "stored": -19.87,
+            "from_current_parser": -3.98
+          }
+        }
+      },
+      {
+        "signal_id": 2386274,
+        "source": "mql5",
+        "version": null,
+        "forensics_ok": true,
+        "mismatches": {
+          "winrate_pct": {
+            "stored": 55.1,
+            "from_current_parser": 53.9
+          }
+        }
+      }
+    ],
+    "method": "Reparse every existing scanned CSV; compare available count, winrate, max loss streak length and sum. Old versions may legitimately differ from current semantics."
+  },
+  "application_reload": {
+    "rows": 194,
+    "ampel": {
+      "\u26aa": 70,
+      "\u26d4": 18,
+      "\ud83d\udd34": 106
+    },
+    "forensics_current": 0,
+    "forensics_stale": 161,
+    "errors": 63,
+    "stale_but_green": [],
+    "current_but_missing_file": [],
+    "currency": {
+      "None": 194
+    }
+  }
+}

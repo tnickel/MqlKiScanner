@@ -1,0 +1,8 @@
+{
+  "utc": "2026-10-18T18:44:55.3478821Z",
+  "pid": 1764128,
+  "expected_old_pid": 1351408,
+  "tests": 195,
+  "helper_shell": "bundled PowerShell7.6.5, same version as the verified shell environment",
+  "reason": "Legacy PowerShell5.1 could not import inherited Core modules; no source close or cache change occurred"
+}

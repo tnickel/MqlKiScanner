@@ -1,0 +1,112 @@
+{
+  "observed_utc": "2026-10-18T18:30:03.592583+00:00",
+  "process_id": 1629024,
+  "job_id": "u-559dfc47-4a38-4426-b51d-59adf5ffb5db",
+  "status": {
+    "jobId": "u-559dfc47-4a38-4426-b51d-59adf5ffb5db",
+    "state": "done",
+    "phase": "download",
+    "done": 48,
+    "total": 4500,
+    "message": "Kein Download aktiv",
+    "startedAt": "2026-10-18T20:04:14",
+    "finishedAt": "2026-10-18T20:29:52",
+    "ergebnis": {
+      "signaleGeliefert": 96,
+      "tradelistenNeu": 0,
+      "tradelistenAktualisiert": 96,
+      "tradelistenFehler": 0,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": false,
+      "datenstand": "2026-10-18T20:29:52.922087900",
+      "hinweise": [
+        "Katalog-Discovery nach konfigurierten MQL4-/MQL5-Limits; bei frischem Katalog werden dessen bekannte Anbieter aktualisiert."
+      ]
+    },
+    "error": null
+  },
+  "observed_list_urls": [
+    {
+      "platform": "mt4",
+      "page": 1,
+      "orderby": "subscribers",
+      "url": "https://www.mql5.com/en/signals/mt4/list?orderby=subscribers",
+      "first_seen_utc": "2026-10-18T18:13:21.712872+00:00",
+      "driver_pid": 1634784
+    },
+    {
+      "platform": "mt4",
+      "page": 2,
+      "orderby": "subscribers",
+      "url": "https://www.mql5.com/en/signals/mt4/page2?orderby=subscribers",
+      "first_seen_utc": "2026-10-18T18:14:58.437313+00:00",
+      "driver_pid": 1634784
+    },
+    {
+      "platform": "mt5",
+      "page": 1,
+      "orderby": "subscribers",
+      "url": "https://www.mql5.com/en/signals/mt5/list?orderby=subscribers",
+      "first_seen_utc": "2026-10-18T18:17:21.388157+00:00",
+      "driver_pid": 1680980
+    },
+    {
+      "platform": "mt5",
+      "page": 2,
+      "orderby": "subscribers",
+      "url": "https://www.mql5.com/en/signals/mt5/page2?orderby=subscribers",
+      "first_seen_utc": "2026-10-18T18:27:42.413162+00:00",
+      "driver_pid": 1680980
+    }
+  ],
+  "journals": {
+    "mql4": {
+      "success_max_index": 48,
+      "started_max_index": 48,
+      "error_max_index": 0,
+      "pages": [
+        {
+          "at_local": "2026-10-18 20:14:57",
+          "page": 1,
+          "logged_provider_count": 0,
+          "processed": 48
+        },
+        {
+          "at_local": "2026-10-18 20:17:05",
+          "page": 2,
+          "logged_provider_count": 0,
+          "processed": 48
+        }
+      ],
+      "success_count": 48
+    },
+    "mql5": {
+      "success_max_index": 48,
+      "started_max_index": 48,
+      "error_max_index": 0,
+      "pages": [
+        {
+          "at_local": "2026-10-18 20:27:41",
+          "page": 1,
+          "logged_provider_count": 0,
+          "processed": 48
+        },
+        {
+          "at_local": "2026-10-18 20:29:51",
+          "page": 2,
+          "logged_provider_count": 0,
+          "processed": 48
+        }
+      ],
+      "success_count": 48
+    }
+  },
+  "workflow_lock": {
+    "frei": false,
+    "pid": 1675172,
+    "alter_s": 287,
+    "verwaist": false,
+    "lebend": true
+  },
+  "browser_observation_method": "GET current URL from existing descendant ChromeDriver only; no navigation/script/website request"
+}

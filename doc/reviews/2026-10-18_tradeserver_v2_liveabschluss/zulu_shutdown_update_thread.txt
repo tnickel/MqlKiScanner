@@ -1,0 +1,31 @@
+
+> "update-job" #85 [1352944] daemon prio=5 os_prio=0 cpu=1453.12ms elapsed=1786.64s tid=0x00000218ab0be500 nid=1352944 waiting on condition  [0x00000022c73fe000]
+     java.lang.Thread.State: WAITING (parking)
+  	at jdk.internal.misc.Unsafe.park(java.base@25.0.4.1/Native Method)
+  	- parking to wait for  <0x00000000a4360838> (a java.util.concurrent.CompletableFuture$Signaller)
+  	at java.util.concurrent.locks.LockSupport.park(java.base@25.0.4.1/LockSupport.java:223)
+  	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@25.0.4.1/CompletableFuture.java:1885)
+  	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@25.0.4.1/ForkJoinPool.java:4364)
+  	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@25.0.4.1/ForkJoinPool.java:4310)
+  	at java.util.concurrent.CompletableFuture.waitingGet(java.base@25.0.4.1/CompletableFuture.java:1919)
+  	at java.util.concurrent.CompletableFuture.get(java.base@25.0.4.1/CompletableFuture.java:2093)
+  	at jdk.internal.net.http.HttpClientImpl.send(java.net.http@25.0.4.1/HttpClientImpl.java:902)
+  	at jdk.internal.net.http.HttpClientFacade.send(java.net.http@25.0.4.1/HttpClientFacade.java:133)
+  	at de.zulumonitor.api.ZuluTradeClient.sendWithRetry(ZuluTradeClient.java:546)
+  	at de.zulumonitor.api.ZuluTradeClient.getJson(ZuluTradeClient.java:519)
+  	at de.zulumonitor.api.ZuluTradeClient.getTradingJson(ZuluTradeClient.java:480)
+  	at de.zulumonitor.api.ZuluTradeClient.downloadTradeHistory(ZuluTradeClient.java:311)
+  	at de.zulumonitor.ZuluMonitorApp$2.ladeTradeliste(ZuluMonitorApp.java:396)
+  	at de.zulumonitor.update.UpdateJobRunner.tradelistenPhase(UpdateJobRunner.java:160)
+  	at de.zulumonitor.update.UpdateJobRunner.run(UpdateJobRunner.java:111)
+  	at de.zulumonitor.ZuluMonitorApp.lambda$starteUpdateJob$0(ZuluMonitorApp.java:454)
+  	at de.zulumonitor.ZuluMonitorApp$$Lambda/0x0000000003573d40.run(Unknown Source)
+  	at java.lang.Thread.runWith(java.base@25.0.4.1/Thread.java:1487)
+  	at java.lang.Thread.run(java.base@25.0.4.1/Thread.java:1474)
+  
+  "HttpClient-1-Worker-8" #92 [1425072] daemon prio=5 os_prio=0 cpu=46.88ms elapsed=617.69s tid=0x00000218fce72570 nid=1425072 waiting on condition  [0x00000022c74ff000]
+     java.lang.Thread.State: TIMED_WAITING (parking)
+  	at jdk.internal.misc.Unsafe.park(java.base@25.0.4.1/Native Method)
+  	- parking to wait for  <0x0000000082887a40> (a java.util.concurrent.SynchronousQueue$Transferer)
+
+

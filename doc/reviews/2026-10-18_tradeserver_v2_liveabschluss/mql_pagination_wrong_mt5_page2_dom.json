@@ -1,0 +1,17 @@
+[
+  {
+    "utc": "2026-10-18T18:29:12.810813+00:00",
+    "driver_pid": 1680980,
+    "url": "https://www.mql5.com/en/signals/mt5/page2?orderby=subscribers",
+    "title": "Trading Signals and Social Trading in MetaTrader 5 – Forex Signals - Page 2",
+    "html_sha256": "02d725a22e42331bccfcae55ca69fd133015e261766ddeb14cca3a4cdd628177",
+    "http_status_observed": null,
+    "signal_selector_anchors": 0,
+    "broad_signal_anchors": 87,
+    "numeric_provider_anchors": 48,
+    "subscriber_cells": 193,
+    "h1_texts": [
+      "MetaTrader 5 Trading Signals with Automatic Execution on Your Account"
+    ]
+  }
+]

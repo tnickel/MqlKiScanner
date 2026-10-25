@@ -1,0 +1,37 @@
+{
+  "started_utc": "2026-10-19T08:33:48.018768+00:00",
+  "finished_utc": "2026-10-19T08:33:58.497780+00:00",
+  "source": "zulu",
+  "quellen_uid": "49f40802-d00d-486b-b262-32b89b666a29",
+  "scope_path": "data/runs/liveabschluss_20261019/zulu_recovery/verified_scanner_export_scope.json",
+  "scope_sha256": "6353bd0f72430c73e797600ae40ed3d2f50c817ff4540714c73a9974218a332c",
+  "source_acceptance": {
+    "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/sources_zulu_acceptance_final_20261019.json",
+    "sha256": "5b474c9013a5fe99c955cd07f7ee55156c144ad1c456c723b47a944f4aa0fab4"
+  },
+  "current_parser_source_sha256": {
+    "src/mqlkiscanner/parser.py": "eb9259361d1a0891b46a8ef09759b38b491f342ddec562ce9e7d6b24f9bd6ae2",
+    "src/mqlkiscanner/models.py": "d843ac646f7a921781675222110953c3cede3096ff640f10c8f30bf6ac17d62d"
+  },
+  "strict_normal_parser": true,
+  "financial_only_mode": false,
+  "platform_positions_argument": null,
+  "platform_count_note": "No platform total supplied. Expected count is the actual frozen REST CSV row count, not upstream totalElements. Default parser preserves identical rows as a diagnostic.",
+  "verified_count": 178,
+  "pass_count": 178,
+  "fail_count": 0,
+  "expected_rows": 729509,
+  "parsed_trades": 729509,
+  "identical_trade_row_diagnostics": 3362,
+  "removed_rows": 0,
+  "all_file_shas_match_before_after_and_final": true,
+  "scope_and_end_receipt_unchanged": true,
+  "legacy_22_untouched": true,
+  "database_network_or_subprocess_attempts": [],
+  "forbidden_imports": [],
+  "no_database_rates_forensics_models_or_original_writes": true,
+  "private_evidence": {
+    "path": "data/runs/liveabschluss_20261019/zulu_recovery/parser_acceptance_178_private.json",
+    "sha256": "f4b93dde8a8aea03239370b773489be259e4230c0c2266d2cca85dacd7920e77"
+  }
+}

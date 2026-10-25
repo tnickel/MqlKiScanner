@@ -1,0 +1,20 @@
+{
+  "before": {
+    "tests": 6,
+    "failures": 6,
+    "errors": 0,
+    "skipped": 0,
+    "exit": 1
+  },
+  "final": {
+    "tests": 148,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit": 0
+  },
+  "source_contract_cases": 26,
+  "new_cases": 6,
+  "final_source_hashes_still_match": true,
+  "whitespace_errors": []
+}

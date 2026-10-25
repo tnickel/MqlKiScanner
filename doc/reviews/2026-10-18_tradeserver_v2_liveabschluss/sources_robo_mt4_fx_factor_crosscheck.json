@@ -1,0 +1,766 @@
+{
+  "checked_utc": "2026-10-18T18:31:12.480372+00:00",
+  "meaning": "Read-only standard USD-quoted FX contract check on MT4 native order money against storedLots * 100000 * priceDelta; simultaneous currency and lot-unit ambiguity is NOT resolved by this ratio alone.",
+  "providers": [
+    {
+      "signal_id": 38041279,
+      "source_id": "aaak",
+      "orders": 10801,
+      "median_money_factor": 0.09999999999999996,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 21566784,
+      "source_id": "aaaa",
+      "orders": 213,
+      "median_money_factor": 9.999999999999986,
+      "near_10_count": 213,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 21411352,
+      "source_id": "aaaa",
+      "orders": 38,
+      "median_money_factor": 9.999999999999796,
+      "near_10_count": 38,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 35062190,
+      "source_id": "aaay",
+      "orders": 277,
+      "median_money_factor": 0.09999999999999948,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 73009362,
+      "source_id": "aaaq",
+      "orders": 114,
+      "median_money_factor": 10.000000000000004,
+      "near_10_count": 114,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 26170186,
+      "source_id": "aaah",
+      "orders": 6,
+      "median_money_factor": 10.000000000000075,
+      "near_10_count": 6,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72166283,
+      "source_id": "aaac",
+      "orders": 6876,
+      "median_money_factor": 10.000000000000025,
+      "near_10_count": 6876,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72170009,
+      "source_id": "aaac",
+      "orders": 210,
+      "median_money_factor": 10.000000000000004,
+      "near_10_count": 210,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72170022,
+      "source_id": "aaac",
+      "orders": 1,
+      "median_money_factor": 10.000000000000357,
+      "near_10_count": 1,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46142429,
+      "source_id": "aaao",
+      "orders": 3141,
+      "median_money_factor": 0.1,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46079395,
+      "source_id": "aaao",
+      "orders": 839,
+      "median_money_factor": 0.10000000000000003,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 33181649,
+      "source_id": "aaax",
+      "orders": 3414,
+      "median_money_factor": 0.10000000000000019,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 75022088,
+      "source_id": "aaaj",
+      "orders": 34,
+      "median_money_factor": 10.00000000000014,
+      "near_10_count": 34,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72172400,
+      "source_id": "aaac",
+      "orders": 230,
+      "median_money_factor": 10.000000000000009,
+      "near_10_count": 230,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 33167402,
+      "source_id": "aaax",
+      "orders": 368,
+      "median_money_factor": 0.10000000000000135,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 7395008,
+      "source_id": "aaaq",
+      "orders": 217,
+      "median_money_factor": 9.999999999999979,
+      "near_10_count": 217,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 22741732,
+      "source_id": "aaab",
+      "orders": 648,
+      "median_money_factor": 10.000000000000025,
+      "near_10_count": 648,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 34138552,
+      "source_id": "aaar",
+      "orders": 4376,
+      "median_money_factor": 0.09999999999999992,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 75012822,
+      "source_id": "aaaj",
+      "orders": 310,
+      "median_money_factor": 9.999999999999911,
+      "near_10_count": 310,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 34150222,
+      "source_id": "aaar",
+      "orders": 2088,
+      "median_money_factor": 0.08823529411766062,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 38036434,
+      "source_id": "aaak",
+      "orders": 297,
+      "median_money_factor": 0.09999999999999992,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 75065144,
+      "source_id": "aaaj",
+      "orders": 113,
+      "median_money_factor": 9.999999999999993,
+      "near_10_count": 113,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46030023,
+      "source_id": "aaao",
+      "orders": 72,
+      "median_money_factor": 0.052402598540862974,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 34134147,
+      "source_id": "aaar",
+      "orders": 6825,
+      "median_money_factor": 0.1,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 7385715,
+      "source_id": "aaaq",
+      "orders": 13620,
+      "median_money_factor": 10.000000000000009,
+      "near_10_count": 13620,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 35094467,
+      "source_id": "aaay",
+      "orders": 469,
+      "median_money_factor": 0.09999999999999994,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 35091047,
+      "source_id": "aaay",
+      "orders": 9890,
+      "median_money_factor": 0.09999999999999962,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 33174394,
+      "source_id": "aaax",
+      "orders": 7417,
+      "median_money_factor": 0.1000000000000001,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 75003592,
+      "source_id": "aaaj",
+      "orders": 370,
+      "median_money_factor": 9.149508293194561,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72173061,
+      "source_id": "aaac",
+      "orders": 224,
+      "median_money_factor": 10.000000000000092,
+      "near_10_count": 224,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 35032009,
+      "source_id": "aaay",
+      "orders": 1975,
+      "median_money_factor": 0.10000000000000009,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72057878,
+      "source_id": "aaac",
+      "orders": 686,
+      "median_money_factor": 10.0,
+      "near_10_count": 686,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 47145356,
+      "source_id": "aaap",
+      "orders": 332,
+      "median_money_factor": 0.10000000000000023,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 21480125,
+      "source_id": "aaaa",
+      "orders": 2055,
+      "median_money_factor": 10.000000000000005,
+      "near_10_count": 2055,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 22487196,
+      "source_id": "aaab",
+      "orders": 2396,
+      "median_money_factor": 10.000000000000007,
+      "near_10_count": 2396,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 33144871,
+      "source_id": "aaax",
+      "orders": 233,
+      "median_money_factor": 0.10000000000000005,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46142849,
+      "source_id": "aaao",
+      "orders": 1470,
+      "median_money_factor": 0.10000000000000017,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46109443,
+      "source_id": "aaao",
+      "orders": 70,
+      "median_money_factor": 0.09999999999999995,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 26026591,
+      "source_id": "aaah",
+      "orders": 5,
+      "median_money_factor": 10.00000000000281,
+      "near_10_count": 5,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46149082,
+      "source_id": "aaao",
+      "orders": 843,
+      "median_money_factor": 0.09999999999999963,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 23665840,
+      "source_id": "aaau",
+      "orders": 258,
+      "median_money_factor": 10.000000000000009,
+      "near_10_count": 258,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 74149514,
+      "source_id": "aaai",
+      "orders": 116,
+      "median_money_factor": 8.93905941205556,
+      "near_10_count": 10,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 73028575,
+      "source_id": "aaaq",
+      "orders": 28,
+      "median_money_factor": 10.000000000000071,
+      "near_10_count": 28,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 73023319,
+      "source_id": "aaaq",
+      "orders": 341,
+      "median_money_factor": 10.000000000000092,
+      "near_10_count": 341,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 33054708,
+      "source_id": "aaax",
+      "orders": 33729,
+      "median_money_factor": 0.09999999999999903,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72039588,
+      "source_id": "aaac",
+      "orders": 289,
+      "median_money_factor": 9.094223219293319,
+      "near_10_count": 1,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 25351941,
+      "source_id": "aaal",
+      "orders": 1481,
+      "median_money_factor": 8.638059701492725,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 32083536,
+      "source_id": "aaaf",
+      "orders": 170,
+      "median_money_factor": 0.08800412738086731,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 7326844,
+      "source_id": "aaaq",
+      "orders": 1187,
+      "median_money_factor": 9.090909090908257,
+      "near_10_count": 92,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 23660632,
+      "source_id": "aaau",
+      "orders": 81,
+      "median_money_factor": 10.000000000000092,
+      "near_10_count": 81,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 35110876,
+      "source_id": "aaay",
+      "orders": 5139,
+      "median_money_factor": 0.08649484536081249,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 21452129,
+      "source_id": "aaaa",
+      "orders": 1984,
+      "median_money_factor": 10.000000000000009,
+      "near_10_count": 1984,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 32071010,
+      "source_id": "aaaf",
+      "orders": 184,
+      "median_money_factor": 0.10000000000000019,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 31028313,
+      "source_id": "aaae",
+      "orders": 1446,
+      "median_money_factor": 0.10000000000000009,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 23630435,
+      "source_id": "aaau",
+      "orders": 46,
+      "median_money_factor": 10.000000000000075,
+      "near_10_count": 46,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 74171663,
+      "source_id": "aaai",
+      "orders": 574,
+      "median_money_factor": 10.000000000000009,
+      "near_10_count": 574,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46008988,
+      "source_id": "aaao",
+      "orders": 4890,
+      "median_money_factor": 0.10000000000000005,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 38043043,
+      "source_id": "aaak",
+      "orders": 1,
+      "median_money_factor": 0.10000000000001101,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 73033237,
+      "source_id": "aaaq",
+      "orders": 8,
+      "median_money_factor": 9.999999999999932,
+      "near_10_count": 8,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 34173829,
+      "source_id": "aaar",
+      "orders": 1660,
+      "median_money_factor": 0.0999999999999999,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72178437,
+      "source_id": "aaac",
+      "orders": 8,
+      "median_money_factor": 8.705209864446875,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 33180292,
+      "source_id": "aaax",
+      "orders": 1406,
+      "median_money_factor": 0.1000000000000001,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 38053454,
+      "source_id": "aaak",
+      "orders": 3107,
+      "median_money_factor": 0.10000000000000009,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 75009883,
+      "source_id": "aaaj",
+      "orders": 21,
+      "median_money_factor": 9.999999999999874,
+      "near_10_count": 21,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 23124105,
+      "source_id": "aaau",
+      "orders": 565,
+      "median_money_factor": 10.000000000000009,
+      "near_10_count": 565,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 32032603,
+      "source_id": "aaaf",
+      "orders": 562,
+      "median_money_factor": 0.09999999999999991,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46150623,
+      "source_id": "aaao",
+      "orders": 146,
+      "median_money_factor": 0.10000000000000019,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46002947,
+      "source_id": "aaao",
+      "orders": 1364,
+      "median_money_factor": 0.09999999999999996,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72170432,
+      "source_id": "aaac",
+      "orders": 31,
+      "median_money_factor": 10.000000000000044,
+      "near_10_count": 31,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 74170823,
+      "source_id": "aaai",
+      "orders": 6,
+      "median_money_factor": 9.999999999999853,
+      "near_10_count": 6,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 21564086,
+      "source_id": "aaaa",
+      "orders": 7,
+      "median_money_factor": 9.999999999999796,
+      "near_10_count": 7,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 25344084,
+      "source_id": "aaal",
+      "orders": 89,
+      "median_money_factor": 10.00000000000003,
+      "near_10_count": 89,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 73002068,
+      "source_id": "aaaq",
+      "orders": 586,
+      "median_money_factor": 9.197934078179724,
+      "near_10_count": 1,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 25137242,
+      "source_id": "aaal",
+      "orders": 4,
+      "median_money_factor": 10.000000000000407,
+      "near_10_count": 4,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72170338,
+      "source_id": "aaac",
+      "orders": 136,
+      "median_money_factor": 10.000000000000135,
+      "near_10_count": 136,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 47112146,
+      "source_id": "aaap",
+      "orders": 114,
+      "median_money_factor": 0.1000000000000013,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 38064085,
+      "source_id": "aaak",
+      "orders": 14,
+      "median_money_factor": 0.10000000000000028,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 33187269,
+      "source_id": "aaax",
+      "orders": 368,
+      "median_money_factor": 0.09999999999999992,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72170379,
+      "source_id": "aaac",
+      "orders": 129,
+      "median_money_factor": 10.000000000000092,
+      "near_10_count": 129,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 47117885,
+      "source_id": "aaap",
+      "orders": 2540,
+      "median_money_factor": 0.09999999999999895,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72161506,
+      "source_id": "aaac",
+      "orders": 1,
+      "median_money_factor": 10.00000000001523,
+      "near_10_count": 1,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 7307282,
+      "source_id": "aaaq",
+      "orders": 212,
+      "median_money_factor": 9.999999999999996,
+      "near_10_count": 212,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 73035081,
+      "source_id": "aaaq",
+      "orders": 26,
+      "median_money_factor": 9.999999999999996,
+      "near_10_count": 26,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 35102328,
+      "source_id": "aaay",
+      "orders": 1703,
+      "median_money_factor": 0.1,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46152046,
+      "source_id": "aaao",
+      "orders": 7251,
+      "median_money_factor": 0.09999999999999946,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 72177434,
+      "source_id": "aaac",
+      "orders": 515,
+      "median_money_factor": 10.000000000000009,
+      "near_10_count": 515,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 35053242,
+      "source_id": "aaay",
+      "orders": 2435,
+      "median_money_factor": 0.09999999999999996,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 38069336,
+      "source_id": "aaak",
+      "orders": 379,
+      "median_money_factor": 0.10000000000000114,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 32093879,
+      "source_id": "aaaf",
+      "orders": 13,
+      "median_money_factor": 0.09999999999999709,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 7378173,
+      "source_id": "aaaq",
+      "orders": 369,
+      "median_money_factor": 9.21610169491514,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 46011517,
+      "source_id": "aaao",
+      "orders": 14167,
+      "median_money_factor": 0.0905263157895154,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 25131083,
+      "source_id": "aaal",
+      "orders": 45,
+      "median_money_factor": 9.232693911592694,
+      "near_10_count": 0,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 75058312,
+      "source_id": "aaaj",
+      "orders": 28,
+      "median_money_factor": 10.000000000000009,
+      "near_10_count": 28,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 74159872,
+      "source_id": "aaai",
+      "orders": 360,
+      "median_money_factor": 10.000000000000348,
+      "near_10_count": 360,
+      "near_1_count": 0
+    },
+    {
+      "signal_id": 24229925,
+      "source_id": "aaav",
+      "orders": 397,
+      "median_money_factor": 10.00000000000004,
+      "near_10_count": 397,
+      "near_1_count": 0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "started_utc": "2026-10-19T07:21:34.631954+00:00",
+  "pid": 41072,
+  "mode": "normal PelicanMonitorApp GUI with native UpdateStarter",
+  "runtime_jar_sha256": "1d89883cac256fc5253092d39677fdec949e73b45504f57ed0a0549025dfacd3",
+  "tested_target_class_count_matching_jar": 108,
+  "historical_tests": {
+    "tests": 181,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "source_target_unchanged": true,
+  "prior_port8090_free": true,
+  "health": {
+    "status": "ok",
+    "service": "PelicanTrading",
+    "instance": "Ryzen7950X",
+    "apiVersion": "v1",
+    "uptimeSeconds": 0,
+    "serverTime": "2026-10-19T09:21:53.2679431",
+    "providers": 641,
+    "tokenRequired": false
+  },
+  "checked_utc": "2026-10-19T07:21:53.295448+00:00"
+}

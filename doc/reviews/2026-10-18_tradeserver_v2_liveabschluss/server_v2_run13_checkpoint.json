@@ -1,0 +1,98 @@
+{
+  "checked_at_utc": "2026-10-18T18:42:09.799101+00:00",
+  "scope": "Intermediate Run13 checkpoint; not global source/data/report completion",
+  "forensics_version": 21,
+  "protocol": {
+    "service": "MqlTradeMonitor",
+    "protocolVersion": 2,
+    "kiscannerApi": 2,
+    "supportedProtocolVersions": [
+      1,
+      2
+    ]
+  },
+  "deployed_war_sha256": "89d081fc1190d41589e6a3c6a5548e051715fe4417c1de9e989882ed1e3e2615",
+  "sync_summary": {
+    "signale": 199,
+    "gespeichert": 199,
+    "geloescht": 0,
+    "dokumente": 0,
+    "uebertragen": 0,
+    "uebersprungen": 0,
+    "bytes": 0,
+    "fehler": [],
+    "abgebrochen": null,
+    "run_id": 13,
+    "server_zeit": "2026-10-18 20:36:58",
+    "dauer_s": 5.4
+  },
+  "server_readonly_audit": {
+    "KI_SIGNALS_legacy_count": 32,
+    "KI_SIGNALS_legacy_hash": "67aa01bc2f6a7cde79c81d99da9850348c5171795df57cea2abe679901ae3e08",
+    "KI_SIGNALS_backup_equal": true,
+    "KI_DOCUMENTS_legacy_count": 313,
+    "KI_DOCUMENTS_legacy_hash": "4fe1a542d43bcb18f6b91de4abd681127c1916b85552023a2ef510f6d1921d71",
+    "KI_DOCUMENTS_backup_equal": true,
+    "active_signals": 199,
+    "active_documents": 0,
+    "duplicate_signal_pairs": 0,
+    "legacy_owned_active_signals": 0,
+    "owner_pairs_sha256": "8a3f20d6c4c807dd4f3032757cf7b23061122037033a977868c5a142389322da",
+    "ampel_EXCLUDED": 18,
+    "ampel_GREEN": 5,
+    "ampel_RED": 78,
+    "ampel_WHITE": 80,
+    "ampel_YELLOW": 18,
+    "green_without_measured_annual_criteria": 0,
+    "invalid_document_owners": 0,
+    "document_blob_hash_mismatches": 0,
+    "min_calmar_jahr_min": 3.0,
+    "min_calmar_jahr_max": 3.0,
+    "drawdown_limit_pct_min": 50.0,
+    "drawdown_limit_pct_max": 50.0,
+    "v2_active": true,
+    "last_run_id": 13,
+    "last_run_status": "ok",
+    "last_run_signals_stored": 199,
+    "last_run_documents_total": 0,
+    "last_run_documents_uploaded": 0,
+    "last_run_documents_skipped": 0,
+    "last_run_bytes_transferred": 0,
+    "last_run_finished_at": "2026-10-18 20:36:58.882512",
+    "open_runs": 0
+  },
+  "local_workflow_rows": 199,
+  "local_unique_owner_pairs": 199,
+  "local_owner_pair_sha256": "8a3f20d6c4c807dd4f3032757cf7b23061122037033a977868c5a142389322da",
+  "owner_pairs_match": true,
+  "legacy_originals_unchanged_since_run12": true,
+  "verification_method": [
+    "Authenticated GET /api/kiscanner/ping; no register or writes",
+    "Read-only H2 counts, owner/hash/annual-criteria checks and last completed run",
+    "Legacy table canonical values/BLOB hashes compared to consistent closed-database backup",
+    "Local results_from_db(materialize_pdfs=False) owner-pair hash comparison",
+    "Read-only deployed WAR SHA256"
+  ],
+  "atomic_snapshot_observation": {
+    "last_run_closed": true,
+    "open_runs": 0,
+    "stored_matches_active_count": true,
+    "note": "Observed completed snapshot; rollback/abort failure semantics remain covered by existing Java/H2 integration tests, not a new destructive live test"
+  },
+  "document_scope": {
+    "active_count": 0,
+    "legacy_count": 313,
+    "nonempty_v2_pdf_owner_example_proven_live": false,
+    "note": "Current report guard exports no unbound historical PDFs; nonempty composite-owner PDF assignment remains covered by Java/Python integration tests"
+  },
+  "pending": [
+    "Source updates outside completed Pelican/FT subset",
+    "Strict FT study refresh after transport resolver fix",
+    "Current evidence-bound reports and final publication/remote acceptance"
+  ],
+  "related_evidence": [
+    "server_v2_live_sync.json",
+    "scanner_current_tables_readonly.json",
+    "scanner_ft_status_readonly_explanation.json"
+  ]
+}

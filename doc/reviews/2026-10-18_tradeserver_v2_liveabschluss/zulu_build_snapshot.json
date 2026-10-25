@@ -1,0 +1,231 @@
+{
+  "recorded_utc": "2026-10-18T17:31:53.021264+00:00",
+  "jar_sha256": "a176d947f14c5564c4995ac58648d1599e528f1a7581a36c8e3b464725270828",
+  "jar_size": 372355,
+  "main_classes_verified_against_target": 93,
+  "tests": {
+    "command": [
+      "mvn",
+      "test",
+      "-q"
+    ],
+    "passed": 149,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "package": {
+    "command": [
+      "mvn",
+      "-q",
+      "-DskipTests",
+      "package"
+    ],
+    "exit_code": 0
+  },
+  "snapshot_jar": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\.tmp\\zulu_deployment\\20261018T173153Z\\zulumonitor-1.2.0.jar",
+  "activated": false,
+  "source_files": [
+    {
+      "path": "../zulumonitor/pom.xml",
+      "sha256": "71ccdd391e820678582ea864b7dcb65f6adcff56569a3574ed7d5582d80ec655"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/api/ZuluTradeClient.java",
+      "sha256": "1036cd625b1eb9a489268ed59e0d80e06eb7101db83014771db7c51c57c573f8"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/config/AppSettings.java",
+      "sha256": "3596962b04a9c4e193fd6bb39a4feb6a5f66a02e7e4c3f85a9767fbb370f7d2c"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/gui/AbonnentenStatistikDialog.java",
+      "sha256": "575eee944e75f45b288e0278e7eb1af651fcade24282f2df4a7b526bdc1d2e80"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/llm/GlmClient.java",
+      "sha256": "3105470cea4f5462b0114713356c3723ea0a27cd8b49b6465547b8a5f1bc71df"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/model/EquityDrawdown.java",
+      "sha256": "6c685f607afce1f573b4fdc5a98bdb787df2ef0157bf1fccf3cee0f9a5bf55e7"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/model/EquityKurve.java",
+      "sha256": "a1c534508efc48454d4cb759283e0463224defb421f1aceb492f2b509c9dffce"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/model/OpenTrade.java",
+      "sha256": "09de0b09e980778aeeffc878cab7bff90e8716cf8a42c4e0eb6ff71ff8ad4942"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/model/Trade.java",
+      "sha256": "a4ed337ef5167b81fbc34cf1bebbecadb9cc13bd182b21bc52547f1a45bd9370"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/model/Trader.java",
+      "sha256": "cbe072e74f01d6918db62b2fed4edb3f62a9427e4eab4640ce6506c1b9806b3b"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/model/ZombieInfo.java",
+      "sha256": "09a180e10a4ac9cfe2e47a0eb9f4d327ae0fdbf8a448dcfee081cac20211d7db"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/report/PdfRenderer.java",
+      "sha256": "0ab0c0901e67da935110b4133809305682a65f854c6c1478b5c7496ce8476c40"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/report/ReportService.java",
+      "sha256": "a1a5ca32b6037d1483124288e5a81ef08596f679555c7dd70bbadc2a6be6f8c9"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/report/TradePayloadBuilder.java",
+      "sha256": "c99c242e34db52d46f6fbfd2829d4208e78da3fa3f3fcda73094db4750b6ff94"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/rest/FxRates.java",
+      "sha256": "3900b7375c9a4dca3e8610c0d34837f832e021c4a0062560932191be7cbdab1e"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/rest/RestApiConfig.java",
+      "sha256": "8559aebe9454b46fa7b187cb2d7e5e69a86593a31e6934284b788f9a358dd553"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/rest/RestApiServer.java",
+      "sha256": "c1459b2f7af07ec75b843988ed1eb7ee7fe94c85e282250910992de6989ec745"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/rest/UpdateStarter.java",
+      "sha256": "7815b54196adeeda8d2014d37a884baeebf4bf77467905ffe661f1119ac6475b"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/SignalOverviewWindow.java",
+      "sha256": "0c89be856b6a080029a7106929d978ae235fb455b652eb5c3c8ee00d78531956"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/store/DataStore.java",
+      "sha256": "65537094258247fc8d2179436b23fac61ed31ae8ceb094a5e8fdba2a8a1d50c3"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/store/LlmReportStore.java",
+      "sha256": "4c4487703fc4093521a260f2516663de315419c52a568585107a5046e6e3cf06"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/store/SubscriberDb.java",
+      "sha256": "357f42746c9bbdaa3816d3bbc9e755a6279d8efe0e11953e4c0f8de142603065"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/store/TradeListenStore.java",
+      "sha256": "699f4ca99e8f40cf9b221b17726b7661ebc14132aa59bd49e209caaf70d143c8"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/store/UiPrefs.java",
+      "sha256": "3af9b40a8debde074bf22f1913d93317103cd609ba15b2f6e114f5fcd769b9f4"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/update/UpdateJob.java",
+      "sha256": "c4242640846dff18ec2a1f6ad7ad20b632d14cc99c8951e1d478870eed4ca4c2"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/update/UpdateJobRunner.java",
+      "sha256": "afc352c821418661067fa381c50ec51f1ccbe4b954776fc0d4bb38db9783a097"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/ZuluMonitorApp.java",
+      "sha256": "ff6e928c74065e3e49699fe75dd66c507123a9e157c31c3663b2ad1f601b9d88"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/api/CataloguePaginationTest.java",
+      "sha256": "35875f592cf8301dde1f9e39822b349c511e219b79a9b07a29fd5ffcb2406801"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/api/ClosedTradeContractTest.java",
+      "sha256": "cb852b15283d4200a956fe88ac8a04f22434cbda0c84bf185145e8d039fc0cc1"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/api/WeekEvidenceTest.java",
+      "sha256": "0f10f7c5fb1d500734619ec25c095e15310abaa5b911eba92339e55c8df1fa26"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/api/ZuluTradeClientLocalTest.java",
+      "sha256": "10f8e55582d33b3e5da3dc5a1e47165a8c5c220af180e2e6d434cdb446502630"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/config/PromptMigrationTest.java",
+      "sha256": "131b4befade32c07ef7508896ca7205815e36ce41f79eaea139cd7704f83f9a4"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/CoreRegressionTest.java",
+      "sha256": "db937508353c5d9aaf2720a56ba3a847b8c3792967c87f7e6f07e195343aff44"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/FxRatesTest.java",
+      "sha256": "01011ff2a070dfb5616c488c620c6c9ca7f1a36ccfe562d17163156931fa3927"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/HeadlessBatchDownload.java",
+      "sha256": "089ad9e020ddd47a6b1e65a948acee55fdd0e9b503a1f14df575ecd5415f681e"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/HeadlessReportTest.java",
+      "sha256": "d5bc9516f8b4fcc6464b012cc753d582f63dd6045db443543e447f3162371221"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/HeadlessSmokeTest.java",
+      "sha256": "06a55146f8b5bfe2a72c195dda6a913ba3d3017920d4218679e06d82cad14fd3"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/report/DrawdownBasisTest.java",
+      "sha256": "40aeb65294b550fa54d115f9d4308b85d493b51d54473496334207ed7b4b1b64"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/ReportPipelineTest.java",
+      "sha256": "8507b9c8054072bf9ee307098153dc3a384333856d823f64e43a7a70e9eaeeea"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/RestApiServerTest.java",
+      "sha256": "e4def72c7bf227cde9c6462665fa67d7c53ce481676399d2258a777199fefdd4"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/SettingsRegressionTest.java",
+      "sha256": "64dd2d74ee1e01fd8789190a13185cbed990c6bfd2d2197a864651cac1e27efb"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/DataStoreIntegrityTest.java",
+      "sha256": "3147697f524af6b810b4e0c41b3e323d2db5293d7dfaf3f3e3c2b80981ef0bea"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/SubscriberDbTest.java",
+      "sha256": "3bf6995be211fec5a97189d025952236fa31a040ee6e1e971c31feadea12f553"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/TradeArchiveMergeTest.java",
+      "sha256": "1a52d5143bd843174402e1ba9f61c19e6831b0d8eebf84b48cd1f0af7c0131a4"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/TradeArchivePublicationTest.java",
+      "sha256": "279a62bb8936f43e8361ebbf9f32529cad044f3b750bf714bfd8d5f62912d2be"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/TradeListenStoreTest.java",
+      "sha256": "b5e0802a3606441b1b2316936ed31f14c658eb73df4bf2fd983290c444109ac4"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/UiPrefsTest.java",
+      "sha256": "a4a042653df0a72f70baf6a960e9b5a586a89e6111385aba6e5426e4ca750efc"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/UpdateCancellationRestTest.java",
+      "sha256": "6f56044c77e924f5900802af2b86e75a7e3b28cd7804cb26a6e1c2d9d6bbb0f7"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/UpdateJobStufe0Test.java",
+      "sha256": "338ddba80529ebd0d90b97c266ebd6c574399380174dc467dadda384640fe87c"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/ZuluMonitorUiTest.java",
+      "sha256": "d47a058439835613b34b4f3a963bf8a1177b38438ff8bd934f31b5cbee4985f7"
+    }
+  ]
+}

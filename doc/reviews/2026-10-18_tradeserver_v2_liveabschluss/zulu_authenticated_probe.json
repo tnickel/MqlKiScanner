@@ -1,0 +1,36 @@
+[
+  {
+    "authenticated": true,
+    "page": 0,
+    "status": 200,
+    "meta": {
+      "totalElements": 48396,
+      "totalPages": 484,
+      "number": 0,
+      "size": 100,
+      "last": false
+    },
+    "rows": 100,
+    "owners": [
+      0
+    ],
+    "ids_sha256": "1a5eea4b8c8a20ed2b35ed8455b1d380624cc41a009dbcc83d49130b6a7e5e67"
+  },
+  {
+    "authenticated": true,
+    "page": 1,
+    "status": 200,
+    "meta": {
+      "totalElements": 48396,
+      "totalPages": 484,
+      "number": 1,
+      "size": 100,
+      "last": false
+    },
+    "rows": 100,
+    "owners": [
+      0
+    ],
+    "ids_sha256": "1bb73ee295e243715505f41adb00e72fa2d899ad9e9842c9e8bdd3fa16ebc411"
+  }
+]

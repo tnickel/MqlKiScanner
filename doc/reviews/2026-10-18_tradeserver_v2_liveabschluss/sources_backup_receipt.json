@@ -1,0 +1,38 @@
+{
+  "utc": "2026-10-18T16:41:12.274487+00:00",
+  "backup_path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\.tmp\\source_runtime_backup\\20261018T163932Z",
+  "copy": [
+    {
+      "name": "vantage_data",
+      "files": 3678,
+      "bytes": 125904760
+    },
+    {
+      "name": "vantage_classes",
+      "files": 101,
+      "bytes": 611768
+    },
+    {
+      "name": "mql_config",
+      "files": 423,
+      "bytes": 98984257
+    },
+    {
+      "name": "mql_download",
+      "files": 2001,
+      "bytes": 727524394
+    },
+    {
+      "name": "mql_jar",
+      "files": 1,
+      "bytes": 51260413
+    },
+    {
+      "name": "mql_update_state",
+      "files": 1,
+      "bytes": 51
+    }
+  ],
+  "backup_manifest_sha256": "ebc1db40e1e39a098baf26434773521ff2d9a7debb4892ebe7994af8e2b76014",
+  "note": "Private Runtimekopie nach bestaetigtem Ende beider JVMs; keine Zugangsdaten im Review."
+}

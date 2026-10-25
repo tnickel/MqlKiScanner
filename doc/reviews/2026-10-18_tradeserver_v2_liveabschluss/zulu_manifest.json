@@ -1,0 +1,173 @@
+{
+  "created_utc": "2026-10-18T17:08:43.748705+00:00",
+  "tests_passed": 129,
+  "test_failures": 0,
+  "test_exit_code": 0,
+  "active_process_restarted": false,
+  "live_cache_writes": false,
+  "files": [
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/ZuluMonitorApp.java",
+      "sha256": "778334cf73776124c59752126734b03161545ee20d658cd3d2a9f227221bbd70"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/api/ZuluTradeClient.java",
+      "sha256": "549060fd7612dd08a5c000e46577c1c86b6116b6589d1e613d46fcac6ce13b36"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/rest/RestApiServer.java",
+      "sha256": "1d24454cca2833a7e05dad286ff7de4dfd4eb9adb08ad78f487e39715d6e03f6"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/store/DataStore.java",
+      "sha256": "59142bf1225516ded309b4741fc4ab017ebc910393ff43998b475e7b774d91a8"
+    },
+    {
+      "path": "../zulumonitor/src/main/java/de/zulumonitor/update/UpdateJobRunner.java",
+      "sha256": "c39b7742b9ab393ed15d936146f4e2df6291abe43e186593941afa00879dd2b1"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/RestApiServerTest.java",
+      "sha256": "e4def72c7bf227cde9c6462665fa67d7c53ce481676399d2258a777199fefdd4"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/UpdateJobStufe0Test.java",
+      "sha256": "48bff03c663a649c7a7fc1f7288866729b66f6ca29617eff61038b987751a259"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/api/ZuluTradeClientLocalTest.java",
+      "sha256": "5562734a3c8842d8883fd3393ae72675043427f28506808c039c23d1a9921bab"
+    },
+    {
+      "path": "../zulumonitor/src/test/java/de/zulumonitor/store/DataStoreIntegrityTest.java",
+      "sha256": "4459a68d158cee079caa3b57898993660303ea8cbc2f13943bd110f4d3a0a224"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_active_status.json",
+      "sha256": "a170906137e25857b2fa36879e2d49b679f26f23e49d3520ea07bd3716f4b291"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_authenticated_probe.json",
+      "sha256": "c1efd05cd216b0cba43006e7cde3d0dc74c7eb1391bde177c9dfdb7249f16ae6"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_boundary_probe.json",
+      "sha256": "f3adc421d0a47f59fa7ede7dd20b6251ecf6720f8db46b5e3bdfcc777945287f"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_ownership_probe.json",
+      "sha256": "d1abac69581253eace474875ec8532ac8175af0e9fc1efe8941bac4669c4b3d0"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_pagination_probe.json",
+      "sha256": "4602973864e23e348b728496e2addd1259d30814bc27100419bd2a4c72175d52"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_progress_limit.json",
+      "sha256": "d8b2f6a20986354bd29af4cf07f2be17626bba78110dda791bc2694a00283e80"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_README.md",
+      "sha256": "0745e735812a977f3bce173ea4391a31389b573bd96c05d4d97e579931ee6e23"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.api.CataloguePaginationTest.xml",
+      "sha256": "b25984e19f4a43d0f168c10f79d1ace947602ffcae33395dea8dc28dc01bb1aa"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.api.ClosedTradeContractTest.xml",
+      "sha256": "d36506073db967b81a86bc2440d4d325364c3a9a310129ecee4342565441f0ee"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.api.WeekEvidenceTest.xml",
+      "sha256": "eb6178ac39232657f04f595985bc129ad3787eb68b2bcea7a95a8fdc78e89183"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.api.ZuluTradeClientLocalTest.xml",
+      "sha256": "a13b10e3bf7b3e4ead858a4f9f8e65941799b60b860e92372c47da5bfc6708fe"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.config.PromptMigrationTest.xml",
+      "sha256": "7f02dd1cca25d487dcb5015fe5cca3ee8c576757a3af4e4c66030e0f3c879cc5"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.CoreRegressionTest.xml",
+      "sha256": "b2a1fc7f01bff10eae1c4d2cc37a43ab5f10b6a03534c69fddbe4055d78389f6"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.FxRatesTest.xml",
+      "sha256": "9151c5999e3bd94b1c3c4574cdd9d143a15018f7850ef186d150a57f89efc7ea"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.report.DrawdownBasisTest.xml",
+      "sha256": "276fdf5108c0ce1975a8f91a29057b94ba398381363a6bfbcb30b0f48c0236c5"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.ReportPipelineTest.xml",
+      "sha256": "6621c49042733df9ece682c255f3b977951a23cd2e993772106d717e234797d7"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.RestApiServerTest.xml",
+      "sha256": "12fc3d9c404e1d92afeb11e84340c1db9fab026ea6cd89e3635207e5a82693f8"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.SettingsRegressionTest.xml",
+      "sha256": "940c7e740578f8c959b625a9e409ffb4ca9d1e962520ebc7f08b55a15959f646"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.store.DataStoreIntegrityTest.xml",
+      "sha256": "b4564177ef1649de6d61443899404be2a87f7013f92534835c93d04b7d46b647"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.store.SubscriberDbTest.xml",
+      "sha256": "aba8c935c92d324bfc02adf6455592a36eb23648815b095d83584b386160ddf9"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.store.TradeArchiveMergeTest.xml",
+      "sha256": "d71541a3cfc853688a09a479cd115cb9b51b3bb6e49ae0ec5baf884355cb646e"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.store.TradeListenStoreTest.xml",
+      "sha256": "8f0a534b964a70122927318342e31653f25db8811e4fb17e4e675df050102460"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.store.UiPrefsTest.xml",
+      "sha256": "3d10702cf56d36f2c0ad631cf7f536ca58f730b30feb24bb0516480e49a5fb6c"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.UpdateJobStufe0Test.xml",
+      "sha256": "2ab1fd9da8a4f34b6999cb6f7f6c135cadd7c96125e670d2094d4e1d2b7840fc"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_TEST-de.zulumonitor.ZuluMonitorUiTest.xml",
+      "sha256": "6d580ec8f4b38988c812cfe2313a2896c446ad476b2ddf06fe71e2efdedceb5c"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_tests.log",
+      "sha256": "bc745818a2d53813067102d50ff2e9eaa4fd35fea11a2646b48bc6d5ed547d8f"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_tests_exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_tests_summary.json",
+      "sha256": "092cb0f8881c766390a07b557cea8115c4a6581c58b355a652651bf29149c184"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_shutdown_assessment_runtime.json",
+      "sha256": "88c16efcb13038601c27284f83e3e545689dea155fba7db8523082f7db397869"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_shutdown_published_hashes.json",
+      "sha256": "3d8e9c461d3e60f9c5732ec4d2eddff231abf8718abb7e38a2756cbafa08d1ca"
+    },
+    {
+      "path": "doc/reviews/2026-10-18_tradeserver_v2_liveabschluss/zulu_shutdown_update_thread.txt",
+      "sha256": "2d6cde57b3186d4428ffde3bec6594e53e90d451ee26dd72695d5754669c711e"
+    }
+  ],
+  "shutdown_assessed_utc": "2026-10-18T17:12:19.885452+00:00",
+  "shutdown_executed": false,
+  "shutdown_reason": "No registered cooperative cancellation path for active daemon update-job; CSV/meta publication is not a single transaction."
+}

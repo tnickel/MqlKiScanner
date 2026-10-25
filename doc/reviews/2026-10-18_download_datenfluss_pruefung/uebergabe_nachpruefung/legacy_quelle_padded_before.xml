@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.319" timestamp="2026-10-18T13:34:53.330998+02:00" hostname="Ryzen7950X"><testcase classname="tests.test_source_identity_contract" name="test_nonempty_padded_source_keeps_exact_update_compatibility[upsert_signal]" time="0.087"><failure message="ValueError: ID-Kollision abgewehrt: Signal 123 gehört Quelle 'pelik'; Schreibversuch aus Quelle ' pelik ' verworfen (bis Composite-Identität, doc/20 Stufe 2).">api = 'upsert_signal'
+
+    @pytest.mark.parametrize("api", ["upsert_signal", "store_scan_result"])
+    def test_nonempty_padded_source_keeps_exact_update_compatibility(api):
+        db.init_db()
+        source = " pelik "
+    
+        def write(name):
+            payload = {"name": name, "quelle": source}
+            if api == "upsert_signal":
+                db.upsert_signal(123, **payload)
+            else:
+                db.store_scan_result(123, payload)
+    
+        write("Original")
+        assert db.get_signal(123)["quelle"] == source
+&gt;       write("Exact source update")
+
+tests\test_source_identity_contract.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_source_identity_contract.py:77: in write
+    db.upsert_signal(123, **payload)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+signal_id = 123, name = 'Exact source update', platform = '', url = ''
+autor = '', abo_preis = None, abonnenten = None, wochen = None, stats = None
+quelle = ' pelik ', _connection = None
+
+    def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str = "",
+                      autor: str = "", abo_preis=None, abonnenten=None, wochen=None,
+                      stats: dict | None = None, quelle: str | None = None, *,
+                      _connection=None) -&gt; None:
+        """Store metadata only for an explicitly claimed, matching source.
+    
+        Missing sources are compatible with initial legacy MQL imports only.
+        Updates may never infer their claimed source from the existing record.
+        Until composite identities are implemented, conflicting numeric IDs must
+        be rejected rather than relabelled or overwritten.
+        """
+        with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
+            # Standalone callers need the same read/write serialization as the
+            # complete scan transaction; a SELECT before acquiring the writer
+            # lock would allow two new sources to both observe a missing ID.
+            if not conn.in_transaction:
+                conn.execute("BEGIN IMMEDIATE")
+            alt = conn.execute("SELECT quelle FROM signals WHERE signal_id=?",
+                               (signal_id,)).fetchone()
+            if alt is not None and (not isinstance(quelle, str) or not quelle.strip()):
+                raise ValueError(
+                    f"ID-Kollision abgewehrt: Signal {signal_id} existiert bereits; "
+                    "ein Update benötigt eine explizite Quelle.")
+            if quelle is None:
+                quelle = "mql5"
+            elif not isinstance(quelle, str) or not quelle.strip():
+                raise ValueError("Signalquelle muss ein nichtleeres Kürzel sein")
+            # Use the same legacy interpretation as signal_quellen: an empty
+            # stored label denotes MQL5, not an identity available to any source.
+            alt_quelle = (str(alt[0] or "").strip() or "mql5") if alt is not None else None
+            if alt_quelle is not None and alt_quelle != quelle:
+&gt;               raise ValueError(
+                    f"ID-Kollision abgewehrt: Signal {signal_id} gehört "
+                    f"Quelle {alt_quelle!r}; Schreibversuch aus Quelle "
+                    f"{quelle!r} verworfen (bis Composite-Identität, doc/20 Stufe 2).")
+E               ValueError: ID-Kollision abgewehrt: Signal 123 gehört Quelle 'pelik'; Schreibversuch aus Quelle ' pelik ' verworfen (bis Composite-Identität, doc/20 Stufe 2).
+
+src\mqlkiscanner\db.py:315: ValueError</failure></testcase><testcase classname="tests.test_source_identity_contract" name="test_nonempty_padded_source_keeps_exact_update_compatibility[store_scan_result]" time="0.078"><failure message="ValueError: ID-Kollision abgewehrt: Signal 123 gehört Quelle 'pelik'; Schreibversuch aus Quelle ' pelik ' verworfen (bis Composite-Identität, doc/20 Stufe 2).">api = 'store_scan_result'
+
+    @pytest.mark.parametrize("api", ["upsert_signal", "store_scan_result"])
+    def test_nonempty_padded_source_keeps_exact_update_compatibility(api):
+        db.init_db()
+        source = " pelik "
+    
+        def write(name):
+            payload = {"name": name, "quelle": source}
+            if api == "upsert_signal":
+                db.upsert_signal(123, **payload)
+            else:
+                db.store_scan_result(123, payload)
+    
+        write("Original")
+        assert db.get_signal(123)["quelle"] == source
+&gt;       write("Exact source update")
+
+tests\test_source_identity_contract.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_source_identity_contract.py:79: in write
+    db.store_scan_result(123, payload)
+src\mqlkiscanner\db.py:437: in store_scan_result
+    upsert_signal(signal_id, **signal, _connection=conn)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+signal_id = 123, name = 'Exact source update', platform = '', url = ''
+autor = '', abo_preis = None, abonnenten = None, wochen = None, stats = None
+quelle = ' pelik '
+_connection = &lt;sqlite3.Connection object at 0x000002148CBA1F30&gt;
+
+    def upsert_signal(signal_id: int, name: str = "", platform: str = "", url: str = "",
+                      autor: str = "", abo_preis=None, abonnenten=None, wochen=None,
+                      stats: dict | None = None, quelle: str | None = None, *,
+                      _connection=None) -&gt; None:
+        """Store metadata only for an explicitly claimed, matching source.
+    
+        Missing sources are compatible with initial legacy MQL imports only.
+        Updates may never infer their claimed source from the existing record.
+        Until composite identities are implemented, conflicting numeric IDs must
+        be rejected rather than relabelled or overwritten.
+        """
+        with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
+            # Standalone callers need the same read/write serialization as the
+            # complete scan transaction; a SELECT before acquiring the writer
+            # lock would allow two new sources to both observe a missing ID.
+            if not conn.in_transaction:
+                conn.execute("BEGIN IMMEDIATE")
+            alt = conn.execute("SELECT quelle FROM signals WHERE signal_id=?",
+                               (signal_id,)).fetchone()
+            if alt is not None and (not isinstance(quelle, str) or not quelle.strip()):
+                raise ValueError(
+                    f"ID-Kollision abgewehrt: Signal {signal_id} existiert bereits; "
+                    "ein Update benötigt eine explizite Quelle.")
+            if quelle is None:
+                quelle = "mql5"
+            elif not isinstance(quelle, str) or not quelle.strip():
+                raise ValueError("Signalquelle muss ein nichtleeres Kürzel sein")
+            # Use the same legacy interpretation as signal_quellen: an empty
+            # stored label denotes MQL5, not an identity available to any source.
+            alt_quelle = (str(alt[0] or "").strip() or "mql5") if alt is not None else None
+            if alt_quelle is not None and alt_quelle != quelle:
+&gt;               raise ValueError(
+                    f"ID-Kollision abgewehrt: Signal {signal_id} gehört "
+                    f"Quelle {alt_quelle!r}; Schreibversuch aus Quelle "
+                    f"{quelle!r} verworfen (bis Composite-Identität, doc/20 Stufe 2).")
+E               ValueError: ID-Kollision abgewehrt: Signal 123 gehört Quelle 'pelik'; Schreibversuch aus Quelle ' pelik ' verworfen (bis Composite-Identität, doc/20 Stufe 2).
+
+src\mqlkiscanner\db.py:315: ValueError</failure></testcase></testsuite></testsuites>

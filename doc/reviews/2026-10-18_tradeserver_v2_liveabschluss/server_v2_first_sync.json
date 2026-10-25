@@ -1,0 +1,21 @@
+{
+  "phase": "publish",
+  "started": "2026-10-18T19:29:04",
+  "finished": "2026-10-18T19:29:31",
+  "forensics_version": 21,
+  "sync_summary": {
+    "signale": 194,
+    "gespeichert": 194,
+    "geloescht": 32,
+    "dokumente": 47,
+    "uebertragen": 47,
+    "uebersprungen": 0,
+    "bytes": 3914464,
+    "fehler": [],
+    "abgebrochen": null,
+    "run_id": 11,
+    "server_zeit": "2026-10-18 19:29:13",
+    "dauer_s": 24.7
+  },
+  "quality_status": "Intermediate sync exposed 47 historical unbound own depth PDFs; corrected by export guard and run 12"
+}

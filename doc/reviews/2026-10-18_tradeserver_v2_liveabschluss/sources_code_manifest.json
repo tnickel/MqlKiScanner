@@ -1,0 +1,288 @@
+{
+  "utc": "2026-10-18T17:38:43.360810+00:00",
+  "scope": "Modified/untracked source, tests and documentation; includes preserved earlier fixes. No runtime data/secrets.",
+  "files": [
+    {
+      "repository": "vantage",
+      "path": "README.md",
+      "sha256": "94bc890377538774ddac7a9e9d4c0c70b29d7eb3368b00cf8e1337980c77a4ee",
+      "bytes": 24163
+    },
+    {
+      "repository": "vantage",
+      "path": "download_trades.py",
+      "sha256": "7ff6a27c3b00c98f7e441bb2584f5c832ca9d13270a5cf64317f097184f79a91",
+      "bytes": 11800
+    },
+    {
+      "repository": "vantage",
+      "path": "src/main/java/de/vantagemonitor/VantageMonitorApp.java",
+      "sha256": "fe7375a39db24857c4fbf2373dac562c2a2f6e1e0cb05aac4dd097f07878a98e",
+      "bytes": 152955
+    },
+    {
+      "repository": "vantage",
+      "path": "src/main/java/de/vantagemonitor/api/VantageClient.java",
+      "sha256": "ddbb82afc6be56768b63e11dadc6141a0bd696c4f4b0e0f81de83fd0cbf4d184",
+      "bytes": 36804
+    },
+    {
+      "repository": "vantage",
+      "path": "src/main/java/de/vantagemonitor/model/TradeRecord.java",
+      "sha256": "65379327bfe0f5729c3909d9d1909b0fa148200f7dc9bb2bcb3ac280d8710dac",
+      "bytes": 4440
+    },
+    {
+      "repository": "vantage",
+      "path": "src/main/java/de/vantagemonitor/report/SignalPayloadBuilder.java",
+      "sha256": "850d9fb548495ae041352ca7cd3140688faf557734f673d672360ff6e888b469",
+      "bytes": 15767
+    },
+    {
+      "repository": "vantage",
+      "path": "src/main/java/de/vantagemonitor/rest/RestApiServer.java",
+      "sha256": "26a50d9b45f63253055f678bf39679875b71a71de8a597347c69f3d02aa59539",
+      "bytes": 37058
+    },
+    {
+      "repository": "vantage",
+      "path": "src/main/java/de/vantagemonitor/store/HistoryFiles.java",
+      "sha256": "f911b069ca0fa16ad579b08fb3a3d6cb48b13bb4a16d6653d494603c9da9ad8a",
+      "bytes": 5860
+    },
+    {
+      "repository": "vantage",
+      "path": "src/main/java/de/vantagemonitor/store/TradeListStore.java",
+      "sha256": "fa89486bc61bdff51b36e0d1bea5b60c979e970d05d0cec4be3e7cf53b1dabeb",
+      "bytes": 15843
+    },
+    {
+      "repository": "vantage",
+      "path": "src/main/java/de/vantagemonitor/store/TradeStore.java",
+      "sha256": "374afddde2f1974feca99e7239d7b6b35ef0f96483e9f3db686e975301e135db",
+      "bytes": 22290
+    },
+    {
+      "repository": "vantage",
+      "path": "src/main/java/de/vantagemonitor/update/UpdateJobRunner.java",
+      "sha256": "a26f4cc3531a86b041f60c8756e0366ae4c7da4d37810c383e0c97bcf6e60e84",
+      "bytes": 16308
+    },
+    {
+      "repository": "vantage",
+      "path": "src/test/java/de/vantagemonitor/HeadlessTradelistenLoad.java",
+      "sha256": "327a2f33006dc522f9428a60df8f7aef373983ebcf0d76af960a09bfb5228de8",
+      "bytes": 9574
+    },
+    {
+      "repository": "vantage",
+      "path": "src/test/java/de/vantagemonitor/LegacyHistoryRenewalTest.java",
+      "sha256": "0cbd96296731480200ee57977bc019d6950e7fdb14e506c69fd85ab15288a95c",
+      "bytes": 8917
+    },
+    {
+      "repository": "vantage",
+      "path": "src/test/java/de/vantagemonitor/RestApiServerTest.java",
+      "sha256": "cbb2722818bac18440e8f80f1254948a15aa0fda3ac54b3133eb0e758fa1d105",
+      "bytes": 27835
+    },
+    {
+      "repository": "vantage",
+      "path": "src/test/java/de/vantagemonitor/api/CompleteHistoryRepairTest.java",
+      "sha256": "122377599cbac804774564d77d426176b2e6a6b6d77de100910e15a09266bd8c",
+      "bytes": 6683
+    },
+    {
+      "repository": "vantage",
+      "path": "src/test/java/de/vantagemonitor/api/ReviewFollowupTest.java",
+      "sha256": "c6b84f7f49826cebc7c266e4c26350a95291ba3e594e576ce08826d549fc4758",
+      "bytes": 2201
+    },
+    {
+      "repository": "vantage",
+      "path": "src/test/java/de/vantagemonitor/api/TradeContractTest.java",
+      "sha256": "11b01547ef607a1a74600d6ae98b3670eff36740bf1022bc38386ccb374a2622",
+      "bytes": 6895
+    },
+    {
+      "repository": "vantage",
+      "path": "src/test/java/de/vantagemonitor/store/TradeIntegrityTest.java",
+      "sha256": "985e1175ae4e9864bdd69b9e9135e8488d85f2882fd48b13b70c86f97b837068",
+      "bytes": 12467
+    },
+    {
+      "repository": "vantage",
+      "path": "tests/test_download_trades.py",
+      "sha256": "7c8c0595275c00fc74245d6d541fb452e766a9fc095bf77d96b5e66fc67a2838",
+      "bytes": 6499
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "README.md",
+      "sha256": "1db7a27560dc8c03b2519c94f66de4fc59e6d40242d2a96721e4940b9ab36917",
+      "bytes": 12408
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "doc/REST_API_Dokumentation.md",
+      "sha256": "be837f91777483ab6f7f67e68355692266458fc357eda9163c4631c620fbccdf",
+      "bytes": 23780
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/converter/HtmlConverter.java",
+      "sha256": "71d02a017e291368ed8aa234d63e5fca1b2e8b2121cbe8ccffc198c5e955d85d",
+      "bytes": 21761
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/downloader/DownloadFiles.java",
+      "sha256": "42150c832eb8b297b99d51c126bfb67f99148e8b383ea31b2a357eb360d5413c",
+      "bytes": 2747
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/downloader/SignalDownloader.java",
+      "sha256": "8b47a440894ecae2e8c9443b793a74aa3ad7cf4a982ba84c671c8fb09701bdbd",
+      "bytes": 63784
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/gui/ClientUpdateRunner.java",
+      "sha256": "f9a75d68aa3431cb3152334a7c3d125bc66e6087d16eea56ac646576259be053",
+      "bytes": 4438
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/gui/DownloadManager.java",
+      "sha256": "f28c6466f2b282b452ae4a38895e3bb4267efc775277bd8d7a908b9eb53f95ad",
+      "bytes": 18565
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/gui/MqlDownloaderGui.java",
+      "sha256": "0258dc62b6a95f8546f1dd1d94b813b20877e006ae1095711e6901f9c13a4b6e",
+      "bytes": 27999
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/logging/LoggerManager.java",
+      "sha256": "3a1e0c2d3b8de939fd702cef08b86e85fd0d4b465e20b3ba7e62102cc977bcae",
+      "bytes": 14690
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/rest/ProviderAge.java",
+      "sha256": "d08f0935782a3fafb4fb9b9e39232bd563b3b2b2cdf1b077d5b39be34e9d2bb1",
+      "bytes": 3638
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/rest/ProviderFiles.java",
+      "sha256": "021a2db1e556bf13017909ec7a3b139a8fa7f9d2a95356024f9280d9ef24fbb6",
+      "bytes": 13571
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "src/rest/RestApiServer.java",
+      "sha256": "29cc4b5ed4fc5460b73a1b4187f1ef2ab47dec4b32132261170c3d91f1abc157",
+      "bytes": 50683
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "tests/calculators/MPDDDataQualityTest.java",
+      "sha256": "141b5715992fe780ff4f22243f1c6d8ec3dae944cc1b493c283016332df7dfe1",
+      "bytes": 3766
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "tests/downloader/DownloadFilesTest.java",
+      "sha256": "1bbca2f753e869e00ba7cde7b0e27ed0cd4d804c9ce2dc0c4181cb71086922be",
+      "bytes": 2463
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "tests/downloader/SignalUpdateModeTest.java",
+      "sha256": "4d1df5d56d3c4d8b76ccd6468af41ae40d8ced70d07bf46d2963588ee0600d88",
+      "bytes": 6535
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "tests/gui/ClientUpdateRunnerTest.java",
+      "sha256": "195f78c50e2c7fa3abbc1b8f408a679e67ef6d26e0b1c1979bf52e0a15245c0d",
+      "bytes": 7583
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "tests/logging/LoggerManagerTest.java",
+      "sha256": "86ae3f673e58528580914570bf3a90556208dbda22a8022d869b85fe4124e979",
+      "bytes": 1714
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "tests/rest/ProviderAgeTest.java",
+      "sha256": "44700f653d3939620af0462c9bc7bc4f6b282df7068168d83daeecca7a2b155f",
+      "bytes": 5285
+    },
+    {
+      "repository": "MqlDownloader",
+      "path": "tests/rest/RestApiServerTest.java",
+      "sha256": "e311bf7c0f8a83e909312c30faeb468244e74da8f14c41e81b48946539f08104",
+      "bytes": 16476
+    },
+    {
+      "repository": "roboforex",
+      "path": "README.md",
+      "sha256": "c91644992e9cbc081c1c4846aa18c72f540d36d831b1245049cf899b8221f33b",
+      "bytes": 31272
+    },
+    {
+      "repository": "roboforex",
+      "path": "src/main/java/de/robomonitor/api/RoboForexClient.java",
+      "sha256": "c936e10b4acf2afa0e799c0d072fa6f0253482675b74c5854533fdea4c003cb0",
+      "bytes": 36670
+    },
+    {
+      "repository": "roboforex",
+      "path": "src/main/java/de/robomonitor/store/DataStore.java",
+      "sha256": "0b920a4e6de92e5a6de4542ec2ed716d8c7825e3037937b80bc61cf68e74bcf3",
+      "bytes": 17694
+    },
+    {
+      "repository": "roboforex",
+      "path": "src/main/java/de/robomonitor/store/DealStore.java",
+      "sha256": "f05ccff4414747562bbd7349585fb3a991ee5a5cbbadb8e0413ec2f02f55a024",
+      "bytes": 21316
+    },
+    {
+      "repository": "roboforex",
+      "path": "src/main/java/de/robomonitor/store/FileTransactions.java",
+      "sha256": "22edcbd378589534bd6da3af497e8bdcd041046da14ed5c7fcaf27582320199c",
+      "bytes": 5987
+    },
+    {
+      "repository": "roboforex",
+      "path": "src/test/java/de/robomonitor/DataStoreBundleReadLockTest.java",
+      "sha256": "46d59f789a8ddcfea99ac7ebed29b1ee8eef055ff60435e5459fc4c686e725b3",
+      "bytes": 4323
+    },
+    {
+      "repository": "roboforex",
+      "path": "src/test/java/de/robomonitor/HeadlessDealsLive.java",
+      "sha256": "8043d1c6c321bfcbf2a0d1017efd03b8c0de6c22b79f5e6449a2701f48202ba1",
+      "bytes": 2605
+    },
+    {
+      "repository": "roboforex",
+      "path": "src/test/java/de/robomonitor/LegacyDealRenewalTest.java",
+      "sha256": "f2a10462334d92834d7855a6fcda82fcaf0cb6a821595c9871348f4a275f425b",
+      "bytes": 6071
+    },
+    {
+      "repository": "roboforex",
+      "path": "src/test/java/de/robomonitor/store/FileTransactionsBundleTest.java",
+      "sha256": "5ccbe681936418252fc0d5834e8824ea0bbfce5b5bbd6b60ed10d66562e7c315",
+      "bytes": 2302
+    }
+  ]
+}

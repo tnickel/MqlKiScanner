@@ -1,0 +1,653 @@
+{
+  "snapshot_utc": "2026-10-18; consistent input snapshot, own temporary writable copy",
+  "network": "blocked",
+  "product_changes": false,
+  "counts": {
+    "db_signals": 194,
+    "results_live": 194,
+    "source_catalog_rows": 1454,
+    "source_catalog_unique_ids": 1454,
+    "additional_catalog_rows": 1283,
+    "all_signals_rows": 1477
+  },
+  "sources_in_all_signals": {
+    "pelik": 643,
+    "vant": 210,
+    "mql5": 222,
+    "robo": 202,
+    "zulu": 200
+  },
+  "checks": {
+    "db_to_result_fields": 2134,
+    "annual_calmar": 194,
+    "parsed_trade_statistics": 2232
+  },
+  "mismatches": [],
+  "cache": {
+    "existing_trade_file": 1349,
+    "statistics_computed": 1141,
+    "usd_blocked": 242,
+    "statistics_with_error": 25,
+    "no_trade_path": 128
+  },
+  "states": {
+    "workflow": 194,
+    "stale_forensics": 161,
+    "virtual_equity_basis": 945,
+    "provisional_calmar": 249,
+    "statistics_without_positive_capital_basis": 270,
+    "catalog": 1283,
+    "no_statistics": 94
+  },
+  "missing_registered_files_ids": [],
+  "sha_mismatch_ids": [],
+  "financial_only_partial_statistics_ids": [
+    430016,
+    426987,
+    425666,
+    428586,
+    430608,
+    431040,
+    429555,
+    430472,
+    385732,
+    408444,
+    428298,
+    430074,
+    428131,
+    419789,
+    429044
+  ],
+  "no_trade_path_ids": [
+    1,
+    1564210,
+    1550537,
+    613905,
+    47154935,
+    1550133,
+    430815,
+    1456357,
+    93128696,
+    93019895,
+    2100517,
+    1526991,
+    1521725,
+    227811,
+    414915,
+    37407115,
+    1535735,
+    2100450,
+    1518925,
+    1545074,
+    1284291,
+    93156209,
+    2101325,
+    73035081,
+    1549034,
+    37398290,
+    72170379,
+    37347564,
+    2100987,
+    7307282,
+    7378173,
+    25131083,
+    32093879,
+    35122311,
+    37303265,
+    46011517,
+    47150215,
+    74159872,
+    75058312,
+    426712,
+    2100631,
+    24229925,
+    31028312,
+    986734,
+    1026142,
+    1213717,
+    2100809,
+    2100988,
+    1152807,
+    1531820,
+    1349247,
+    1156192,
+    1524067,
+    1549664,
+    1485150,
+    1382873,
+    1531013,
+    1533098,
+    2100262,
+    2101107,
+    155768,
+    1560620,
+    1566761,
+    1306625,
+    1557333,
+    892947,
+    1202644,
+    1354281,
+    528864,
+    1285683,
+    1298305,
+    1489234,
+    1492963,
+    1500341,
+    1545426,
+    1568251,
+    996649,
+    292479,
+    1383237,
+    2065608,
+    2094904,
+    2101072,
+    2101209,
+    430246,
+    2236750,
+    2376856,
+    2380306,
+    2383908,
+    2394758,
+    2089046,
+    2097376,
+    2099670,
+    2100083,
+    2100610,
+    2100953,
+    2101017,
+    2101161,
+    2101415,
+    2101453,
+    428708,
+    429985,
+    1750918,
+    1750952,
+    1949522,
+    2193150,
+    2245675,
+    2281956,
+    2373736,
+    2022031,
+    2024632,
+    2028855,
+    2037011,
+    2067521,
+    2069257,
+    2072348,
+    2074370,
+    2076649,
+    2082247,
+    2083844,
+    2087782,
+    2092361,
+    2098572,
+    2099260,
+    2099704,
+    2100671,
+    2100764,
+    2101095,
+    2101421
+  ],
+  "cross_source_catalog_id_collisions": [],
+  "result_column_profile": {
+    "Stand": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 194,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Fix": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 194,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Ampel": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 194
+    },
+    "ID": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 194
+    },
+    "Name": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 194
+    },
+    "Platform": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 194
+    },
+    "Quelle": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 194
+    },
+    "Abo $": {
+      "rows": 194,
+      "null": 131,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 63
+    },
+    "Abos": {
+      "rows": 194,
+      "null": 5,
+      "empty_text": 0,
+      "zero_numeric": 1,
+      "nonempty": 189
+    },
+    "Wochen": {
+      "rows": 194,
+      "null": 7,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 187
+    },
+    "Growth %": {
+      "rows": 194,
+      "null": 127,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 67
+    },
+    "Ertrag/Monat %": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 5,
+      "nonempty": 194
+    },
+    "PF": {
+      "rows": 194,
+      "null": 126,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 68
+    },
+    "Drawdown % (Plattform)": {
+      "rows": 194,
+      "null": 2,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 192
+    },
+    "Balance-DD % (Plattform)": {
+      "rows": 194,
+      "null": 126,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 68
+    },
+    "Max-Drawdown %": {
+      "rows": 194,
+      "null": 194,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Gewinn %/Monat": {
+      "rows": 194,
+      "null": 194,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "TrueRetDD": {
+      "rows": 194,
+      "null": 194,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "TrueRetDD (Vorbehalt)": {
+      "rows": 194,
+      "null": 194,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "RetDD/Monat": {
+      "rows": 194,
+      "null": 194,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Trading-DD % (geschlossen)": {
+      "rows": 194,
+      "null": 31,
+      "empty_text": 0,
+      "zero_numeric": 1,
+      "nonempty": 163
+    },
+    "Equity-Messung": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 194
+    },
+    "Winrate %": {
+      "rows": 194,
+      "null": 31,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 163
+    },
+    "Verlustserie": {
+      "rows": 194,
+      "null": 31,
+      "empty_text": 0,
+      "zero_numeric": 1,
+      "nonempty": 163
+    },
+    "Peak-Pos": {
+      "rows": 194,
+      "null": 31,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 163
+    },
+    "Netto-Lots": {
+      "rows": 194,
+      "null": 32,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 162
+    },
+    "Schock $": {
+      "rows": 194,
+      "null": 32,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 162
+    },
+    "Martingale": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 31,
+      "zero_numeric": 0,
+      "nonempty": 163
+    },
+    "Stop": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 31,
+      "zero_numeric": 0,
+      "nonempty": 163
+    },
+    "Score": {
+      "rows": 194,
+      "null": 194,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Kurzfassung": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 194,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Urteil": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 194
+    },
+    "Bericht vom": {
+      "rows": 194,
+      "null": 194,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Fehler": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 131,
+      "zero_numeric": 0,
+      "nonempty": 63
+    },
+    "Bericht": {
+      "rows": 194,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 194
+    }
+  },
+  "all_signals_column_profile": {
+    "Mark.": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 1477,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Komm.": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 1477,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Ampel": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1477
+    },
+    "Fix": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 1477,
+      "zero_numeric": 0,
+      "nonempty": 0
+    },
+    "Name": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1477
+    },
+    "Link": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1477
+    },
+    "Quelle": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1477
+    },
+    "Herkunft": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1477
+    },
+    "Plattform": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1477
+    },
+    "ID": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1477
+    },
+    "Wochen": {
+      "rows": 1477,
+      "null": 176,
+      "empty_text": 0,
+      "zero_numeric": 15,
+      "nonempty": 1301
+    },
+    "Abonnenten": {
+      "rows": 1477,
+      "null": 1,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1476
+    },
+    "Plattform-DD %": {
+      "rows": 1477,
+      "null": 137,
+      "empty_text": 0,
+      "zero_numeric": 51,
+      "nonempty": 1340
+    },
+    "Trading-DD %": {
+      "rows": 1477,
+      "null": 361,
+      "empty_text": 0,
+      "zero_numeric": 75,
+      "nonempty": 1116
+    },
+    "True-DD %": {
+      "rows": 1477,
+      "null": 507,
+      "empty_text": 0,
+      "zero_numeric": 5,
+      "nonempty": 970
+    },
+    "True-DD ≈": {
+      "rows": 1477,
+      "null": 1151,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 326
+    },
+    "True-DD USD": {
+      "rows": 1477,
+      "null": 507,
+      "empty_text": 0,
+      "zero_numeric": 5,
+      "nonempty": 970
+    },
+    "Plattform %/M": {
+      "rows": 1477,
+      "null": 234,
+      "empty_text": 0,
+      "zero_numeric": 99,
+      "nonempty": 1243
+    },
+    "Geom. %/M": {
+      "rows": 1477,
+      "null": 516,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 961
+    },
+    "TrueRetDD": {
+      "rows": 1477,
+      "null": 633,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 844
+    },
+    "TrueRetDD ≈": {
+      "rows": 1477,
+      "null": 1228,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 249
+    },
+    "RetDD/Monat": {
+      "rows": 1477,
+      "null": 633,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 844
+    },
+    "PF": {
+      "rows": 1477,
+      "null": 391,
+      "empty_text": 0,
+      "zero_numeric": 11,
+      "nonempty": 1086
+    },
+    "Win %": {
+      "rows": 1477,
+      "null": 346,
+      "empty_text": 0,
+      "zero_numeric": 9,
+      "nonempty": 1131
+    },
+    "Trades": {
+      "rows": 1477,
+      "null": 336,
+      "empty_text": 0,
+      "zero_numeric": 10,
+      "nonempty": 1141
+    },
+    "Basis": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1477
+    },
+    "Forensik": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 0,
+      "zero_numeric": 0,
+      "nonempty": 1477
+    },
+    "Messstatus": {
+      "rows": 1477,
+      "null": 0,
+      "empty_text": 67,
+      "zero_numeric": 0,
+      "nonempty": 1410
+    }
+  },
+  "blank_value_reasons": {
+    "no_trade_path": "Unloaded catalogue rows or failed/missing export: no own trade statistics",
+    "usd_blocked": "Native MQL currency missing/non-USD: own USD values intentionally blank",
+    "stale_forensics": "Version, SHA or last failed run invalidates workflow equity/return/score",
+    "no_positive_equity": "No reliable positive H1 denominator: Calmar blank",
+    "virtual_equity": "Separate virtual 10000 USD basis/study display; does not grant workflow green",
+    "report_date": "Only latest Gesamtbericht bound to current verified report_basis; stale/incomplete forensics clear current reports and timestamp while SQLite history remains",
+    "subscriber_history": "Separate local mirrored history, absent/short history means blank"
+  },
+  "elapsed_seconds": 143.828,
+  "date_profile_recheck": "NaT interpreted as null; narrow remap of all 194 result rows",
+  "workflow_not_in_current_local_catalog": 23,
+  "statistics_diagnosis_categories": {
+    "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik": 15,
+    "keine Trades im lesbaren Export": 10
+  }
+}

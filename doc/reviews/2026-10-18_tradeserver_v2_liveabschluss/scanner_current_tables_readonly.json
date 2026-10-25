@@ -1,0 +1,31 @@
+{
+  "captured_at": "2026-10-18T18:35:43.033996+00:00",
+  "workflow_count": 199,
+  "catalog_only_count": 2853,
+  "all_count": 3052,
+  "unique_uid_id_pairs": 3052,
+  "duplicate_uid_id_pairs": 0,
+  "duplicate_display_pairs": 0,
+  "external_ids_with_multiple_source_uids": 0,
+  "current_active_study_count": 3,
+  "visible_study_count": 3,
+  "visible_study_owner_version_sha_error_count": 0,
+  "invalid_study_owner_hashes": [],
+  "workflow_stale_count": 129,
+  "green_count": 5,
+  "green_without_current_measured_efficiency_count": 0,
+  "ft_count": 5,
+  "ft_ampel_counts": {
+    "🔴": 5
+  },
+  "ft_restored_transport_count": 5,
+  "ft_virtual_study_count": 3,
+  "ft_studies_applied_as_measured_workflow_count": 0,
+  "forensics_version": 21,
+  "legacy_or_quarantine_tables_exist": true,
+  "limits": [
+    "Readonly snapshot during ongoing source/study jobs",
+    "No source fetch, terminal access, report materialization, update or sync requested",
+    "No nonempty live numeric-ID collision is claimed if external_ids_with_multiple_source_uids is zero"
+  ]
+}

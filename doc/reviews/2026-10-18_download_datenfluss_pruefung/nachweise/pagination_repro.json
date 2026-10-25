@@ -1,0 +1,41 @@
+{
+  "scope": "synthetic isolated temporary SQLite; no production requests or writes",
+  "server_reported_total": 3,
+  "original_catalog_signal_ids": [
+    1,
+    2,
+    3
+  ],
+  "http_200_pages": [
+    {
+      "limit": 500,
+      "offset": 0
+    },
+    {
+      "limit": 500,
+      "offset": 2
+    }
+  ],
+  "sync_summary": {
+    "quellen": {
+      "audit": {
+        "anzahl": 2,
+        "geloescht": 1,
+        "fehler": null,
+        "gelaufen_am": "2026-10-18 12:07:50"
+      }
+    },
+    "gesamt": 2
+  },
+  "remaining_signal_ids": [
+    1,
+    2
+  ],
+  "confirmed_defect": "Premature empty page despite remaining total is accepted as complete; catalogue replacement deletes ID 3 and records success.",
+  "page_cap_probe": {
+    "max_pages": 1,
+    "reported_total": 3,
+    "returned_items": 2,
+    "exception": null
+  }
+}

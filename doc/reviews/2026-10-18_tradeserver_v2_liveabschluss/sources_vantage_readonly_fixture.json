@@ -1,0 +1,12 @@
+{
+  "normal_stop_and_port_free" : true,
+  "unrelated_provider_writer_isolated" : true,
+  "synthetic_data_only" : true,
+  "source_bytes_unchanged_by_get" : true,
+  "put_405" : true,
+  "health_and_owner_get" : true,
+  "post_update_405" : true,
+  "tested_utc" : "2026-10-18T18:11:51.025622200Z",
+  "update_status_404" : true,
+  "invalid_pair_404" : true
+}

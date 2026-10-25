@@ -1,0 +1,24 @@
+{
+  "status": "final",
+  "date": "2026-10-18",
+  "exit_code": 0,
+  "passed": 189,
+  "failed": 0,
+  "pytest_duration_seconds": 8.77,
+  "command": "python -m pytest tests/test_contract_specs.py tests/test_vantage_restspecs.py tests/test_studien_spec_nachmessung.py tests/test_kapitalbasis.py tests/test_effizienz_eq_dd.py tests/test_twr_ertrag.py tests/test_signal_statistik.py::test_kapitalbasis_kaskade_seite_vor_virtuell tests/test_equity_rekonstruktion.py::test_fehlende_trades_machen_ergebnis_unzuverlaessig tests/test_equity_rekonstruktion.py::test_datenloch_in_vorhandenem_symbol_bleibt_unvollstaendig tests/test_handover_source_currency.py tests/test_studien_waehrungsnachweis.py -q -p no:cacheprovider --junitxml=doc/reviews/2026-10-18_download_datenfluss_pruefung/fremdreview_nachpruefung/kontrakte_tests.xml",
+  "storage": "tests/conftest.py isolates DB, settings, credentials and artifact writes in pytest tmp paths; network requests rejected unless mocked",
+  "intermediate_run": {
+    "status": "superseded, not final result",
+    "exit_code": 1,
+    "passed": 185,
+    "failed": 4,
+    "pytest_duration_seconds": 8.20,
+    "cause": "four old stats[123] test consumers after intentional source+ID catalogue mapping change, corrected by Root to stats[(robo,123)]",
+    "report": "kontrakte_tests_intermediate.xml"
+  },
+  "registry_changed": false,
+  "source_change": "only evidence requirement in exposure broker-denial diagnostic; Root's configurable drawdown wording preserved",
+  "production_data_changed": false,
+  "apps_or_terminals_started": false,
+  "unresolved_evidence": ["GER40FT and UK100FT duplicate native-quote versus USD-median registry statements; no new factor or broker authorization inferred"]
+}

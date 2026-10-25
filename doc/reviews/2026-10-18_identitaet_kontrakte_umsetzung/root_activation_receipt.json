@@ -1,0 +1,33 @@
+{
+  "activated": true,
+  "method": "sqlite_backup_exclusive",
+  "live_path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\mqlkiscanner.db",
+  "candidate_path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\identity_migration\\20261018T162110Z\\candidate.db",
+  "candidate_sha256": "b1f082f9f9f78b1db18c1147eec2fda37ced57c02ae762fd27cea6d314018c97",
+  "previous_live_sha256": "522c8f2ed6be20601f46ffc2a6ccff152a4ddd40c783b61e9fb7077e88c145ba",
+  "activated_sha256": "d825d52c8ee866085796074540c09f64c8fd04e7cc35d07cfecaf8735109f3fb",
+  "journal_mode": "wal",
+  "schema_version": 2,
+  "candidate_modified": false,
+  "rollback_snapshot_modified": false,
+  "activated_utc": "2026-10-18T16:28:24.288309+00:00",
+  "rollback_sha256_verified_after": true,
+  "candidate_sha256_verified_after": true,
+  "integrity_check": "ok",
+  "foreign_key_errors": 0,
+  "counts": {
+    "signals": 194,
+    "signal_identitaeten": 1732,
+    "katalog_signale": 1454,
+    "equity_studien": 0,
+    "migration_quarantaene": 4458,
+    "signal_fixierungen": 15,
+    "agenten_budget_altkosten": 213
+  },
+  "settings": {
+    "schranke_eq_dd_pct": 50.0,
+    "min_calmar_jahr": 3.0,
+    "min_ertrag_pct_monat": 0.0,
+    "agenten_enabled": false
+  }
+}

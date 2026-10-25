@@ -1,0 +1,26 @@
+{
+  "args": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "tests/test_source_identity_contract.py",
+    "-k",
+    "nonempty_padded_source_keeps_exact_update_compatibility",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_download_datenfluss_pruefung\\uebergabe_nachpruefung\\legacy_quelle_padded_before.xml"
+  ],
+  "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner",
+  "started_utc": "2026-10-18T11:34:52.666204+00:00",
+  "purpose": "Reproduce padded nonempty source regression before compatibility fix",
+  "child_env_overrides": {
+    "PYTHONIOENCODING": "utf-8"
+  },
+  "source_sha256": {
+    "src/mqlkiscanner/db.py": "9907012924eb3f2504e573c97121acad881852a0c426ff77fd13e8ff86713ed2",
+    "tests/test_source_identity_contract.py": "b26265410ff3a0e4828c4ccb49773c40d5c0dbaa7c3f70df66c292c9954da75f"
+  },
+  "exit_code": 1,
+  "finished_utc": "2026-10-18T11:34:54.594744+00:00"
+}

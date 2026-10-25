@@ -1,0 +1,341 @@
+{
+  "observed_utc": "2026-10-18T15:55:56.099850+00:00",
+  "read_only": true,
+  "network_requests": 0,
+  "terminals_used": false,
+  "equity_reconstruction_run": false,
+  "models": {
+    "before_registry_sha256": "778e81f5e542aad2dd22be1a96f68c1cd44698deef25202789f0a60370cee520",
+    "after_registry_sha256": "2fd658a66021aa558e1f640dafad92431792ad39bcde12d6175ba0630fa2e3ee",
+    "before": {
+      "GER40FT_VANTAGE": {
+        "contract_size": 1.08,
+        "quote_currency": "USD",
+        "stress_move": 500.0
+      },
+      "UK100FT_VANTAGE": {
+        "contract_size": 1.35,
+        "quote_currency": "USD",
+        "stress_move": 200.0
+      }
+    },
+    "after": {
+      "GER40FT_VANTAGE": {
+        "contract_size": 1.0,
+        "quote_currency": "EUR",
+        "stress_move": 500.0
+      },
+      "UK100FT_VANTAGE": {
+        "contract_size": 1.0,
+        "quote_currency": "GBP",
+        "stress_move": 200.0
+      }
+    }
+  },
+  "fx_cache_sha256": "03cb5389680fc0e761a08ba7a1ea00d9ceffe16cadb163a81079632eab7fb7bb",
+  "fx_latest_date": "2026-10-15",
+  "fx_policy": "production fx_rates.usd_per, cached ECB only, max 10 calendar days, no refresh",
+  "limits": [
+    "Exposure scenarios only, no H1 equity reconstruction, Calmar or new signal verdict.",
+    "No synthetic capital injected; shock percentages unavailable without proven capital.",
+    "Existing Vantage family contract is derived by the production metrics mapper; historical original server remains unknown.",
+    "CSV event timezone is not certified; daily reference FX is a model conversion, not execution FX.",
+    "Local cached exports may be partial/legacy UTC; this audit does not renew or certify their completeness."
+  ],
+  "signals": [
+    {
+      "quelle": "vant",
+      "signal_id": 178177,
+      "version": "vantage",
+      "trade_sha256": "ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84",
+      "metrics_sha256": "96af36cce47d37dfd254a36a198a74091ad512e49d710c23aa5f1c6b95f1faae",
+      "input_kind": "existing_immutable_snapshot",
+      "metrics_broker_label": null,
+      "effective_broker_profile": "vantage",
+      "original_provider_server": null,
+      "reported_history_complete": null,
+      "reported_truncated": false,
+      "all_trade_count": 1091,
+      "ft_trade_counts": {
+        "GER40FT": 9,
+        "UK100FT": 13
+      },
+      "ft_first_open": "2023-12-08T15:43:41",
+      "ft_last_close": "2026-02-27T09:56:24",
+      "before": {
+        "entire_cached_export": {
+          "peak_open_positions": 34,
+          "peak_net_lots": null,
+          "shock_usd": null,
+          "conversion_complete": false,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 4,
+          "peak_net_lots": -4.5,
+          "shock_usd": 1619.06,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      },
+      "after": {
+        "entire_cached_export": {
+          "peak_open_positions": 34,
+          "peak_net_lots": null,
+          "shock_usd": null,
+          "conversion_complete": false,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 4,
+          "peak_net_lots": -4.5,
+          "shock_usd": 1555.31,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      }
+    },
+    {
+      "quelle": "vant",
+      "signal_id": 1231244,
+      "version": "vantage",
+      "trade_sha256": "37f03ae2891a6a474484cc0a19b3acece9fb76b2b8a1179e49429c1f88f1e27f",
+      "metrics_sha256": "0887707baee024c9381186ba16e3269ea11e7d753f369a16a8c2e017de7fa683",
+      "input_kind": "verified_existing_artifact_cache",
+      "metrics_broker_label": null,
+      "effective_broker_profile": "vantage",
+      "original_provider_server": null,
+      "reported_history_complete": null,
+      "reported_truncated": false,
+      "all_trade_count": 248,
+      "ft_trade_counts": {
+        "GER40FT": 1
+      },
+      "ft_first_open": "2026-06-22T10:48:26",
+      "ft_last_close": "2026-06-22T10:55:56",
+      "before": {
+        "entire_cached_export": {
+          "status": "blocked",
+          "reason": "Unbekannte Instrumente ohne belegte Kontraktgroesse: NIKKEI225 \u2014 in data/contract_specs.json eintragen (Kontraktgroesse, Gewinnwaehrung, Quelle), dann erneut pruefen."
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 1,
+          "peak_net_lots": 2.0,
+          "shock_usd": 1080.0,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      },
+      "after": {
+        "entire_cached_export": {
+          "status": "blocked",
+          "reason": "Unbekannte Instrumente ohne belegte Kontraktgroesse: NIKKEI225 \u2014 in data/contract_specs.json eintragen (Kontraktgroesse, Gewinnwaehrung, Quelle), dann erneut pruefen."
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 1,
+          "peak_net_lots": 2.0,
+          "shock_usd": 1145.6,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      }
+    },
+    {
+      "quelle": "vant",
+      "signal_id": 504191,
+      "version": "vantage",
+      "trade_sha256": "a2bfac766b902580f925a7a410bd0e1927902ab8ca64d7801f6568de8c52b631",
+      "metrics_sha256": "20f5a2af08c05aa38c3a43a884292bba77c652c792d6f808b4ce7ffe7147fae2",
+      "input_kind": "existing_immutable_snapshot",
+      "metrics_broker_label": null,
+      "effective_broker_profile": "vantage",
+      "original_provider_server": null,
+      "reported_history_complete": null,
+      "reported_truncated": false,
+      "all_trade_count": 1486,
+      "ft_trade_counts": {
+        "GER40FT": 1
+      },
+      "ft_first_open": "2025-05-05T09:43:15",
+      "ft_last_close": "2025-05-05T13:52:22",
+      "before": {
+        "entire_cached_export": {
+          "peak_open_positions": 29,
+          "peak_net_lots": null,
+          "shock_usd": null,
+          "conversion_complete": false,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 1,
+          "peak_net_lots": 1.0,
+          "shock_usd": 540.0,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      },
+      "after": {
+        "entire_cached_export": {
+          "peak_open_positions": 29,
+          "peak_net_lots": null,
+          "shock_usd": null,
+          "conversion_complete": false,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 1,
+          "peak_net_lots": 1.0,
+          "shock_usd": 567.15,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      }
+    },
+    {
+      "quelle": "vant",
+      "signal_id": 692325,
+      "version": "vantage",
+      "trade_sha256": "be46ec64c0c40d4299e5c773066f3e718ad86ac58f6a013040cae4208a62e32f",
+      "metrics_sha256": "07123d2aaad41c096acdc3ed581286c7c1761932d4947f4773e1bc0aa514ca0f",
+      "input_kind": "verified_existing_artifact_cache",
+      "metrics_broker_label": null,
+      "effective_broker_profile": "vantage",
+      "original_provider_server": null,
+      "reported_history_complete": null,
+      "reported_truncated": false,
+      "all_trade_count": 279,
+      "ft_trade_counts": {
+        "UK100FT": 1
+      },
+      "ft_first_open": "2026-02-09T04:08:13",
+      "ft_last_close": "2026-02-17T03:04:51",
+      "before": {
+        "entire_cached_export": {
+          "status": "blocked",
+          "reason": "Unbekannte Instrumente ohne belegte Kontraktgroesse: NIKKEI225 \u2014 in data/contract_specs.json eintragen (Kontraktgroesse, Gewinnwaehrung, Quelle), dann erneut pruefen."
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 1,
+          "peak_net_lots": 0.4,
+          "shock_usd": 108.0,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      },
+      "after": {
+        "entire_cached_export": {
+          "status": "blocked",
+          "reason": "Unbekannte Instrumente ohne belegte Kontraktgroesse: NIKKEI225 \u2014 in data/contract_specs.json eintragen (Kontraktgroesse, Gewinnwaehrung, Quelle), dann erneut pruefen."
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 1,
+          "peak_net_lots": 0.4,
+          "shock_usd": 109.28,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      }
+    },
+    {
+      "quelle": "vant",
+      "signal_id": 762452,
+      "version": "vantage",
+      "trade_sha256": "9eecde901e91f4d53499d7944368d4fe516891e47f89785db6f40af1aaae47fa",
+      "metrics_sha256": "db5065b62ecd5e9f821a5b8b5ed131dc3a31d2e417e71095cec94db5040878c4",
+      "input_kind": "verified_existing_artifact_cache",
+      "metrics_broker_label": null,
+      "effective_broker_profile": "vantage",
+      "original_provider_server": null,
+      "reported_history_complete": null,
+      "reported_truncated": false,
+      "all_trade_count": 196,
+      "ft_trade_counts": {
+        "UK100FT": 2
+      },
+      "ft_first_open": "2025-11-05T14:59:54",
+      "ft_last_close": "2025-11-07T02:41:31",
+      "before": {
+        "entire_cached_export": {
+          "status": "blocked",
+          "reason": "Unbekannte Instrumente ohne belegte Kontraktgroesse: NIKKEI225, SOYBEAN-C \u2014 in data/contract_specs.json eintragen (Kontraktgroesse, Gewinnwaehrung, Quelle), dann erneut pruefen."
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 2,
+          "peak_net_lots": 1.0,
+          "shock_usd": 270.0,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      },
+      "after": {
+        "entire_cached_export": {
+          "status": "blocked",
+          "reason": "Unbekannte Instrumente ohne belegte Kontraktgroesse: NIKKEI225, SOYBEAN-C \u2014 in data/contract_specs.json eintragen (Kontraktgroesse, Gewinnwaehrung, Quelle), dann erneut pruefen."
+        },
+        "ft_positions_only_without_capital": {
+          "peak_open_positions": 2,
+          "peak_net_lots": 1.0,
+          "shock_usd": 260.89,
+          "conversion_complete": true,
+          "contract_complete": true,
+          "temporal_risk_available": false,
+          "capital_history_complete": false,
+          "shock_pct_max": null,
+          "status": "computed"
+        }
+      }
+    }
+  ]
+}

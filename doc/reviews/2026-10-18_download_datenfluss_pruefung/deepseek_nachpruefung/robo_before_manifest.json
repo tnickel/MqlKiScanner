@@ -1,0 +1,19 @@
+{
+  "saved_utc": "2026-10-18T15:10:28.748473+00:00",
+  "purpose": "Preserve the original non-green pre-fix Java report before any new Maven invocation",
+  "files": {
+    "robo_before_parallel.xml": {
+      "original": "target/surefire-reports/TEST-de.robomonitor.ReviewDataIntegrityTest.xml",
+      "sha256": "dda01e9a54ed98eb4d5dfd3555b21e484ceef36d68108b98d6a31f37c7999505"
+    },
+    "robo_before_parallel.txt": {
+      "original": "target/surefire-reports/de.robomonitor.ReviewDataIntegrityTest.txt",
+      "sha256": "2defe53637a003fc0b48fd5df747f9f6aa96a4e9c825047a370ecea54f3d35d7"
+    }
+  },
+  "source_sha256": {
+    "src/main/java/de/robomonitor/store/DataStore.java": "b6d48b1dfe07a516949da100f70eed82b58dde41f0a428c3055d52970c81c946",
+    "src/main/java/de/robomonitor/store/FileTransactions.java": "8ee91d6262895f64ee8ffea993f4c9a8ecc76a1592248d9b3e5fe23308c12c77",
+    "src/test/java/de/robomonitor/ReviewDataIntegrityTest.java": "107cb6c6f34b8aae991343a9c52a87de273bbb3da55b01b64aabe06e4c666e1b"
+  }
+}

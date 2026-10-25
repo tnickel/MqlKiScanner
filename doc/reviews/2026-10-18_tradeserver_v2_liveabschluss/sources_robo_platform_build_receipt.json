@@ -1,0 +1,19 @@
+{
+  "checked_utc": "2026-10-18T17:55:47.058048+00:00",
+  "repository": "roboforex",
+  "tests": 193,
+  "failures": 0,
+  "errors": 0,
+  "activation": "pending_old_writer_end",
+  "jar_sha256": "2375b5c395d79d9c242e5ae4259603e8361b9c2bd4a41af742b1b4ba01672fbb",
+  "files": [
+    {
+      "path": "src/main/java/de/robomonitor/rest/RestApiServer.java",
+      "sha256": "d50635dc0a650b89ff8989fb097fe56936ee5dc7e54912794c849f10852e98f1"
+    },
+    {
+      "path": "src/test/java/de/robomonitor/RestApiServerTest.java",
+      "sha256": "6e2c30e6b03d70ef2c408a18849c05b3dbb95b7d5c0563b93b003444d5ed8cc3"
+    }
+  ]
+}

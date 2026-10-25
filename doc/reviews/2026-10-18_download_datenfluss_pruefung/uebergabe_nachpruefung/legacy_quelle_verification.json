@@ -1,0 +1,38 @@
+{
+  "before": {
+    "tests": 6,
+    "failures": 6,
+    "errors": 0,
+    "skipped": 0,
+    "exit": 1
+  },
+  "padded_before": {
+    "tests": 2,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0,
+    "exit": 1
+  },
+  "intermediate_148": {
+    "tests": 148,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit": 0
+  },
+  "final": {
+    "tests": 150,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit": 0
+  },
+  "source_contract_cases": 28,
+  "new_cases": 8,
+  "final_source_hashes_still_match": true,
+  "source_sha256": {
+    "src/mqlkiscanner/db.py": "408fffdb0e6466b148a88886a70729665b58aed3700930084b9f81c7fd3b8cbb",
+    "tests/test_source_identity_contract.py": "b26265410ff3a0e4828c4ccb49773c40d5c0dbaa7c3f70df66c292c9954da75f"
+  },
+  "whitespace_errors": []
+}

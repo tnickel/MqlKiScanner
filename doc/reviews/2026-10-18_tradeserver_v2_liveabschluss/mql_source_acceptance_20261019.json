@@ -1,0 +1,107 @@
+{
+  "verified_utc": "2026-10-19T07:32:31.862294+00:00",
+  "source": "mql5",
+  "quellen_uid": "0a8faef1-a341-4899-a199-a87166b69079",
+  "completed_job_id": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+  "completed_job_status": {
+    "jobId": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+    "state": "done",
+    "phase": "download",
+    "done": 176,
+    "total": 4500,
+    "message": "Kein Download aktiv",
+    "startedAt": "2026-10-18T20:33:42",
+    "finishedAt": "2026-10-18T21:37:56",
+    "ergebnis": {
+      "signaleGeliefert": 268,
+      "tradelistenNeu": 135,
+      "tradelistenAktualisiert": 133,
+      "tradelistenFehler": 0,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": false,
+      "datenstand": "2026-10-18T21:37:56.568372300",
+      "hinweise": [
+        "Katalog-Discovery nach konfigurierten MQL4-/MQL5-Limits; bei frischem Katalog werden dessen bekannte Anbieter aktualisiert."
+      ]
+    },
+    "error": null
+  },
+  "successful_updated_scope": {
+    "mql4": 92,
+    "mql5": 176,
+    "total": 268,
+    "private_scope_path": "data\\runs\\liveabschluss_20261019\\mql\\successful_update_scope.json",
+    "scope_sha256": "05f2d356e8d61e4ba027c3dd82bfaba23a709634ccdbc098503f9f0b2369286b"
+  },
+  "catalog": {
+    "locally_offered_total": 372,
+    "rows_checked": 372,
+    "unique_source_platform_identities": 372,
+    "catalog_response_sha256": "dc0478158f8bca419880687957b1c004298871c7dff83e24f6ccbff625bc9cc8",
+    "unknown_age_rows": 6,
+    "positive_subscriber_rows": 352,
+    "preserved_invalid_identities_still_exposed": [],
+    "catalog_identity_accepted": true,
+    "scope": "Complete locally offered catalogue, minSubscribers=0; no claim of all MQL5 website providers"
+  },
+  "local_catalog_rows_outside_verified_update_scope": 104,
+  "successful_csv_gets_equal_preserved_generations": 268,
+  "fresh_metrics_exact_csv_family_gets": 268,
+  "account_currencies": {
+    "USD": 208,
+    "EUR": 39,
+    "AUD": 6,
+    "CHF": 1,
+    "JPY": 7,
+    "UST": 1,
+    "SGD": 2,
+    "HKD": 1,
+    "THB": 1,
+    "GBP": 1,
+    "RUB": 1
+  },
+  "fixed_metrics_rename_ids": [
+    {
+      "version": "mql5",
+      "signal_id": 2360068
+    },
+    {
+      "version": "mql5",
+      "signal_id": 1059619
+    }
+  ],
+  "public_api_identity_checks": {
+    "providers_json_rows": 372,
+    "providers_csv_rows": 372,
+    "health_and_summary_agree": true,
+    "event_rows_checked": 1000,
+    "trade_catalog_rows_checked": 371,
+    "invalid_ids_exposed": false
+  },
+  "after_guard_process": {
+    "pid": 54788,
+    "jar_sha256": "52c22f3ea025da5d3726726d2f0358277b8180ecaea7ac29aee36dc9c4d793d2",
+    "job_state_after_normal_start": "idle",
+    "source_generations_unchanged": true
+  },
+  "build_tests": {
+    "tests": 166,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "initial_parser_boundary_preserved": {
+    "count": 1,
+    "version": "mql5",
+    "signal_id": 2236750,
+    "type": "Deal Interestrate",
+    "rows": 38
+  },
+  "separate_parser_recheck_path": "data\\runs\\liveabschluss_20261019\\parser_checks\\mql_268_parser_acceptance.json",
+  "separate_parser_recheck_sha256": "f65b5b7a1874be5bb9d2b75ee0fccfedaf348b2afa847cb3720aaa1fc61da6f4",
+  "scanner_completion_history_appended": false,
+  "scanner_db_or_settings_modified": false,
+  "source_update_post_sent": false,
+  "source_generation_files_modified": false,
+  "no_commit_or_push": true
+}

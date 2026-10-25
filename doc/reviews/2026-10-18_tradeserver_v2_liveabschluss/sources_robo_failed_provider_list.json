@@ -1,0 +1,236 @@
+{
+  "checked_utc": "2026-10-18T18:44:56.429535+00:00",
+  "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+  "initial_job": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+  "actual_status": {
+    "jobId": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+    "state": "done",
+    "phase": "deals",
+    "done": 200,
+    "total": 200,
+    "message": "Deals: 4 neu, 176 aktualisiert, 20 Fehler",
+    "startedAt": "2026-10-18T18:42:00",
+    "finishedAt": "2026-10-18T20:34:17",
+    "ergebnis": {
+      "signaleGeliefert": 200,
+      "tradelistenNeu": 4,
+      "tradelistenAktualisiert": 176,
+      "tradelistenFehler": 20,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": false,
+      "datenstand": "2026-10-18T20:34:17",
+      "hinweise": [
+        "20 Deal-Downloads fehlgeschlagen (Details: data/robomonitor.log)"
+      ],
+      "tradelistenOhneAbonnenten": 0
+    },
+    "error": null
+  },
+  "failures": [
+    {
+      "signal_id": 72166283,
+      "name": "exactw",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 18:49:28",
+      "old_rows": 20000,
+      "unique_ids": 19999,
+      "repeated_ids": 1,
+      "old_csv_sha256": "0da85f094ea5cf2769fbe34f17c58f4381fe4ac5b5141ceaba7fb936343e978f",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 37293345,
+      "name": "EliteForexInvestimento",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 18:57:21",
+      "old_rows": 20000,
+      "unique_ids": 19999,
+      "repeated_ids": 1,
+      "old_csv_sha256": "be4d7bc5f9fcb9c1945206dd60f034805f42c54828d841940a9178e7441ef24f",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 27406010,
+      "name": "Badiashvili",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:02:18",
+      "old_rows": 20000,
+      "unique_ids": 19999,
+      "repeated_ids": 1,
+      "old_csv_sha256": "4ba4fb06179bf28ee4d83bc8017522cf73ac7aa0b1b8a17961fe277f66a27b87",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 7776453,
+      "name": "TradeMinds",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:02:31",
+      "old_rows": 1644,
+      "unique_ids": 1643,
+      "repeated_ids": 1,
+      "old_csv_sha256": "aa132f77c9ed9245773e3859bfe0e2cdf3343cd2da0b7338cefe4ef3cb1c7848",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 37371407,
+      "name": "BlackcodeGOLD",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:16:43",
+      "old_rows": 20000,
+      "unique_ids": 19999,
+      "repeated_ids": 1,
+      "old_csv_sha256": "5b3a24fdbf07020dad301e095cc3fa4164b1e6479cd66a0d1a699c43d14e8efd",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 34150222,
+      "name": "KeeperTrading",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:17:39",
+      "old_rows": 17804,
+      "unique_ids": 17803,
+      "repeated_ids": 1,
+      "old_csv_sha256": "15911249b7ebf803df81cf71a0c8560fd5ad3b1b0e158acb71267c348fb3dfea",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 93128696,
+      "name": "TradingGoldTrade",
+      "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+      "observed_local_time": "2026-10-18 19:28:28"
+    },
+    {
+      "signal_id": 93019895,
+      "name": "TrendInvestSignal",
+      "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+      "observed_local_time": "2026-10-18 19:31:56"
+    },
+    {
+      "signal_id": 37232470,
+      "name": "TEPFX",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:33:31",
+      "old_rows": 12788,
+      "unique_ids": 12786,
+      "repeated_ids": 2,
+      "old_csv_sha256": "8ee073a25cc0ffdc225998244181558827e89d2192a0a04e4cb0cb65e2d7ca3f",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 37155456,
+      "name": "UncleScrooge",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:36:52",
+      "old_rows": 14145,
+      "unique_ids": 14142,
+      "repeated_ids": 3,
+      "old_csv_sha256": "e80aed3be36a0f254f1a8bb311cf24ba2bea62cbf1100c28dab7043056ce8f2d",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 77004108,
+      "name": "LuxFX",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:41:56",
+      "old_rows": 4420,
+      "unique_ids": 4418,
+      "repeated_ids": 2,
+      "old_csv_sha256": "9a4e5bcf746a19d0b38ee85277e99924275afce6c126e6b4a82e70f376243261",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 37173630,
+      "name": "Namaha",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:50:22",
+      "old_rows": 20000,
+      "unique_ids": 19998,
+      "repeated_ids": 2,
+      "old_csv_sha256": "1a608b69bd02d9beb44774befc9688c54d2dcc1b28a38927bf37066efbe6e634",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 93156209,
+      "name": "SP500ETF",
+      "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+      "observed_local_time": "2026-10-18 19:51:48"
+    },
+    {
+      "signal_id": 37009091,
+      "name": "ROGERIOINVESTE",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:55:54",
+      "old_rows": 6897,
+      "unique_ids": 6896,
+      "repeated_ids": 1,
+      "old_csv_sha256": "727f2436647b8837bc3b29d3254910001ba8aea6d39fc4cf487aaff3fa27dd23",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 7752268,
+      "name": "BFS",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 19:57:46",
+      "old_rows": 5238,
+      "unique_ids": 5237,
+      "repeated_ids": 1,
+      "old_csv_sha256": "0703081e0b570eb7fb6b8ed2c4a431ab8f42c8c5ac6bcae72856917fd9050454",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 37346461,
+      "name": "RGWEB",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 20:10:13",
+      "old_rows": 20000,
+      "unique_ids": 19998,
+      "repeated_ids": 2,
+      "old_csv_sha256": "8344d7b2f3c83abca4d8aeecb57cc852d79e9126056f5eb738286ef14ba1ae63",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 37275457,
+      "name": "BTCMTradingBots",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 20:15:33",
+      "old_rows": 20000,
+      "unique_ids": 19998,
+      "repeated_ids": 2,
+      "old_csv_sha256": "f8dc248862a2350863778304bc41f3a72db3d2ec6bcb2b55c2a0971591bf2a96",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 37107389,
+      "name": "Namaha",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 20:26:11",
+      "old_rows": 20000,
+      "unique_ids": 19999,
+      "repeated_ids": 1,
+      "old_csv_sha256": "65ab8897ddb8c95c35d50e30d85752616726612d6647f0becb45c2502de295fd",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 37353857,
+      "name": "FhoenixTrade",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 20:27:02",
+      "old_rows": 775,
+      "unique_ids": 774,
+      "repeated_ids": 1,
+      "old_csv_sha256": "f912c61b7944d853071ff97ecc3dc42896487e7451e24ef7f7055a9872cc2aa8",
+      "rows_sharing_id_with_field_conflicts": 0
+    },
+    {
+      "signal_id": 27215488,
+      "name": "ZsuiradNezrok",
+      "error": "Ungueltige Dealdatei: Mehrfache Deal-ID",
+      "observed_local_time": "2026-10-18 20:29:47",
+      "old_rows": 17126,
+      "unique_ids": 17121,
+      "repeated_ids": 5,
+      "old_csv_sha256": "27cbf02be8cd3f3fe4b3cd98b92c49348d49380b5420a3c86959debc8ce13c77",
+      "rows_sharing_id_with_field_conflicts": 0
+    }
+  ]
+}

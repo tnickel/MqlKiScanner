@@ -1,0 +1,22 @@
+{
+  "generated_utc": "2026-10-18T10:33:48.853316+00:00",
+  "purpose": "AI review handoff with subsequent implementation report and test manifest",
+  "handoff_file": "KI_UEBERGABE.md",
+  "handoff_sha256": "16a6f48cfc99ce0bf97330b124ad3fd67ca09f3023f2c5aef6c4394e5f8126d3",
+  "original_audit_manifest": "nachweise/manifest.json",
+  "original_audit_manifest_sha256": "2d3254e0056ce48d196a8402a5d11584b37a10a2ddfd1af54bbbb74bb340a0bf",
+  "original_review_sha256": "765c806465e83f8452fa7d0cd70dea534f2ff79491f1ba0966c64f080c101069",
+  "original_evidence_checked": 50,
+  "original_evidence_hash_mismatches": [],
+  "broken_handoff_links": [],
+  "original_report_and_evidence_modified": false,
+  "peer_review": "Completed; source-verified distinction of separate virtual studies versus permitted engine fallback; probe stdout/file-write behavior corrected",
+  "followup_user_decision": "2026-10-18: Remove fixed 30 percent drawdown ceiling; a configured 50 percent limit is allowed with proven return/annual Calmar. No new default selected.",
+  "project_instructions_sha256": "0ebceea4e7a4139c64b96757e6e4cbb39fe7dc4c80307147be83ef70c46d948d",
+  "product_code_or_settings_changed_for_followup": true,
+  "updated_utc": "2026-10-18T10:59:00.189853+00:00",
+  "productive_settings_changed_by_this_fix": false,
+  "implementation_followup": "BEHEBUNG.md",
+  "implementation_followup_manifest": "BEHEBUNG.manifest.json",
+  "initial_documentation_test_runs": 0
+}

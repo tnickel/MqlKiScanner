@@ -1,0 +1,5 @@
+actual_mergeHistory_error=Vorhandene Historie nicht verifiziert; kein stilles Ueberschreiben
+actual_saveTrades_error=Vorhandene Historie nicht verifiziert; kein stilles Ueberschreiben
+CONFIRMED: valid fresh API records cannot repair legacy archive through normal merge/save
+Scope: safety rejection is deliberate; missing recovery path blocks current legacy installations
+EXITCODE: 0

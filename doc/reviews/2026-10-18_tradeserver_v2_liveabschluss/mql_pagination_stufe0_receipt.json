@@ -1,0 +1,13 @@
+{
+  "recorded_utc": "2026-10-18T18:31:11.633703+00:00",
+  "job_id": "u-559dfc47-4a38-4426-b51d-59adf5ffb5db",
+  "status": "teilweise",
+  "db_rows": [
+    {
+      "id": 64,
+      "ts": "2026-10-18T20:31:11",
+      "job_id": "u-559dfc47-4a38-4426-b51d-59adf5ffb5db",
+      "status": "teilweise"
+    }
+  ]
+}

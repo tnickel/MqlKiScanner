@@ -1,0 +1,78 @@
+{
+  "checked_utc": "2026-10-19T07:57:05.127752+00:00",
+  "source": "robo",
+  "status": "actual_rejections_verified",
+  "checks": [
+    {
+      "method": "POST",
+      "path": "/update",
+      "status": 400
+    },
+    {
+      "method": "POST",
+      "path": "/update",
+      "status": 400
+    },
+    {
+      "method": "POST",
+      "path": "/providers",
+      "status": 405
+    },
+    {
+      "method": "PUT",
+      "path": "/update",
+      "status": 405
+    },
+    {
+      "method": "GET",
+      "path": "/providers/37232470/mql4/trades",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/providers/72166283/mql5/trades.csv",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/providers/93128696/rst/trades",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/providers/93128696/mql5/trades",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/providers/37232470/mql5/trades.csv",
+      "status": 404,
+      "code": "unverified_trade_units"
+    },
+    {
+      "method": "GET",
+      "path": "/providers/72166283/mql4/trades.csv",
+      "status": 404,
+      "code": "unverified_trade_units"
+    },
+    {
+      "method": "GET",
+      "path_kind": "existing_local_historical_pdf_matching_provider",
+      "signal_id": 21596244,
+      "platform": "mql4",
+      "status": 404,
+      "existing_local_file": true,
+      "file_sha256": "51b05478b0ee38eca8471644954153d319d5626c3bc0c25b794044a7b6691c83"
+    }
+  ],
+  "native_files_unchanged": 475,
+  "backend_job_before": {
+    "state": "idle"
+  },
+  "backend_job_after": {
+    "state": "idle"
+  },
+  "valid_update_submitted": false,
+  "busy_guard_live_simulated": false,
+  "financial_unit_scope": "unknown; CSV remains unavailable"
+}

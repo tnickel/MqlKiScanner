@@ -1,0 +1,7 @@
+{
+  "operation": "migrate_copy",
+  "source": "data/mqlkiscanner.db",
+  "destination": "C:\\Users\\tnickel\\AppData\\Local\\Temp\\scanner_identity_migration_nordfgdk\\candidate.db",
+  "verify_files": true,
+  "production_activation": false
+}

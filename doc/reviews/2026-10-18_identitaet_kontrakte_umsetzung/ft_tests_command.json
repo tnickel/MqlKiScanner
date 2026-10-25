@@ -1,0 +1,26 @@
+{
+  "started_utc": "2026-10-18T15:42:46.718051+00:00",
+  "command": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_ft_kontrakt_beleg.py",
+    "tests/test_ft_contract_specs.py",
+    "tests/test_contract_specs.py",
+    "tests/test_vantage_restspecs.py",
+    "tests/test_fx_rates.py",
+    "tests/test_activtrades_symbolnamen.py",
+    "tests/test_equity_h1_umrechnung.py",
+    "tests/test_equity_rekonstruktion.py",
+    "tests/test_kursdaten_vantage_portable.py",
+    "tests/test_kursdaten_terminalwechsel.py",
+    "tests/test_handover_source_currency.py",
+    "--junitxml=doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_tests.xml"
+  ],
+  "environment_override": {
+    "PYTHONIOENCODING": "utf-8"
+  }
+}

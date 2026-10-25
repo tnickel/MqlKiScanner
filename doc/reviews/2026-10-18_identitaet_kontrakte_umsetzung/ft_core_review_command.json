@@ -1,0 +1,16 @@
+{
+  "started_utc": "2026-10-18T15:53:27.021299+00:00",
+  "command": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_identity_core_review.py",
+    "--junitxml=doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_core_review_tests.xml"
+  ],
+  "environment_override": {
+    "PYTHONIOENCODING": "utf-8"
+  }
+}

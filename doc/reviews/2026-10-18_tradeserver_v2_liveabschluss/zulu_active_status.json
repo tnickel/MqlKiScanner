@@ -1,0 +1,22 @@
+{
+  "jobId": "u-20261018-184200-b328fbb6",
+  "state": "running",
+  "phase": "tradelisten",
+  "done": 4,
+  "total": 200,
+  "message": "Tradelisten: 0 neu, 4 aktualisiert, 0 Fehler",
+  "startedAt": "2026-10-18T18:42:00",
+  "finishedAt": null,
+  "ergebnis": {
+    "signaleGeliefert": 200,
+    "tradelistenNeu": null,
+    "tradelistenAktualisiert": null,
+    "tradelistenFehler": 0,
+    "tradelistenAbgebrochen": false,
+    "katalogUebersprungen": false,
+    "datenstand": null,
+    "hinweise": []
+  },
+  "error": null,
+  "observed_utc": "2026-10-18T17:08:43.747705+00:00"
+}

@@ -1,0 +1,81 @@
+{
+  "checked_utc": "2026-10-19T07:19:53.808032+00:00",
+  "source": "robo",
+  "native_scope": 200,
+  "supported_mt_scope": 197,
+  "unsupported_rst_scope": 3,
+  "paused_previous_completed_verified": 7,
+  "targeted_remaining_ids": [
+    37155456,
+    77004108,
+    37173630,
+    37009091,
+    7752268,
+    37346461,
+    37275457,
+    37107389,
+    37353857,
+    27215488
+  ],
+  "native_writer_exclusive": true,
+  "tested_immutable_stage": true,
+  "stage_test_receipt_rechecked": {
+    "tests": 195,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "build_source_hashes": [
+    {
+      "path": "src/main/java/de/robomonitor/deals/TradeUnits.java",
+      "sha256": "f5670532ebc277a947beda12b05cb70385dedd6446a8d2c1089faeea27c549f5",
+      "matches_tested_build": true
+    },
+    {
+      "path": "src/main/java/de/robomonitor/rest/RestApiServer.java",
+      "sha256": "7b929bc56412c37389f083de77e4aac2856a97227cf5e32449d6440ff220933a",
+      "matches_tested_build": true
+    },
+    {
+      "path": "src/main/java/de/robomonitor/RoboMonitorApp.java",
+      "sha256": "281de3333349a3e1b97f9f7671b09ddbf313a1096ffab4a72b5bfb3e8f41a65c",
+      "matches_tested_build": true
+    },
+    {
+      "path": "src/main/java/de/robomonitor/store/TradeDdStore.java",
+      "sha256": "c3d104a0e3e2995d83214d094640dd087213e7965163d0accf10addba9615676",
+      "matches_tested_build": true
+    },
+    {
+      "path": "src/main/java/de/robomonitor/report/SignalPayloadBuilder.java",
+      "sha256": "a46b645429af090ffbeee5b4e52bc038fa0c39e438a541a631b4dc30215f4ba7",
+      "matches_tested_build": true
+    },
+    {
+      "path": "src/main/java/de/robomonitor/report/TradeCurveData.java",
+      "sha256": "132dd06ff228453dd7a7aec19e3138eb28263d77d672017913d16f501f41996b",
+      "matches_tested_build": true
+    },
+    {
+      "path": "src/test/java/de/robomonitor/RestApiServerTest.java",
+      "sha256": "eb58e15093b7ee3deecc3095b30030de735e88b4d7a31a8be1f78b1651340b5b",
+      "matches_tested_build": true
+    },
+    {
+      "path": "src/test/java/de/robomonitor/TradeDdProvenanceTest.java",
+      "sha256": "1cb369cfe56a6f9947ae73671b5b8bb4a668a5c6ee093adfb9e680b65feee54c",
+      "matches_tested_build": true
+    },
+    {
+      "path": "src/test/java/de/robomonitor/DealStoreTest.java",
+      "sha256": "1c3d25e4e216fbc7de8a57a623631d7ee6f29ae4aca588a8b904ac76af9105fe",
+      "matches_tested_build": true
+    }
+  ],
+  "unit_status": "unverified",
+  "scanner_csv": "404 unverified_trade_units required",
+  "scanner_db_settings_untouched": true,
+  "state": "complete:17 repairs plus supported native/API/GUI acceptance; units remain unverified",
+  "final_receipt": "sources_robo_activation_final_20261019.json",
+  "current_pid": 114668
+}

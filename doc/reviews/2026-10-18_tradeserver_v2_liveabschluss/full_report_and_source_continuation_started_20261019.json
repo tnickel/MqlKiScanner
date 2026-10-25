@@ -1,0 +1,89 @@
+{
+  "recordedUtc": "2026-10-19T11:58:37.574385+00:00",
+  "status": "actual_missing_stage_reports_and_full_followup_running",
+  "finalComplete": false,
+  "userBudgetAuthorization": "Day/month increases as needed for complete remaining analyses; actual10Mday/10Mmonth/10Mrun",
+  "reportQueue": {
+    "pid": 422660,
+    "creationUtc": "2026-10-19T11:51:39.8106447Z",
+    "childPid": 427216,
+    "scopeSignals": 73,
+    "missingStagesAtStart": 218,
+    "planSha256": "b23df7a8624699426ec69a3c99aafd138d7cf77dd68f03c9ac226f40010e1a60",
+    "runnerSha256": "b744128d75634f3a7c3f1587abc9e06c291bbf4ddedf801972b3d7c3929fdacf",
+    "state": "normal_report_queue_running"
+  },
+  "reportConnector": {
+    "startedUtc": "2026-10-19T11:56:14.4871617Z",
+    "pid": 411092,
+    "creationUtc": "2026-10-19T11:56:14.4817676Z",
+    "entry": "connect_after_reports_full_once.py",
+    "label": "reports_full_intermediate",
+    "reportPid": 422660,
+    "reportCreationUtc": "2026-10-19T11:51:39.8106447Z",
+    "pinsSha256": "3c49834233de6c38dd0ab2272aa202525d397759cba09fa975523556d017583c",
+    "reportScopeSha256": "b23df7a8624699426ec69a3c99aafd138d7cf77dd68f03c9ac226f40010e1a60",
+    "recurring": false,
+    "scheduledAutomation": false
+  },
+  "finalSourceWaiter": {
+    "startedUtc": "2026-10-19T11:56:44.3002693Z",
+    "pid": 441932,
+    "creationUtc": "2026-10-19T11:56:44.2948447Z",
+    "entry": "continue_vantage_after_reports_full_once.py",
+    "sourcePid": 299388,
+    "sourceCreationUtc": "2026-10-19T09:51:53.3200742Z",
+    "connectorPid": 411092,
+    "connectorCreationUtc": "2026-10-19T11:56:14.4817676Z",
+    "parentPinsSha256": "025ec5ecf986250741736b05056585e7910be4fa04299d6eda9500f93114c77e",
+    "recurring": false,
+    "scheduledAutomation": false,
+    "newModels": false,
+    "newNativePosts": false
+  },
+  "actualSourceBinding": {
+    "method": "pid_creation_bound_handle_wait",
+    "pid": 299388,
+    "creationUtc": "2026-10-19T09:51:53.320074+00:00"
+  },
+  "actualIntermediateBinding": {
+    "method": "pid_creation_bound_handle_wait",
+    "expectedPid": 411092,
+    "expectedCreationUtc": "2026-10-19T11:56:14.4817676Z",
+    "creationUtc": "2026-10-19T11:56:14.481768+00:00"
+  },
+  "futurePhases": [
+    "New reports_full_intermediate actual mirror/PDF/verify/v2publish/TCPaudit/exactcomparison after report queue",
+    "Then source299388actualSchema2 completion plus qualifiedVantage catalog/selection/forensic/studies/binding check",
+    "New vantage_full_followup actual mirror/PDF/verify/v2publish/TCPaudit/exactcomparison"
+  ],
+  "guardChecks": 42,
+  "reportResumeTestsPassed": 91,
+  "codePinFiles": 144,
+  "parentPinsSha256": "025ec5ecf986250741736b05056585e7910be4fa04299d6eda9500f93114c77e",
+  "flatConnectorPinsSha256": "3c49834233de6c38dd0ab2272aa202525d397759cba09fa975523556d017583c",
+  "startupStderrBytes": 0,
+  "old500kWaiter311692EndedAndHistoricalReceiptsPreserved": true,
+  "existingNativeSourceDownloadUntouched": true,
+  "nativeProgressAtRecord": {
+    "checkedUtc": "2026-10-19T11:58:29.270426+00:00",
+    "done": 125,
+    "total": 215,
+    "state": "running"
+  },
+  "recurringOrScheduledAutomation": false,
+  "limits": [
+    "These are actual process startup and binding proofs, not completion of all218newstages.",
+    "Any source/queue/connector error, changed code/settings/input or Root STOP ends continuation for review; no automatic repeat.",
+    "Native errors, truncated/unknown source history and virtual account-capital limits remain explicit.",
+    "No new source update POST or extra model calls by final data/sync helpers."
+  ],
+  "inputSha256": {
+    "data/runs/liveabschluss_20261019/plans/full_report_queue_launch_20261019.json": "48439d12589cf2c95e1c07e096ecde02ab2028c4ebfc15630d8a1b2b5e16fffa",
+    "data/runs/liveabschluss_20261019/plans/full_reports_connector_launch_20261019.json": "b1298c907c81753f75c8d9f9ec52b8085e77545c5704c267993793f1a366fd48",
+    "data/runs/liveabschluss_20261019/plans/vantage_full_waiter_launch_20261019.json": "bcf5b2244406b90e6010e405034c3dc275b249305c5deb5cb5a90e1983962227",
+    "data/runs/liveabschluss_20261019/plans/full_continuation_guard_checks_20261019.json": "49aaa6b7303f5114ce31e942530846213f8b20bce0bc62ab55c1a22461adaaac",
+    "data/runs/liveabschluss_20261019/plans/vantage_final_full_coordinator_pins_20261019.json": "025ec5ecf986250741736b05056585e7910be4fa04299d6eda9500f93114c77e",
+    "data/runs/liveabschluss_20261019/plans/post_reports_connector_pins_full_20261019.json": "3c49834233de6c38dd0ab2272aa202525d397759cba09fa975523556d017583c"
+  }
+}

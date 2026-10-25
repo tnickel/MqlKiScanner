@@ -1,0 +1,4 @@
+Befehl: python -m pytest tests/test_ergebnis_gewinn_retdd_ui.py tests/test_alle_signale_seite.py tests/test_alle_signale_batch_refresh.py tests/test_alle_signale_performance.py tests/test_katalog.py tests/test_app.py::test_results_db_marks_refreshed_signals_as_neu -q -p no:cacheprovider --junitxml=doc/reviews/2026-10-18_download_datenfluss_pruefung/nachweise/tabelle_pytest.xml
+Exitcode: 0
+Ergebnis: 104 passed in 43.02s
+Isolation: tests/conftest.py::isolated_app_storage; Daten-/Secrets-/Settingspfade auf pytest-Tempverzeichnis umgeleitet; HTTP-Requests abgewiesen; keine Produktivdownloads und keine produktiven Datenänderungen.

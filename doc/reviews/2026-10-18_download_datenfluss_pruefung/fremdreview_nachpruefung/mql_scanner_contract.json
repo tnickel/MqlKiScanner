@@ -1,0 +1,100 @@
+{
+  "readOnlyProduction": true,
+  "networkRequests": 0,
+  "minimumWeeks": 26,
+  "fixIds": [],
+  "cases": [
+    {
+      "signalId": "138420",
+      "version": "mql4",
+      "weeks": 572,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (572 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "1496203",
+      "version": "mql4",
+      "weeks": 238,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (238 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "1719023",
+      "version": "mql4",
+      "weeks": 195,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (195 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "2295882",
+      "version": "mql4",
+      "weeks": 87,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (87 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "2381807",
+      "version": "mql4",
+      "weeks": 6,
+      "accepted": false,
+      "reason": "\u2717 Alter: 6 Wochen < Mindestalter 26 Wochen."
+    },
+    {
+      "signalId": "1784430",
+      "version": "mql4",
+      "weeks": null,
+      "accepted": false,
+      "reason": "\u2717 Alter unbekannt (weeks fehlt bei der Quelle) \u2014 Mindestalter kann nicht belegt werden."
+    },
+    {
+      "signalId": "1059619",
+      "version": "mql5",
+      "weeks": 281,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (281 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "1560883",
+      "version": "mql5",
+      "weeks": 253,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (253 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "1725090",
+      "version": "mql5",
+      "weeks": 212,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (212 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "2265877",
+      "version": "mql5",
+      "weeks": 102,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (102 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "2350211",
+      "version": "mql5",
+      "weeks": 35,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (35 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "2371777",
+      "version": "mql5",
+      "weeks": 26,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (26 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    },
+    {
+      "signalId": "2379208",
+      "version": "mql5",
+      "weeks": 85,
+      "accepted": true,
+      "reason": "\u2713 Vorfilter bestanden (85 Wochen, 10 Abonnenten) \u2014 \u00fcber die Auswahl (Slots bzw. Teilscan-Scope) wird als N\u00e4chstes entschieden."
+    }
+  ],
+  "assertionsPassed": 26
+}

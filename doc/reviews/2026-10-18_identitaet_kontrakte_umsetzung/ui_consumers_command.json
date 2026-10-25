@@ -1,0 +1,24 @@
+{
+  "command": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_katalog.py",
+    "tests/test_downloader_client.py",
+    "tests/test_tradeserver_client.py",
+    "tests/test_portfolio_statistik.py",
+    "tests/test_pdf_reports.py",
+    "tests/test_rest_api.py",
+    "tests/test_studien_batch.py",
+    "tests/test_tiefen_batch.py",
+    "tests/test_review_table_fixes.py",
+    "tests/test_ui_source_identity.py",
+    "--junitxml=doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ui_consumers.xml"
+  ],
+  "environment": {
+    "PYTHONIOENCODING": "utf-8"
+  }
+}

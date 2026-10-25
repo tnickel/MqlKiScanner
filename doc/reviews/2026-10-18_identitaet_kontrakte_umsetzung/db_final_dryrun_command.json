@@ -1,0 +1,8 @@
+{
+  "operation": "migrate_copy",
+  "source": "C:\\Users\\tnickel\\AppData\\Local\\Temp\\scanner_identity_migration_nordfgdk\\candidate.db.legacy-backup.sqlite",
+  "source_kind": "previously_created_consistent_private_production_snapshot",
+  "destination": "C:\\Users\\tnickel\\AppData\\Local\\Temp\\scanner_identity_final_ker_nf70\\candidate.db",
+  "verify_files": true,
+  "production_activation": false
+}

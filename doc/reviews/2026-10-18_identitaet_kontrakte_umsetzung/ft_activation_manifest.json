@@ -1,0 +1,14 @@
+{
+  "generated_utc": "2026-10-18T16:16:56.479757+00:00",
+  "sha256": {
+    "src/mqlkiscanner/identity_activation.py": "c385cb0c0eaaea4b2e46d805bde650f2923ddf66b935f6c83f1e2d63b73352eb",
+    "tests/test_identity_activation.py": "4f11f3544ef22c006aa5b05194f4321594885c2e8d8c23795d58f048a1b93b9a",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_activation_command.json": "6893f8c52fb09a9b19ad644f386a390248931dac4a394c02f8ae5f4e4c268336",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_activation_exit.txt": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_activation_handle_probe.json": "bf734a52abdf4cd0404efa37db147d8bc61d6287e9e5b1d4d417f4504fb94ba0",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_activation_native_probe.json": "ffb3376046ef20e7545c931f07dfb12dd49a395fc83a5a2d8338fda0255ae595",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_activation_README.md": "fc4072113332103de1e4860a147a23adad5ddff7b3ef97942f0bb58b6e045399",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_activation_tests.log": "17c5e188533b327959a7ab3ec659cfa8217478f2827d5981c64cdff3ea47dfa3",
+    "doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_activation_tests.xml": "316636fcee037bec22fd3c96c7f32c10b06e080d7fd0b2c71c5e5579a06cad8f"
+  }
+}

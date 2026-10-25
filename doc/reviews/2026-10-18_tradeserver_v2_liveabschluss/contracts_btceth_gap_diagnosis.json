@@ -1,0 +1,22 @@
+{
+  "observed_utc": "2026-10-18T16:57:37.753079+00:00",
+  "source": "vant/504191",
+  "trade_sha256": "a2bfac766b902580f925a7a410bd0e1927902ab8ca64d7801f6568de8c52b631",
+  "read_only": true,
+  "network_requests": 0,
+  "terminal_access": false,
+  "feed": "[\"c:\\\\forex\\\\mt5\\\\vantage\\\\terminal64.exe\", \"VantageMarkets-Live 10\"]",
+  "btceth_trades": 37,
+  "invalid_trade_count": 3,
+  "event_gap_reasons": {
+    "price_outside_own_bar_tolerance": 4
+  },
+  "price_tolerance_pct": 0.1,
+  "maximum_price_distance_outside_own_bar_pct": 0.8621154364483479,
+  "time_basis_reliable": true,
+  "gmt_offsets_h": [
+    1.0,
+    2.0
+  ],
+  "conclusion": "Individual own-bar price evidence remains missing; no rate/clock tolerance was relaxed."
+}

@@ -1,0 +1,7 @@
+........................................................................ [ 48%]
+........................................................................ [ 96%]
+......                                                                   [100%]
+150 passed in 117.81s (0:01:57)
+
+COMMAND: python -m pytest tests/test_deepseek_weeks_validation.py tests/test_quellen.py -q -p no:cacheprovider
+EXITCODE: 0

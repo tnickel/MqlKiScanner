@@ -1,0 +1,8 @@
+{
+  "utc": "2026-10-18T17:03:33.8155468Z",
+  "source": "mql5",
+  "old_pid": 1351120,
+  "new_pid": 1431592,
+  "reason": "tested filename and Log4j fixes; no active job at replacement",
+  "jar_sha256": "80df2d24d8fe182f7a71b690be452f0a5bbcb69cc43d45afd0499fabc45935f2"
+}

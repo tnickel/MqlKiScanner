@@ -1,0 +1,18 @@
+{
+  "started_utc": "2026-10-18T16:00:56.521021+00:00",
+  "command": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_studien_spec_nachmessung.py",
+    "tests/test_stale_independent_study_display.py",
+    "tests/test_virtuelle_messanzeige.py",
+    "--junitxml=doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ft_study_regression.xml"
+  ],
+  "environment_override": {
+    "PYTHONIOENCODING": "utf-8"
+  }
+}

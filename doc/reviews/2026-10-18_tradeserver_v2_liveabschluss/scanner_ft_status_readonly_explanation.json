@@ -1,0 +1,9 @@
+{
+  "ft_count": 5,
+  "martingale_flag_count": 4,
+  "platform_or_monitor_dd_over_configured_limit_count": 3,
+  "non_martingale_rejected_by_platform_or_monitor_dd_count": 1,
+  "all_have_missing_capital_error": true,
+  "all_stored_and_displayed_red": true,
+  "basis": "pipeline.ampel_for keeps proven Martingale and platform DD gates active even when the rest of forensics is incomplete; missing capital still prevents current measured workflow efficiency"
+}

@@ -1,0 +1,532 @@
+{
+  "observed_utc": "2026-10-18T18:47:47.201920+00:00",
+  "job_id": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+  "source_job_still_running": true,
+  "successful_generations_parsed": 58,
+  "parser_errors": [],
+  "generations": [
+    {
+      "platform": "mql4",
+      "signal_id": 2306053,
+      "index": 1,
+      "csv_sha256": "b0f801daec11de1363fc5e862f4b4eb799583c5aa784db2165f2b26caa0296cf",
+      "parsed_trades": 875,
+      "parsed_balances": 11,
+      "parsed_pending_orders": 2470
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2349227,
+      "index": 2,
+      "csv_sha256": "229c90697bd7510020faac0ac1c7c88cb9ae9e44353df6f36d39754034bbda4a",
+      "parsed_trades": 411,
+      "parsed_balances": 9,
+      "parsed_pending_orders": 870
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2327790,
+      "index": 3,
+      "csv_sha256": "9080529642a78b127b60edc57ede06f5fc59b809eca01429412ddb81cb2e724f",
+      "parsed_trades": 8321,
+      "parsed_balances": 84,
+      "parsed_pending_orders": 1
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2308093,
+      "index": 4,
+      "csv_sha256": "47cfd37caba5d89569887eb160bbded383409c367bfcb667ab56f6167746c008",
+      "parsed_trades": 1716,
+      "parsed_balances": 15,
+      "parsed_pending_orders": 3
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2363323,
+      "index": 5,
+      "csv_sha256": "8a121752c0e244e7d60e9b98c6cd3126ab40e6273a5d66aaabc7b9118d95eaaf",
+      "parsed_trades": 1591,
+      "parsed_balances": 9,
+      "parsed_pending_orders": 1
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1496203,
+      "index": 6,
+      "csv_sha256": "4bb91bea75c087011388607b94148887c17d990f2e3407333faf50e306f3c6f5",
+      "parsed_trades": 2517,
+      "parsed_balances": 9,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 683917,
+      "index": 7,
+      "csv_sha256": "f06272e21b43d31393dff47083db975c5c03c123f71eb6b70f0e22626adf938b",
+      "parsed_trades": 2649,
+      "parsed_balances": 10,
+      "parsed_pending_orders": 4823
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2370312,
+      "index": 8,
+      "csv_sha256": "aa29b35f62b46eac87856f6ba8128078ca94aa750f1c84f5f548c48b3ed4c6c5",
+      "parsed_trades": 297,
+      "parsed_balances": 1,
+      "parsed_pending_orders": 2
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2330000,
+      "index": 9,
+      "csv_sha256": "3cedb7d2e781349df29e5e5636c273d942fda133a57591f7a4bb1401d3aeb3bd",
+      "parsed_trades": 1661,
+      "parsed_balances": 2,
+      "parsed_pending_orders": 8
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2382360,
+      "index": 10,
+      "csv_sha256": "673b3df0880615d0d10b72d10871d5bb1a3ad06e3828bb1ab9cf25353fceb3a7",
+      "parsed_trades": 1165,
+      "parsed_balances": 3,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1760039,
+      "index": 11,
+      "csv_sha256": "1eedfe5115816f503ab33de5589b16254971888d238b9ee1fc47433ff82b1d0f",
+      "parsed_trades": 12195,
+      "parsed_balances": 17,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 840474,
+      "index": 12,
+      "csv_sha256": "6a8cd6ee406e4bd19ceee3ae9be3408c9cb0f69d9c045a94fdb78c6a37ec6fe1",
+      "parsed_trades": 9219,
+      "parsed_balances": 36,
+      "parsed_pending_orders": 2
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2331134,
+      "index": 13,
+      "csv_sha256": "26b2ff9555d0b8f7a84eabd161ad9d24852b865bc14edd516512d03b739abb68",
+      "parsed_trades": 9802,
+      "parsed_balances": 610,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2368490,
+      "index": 14,
+      "csv_sha256": "d57703148e997efc91eec6294c75288e4ab755974f4d1a035976a070862a3e90",
+      "parsed_trades": 1306,
+      "parsed_balances": 10,
+      "parsed_pending_orders": 15
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2345795,
+      "index": 15,
+      "csv_sha256": "a4106111c2c64bfd0aa87f7dd0159c24c757ec35a2d74cfa440a85796986c1d5",
+      "parsed_trades": 709,
+      "parsed_balances": 19,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1750957,
+      "index": 16,
+      "csv_sha256": "0b0396a6a52910def7ab4ce460980ed6a470ca2f97fbf91448d1d9eeab71a973",
+      "parsed_trades": 6693,
+      "parsed_balances": 5,
+      "parsed_pending_orders": 2213
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2332166,
+      "index": 17,
+      "csv_sha256": "6dea5ce7d3ff8245721bfebc9bc0eacb37ed557734bdd51b0f001d565910bf03",
+      "parsed_trades": 718,
+      "parsed_balances": 285,
+      "parsed_pending_orders": 1560
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2331815,
+      "index": 18,
+      "csv_sha256": "1198b93a6ae2c3604025c6864305afc3df069236662dd652cb3321439d9af0d3",
+      "parsed_trades": 458,
+      "parsed_balances": 2,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2380390,
+      "index": 19,
+      "csv_sha256": "6beda7722f6f9e476d5e0f39cb3b84f3b123cf0918996cd290142443dcbdfa4a",
+      "parsed_trades": 865,
+      "parsed_balances": 13,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2197435,
+      "index": 20,
+      "csv_sha256": "b3909214f62f585af89e3d7583f1a3877e0ad9720a404bb578e078b04ea5e4af",
+      "parsed_trades": 1470,
+      "parsed_balances": 12,
+      "parsed_pending_orders": 2
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 539949,
+      "index": 21,
+      "csv_sha256": "e0a5a26eddd4843d01b6bcd354b6050f797008c479238dad14165c8c38b0b3ba",
+      "parsed_trades": 4415,
+      "parsed_balances": 19,
+      "parsed_pending_orders": 4
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2321296,
+      "index": 22,
+      "csv_sha256": "c64ccf7fe49d678e8c5177ce45caba8eb9fc5974a6d405e3a8a2f369985cd227",
+      "parsed_trades": 164,
+      "parsed_balances": 11,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2347919,
+      "index": 23,
+      "csv_sha256": "cab2aa6619f3c68853d424894c62df00d0822ddf81e4247f35c97782a863825d",
+      "parsed_trades": 161,
+      "parsed_balances": 1,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2320575,
+      "index": 24,
+      "csv_sha256": "a0304ce5da6b7f310e72e252a23f5e289c82465e0bb7289e14470a6b66a4a938",
+      "parsed_trades": 616,
+      "parsed_balances": 26,
+      "parsed_pending_orders": 2284
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2383908,
+      "index": 25,
+      "csv_sha256": "60d2c1acc8fda3600f83a92156bb02fe502c4ce242c04ccd34e156d5e55db3c1",
+      "parsed_trades": 98,
+      "parsed_balances": 1,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2378927,
+      "index": 26,
+      "csv_sha256": "835673321df8164ebed298593bf0ed151b601281fbd3bcbc124252adc79df92a",
+      "parsed_trades": 192,
+      "parsed_balances": 11,
+      "parsed_pending_orders": 69
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2347343,
+      "index": 27,
+      "csv_sha256": "9207a93b8517626d3a28e0fdbf43f54936b803115e945e30a46f0d99c7be72c4",
+      "parsed_trades": 284,
+      "parsed_balances": 28,
+      "parsed_pending_orders": 168
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 138420,
+      "index": 28,
+      "csv_sha256": "cad551c7f4c82d66ad7081e9803d93568714e9f52464022431ec8f19d7393a89",
+      "parsed_trades": 3265,
+      "parsed_balances": 29,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2330426,
+      "index": 29,
+      "csv_sha256": "f773b32c61a338c11a56d5127da889d606fc61af33510e8ea7ff8b01c5e58474",
+      "parsed_trades": 1438,
+      "parsed_balances": 3,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2294877,
+      "index": 30,
+      "csv_sha256": "99832a6c7213365489e60a3572cc99d675c75cf002fe804de1fe63d0d25c03ff",
+      "parsed_trades": 816,
+      "parsed_balances": 7,
+      "parsed_pending_orders": 1298
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2365401,
+      "index": 31,
+      "csv_sha256": "ae6dd03236c46bb568909ced12fcfe1b2075e5e3e48bf94f22d9aaf465db0b61",
+      "parsed_trades": 1033,
+      "parsed_balances": 8,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2225567,
+      "index": 32,
+      "csv_sha256": "229a81014f33d138ef6f61aabf0f0d2b3fbaed74ff97a95e8bda701e61d1a16e",
+      "parsed_trades": 1428,
+      "parsed_balances": 4,
+      "parsed_pending_orders": 1072
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2367841,
+      "index": 33,
+      "csv_sha256": "b6f4f5d212d13f3e2e118c158c56c9f3a05447b605ba4de1eb67796465c0c16f",
+      "parsed_trades": 451,
+      "parsed_balances": 32,
+      "parsed_pending_orders": 2
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2348377,
+      "index": 34,
+      "csv_sha256": "4c7f802acc11ff20d9f0094b8ff82b599451b1f37af2ba05611d3910584cf2f9",
+      "parsed_trades": 770,
+      "parsed_balances": 10,
+      "parsed_pending_orders": 32
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2320903,
+      "index": 35,
+      "csv_sha256": "e0f52675b0e33984f0b13bdf0c2c519ec42a07be0109455d7bc9095dd57be452",
+      "parsed_trades": 193,
+      "parsed_balances": 2,
+      "parsed_pending_orders": 980
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2358336,
+      "index": 36,
+      "csv_sha256": "dfdc2cb6d0f3bcbb704c7d2bed079c1edc44e5ef2b4d5973fe3db35aa2c8c6d2",
+      "parsed_trades": 1834,
+      "parsed_balances": 2,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2321576,
+      "index": 37,
+      "csv_sha256": "efe3e00c2ef58d8d87ef1913d7af8c7eedf3cc57a9d082d8d9ead1e7c7b85fcb",
+      "parsed_trades": 265,
+      "parsed_balances": 16,
+      "parsed_pending_orders": 8
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2274644,
+      "index": 38,
+      "csv_sha256": "9a19adc907a7a649de4ea4d8efe84db3118ae7915cbe43e3594f25369db286e9",
+      "parsed_trades": 3132,
+      "parsed_balances": 5,
+      "parsed_pending_orders": 2
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2023750,
+      "index": 39,
+      "csv_sha256": "121bf3c0a8daaf27cf7dc3ea1e523d1f8bd4a93a68f97e0260ce46c4386eb7cf",
+      "parsed_trades": 2354,
+      "parsed_balances": 39,
+      "parsed_pending_orders": 7
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2317789,
+      "index": 40,
+      "csv_sha256": "f2600e9adf852ac79f27724bee04a03c8650a776bc36cba2b9ecf781b840b252",
+      "parsed_trades": 338,
+      "parsed_balances": 10,
+      "parsed_pending_orders": 144
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2350542,
+      "index": 41,
+      "csv_sha256": "c3db1245653f169c3c0300256f0251b17392af4acfe416fd07ff8c187eafc97e",
+      "parsed_trades": 180,
+      "parsed_balances": 1,
+      "parsed_pending_orders": 207
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1858780,
+      "index": 42,
+      "csv_sha256": "b1fb6948b3e1eb43564a8eefa0bebfc1e3a27a4b1524ca8c3a48f727bcdac74d",
+      "parsed_trades": 5725,
+      "parsed_balances": 4,
+      "parsed_pending_orders": 1795
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2286356,
+      "index": 43,
+      "csv_sha256": "27e831410027f5a0516fabebf5ebd6a711e45711c29a9c6ff22631051cd1deeb",
+      "parsed_trades": 449,
+      "parsed_balances": 4,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1724716,
+      "index": 44,
+      "csv_sha256": "084b60ba4fd79752fe14f47429d40e84732d3d18ba21071287c4e57619e0388a",
+      "parsed_trades": 8642,
+      "parsed_balances": 87,
+      "parsed_pending_orders": 9430
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1949522,
+      "index": 45,
+      "csv_sha256": "ce3121b2b34bfbeda0e6d72095e78e753d97a2e59590d48908c53eae5b0730c9",
+      "parsed_trades": 2773,
+      "parsed_balances": 2,
+      "parsed_pending_orders": 2
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2281956,
+      "index": 46,
+      "csv_sha256": "f1dfaec531daceab3ef5afaa7d69c80b8ffa89294c3a328726ca4583fa361b90",
+      "parsed_trades": 1026,
+      "parsed_balances": 1,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1750952,
+      "index": 47,
+      "csv_sha256": "d30620d82d020589c9f5697fe558c50f4de06bbb3fdc74516ac414616dedaeb6",
+      "parsed_trades": 5140,
+      "parsed_balances": 13,
+      "parsed_pending_orders": 115
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2193150,
+      "index": 48,
+      "csv_sha256": "2ca26005debd7c90d6c326f78a0299a34e516f25c1b9f09bc6b249eb180ad502",
+      "parsed_trades": 2009,
+      "parsed_balances": 12,
+      "parsed_pending_orders": 8
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1750918,
+      "index": 49,
+      "csv_sha256": "43be61c543891fe2a2267765bd98dc1e4eff2075e07f555f380b448794924c61",
+      "parsed_trades": 2700,
+      "parsed_balances": 4,
+      "parsed_pending_orders": 1
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2373736,
+      "index": 50,
+      "csv_sha256": "6a664a31ccaa11d644dea852ec0098dfee1c944b93d7fa8144e8763cec6085d3",
+      "parsed_trades": 1979,
+      "parsed_balances": 7,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2043012,
+      "index": 51,
+      "csv_sha256": "9520e96d3675dfc888bd9b08ca6ab723c9ace7910e509e31b8938045e08220fd",
+      "parsed_trades": 1135,
+      "parsed_balances": 3,
+      "parsed_pending_orders": 6593
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2334562,
+      "index": 52,
+      "csv_sha256": "13ecb39e78f1fdece81ef3326e9b716f71ba28596f07b596c285852e434125a6",
+      "parsed_trades": 436,
+      "parsed_balances": 59,
+      "parsed_pending_orders": 262
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1997766,
+      "index": 53,
+      "csv_sha256": "5a8e575f7fb1c55fa1fd6810a9fbcbeacd909665c05c20de8c52e72900b6c264",
+      "parsed_trades": 871,
+      "parsed_balances": 903,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2370899,
+      "index": 54,
+      "csv_sha256": "d1e6454e1677112fb56d21ba6648cae1f535f79a4b727bccc6eaf7e1ef9eea5a",
+      "parsed_trades": 167,
+      "parsed_balances": 1,
+      "parsed_pending_orders": 1063
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2201028,
+      "index": 55,
+      "csv_sha256": "eb124ad586fe7cbfd042cd39ec91d4ebaedfee0c9743db7b253bbe847c773e08",
+      "parsed_trades": 3018,
+      "parsed_balances": 1,
+      "parsed_pending_orders": 0
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 763292,
+      "index": 56,
+      "csv_sha256": "3986404cfc5c5a4c35823e38b6466e821488856a161e86d26bdb172ca0c9977b",
+      "parsed_trades": 63390,
+      "parsed_balances": 4,
+      "parsed_pending_orders": 636
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 1949810,
+      "index": 57,
+      "csv_sha256": "e43e838bb99d517de5190dfa01a3b0c281ab3f3f9c70adb90f057b97dc238d04",
+      "parsed_trades": 1304,
+      "parsed_balances": 198,
+      "parsed_pending_orders": 4455
+    },
+    {
+      "platform": "mql4",
+      "signal_id": 2274095,
+      "index": 58,
+      "csv_sha256": "5abeab76b525b1e71e255ad83cdf2ecc5d01853d5ce644fe74682cb8574a8215",
+      "parsed_trades": 881,
+      "parsed_balances": 6,
+      "parsed_pending_orders": 2
+    }
+  ],
+  "meaning": "Early readonly input/format check only; final metrics and all successful source generations still require end verification."
+}

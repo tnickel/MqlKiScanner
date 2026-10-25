@@ -1,0 +1,4 @@
+reason=complete_fresh_history_replacement
+archivedAt=2026-10-18T18:13:11.956924200Z
+legacyIncludedInUtcHistory=false
+coverage=only_fresh_utc_rows; provider_total_is_separate

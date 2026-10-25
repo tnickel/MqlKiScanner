@@ -1,0 +1,169 @@
+{
+  "saved_utc": "2026-10-18T19:00:19.874242+00:00",
+  "resume_rule": "NO scheduled time, NO automation, NO automatic AI continuation. Continue only after an explicit new user instruction.",
+  "pause_rule": "No new POST/deploy/source scan/test/code edit. Leave MQL and Zulu workers untouched. Existing read-only observer may save a natural terminal state; it has no follow-up action.",
+  "mql": {
+    "pid": 1663784,
+    "job_id": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+    "active_jar_sha256": "f343519189c345cac7ed08e1b01b02485f2477bf80f80eabd0ba47359fc09315",
+    "latest_observation": {
+      "observed_utc": "2026-10-18T19:00:19.534027+00:00",
+      "process_id": 1663784,
+      "job_id": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+      "status": {
+        "jobId": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+        "state": "running",
+        "phase": "download",
+        "done": 20,
+        "total": 4500,
+        "message": "MQL5 Download laeuft (Limit: 4500 Provider)",
+        "startedAt": "2026-10-18T20:33:42",
+        "finishedAt": null,
+        "ergebnis": {
+          "signaleGeliefert": 92,
+          "tradelistenNeu": 33,
+          "tradelistenAktualisiert": 59,
+          "tradelistenFehler": 0,
+          "tradelistenAbgebrochen": false,
+          "katalogUebersprungen": false,
+          "datenstand": null,
+          "hinweise": []
+        },
+        "error": null
+      },
+      "observed_list_urls": [
+        {
+          "platform": "mt4",
+          "page": 1,
+          "orderby": "subscribers",
+          "url": "https://www.mql5.com/en/signals/mt4/list?orderby=subscribers",
+          "first_seen_utc": "2026-10-18T18:34:45.137325+00:00",
+          "driver_pid": 1737408
+        },
+        {
+          "platform": "mt4",
+          "page": 2,
+          "orderby": "subscribers",
+          "url": "https://www.mql5.com/en/signals/mt4/list/page2?orderby=subscribers",
+          "first_seen_utc": "2026-10-18T18:45:17.064557+00:00",
+          "driver_pid": 1737408
+        },
+        {
+          "platform": "mt5",
+          "page": 1,
+          "orderby": "subscribers",
+          "url": "https://www.mql5.com/en/signals/mt5/list?orderby=subscribers",
+          "first_seen_utc": "2026-10-18T18:55:37.400304+00:00",
+          "driver_pid": 1768520
+        }
+      ],
+      "journals": {
+        "mql4": {
+          "success_max_index": 92,
+          "started_max_index": 92,
+          "error_max_index": 0,
+          "pages": [
+            {
+              "at_local": "2026-10-18 20:45:16",
+              "page": 1,
+              "logged_provider_count": 48,
+              "processed": 48
+            },
+            {
+              "at_local": "2026-10-18 20:55:21",
+              "page": 2,
+              "logged_provider_count": 48,
+              "processed": 92
+            }
+          ],
+          "success_count": 92
+        },
+        "mql5": {
+          "success_max_index": 20,
+          "started_max_index": 21,
+          "error_max_index": 0,
+          "pages": [],
+          "success_count": 20
+        }
+      },
+      "workflow_lock": {
+        "frei": true
+      },
+      "browser_observation_method": "GET current URL from existing descendant ChromeDriver only; no navigation/script/website request"
+    },
+    "watcher_exec_session_id": 17811,
+    "watcher_script": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_corrected_watch.py",
+    "status_file": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_corrected_watch_status.json",
+    "events_file": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_corrected_observations.jsonl",
+    "automatic_deploy_scan_or_post_attached": false,
+    "readonly_watcher_pid": 1742704
+  },
+  "zulu": {
+    "known_pid": 1595272,
+    "known_job_id": "u-20261018-195000-c347a8c1",
+    "latest_global_observer_file": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\sources_current_progress.json",
+    "rule": "Keep backend/worker running; no shutdown, cancellation or downstream action."
+  },
+  "pending_api_guard": {
+    "jar": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\.tmp\\source_maintenance\\mql_guard_stage_20261018T184418Z\\target\\MqlDownloader-0.0.35-SNAPSHOT-jar-with-dependencies.jar",
+    "sha256": "59b6a9996628c040bfdcb36042eeecf1e68c52437ef1a3003a4f5fc138db37a7",
+    "tests": {
+      "tests": 163,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "source_hashes": [
+      {
+        "path": "../MqlDownloader/src/rest/RestApiServer.java",
+        "sha256": "f11b80137e7b452531b2843786de996211ff3c38d0ae72acad4f50d0a71019d1"
+      },
+      {
+        "path": "../MqlDownloader/src/database/DatabaseManager.java",
+        "sha256": "99a3879eadb7dda64488282f3c6dfd1e3e6d3b08c30cebfa3d525d7a9a1c4d71"
+      },
+      {
+        "path": "../MqlDownloader/tests/rest/ProviderIdentityGuardTest.java",
+        "sha256": "66e333018c397f27ba9a753752960379e7cb2474922014ecc4313c320690fcb8"
+      }
+    ],
+    "manifest": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_api_guard_tests_summary.json",
+    "description": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_api_guard_README.md",
+    "deployed": false,
+    "active_target_untouched_by_this_agent": true
+  },
+  "findings": [
+    "Old MQL u559 claimed96done, but only48per platform. Correct table /list/page2 contains44more subscribedMT4providers. Oldjob retained once as partially accepted client_updates.id64.",
+    "NewMT4 really visited /mt4/list/page2?orderby=subscribers, provider49#1750918 exactfreshCSV/RESTSHAproved. MT4 ended20:55:21 with92success/0failed/0skipped/2pages. MT5 still running at checkpoint.",
+    "Early Scannerparser check58/58freshCSV without error; this is partial, final all-file+Metrics verification still outstanding.",
+    "Legacytest_1/mql4,test_2/mql5,page2/mql4,page2/mql5 still publicly offered until idleAPIguarddeploy. Preserved rows/files; fouractualIDs excluded by both Scannerpure normalizers.",
+    "APIguard163isolatedMaventests green and independent read-only peer review found no evident guard gap. No Source runtime mutation.",
+    "Historical root package overwrote active oldFatJAR and caused NoClassDefFound HtmlParser/ProviderAge$Snapshot. Old96job not accepted as fresh conversion/API completion. Current159JAR normally restarted and left untouched."
+  ],
+  "next_steps_only_after_explicit_user_resume": [
+    "Read exact current MQLwatcher terminal. If still running, let it continue; do not create a second update.",
+    "Require exact u355done, no errors/aborted/skippedDiscovery, real correctMT4+MT5/list/page2, successful providerindex>48each. On failure/partial preserve as such.",
+    "BEFORE any idleAPIrestart run bundledPython mql_corrected_finish.py verify-source. This binds rawjob end, every successfulCSV with RESTSHA/Scannerparser, freshMetrics and known4legacylabels. Do not appendfertig before APIguardaccepted.",
+    "Parent then verifies writerabsence, normalWindowExit+offlinebackup and staged163JAR replacement SHA59b6... . No kill/interrupt. No extra download needed for outputguard.",
+    "After newPID+healthyAPI and idlejob state, run bundledPython mql_corrected_finish.py after-guard NEW_PID 59b6a9996628c040bfdcb36042eeecf1e68c52437ef1a3003a4f5fc138db37a7. It checks API-PID/JAR, full filteredcatalog and unchanged savedgenerations, then idempotent exactjobfertigappend.",
+    "Coordinate with parent before canonical live_abschluss.py catalog then source-scan --source mql5 --live --expected-version21 --output data/runs/liveabschluss_20261018. Fresh bundledPython, sharedatomiclock, FT/Pelican priorities and existing owner prevail.",
+    "Reports/studies/publishing only with parent coordination. No commits. Preserve DB/rawHTML/trades/privatecredentials and all incomplete/error evidence."
+  ],
+  "python": {
+    "executable": "C:/Users/tnickel/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe",
+    "PYTHONPATH": "src;C:/Users/tnickel/AppData/Local/Packages/PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0/LocalCache/local-packages/Python312/site-packages",
+    "avoid": "Windows Store Python, process kills, Ctrl-C/console control"
+  },
+  "key_files": [
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\root_mql_pagination_README.md",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\root_mql_corrected_live_start.json",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_corrected_mt4_page2_first_export.json",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_corrected_csv_precheck.json",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_corrected_catalog_legacy_invalid.json",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_api_guard_scanner_filter.json",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_api_guard_README.md",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_api_guard_tests_summary.json",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_corrected_finish.py",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_tradeserver_v2_liveabschluss\\mql_pagination_stufe0_receipt.json"
+  ]
+}

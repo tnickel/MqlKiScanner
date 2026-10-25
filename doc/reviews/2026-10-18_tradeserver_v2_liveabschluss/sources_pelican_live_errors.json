@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-18T17:18:37.361289+00:00",
+  "errors": [
+    "2026-10-18 19:12 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste AUTOTRADE ✅ (#2019203): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:13 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste Phonics (#2015482): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:13 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste Black Enter (#2000434): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:13 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste SergioTradeos (#2000876): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:14 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste POP2 UG (#2004588): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:14 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste J.Esus (#2049681): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:14 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste Yong cheng max K (#2001220): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:14 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste Yagafm (#2042565): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:14 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste Elite del Trading - Javi (#2033102): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:14 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste Makaveli (#2028213): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:14 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste 1000Academy (#2028633): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten.",
+    "2026-10-18 19:15 [UPDATE-JOB] UPDATE-JOB FEHLER Tradeliste AFX Strategy (#2021948): Aktuelle realisierte Rendite fuer Trade-DD fehlt; alter Bestand bleibt erhalten."
+  ]
+}

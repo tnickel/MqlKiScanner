@@ -1,0 +1,88 @@
+{
+  "checked_utc": "2026-10-19T09:34:44.740523+00:00",
+  "source": "zulu",
+  "quellen_uid": "49f40802-d00d-486b-b262-32b89b666a29",
+  "status": "verified",
+  "expected": 35,
+  "verified": 35,
+  "errors": [],
+  "original_source_scan": {
+    "attempted": 35,
+    "persisted": 35,
+    "complete": 0,
+    "missing_real_capital_basis_errors": 33,
+    "unproven_contract_ids": [
+      427110,
+      429464
+    ]
+  },
+  "current_sha_bound_partial_forensic_payload_version21_count": 33,
+  "no_current_sha_bound_forensic_payload_ids": [
+    427110,
+    429464
+  ],
+  "complete_workflow_forensics_count": 0,
+  "missing_real_capital_evidence_in_current_payload_count": 33,
+  "original_source_scan_errors_preserved_count": 35,
+  "refresh": {
+    "total": 35,
+    "fetched": 35,
+    "failed": []
+  },
+  "study_control": {
+    "typ": "studien_batch",
+    "fertig": true,
+    "abbruch": false,
+    "gesamt": 35,
+    "aktuell": 35,
+    "fertig_count": 0,
+    "uebersprungen": 0,
+    "gerechnet": 35,
+    "fehler": [],
+    "skipped_gruende": [],
+    "phase": "fertig",
+    "aktuelles_signal": "zulu:402995 · SKMT4IC2017",
+    "restzeit_s": 0,
+    "dauer_je_s": 67.5,
+    "start_ts": 1792399706.4055326,
+    "summary": "35 gerechnet · 0 übersprungen · 0 Fehler · Dauer 2724 s",
+    "nur_luecken": false,
+    "trades_nachladen": true
+  },
+  "coordinator_study_exit_code": 0,
+  "all_study_owner_ref_version21_sha_and_both_paths_checked": true,
+  "forensic_payload_binding_contract": "33capital-error heads require version21 partial payload/SHA written during this SourceScan.2early contract-error heads may have no new payload; stale/absent evidence is recorded explicitly and never promoted to current merely from matching version/SHA. No pre-scan payload baseline exists in this audit, so unchanged historical bytes are not claimed.",
+  "all_study_times_within_finished_current_run": true,
+  "sqlite_mode": "ro",
+  "query_only": true,
+  "sql_total_changes": 0,
+  "no_apis_terminals_models_forensic_execution": true,
+  "gate_changes_made": false,
+  "basis_flags": {
+    "virtuell": 35
+  },
+  "report_statuses": {
+    "ok": 14,
+    "unvollstaendig": 18,
+    "skipped": 2,
+    "ok_teilmessung": 1
+  },
+  "reliability_flags": {
+    "True": 15,
+    "False": 20
+  },
+  "source_path_kinds": {
+    "owner_uid_hash": 35
+  },
+  "unchanged_content_artifact_timestamps_predating_run": 35,
+  "timestamp_note": "Unchanged source bytes preserve old fetched_at. Actual refresh35/fetched35/failed[] is checked separately, plus every study timestamp against receipt, batch epoch and coordinator UTC bounds.",
+  "interpretation": "Correct fresh study/input binding does not make the workflow complete. Source-scan remains0complete/35persisted with33missing real capital errors and2unproven-contract errors; virtual studies do not grant workflow release.",
+  "receipt_hashes": {
+    "data/runs/liveabschluss_20261019/zulu_maintenance_finished.json": "6bb5321ba9797797301a4858b15294d188a83c11b6844c19e48b6132b2c79249",
+    "data/runs/liveabschluss_20261019/studies_zulu/studies_zulu.json": "e337ea6bf3e32c19fc7b0cf70d0b717457cf2493324185c5d68d17e9eeec714c",
+    "data/runs/liveabschluss_20261019/plans/zulu_selection_plan.json": "4da6ff7a0a90379949c95af08450ac07824b884bb32276b57674be60746d7d2a",
+    "data/runs/liveabschluss_20261019/zulu_recovery/verified_scanner_export_scope.json": "6353bd0f72430c73e797600ae40ed3d2f50c817ff4540714c73a9974218a332c",
+    "data/runs/liveabschluss_20261019/source_scan_zulu/source-scan_zulu.json": "b910aa4c8d9bdf2fad6a2ffe7908913b6a05c6a1dce380791ccfb59ddb785e77",
+    "data/runs/liveabschluss_20261019/studies_zulu/study_refresh.json": "77ee14bb901df83fed21da686d58bbeb4b3fb813066e264bde69c4a9a98991bf"
+  }
+}

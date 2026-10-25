@@ -1,0 +1,22 @@
+{
+  "finding": "Persisted Schema-2 workflow rows lacked quelle_id and quelle_version and were absent from pure katalog_list(), so on-demand source resolution returned None despite a proven stable owner UID",
+  "scope": "Only katalog.quellen_referenz and a separate synthetic regression test file",
+  "resolution": "Resolve the actual source-qualified signal/ref owner, require exact UID agreement, derive the API version only from a known platform, then select an active registered transport of that exact UID",
+  "mirror_contract": "Explicit registered transports sharing the exact UID share ownership; preserve oldest active registry order, with no fallback to a foreign owner of the same numeric signal ID",
+  "fail_closed": ["Unknown owner or reference", "Alias/ref/external-ID contradiction", "Owner/UID contradiction", "Unknown platform", "Conflicting explicit API version", "No active transport of the exact UID"],
+  "evidence": {
+    "focused_junit": "scanner_workflow_transport_restore_tests.xml",
+    "focused_passed": 45,
+    "broad_junit": "scanner_workflow_transport_restore_broad_tests.xml",
+    "broad_passed": 241,
+    "broad_seconds": 51.37,
+    "new_regression_cases": 19,
+    "new_full_run": "scanner_final_transport_bundled_full.xml"
+  },
+  "sha256": {
+    "src/mqlkiscanner/katalog.py": "293374096748253684702b3298cdfd96d353a66dab830e70ce8fc7068032d75c",
+    "tests/test_workflow_transport_restore.py": "7bc38afa6deb1fdb8569ae62b3f6280897e3472739aacc709764b31ab09d5212"
+  },
+  "live_scope": "No production DB/source/SDK writes or interrupts performed by this review. The old FT-study attempt used already proven current CSV inputs and USD metadata; fetched=0 did not establish a new transport refresh. A fresh strict round follows its normal completion under root coordination.",
+  "previous_full": "scanner_final_bundled_full.xml remains a complete passing 2784-test result for the earlier frozen code; the source resolver changed afterward and requires the new full run"
+}

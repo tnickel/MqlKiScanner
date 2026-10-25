@@ -1,0 +1,471 @@
+{
+  "scope": "Static current registry/resolver, no new broker permission or current live instrument proof",
+  "registry_sha256": "5ac0989466f49a92bbc9f49e1fd3cea840db94779b239cb22f8892f79848cb34",
+  "registry_changed": false,
+  "rows": [
+    {
+      "symbol": "UKOUSD",
+      "broker": "Vantage International Group Limited",
+      "normalized": "UKOUSD",
+      "registry_key": "UKOUSD_VANTAGE",
+      "factor_and_native_quote": [
+        1000.0,
+        "USD"
+      ],
+      "expected": [
+        1000,
+        "USD"
+      ],
+      "matches": true,
+      "source": "MT5 symbol_info am Vantage-Terminal 08.10.2026 (UKOUSD 'Brent Crude Oil Cash', CS=1000 Barrel) — Signal Rebounds (vant)",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "SP500",
+      "broker": "Vantage International Group Limited",
+      "normalized": "SP500",
+      "registry_key": "SP500_VANTAGE",
+      "factor_and_native_quote": [
+        1.0,
+        "USD"
+      ],
+      "expected": [
+        1,
+        "USD"
+      ],
+      "matches": true,
+      "source": "MT5 symbol_info am Vantage-Terminal 08.10.2026 (SP500 'S&P Index Cash CFD (USD)', CS=1) — Signal TRADE EASY 4YOU 2 (vant)",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "NAS100FT",
+      "broker": "Vantage International Group Limited",
+      "normalized": "NAS100FT",
+      "registry_key": "NAS100FT_VANTAGE",
+      "factor_and_native_quote": [
+        1.0,
+        "USD"
+      ],
+      "expected": [
+        1,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=74, Quartile 1.00…1.00.",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "CL-OIL",
+      "broker": "Vantage International Group Limited",
+      "normalized": "CL-OIL",
+      "registry_key": "CL-OIL_VANTAGE",
+      "factor_and_native_quote": [
+        1000.0,
+        "USD"
+      ],
+      "expected": [
+        1000,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=15, Quartile 1000.00…1000.01. 1000 Barrel/Lot (WTI-Future-Konvention am Vantage-Broker bewiesen).",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "DJ30",
+      "broker": "Vantage International Group Limited",
+      "normalized": "DJ30",
+      "registry_key": "DJ30FT_VANTAGE",
+      "factor_and_native_quote": [
+        1.0,
+        "USD"
+      ],
+      "expected": [
+        1,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=87, Quartile 1.00…1.00. DJ30 (n=1, exakt 1.00) als Alias mitgefuehrt.",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "DJ30FT",
+      "broker": "Vantage International Group Limited",
+      "normalized": "DJ30FT",
+      "registry_key": "DJ30FT_VANTAGE",
+      "factor_and_native_quote": [
+        1.0,
+        "USD"
+      ],
+      "expected": [
+        1,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=87, Quartile 1.00…1.00. DJ30 (n=1, exakt 1.00) als Alias mitgefuehrt.",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "SP500FT",
+      "broker": "Vantage International Group Limited",
+      "normalized": "SP500FT",
+      "registry_key": "SP500FT_VANTAGE",
+      "factor_and_native_quote": [
+        1.0,
+        "USD"
+      ],
+      "expected": [
+        1,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=19, Quartile 1.00…1.00.",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "XAUAUD",
+      "broker": "Vantage International Group Limited",
+      "normalized": "XAUAUD",
+      "registry_key": "XAUAUD_VANTAGE",
+      "factor_and_native_quote": [
+        100.0,
+        "AUD"
+      ],
+      "expected": [
+        100,
+        "AUD"
+      ],
+      "matches": true,
+      "source": "MT5 symbol_info am Vantage-Terminal 10.10.2026: XAUAUD+ 'Gold vs Australian Dollar', trade_contract_size=100, currency_profit=AUD; lesender Beleg doc/reviews/mt5_vantage_kontrakte_2026-10-10.json (scripts/reference/mt5_kontrakt_specs.py).",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "XAUJPY",
+      "broker": "Vantage International Group Limited",
+      "normalized": "XAUJPY",
+      "registry_key": "XAUJPY_VANTAGE",
+      "factor_and_native_quote": [
+        100.0,
+        "JPY"
+      ],
+      "expected": [
+        100,
+        "JPY"
+      ],
+      "matches": true,
+      "source": "MT5 symbol_info am Vantage-Terminal 10.10.2026: XAUJPY+ 'Gold vs Japanese Yen', trade_contract_size=100, currency_profit=JPY; lesender Beleg doc/reviews/mt5_vantage_kontrakte_2026-10-10.json (scripts/reference/mt5_kontrakt_specs.py).",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "COIN",
+      "broker": "Vantage International Group Limited",
+      "normalized": "COIN",
+      "registry_key": "COIN_VANTAGE",
+      "factor_and_native_quote": [
+        1.0,
+        "USD"
+      ],
+      "expected": [
+        1,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: Vantage #1096166 'the best one', COIN n=8, Median 1.0 — 1 USD je 1 USD Bewegung je Lot | Zweitbeweis 08.10.2026: MT5 symbol_info am Vantage-Terminal bestätigt exakt (CS 1 USD)",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "GER40FT",
+      "broker": "Vantage International Group Limited",
+      "normalized": "GER40FT",
+      "registry_key": "GER40FT_VANTAGE",
+      "factor_and_native_quote": [
+        1.08,
+        "USD"
+      ],
+      "expected": [
+        1.08,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=9, Quartile 1.05…1.08. Lokalw EUR/Punkt, Spread = EURUSD-Spanne der Handelszeitraeume — als USD-Aequivalent (Median) eingetragen.",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "UK100FT",
+      "broker": "Vantage International Group Limited",
+      "normalized": "UK100FT",
+      "registry_key": "UK100FT_VANTAGE",
+      "factor_and_native_quote": [
+        1.35,
+        "USD"
+      ],
+      "expected": [
+        1.35,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=13, Quartile 1.27…1.36. Lokalw GBP/Punkt, Spread = GBPUSD-Spanne — als USD-Aequivalent (Median) eingetragen.",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "vantage"
+      ]
+    },
+    {
+      "symbol": "COIN",
+      "broker": "AxiTraderUs07Live",
+      "normalized": "COIN",
+      "registry_key": null,
+      "factor_and_native_quote": null,
+      "expected": null,
+      "matches": true,
+      "source": null,
+      "cross_broker": null,
+      "allowed_brokers": null
+    },
+    {
+      "symbol": "TSLA",
+      "broker": "AxiTraderUs07Live",
+      "normalized": "TSLA",
+      "registry_key": null,
+      "factor_and_native_quote": null,
+      "expected": null,
+      "matches": true,
+      "source": null,
+      "cross_broker": null,
+      "allowed_brokers": null
+    },
+    {
+      "symbol": "USOIL",
+      "broker": "AxiTraderUs07Live",
+      "normalized": "USOIL",
+      "registry_key": null,
+      "factor_and_native_quote": null,
+      "expected": null,
+      "matches": true,
+      "source": null,
+      "cross_broker": null,
+      "allowed_brokers": null
+    },
+    {
+      "symbol": "USOIL-FUTURE",
+      "broker": "AxiTraderUs07Live",
+      "normalized": "USOIL",
+      "registry_key": null,
+      "factor_and_native_quote": null,
+      "expected": null,
+      "matches": true,
+      "source": null,
+      "cross_broker": null,
+      "allowed_brokers": null
+    },
+    {
+      "symbol": "COIN",
+      "broker": "AxiTrader5",
+      "normalized": "COIN",
+      "registry_key": null,
+      "factor_and_native_quote": null,
+      "expected": null,
+      "matches": true,
+      "source": null,
+      "cross_broker": null,
+      "allowed_brokers": null
+    },
+    {
+      "symbol": "TSLA",
+      "broker": "AxiTrader5",
+      "normalized": "TSLA",
+      "registry_key": null,
+      "factor_and_native_quote": null,
+      "expected": null,
+      "matches": true,
+      "source": null,
+      "cross_broker": null,
+      "allowed_brokers": null
+    },
+    {
+      "symbol": "USOIL",
+      "broker": "AxiTrader5",
+      "normalized": "USOIL",
+      "registry_key": null,
+      "factor_and_native_quote": null,
+      "expected": null,
+      "matches": true,
+      "source": null,
+      "cross_broker": null,
+      "allowed_brokers": null
+    },
+    {
+      "symbol": "USOIL-FUTURE",
+      "broker": "AxiTrader5",
+      "normalized": "USOIL",
+      "registry_key": null,
+      "factor_and_native_quote": null,
+      "expected": null,
+      "matches": true,
+      "source": null,
+      "cross_broker": null,
+      "allowed_brokers": null
+    },
+    {
+      "symbol": "USOIL-FUTURE",
+      "broker": "AxiTrader2",
+      "normalized": "USOIL",
+      "registry_key": "USOIL_AXITRADER2",
+      "factor_and_native_quote": [
+        1000.0,
+        "USD"
+      ],
+      "expected": [
+        1000,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung PelicanMonitor data/signals/closed/closed_2019435.csv (Server AxiTrader2): USOIL-FUTURE Sell 0.01 Lots, 62.99 -> 62.85, PnL +1.40 USD => 1000 USD je 1 USD Bewegung je Lot",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "axitrader2"
+      ]
+    },
+    {
+      "symbol": "US500-FUTURE",
+      "broker": "AxiTrader2",
+      "normalized": "US500",
+      "registry_key": "US500_AXITRADER2",
+      "factor_and_native_quote": [
+        50.0,
+        "USD"
+      ],
+      "expected": [
+        50,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung PelicanMonitor data/signals/closed/closed_2019435.csv (Server AxiTrader2): 3x US500-FUTURE 0.01 Lots, exakt 50 USD je Indexpunkt je Lot (z. B. 5989.43 -> 5985.80 = +1.82 USD)",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "axitrader2"
+      ]
+    },
+    {
+      "symbol": "TSLA",
+      "broker": "RoboForex",
+      "normalized": "TSLA",
+      "registry_key": "TSLA_ROBOFOREX",
+      "factor_and_native_quote": [
+        100.0,
+        "USD"
+      ],
+      "expected": [
+        100,
+        "USD"
+      ],
+      "matches": true,
+      "source": "Trade-Rueckrechnung aus Quellen-Snapshot (Median PnL/(Richtung x DeltaPreis x Lots)); Beleg scripts/reference/kontrakt_beweis.py 06.10.2026: RoboForex #73009362, TSLA n=1 Median 99.3 ≈ 100",
+      "cross_broker": false,
+      "allowed_brokers": [
+        "roboforex"
+      ]
+    }
+  ],
+  "checks": 23,
+  "mismatches": [],
+  "unresolved_registry_conflicts": [
+    {
+      "symbol": "GER40FT",
+      "broker_bound": {
+        "contract_size": 1.08,
+        "quote_currency": "USD",
+        "class": "INDEX",
+        "stress_move": 500.0,
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "GER40FT"
+        ],
+        "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=9, Quartile 1.05…1.08. Lokalw EUR/Punkt, Spread = EURUSD-Spanne der Handelszeitraeume — als USD-Aequivalent (Median) eingetragen."
+      },
+      "unscoped_alternative": {
+        "contract_size": 1.0,
+        "quote_currency": "EUR",
+        "stress_move": 600.0,
+        "unit_label": "Punkte",
+        "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+        "retrieved": "2026-10-08",
+        "note": "Vantage-Index-CFD (FT-Namenskonvention). n=9, Median 1,08 USD/Punkt ≈ EURUSD → 1 EUR/Punkt (Restschwankung = FX-Kurs). Kursdaten-Alias: DE40 (Tickmill-Referenzterminal).",
+        "class": "INDEX"
+      },
+      "status": "Registry conflict, no independent FT metadata found in inspected local snapshots; no factor or permission changed"
+    },
+    {
+      "symbol": "UK100FT",
+      "broker_bound": {
+        "contract_size": 1.35,
+        "quote_currency": "USD",
+        "class": "INDEX",
+        "stress_move": 200.0,
+        "unit_label": "USD Kursbewegung",
+        "cross_broker": false,
+        "brokers": [
+          "vantage"
+        ],
+        "aliases": [
+          "UK100FT"
+        ],
+        "source": "Trade-Rueckrechnung Rohan Gupta #178177 (vant) 08.10.2026, Median PnL/(Richtung x Delta x Lots) aus data/trade_snapshots/ded562719204af3799798084442b2c7b1759643cc42507659df7d0dcca44dd84.csv: n=13, Quartile 1.27…1.36. Lokalw GBP/Punkt, Spread = GBPUSD-Spanne — als USD-Aequivalent (Median) eingetragen."
+      },
+      "unscoped_alternative": {
+        "contract_size": 1.0,
+        "quote_currency": "GBP",
+        "stress_move": 450.0,
+        "unit_label": "Punkte",
+        "source": "Trade-Rueckrechnung Vantage-CopyTrades (u. a. data/quellen/vant/vantage_178177_trades.csv, 08.10.2026): USD-PnL / ((Exit-Entry)*Richtung*Lots)",
+        "retrieved": "2026-10-08",
+        "note": "Vantage-Index-CFD (FT-Namenskonvention). n=13, Median 1,35 ≈ GBPUSD → 1 GBP/Punkt. Kursdaten-Alias: UK100 (Tickmill-Referenzterminal).",
+        "class": "INDEX"
+      },
+      "status": "Registry conflict, no independent FT metadata found in inspected local snapshots; no factor or permission changed"
+    }
+  ],
+  "month_basis": {
+    "year_days": 365.2425,
+    "months": 3,
+    "minimum_days": 91.310625,
+    "minimum_weeks": 13.044375
+  }
+}

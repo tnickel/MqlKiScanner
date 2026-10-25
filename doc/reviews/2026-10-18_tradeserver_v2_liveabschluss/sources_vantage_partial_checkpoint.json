@@ -1,0 +1,101 @@
+{
+  "utc": "2026-10-18T17:07:43.790411+00:00",
+  "note": "Checkpoint of actually republished UTC histories; source job still running; whole provider history may be truncated.",
+  "providers": [
+    {
+      "signal_id": 1176428,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "version": "2",
+      "time_basis": "UTC",
+      "stored_count": 2000,
+      "metadata_count": 2000,
+      "provider_total": 4322,
+      "sha256": "cb4e71e40035e590bdaff547516426ca4e263a72bcc8a81b7747239c45047804",
+      "sha_matches": true,
+      "old_cache_existed": true,
+      "old_original_archived": true,
+      "api": {
+        "TradesStored": 2000,
+        "TradesTotalAvailable": 4322,
+        "TradesTruncated": true,
+        "TradeTimeBasis": "UTC"
+      }
+    },
+    {
+      "signal_id": 1321059,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "version": "2",
+      "time_basis": "UTC",
+      "stored_count": 2000,
+      "metadata_count": 2000,
+      "provider_total": 3351,
+      "sha256": "a02a8e7dfc2ef5de1f573bb60480b6dc399ff6ca363d9871e92670aae17c1d34",
+      "sha_matches": true,
+      "old_cache_existed": true,
+      "old_original_archived": true,
+      "api": {
+        "TradesStored": 2000,
+        "TradesTotalAvailable": 3351,
+        "TradesTruncated": true,
+        "TradeTimeBasis": "UTC"
+      }
+    },
+    {
+      "signal_id": 1332546,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "version": "2",
+      "time_basis": "UTC",
+      "stored_count": 348,
+      "metadata_count": 348,
+      "provider_total": 354,
+      "sha256": "6cee6f7dbbd6cd25c5a584383929c8a1b83c389add841699c078e84183e85e7f",
+      "sha_matches": true,
+      "old_cache_existed": true,
+      "old_original_archived": true,
+      "api": {
+        "TradesStored": 348,
+        "TradesTotalAvailable": 354,
+        "TradesTruncated": true,
+        "TradeTimeBasis": "UTC"
+      }
+    },
+    {
+      "signal_id": 1341293,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "version": "2",
+      "time_basis": "UTC",
+      "stored_count": 301,
+      "metadata_count": 301,
+      "provider_total": 301,
+      "sha256": "42a3ded65f2f827f3184234f6d2726ab56d99a2d4a6600507739ea6b525c6f31",
+      "sha_matches": true,
+      "old_cache_existed": true,
+      "old_original_archived": true,
+      "api": {
+        "TradesStored": 301,
+        "TradesTotalAvailable": 301,
+        "TradesTruncated": false,
+        "TradeTimeBasis": "UTC"
+      }
+    },
+    {
+      "signal_id": 1445283,
+      "quellen_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+      "version": "2",
+      "time_basis": "UTC",
+      "stored_count": 2000,
+      "metadata_count": 2000,
+      "provider_total": 7588,
+      "sha256": "c3eee772e51ab8c1d9924ee8933caa1e4a078a55a71f4b24249d87f65f1482c1",
+      "sha_matches": true,
+      "old_cache_existed": true,
+      "old_original_archived": true,
+      "api": {
+        "TradesStored": 2000,
+        "TradesTotalAvailable": 7588,
+        "TradesTruncated": true,
+        "TradeTimeBasis": "UTC"
+      }
+    }
+  ]
+}

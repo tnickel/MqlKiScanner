@@ -1,0 +1,104 @@
+{
+  "checked_at_utc": "2026-10-18T17:36:47.632232+00:00",
+  "forensics_version": 21,
+  "protocol": {
+    "service": "MqlTradeMonitor",
+    "protocolVersion": 2,
+    "kiscannerApi": 2,
+    "supportedProtocolVersions": [
+      1,
+      2
+    ]
+  },
+  "deployed_war_sha256": "89d081fc1190d41589e6a3c6a5548e051715fe4417c1de9e989882ed1e3e2615",
+  "latest_sync_summary": {
+    "signale": 194,
+    "gespeichert": 194,
+    "geloescht": 0,
+    "dokumente": 0,
+    "uebertragen": 0,
+    "uebersprungen": 0,
+    "bytes": 0,
+    "fehler": [],
+    "abgebrochen": null,
+    "run_id": 12,
+    "server_zeit": "2026-10-18 19:33:17",
+    "dauer_s": 5.0
+  },
+  "local_sync_status": "ok",
+  "local_sync_finished_at": "2026-10-18 19:33:18",
+  "server_readonly_audit": {
+    "KI_SIGNALS_legacy_count": 32,
+    "KI_SIGNALS_legacy_hash": "67aa01bc2f6a7cde79c81d99da9850348c5171795df57cea2abe679901ae3e08",
+    "KI_SIGNALS_backup_equal": true,
+    "KI_DOCUMENTS_legacy_count": 313,
+    "KI_DOCUMENTS_legacy_hash": "4fe1a542d43bcb18f6b91de4abd681127c1916b85552023a2ef510f6d1921d71",
+    "KI_DOCUMENTS_backup_equal": true,
+    "active_signals": 194,
+    "active_documents": 0,
+    "duplicate_signal_pairs": 0,
+    "legacy_owned_active_signals": 0,
+    "owner_pairs_sha256": "f4acfb15319c4e6b31508c9908a6d41c3de995b44cf6867775c02fdac684a682",
+    "ampel_EXCLUDED": 18,
+    "ampel_GREEN": 1,
+    "ampel_RED": 77,
+    "ampel_WHITE": 98,
+    "green_without_measured_annual_criteria": 0,
+    "invalid_document_owners": 0,
+    "document_blob_hash_mismatches": 0,
+    "min_calmar_jahr_min": 3.0,
+    "min_calmar_jahr_max": 3.0,
+    "drawdown_limit_pct_min": 50.0,
+    "drawdown_limit_pct_max": 50.0,
+    "v2_active": true,
+    "last_run_id": 12,
+    "last_run_status": "ok",
+    "last_run_signals_stored": 194,
+    "last_run_documents_total": 0,
+    "last_run_documents_uploaded": 0,
+    "last_run_documents_skipped": 0,
+    "last_run_bytes_transferred": 0,
+    "last_run_finished_at": "2026-10-18 19:33:18.818188",
+    "open_runs": 0
+  },
+  "local_owner_pair_sha256": "f4acfb15319c4e6b31508c9908a6d41c3de995b44cf6867775c02fdac684a682",
+  "owner_pairs_match": true,
+  "old_unbound_active_pdfs_removed": 47,
+  "current_own_pdf_count": 0,
+  "report_quality_note": "No current evidence-bound own reports exist in this interim snapshot. Historical local texts and original legacy tables are retained; no new report was invented.",
+  "current_workflow_snapshot": {
+    "rows": 194,
+    "current_forensics": 1,
+    "stale_forensics": 160,
+    "ampel": {
+      "🟢": 1,
+      "⚪": 98,
+      "🔴": 77,
+      "⛔": 18
+    }
+  },
+  "verification_limits": "Snapshot reflects this explicit sync. Source updates and further recalculations are still in progress; later results require another sync.0activePDFs provide no nonempty real-PDF ownership example; nonempty composite-PDF assignment is covered by Java/Python integration tests.",
+  "guard_tests": {
+    "passed": 50,
+    "failures": 0,
+    "junit": "server_current_report_guard_tests.xml"
+  },
+  "guard_files": [
+    {
+      "path": "src/mqlkiscanner/tradeserver_sync.py",
+      "sha256": "60193615aedb1053b185c438472390bef3f71ea2c099f03e48e1706f5aa42415"
+    },
+    {
+      "path": "tests/test_tradeserver_current_report_guard.py",
+      "sha256": "4dc24db18ce05007e9e0166c6ec22e7853d9cca7a76ccdb12bc18ad1cdb9704b"
+    },
+    {
+      "path": "tests/test_tradeserver_sync.py",
+      "sha256": "a0fbecf4ee053064958c5b6169daee9cf7d54d263f0ad6713a62e1fe1b61f964"
+    },
+    {
+      "path": "tests/test_tradeserver_v2.py",
+      "sha256": "e670379e6393cd2fb6dc1469dc5fe471aa2886a4e242552bc0587ee967f88a5d"
+    }
+  ]
+}

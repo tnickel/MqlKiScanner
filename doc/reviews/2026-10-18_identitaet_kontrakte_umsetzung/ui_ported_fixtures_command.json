@@ -1,0 +1,33 @@
+{
+  "command": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_alle_signale_performance.py::test_uebersicht_verwendet_snapshot_ohne_pdf_rendern",
+    "tests/test_alle_signale_performance.py::test_tabellenzeilen_nutzen_gemeinsame_fix_ids",
+    "tests/test_alle_signale_performance.py::test_seite_zeigt_gez\u00e4hlte_phasen_und_geschaetzte_restzeit",
+    "tests/test_alle_signale_performance.py::test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[same-same-None-10000.0]",
+    "tests/test_alle_signale_performance.py::test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[old-new-None-None]",
+    "tests/test_alle_signale_performance.py::test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[-same-None-None]",
+    "tests/test_alle_signale_performance.py::test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[same--None-None]",
+    "tests/test_alle_signale_performance.py::test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[same-same-20000.0-20000.0]",
+    "tests/test_alle_signale_seite.py::test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USD-MT4]",
+    "tests/test_alle_signale_seite.py::test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USD-MT5]",
+    "tests/test_alle_signale_seite.py::test_demo_and_converted_source_detail_keep_their_usd_contract[pelican]",
+    "tests/test_alle_signale_seite.py::test_demo_and_converted_source_detail_keep_their_usd_contract[vantage]",
+    "tests/test_alle_signale_seite.py::test_demo_and_converted_source_detail_keep_their_usd_contract[zulu]",
+    "tests/test_alle_signale_seite.py::test_katalog_zeile_laedt_daten_on_demand",
+    "tests/test_alle_signale_seite.py::test_gescannte_zeile_ohne_trades_mit_katalogref_holt_nach",
+    "tests/test_alle_signale_seite.py::test_markierungen_db_setzen_ueberschreiben_entfernen",
+    "tests/test_fremdreview_katalog.py::test_identical_trade_bytes_do_not_authorize_source_agnostic_study",
+    "tests/test_fremdreview_katalog.py::test_qualified_studies_coexist_but_wrong_owner_stops_before_terminal",
+    "tests/test_ui_source_identity.py",
+    "--junitxml=doc\\reviews\\2026-10-18_identitaet_kontrakte_umsetzung\\ui_ported_fixtures.xml"
+  ],
+  "environment": {
+    "PYTHONIOENCODING": "utf-8"
+  }
+}

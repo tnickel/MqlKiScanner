@@ -1,0 +1,10 @@
+{
+  "backup_path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\.tmp\\source_runtime_backup\\20261018T163932Z",
+  "manifest_written_utc": "2026-10-18T16:41:02.923585+00:00",
+  "source": "robo",
+  "files": 1371,
+  "bytes": 151696564,
+  "manifest_sha256": "abb216813d337e0c4fce26c134e1c0ef18e4dd915cbe9de6aba25d442a6d5660",
+  "timing": "after confirmed old JVM exit, before restarted JVM and update POST",
+  "classes_note": "Private class copies belong to the initially tested build, not a dump of previously loaded JVM bytecode."
+}

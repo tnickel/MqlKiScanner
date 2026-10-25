@@ -1,0 +1,33 @@
+{
+  "time": "2026-10-18T19:29:15.816716",
+  "tests": {
+    "tests": 181,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "test_classes": 27,
+  "jar_sha256": "1d89883cac256fc5253092d39677fdec949e73b45504f57ed0a0549025dfacd3",
+  "backup_files": 7144,
+  "backup_bytes": 63156280,
+  "backup_db_integrity": [
+    {
+      "name": "abonnenten.db",
+      "integrity": "ok"
+    },
+    {
+      "name": "live_trading.db",
+      "integrity": "ok"
+    },
+    {
+      "name": "strategien.db",
+      "integrity": "ok"
+    }
+  ],
+  "changed_source": {
+    "src\\main\\java\\de\\pelicanmonitor\\api\\PelicanClient.java": "dcc9a368318847dbbaaf0448a16138ac29fdd7d82f3fddc034a4b095ab4e074e",
+    "src\\main\\java\\de\\pelicanmonitor\\PelicanMonitorApp.java": "ef7226471ebef24f70a06050a7170ff44429b6ac497e1bc50321dac8daaa3994",
+    "src\\test\\java\\de\\pelicanmonitor\\api\\CatalogueAndFreshStatsTest.java": "a1e13ba23a74d0dd58bfb6a75c82a08c4752b5d4c4c25a63dfbc89e36b8f1b9b"
+  },
+  "old_stale_live_check_report_excluded": true
+}

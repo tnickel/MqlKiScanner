@@ -1,0 +1,41 @@
+{
+  "observed_utc": "2026-10-18T18:37:24.457735+00:00",
+  "pid": 1663784,
+  "job_id": "u-35579920-eb3d-4db4-83ef-ae6a24b934c9",
+  "endpoint": "GET /api/v1/providers?offset=N&limit=100&minSubscribers=0",
+  "total": 239,
+  "rows_observed": 239,
+  "identity_invalid_rows": [
+    {
+      "signalId": "test_1",
+      "version": "mql4",
+      "url": "https://www.mql5.com/en/signals/test_1",
+      "subscribers": 8,
+      "lastUpdated": "2026-06-21T11:23:05.52"
+    },
+    {
+      "signalId": "test_2",
+      "version": "mql5",
+      "url": "https://www.mql5.com/en/signals/test_2",
+      "subscribers": 0,
+      "lastUpdated": "2026-06-21T11:23:05.521"
+    },
+    {
+      "signalId": "page2",
+      "version": "mql4",
+      "url": "https://www.mql5.com/en/signals/mt4/page2?orderby=subscribers",
+      "subscribers": 0,
+      "lastUpdated": "2026-10-18T20:17:05.661"
+    },
+    {
+      "signalId": "page2",
+      "version": "mql5",
+      "url": "https://www.mql5.com/en/signals/mt5/page2?orderby=subscribers",
+      "subscribers": 0,
+      "lastUpdated": "2026-10-18T20:29:51.607"
+    }
+  ],
+  "catalog_response_sha256": "ed6065b83f06cd66e8948e87401455b981acefa8821952d358d9bd1a65e6b231",
+  "source_mutations_performed": false,
+  "meaning": "Legacy test/navigation rows remain in source DB; corrected downloader prevents new nonnumeric provider IDs but does not retroactively remove old rows."
+}

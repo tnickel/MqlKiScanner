@@ -1,0 +1,38 @@
+{
+  "tested_utc": "2026-10-18T18:43:58.219809+00:00",
+  "command": [
+    "mvn",
+    "-q",
+    "-f",
+    "<isolated-stage>/pom.xml",
+    "test"
+  ],
+  "exit_code": 0,
+  "tests": {
+    "tests": 163,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "source_hashes": [
+    {
+      "path": "../MqlDownloader/src/rest/RestApiServer.java",
+      "sha256": "f11b80137e7b452531b2843786de996211ff3c38d0ae72acad4f50d0a71019d1"
+    },
+    {
+      "path": "../MqlDownloader/src/database/DatabaseManager.java",
+      "sha256": "99a3879eadb7dda64488282f3c6dfd1e3e6d3b08c30cebfa3d525d7a9a1c4d71"
+    },
+    {
+      "path": "../MqlDownloader/tests/rest/ProviderIdentityGuardTest.java",
+      "sha256": "66e333018c397f27ba9a753752960379e7cb2474922014ecc4313c320690fcb8"
+    }
+  ],
+  "active_target_modified": false,
+  "package_performed": false,
+  "deployed": false,
+  "production_process_unchanged": 1663784,
+  "database_rows_deleted": 0,
+  "strict_anchor_and_unicode_controls_covered": true,
+  "intermediate_fixture_issue": "Writer trims labels; raw SQL fixture now preserves control-character legacy rows instead of accidentally changing valid123. Original failed fixture log retained."
+}

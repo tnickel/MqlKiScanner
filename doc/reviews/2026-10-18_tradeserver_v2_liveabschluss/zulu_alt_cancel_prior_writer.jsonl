@@ -1,0 +1,14 @@
+{"utc":"2026-10-18T17:43:43.384394800Z","phase":"EXISTING_LOCK_NAMESPACE_VERIFIED","detail":"matchingProviderKeys=7"}
+{"utc":"2026-10-18T17:43:43.396589400Z","phase":"PREFLIGHT","detail":"providers=7; thread=42"}
+{"utc":"2026-10-18T17:43:43.473167300Z","phase":"LOADED_CLASS_SHAPE","detail":"de/zulumonitor/store/DataStore; normalizedSha256=45b3957be43f291e8a945f707de1c370e5c41df833146e726f23df8a7ec67298"}
+{"utc":"2026-10-18T17:43:43.481674800Z","phase":"CLASS_GUARDED","detail":"de/zulumonitor/store/DataStore; methods=3; originalSha256=1972b9f4cd88cb6b0c90be47d107a3c93e98b7e48d26a0b4526b32027cdc61fa"}
+{"utc":"2026-10-18T17:43:43.484188200Z","phase":"LOADED_CLASS_SHAPE","detail":"de/zulumonitor/update/UpdateJob; normalizedSha256=cfd4d3a68d01d1668dd7df68a1dc399670c71828384f98709e06f228a32ac4b3"}
+{"utc":"2026-10-18T17:43:43.485186900Z","phase":"CLASS_GUARDED","detail":"de/zulumonitor/update/UpdateJob; methods=1; originalSha256=c73ef5857826e84c6c9dcab3366ef9145e1fd9643fb216dc5b9dc4c2420cd44f"}
+{"utc":"2026-10-18T17:43:43.491186Z","phase":"GUARD_INSTALLED","detail":"archiveFiles=14; allProviderLocksHeld=true; activePublicationFrame=false"}
+{"utc":"2026-10-18T17:43:43.492188Z","phase":"HTTP_INTERRUPT","detail":"1"}
+{"utc":"2026-10-18T17:43:43.543288900Z","phase":"HTTP_INTERRUPT","detail":"2"}
+{"utc":"2026-10-18T17:43:43.594837Z","phase":"HTTP_INTERRUPT","detail":"3"}
+{"utc":"2026-10-18T17:43:43.645875400Z","phase":"HTTP_INTERRUPT","detail":"4"}
+{"utc":"2026-10-18T17:43:43.697116600Z","phase":"HTTP_INTERRUPT","detail":"5"}
+{"utc":"2026-10-18T17:43:43.699116600Z","phase":"SUCCESS_SUPPRESSED","detail":"fixture-prior_writer"}
+{"utc":"2026-10-18T17:43:43.706627200Z","phase":"WORKER_ENDED_ARCHIVES_IDENTICAL","detail":"interrupts=5; blockedProviders=0; state=error; aborted=true; dataTimestamp=null"}

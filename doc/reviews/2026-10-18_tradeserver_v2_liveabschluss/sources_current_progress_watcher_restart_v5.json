@@ -1,0 +1,7 @@
+{
+  "utc": "2026-10-18T18:50:25.6036698Z",
+  "pid": 1773324,
+  "previous_pid": 1705520,
+  "read_only": true,
+  "reason": "Current Robo full-repair loaded raw count from owned CLI log; no invented API total"
+}

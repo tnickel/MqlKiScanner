@@ -1,0 +1,91 @@
+{
+  "full": {
+    "cases": 185,
+    "passed": 185,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "repeat_runs": [
+    {
+      "index": 1,
+      "cases": 3,
+      "passed": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0
+    },
+    {
+      "index": 2,
+      "cases": 3,
+      "passed": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0
+    },
+    {
+      "index": 3,
+      "cases": 3,
+      "passed": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0
+    },
+    {
+      "index": 4,
+      "cases": 3,
+      "passed": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0
+    },
+    {
+      "index": 5,
+      "cases": 3,
+      "passed": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0
+    }
+  ],
+  "sources_unchanged": true,
+  "source_sha256": {
+    "src/main/java/de/robomonitor/store/DataStore.java": "0b920a4e6de92e5a6de4542ec2ed716d8c7825e3037937b80bc61cf68e74bcf3",
+    "src/main/java/de/robomonitor/store/FileTransactions.java": "8ee91d6262895f64ee8ffea993f4c9a8ecc76a1592248d9b3e5fe23308c12c77",
+    "src/test/java/de/robomonitor/ReviewDataIntegrityTest.java": "107cb6c6f34b8aae991343a9c52a87de273bbb3da55b01b64aabe06e4c666e1b",
+    "src/test/java/de/robomonitor/DataStoreBundleReadLockTest.java": "46d59f789a8ddcfea99ac7ebed29b1ee8eef055ff60435e5459fc4c686e725b3"
+  },
+  "artifact": {
+    "created_utc": "2026-10-18T15:16:11.154501+00:00",
+    "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\roboforex\\target\\robomonitor-1.2.0.jar",
+    "bytes": 313415,
+    "sha256": "75e303a14a64b7487b739462ac749912a2bd07c6f1d36b38f69662fb922d047d",
+    "changed_class": "de/robomonitor/store/DataStore.class",
+    "class_sha256": "2dca963f8e43ab079476d28d7cc01e72844729da705deec35089b3e79fe67ce8",
+    "matches_tested_class": true,
+    "matches_current_target_class": true,
+    "package_exit": 0,
+    "application_started": false,
+    "runtime_restarted": false,
+    "scope": "Normal Maven package only; no package/start of other projects"
+  },
+  "groups_overlap_do_not_sum": true,
+  "original_failed_reports_preserved": true,
+  "before_repro": {
+    "robo_repro_TEST-de.robomonitor.ReviewDataIntegrityTest.xml": {
+      "cases": 1,
+      "failures": 0,
+      "errors": 1
+    },
+    "robo_repro_TEST-de.robomonitor.DataStoreBundleReadLockTest.xml": {
+      "cases": 2,
+      "failures": 2,
+      "errors": 0
+    }
+  }
+}

@@ -1,0 +1,342 @@
+================================================================================
+KI-REPORT: Abonnenten-Statistik-/Recherche-Workflow — Code-Review + Laufprüfung
+================================================================================
+Datum:        2026-10-24, Analyse-Fenster ca. 08:20–09:47 MESZ
+Autor:        GLM-5.3 (ZCode-Session), NUR-LESendes Review — es wurde KEIN Code
+              und KEINE Daten geändert.
+Basisstand:   Commit a02cdcc + UNCOMMITTETE Änderungen einer anderen KI-Session
+              (Codex-Runtime) in src/mqlkiscanner/abonnenten_analyse.py und dem
+              NEUEN, unversionierten src/mqlkiscanner/abonnenten_analyse_klaerung.py.
+              WICHTIG: Die Datei wächst während des Reviews aktiv (879 → 1344
+              Zeilen bis 09:47). Zeilenangaben sind der Stand 09:47 und driften;
+              zum Auffinden IMMER Funktionsname + Code-Anker (Zitat) nutzen.
+
+L E S E - A N W E I S U N G E N   F Ü R   DIE   VERARBEITENDE   K I
+--------------------------------------------------------------------------------
+1. Lies die Datei vollständig, von oben nach unten. Bearbeite die Befunde F1–F7
+   in der Reihenfolge ihrer Priorität; F3 und F4 haben Entscheidungsauflagen.
+2. AUTONOMIE-REGEL: Nur Befunde mit "autonom_fixbar: true" im JSON-Block am Ende
+   darfst du ohne Rückfrage korrigieren. F3 (Ranking-Plausibilität) ist eine
+   FACHLICHE NUTZERENTSCHEIDUNG — NICHT selbst eine Grenze erfinden. F4 ist
+   KEIN Bug (gewolltes Verhalten), dort nichts "reparieren".
+3. KOORDINATIONS-PFLICHT: Eine andere KI-Session arbeitet GERADE an denselben
+   Dateien (uncommittete Änderungen, pytest lief um 09:40 auf
+   tests/test_abonnenten_analyse_klaerung_ui.py). Vor JEDEM Edit:
+   git status + git diff prüfen und Zeilen neu verifizieren. Nicht auf
+   driftende Zeilennummern verlassen — Funktionsnamen + Code-Anker sind maßgeblich.
+4. DATENBANK: Der Recherche-Store data/abonnenten_analyse/jobs.sqlite3 (37 MB)
+   gehört zum LAUFENDEN Betrieb. Ausschließlich read-only öffnen:
+       import sqlite3, json
+       con = sqlite3.connect('file:data/abonnenten_analyse/jobs.sqlite3?mode=ro', uri=True)
+   NIEMALS schreibend öffnen, solange ein Worker laufen könnte (Store.update
+   macht read-modify-write auf der ganzen Run-JSON-Zeile; Fremdschreiber
+   verlieren Updates). Tabellen: runs (1 Zeile), tasks (800, Spalten
+   run_id, signal_ref, json), calls (3157, PRIMARY KEY run_id+basis).
+5. Die Beleg-/Validierungsstrenge (Belegregister, Martingale-Vertrag,
+   Trade-Ref-Prüfung) ist KEIN Fehlerquell, sondern Schutz — siehe Abschnitt
+   "Bewusst NICHT ändern".
+
+================================================================================
+KONTEXT: WARUM DIE SEITE „NUR 167 KURZTESTS" ZEIGT (KEIN BUG)
+================================================================================
+Lauf: d38440b65c6540b79ce69e7fe7457ab0 (einziger Run in jobs.sqlite3)
+- Budget: 200.000.000 Tokens je Lauf/Tag/Monat, ausschließlich an diesen Lauf
+  gebunden über run.budget_settings. Real verbraucht: 191.002.520 Tokens
+  (SELECT SUM(tokens) FROM calls). Mit offenen Reservierungen standen
+  199.902.027 gegen das Limit → Status "wartet_budget" um 2026-10-24T04:44:57.
+- Zählerweisung der Seite (Metric „KI-Kurztests vorhanden 167/234"):
+    234 = Anzahl KI-geeigneter Anbieter gemäß _ki_possible()
+          (src/mqlkiscanner/abonnenten_analyse.py, Funktion `_ki_possible`,
+          Stand 09:47 ca. Zeile 1202; Kriterien: trades_path + forensik +
+          trades >= 50 + dauer_monate >= 2 — bewusst INKLUSIVE Tasks mit
+          Datenlückenstatus, weil der Kurztest nur die Strategie klassifiziert).
+    167 = Tasks mit gespeichertem kurztest-Objekt (unabhängig von der
+          Basis-Aktualität, siehe F2). Nach Rechnung: 166 mit aktueller
+          kurztest_basis + 1 veralteter (F2).
+- Offen: 67 (53 KI-geeignete ohne Kurztest + 14 ki_fehler). Alle 15
+  ki_fehler-Feld-Inhalte sind Belegregister-Rejections ("Unbekannter
+  Fakten-/Tradebeleg in <feld>[i].beleg_refs") — zwei Versuche je Ausführung,
+  wiederaufnehmbar über Fortsetzen.
+- Live-Aktivität der anderen KI beim Review: 08:27:25 Restart-Checkpoint
+  (state consumed), 08:28–08:30 Worker mit weiteren Kurztests (Logzeilen
+  mql5:2340542 Eriksson … mql5:2023752 NoStress), 08:30:14 kooperativer Stop
+  (status "angehalten", stop_requested true), danach weiterentwicklung des
+  Klärungs-/Endprüfungs-Features (pytest lief).
+
+================================================================================
+B E F U N D E
+================================================================================
+--------------------------------------------------------------------------------
+F1 [MITTEL] Kurztest-Erfolg überschreibt Status "datenluecke" → "fertig"
+--------------------------------------------------------------------------------
+Datei:Zeile:  src/mqlkiscanner/abonnenten_analyse.py : ca. 655 (Stand 09:47;
+              Funktion `_kurzanalysen`, Ergebnisbehandlungs-Zweig nach erfolgreichem
+              future.result())
+Klasse/Funktion: Modulfunktion `_kurzanalysen` (Koordinator der Kurztest-Phase)
+Anker (Code-Zitat, im Kurztest-Ergebniszweig):
+    entry.update(kurztest=answer, kurz_basis=basis, ki_fehler="")
+    store.save_task(run_id, entry)
+    _check_hints(entry, answer.get("pruefhinweise") or [], stage="kurztest")
+    entry["status"] = "ausgeschlossen" if entry.get("hard_excluded") else "fertig"
+Was passiert: Der Datenversuch eines Signals kann eine Datenlücke haben
+  (z. B. "ValueError: Keine belegte positive echte Kapitalbasis…", gesetzt in
+  `_execute`/AnalyseDaten.berechne — die Exception wird dort bewusst als
+  result.grund zurückgegeben, status="datenluecke"). Läuft danach der Kurztest
+  erfolgreich, überschreibt der Ergebnis-Zweig den Status pauschal mit "fertig".
+  Der Fehler-Grund bleibt im Feld `grund` stehen.
+Beleg (DB, read-only): 119 Tasks mit status="fertig" UND nicht-leerem grund,
+  davon 82 mit echten Datenfehlern (36× kapitalfluss_equity_unbelegt, 33×
+  fehlende echte Kapitalbasis, 11× Floating-Equity-Messung unvollständig …).
+Folge: Statusspalte und Grundfeld widersprechen sich; UI-Zähler "done"
+  (zustand()) zählt sie als erledigt. KEINE Datenkorruption: eligible=false,
+  Grund und alle Messwerte bleiben korrekt erhalten.
+Fix-Richtung: Im Ergebnis-Zweig den Status nur setzen, wenn der Datenversuch
+  dieses Signals data_done=true lieferte; sonst z. B. Status "ki_fertig" o. ä.
+  (neuer Statuswert muss in zustand()/done-Menge, _FINISHED_DATA_ATTEMPTS und
+  UI-Filtern begleitet werden) — oder mindestens sicherstellen, dass "fertig"
+  dokumentiert "Verarbeitung abgeschlossen" meint und die UI den Grund
+  hervorhebt. Vor Umbau: Abstimmung mit der laufenden Endprüfungs-Entwicklung
+  der anderen KI (die nutzt status-Werte ebenfalls).
+autonom_fixbar: false (Status-Semantik berührt UI-Zähler, Restart-Checks
+  _FINISHED_DATA_ATTEMPTS und die laufende Entwicklung der anderen KI)
+
+--------------------------------------------------------------------------------
+F2 [MITTEL] Wiederverwendungs-Pfad heilt "ki_fehler" nicht; UI zählt
+     basis-veraltete Kurztests als vorhanden
+--------------------------------------------------------------------------------
+Datei:Zeile:  a) src/mqlkiscanner/abonnenten_analyse.py : 611–614 (Stand 09:47;
+                 Funktion `_kurzanalysen`, Wiederverwendungs-Zweig)
+              b) src/mqlkiscanner/abonnenten_analyse_ui.py : 105–124
+                 (Funktion `_ki_zaehler`, Feld "kurz_fertig", Zeile 121)
+Anker a) (Code-Zitat):
+    if entry.get("kurz_basis") == basis and entry.get("kurztest"):
+        _check_hints(entry, entry["kurztest"].get("pruefhinweise") or [], stage="kurztest")
+        store.save_task(run_id, entry)
+        continue
+Anker b) (Code-Zitat):
+    return {"kurz_fertig": sum(isinstance(entry.get("kurztest"), dict) and bool(entry["kurztest"])
+                               for entry in short), …}
+Was passiert:
+  a) Der Wiederverwendungs-Pfad speichert den Task, setzt aber den Status
+     NICHT neu. Ein Task mit gültigem Kurztest, aber altem status="ki_fehler",
+     bleibt für immer "ki_fehler" und wird als KI-Fehler gezählt/displayed.
+  b) `_ki_zaehler` zählt jedes vorhandene kurztest-Objekt, OHNE zu prüfen, ob
+     dessen kurz_basis noch der aktuellen Basis entspricht (Basis = Digest aus
+     Daten, Fakten, Profil, Prompt-Fingerprint, Modell — Funktion
+     `kurztest_basis`, src/mqlkiscanner/abonnenten_analyse.py, Funktion
+     `kurztest_basis`). Veraltete Kurztests zählen als "vorhanden".
+Beleg (DB + Nachrechnung mit aktueller Basis, read-only): Genau 1 Task ist
+  betroffen: quelle=mql5, id=2308093, name="UpFuji MT4", signal_ref=114 —
+  kurztest vorhanden, aber kurz_basis VERALTET; status="ki_fehler";
+  ki_fehler="Unbekannter Fakten-/Tradebeleg in staerken[0].beleg_refs…".
+  Rekonstruktion: älterer erfolgreicher Kurztest blieb liegen, Neulauf nach
+  Basiswechsel scheiterte 2× an der Belegprüfung. Effektiv sind 166 Kurztests
+  aktuell, die Seite zeigt 167.
+Fix-Richtung:
+  a) Im Wiederverwendungs-Zweig nach _check_hints denselben Status setzen wie
+     im frischen Ergebnis-Zweig ("ausgeschlossen" wenn hard_excluded, sonst
+     "fertig" — bzw. konsistent zur F1-Entscheidung).
+  b) In `_ki_zaehler.kurz_fertig` zusätzlich prüfen, dass kurz_basis ==
+     kurztest_basis(entry, profile, settings) — benötigt Zugriff auf das
+     Backend (bereits über `backend`-Parameter vorhanden; kurze Basisfunktion
+     ggf. über getattr abfragen, damit Fake-Backends in Tests weiterlaufen).
+autonom_fixbar: true (klein, lokalisierbar; Tests in tests/test_abonnenten_*-
+  Suites erweitern; vorher git diff der anderen KI prüfen)
+
+--------------------------------------------------------------------------------
+F3 [MITTEL + NUTZERENTSCHEIDUNG] Ranking ohne Plausibilitätsgrenze —
+     50-USD-Mikrokonto auf Rang 1 mit retdd_jahr 32.202
+--------------------------------------------------------------------------------
+Datei:Zeile:  src/mqlkiscanner/abonnenten_analyse.py : 59–90 (Stand 09:47;
+              Funktion `rank_entries`)
+              src/mqlkiscanner/abonnenten_analyse_daten.py : 95–112
+              (Funktion `pruefe_kriterien`; Konstanten MIN_MONATE=2.0,
+              MIN_TRADES=50 in Zeilen 21–22)
+Anker (Code-Zitat, rank_entries, Kandidatenfilter):
+    candidates = [e for e in entries if e.get("eligible") and _finite(e.get("retdd_jahr"))
+                  and e["retdd_jahr"] > 0 and _finite(e.get(popularity_field))
+                  and (kurztest_optional or not e.get("review_pending"))
+                  and not e.get("ki_klaerung_gesperrt")]
+Datenbeleg (DB, read-only): Task mql5 id=2385128, name="Dynamic Liquidity
+  Intelligence TMGM50": kapitalbasis_usd=50.0, dauer_monate=2.57,
+  trades=98, ertrag_monat_geom_pct=121.09, cagr_jahr_pct=1.364.147,6,
+  equity_dd_pct=42.36 → retdd_jahr=32.202,5 → retdd_perzentil ≈ 100 →
+  auswahlwert maximal → RANG 1 der Kandidatenliste. Mathematisch korrekt
+  (50 USD Start, ~121 %/Monat geom. über 2,6 Monate), aber:
+  - Die Recherchepolicy hat KEINE Mindest-Kapitalbasis und KEINE Obergrenze/
+    Plausibilitätsschwelle für retdd_jahr; Perzentil-Ranking macht Extremwerte
+  aus Mikrokonten automatisch zum Spitzenkandidaten (Top-5-Bericht + PDF
+  würden dafür erzeugt).
+  - Messhinweis dokumentiert die Schwäche bereits ("zwei Monate und 50 Trades
+    garantieren keine statistische Belastbarkeit") — eine Schwelle wäre regel-
+    konform dokumentierbar.
+AUFLAGEN: Das ist eine FACHLICHE REGELFRAGE des Nutzers (Muster: „nicht so
+  hart filtern", keine automatischen Ausnahmeformeln — siehe AGENTS.md-
+  Regeln zu Risikoschranke/Ertragshürde). Vorschlag zur Nutzerfrage:
+  Mindest-Kapitalbasis (z. B. >= 500 oder >= 1000 USD) und/oder
+  RetDD-Deckelungs-/Kennzeichnungsregel für annualisierte Extremwerte aus
+  Historien < 3 Monaten. KEINE eigene Grenze implementieren.
+autonom_fixbar: false (Nutzerentscheidung erforderlich)
+
+--------------------------------------------------------------------------------
+F4 [HOCH — LAGEBILD, KEIN BUG] 165/167 Kurztests mit offenen KI-Prüfhinweisen
+     → nur 3 Kandidaten im Rang, 0 Top-5-Berichte
+--------------------------------------------------------------------------------
+Datei:Zeile:  src/mqlkiscanner/abonnenten_analyse.py: `rank_entries` (Filter
+              `not e.get("review_pending")`, Zeile ~66) und `_check_hints`
+              (Funktion `_check_hints`; setzt review_pending=true und löscht
+              rang/auswahlwert/retdd_perzentil bei JEDEM Prüfhinweis)
+Datenbeleg (DB, read-only): review_pending=true bei 165 von 167 Tasks mit
+  Kurztest; ki_pruefhinweise-Häufigkeit: 2×84 Tasks, 3×58, 4×12 …
+  Rangfähig (eligible + retdd>0 + kein review_pending): 3 Tasks; Berichte
+  mit bericht_markdown: 0. Der Lauf erreichte die Top-5-Phase nie
+  (Budgetpause in Phase "kurzanalysen").
+Einordnung: KEIN Fehler — gewolltes Verhalten nach Grok-4.7-Fix („offene
+  KI-Hinweise mit sofortigem Rangentzug und ursprünglicher Belegbindung").
+  Der Kurztest-Prompt erzeugt aber praktisch immer pruefhinweise, sodass ohne
+  Klärung fast nichts rangfähig bleibt. Dafür baut die andere KI-Session
+  GERADE die Endprüfung/Klärung: neues Modul
+  src/mqlkiscanner/abonnenten_analyse_klaerung.py (Funktionen `apply_resolution`,
+  `validate_resolution`, Klasse `KlaerungKI(AnalyseKI)`) plus Run-Optionen
+  kurztest_optional/endpruefung_auto/auswahl_modus in der uncommitteten
+  Differenz von abonnenten_analyse.py. Stand 09:40: 0 Klärungen gespeichert
+  (ki_klaerung_status/endpruefung_status bei 0 Tasks gesetzt).
+AUFLAGE: NICHT „reparieren". Weder review_pending-Automatik lockern noch
+  Hinweise still verwerfen. Abwarten/Einbinden der Endprüfungs-Entwicklung.
+autonom_fixbar: false (bewusst so entschieden; andere KI implementiert die Lösung)
+
+--------------------------------------------------------------------------------
+F5 [NIEDRIG] Sehr konservative Budget-Reservierung; verwaiste Reservierungen
+     belegen nach hartem Absturz dauerhaft Laufbudget
+--------------------------------------------------------------------------------
+Datei:Zeile:  src/mqlkiscanner/abonnenten_analyse_ki.py : 534 (Klasse
+              `AnalyseKI`, Methode `_ask`, Reservierungsblock)
+              src/mqlkiscanner/abonnenten_analyse_store.py : 139–148 (Klasse
+              `Store`, Methode `reserve`), 155–157 (`spent`)
+Anker (Code-Zitat, AnalyseKI._ask):
+    reserve = 6 * (2 * max_tokens + len(actual_prompt.encode("utf-8")) + 2048)
+Anker (Code-Zitat, Store.spent):
+    SELECT COALESCE(SUM(CASE WHEN tokens IS NULL THEN reserved ELSE tokens END),0) FROM calls
+Was passiert: Reservierung = 6 Versuche × (2×16.384 + Prompt-BYTES + 2.048) —
+  UTF-8-Bytes werden wie Tokens gerechnet, Faktor ~16 über dem Realverbrauch
+  (real 70–180k je Call, reserviert ~1,0–1,3 Mio.; Summe aller Reservierungen
+  3,19 Mrd. — nur Spitzenwert je Call, KEIN Laufbudget-Betrag). Im normalen
+  Betrieb korrekt: finish_call settles auf echte Tokens (verbraucht=191 Mio.).
+  Risiko: Stirkt der Prozess zwischen reserve und finish_call (hartes Kill,
+  Stromausfall), bleibt die Call-Zeile status="reserved"/tokens NULL und zählt
+  in spent() FÜR IMMER als verbraucht. Es gibt keinen Mechanismus, der
+  verwaiste Reservierungen beim Resume freigibt (budget_resume_refs regelt nur
+  Task-Wiederverwendung, nicht Call-Zeilen).
+Fix-Richtung (wenn gewünscht): Beim Resume (fortsetzen/_execute-Start) Call-
+  Zeilen mit status="reserved", deren updated_at/created_at vor dem letzten
+  Worker-Ende liegt, auf tokens=0/status="verwaist" setzen — NUR solche,
+  NIEMALS echte Antworten antasten. Alternativ Formel auf realistischere
+  Obergrenze (z. B. 3× (max_tokens + bytes/3)) anpassen — Einstellung mit
+  Nutzer abstimmen, da Budget-Freigaben dokumentiert sind.
+autonom_fixbar: false (Budget-Mechanik ist bewusst dokumentiert; Änderung nur
+  mit Nutzervotum — 200-Mio-Freigabe ist an den Auftrag gebunden)
+
+--------------------------------------------------------------------------------
+F6 [NIEDRIG, Performance] Stop-Prüfung liest bei jedem Aufruf das komplette
+     Run-JSON aus der 37-MB-DB
+--------------------------------------------------------------------------------
+Datei:Zeile:  src/mqlkiscanner/abonnenten_analyse.py : 1027 (Stand 09:47;
+              Funktion `_execute`, Zuweisung `stopped`)
+Anker (Code-Zitat):
+    stopped = lambda: bool(store.read(run_id).get("stop_requested"))
+Was passiert: store.read lädt die gesamte Run-Zeile (inkl. 250 Log-Einträge +
+  snapshot_quellen) und parst JSON. stopped() wird pro Worker-Poll (0,5 s,
+  AdaptiveHttpGate.slot/backoff in src/mqlkiscanner/abonnenten_analyse_parallel.py)
+  und je KI-Versuch aufgerufen — bei 10 Workern Dauerlast auf SQLite gegen
+  gleichzeitige BEGIN-IMMEDIATE-Schreiber (store.log/store.update schreiben
+  ihrerseits die ganze Run-Zeile). Funktioniert (timeout=30 s fängt
+  Sperrkonflikte ab), ist aber teuer.
+Fix-Richtung (optional): Eigenes kleines Feld/Callback (z. B. Stop-Datei oder
+  separate Ein-Spalten-Tabelle) oder throttle (read nur alle ≥1 s). Keine
+  Korrektheitsänderung, nur Lastverminderung.
+autonom_fixbar: true (nach Abstimmung mit der anderen KI; geringe Prio)
+
+--------------------------------------------------------------------------------
+F7 [NIEDRIG, kosmetisch] freeze_source ohne None-Check auf Run-Zeile
+--------------------------------------------------------------------------------
+Datei:Zeile:  src/mqlkiscanner/abonnenten_analyse_store.py : 109–126 (Klasse
+              `Store`, Methode `freeze_source`)
+Anker (Code-Zitat):
+    run = json.loads(connection.execute("SELECT json FROM runs WHERE id=?", (run_id,)).fetchone()[0])
+Was passiert: Fehlt die Run-Zeile (unbekannte run_id), wirft fetchone()[0]
+  TypeError statt eines klaren Fehlers. Praktisch heute unerreichbar (Aufrufer
+  liest den Run vorher), reine Robustheitslücke.
+Fix-Richtung: `row = …fetchone(); if row is None: raise ValueError("Unbekannter Bewertungslauf")`
+  (analog Store.update).
+autonom_fixbar: true
+
+================================================================================
+B E W U S S T   N I C H T   Ä N D E R N   (SCHUTZ-INARIANTEN)
+================================================================================
+- Belegregister-/Trade-Ref-Validierung (abonnenten_analyse_ki.py:
+  `validate_evidence`, `_evidence_register`, `_trade_evidence_refs`): Die
+  15 ki_fehler sind KORREKTE Ablehnungen erfundener Referenzen (Modell
+  formulierte Pfade statt Register-IDs zu kopieren). Keine Validierung
+  lockern, keine Antworten passend machen.
+- Martingale-Vertrag (`_martingale_contract` + validate): code_belegt nur bei
+  positivem Code-Flag — Nutzervorgabe, unverändert.
+- Store-Transaktionsmuster (BEGIN IMMEDIATE + Rollback im Kontextmanager)
+  und Calls-Ledger (PRIMARY KEY run_id+basis, basis = digest:attempt:digest)
+  sind konsistent; bezahlte Antworten werden vor Folgearbeit gespeichert.
+- Datenlücken-Ehrlichkeit (grund statt stiller Fallbacks, keine virtuelle
+  10k-Basis in der Recherche) — Kern-Regel der Policy abonnenten_recherche_v1.
+- AdaptiveHttpGate (abonnenten_analyse_parallel.py): Drossel bei 429/Code
+  1302 mit Halbierung + exponentiellem Cooldown, vorsichtige Erholung,
+  kooperativer Stop in slot()/backoff() — sauber; nichts ändern.
+- Klasse `KlaerungKI` / `resolution_basis` im neuen klaerung-Modul:
+  Entscheidungen sind an einen Basis-Digest gebunden, der Daten, Fakten,
+  Hinweise und Prompt-Fingerprint umfasst — bewährtes Muster, nicht
+  umbauen, nur ergänzen.
+
+================================================================================
+P R Ü F B E F E H L E   ( R E A D - O N L Y ,   Z U R   V E R I F I E R U N G )
+================================================================================
+cd D:\AntiGravitySoftware\GitWorkspace\SIGNALDOWNLOADER\SignalKiScanner
+PYTHONPATH=src python - <<'PY'
+import sqlite3, json
+from collections import Counter
+con = sqlite3.connect('file:data/abonnenten_analyse/jobs.sqlite3?mode=ro', uri=True)
+run = json.loads(con.execute('SELECT json FROM runs').fetchone()[0])
+print('status', run.get('status'), '| phase', run.get('phase'), '| updated', run.get('updated_at'))
+tasks = [json.loads(j) for (j,) in con.execute('SELECT json FROM tasks')]
+print('tasks', len(tasks), Counter(t.get('status') for t in tasks))
+print('kurztests', sum(1 for t in tasks if isinstance(t.get('kurztest'), dict) and t['kurztest']))
+print('fertig_mit_grund', sum(1 for t in tasks if t.get('status')=='fertig' and t.get('grund')))
+print('review_pending', sum(1 for t in tasks if t.get('review_pending')))
+print('tokens_real', con.execute('SELECT SUM(tokens) FROM calls').fetchone()[0])
+# F3-Beleg:
+t = next(t for t in tasks if t.get('id')==2385128)
+print('F3:', t.get('name'), 'kapitalbasis', t.get('kapitalbasis_usd'), 'retdd', t.get('retdd_jahr'))
+PY
+# F2-Beleg (Basis-Vergleich; braucht aktuelle Settings):
+PYTHONPATH=src python -c "from mqlkiscanner import config; from mqlkiscanner.abonnenten_analyse import kurztest_basis, _profile; import sqlite3,json; con=sqlite3.connect('file:data/abonnenten_analyse/jobs.sqlite3?mode=ro',uri=True); run=json.loads(con.execute('SELECT json FROM runs').fetchone()[0]); s=config.load_settings(); p=_profile(run); ts=[json.loads(j) for (j,) in con.execute('SELECT json FROM tasks')]; cur=sum(1 for t in ts if isinstance(t.get('kurztest'),dict) and t['kurztest'] and t.get('kurz_basis')==kurztest_basis(t,p,s)); print('aktuelle Kurztests:',cur)"
+
+================================================================================
+J S O N - B L O C K   ( P A R S E B A R ,   A B S C H L I E S S E N D )
+================================================================================
+{
+  "report": "abonnenten_statistik_workflow_review",
+  "datum": "2026-10-24T09:47:00+02:00",
+  "autor": "GLM-5.3 (ZCode), nur-lesend",
+  "basisstand": {"commit": "a02cdcc", "arbeitsbaum": "mit uncommitteten Aenderungen einer anderen KI-Session (Codex)", "zeilennummern_gueltig_bis": "2026-10-24T09:47+02:00, danach drift"},
+  "lauf": {"id": "d38440b65c6540b79ce69e7fe7457ab0", "status_beim_review": ["wartet_budget (04:44:57)", "angehalten (08:30:14, Stop angefordert)"], "tokens_real": 191002520, "limit": 200000000, "kurztests_vorhanden": 167, "kurztests_aktuelle_basis": 166, "ki_geeignet_gesamt": 234, "offen": 67, "ki_fehler": 15, "review_pending": 165, "rangfaehige_kandidaten": 3, "top5_berichte": 0},
+  "befunde": [
+    {"id": "F1", "titel": "Kurztest-Erfolg ueberschreibt status datenluecke nach fertig", "prioritaet": "mittel", "datei": "src/mqlkiscanner/abonnenten_analyse.py", "zeile_ca": 655, "anker": "Funktion _kurzanalysen, Zitat: entry[\"status\"] = \"ausgeschlossen\" if entry.get(\"hard_excluded\") else \"fertig\"", "beleg": "82 Tasks status=fertig mit grund=ValueError-Datenfehler", "autonom_fixbar": false, "grund_nicht_fix": "Status-Semantik beruehrt zustand()/_FINISHED_DATA_ATTEMPTS/UI und laufende Entwicklung der anderen KI"},
+    {"id": "F2", "titel": "Reuse-Pfad heilt ki_fehler nicht; UI zaehlt basis-veraltete Kurztests", "prioritaet": "mittel", "datei": ["src/mqlkiscanner/abonnenten_analyse.py", "src/mqlkiscanner/abonnenten_analyse_ui.py"], "zeile_ca": [611, 121], "anker": ["Funktion _kurzanalysen Reuse-Zweig: if entry.get(\"kurz_basis\") == basis and entry.get(\"kurztest\")", "Funktion _ki_zaehler Feld kurz_fertig"], "beleg": "mql5 id=2308093 UpFuji MT4, signal_ref=114: kurztest vorhanden, kurz_basis veraltet, status=ki_fehler", "autonom_fixbar": true, "hinweis": "Vor Edit git diff der anderen KI pruefen; UI-Zaehler um kurztest_basis-Vergleich ergaenzen"},
+    {"id": "F3", "titel": "Ranking ohne Plausibilitaetsgrenze: 50-USD-Mikrokonto Rang 1, retdd_jahr 32202", "prioritaet": "mittel", "datei": ["src/mqlkiscanner/abonnenten_analyse.py", "src/mqlkiscanner/abonnenten_analyse_daten.py"], "zeile_ca": [59, 95], "anker": ["Funktion rank_entries Kandidatenfilter", "Funktion pruefe_kriterien (keine Kapitalbasis-Untergrenze)"], "beleg": "mql5 id=2385128: kapitalbasis_usd=50.0, cagr_jahr_pct=1364147.64, retdd_jahr=32202.54, rang=1", "autonom_fixbar": false, "grund_nicht_fix": "Fachliche Nutzerentscheidung (Mindest-Kapitalbasis / RetDD-Deckel) — keine eigene Grenze erfinden"},
+    {"id": "F4", "titel": "165/167 review_pending => nur 3 Kandidaten, 0 Top-5-Berichte", "prioritaet": "hoch_als_lage", "datei": "src/mqlkiscanner/abonnenten_analyse.py", "zeile_ca": 66, "anker": "rank_entries-Filter not e.get(\"review_pending\") + Funktion _check_hints", "beleg": "review_pending=165 von 167; rangfaehig=3; bericht_markdown=0", "autonom_fixbar": false, "grund_nicht_fix": "Gewolltes Verhalten (Grok-4.7-Fix); Loesung = Endprüfung/Klaerung, die eine andere KI gerade baut (abonnenten_analyse_klaerung.py)"},
+    {"id": "F5", "titel": "Konservative Reserve-Formel; verwaiste reserved-Calls belegen Budget dauerhaft", "prioritaet": "niedrig", "datei": ["src/mqlkiscanner/abonnenten_analyse_ki.py", "src/mqlkiscanner/abonnenten_analyse_store.py"], "zeile_ca": [534, 139], "anker": ["AnalyseKI._ask: reserve = 6 * (2 * max_tokens + len(actual_prompt.encode(\"utf-8\")) + 2048)", "Store.reserve/Store.spent CASE WHEN tokens IS NULL THEN reserved"], "beleg": "Reservierungen ~1,0-1,3 Mio je Call bei 70-180k Realverbrauch; Summe reserved 3,19 Mrd (Spitzenwerte, kein Budgetbetrag)", "autonom_fixbar": false, "grund_nicht_fix": "Budgetmechanik dokumentiert und an Nutzergenehmigung gebunden; Cleanup verwaister Reservierungen nur mit Nutzervotum"},
+    {"id": "F6", "titel": "stopped() liest komplettes Run-JSON je Pruefung (Performance)", "prioritaet": "niedrig", "datei": "src/mqlkiscanner/abonnenten_analyse.py", "zeile_ca": 1027, "anker": "Funktion _execute: stopped = lambda: bool(store.read(run_id).get(\"stop_requested\"))", "beleg": "10 Worker x 0,5-s-Poll gegen 37-MB-DB neben BEGIN-IMMEDIATE-Schreibern", "autonom_fixbar": true, "hinweis": "Geringe Prio; mit der anderen KI abstimmen"},
+    {"id": "F7", "titel": "freeze_source ohne None-Check auf Run-Zeile (TypeError statt klarer Fehler)", "prioritaet": "niedrig", "datei": "src/mqlkiscanner/abonnenten_analyse_store.py", "zeile_ca": 113, "anker": "Store.freeze_source: json.loads(...fetchone()[0])", "beleg": "Statischer Befund", "autonom_fixbar": true}
+  ],
+  "nicht_aendern": ["Belegregister-/Trade-Ref-Validierung", "Martingale-Vertrag", "Store-Transaktionsmuster/Calls-Ledger", "Datenluecken-Ehrlichkeit", "AdaptiveHttpGate", "Klaerung-Basisbindung"],
+  "kontext_kein_bug": "167/234 Kurztests = Budgetpause (191M/200M real), korrekt gezaehlt; 234 = _ki_possible-Kriterien; andere KI-Session arbeitet aktiv (Checkpoint 08:27, Worker 08:28-08:30, pytest 09:40)"
+}
+================================================================================
+ENDE DER DATEI
+================================================================================

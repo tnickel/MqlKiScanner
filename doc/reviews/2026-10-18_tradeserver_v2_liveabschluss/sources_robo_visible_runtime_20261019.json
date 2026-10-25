@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-19T07:56:35.188240+00:00",
+  "previous_pid": 102404,
+  "new_pid": 114668,
+  "normal_idle_javafx_exit": true,
+  "actual_workers_absent": true,
+  "old_listener_ended": true,
+  "native_files_unchanged": 475,
+  "immutable_stage_class_hashes_verified": 109,
+  "visible_interactive_gui_requested": true,
+  "new_source_update_started": false
+}

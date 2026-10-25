@@ -1,0 +1,35 @@
+{
+  "samples": [
+    {
+      "utc": "2026-10-18T17:55:47.189778+00:00",
+      "status": {
+        "jobId": "u-20261018-195000-c347a8c1",
+        "state": "running",
+        "phase": "tradelisten",
+        "done": 4,
+        "total": 200,
+        "message": "AF Gold Hunter Pro (429450): Lade Trade-Historie (Seite 43) …",
+        "cancellationRequested": false,
+        "startedAt": "2026-10-18T19:50:00",
+        "finishedAt": null,
+        "ergebnis": {
+          "signaleGeliefert": 200,
+          "tradelistenNeu": null,
+          "tradelistenAktualisiert": null,
+          "tradelistenFehler": 0,
+          "tradelistenAbgebrochen": false,
+          "katalogUebersprungen": false,
+          "datenstand": null,
+          "hinweise": [],
+          "tradeDownload": {
+            "providerId": 429450,
+            "loaded": 4200,
+            "total": 48396,
+            "updatedAt": "2026-10-18T17:55:43.805261100Z"
+          }
+        },
+        "error": null
+      }
+    }
+  ]
+}

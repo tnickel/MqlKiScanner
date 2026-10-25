@@ -1,0 +1,56 @@
+{
+  "code_freeze_verified_at": "2026-10-18T19:57:32+02:00",
+  "scope": "Three UI corrections and bounded batching of historical H1 interior gaps",
+  "evaluation_rules_changed": false,
+  "settings_changed": false,
+  "production_processes_interrupted": false,
+  "committed": false,
+  "ui_changes": [
+    "Scan fix labels format display-source:provider-ID explicitly",
+    "True-DD USD falls back to a current, reliable, complete workflow measurement when the separate study field is absent; stale, failed, currency-blocked and partial-statistics guards remain",
+    "The approximate marker itself is orange; an empty trusted measurement cell is not styled as the approximate value"
+  ],
+  "numeric_null_display": {
+    "status": "Native framework behavior retained",
+    "finding": "Streamlit NumberColumn displays numeric null as gray None; a serialized Styler na_rep override did not alter the actual browser rendering",
+    "action": "Only the attempted new na_rep changes were reverted; no conversion of financial columns to text and no custom component",
+    "regression": "Tests assert numeric dtypes and true nulls, and the existing table/CSV snapshot tests verify the factual export"
+  },
+  "h1_changes": [
+    "Combine only missing ranges bounded by already cached, finalized, aligned H1 bars of the same exact feed and symbol",
+    "A combined SDK query spans at most 31 days; outer edges, provisional-bar ranges and single long gaps keep their previous request path",
+    "A new readonly cache query identifies old provisional bars so they cannot be included in a historical batch",
+    "Clip the SDK response to each original missing range before merging; cached bridge bars cannot be overwritten",
+    "Persist bars and negative attempts per original range with unchanged 24-hour interior and 60-second edge/provisional behavior",
+    "Empty or partial responses do not manufacture bars or coverage; SDK retry behavior remains bounded and unchanged"
+  ],
+  "browser_verification": {
+    "fix_labels": "verified on running Scanner",
+    "approximate_cell_color": "verified on running Scanner",
+    "workflow_usd_fallback": "verified through CUA on the restored Scanner runtime PID1639856: requested current Gold Spike row has numeric True-DD USD, unchanged 9.7 percent DD, annual Calmar 34.04 and green status",
+    "restart_evidence": "root_scanner_bundled_restart.json",
+    "null_placeholder_attempt": "browser showed no effect; reverted",
+    "mutating_buttons_used": false,
+    "private_screenshots_published": false
+  },
+  "tests": {
+    "initial_h1": {"passed": 43, "evidence": "server_h1_batch_tests.xml", "note": "Before the final unaligned-anchor regression was added"},
+    "final_broad_regression": {"status": "passed", "passed": 352, "failed": 0, "exit_code": 0, "seconds": 83.34, "test_files": 22, "evidence": "server_h1_ui_fx_pipeline_tests.xml", "note": "First larger attempt exited without a pytest summary or JUnit and is not counted as passing. Explicit relevant-file rerun completed successfully."},
+    "broad_scope": "H1 cache/persistence/reload/terminal switching/hour boundaries, FX/FT contracts, Equity calculations/flows/time bases, pipeline variants and UI/CSV regressions",
+    "measured_live_speedup": null
+  },
+  "sha256": {
+    "app_pages/scan.py": "d78769b232a8d97044a0ce0f46ed8e474551ffd2510bbb6b295c6c68405a2d13",
+    "app_pages/alle_signale.py": "8069ffaa00ac8df70a83c8be9b471738c4a58a9b202c9b90497ebb5242b3cf6d",
+    "src/mqlkiscanner/alle_signale_ui.py": "d4face5a8f0477065a3e687f22d9cadccbfbea91b9d4b8e6beecea2055f36782",
+    "src/mqlkiscanner/kursdaten.py": "07c5d806c95ec6f8fc546fb9ee65d9f8ff13eb6b1c5eba7eff1b17a788543505",
+    "src/mqlkiscanner/kurs_cache.py": "392dd7f3c89a4350c2b34a7e991a1ca647ac31925e9aebde98b4935446e770b7",
+    "tests/test_ui_live_acceptance_fixes.py": "4a2c47e274b39c4f410a06225a5cdd2125606b4ee89c9379523488ac812e3d7d",
+    "tests/test_kursdaten_innenluecken.py": "8a6dd0aeb70ca788c27fed693a3a20cbcb251a174554e0952ed251da5a6d03ca"
+  },
+  "limits": [
+    "No live SDK benchmark was performed",
+    "An already-running source helper keeps its existing imported course code until a coordinated restart",
+    "A successful cache optimization is not proof that all source refreshes or new forensics have completed"
+  ]
+}

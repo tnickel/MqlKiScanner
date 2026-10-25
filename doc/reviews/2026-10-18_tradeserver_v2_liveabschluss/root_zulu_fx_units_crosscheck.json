@@ -1,0 +1,56 @@
+{
+  "utc": "2026-10-18T18:41:46.834036+00:00",
+  "scope": "read-only committed new archive generations, USD accounts, simple FX USD quotes only, gross versus price change times stated lots times 100000, absolute expected pnl >=5 USD",
+  "providers": [
+    {
+      "provider_id": 415776,
+      "account_currency": "USD",
+      "generation": "b6c0f684-601c-4a83-869e-8592fd15d6c7",
+      "csv_sha256": "93fdf3b2e3dfe393accb5b7d409bee9b5087c45ab16c434a32c192792cd77de6",
+      "positions": 312,
+      "ratio_median": 0.9999999999999998,
+      "within_one_percent_of_one": 312,
+      "min": 0.9999999999999626,
+      "max": 1.00000000000005
+    },
+    {
+      "provider_id": 416568,
+      "account_currency": "USD",
+      "generation": "808a184c-d627-4a93-b958-24675fbcf260",
+      "csv_sha256": "5fc0afd4808dac8cc5847d9ac75b67b15ede71578e6a91a27c8d529f1bde9c31",
+      "positions": 76,
+      "ratio_median": 0.999999999999999,
+      "within_one_percent_of_one": 75,
+      "min": 0.9810126582279011,
+      "max": 1.0000000000001563
+    },
+    {
+      "provider_id": 424438,
+      "account_currency": "USD",
+      "generation": "66b5eecd-31a8-4e05-9a85-c41ece34c4e7",
+      "csv_sha256": "41c2ae09c1f43f090073a4c80c0c5c51398da8bf6f9860f87affceeef9bf8220",
+      "positions": 1177,
+      "ratio_median": 1.0000000000000009,
+      "within_one_percent_of_one": 1177,
+      "min": 0.9999999999996168,
+      "max": 1.0000000000003397
+    },
+    {
+      "provider_id": 429450,
+      "account_currency": "USD",
+      "generation": "7bd03481-b464-473f-864d-52c8973dd3e2",
+      "csv_sha256": "3800a132a8801be5713f5a8ee6cecd216643ed6b98e5cc4ad296010e29c7ba57",
+      "positions": 1285,
+      "ratio_median": 1.0000000000000002,
+      "within_one_percent_of_one": 1282,
+      "min": 0.386904761904784,
+      "max": 1.0000000000006115
+    }
+  ],
+  "positions": 2850,
+  "within_one_percent": 2846,
+  "limits": [
+    "No non-FX/cent/non-USD unit certification",
+    "Empirical invariants are not account-currency proof or full trade-history acceptance"
+  ]
+}

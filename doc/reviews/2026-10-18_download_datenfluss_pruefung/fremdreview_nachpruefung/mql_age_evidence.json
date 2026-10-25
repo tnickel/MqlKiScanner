@@ -1,0 +1,41 @@
+{
+  "source": "mql_profile_cached_weeks_lower_bound",
+  "readOnly": true,
+  "networkRequests": 0,
+  "mql4": {
+    "htmlFiles": 111,
+    "uniqueNumericIds": 111,
+    "provenWeeks": 110,
+    "lessThan26Weeks": 16,
+    "atLeast26Weeks": 94,
+    "unknownIds": [
+      "1784430"
+    ],
+    "samples": {
+      "138420": 572,
+      "1496203": 238,
+      "1719023": 195,
+      "2295882": 87,
+      "2381807": 6
+    }
+  },
+  "mql5": {
+    "htmlFiles": 122,
+    "uniqueNumericIds": 121,
+    "provenWeeks": 121,
+    "lessThan26Weeks": 30,
+    "atLeast26Weeks": 91,
+    "unknownIds": [],
+    "samples": {
+      "1059619": 281,
+      "1560883": 253,
+      "1725090": 212,
+      "2265877": 102,
+      "2350211": 35,
+      "2371777": 26,
+      "2379208": 85
+    }
+  },
+  "firstPassMs": 2722,
+  "cachedPassMs": 1506
+}

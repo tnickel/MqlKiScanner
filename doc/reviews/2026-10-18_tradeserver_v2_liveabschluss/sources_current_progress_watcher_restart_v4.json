@@ -1,0 +1,7 @@
+{
+  "utc": "2026-10-18T18:23:26.9972700Z",
+  "pid": 1705520,
+  "previous_pid": 1684432,
+  "read_only": true,
+  "reason": "Preserve actual old Robo done/total while waiting and recheck temporary Vantage listener health"
+}

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="7" time="1.161" timestamp="2026-10-18T17:06:24.936494+02:00" hostname="Ryzen7950X"><testcase classname="tests.test_deepseek_catalog_scope" name="test_client_default_keeps_existing_subscriber_scope" time="0.096"><failure message="AssertionError: assert [{'limit': 500, 'offset': 0}] == [{'limit': 50...scribers': 1}]&#10;  &#10;  At index 0 diff: {'limit': 500, 'offset': 0} != {'limit': 500, 'offset': 0, 'minSubscribers': 1}&#10;  Use -v to get more diff">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022C3417DE50&gt;
+
+    def test_client_default_keeps_existing_subscriber_scope(monkeypatch):
+        _, client, api = wire_source(monkeypatch)
+        page = client.katalog()
+        assert page["total"] == 2
+&gt;       assert api.calls == [{"limit": 500, "offset": 0, "minSubscribers": 1}]
+E       AssertionError: assert [{'limit': 500, 'offset': 0}] == [{'limit': 50...scribers': 1}]
+E         
+E         At index 0 diff: {'limit': 500, 'offset': 0} != {'limit': 500, 'offset': 0, 'minSubscribers': 1}
+E         Use -v to get more diff
+
+tests\test_deepseek_catalog_scope.py:48: AssertionError</failure></testcase><testcase classname="tests.test_deepseek_catalog_scope" name="test_client_exposes_subscriber_scope_without_losing_pagination_or_version[0]" time="0.079"><failure message="TypeError: DownloaderClient.katalog() got an unexpected keyword argument 'min_subscribers'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022C344680B0&gt;
+minimum = 0
+
+    @pytest.mark.parametrize("minimum", [0, 1, 7])
+    def test_client_exposes_subscriber_scope_without_losing_pagination_or_version(monkeypatch, minimum):
+        _, client, api = wire_source(monkeypatch)
+&gt;       client.katalog(limit=17, offset=2, version="pelican", min_subscribers=minimum)
+E       TypeError: DownloaderClient.katalog() got an unexpected keyword argument 'min_subscribers'
+
+tests\test_deepseek_catalog_scope.py:54: TypeError</failure></testcase><testcase classname="tests.test_deepseek_catalog_scope" name="test_client_exposes_subscriber_scope_without_losing_pagination_or_version[1]" time="0.349"><failure message="TypeError: DownloaderClient.katalog() got an unexpected keyword argument 'min_subscribers'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022C3446B7A0&gt;
+minimum = 1
+
+    @pytest.mark.parametrize("minimum", [0, 1, 7])
+    def test_client_exposes_subscriber_scope_without_losing_pagination_or_version(monkeypatch, minimum):
+        _, client, api = wire_source(monkeypatch)
+&gt;       client.katalog(limit=17, offset=2, version="pelican", min_subscribers=minimum)
+E       TypeError: DownloaderClient.katalog() got an unexpected keyword argument 'min_subscribers'
+
+tests\test_deepseek_catalog_scope.py:54: TypeError</failure></testcase><testcase classname="tests.test_deepseek_catalog_scope" name="test_client_exposes_subscriber_scope_without_losing_pagination_or_version[7]" time="0.076"><failure message="TypeError: DownloaderClient.katalog() got an unexpected keyword argument 'min_subscribers'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022C3446B830&gt;
+minimum = 7
+
+    @pytest.mark.parametrize("minimum", [0, 1, 7])
+    def test_client_exposes_subscriber_scope_without_losing_pagination_or_version(monkeypatch, minimum):
+        _, client, api = wire_source(monkeypatch)
+&gt;       client.katalog(limit=17, offset=2, version="pelican", min_subscribers=minimum)
+E       TypeError: DownloaderClient.katalog() got an unexpected keyword argument 'min_subscribers'
+
+tests\test_deepseek_catalog_scope.py:54: TypeError</failure></testcase><testcase classname="tests.test_deepseek_catalog_scope" name="test_full_catalog_sync_retains_zero_audience_through_database_and_display" time="0.103"><failure message="assert 2 == 4">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022C3446A390&gt;
+
+    def test_full_catalog_sync_retains_zero_audience_through_database_and_display(monkeypatch):
+        _, _, api = wire_source(monkeypatch)
+        result = katalog.sync()
+&gt;       assert result["gesamt"] == 4  # Five raw rows; the nonnumeric test ID is discarded only afterwards.
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 2 == 4
+
+tests\test_deepseek_catalog_scope.py:62: AssertionError</failure></testcase><testcase classname="tests.test_deepseek_catalog_scope" name="test_scan_candidate_fetch_preserves_previous_scope_after_full_catalog_sync" time="0.109"><failure message="KeyError: 'minSubscribers'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022C3446B2C0&gt;
+
+    def test_scan_candidate_fetch_preserves_previous_scope_after_full_catalog_sync(monkeypatch):
+        _, _, api = wire_source(monkeypatch)
+        katalog.sync()
+        api.calls.clear()
+        candidates = ingest.kandidaten_aus_quellen()
+        assert [row["id"] for row in candidates] == [1, 4]
+&gt;       assert all(call["minSubscribers"] == 1 for call in api.calls)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_deepseek_catalog_scope.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+.0 = &lt;list_iterator object at 0x0000022C344FC1C0&gt;
+
+&gt;   assert all(call["minSubscribers"] == 1 for call in api.calls)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'minSubscribers'
+
+tests\test_deepseek_catalog_scope.py:80: KeyError</failure></testcase><testcase classname="tests.test_deepseek_catalog_scope" name="test_incomplete_full_catalog_still_cannot_delete_previous_rows" time="0.114"><failure message="assert None">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000022C344FE420&gt;
+
+    def test_incomplete_full_catalog_still_cannot_delete_previous_rows(monkeypatch):
+        _, _, api = wire_source(monkeypatch, change_total=True)
+        db.katalog_upsert_many("pelik", [{"signal_id": sid} for sid in (1, 2, 99)])
+        result = katalog.sync()
+&gt;       assert result["quellen"]["pelik"]["fehler"]
+E       assert None
+
+tests\test_deepseek_catalog_scope.py:88: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,105 @@
+{
+  "utc" : "2026-10-18T18:32:17.747669Z",
+  "existingPublicGetRating" : {
+    "dataFields" : {
+      "entries" : "ARRAY",
+      "page" : "OBJECT"
+    },
+    "entryFields" : {
+      "source_id" : "STRING",
+      "login" : "NUMBER",
+      "profit_percent" : "NUMBER",
+      "profit_money" : "NUMBER",
+      "profit_usd" : "NUMBER",
+      "dd_max" : "NUMBER",
+      "deal_count" : "NUMBER",
+      "balance_usd" : "NUMBER",
+      "offer_id" : "NUMBER",
+      "offer_initial_date" : "STRING",
+      "name" : "STRING",
+      "avatar" : "STRING",
+      "subscriber_count" : "NUMBER",
+      "portfolio_usd" : "STRING",
+      "registration_time" : "STRING",
+      "strategy" : "STRING",
+      "min_equity_usd" : "NUMBER",
+      "subscriber_new_count" : "NUMBER",
+      "subs_mode" : "NUMBER",
+      "leverage" : "NUMBER",
+      "offer" : "OBJECT",
+      "profit_percent_chart" : "ARRAY",
+      "platform" : "STRING"
+    },
+    "possibleUnitProofFields" : { }
+  },
+  "existingMemberHistory" : [ {
+    "signal_id" : 27231841,
+    "platform" : "mt5",
+    "schema" : {
+      "dataFields" : {
+        "entries" : "ARRAY",
+        "page" : "OBJECT"
+      },
+      "entryFields" : {
+        "deal" : "NUMBER",
+        "time" : "STRING",
+        "symbol" : "STRING",
+        "action" : "NUMBER",
+        "entry" : "NUMBER",
+        "volume" : "NUMBER",
+        "price" : "NUMBER",
+        "commission" : "NUMBER",
+        "storage" : "NUMBER",
+        "profit" : "NUMBER",
+        "position_id" : "NUMBER"
+      },
+      "possibleUnitProofFields" : { }
+    }
+  }, {
+    "signal_id" : 37102008,
+    "platform" : "mt5",
+    "schema" : {
+      "dataFields" : {
+        "entries" : "ARRAY",
+        "page" : "OBJECT"
+      },
+      "entryFields" : {
+        "deal" : "NUMBER",
+        "time" : "STRING",
+        "symbol" : "STRING",
+        "action" : "NUMBER",
+        "entry" : "NUMBER",
+        "volume" : "NUMBER",
+        "price" : "NUMBER",
+        "commission" : "NUMBER",
+        "storage" : "NUMBER",
+        "profit" : "NUMBER",
+        "position_id" : "NUMBER"
+      },
+      "possibleUnitProofFields" : { }
+    }
+  }, {
+    "signal_id" : 7776453,
+    "platform" : "mt5",
+    "schema" : {
+      "dataFields" : {
+        "entries" : "ARRAY",
+        "page" : "OBJECT"
+      },
+      "entryFields" : {
+        "deal" : "NUMBER",
+        "time" : "STRING",
+        "symbol" : "STRING",
+        "action" : "NUMBER",
+        "entry" : "NUMBER",
+        "volume" : "NUMBER",
+        "price" : "NUMBER",
+        "commission" : "NUMBER",
+        "storage" : "NUMBER",
+        "profit" : "NUMBER",
+        "position_id" : "NUMBER"
+      },
+      "possibleUnitProofFields" : { }
+    }
+  } ]
+}

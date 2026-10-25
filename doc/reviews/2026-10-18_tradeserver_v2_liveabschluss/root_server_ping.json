@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-18T16:50:15.067143+00:00",
+  "info": {
+    "supportedProtocolVersions": [
+      1,
+      2
+    ],
+    "protocolVersion": 2,
+    "status": "ok",
+    "service": "MqlTradeMonitor",
+    "kiscannerApi": 2
+  },
+  "compatible": true
+}

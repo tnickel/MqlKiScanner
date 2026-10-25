@@ -1,0 +1,816 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="18" skipped="0" tests="208" time="89.001" timestamp="2026-10-18T17:54:09.063678+02:00" hostname="Ryzen7950X"><testcase classname="tests.test_alle_signale_batch_refresh" name="test_sitzung_behaelt_batch_nach_registry_freigabe" time="0.004" /><testcase classname="tests.test_alle_signale_batch_refresh" name="test_nur_neue_gespeicherte_studien_loesen_gedrosselten_refresh_aus" time="0.003" /><testcase classname="tests.test_alle_signale_batch_refresh" name="test_abschluss_wird_sofort_je_sitzung_einmal_uebernommen" time="0.002" /><testcase classname="tests.test_alle_signale_batch_refresh" name="test_erstmals_im_fragment_entdeckter_batch_laesst_tabelle_nachladen" time="0.002" /><testcase classname="tests.test_alle_signale_batch_refresh" name="test_seite_laesst_abschluss_nach_registry_freigabe_in_tabelle_einfliessen" time="1.352" /><testcase classname="tests.test_alle_signale_performance" name="test_uebersicht_verwendet_snapshot_ohne_pdf_rendern" time="0.120"><failure message="mqlkiscanner.signal_identity.IdentityError: ID-Kollision abgewehrt: vorhandene Identitaet benoetigt eine explizite Quelle oder signal_ref">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020DF4916CC0&gt;
+
+    def test_uebersicht_verwendet_snapshot_ohne_pdf_rendern(monkeypatch):
+        db.init_db()
+        db.upsert_signal(42, name='Probe', platform='MT5')
+&gt;       db.store_analysis(42, 'tiefenanalyse', 'test', 0, 'Bestehender Bericht')
+
+tests\test_alle_signale_performance.py:10: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\mqlkiscanner\db.py:679: in store_analysis
+    ref = _write_identity(conn,signal_id,quelle=quelle,signal_ref=signal_ref).signal_ref
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+conn = &lt;sqlite3.Connection object at 0x0000020DF491CA90&gt;, signal_id = 42
+quelle = None, signal_ref = None
+
+    def _write_identity(conn, signal_id, *, quelle=None, signal_ref=None):
+        if not conn.in_transaction:
+            conn.execute("BEGIN IMMEDIATE")
+        if quelle is not None and (not isinstance(quelle, str) or not quelle.strip()):
+            raise IdentityError("ID-Kollision abgewehrt: Signalquelle muss ein nichtleeres Kuerzel sein")
+        if quelle is None and signal_ref is None:
+            existing = conn.execute("SELECT 1 FROM signal_identitaeten WHERE externe_id=?",
+                                    (int(signal_id),)).fetchone()
+            if existing:
+&gt;               raise IdentityError("ID-Kollision abgewehrt: vorhandene Identitaet benoetigt eine explizite Quelle oder signal_ref")
+E               mqlkiscanner.signal_identity.IdentityError: ID-Kollision abgewehrt: vorhandene Identitaet benoetigt eine explizite Quelle oder signal_ref
+
+src\mqlkiscanner\db.py:421: IdentityError</failure></testcase><testcase classname="tests.test_alle_signale_performance" name="test_katalog_liest_artefakte_bulk_und_zaehlt_fortschritt" time="0.152" /><testcase classname="tests.test_alle_signale_performance" name="test_bulk_index_enthaelt_alle_identitaetsbestandteile" time="0.174" /><testcase classname="tests.test_alle_signale_performance" name="test_tabellenzeilen_nutzen_gemeinsame_fix_ids" time="0.003"><failure message="AssertionError: assert '' == '📌 FIX'&#10;  &#10;  - 📌 FIX">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E06495A30&gt;
+
+    def test_tabellenzeilen_nutzen_gemeinsame_fix_ids(monkeypatch):
+        from mqlkiscanner import alle_signale_ui
+        def unerwartet():
+            raise AssertionError('Einstellungen nicht je Zeile laden')
+        monkeypatch.setattr(alle_signale_ui, '_fix_ids', unerwartet)
+&gt;       assert tabellen_zeile(pipeline.ScanResult(id=42, name='Probe'), {},
+                              fix_ids={42})['Fix'] == '📌 FIX'
+E       AssertionError: assert '' == '📌 FIX'
+E         
+E         - 📌 FIX
+
+tests\test_alle_signale_performance.py:74: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_performance" name="test_seite_zeigt_gezählte_phasen_und_geschaetzte_restzeit" time="0.517"><failure message="assert not ElementList(_list=[Exception(message=&quot;test_seite_zeigt_gezählte_phasen_und_geschaetzte_restzeit.&lt;locals&gt;.&lt;lambda&gt;() go...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])&#10; +  where ElementList(_list=[Exception(message=&quot;test_seite_zeigt_gezählte_phasen_und_geschaetzte_restzeit.&lt;locals&gt;.&lt;lambda&gt;() go...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E06495B80&gt;
+
+    def test_seite_zeigt_gezählte_phasen_und_geschaetzte_restzeit(monkeypatch):
+        from pathlib import Path
+        from itertools import count
+        from time import monotonic
+        from types import SimpleNamespace
+        import re
+        from streamlit.delta_generator import DeltaGenerator
+        from streamlit.testing.v1 import AppTest
+    
+        texte = []
+        original_caption = DeltaGenerator.caption
+        def caption(self, body, *args, **kwargs):
+            texte.append(str(body))
+            return original_caption(self, body, *args, **kwargs)
+        monkeypatch.setattr(DeltaGenerator, 'caption', caption)
+        rows = [dict(signal_id=1, stats={}), dict(signal_id=2, stats={})]
+        monkeypatch.setattr(db, 'list_catalog', lambda: rows)
+        monkeypatch.setattr(db, 'list_equity_studien', lambda: {})
+        monkeypatch.setattr(db, 'katalog_sync_status', lambda: {'vant': dict(anzahl=2)})
+        def workflow(**kwargs):
+            assert kwargs['materialize_pdfs'] is False
+            assert kwargs['catalog_rows'] is rows
+            ticks = count(monotonic() + 1, 0.5)
+            kwargs['progress'].__globals__['time'] = SimpleNamespace(
+                monotonic=lambda: next(ticks))
+            for n in range(3):
+                kwargs['progress'](n, 2)
+            return [pipeline.ScanResult(id=i, name=str(i)) for i in (1, 2)]
+        monkeypatch.setattr(pipeline, 'results_from_db', workflow)
+        monkeypatch.setattr(katalog, 'katalog_resultate', lambda **kwargs: ([], {}))
+        seite = Path(__file__).resolve().parents[1] / 'app_pages' / 'alle_signale.py'
+        at = AppTest.from_file(str(seite), default_timeout=30).run()
+&gt;       assert not at.exception
+E       assert not ElementList(_list=[Exception(message="test_seite_zeigt_gezählte_phasen_und_geschaetzte_restzeit.&lt;locals&gt;.&lt;lambda&gt;() go...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])
+E        +  where ElementList(_list=[Exception(message="test_seite_zeigt_gezählte_phasen_und_geschaetzte_restzeit.&lt;locals&gt;.&lt;lambda&gt;() go...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception
+
+tests\test_alle_signale_performance.py:110: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_performance" name="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[same-same-None-10000.0]" time="0.495"><failure message="assert not ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])&#10; +  where ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E0649E660&gt;
+tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_virtuelle_studienbasis_nu0')
+study_sha = 'same', trade_sha = 'same', initial = None, expected_basis = 10000.0
+
+    @pytest.mark.parametrize('study_sha,trade_sha,initial,expected_basis', [
+        ('same', 'same', None, 10_000.0),
+        ('old', 'new', None, None),
+        ('', 'same', None, None),
+        ('same', '', None, None),
+        ('same', 'same', 20_000.0, 20_000.0),
+    ])
+    def test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades(
+            monkeypatch, tmp_path, study_sha, trade_sha, initial, expected_basis):
+        from pathlib import Path
+        from streamlit.testing.v1 import AppTest
+        from mqlkiscanner import signal_statistik
+    
+        csv = tmp_path / 'dino.csv'
+        csv.write_text(
+            'Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n'
+            '2026.01.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.01.05 11:00:00;1.101;0;0;100\n'
+            '2026.02.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.02.05 11:00:00;1.102;0;0;200\n',
+            encoding='utf-8')
+        stats = dict(initial_deposit_usd=initial, kapitalbasis_virtual_usd=None,
+                     regression_test=tmp_path.name)
+        result = pipeline.ScanResult(id=1286742, name='DINO',
+            trades_path=str(csv), trades_sha256=trade_sha)
+        monkeypatch.setattr(db, 'list_catalog', lambda: [dict(signal_id=result.id, stats=stats)])
+        monkeypatch.setattr(db, 'list_equity_studien', lambda: {
+            result.id: dict(virtuell=True, trades_sha=study_sha)})
+        monkeypatch.setattr(db, 'katalog_sync_status', lambda: {'vant': dict(anzahl=1)})
+        monkeypatch.setattr(pipeline, 'results_from_db', lambda **kwargs: [result])
+        monkeypatch.setattr(katalog, 'katalog_resultate', lambda **kwargs: ([], {}))
+        computed = []
+        original = signal_statistik.berechne
+        def berechne(path, basis_stats):
+            value = original(path, basis_stats)
+            computed.append(value)
+            return value
+        monkeypatch.setattr(signal_statistik, 'berechne', berechne)
+        page = Path(__file__).resolve().parents[1] / 'app_pages' / 'alle_signale.py'
+        at = AppTest.from_file(str(page), default_timeout=30).run()
+&gt;       assert not at.exception
+E       assert not ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])
+E        +  where ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception
+
+tests\test_alle_signale_performance.py:157: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_performance" name="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[old-new-None-None]" time="0.508"><failure message="assert not ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])&#10; +  where ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E06496FC0&gt;
+tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_virtuelle_studienbasis_nu1')
+study_sha = 'old', trade_sha = 'new', initial = None, expected_basis = None
+
+    @pytest.mark.parametrize('study_sha,trade_sha,initial,expected_basis', [
+        ('same', 'same', None, 10_000.0),
+        ('old', 'new', None, None),
+        ('', 'same', None, None),
+        ('same', '', None, None),
+        ('same', 'same', 20_000.0, 20_000.0),
+    ])
+    def test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades(
+            monkeypatch, tmp_path, study_sha, trade_sha, initial, expected_basis):
+        from pathlib import Path
+        from streamlit.testing.v1 import AppTest
+        from mqlkiscanner import signal_statistik
+    
+        csv = tmp_path / 'dino.csv'
+        csv.write_text(
+            'Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n'
+            '2026.01.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.01.05 11:00:00;1.101;0;0;100\n'
+            '2026.02.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.02.05 11:00:00;1.102;0;0;200\n',
+            encoding='utf-8')
+        stats = dict(initial_deposit_usd=initial, kapitalbasis_virtual_usd=None,
+                     regression_test=tmp_path.name)
+        result = pipeline.ScanResult(id=1286742, name='DINO',
+            trades_path=str(csv), trades_sha256=trade_sha)
+        monkeypatch.setattr(db, 'list_catalog', lambda: [dict(signal_id=result.id, stats=stats)])
+        monkeypatch.setattr(db, 'list_equity_studien', lambda: {
+            result.id: dict(virtuell=True, trades_sha=study_sha)})
+        monkeypatch.setattr(db, 'katalog_sync_status', lambda: {'vant': dict(anzahl=1)})
+        monkeypatch.setattr(pipeline, 'results_from_db', lambda **kwargs: [result])
+        monkeypatch.setattr(katalog, 'katalog_resultate', lambda **kwargs: ([], {}))
+        computed = []
+        original = signal_statistik.berechne
+        def berechne(path, basis_stats):
+            value = original(path, basis_stats)
+            computed.append(value)
+            return value
+        monkeypatch.setattr(signal_statistik, 'berechne', berechne)
+        page = Path(__file__).resolve().parents[1] / 'app_pages' / 'alle_signale.py'
+        at = AppTest.from_file(str(page), default_timeout=30).run()
+&gt;       assert not at.exception
+E       assert not ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])
+E        +  where ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception
+
+tests\test_alle_signale_performance.py:157: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_performance" name="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[-same-None-None]" time="0.559"><failure message="assert not ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])&#10; +  where ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E46538860&gt;
+tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_virtuelle_studienbasis_nu2')
+study_sha = '', trade_sha = 'same', initial = None, expected_basis = None
+
+    @pytest.mark.parametrize('study_sha,trade_sha,initial,expected_basis', [
+        ('same', 'same', None, 10_000.0),
+        ('old', 'new', None, None),
+        ('', 'same', None, None),
+        ('same', '', None, None),
+        ('same', 'same', 20_000.0, 20_000.0),
+    ])
+    def test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades(
+            monkeypatch, tmp_path, study_sha, trade_sha, initial, expected_basis):
+        from pathlib import Path
+        from streamlit.testing.v1 import AppTest
+        from mqlkiscanner import signal_statistik
+    
+        csv = tmp_path / 'dino.csv'
+        csv.write_text(
+            'Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n'
+            '2026.01.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.01.05 11:00:00;1.101;0;0;100\n'
+            '2026.02.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.02.05 11:00:00;1.102;0;0;200\n',
+            encoding='utf-8')
+        stats = dict(initial_deposit_usd=initial, kapitalbasis_virtual_usd=None,
+                     regression_test=tmp_path.name)
+        result = pipeline.ScanResult(id=1286742, name='DINO',
+            trades_path=str(csv), trades_sha256=trade_sha)
+        monkeypatch.setattr(db, 'list_catalog', lambda: [dict(signal_id=result.id, stats=stats)])
+        monkeypatch.setattr(db, 'list_equity_studien', lambda: {
+            result.id: dict(virtuell=True, trades_sha=study_sha)})
+        monkeypatch.setattr(db, 'katalog_sync_status', lambda: {'vant': dict(anzahl=1)})
+        monkeypatch.setattr(pipeline, 'results_from_db', lambda **kwargs: [result])
+        monkeypatch.setattr(katalog, 'katalog_resultate', lambda **kwargs: ([], {}))
+        computed = []
+        original = signal_statistik.berechne
+        def berechne(path, basis_stats):
+            value = original(path, basis_stats)
+            computed.append(value)
+            return value
+        monkeypatch.setattr(signal_statistik, 'berechne', berechne)
+        page = Path(__file__).resolve().parents[1] / 'app_pages' / 'alle_signale.py'
+        at = AppTest.from_file(str(page), default_timeout=30).run()
+&gt;       assert not at.exception
+E       assert not ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])
+E        +  where ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception
+
+tests\test_alle_signale_performance.py:157: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_performance" name="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[same--None-None]" time="0.494"><failure message="assert not ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])&#10; +  where ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E0644FFB0&gt;
+tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_virtuelle_studienbasis_nu3')
+study_sha = 'same', trade_sha = '', initial = None, expected_basis = None
+
+    @pytest.mark.parametrize('study_sha,trade_sha,initial,expected_basis', [
+        ('same', 'same', None, 10_000.0),
+        ('old', 'new', None, None),
+        ('', 'same', None, None),
+        ('same', '', None, None),
+        ('same', 'same', 20_000.0, 20_000.0),
+    ])
+    def test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades(
+            monkeypatch, tmp_path, study_sha, trade_sha, initial, expected_basis):
+        from pathlib import Path
+        from streamlit.testing.v1 import AppTest
+        from mqlkiscanner import signal_statistik
+    
+        csv = tmp_path / 'dino.csv'
+        csv.write_text(
+            'Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n'
+            '2026.01.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.01.05 11:00:00;1.101;0;0;100\n'
+            '2026.02.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.02.05 11:00:00;1.102;0;0;200\n',
+            encoding='utf-8')
+        stats = dict(initial_deposit_usd=initial, kapitalbasis_virtual_usd=None,
+                     regression_test=tmp_path.name)
+        result = pipeline.ScanResult(id=1286742, name='DINO',
+            trades_path=str(csv), trades_sha256=trade_sha)
+        monkeypatch.setattr(db, 'list_catalog', lambda: [dict(signal_id=result.id, stats=stats)])
+        monkeypatch.setattr(db, 'list_equity_studien', lambda: {
+            result.id: dict(virtuell=True, trades_sha=study_sha)})
+        monkeypatch.setattr(db, 'katalog_sync_status', lambda: {'vant': dict(anzahl=1)})
+        monkeypatch.setattr(pipeline, 'results_from_db', lambda **kwargs: [result])
+        monkeypatch.setattr(katalog, 'katalog_resultate', lambda **kwargs: ([], {}))
+        computed = []
+        original = signal_statistik.berechne
+        def berechne(path, basis_stats):
+            value = original(path, basis_stats)
+            computed.append(value)
+            return value
+        monkeypatch.setattr(signal_statistik, 'berechne', berechne)
+        page = Path(__file__).resolve().parents[1] / 'app_pages' / 'alle_signale.py'
+        at = AppTest.from_file(str(page), default_timeout=30).run()
+&gt;       assert not at.exception
+E       assert not ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])
+E        +  where ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception
+
+tests\test_alle_signale_performance.py:157: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_performance" name="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades[same-same-20000.0-20000.0]" time="0.510"><failure message="assert not ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])&#10; +  where ElementList(_list=[Exception(message=&quot;test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E0644FFE0&gt;
+tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_virtuelle_studienbasis_nu4')
+study_sha = 'same', trade_sha = 'same', initial = 20000.0
+expected_basis = 20000.0
+
+    @pytest.mark.parametrize('study_sha,trade_sha,initial,expected_basis', [
+        ('same', 'same', None, 10_000.0),
+        ('old', 'new', None, None),
+        ('', 'same', None, None),
+        ('same', '', None, None),
+        ('same', 'same', 20_000.0, 20_000.0),
+    ])
+    def test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades(
+            monkeypatch, tmp_path, study_sha, trade_sha, initial, expected_basis):
+        from pathlib import Path
+        from streamlit.testing.v1 import AppTest
+        from mqlkiscanner import signal_statistik
+    
+        csv = tmp_path / 'dino.csv'
+        csv.write_text(
+            'Time;Type;Volume;Symbol;Price;Volume;Time;Price;Commission;Swap;Profit\n'
+            '2026.01.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.01.05 11:00:00;1.101;0;0;100\n'
+            '2026.02.05 10:00:00;Buy;0.1;EURUSD;1.1;0.1;2026.02.05 11:00:00;1.102;0;0;200\n',
+            encoding='utf-8')
+        stats = dict(initial_deposit_usd=initial, kapitalbasis_virtual_usd=None,
+                     regression_test=tmp_path.name)
+        result = pipeline.ScanResult(id=1286742, name='DINO',
+            trades_path=str(csv), trades_sha256=trade_sha)
+        monkeypatch.setattr(db, 'list_catalog', lambda: [dict(signal_id=result.id, stats=stats)])
+        monkeypatch.setattr(db, 'list_equity_studien', lambda: {
+            result.id: dict(virtuell=True, trades_sha=study_sha)})
+        monkeypatch.setattr(db, 'katalog_sync_status', lambda: {'vant': dict(anzahl=1)})
+        monkeypatch.setattr(pipeline, 'results_from_db', lambda **kwargs: [result])
+        monkeypatch.setattr(katalog, 'katalog_resultate', lambda **kwargs: ([], {}))
+        computed = []
+        original = signal_statistik.berechne
+        def berechne(path, basis_stats):
+            value = original(path, basis_stats)
+            computed.append(value)
+            return value
+        monkeypatch.setattr(signal_statistik, 'berechne', berechne)
+        page = Path(__file__).resolve().parents[1] / 'app_pages' / 'alle_signale.py'
+        at = AppTest.from_file(str(page), default_timeout=30).run()
+&gt;       assert not at.exception
+E       assert not ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])])
+E        +  where ElementList(_list=[Exception(message="test_virtuelle_studienbasis_nur_fuer_zugehoerige_trades.&lt;locals&gt;.&lt;lambda&gt;() got ...    _studien = db.list_equity_studien(identitaeten=True)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'])]) = AppTest(\n    _script_path='D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\app_pages\\alle_s...k(\n            type='event',\n            children={\n                0: UnknownElement()\n            }\n        )\n    }\n).exception
+
+tests\test_alle_signale_performance.py:157: AssertionError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[None-MT4]" time="0.691" /><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[None-MT5]" time="0.718" /><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USC-MT4]" time="0.713" /><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USC-MT5]" time="0.734" /><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[EUR-MT4]" time="0.696" /><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[EUR-MT5]" time="0.697" /><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USD-MT4]" time="0.685"><failure message="KeyError: 'alle_signale_detail_42_tradeliste_button'">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_native_mql_currency_block6')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E467ECD70&gt;
+platform = 'MT4', currency = 'USD'
+
+    @pytest.mark.parametrize("platform", ["MT4", "MT5"])
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
+    def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, monkeypatch, platform, currency):
+        from mqlkiscanner import signal_statistik
+        import pandas as pd
+        probe = _probe_mit_trades(_csv(tmp_path / "native.csv"))
+        probe.platform = platform
+        probe.quelle = "robo"  # A free alias must not establish conversion.
+        probe.quelle_version = "mql4" if platform == "MT4" else "mql5"
+        probe.account_currency = currency
+        probe.true_dd_usd = 98765.0  # Old session/DB values must not bypass the guard.
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        calculate = Mock(wraps=signal_statistik.berechne)
+        monkeypatch.setattr(signal_statistik, "berechne", calculate)
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        if currency != "USD":
+            calculate.assert_not_called()
+            assert any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+            assert pd.isna(at.dataframe[0].value.iloc[0]["True-DD USD"])
+            assert not [b for b in at.button if b.key and "tradeliste" in b.key]
+            assert len(at.get("plotly_chart")) == 0
+        else:
+            assert calculate.called
+&gt;           assert at.button(key="alle_signale_detail_42_tradeliste_button")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_alle_signale_seite.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WidgetList(_list=[Button(key='ui_info_alle_signale_info', label=':material/info:', help='Erklärung: Alle Signale: unab...: H1-Kurse je Symbol, GMT-Abgleich, Equity inkl. Floating — floating-getreuer Max-Drawdown mit Fortschrittsanzeige.')])
+key = 'alle_signale_detail_42_tradeliste_button'
+
+    def __call__(self, key: str) -&gt; El_co:
+        """Return the first element in this collection with the given user key.
+    
+        The same key can appear on different element types, so this returns the
+        first match in this collection. Use ``get_by_key`` when an ambiguous
+        key should raise.
+        """
+        for e in self._list:
+            if getattr(e, "key", None) == key:
+                return e
+&gt;       raise KeyError(key)
+E       KeyError: 'alle_signale_detail_42_tradeliste_button'
+
+C:\Users\tnickel\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\streamlit\testing\v1\element_tree.py:310: KeyError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_native_mql_currency_blocks_statistics_and_usd_trade_detail[USD-MT5]" time="0.685"><failure message="KeyError: 'alle_signale_detail_42_tradeliste_button'">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_native_mql_currency_block7')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E467EF590&gt;
+platform = 'MT5', currency = 'USD'
+
+    @pytest.mark.parametrize("platform", ["MT4", "MT5"])
+    @pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
+    def test_native_mql_currency_blocks_statistics_and_usd_trade_detail(tmp_path, monkeypatch, platform, currency):
+        from mqlkiscanner import signal_statistik
+        import pandas as pd
+        probe = _probe_mit_trades(_csv(tmp_path / "native.csv"))
+        probe.platform = platform
+        probe.quelle = "robo"  # A free alias must not establish conversion.
+        probe.quelle_version = "mql4" if platform == "MT4" else "mql5"
+        probe.account_currency = currency
+        probe.true_dd_usd = 98765.0  # Old session/DB values must not bypass the guard.
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        calculate = Mock(wraps=signal_statistik.berechne)
+        monkeypatch.setattr(signal_statistik, "berechne", calculate)
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        if currency != "USD":
+            calculate.assert_not_called()
+            assert any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+            assert pd.isna(at.dataframe[0].value.iloc[0]["True-DD USD"])
+            assert not [b for b in at.button if b.key and "tradeliste" in b.key]
+            assert len(at.get("plotly_chart")) == 0
+        else:
+            assert calculate.called
+&gt;           assert at.button(key="alle_signale_detail_42_tradeliste_button")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_alle_signale_seite.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WidgetList(_list=[Button(key='ui_info_alle_signale_info', label=':material/info:', help='Erklärung: Alle Signale: unab...: H1-Kurse je Symbol, GMT-Abgleich, Equity inkl. Floating — floating-getreuer Max-Drawdown mit Fortschrittsanzeige.')])
+key = 'alle_signale_detail_42_tradeliste_button'
+
+    def __call__(self, key: str) -&gt; El_co:
+        """Return the first element in this collection with the given user key.
+    
+        The same key can appear on different element types, so this returns the
+        first match in this collection. Use ``get_by_key`` when an ambiguous
+        key should raise.
+        """
+        for e in self._list:
+            if getattr(e, "key", None) == key:
+                return e
+&gt;       raise KeyError(key)
+E       KeyError: 'alle_signale_detail_42_tradeliste_button'
+
+C:\Users\tnickel\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\streamlit\testing\v1\element_tree.py:310: KeyError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_demo_and_converted_source_detail_keep_their_usd_contract[demo]" time="0.488" /><testcase classname="tests.test_alle_signale_seite" name="test_demo_and_converted_source_detail_keep_their_usd_contract[pelican]" time="0.683"><failure message="KeyError: 'alle_signale_detail_42_tradeliste_button'">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_demo_and_converted_source1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E466DC4A0&gt;
+contract = 'pelican'
+
+    @pytest.mark.parametrize("contract", ["demo", "pelican", "vantage", "zulu"])
+    def test_demo_and_converted_source_detail_keep_their_usd_contract(tmp_path, monkeypatch, contract):
+        from mqlkiscanner import ingest
+        probe = _probe_mit_trades(_csv(tmp_path / "normalized.csv"))
+        if contract == "demo":
+            probe.source_kind = "demo"
+            probe.account_currency = None
+            # The live catalogue intentionally excludes demos; exercise their shared detail renderer.
+            code = f'''
+    from mqlkiscanner.pipeline import ScanResult
+    from mqlkiscanner import signal_statistik
+    from mqlkiscanner.alle_signale_ui import render_detail
+    render_detail(ScanResult(id=42, platform="MT5", source_kind="demo",
+        trades_path={probe.trades_path!r}),
+        signal_statistik.berechne({probe.trades_path!r}, {{"balance_usd":10000}}), key_prefix="demo")
+    '''
+            at = AppTest.from_string(code, default_timeout=60).run()
+            assert not at.exception, at.exception
+            assert not any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+            assert at.button(key="demo_tradeliste_button")
+            return
+        else:
+            probe.platform = contract
+            probe.quelle_version = contract
+            # Original account currency may differ; the successful source CSV is USD.
+            probe.account_currency = ingest.metrics_zu_stats(
+                {"version": contract, "metrics": {"Currency": "EUR", "Balance": 10000}},
+                "free_alias", quelle_version=contract)["account_currency"]
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        assert not any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+&gt;       assert at.button(key="alle_signale_detail_42_tradeliste_button")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_alle_signale_seite.py:129: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WidgetList(_list=[Button(key='ui_info_alle_signale_info', label=':material/info:', help='Erklärung: Alle Signale: unab...: H1-Kurse je Symbol, GMT-Abgleich, Equity inkl. Floating — floating-getreuer Max-Drawdown mit Fortschrittsanzeige.')])
+key = 'alle_signale_detail_42_tradeliste_button'
+
+    def __call__(self, key: str) -&gt; El_co:
+        """Return the first element in this collection with the given user key.
+    
+        The same key can appear on different element types, so this returns the
+        first match in this collection. Use ``get_by_key`` when an ambiguous
+        key should raise.
+        """
+        for e in self._list:
+            if getattr(e, "key", None) == key:
+                return e
+&gt;       raise KeyError(key)
+E       KeyError: 'alle_signale_detail_42_tradeliste_button'
+
+C:\Users\tnickel\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\streamlit\testing\v1\element_tree.py:310: KeyError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_demo_and_converted_source_detail_keep_their_usd_contract[vantage]" time="0.688"><failure message="KeyError: 'alle_signale_detail_42_tradeliste_button'">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_demo_and_converted_source2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E466DC800&gt;
+contract = 'vantage'
+
+    @pytest.mark.parametrize("contract", ["demo", "pelican", "vantage", "zulu"])
+    def test_demo_and_converted_source_detail_keep_their_usd_contract(tmp_path, monkeypatch, contract):
+        from mqlkiscanner import ingest
+        probe = _probe_mit_trades(_csv(tmp_path / "normalized.csv"))
+        if contract == "demo":
+            probe.source_kind = "demo"
+            probe.account_currency = None
+            # The live catalogue intentionally excludes demos; exercise their shared detail renderer.
+            code = f'''
+    from mqlkiscanner.pipeline import ScanResult
+    from mqlkiscanner import signal_statistik
+    from mqlkiscanner.alle_signale_ui import render_detail
+    render_detail(ScanResult(id=42, platform="MT5", source_kind="demo",
+        trades_path={probe.trades_path!r}),
+        signal_statistik.berechne({probe.trades_path!r}, {{"balance_usd":10000}}), key_prefix="demo")
+    '''
+            at = AppTest.from_string(code, default_timeout=60).run()
+            assert not at.exception, at.exception
+            assert not any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+            assert at.button(key="demo_tradeliste_button")
+            return
+        else:
+            probe.platform = contract
+            probe.quelle_version = contract
+            # Original account currency may differ; the successful source CSV is USD.
+            probe.account_currency = ingest.metrics_zu_stats(
+                {"version": contract, "metrics": {"Currency": "EUR", "Balance": 10000}},
+                "free_alias", quelle_version=contract)["account_currency"]
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        assert not any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+&gt;       assert at.button(key="alle_signale_detail_42_tradeliste_button")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_alle_signale_seite.py:129: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WidgetList(_list=[Button(key='ui_info_alle_signale_info', label=':material/info:', help='Erklärung: Alle Signale: unab...: H1-Kurse je Symbol, GMT-Abgleich, Equity inkl. Floating — floating-getreuer Max-Drawdown mit Fortschrittsanzeige.')])
+key = 'alle_signale_detail_42_tradeliste_button'
+
+    def __call__(self, key: str) -&gt; El_co:
+        """Return the first element in this collection with the given user key.
+    
+        The same key can appear on different element types, so this returns the
+        first match in this collection. Use ``get_by_key`` when an ambiguous
+        key should raise.
+        """
+        for e in self._list:
+            if getattr(e, "key", None) == key:
+                return e
+&gt;       raise KeyError(key)
+E       KeyError: 'alle_signale_detail_42_tradeliste_button'
+
+C:\Users\tnickel\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\streamlit\testing\v1\element_tree.py:310: KeyError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_demo_and_converted_source_detail_keep_their_usd_contract[zulu]" time="0.777"><failure message="KeyError: 'alle_signale_detail_42_tradeliste_button'">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_demo_and_converted_source3')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E466DC5F0&gt;
+contract = 'zulu'
+
+    @pytest.mark.parametrize("contract", ["demo", "pelican", "vantage", "zulu"])
+    def test_demo_and_converted_source_detail_keep_their_usd_contract(tmp_path, monkeypatch, contract):
+        from mqlkiscanner import ingest
+        probe = _probe_mit_trades(_csv(tmp_path / "normalized.csv"))
+        if contract == "demo":
+            probe.source_kind = "demo"
+            probe.account_currency = None
+            # The live catalogue intentionally excludes demos; exercise their shared detail renderer.
+            code = f'''
+    from mqlkiscanner.pipeline import ScanResult
+    from mqlkiscanner import signal_statistik
+    from mqlkiscanner.alle_signale_ui import render_detail
+    render_detail(ScanResult(id=42, platform="MT5", source_kind="demo",
+        trades_path={probe.trades_path!r}),
+        signal_statistik.berechne({probe.trades_path!r}, {{"balance_usd":10000}}), key_prefix="demo")
+    '''
+            at = AppTest.from_string(code, default_timeout=60).run()
+            assert not at.exception, at.exception
+            assert not any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+            assert at.button(key="demo_tradeliste_button")
+            return
+        else:
+            probe.platform = contract
+            probe.quelle_version = contract
+            # Original account currency may differ; the successful source CSV is USD.
+            probe.account_currency = ingest.metrics_zu_stats(
+                {"version": contract, "metrics": {"Currency": "EUR", "Balance": 10000}},
+                "free_alias", quelle_version=contract)["account_currency"]
+        monkeypatch.setattr(pipeline, "results_from_db", lambda **kw: [probe])
+        monkeypatch.setattr(db, "list_catalog", lambda **kw: [
+            {"signal_id": 42, "stats": {"balance_usd": 10_000.0}}])
+        monkeypatch.setattr(katalog_mod, "katalog_resultate", lambda **kw: ([], {}))
+        at = AppTest.from_file(str(SEITE), default_timeout=60).run()
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        assert not any("USD-Statistik und Tradeliste gesperrt" in w.value for w in at.warning)
+&gt;       assert at.button(key="alle_signale_detail_42_tradeliste_button")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_alle_signale_seite.py:129: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WidgetList(_list=[Button(key='ui_info_alle_signale_info', label=':material/info:', help='Erklärung: Alle Signale: unab...: H1-Kurse je Symbol, GMT-Abgleich, Equity inkl. Floating — floating-getreuer Max-Drawdown mit Fortschrittsanzeige.')])
+key = 'alle_signale_detail_42_tradeliste_button'
+
+    def __call__(self, key: str) -&gt; El_co:
+        """Return the first element in this collection with the given user key.
+    
+        The same key can appear on different element types, so this returns the
+        first match in this collection. Use ``get_by_key`` when an ambiguous
+        key should raise.
+        """
+        for e in self._list:
+            if getattr(e, "key", None) == key:
+                return e
+&gt;       raise KeyError(key)
+E       KeyError: 'alle_signale_detail_42_tradeliste_button'
+
+C:\Users\tnickel\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\streamlit\testing\v1\element_tree.py:310: KeyError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache[None]" time="0.471" /><testcase classname="tests.test_alle_signale_seite" name="test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache[USC]" time="0.484" /><testcase classname="tests.test_alle_signale_seite" name="test_direct_detail_cannot_use_prefilled_usd_statistics_or_open_trade_cache[EUR]" time="0.487" /><testcase classname="tests.test_alle_signale_seite" name="test_seite_rendert_mit_zwei_signalen" time="0.604" /><testcase classname="tests.test_alle_signale_seite" name="test_seite_leer_ohne_signale" time="0.610" /><testcase classname="tests.test_alle_signale_seite" name="test_filter_nur_mit_trades" time="0.684" /><testcase classname="tests.test_alle_signale_seite" name="test_seite_zeigt_vollkatalog_und_kennzeichnet_herkunft" time="0.607" /><testcase classname="tests.test_alle_signale_seite" name="test_filter_herkunft_und_min_abonnenten" time="0.710" /><testcase classname="tests.test_alle_signale_seite" name="test_katalog_zeile_laedt_daten_on_demand" time="0.648"><failure message="KeyError: 'alle_signale_fetch_1286742'">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_katalog_zeile_laedt_daten0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E46818350&gt;
+
+    def test_katalog_zeile_laedt_daten_on_demand(tmp_path, monkeypatch):
+        """Zeile ohne Trade-Cache → Lade-Button; danach läuft render_detail."""
+        csv_pfad = _csv(tmp_path / "trades_dino.csv")
+        probe = _katalog_probe_mit_quelle()
+        geladen = []
+    
+        def _fake_laden(res):
+            geladen.append(res.id)
+            probe.trades_path = str(csv_pfad)
+            return str(csv_pfad), True
+    
+        monkeypatch.setattr(katalog_mod, "lade_signal_daten", _fake_laden)
+        at = _katalog_seite(monkeypatch, [], [probe])
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+        assert any("lokalen Trade-Cache" in i.value for i in at.info)
+&gt;       at.button(key="alle_signale_fetch_1286742").click()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_alle_signale_seite.py:267: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WidgetList(_list=[Button(key='ui_info_alle_signale_info', label=':material/info:', help='Erklärung: Alle Signale: unab...ar hinzufügen'), Button(key="alle_signale_fetch_('vant', 1286742)", label='Trades + Kennzahlen von der Quelle laden')])
+key = 'alle_signale_fetch_1286742'
+
+    def __call__(self, key: str) -&gt; El_co:
+        """Return the first element in this collection with the given user key.
+    
+        The same key can appear on different element types, so this returns the
+        first match in this collection. Use ``get_by_key`` when an ambiguous
+        key should raise.
+        """
+        for e in self._list:
+            if getattr(e, "key", None) == key:
+                return e
+&gt;       raise KeyError(key)
+E       KeyError: 'alle_signale_fetch_1286742'
+
+C:\Users\tnickel\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\streamlit\testing\v1\element_tree.py:310: KeyError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_sync_button_ruft_katalog_sync" time="0.664" /><testcase classname="tests.test_alle_signale_seite" name="test_erster_start_laedt_katalog_automatisch" time="0.729" /><testcase classname="tests.test_alle_signale_seite" name="test_filter_min_wochen" time="0.638" /><testcase classname="tests.test_alle_signale_seite" name="test_gescannte_zeile_ohne_trades_mit_katalogref_holt_nach" time="0.685"><failure message="KeyError: 'alle_signale_fetch_99'">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_gescannte_zeile_ohne_trad0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E468F8230&gt;
+
+    def test_gescannte_zeile_ohne_trades_mit_katalogref_holt_nach(tmp_path, monkeypatch):
+        """Fehlgeschlagener Scan (Quelle bekannt, kein Trade-Export): die
+        Quellen-Referenz wird über das Kürzel aus dem Katalog aufgelöst —
+        Button erscheint, Klick lädt und zeigt das Detail im selben Run."""
+        csv_pfad = _csv(tmp_path / "t99.csv")
+        db.add_quelle("vant", "VantageMonitor", "http://localhost:8092")
+        db.katalog_upsert_many("vant", [
+            {"signal_id": 99, "name": "Misslungener Scan", "platform": "vantage",
+             "url": "u99", "version": "vantage", "abonnenten": 5.0,
+             "wochen": 30.0, "risiko": None}])
+        probe = pipeline.ScanResult(id=99, name="Misslungener Scan",
+                                    platform="vantage", quelle="vant",
+                                    trades_path="")
+        geladen = []
+    
+        def _fake_laden(res):
+            geladen.append((res.id, res.quelle_id, res.quelle_version))
+            return str(csv_pfad), True
+    
+        monkeypatch.setattr(katalog_mod, "lade_signal_daten", _fake_laden)
+        at = _katalog_seite(monkeypatch, [probe], [])
+        assert not at.exception, at.exception
+        at.session_state["alle_signale_tabelle"] = {"selection": {"rows": [0]}}
+        at.run()
+        assert not at.exception, at.exception
+&gt;       assert at.button(key="alle_signale_fetch_99") is not None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_alle_signale_seite.py:355: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WidgetList(_list=[Button(key='ui_info_alle_signale_info', label=':material/info:', help='Erklärung: Alle Signale: unab...: H1-Kurse je Symbol, GMT-Abgleich, Equity inkl. Floating — floating-getreuer Max-Drawdown mit Fortschrittsanzeige.')])
+key = 'alle_signale_fetch_99'
+
+    def __call__(self, key: str) -&gt; El_co:
+        """Return the first element in this collection with the given user key.
+    
+        The same key can appear on different element types, so this returns the
+        first match in this collection. Use ``get_by_key`` when an ambiguous
+        key should raise.
+        """
+        for e in self._list:
+            if getattr(e, "key", None) == key:
+                return e
+&gt;       raise KeyError(key)
+E       KeyError: 'alle_signale_fetch_99'
+
+C:\Users\tnickel\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\streamlit\testing\v1\element_tree.py:310: KeyError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_gescannte_zeile_ohne_trades_ohne_ref_zeigt_detail" time="0.662" /><testcase classname="tests.test_alle_signale_seite" name="test_monats_balken_chart_farben_nach_vorzeichen" time="0.069" /><testcase classname="tests.test_alle_signale_seite" name="test_kurve_unterwasser_chart_rechnet_rueckgang" time="0.025" /><testcase classname="tests.test_alle_signale_seite" name="test_kurve_unterwasser_chart_auszahlung_ist_kein_drawdown" time="0.014" /><testcase classname="tests.test_alle_signale_seite" name="test_tabellen_zeile_ohne_statistik_zeigt_striche" time="0.096" /><testcase classname="tests.test_alle_signale_seite" name="test_dauer_balken_chart_markiert_gefaehrliche_rot" time="0.010" /><testcase classname="tests.test_alle_signale_seite" name="test_render_detail_tradeliste_und_vorbehalt" time="0.494" /><testcase classname="tests.test_alle_signale_seite" name="test_formel_dialog_oeffnet_mit_formel_rechnung_erklaerung" time="0.471" /><testcase classname="tests.test_alle_signale_seite" name="test_markierungen_db_setzen_ueberschreiben_entfernen" time="0.104"><failure message="mqlkiscanner.signal_identity.IdentityError: ID-Kollision abgewehrt: vorhandene Identitaet benoetigt eine explizite Quelle oder signal_ref">def test_markierungen_db_setzen_ueberschreiben_entfernen():
+        from mqlkiscanner import db as db_mod
+        db_mod.init_db()
+        db_mod.setze_markierung(501, "gruen")
+        db_mod.setze_markierung(502, "orange")
+        assert db_mod.list_markierungen() == {501: "gruen", 502: "orange"}
+&gt;       db_mod.setze_markierung(501, "gelb")          # überschreiben
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_alle_signale_seite.py:542: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\mqlkiscanner\db.py:1456: in setze_markierung
+    identity = _write_identity(conn, signal_id, quelle=quelle, signal_ref=signal_ref)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+conn = &lt;sqlite3.Connection object at 0x0000020E46E6EF20&gt;, signal_id = 501
+quelle = None, signal_ref = None
+
+    def _write_identity(conn, signal_id, *, quelle=None, signal_ref=None):
+        if not conn.in_transaction:
+            conn.execute("BEGIN IMMEDIATE")
+        if quelle is not None and (not isinstance(quelle, str) or not quelle.strip()):
+            raise IdentityError("ID-Kollision abgewehrt: Signalquelle muss ein nichtleeres Kuerzel sein")
+        if quelle is None and signal_ref is None:
+            existing = conn.execute("SELECT 1 FROM signal_identitaeten WHERE externe_id=?",
+                                    (int(signal_id),)).fetchone()
+            if existing:
+&gt;               raise IdentityError("ID-Kollision abgewehrt: vorhandene Identitaet benoetigt eine explizite Quelle oder signal_ref")
+E               mqlkiscanner.signal_identity.IdentityError: ID-Kollision abgewehrt: vorhandene Identitaet benoetigt eine explizite Quelle oder signal_ref
+
+src\mqlkiscanner\db.py:421: IdentityError</failure></testcase><testcase classname="tests.test_alle_signale_seite" name="test_seite_markiert_zeile_und_filtert" time="1.053" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_unbekannte_kontowaehrung_bleibt_trotz_usd_ziel_unbekannt[]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_unbekannte_kontowaehrung_bleibt_trotz_usd_ziel_unbekannt[unknown]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_unbekannte_kontowaehrung_bleibt_trotz_usd_ziel_unbekannt[UNKNOWN]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_unbekannte_kontowaehrung_bleibt_trotz_usd_ziel_unbekannt[unbekannt]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_unbekannte_kontowaehrung_bleibt_trotz_usd_ziel_unbekannt[uneindeutig]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_unbekannte_kontowaehrung_bleibt_trotz_usd_ziel_unbekannt[unbekannt/uneindeutig]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_aktueller_nachweis_aendert_den_historischen_batchfehler_nicht[USD-USD]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_aktueller_nachweis_aendert_den_historischen_batchfehler_nicht[EUR-EUR]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_aktueller_nachweis_aendert_den_historischen_batchfehler_nicht[USC-USC]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_aktueller_nachweis_aendert_den_historischen_batchfehler_nicht[None-weiterhin nicht belegt]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_aktueller_nachweis_aendert_den_historischen_batchfehler_nicht[unknown-weiterhin nicht belegt]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_verschwundenes_signal_bleibt_ohne_fremde_quellenzuordnung_sichtbar" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_mehrdeutige_signal_id_verwendet_keine_der_quellen_oder_waehrungen" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_doppelte_meldungen_werden_einmal_in_erster_reihenfolge_angezeigt" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_andere_batchfehler_und_bekannte_kontowaehrungen_werden_ignoriert[#123 Historisches Signal: ValueError: Kontow\xe4hrung USD: USD-Forensik gesperrt \u2014 keine belegte Umrechnung von Export und Kontobasis in USD.]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_andere_batchfehler_und_bekannte_kontowaehrungen_werden_ignoriert[#123 Historisches Signal: ValueError: Kontow\xe4hrung EUR: USD-Forensik gesperrt \u2014 keine belegte Umrechnung von Export und Kontobasis in USD.]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_andere_batchfehler_und_bekannte_kontowaehrungen_werden_ignoriert[#123 Historisches Signal: ValueError: Kontow\xe4hrung USC: USD-Forensik gesperrt \u2014 keine belegte Umrechnung von Export und Kontobasis in USD.]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_andere_batchfehler_und_bekannte_kontowaehrungen_werden_ignoriert[#123 Historisches Signal: ValueError: ung\xfcltiges Volumen oder Handelszeitraum]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_andere_batchfehler_und_bekannte_kontowaehrungen_werden_ignoriert[#123 Historisches Signal: RuntimeError: Kursdaten nicht verf\xfcgbar]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_andere_batchfehler_und_bekannte_kontowaehrungen_werden_ignoriert[Batch abgebrochen: RuntimeError: Terminal nicht verf\xfcgbar]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_andere_batchfehler_und_bekannte_kontowaehrungen_werden_ignoriert[#123 Historisches Signal: RuntimeError: Kontow\xe4hrung unbekannt/uneindeutig: USD-Forensik gesperrt \u2014 keine belegte Umrechnung von Export und Kontobasis in USD.]" time="0.003" /><testcase classname="tests.test_alle_signale_waehrungsfehler" name="test_seite_zeigt_und_versteckt_historische_fehler_mit_aktuellem_nachweis" time="0.890" /><testcase classname="tests.test_app" name="test_app_boots_without_exception" time="0.686" /><testcase classname="tests.test_app" name="test_scan_page_renders_steps" time="0.655" /><testcase classname="tests.test_app" name="test_verification_button_loads_raw_data_and_saves_isolated_run" time="1.982" /><testcase classname="tests.test_app" name="test_scan_page_shows_problems_with_explanations" time="0.927" /><testcase classname="tests.test_app" name="test_scan_page_shows_waiting_stopwatch_for_long_model_calls" time="15.663" /><testcase classname="tests.test_app" name="test_results_db_marks_refreshed_signals_as_neu" time="0.836" /><testcase classname="tests.test_app" name="test_results_page_renders_session_results" time="0.843" /><testcase classname="tests.test_app" name="test_results_page_wechsel_protokoll_button_und_dialog" time="0.997" /><testcase classname="tests.test_app" name="test_admin_page_handles_missing_or_present_key_without_disclosure[]" time="1.274" /><testcase classname="tests.test_app" name="test_admin_page_handles_missing_or_present_key_without_disclosure[fake-ui-test-key.DO-NOT-USE-987654321]" time="1.357" /><testcase classname="tests.test_app" name="test_live_scan_failure_remains_an_error_after_rerun" time="1.141" /><testcase classname="tests.test_app" name="test_verification_exposes_each_file_and_skips_online_steps" time="1.174" /><testcase classname="tests.test_app" name="test_prompt_reset_updates_saved_template_and_visible_editor" time="3.127" /><testcase classname="tests.test_app" name="test_prompt_save_rejects_missing_data_placeholders" time="2.492" /><testcase classname="tests.test_app" name="test_custom_model_settings_render_and_save_without_losing_other_settings" time="1.643" /><testcase classname="tests.test_app" name="test_action_help_opens_explanation_without_starting_scan" time="0.973" /><testcase classname="tests.test_app" name="test_sidebar_info_erklaert_scan_und_agenten" time="0.859" /><testcase classname="tests.test_app" name="test_standalone_llm_without_key_is_skipped" time="1.118" /><testcase classname="tests.test_app" name="test_results_search_and_status_filter_apply_to_table_and_verdicts" time="1.177" /><testcase classname="tests.test_app" name="test_browsing_archive_keeps_current_session_results" time="1.015" /><testcase classname="tests.test_ergebnis_gewinn_retdd_ui" name="test_table_serializes_colors_and_formats_without_losing_values" time="0.659" /><testcase classname="tests.test_ergebnis_gewinn_retdd_ui" name="test_detail_uses_same_fields_without_platform_or_trading_fallback[20.0-6.0-6.00 %-5.00]" time="0.578" /><testcase classname="tests.test_ergebnis_gewinn_retdd_ui" name="test_detail_uses_same_fields_without_platform_or_trading_fallback[None-6.0-6.00 %-\u2014]" time="0.584" /><testcase classname="tests.test_ergebnis_gewinn_retdd_ui" name="test_detail_uses_same_fields_without_platform_or_trading_fallback[0.0-6.0-6.00 %-\u2014]" time="0.575" /><testcase classname="tests.test_ergebnis_gewinn_retdd_ui" name="test_detail_uses_same_fields_without_platform_or_trading_fallback[20.0-None-\u2014-\u2014]" time="0.605" /><testcase classname="tests.test_ergebnis_gewinn_retdd_ui" name="test_detail_does_not_signal_safe_dd_when_platform_violates_overall_gate" time="0.604" /><testcase classname="tests.test_ergebnis_gewinn_retdd_ui" name="test_styled_table_keeps_row_selection_on_exact_snapshot" time="0.605" /><testcase classname="tests.test_ergebnis_gewinn_retdd_ui" name="test_results_page_filters_profit_and_retdd_with_the_same_rows" time="1.043" /><testcase classname="tests.test_ergebnis_gewinn_retdd_ui" name="test_kompaktansicht_faerbt_vorbehaltliches_trueretdd_orange" time="0.599" /><testcase classname="tests.test_equity_studie" name="test_studie_trennt_usd_maximum_vom_relativmaximum" time="0.024" /><testcase classname="tests.test_equity_studie" name="test_studie_netto_fehlender_kurse_bleibt_enthalten" time="0.005" /><testcase classname="tests.test_equity_studie" name="test_studie_trennt_realisiert_und_floating" time="0.005" /><testcase classname="tests.test_equity_studie" name="test_gmt_je_symbol_eigenstaendig_erkannt" time="0.005" /><testcase classname="tests.test_equity_studie" name="test_gmt_fallback_median_fuer_duennes_symbol" time="0.003" /><testcase classname="tests.test_equity_studie" name="test_einziges_duennes_symbol_noch_erkannt_mit_hinweis" time="0.003" /><testcase classname="tests.test_equity_studie" name="test_fehlendes_symbol_wird_gemeldet_rest_gerechnet" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_symbol_ohne_kontrakt_fliegt_raus" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_kursluecke_ist_kein_messpunkt_realisiert_laeuft_weiter" time="0.003" /><testcase classname="tests.test_equity_studie" name="test_ohne_kapitalbasis_nur_usd_kurven" time="0.003" /><testcase classname="tests.test_equity_studie" name="test_keine_trades_ist_skipped" time="0.003" /><testcase classname="tests.test_equity_studie" name="test_terminal_fallback_wird_zurueckgesetzt" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_studie_erreicht_drittes_terminal_und_beendet_fallback" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_studie_ohne_kurse_beendet_fallback_nach_letztem_terminal" time="0.003" /><testcase classname="tests.test_equity_studie" name="test_studie_fehlgeschlagener_terminalwechsel_wird_nicht_wiederholt" time="0.003" /><testcase classname="tests.test_equity_studie" name="test_alle_kurse_fehlend_ist_skipped_mit_namen" time="0.003" /><testcase classname="tests.test_equity_studie" name="test_equity_studie_seite_rendert_ende_zu_ende" time="0.635" /><testcase classname="tests.test_equity_studie" name="test_anker_klemmt_an_ersten_messpunkt_bei_kuerzerer_kurshistorie" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_symbol_mit_drei_stimmenden_proben_eigenstaendig_erkannt" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_ueberdeckung_klassifiziert_luecken_nach_lage_und_art" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_studie_bucht_flows_und_rest_nach_letztem_trade" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_studie_einzahlung_vergroessert_den_ddd_naechster_verlust_zaehlt" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_studie_auszahlung_in_kursluecke_erzeugt_keinen_drawdown" time="0.004" /><testcase classname="tests.test_equity_studie" name="test_chart_unterwasser_senkt_peak_bei_auszahlung" time="0.019" /><testcase classname="tests.test_equity_studie" name="test_chart_equity_dd_wie_mql5_offener_verlust_durch_balance" time="0.021" /><testcase classname="tests.test_fremdreview_katalog" name="test_same_id_keeps_both_sources_and_their_own_metrics" time="0.194" /><testcase classname="tests.test_fremdreview_katalog" name="test_workflow_dedup_only_removes_same_source_and_id" time="0.211" /><testcase classname="tests.test_fremdreview_katalog" name="test_identical_trade_bytes_do_not_authorize_source_agnostic_study" time="0.193"><failure message="mqlkiscanner.signal_identity.AmbiguousSignalIdentity: Signal-ID 42 gehoert mehreren Quellen">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_identical_trade_bytes_do_0')
+
+    def test_identical_trade_bytes_do_not_authorize_source_agnostic_study(tmp_path):
+        seed(tmp_path)
+        unscoped = {42: dict(trades_sha=hashlib.sha256(CSV).hexdigest(), dd_usd=999,
+            report={'verlaesslich': True, 'equity_dd_pct_raw': 50})}
+&gt;       rows, _ = katalog.katalog_resultate(gescannt=set(), studien=unscoped)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_fremdreview_katalog.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\mqlkiscanner\katalog.py:194: in katalog_resultate
+    pipeline.studie_anwenden(res, studien)
+src\mqlkiscanner\pipeline.py:749: in studie_anwenden
+    identity = db.resolve_identity(res.id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+signal_id = 42, quelle = None, signal_ref = None, create = False
+_connection = None
+
+    def resolve_identity(signal_id: int | None = None, *, quelle=None, signal_ref=None,
+                         create=False, _connection=None) -&gt; SignalIdentity | None:
+        """Resolve external identity explicitly; ambiguous ID-only reads fail closed."""
+        if _connection is None:
+            init_db()
+        with (contextlib.nullcontext(_connection) if _connection is not None else _connect()) as conn:
+            if create and not conn.in_transaction:
+                conn.execute("BEGIN IMMEDIATE")
+            base = ("SELECT i.signal_ref,i.externe_id,q.quellen_uid,q.kuerzel FROM signal_identitaeten i "
+                    "JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid ")
+            if signal_ref is not None:
+                rows = conn.execute(base + "WHERE i.signal_ref=?", (int(signal_ref),)).fetchall()
+                if rows and signal_id is not None and rows[0]["externe_id"] != int(signal_id):
+                    raise IdentityError("Signalreferenz und externe Signal-ID widersprechen sich")
+                if rows and quelle is not None:
+                    source = _source(conn, quelle)
+                    if source is None or source["quellen_uid"] != rows[0]["quellen_uid"]:
+                        raise IdentityError("Signalreferenz und behauptete Quelle widersprechen sich")
+            elif quelle is not None:
+                if signal_id is None:
+                    raise IdentityError("Externe Signal-ID fehlt")
+                source = _source(conn, quelle, create=create)
+                if source is None:
+                    return None
+                if create:
+                    conn.execute("INSERT INTO signal_identitaeten(quellen_uid,externe_id) VALUES(?,?) "
+                                 "ON CONFLICT(quellen_uid,externe_id) DO NOTHING",
+                                 (source["quellen_uid"], int(signal_id)))
+                rows = conn.execute(base + "WHERE i.quellen_uid=? AND i.externe_id=?",
+                                    (source["quellen_uid"], int(signal_id))).fetchall()
+            else:
+                if signal_id is None:
+                    raise IdentityError("Signal-ID oder interne Referenz fehlt")
+                rows = conn.execute(base + "WHERE i.externe_id=?", (int(signal_id),)).fetchall()
+                if len(rows) &gt; 1:
+&gt;                   raise AmbiguousSignalIdentity(f"Signal-ID {signal_id} gehoert mehreren Quellen")
+E                   mqlkiscanner.signal_identity.AmbiguousSignalIdentity: Signal-ID 42 gehoert mehreren Quellen
+
+src\mqlkiscanner\db.py:403: AmbiguousSignalIdentity</failure></testcase><testcase classname="tests.test_fremdreview_katalog" name="test_real_catalogue_to_page_keeps_source_statistics_separate[False]" time="0.735" /><testcase classname="tests.test_fremdreview_katalog" name="test_real_catalogue_to_page_keeps_source_statistics_separate[True]" time="0.771" /><testcase classname="tests.test_fremdreview_katalog" name="test_qualified_studies_coexist_but_wrong_owner_stops_before_terminal" time="0.202"><failure message="AssertionError: Regex pattern did not match.&#10;  Expected regex: 'mehrdeutig'&#10;  Actual message: 'Signal-ID 42 gehoert mehreren Quellen'">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/pytest-of-tnickel/pytest-2202/test_qualified_studies_coexist0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000020E46AC7470&gt;
+
+    def test_qualified_studies_coexist_but_wrong_owner_stops_before_terminal(tmp_path, monkeypatch):
+        seed(tmp_path)
+        rows, _ = katalog.katalog_resultate(gescannt=set(), studien={})
+        def forbidden(*args, **kwargs):
+            raise AssertionError('No terminal may be touched for ambiguous study identity')
+        monkeypatch.setattr(equity_studie_ui.kursdaten, 'KursDaten', forbidden)
+        for row in rows:
+            katalog.require_eindeutige_studien_identitaet(row)
+&gt;       with pytest.raises(ValueError, match='mehrdeutig'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'mehrdeutig'
+E         Actual message: 'Signal-ID 42 gehoert mehreren Quellen'
+
+tests\test_fremdreview_katalog.py:98: AssertionError</failure></testcase><testcase classname="tests.test_fremdreview_katalog" name="test_study_session_cache_includes_source_and_contract_scope[quelle-beta]" time="0.004" /><testcase classname="tests.test_fremdreview_katalog" name="test_study_session_cache_includes_source_and_contract_scope[quelle_version-mql4]" time="0.003" /><testcase classname="tests.test_fremdreview_katalog" name="test_study_session_cache_includes_source_and_contract_scope[broker_server-OtherBroker]" time="0.003" /><testcase classname="tests.test_tradeserver_sync" name="test_signal_zeilen_abbildung_und_rundung" time="0.080" /><testcase classname="tests.test_tradeserver_sync" name="test_signal_zeilen_ohne_frische_ids_ohne_neu_markierung" time="0.086" /><testcase classname="tests.test_tradeserver_sync" name="test_signal_zeilen_tiefenanalyse_zaehlt_gelb" time="0.082" /><testcase classname="tests.test_tradeserver_sync" name="test_dokumente_sammeln_eigene_berichte_und_downloader" time="0.113" /><testcase classname="tests.test_tradeserver_sync" name="test_dokumente_sammeln_portfolio" time="0.094" /><testcase classname="tests.test_tradeserver_sync" name="test_dokumente_sammeln_uebergross_wird_vermerkt" time="0.116" /><testcase classname="tests.test_tradeserver_sync" name="test_sync_alle_happy_path_mit_diff" time="0.205" /><testcase classname="tests.test_tradeserver_sync" name="test_sync_alle_uebertraegt_neue_dokumente_mit_inhalt" time="0.133" /><testcase classname="tests.test_tradeserver_sync" name="test_sync_alle_demo_signale_bleiben_draussen" time="0.108" /><testcase classname="tests.test_tradeserver_sync" name="test_sync_alle_abbruch_bei_verbindungsfehler_ruft_abort" time="0.130" /><testcase classname="tests.test_tradeserver_sync" name="test_sync_alle_schreibt_nur_laufhistorie" time="0.182" /><testcase classname="tests.test_tradeserver_sync" name="test_verbindungs_status_nicht_konfiguriert_ohne_netz" time="0.074" /><testcase classname="tests.test_tradeserver_sync" name="test_verbindungs_status_cacht_ping_5_minuten" time="0.082" /><testcase classname="tests.test_tradeserver_sync" name="test_sync_alle_allgemeine_ausnahme_ruft_abort_nicht_ok" time="0.141" /><testcase classname="tests.test_report_pdf_ui" name="test_table_opens_pdf_report_and_detail_offers_all_pdfs_for_repeated_ids" time="0.665" /><testcase classname="tests.test_report_pdf_ui" name="test_report_panel_offers_final_and_intermediate_pdfs_for_exact_snapshot" time="0.562" /><testcase classname="tests.test_report_pdf_ui" name="test_portfolio_pdf_is_visible_on_scan_and_results_pages" time="1.489" /><testcase classname="tests.test_report_pdf_ui" name="test_prompt_tab_explains_engine_inputs_models_and_outputs" time="1.138" /><testcase classname="tests.test_portfolio_step" name="test_run_portfolio_sends_all_reports_and_stores_analysis" time="0.153" /><testcase classname="tests.test_portfolio_step" name="test_run_portfolio_without_key_is_skipped" time="0.078" /><testcase classname="tests.test_portfolio_step" name="test_run_portfolio_without_results_is_skipped" time="0.079" /><testcase classname="tests.test_portfolio_step" name="test_run_portfolio_stops_before_model_call" time="0.133" /><testcase classname="tests.test_portfolio_step" name="test_kandidat_json_traegt_ampel_und_urteil" time="0.004" /><testcase classname="tests.test_portfolio_step" name="test_report_basis_ignoriert_urteil" time="0.005" /><testcase classname="tests.test_portfolio_step" name="test_run_portfolio_payload_enthaelt_ausschluss_urteil" time="0.090" /><testcase classname="tests.test_portfolio_step" name="test_prompt_defaults_binden_engine_ampel" time="0.004" /><testcase classname="tests.test_portfolio_step" name="test_step5_portfolio_runs_and_displays" time="1.037" /><testcase classname="tests.test_portfolio_step" name="test_step5_portfolio_without_key_is_skipped" time="0.915" /><testcase classname="tests.test_portfolio_step" name="test_ergebnisse_page_shows_stored_portfolio_bericht" time="0.776" /><testcase classname="tests.test_portfolio_step" name="test_urteile_farbig_colors_verdict_words" time="0.003" /><testcase classname="tests.test_portfolio_step" name="test_urteile_farbig_escaped_html_im_bericht" time="0.003" /><testcase classname="tests.test_ui_source_identity" name="test_table_metadata_marks_and_notes_are_source_scoped" time="0.216" /><testcase classname="tests.test_ui_source_identity" name="test_snapshot_selection_pdf_and_study_cache_separate_equal_bytes" time="0.121" /><testcase classname="tests.test_ui_source_identity" name="test_one_sources_study_does_not_fill_another_sources_gap" time="0.120" /><testcase classname="tests.test_ui_source_identity" name="test_workflow_metrics_keep_both_source_keys" time="0.120" /><testcase classname="tests.test_ui_source_identity" name="test_catalog_artifacts_and_studies_follow_their_source_at_equal_sha" time="0.229" /><testcase classname="tests.test_ui_source_identity" name="test_legacy_numeric_fresh_marker_never_spreads_between_sources" time="0.121" /><testcase classname="tests.test_ui_source_identity" name="test_downloader_mirrors_only_the_selected_source" time="0.240" /><testcase classname="tests.test_ui_source_identity" name="test_v1_export_rejects_whole_snapshot_before_client_or_journal" time="0.122" /><testcase classname="tests.test_ui_source_identity" name="test_rest_keeps_external_id_and_exposes_distinct_source_keys" time="0.121" /><testcase classname="tests.test_ui_source_identity" name="test_portfolio_curves_do_not_overwrite_equal_external_ids" time="0.126" /><testcase classname="tests.test_ui_source_identity" name="test_pdf_reports_show_the_source_even_for_identical_names_and_ids" time="0.140" /><testcase classname="tests.test_ui_source_identity" name="test_results_app_table_and_csv_keep_source_rows[False]" time="1.064" /><testcase classname="tests.test_ui_source_identity" name="test_results_app_table_and_csv_keep_source_rows[True]" time="1.094" /><testcase classname="tests.test_pdf_reports" name="test_unicode_markdown_report_is_valid_readable_and_deterministic" time="0.021" /><testcase classname="tests.test_pdf_reports" name="test_final_and_portfolio_reports_are_clearly_labeled" time="0.030" /><testcase classname="tests.test_pdf_reports" name="test_empty_or_unknown_reports_fail_explicitly" time="0.003" /><testcase classname="tests.test_pdf_reports" name="test_safe_filenames_include_kind_id_and_snapshot_identity" time="0.003" /><testcase classname="tests.test_pdf_reports" name="test_portfolio_pdf_specs_do_not_mix_sources" time="0.028" /><testcase classname="tests.test_pdf_reports" name="test_reports_are_persisted_in_signal_snapshot_structure" time="0.052" /><testcase classname="tests.test_pdf_reports" name="test_portfolio_versions_are_persisted_separately" time="0.031" /><testcase classname="tests.test_pdf_reports" name="test_persist_replaces_stale_bytes_for_same_report_path" time="0.051" /><testcase classname="tests.test_pdf_reports" name="test_unchanged_pdf_is_reused_without_rendering" time="0.026" /><testcase classname="tests.test_pdf_reports" name="test_pdf_cache_repairs_damage_and_invalidates_renderer[pdf]" time="0.044" /><testcase classname="tests.test_pdf_reports" name="test_pdf_cache_repairs_damage_and_invalidates_renderer[metadata]" time="0.032" /><testcase classname="tests.test_pdf_reports" name="test_pdf_cache_repairs_damage_and_invalidates_renderer[missing]" time="0.042" /><testcase classname="tests.test_pdf_reports" name="test_pdf_cache_repairs_damage_and_invalidates_renderer[renderer]" time="0.038" /><testcase classname="tests.test_pdf_reports" name="test_save_run_materializes_all_available_pdfs" time="0.054" /><testcase classname="tests.test_pdf_reports" name="test_anhang_erkennt_nur_die_empfohlenen_strategien" time="0.003" /><testcase classname="tests.test_pdf_reports" name="test_anhang_zeigt_vorbehaltlichen_trueretdd_markiert" time="0.003" /><testcase classname="tests.test_pdf_reports" name="test_portfolio_pdf_mit_anhang_rendert_und_ohne_bleibt_klassisch" time="0.031" /><testcase classname="tests.test_pdf_reports" name="test_materialize_portfolio_pdf_durchreichung" time="0.037" /><testcase classname="tests.test_pdf_reports" name="test_anhang_sammelt_alle_berichte_je_strategie" time="0.003" /><testcase classname="tests.test_pdf_reports" name="test_portfolio_pdf_anhang_rendert_alle_berichtsteile" time="0.023" /><testcase classname="tests.test_portfolio_statistik" name="test_monatsrenditen_virtuelle_kurve_und_verlustmonat" time="0.004" /><testcase classname="tests.test_portfolio_statistik" name="test_monatsrenditen_ohne_datei_oder_basis_bleibt_leer" time="0.004" /><testcase classname="tests.test_portfolio_statistik" name="test_cluster_und_fenster" time="0.010" /><testcase classname="tests.test_portfolio_statistik" name="test_instrument_overlap_nur_relevante_paare" time="0.006" /><testcase classname="tests.test_portfolio_statistik" name="test_demo_ergebnisse_bleiben_draussen" time="0.003" /><testcase classname="tests.test_portfolio_statistik" name="test_portfolio_prompt_enthaelt_statistik_block" time="0.004" /><testcase classname="tests.test_portfolio_statistik" name="test_portfolio_prompt_leerer_default_fuellt_platzhalter" time="0.004" /><testcase classname="tests.test_portfolio_statistik" name="test_defaults_bleiben_mit_datei_synchron" time="0.003" /><testcase classname="tests.test_portfolio_statistik" name="test_run_portfolio_reicht_statistik_an_prompt" time="0.135" /></testsuite></testsuites>

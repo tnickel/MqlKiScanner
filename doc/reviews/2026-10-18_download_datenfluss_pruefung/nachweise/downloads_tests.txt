@@ -1,0 +1,5 @@
+........................................................................ [ 52%]
+................................................................         [100%]
+136 passed in 82.49s (0:01:22)
+COMMAND: python -m pytest tests/test_client_updates.py tests/test_downloader_client.py tests/test_quellen.py tests/test_quellen_stringzahlen.py tests/test_stufe0_ui.py tests/test_gesamt_review_hub_fixes.py -q -p no:cacheprovider
+EXITCODE: 0

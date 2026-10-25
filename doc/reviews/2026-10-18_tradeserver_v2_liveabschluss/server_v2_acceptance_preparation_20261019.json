@@ -1,0 +1,227 @@
+{
+  "reviewed_at_utc": "2026-10-19T07:57:41.459097+00:00",
+  "scope": "Read-only Tradeserver-v2 final-publication preparation. No new publication, POST/register/begin_run/upload/complete/abort, deploy, Scanner DB/settings write, PDF render, tests or models.",
+  "current_get_observation": {
+    "observed_at_utc": "2026-10-19T07:55:57.760918+00:00",
+    "authenticated_ping": {
+      "status": "ok",
+      "service": "MqlTradeMonitor",
+      "kiscannerApi": 2,
+      "supportedProtocolVersions": [
+        1,
+        2
+      ],
+      "protocolVersion": 2
+    },
+    "browser_status_http": 401,
+    "browser_status_uses_session_auth": true,
+    "meaning": "Current API/version/key accepted. API key alone cannot read browser status; no browser login was initiated. Current run/rows/documents/legacy state was not independently re-queried today."
+  },
+  "last_verified_remote_snapshot": {
+    "checked_at_utc": "2026-10-18T18:42:09.799101+00:00",
+    "scope": "Intermediate Run13 checkpoint; not global source/data/report completion",
+    "deployed_war_sha256": "89d081fc1190d41589e6a3c6a5548e051715fe4417c1de9e989882ed1e3e2615",
+    "sync_summary": {
+      "signale": 199,
+      "gespeichert": 199,
+      "geloescht": 0,
+      "dokumente": 0,
+      "uebertragen": 0,
+      "uebersprungen": 0,
+      "bytes": 0,
+      "fehler": [],
+      "abgebrochen": null,
+      "run_id": 13,
+      "server_zeit": "2026-10-18 20:36:58",
+      "dauer_s": 5.4
+    },
+    "server_readonly_audit": {
+      "KI_SIGNALS_legacy_count": 32,
+      "KI_SIGNALS_legacy_hash": "67aa01bc2f6a7cde79c81d99da9850348c5171795df57cea2abe679901ae3e08",
+      "KI_SIGNALS_backup_equal": true,
+      "KI_DOCUMENTS_legacy_count": 313,
+      "KI_DOCUMENTS_legacy_hash": "4fe1a542d43bcb18f6b91de4abd681127c1916b85552023a2ef510f6d1921d71",
+      "KI_DOCUMENTS_backup_equal": true,
+      "active_signals": 199,
+      "active_documents": 0,
+      "duplicate_signal_pairs": 0,
+      "legacy_owned_active_signals": 0,
+      "owner_pairs_sha256": "8a3f20d6c4c807dd4f3032757cf7b23061122037033a977868c5a142389322da",
+      "ampel_EXCLUDED": 18,
+      "ampel_GREEN": 5,
+      "ampel_RED": 78,
+      "ampel_WHITE": 80,
+      "ampel_YELLOW": 18,
+      "green_without_measured_annual_criteria": 0,
+      "invalid_document_owners": 0,
+      "document_blob_hash_mismatches": 0,
+      "min_calmar_jahr_min": 3.0,
+      "min_calmar_jahr_max": 3.0,
+      "drawdown_limit_pct_min": 50.0,
+      "drawdown_limit_pct_max": 50.0,
+      "v2_active": true,
+      "last_run_id": 13,
+      "last_run_status": "ok",
+      "last_run_signals_stored": 199,
+      "last_run_documents_total": 0,
+      "last_run_documents_uploaded": 0,
+      "last_run_documents_skipped": 0,
+      "last_run_bytes_transferred": 0,
+      "last_run_finished_at": "2026-10-18 20:36:58.882512",
+      "open_runs": 0
+    },
+    "atomic_snapshot_observation": {
+      "last_run_closed": true,
+      "open_runs": 0,
+      "stored_matches_active_count": true,
+      "note": "Observed completed snapshot; rollback/abort failure semantics remain covered by existing Java/H2 integration tests, not a new destructive live test"
+    },
+    "document_scope": {
+      "active_count": 0,
+      "legacy_count": 313,
+      "nonempty_v2_pdf_owner_example_proven_live": false,
+      "note": "Current report guard exports no unbound historical PDFs; nonempty composite-owner PDF assignment remains covered by Java/Python integration tests"
+    }
+  },
+  "private_readonly_helper": {
+    "path": "data/runs/liveabschluss_20261019/plans/prepare_tradeserver_v2_acceptance.py",
+    "sha256": "ce4a49ce2dde28ebe813756720cc7d958889a3d72551d2061d33378d3ea08db7",
+    "access": "single SQLite mode=ro/query_only=ON transaction; guarded existing schema; no init/mutation; production results_from_db(materialize_pdfs=False) and signal_zeilen; PDF specs/paths/sidecars/bytes are inspected without calling any renderer/collector/sync",
+    "run_again_after_sources_studies_reports": "Bundled Python with existing project PYTHONPATH; --output data/runs/liveabschluss_20261019/plans/tradeserver_v2_before_publish.json --label before_publish. Output must be new; never overwrite previous manifest. --get-ping is optional and issues GET only.",
+    "provisional_manifest": "data/runs/liveabschluss_20261019/plans/tradeserver_v2_provisional_reviewed_20261019.json",
+    "provisional_manifest_sha256": "7ec19277e212d1edba467eceb8f75649bdb9334c5d438bbe451b7f455efa80a9",
+    "provisional_signal_count": 203,
+    "provisional_sources": {
+      "mql5": 75,
+      "pelik": 39,
+      "vant": 19,
+      "robo": 33,
+      "zulu": 37
+    },
+    "exact_uid_provider_pairs_and_wire_rows": "Stored privately in the provisional manifest; regenerate after remaining approved work.203 is not a frozen final expectation.",
+    "provisional_current_pdf_count": 0,
+    "final_report_or_pdf_completion_proven": false
+  },
+  "virtual_model_wire_review": {
+    "checked_virtual_workflow_origins": 35,
+    "current_model_rows_with_visible_virtual_notice": 33,
+    "all_current_virtual_notices_survive_server_verdict_limit": true,
+    "maximum_current_virtual_verdict_length": 495,
+    "concrete_wrong_real_account_labels_or_lost_active_virtual_notices": [],
+    "established_contract": "kapitalbasisUsd continues to carry real initial deposit only; missing real capital remains null. Source virtual capital is not copied into that field. Virtual model provenance survives in urteil and equityMeasurementStatus. UI says own virtual CAGR/H1 virtual Trading-Equity and does not claim an actual real-account Calmar.",
+    "bounded_metadata_limit": "No dedicated fields transport the used virtual amount/source, study-overlay virtual flag or per-document full TradeSHA/reportBasis. This is an existing contract limit. Full actual model origin and report/evidence binding must be retained in the private expected manifest. No observed active virtual notice was lost; no new valuation gate or wire/schema change is proposed.",
+    "historical_rows": "Two old Pelican workflow heads have stale-error verdicts and no trusted current Equity-DD/Calmar. Their old virtual origin is not treated as an active model-label loss. The first private provisional diagnostic overflagged these; the reviewed manifest/helper applies the actual current-model condition."
+  },
+  "final_acceptance_criteria": [
+    "Recapture only after all approved source scans, studies, reports and mirrors finished; no concurrent publisher or stale GUI selection.",
+    "Expected owner set equals the manifest full sourceUid/provider-ID pair set, not a hardcoded 199 or the selected source-scan subset.",
+    "After root publishes, last completed run is the returned new run ID with status ok, finishedAt present, expected signals/documents and open_runs=0; last attempt must be this successful run.",
+    "Before complete the previous active snapshot remains visible; atomic commit/rollback semantics are contract/integration-test evidence, not re-tested destructively live.",
+    "Remote documentKeys exactly equal the intended current manifest, including skipped identical files; no extra stale or missing PDF. Empty PDF scope cannot prove nonempty owner assignment.",
+    "Each remote PDF owner pair matches a signal; docKey prefix uses the exact escaped UID/provider ID. Downloader originals retain their qualified source owner.",
+    "Compare every local PDF SHA256 and byte count with remote metadata AND actual BLOB/GET bytes; verify at least one actual current own PDF per included source, and all BLOB hashes via read-only audit if available.",
+    "Local current PDF input/cache hash, body SHA, reportBasis, currentComputedReportBasis and full current TradeSHA bind source evidence to exported PDF bytes. Server metadata itself has no separate reportBasis or full TradeSHA field per document.",
+    "Legacy tables retain 32 original signals and 313 original PDFs with both historical canonical hashes unchanged (same canonicalization as prior audit); do not compare these with active v2 counts.",
+    "Raw annual Calmar, configured minCalmarJahr/DD limit, approximate values and equityMeasurementStatus match payload; no server revaluation.",
+    "Virtual workflow notice survives the server's 1024-character verdict field; do not relabel virtual10000 as real kapitalbasisUsd. Generic H1 status alone does not prove real account capital.",
+    "Ping only proves API/version/auth. An unauthenticated/401 browser status cannot prove run closure, owner pairs, PDF hashes or legacy preservation; obtain authorized read-only server audit separately."
+  ],
+  "legacy_expected": {
+    "receiptSha256": "aad2faa4916f24a3d85185ac923fc68d119088d398fe90aadf99ba2662fea9a6",
+    "runId": 13,
+    "signals": 199,
+    "documents": 0,
+    "legacySignals": 32,
+    "legacyDocuments": 313,
+    "legacySignalCanonicalHash": "67aa01bc2f6a7cde79c81d99da9850348c5171795df57cea2abe679901ae3e08",
+    "legacyDocumentCanonicalHash": "4fe1a542d43bcb18f6b91de4abd681127c1916b85552023a2ef510f6d1921d71"
+  },
+  "source_references": [
+    {
+      "path": "src/mqlkiscanner/tradeserver_client.py",
+      "sha256": "d44a834e109e82ba96b1380633eade4badeb9cd7a652f0e7c0b341d616f427a0",
+      "subjects": [
+        "PROTOKOLL_VERSION=2",
+        "GET ping",
+        "register/signals/document/complete/abort are POST and were not called"
+      ]
+    },
+    {
+      "path": "src/mqlkiscanner/tradeserver_sync.py",
+      "sha256": "60193615aedb1053b185c438472390bef3f71ea2c099f03e48e1706f5aa42415",
+      "subjects": [
+        "signal_zeilen",
+        "_remote_identity",
+        "_eigene_berichte_aktuell",
+        "dokumente_sammeln",
+        "immutable PDF bytes/diff/full documentKeys"
+      ]
+    },
+    {
+      "path": "src/mqlkiscanner/pdf_reports.py",
+      "sha256": "810fb4dd8813392d87f1fa0b22c296610cc69a576c31c154552f6f6b7c263226",
+      "subjects": [
+        "result_pdf_spec",
+        "report_storage_path",
+        "input_sha256/pdf_sha256 sidecars"
+      ]
+    },
+    {
+      "path": "scripts/reference/live_abschluss.py",
+      "sha256": "47095719fb66930d7608afc4ca0bcc95021fe31c69d28ece11734ee5a06c051f",
+      "subjects": [
+        "publish lines225-230 exports all live workflow heads; not a selected source-scan subset"
+      ]
+    },
+    {
+      "path": "D:/AntiGravitySoftware/GitWorkspace/MqlTradeMonitor/Doku/MqlKiScanner_Integration.md",
+      "sha256": "fe77e7a05f122f10ab9a69936b98eb1b38bee3b8199fc1ab3bfae46ee222d5e7",
+      "subjects": [
+        "v2 contract lines1-89"
+      ]
+    },
+    {
+      "path": "D:/AntiGravitySoftware/GitWorkspace/MqlTradeMonitor/server/src/main/java/de/trademonitor/service/KiScannerService.java",
+      "sha256": "ae75bb02c223052900ee0a8b8f611e2003786df506a9d29542321792ac220c81",
+      "subjects": [
+        "mapRow verdict limit1024 lines136-184",
+        "atomic complete lines263-316",
+        "statusForDashboard lines371-394"
+      ]
+    },
+    {
+      "path": "D:/AntiGravitySoftware/GitWorkspace/MqlTradeMonitor/server/src/main/java/de/trademonitor/dto/KiScannerDtos.java",
+      "sha256": "311ed5ed7c6bef6d9ea3f93b6404a7ea962800ca62d8e7f061595bca7ee86902",
+      "subjects": [
+        "SignalRow fields41-98"
+      ]
+    },
+    {
+      "path": "D:/AntiGravitySoftware/GitWorkspace/MqlTradeMonitor/server/src/main/resources/templates/kiscanner.html",
+      "sha256": "4037091e39736ffb6828d350e5efbdd0c177109ad08bf4de1239e2977fa4d8ec",
+      "subjects": [
+        "detail labels/verdict/equity status and virtual limits lines575-594"
+      ]
+    },
+    {
+      "path": "tests/test_tradeserver_v2.py",
+      "sha256": "e670379e6393cd2fb6dc1469dc5fe471aa2886a4e242552bc0587ee967f88a5d",
+      "subjects": [
+        "existing UID/run/PDF regression contracts read only"
+      ]
+    },
+    {
+      "path": "tests/test_tradeserver_current_report_guard.py",
+      "sha256": "4dc24db18ce05007e9e0166c6ec22e7853d9cca7a76ccdb12bc18ad1cdb9704b",
+      "subjects": [
+        "existing current-evidence report export guards read only"
+      ]
+    }
+  ],
+  "read_only_review_limits": [
+    "No current authenticated browser session or fresh remote H2 audit was available; Run13 remains last proven remote data snapshot.",
+    "The current manifest is provisional while root continues approved work; normal publication includes all current live workflow heads, not only the scan subset.",
+    "With zero current PDFs, nonempty real PDF ownership/hash transfer is not yet proven live.",
+    "Atomically committed final state is observed after root publication; destructive abort/rollback behavior is covered by existing tests, not retried live."
+  ]
+}

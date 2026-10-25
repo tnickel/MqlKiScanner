@@ -1,0 +1,34 @@
+{
+  "read_only_gets": true,
+  "read_utc": "2026-10-18T11:10:13.751435+00:00",
+  "results": [
+    {
+      "port": 8089,
+      "path": "/api/v1/providers?limit=1&offset=0",
+      "http": 200,
+      "total": 216,
+      "first_weeks": null
+    },
+    {
+      "port": 8092,
+      "path": "/api/v1/providers/178177/vantage/trades.csv",
+      "http": 404
+    },
+    {
+      "port": 8092,
+      "path": "/api/v1/update/status",
+      "http": 200,
+      "state": "idle"
+    },
+    {
+      "port": 8092,
+      "catalogue_total": 199,
+      "audit_id_178177_in_catalogue": false,
+      "sample_in_catalogue": true,
+      "signal_id": "1419494",
+      "version": "vantage",
+      "read_utc": "2026-10-18T11:11:56.411960+00:00",
+      "http": 404
+    }
+  ]
+}

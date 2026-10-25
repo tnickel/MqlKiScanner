@@ -1,0 +1,6 @@
+actual_compiled_method=starteUpdateKaskade
+fresh_marker_age_hours=1; configured_window_hours=72
+download_manager=null; conversion_manager=null; gui_constructor_called=false
+actual_job={jobId=isolated-audit, state=done, phase=, done=0, total=0, message=, startedAt=2026-10-18T12:07:51, finishedAt=2026-10-18T12:07:51, ergebnis={signaleGeliefert=null, tradelistenNeu=null, tradelistenAktualisiert=null, tradelistenFehler=0, tradelistenAbgebrochen=false, katalogUebersprungen=true, datenstand=2026-10-18T09:07:51.470470500Z, hinweise=[]}, error=null}
+CONFIRMED: done without any catalogue OR trade download attempt
+EXITCODE: 0

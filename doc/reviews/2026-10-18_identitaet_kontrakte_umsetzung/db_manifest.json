@@ -1,0 +1,31 @@
+{
+  "purpose": "Persistence implementation evidence; no productive activation",
+  "sha256": {
+    "db_dryrun_command.json": "9e605093653bc4330469d4a95ff98987adaabe284703f27f8de6d1bec7c93042",
+    "db_dryrun_exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "db_dryrun_report.json": "f518b85a682348aeac7901d4db191a9113ebbf019e611b16f57e6ec8f34dc1cf",
+    "db_final_dryrun_command.json": "2df80a93d30f96f3830437c2a0893066288d3014178ab09076695b3a0d0d173c",
+    "db_final_dryrun_exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "db_final_dryrun_report.json": "174ca38d63ed3fa5171010b0514c8459af4fb81e5649c6864ec7ff92bf853ecc",
+    "db_final_payload_verification.json": "de39276a033d545d969bc9b20a0cd23869fbf9c8cd9130ad00fcc3c3d8cb9917",
+    "db_payload_verification.json": "de39276a033d545d969bc9b20a0cd23869fbf9c8cd9130ad00fcc3c3d8cb9917",
+    "db_README.md": "b54341e075d0b63872c45199f45a6a68259b3a019cf237977bd672f8cf942949",
+    "db_regression.log": "1ff9786c4486f383ea3103722b5125710dde94a582d8877635437d4a9fa03792",
+    "db_regression.xml": "b736a71121fbf364fb9d012e2ab256bcc65c4cf875b2fd35a78156fbe7243269",
+    "db_regression_command.json": "98bdcf2abd251c0fdddd08bbd4e4c95f38b8315bb90be3728ec71872b95007a7",
+    "db_regression_diagnostic.xml": "4c21b1acaa0038cf39154e5a0c9bcc6e218f091bcd6145a4e20a4c85dfaa2d51",
+    "db_regression_exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "db_regression_followup.log": "98f8ad785867f3de224ecc98e7bf17bae16b10c414521b79e160700ccb608b42",
+    "db_regression_followup.xml": "75ce05f4a13c24e3beda300a6bfb01b473a3a5b608bd8d8ad476401180b655d7",
+    "db_regression_followup_command.json": "4180beb5023508a553e3d58baed57efff385a17b52e9549001718cd3b932ed3e",
+    "db_regression_followup_exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "db_regression_intermediate_188.log": "694e4ed5eaf944914abf28fc88e3abad5d8cff0583fb0dde695cdb05147892ce",
+    "db_regression_intermediate_188.xml": "1f090b3634527797d3e88b8b6dca7e37d890db6650f4a45263d9589e4359de72",
+    "db_regression_intermediate_188_command.json": "140c0f32354b0f551c5bbf9410b4c445cbb5649cda73982f2065611af6494668",
+    "db_regression_intermediate_188_exit.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+    "db_run_regression.py": "b12835f321eed7d0a3d1de2b31d5f1de3b7a4988149a3787c2a25402164ea10b",
+    "db_source_state_verification.json": "87271c82fb1d15bee952f085bca354336ec82ec2227ca40d632a0fa59ac3bae8",
+    "db_verification.json": "2420b9729da4c6c15bb6e54894d190ebc150d407527376f69fbf7a58ffb2cd83",
+    "db_verify_copy.py": "6b25743088578440a776f5ac86151d445ed9bc664be17ce6ee5e7a306b1d5b5d"
+  }
+}

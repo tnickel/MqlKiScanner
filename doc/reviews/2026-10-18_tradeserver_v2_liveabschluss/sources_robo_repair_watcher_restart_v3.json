@@ -1,0 +1,7 @@
+{
+  "utc": "2026-10-18T18:43:19.9740871Z",
+  "pid": 1763180,
+  "expected_old_pid": 1351408,
+  "tests": 195,
+  "helper_invocation": "same trusted local helper as commandblock with explicit maintenance directory; no ExecutionPolicy change"
+}

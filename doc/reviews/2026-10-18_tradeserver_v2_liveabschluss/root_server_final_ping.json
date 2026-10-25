@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-18T17:00:19.480016+00:00",
+  "war_sha256": "89d081fc1190d41589e6a3c6a5548e051715fe4417c1de9e989882ed1e3e2615",
+  "info": {
+    "status": "ok",
+    "service": "MqlTradeMonitor",
+    "kiscannerApi": 2,
+    "supportedProtocolVersions": [
+      1,
+      2
+    ],
+    "protocolVersion": 2
+  }
+}

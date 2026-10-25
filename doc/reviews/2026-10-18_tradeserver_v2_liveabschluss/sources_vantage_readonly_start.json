@@ -1,0 +1,21 @@
+{
+  "utc": "2026-10-18T18:13:33.6731455Z",
+  "pid": 1670220,
+  "mode": "GET_OPTIONS_only",
+  "port": 8092,
+  "gui": false,
+  "updateStarter": false,
+  "stopfile": ".tmp/sources_vantage_readonly.stop",
+  "allowed_review_scope": [
+    178177,
+    1231244,
+    504191,
+    692325,
+    762452
+  ],
+  "other_history_writer_pid": 1580932,
+  "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+  "settings": "existing native defaults; optional rest_api.json absent, unchanged",
+  "failed_first_start": "sources_vantage_readonly_failed_start_181220.json",
+  "launcher_sha256": "be448df893fb4f66de7ea3bfe7ec88d6c28f8faf39e9c3e75d290287681c2173"
+}

@@ -1,0 +1,106 @@
+{
+  "prepared_utc": "2026-10-19T09:29:57.912838+00:00",
+  "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+  "job_id": "u-20261019-092038-e16ea0fc",
+  "runtime_package_sha256": "481dab17499d8b930a10e6f60b591fef09a7956c4212690f270b66984f9b4bac",
+  "preparation_only_not_final_scope": true,
+  "native_job_ongoing": true,
+  "reader_follower_pid": 201672,
+  "reader_waits_for_native_acceptance_pid": 60436,
+  "helper_sha256": {
+    "data\\runs\\liveabschluss_20261019\\vantage\\qualify_normal_exports.py": "026fe70bd9b8dd3b4d190011f9b03bfbd100367333089a741f42e95126af711f",
+    "data\\runs\\liveabschluss_20261019\\vantage\\test_qualify_normal_exports.py": "06a08da04876940f23acfbc926b364b48cdf48a1b225f59207bbfb9af1a1cf3a"
+  },
+  "frozen_helper_sha256": {
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\runs\\liveabschluss_20261019\\vantage\\accept_after_job.py": "3596fe42948a9dcaba7ae174997da1a5b8fcea3963247c76be78dd016d53bd30",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\runs\\liveabschluss_20261019\\vantage\\verify_completion.py": "e74a7cb22d4f8b0f8bc04efbbe7f9526ac4c437c67d4875ec0bcc55086d43690",
+    "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\data\\runs\\liveabschluss_20261019\\vantage\\qualify_normal_exports.py": "026fe70bd9b8dd3b4d190011f9b03bfbd100367333089a741f42e95126af711f"
+  },
+  "tests": {
+    "exit_code": 0,
+    "passed": 11,
+    "failed": 0,
+    "live_source_access": false,
+    "db_or_terminals_used": false,
+    "real_product_parser": true,
+    "cases": [
+      "test_partial_unknown_and_404_are_distinct_with_real_parser",
+      "test_changed_native_generation_fails_closed",
+      "test_changed_export_sha_fails_closed",
+      "test_real_parser_rejects_an_invalid_header_even_with_matching_sha",
+      "test_mutation_during_get_fails_closed",
+      "test_active_or_different_job_rejects_the_scope",
+      "test_http500_is_not_relabelled_as_a_404",
+      "test_duplicate_provider_id_rejects_scope",
+      "test_mismatching_version_rejects_scope",
+      "test_end_receipt_binds_scope_sha_and_prevents_duplicate_launch",
+      "test_failure_receipt_never_releases_a_scope"
+    ],
+    "recorded_utc": "2026-10-19T09:29:57.912838+00:00"
+  },
+  "export_rules": {
+    "required": [
+      "known provider and version vantage",
+      "native CSV/meta valid schema2, UTC, matching count and SHA",
+      "all positions have positive finite prices and lots, valid direction and timestamps",
+      "all money fields finite and historical USD normalization available"
+    ],
+    "http404_on_failed_export": true,
+    "truncated_is_export_gate": false,
+    "positive_total_equal_count": "counts match the currently offered native history; not all original-platform history",
+    "positive_total_greater_than_count": "partial delivered history; CSV can still be HTTP200",
+    "zero_total": "unknown total, exported metrics use null",
+    "source_complete_fields": [
+      "TradesHistoryComplete",
+      "TradeHistoryComplete"
+    ],
+    "source_complete_fields_currently_present": false,
+    "scanner_behavior": {
+      "Truncated": "advisory partial-history note",
+      "TradeHistoryComplete_false": "hard failure if a source sends it",
+      "missing_Complete_or_null_total": "no invented completeness"
+    }
+  },
+  "machine_binding": {
+    "provider_id_and_version": "GET /api/v1/providers/{id}; signalId + version",
+    "csv_sha": "SHA256 of exact raw GET /api/v1/providers/{id}/vantage/trades.csv including BOM",
+    "native_generation": "data/trades/trades_ID.csv + .meta and data/tradelisten/tradeliste_ID.csv + .meta; count, version2, UTC, identityBasis, CSV/meta SHA",
+    "native_opaque_generation_id": null,
+    "api_version": "v1",
+    "version": "vantage",
+    "native_schema_version": 2
+  },
+  "final_paths": {
+    "scope": "data\\runs\\liveabschluss_20261019\\vantage\\normal-final\\eligible_scope.json",
+    "end_receipt": "data\\runs\\liveabschluss_20261019\\vantage\\normal-final\\follower_exit.json",
+    "failure": "data\\runs\\liveabschluss_20261019\\vantage\\normal-final\\follower_failure.json",
+    "start_receipt": "data\\runs\\liveabschluss_20261019\\vantage\\normal-final\\follower_started.json",
+    "public_scope": "sources_vantage_normal_final_eligible_scope_20261019.json",
+    "public_end_receipt": "sources_vantage_normal_final_export_receipt_20261019.json"
+  },
+  "schema": {
+    "schema_version": 1,
+    "finalschema_version": 1,
+    "eligible_scope": "array of unique integer provider IDs with HTTP200 + CSV SHA + parser_ok + stable bound native generation",
+    "blocked_export_ids": "array of current native HTTP404 IDs",
+    "eligible_old19_ids": "old19 intersection eligible_scope",
+    "providers": "records source_uid,signal_id,version,http_status,eligible,csv_sha256,csv_rows,parser_ok,native_evidence,reported_total,truncated,history_scope,Complete fields",
+    "end_receipt_scope_sha_field": "eligible_scope_sha256",
+    "end_receipt_success_field": "exit_code=0",
+    "selection_recipe": "(normal TopN union configured Fix IDs union old19) intersection eligible_scope"
+  },
+  "consume_requirements": [
+    "successful end receipt exit_code0 and no failure receipt",
+    "SHA256 eligible_scope.json exactly equals end receipt eligible_scope_sha256",
+    "job_id exactly u-20261019-092038-e16ea0fc and expected source_uid/version vantage",
+    "unique provider IDs; each selected row HTTP200, eligible true, parser_ok true and nonempty csv_sha256",
+    "preserve truncated/unknown history labels; no workflow/forensic release inferred"
+  ],
+  "code_evidence": [
+    "vantage: RestApiServer.tradesCsv, metrics, normalization; TradeRecord.isValidClosedPosition; TradeStore.readVerified/saveTrades",
+    "scanner: DownloaderClient.trades_csv; ingest.hole_trades/metrics_zu_stats; pipeline incomplete-history guard and truncated advisory"
+  ],
+  "source_jobs_started_by_reader": 0,
+  "scanner_db_access": false,
+  "production_modules_changed": false
+}

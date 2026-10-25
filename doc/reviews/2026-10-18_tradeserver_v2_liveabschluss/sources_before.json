@@ -1,0 +1,90 @@
+{
+  "utc": "2026-10-18T16:38:09.031005+00:00",
+  "sources": [
+    {
+      "source": "mql5",
+      "url": "http://localhost:8089",
+      "health": {
+        "status": "ok",
+        "service": "MqlDownloader",
+        "instance": "Ryzen7950X",
+        "apiVersion": "v1",
+        "uptimeSeconds": 23798,
+        "serverTime": "2026-10-18T18:38:09.008",
+        "providers": 236,
+        "tokenRequired": false
+      },
+      "status": {
+        "state": "idle"
+      }
+    },
+    {
+      "source": "pelik",
+      "url": "http://localhost:8090",
+      "health": {
+        "status": "ok",
+        "service": "PelicanTrading",
+        "instance": "Ryzen7950X",
+        "apiVersion": "v1",
+        "uptimeSeconds": 23800,
+        "serverTime": "2026-10-18T18:38:09.0080782",
+        "providers": 640,
+        "tokenRequired": false
+      },
+      "status": {
+        "state": "idle"
+      }
+    },
+    {
+      "source": "vant",
+      "url": "http://localhost:8092",
+      "health": {
+        "status": "ok",
+        "service": "VantageMonitor",
+        "instance": "Ryzen7950X",
+        "apiVersion": "v1",
+        "uptimeSeconds": 23801,
+        "serverTime": "2026-10-18T18:38:09.0080782",
+        "providers": 199,
+        "tokenRequired": false
+      },
+      "status": {
+        "state": "idle"
+      }
+    },
+    {
+      "source": "robo",
+      "url": "http://localhost:8091",
+      "health": {
+        "status": "ok",
+        "service": "RoboMonitor",
+        "instance": "Ryzen7950X",
+        "apiVersion": "v1",
+        "uptimeSeconds": 23801,
+        "serverTime": "2026-10-18T18:38:09.0080782",
+        "providers": 200,
+        "tokenRequired": false
+      },
+      "status": {
+        "state": "idle"
+      }
+    },
+    {
+      "source": "zulu",
+      "url": "http://localhost:8093",
+      "health": {
+        "status": "ok",
+        "service": "ZuluMonitor",
+        "instance": "Ryzen7950X",
+        "apiVersion": "v1",
+        "uptimeSeconds": 23801,
+        "serverTime": "2026-10-18T18:38:09.0080782",
+        "providers": 200,
+        "tokenRequired": false
+      },
+      "status": {
+        "state": "idle"
+      }
+    }
+  ]
+}

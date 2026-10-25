@@ -1,0 +1,36 @@
+{
+  "args": [
+    "C:\\Users\\tnickel\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "pytest",
+    "tests/test_source_identity_contract.py",
+    "tests/test_download_snapshot_integrity.py",
+    "tests/test_audit_identitaet_20261018.py",
+    "tests/test_second_review_storage.py",
+    "tests/test_forensik_trade_sha.py",
+    "tests/test_second_review_pipeline.py",
+    "tests/test_review10_db.py",
+    "tests/test_studien_batch.py",
+    "tests/test_studien_waehrungsnachweis.py",
+    "tests/test_virtuelle_messanzeige.py",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--junitxml=D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\doc\\reviews\\2026-10-18_download_datenfluss_pruefung\\uebergabe_nachpruefung\\legacy_quelle_final.xml"
+  ],
+  "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner",
+  "started_utc": "2026-10-18T11:32:29.213707+00:00",
+  "purpose": "Legacy blank source fix plus existing DB/snapshot/study regressions",
+  "expected_cases": 148,
+  "new_parametrized_cases": 6,
+  "child_env_overrides": {
+    "PYTHONIOENCODING": "utf-8"
+  },
+  "source_sha256": {
+    "src/mqlkiscanner/db.py": "9907012924eb3f2504e573c97121acad881852a0c426ff77fd13e8ff86713ed2",
+    "tests/test_source_identity_contract.py": "d5156527a01e23ee29571a3e37d2cd9a582891cd14a7735eab9df8537240cf06"
+  },
+  "exit_code": 0,
+  "finished_utc": "2026-10-18T11:32:52.092486+00:00",
+  "elapsed_seconds": 22.88
+}

@@ -1,0 +1,53 @@
+{
+  "primary_tests": 196,
+  "primary_exit_code": 0,
+  "source_files_unchanged_during_primary": true,
+  "tested_source_sha256": {
+    "src/mqlkiscanner/db.py": "0158bb0a53e6af1feeeb9598c992403a467be67746c1fe86b4535c377ad1bae4",
+    "src/mqlkiscanner/signal_identity.py": "04b755866c8503835b2dcce580f83582fb2100fbdee42e338efd8af7fd51fc3a",
+    "src/mqlkiscanner/identity_migration.py": "3d53462cd9ffd450c368aa203d869150c467692c16e114c2284d1ddc50a46a2d",
+    "src/mqlkiscanner/agenten/dossier.py": "aa3f32b2c601b6df7f254094b563c6a8c24efd3cb3aac8bc1cb0642e83fde382",
+    "src/mqlkiscanner/agenten/budget.py": "152a210ecb84ab677c89bbfe1861913424ba5cdeefc26a4752c804db82ecda34",
+    "src/mqlkiscanner/agenten/journal.py": "b966d320f650959f3d1131b75f0a980d04232af79ffbc48378e37f7ed1d2a2a8"
+  },
+  "current_source_sha256": {
+    "src/mqlkiscanner/db.py": "d6e971f47ddaf7af8114a9bdc552ee2fcb3045d22a51a004e4195fc363f3140b",
+    "src/mqlkiscanner/signal_identity.py": "04b755866c8503835b2dcce580f83582fb2100fbdee42e338efd8af7fd51fc3a",
+    "src/mqlkiscanner/identity_migration.py": "3d53462cd9ffd450c368aa203d869150c467692c16e114c2284d1ddc50a46a2d",
+    "src/mqlkiscanner/agenten/dossier.py": "aa3f32b2c601b6df7f254094b563c6a8c24efd3cb3aac8bc1cb0642e83fde382",
+    "src/mqlkiscanner/agenten/budget.py": "152a210ecb84ab677c89bbfe1861913424ba5cdeefc26a4752c804db82ecda34",
+    "src/mqlkiscanner/agenten/journal.py": "b966d320f650959f3d1131b75f0a980d04232af79ffbc48378e37f7ed1d2a2a8"
+  },
+  "primary_mutated_test_files": [
+    "tests/test_identity_core_workflow.py",
+    "tests/test_ui_source_identity.py"
+  ],
+  "followup_tests": 31,
+  "followup_exit_code": 0,
+  "followup_unchanged": true,
+  "counts_by_test_module": {
+    "tests.test_source_identity_contract": 28,
+    "tests.test_review10_db": 5,
+    "tests.test_external_review_db": 4,
+    "tests.test_second_review_storage": 5,
+    "tests.test_forensik_trade_sha": 6,
+    "tests.test_download_snapshot_integrity": 13,
+    "tests.test_identity_migration": 19,
+    "tests.test_identity_db": 9,
+    "tests.test_identity_core_workflow": 10,
+    "tests.test_identity_core_review": 10,
+    "tests.test_journal_signal_identity": 11,
+    "tests.test_ui_source_identity": 21,
+    "tests.test_agent_budget_periods": 7,
+    "tests.test_audit_identitaet_20261018": 8,
+    "tests.test_quellen": 40
+  },
+  "production_activated_by_this_agent": false,
+  "current_sources_match_tested": false,
+  "source_change_after_tests": {
+    "path": "src/mqlkiscanner/db.py",
+    "only_removed_one_blank_eof_line": true,
+    "current_sha256": "d6e971f47ddaf7af8114a9bdc552ee2fcb3045d22a51a004e4195fc363f3140b",
+    "newline": "CRLF"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "time": "2026-10-18T20:09:08.777351",
+  "appended": [
+    {
+      "job_id": "u-87984d97-7ff7-4527-976e-2d5752e05f71",
+      "status": "fertig"
+    },
+    {
+      "job_id": "u-559dfc47-4a38-4426-b51d-59adf5ffb5db",
+      "status": "laeuft"
+    }
+  ]
+}

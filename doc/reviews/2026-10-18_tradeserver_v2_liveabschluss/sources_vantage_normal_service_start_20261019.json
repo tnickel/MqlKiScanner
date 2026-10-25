@@ -1,0 +1,28 @@
+{
+  "started_utc": "2026-10-19T07:18:12.543717+00:00",
+  "pid": 39932,
+  "mode": "normal VantageMonitorApp GUI with native UpdateStarter",
+  "runtime_jar_sha256": "481dab17499d8b930a10e6f60b591fef09a7956c4212690f270b66984f9b4bac",
+  "tested_target_class_count_matching_jar": 101,
+  "historical_test_results": {
+    "tests": 94,
+    "errors": 0,
+    "failures": 0
+  },
+  "source_target_unchanged": true,
+  "prior_readonly_process_absent": true,
+  "prior_port8092_free": true,
+  "readonly_stopfile_requested": true,
+  "prior_readonly_regular_exit_not_proven": true,
+  "health": {
+    "status": "ok",
+    "service": "VantageMonitor",
+    "instance": "Ryzen7950X",
+    "apiVersion": "v1",
+    "uptimeSeconds": 0,
+    "serverTime": "2026-10-19T09:18:15.6237773",
+    "providers": 167,
+    "tokenRequired": false
+  },
+  "checked_utc": "2026-10-19T07:18:17.109530+00:00"
+}

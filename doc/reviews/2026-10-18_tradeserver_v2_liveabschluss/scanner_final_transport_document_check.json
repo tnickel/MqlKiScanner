@@ -1,0 +1,16 @@
+{
+  "checked_at_utc": "2026-10-18T18:55:34.704429+00:00",
+  "readme_count": 11,
+  "missing_local_links": [],
+  "key_json_evidence_valid": [
+    "scanner_final_transport_bundled_summary.json",
+    "scanner_final_transport_bundled_hash_comparison.json",
+    "scanner_final_transport_bundled_runtime_comparison.json",
+    "server_v2_run13_checkpoint.json"
+  ],
+  "production_files_rechecked": 112,
+  "test_files_rechecked": 190,
+  "changes_since_after_full_manifest": [],
+  "core_frozen": true,
+  "note": "Documentation-only consistency check after final full suite; not an additional live source/data completion claim"
+}

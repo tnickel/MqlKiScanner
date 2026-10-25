@@ -1,0 +1,20 @@
+{
+  "utc": "2026-10-19T07:30:36.6719274Z",
+  "source": "mql5",
+  "source_uid": "0a8faef1-a341-4899-a199-a87166b69079",
+  "old_pid": 52344,
+  "new_pid": 54788,
+  "normal_window_close": true,
+  "idle_job_before_close": true,
+  "writer_stacks_absent": true,
+  "port_end_confirmed": true,
+  "offline_live_db_config_files_hash_verified": 22,
+  "prior_complete_offline_backup_retained": true,
+  "previous_jar_sha256": "59b6a9996628c040bfdcb36042eeecf1e68c52437ef1a3003a4f5fc138db37a7",
+  "installed_jar_sha256": "52c22f3ea025da5d3726726d2f0358277b8180ecaea7ac29aee36dc9c4d793d2",
+  "active_jar_or_classes_overwritten": false,
+  "source_update_post_sent": false,
+  "scanner_db_or_settings_modified": false,
+  "normal_application_start": true,
+  "source_data_files_rewritten": false
+}

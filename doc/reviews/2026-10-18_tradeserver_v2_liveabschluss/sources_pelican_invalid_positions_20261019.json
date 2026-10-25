@@ -1,0 +1,17 @@
+{
+  "checked_utc": "2026-10-19T07:29:40.976132+00:00",
+  "signal_id": 2096343,
+  "native_rows": 687,
+  "prior_20261018_backup_exists": true,
+  "same_bad_rows_in_original_backup": true,
+  "native_csv_sha256": "bea244cf2e1dcefdedd2eda02ef62a2c628dcfc8604f9ed81982f68ce2c6cbba",
+  "public_conclusion": "Both PEPEUSD records also carry exact zero opening and closing prices in the current authenticated source GET. Prices and PnL remain unchanged; HTTP 404 is correct.",
+  "invalid_price_record_count": 2,
+  "instrument_set": [
+    "PEPEUSD"
+  ],
+  "invalid_price_rows_preexisting": true,
+  "fresh_original_get_utc": "2026-10-19T07:30:52.167598400Z",
+  "original_source_prices_confirmed_zero": true,
+  "serialization_rounding_hypothesis_disproved_for_these_records": true
+}

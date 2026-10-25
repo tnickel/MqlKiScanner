@@ -1,0 +1,183 @@
+{
+  "rows_parsed_without_statistics_rerun": 1141,
+  "statistics_recomputed_only_for_parser_diagnoses": 15,
+  "categories": {
+    "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik": 15,
+    "keine Trades im lesbaren Export": 10
+  },
+  "diagnoses": [
+    {
+      "quelle": "zulu",
+      "id": 430016,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 4091
+    },
+    {
+      "quelle": "zulu",
+      "id": 426987,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 6431
+    },
+    {
+      "quelle": "zulu",
+      "id": 425666,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 4000
+    },
+    {
+      "quelle": "zulu",
+      "id": 428586,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 8318
+    },
+    {
+      "quelle": "zulu",
+      "id": 430608,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 11107
+    },
+    {
+      "quelle": "zulu",
+      "id": 431040,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 694
+    },
+    {
+      "quelle": "zulu",
+      "id": 429555,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 186
+    },
+    {
+      "quelle": "zulu",
+      "id": 430472,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 327
+    },
+    {
+      "quelle": "pelik",
+      "id": 2001115,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    },
+    {
+      "quelle": "pelik",
+      "id": 2053531,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    },
+    {
+      "quelle": "zulu",
+      "id": 385732,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 10389
+    },
+    {
+      "quelle": "zulu",
+      "id": 408444,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 12443
+    },
+    {
+      "quelle": "zulu",
+      "id": 428298,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 1286
+    },
+    {
+      "quelle": "zulu",
+      "id": 430074,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 2994
+    },
+    {
+      "quelle": "zulu",
+      "id": 428131,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 355
+    },
+    {
+      "quelle": "pelik",
+      "id": 2097770,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    },
+    {
+      "quelle": "zulu",
+      "id": 419789,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 41833
+    },
+    {
+      "quelle": "zulu",
+      "id": 429044,
+      "diagnosis": "Negative Open/Close-Zeitintervalle; nur finanzielle Teilstatistik",
+      "financial_only_partial": true,
+      "display_trades": 497
+    },
+    {
+      "quelle": "pelik",
+      "id": 2000036,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    },
+    {
+      "quelle": "pelik",
+      "id": 2000436,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    },
+    {
+      "quelle": "pelik",
+      "id": 2000638,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    },
+    {
+      "quelle": "pelik",
+      "id": 2000786,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    },
+    {
+      "quelle": "pelik",
+      "id": 2001116,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    },
+    {
+      "quelle": "pelik",
+      "id": 2063824,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    },
+    {
+      "quelle": "pelik",
+      "id": 2064608,
+      "diagnosis": "keine Trades im lesbaren Export",
+      "display_trades": 0
+    }
+  ],
+  "result_report_date_profile": {
+    "rows": 194,
+    "null": 194,
+    "empty_text": 0,
+    "zero_numeric": 0,
+    "nonempty": 0
+  },
+  "workflow_not_in_current_local_catalog": 23
+}

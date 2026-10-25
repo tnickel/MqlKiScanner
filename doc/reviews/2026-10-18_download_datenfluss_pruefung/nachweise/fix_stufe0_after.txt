@@ -1,0 +1,4 @@
+..................................................                       [100%]
+50 passed in 6.43s
+COMMAND: python -m pytest tests/test_stufe0_abschluss.py tests/test_client_updates.py tests/test_gesamt_review_hub_fixes.py -q -p no:cacheprovider
+EXITCODE: 0

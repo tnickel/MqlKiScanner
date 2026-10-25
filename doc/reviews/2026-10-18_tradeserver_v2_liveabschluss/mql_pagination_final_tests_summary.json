@@ -1,0 +1,27 @@
+{
+  "utc": "2026-10-18T18:29:13.882485+00:00",
+  "command": [
+    "mvn",
+    "-q",
+    "test"
+  ],
+  "package_performed": false,
+  "tests": {
+    "tests": 159,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "exit_code": 0,
+  "source_hashes": [
+    {
+      "path": "../MqlDownloader/src/downloader/SignalDownloader.java",
+      "sha256": "85566db1e97c19b118ca51fb080f2f515fb73a3dc7076a2dc19c9b3567d5b9bb"
+    },
+    {
+      "path": "../MqlDownloader/tests/downloader/SignalPaginationTest.java",
+      "sha256": "239535451066d25b5c38a0b2ed315e59084aaf7d219778351733226e1c892fce"
+    }
+  ],
+  "live_activation": false
+}

@@ -1,0 +1,24 @@
+{
+  "args": [
+    "D:\\DevelopmentTools\\apache-maven-3.9.6\\bin\\mvn.cmd",
+    "-o",
+    "-q",
+    "-Dtest=ReviewDataIntegrityTest#parallelDailyStoresPublishVerifiableWholeBundles,DataStoreBundleReadLockTest",
+    "test"
+  ],
+  "cwd": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\roboforex",
+  "started_utc": "2026-10-18T15:12:14.763412+00:00",
+  "purpose": "Pre-fix reproduction: existing parallel test and deterministic bundle-read lock regressions",
+  "offline_maven": true,
+  "child_env_overrides": {
+    "JAVA_HOME": "C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot",
+    "PATH_prefix": "C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.4.101-hotspot\\bin"
+  },
+  "source_sha256": {
+    "src/main/java/de/robomonitor/store/DataStore.java": "b6d48b1dfe07a516949da100f70eed82b58dde41f0a428c3055d52970c81c946",
+    "src/test/java/de/robomonitor/DataStoreBundleReadLockTest.java": "46d59f789a8ddcfea99ac7ebed29b1ee8eef055ff60435e5459fc4c686e725b3"
+  },
+  "exit_code": 1,
+  "finished_utc": "2026-10-18T15:12:18.781021+00:00",
+  "elapsed_seconds": 4.01
+}

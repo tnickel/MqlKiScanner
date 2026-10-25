@@ -1,0 +1,9 @@
+{
+  "pid" : 1669308,
+  "gui" : false,
+  "updateStarter" : false,
+  "instance" : "readonly-fixture",
+  "port" : 49338,
+  "utc" : "2026-10-18T18:13:11.824172200Z",
+  "mode" : "GET_OPTIONS_only"
+}

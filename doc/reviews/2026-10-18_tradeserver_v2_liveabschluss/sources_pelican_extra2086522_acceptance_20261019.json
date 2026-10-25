@@ -1,0 +1,47 @@
+{
+  "checked_utc": "2026-10-19T07:51:22.161899+00:00",
+  "source_uid": "a6bbb58c-510f-4ec5-a4cb-aa127eca126f",
+  "separate_scope": [
+    2086522
+  ],
+  "source_update_post": false,
+  "native_operation": "Existing PelicanMonitorApp.ladeTradeliste in same running JVM; full normal history window, fresh stats and open positions; no offline fallback",
+  "first_attempt_session_failure_preserved": true,
+  "runtime_session_manager_reloaded_from_existing_valid_file": true,
+  "native_start": {
+    "source_update_post": false,
+    "same_jvm_store_locks": true,
+    "pid": 41072,
+    "native_method": "PelicanMonitorApp.ladeTradeliste",
+    "signal_id": 2086522,
+    "started_utc": "2026-10-19T07:49:50.808865300Z"
+  },
+  "native_finish": {
+    "signal_id": 2086522,
+    "status": "StringProperty [value: Tradeliste geladen: Range Rocket Long]",
+    "ended_utc": "2026-10-19T07:49:55.494881800Z",
+    "native_task_ended": true,
+    "scanner_access": false,
+    "pid": 41072,
+    "native_success": true
+  },
+  "previous_rows": 359,
+  "current_rows": 531,
+  "native_csv_sha256": "c9277a5cf9f7e9357e772b7a1b54930756461ce2e16920eebbcefbad918dfdf1",
+  "native_meta_sha256": "d04baa67a403d448b41a907dd63032085bda83a2e509932b3123de6d912dabc3",
+  "all_original_trade_ids_retained": true,
+  "unique_trade_ids": 531,
+  "fresh_csv_and_meta_in_bound_operation": true,
+  "same_jvm_atomic_store_lock": true,
+  "unrelated_closed_files_hash_unchanged": 4602,
+  "rest_export_rows": 531,
+  "rest_export_sha256": "244440d8dfe2c7514008a7ac7d4e9024e05bd2ce392c34d768624abe621af274",
+  "native_currency": "USD",
+  "closing_dd": 37.28465971268412,
+  "original_top200_job_id_unchanged": "u-4445cd80-d661-4698-9450-7d24ae92c118",
+  "separate_one_provider_scope_accepted": true,
+  "limits": [
+    "This is a separate one-provider refresh outside the completed Top200 job.",
+    "Historical broker contracts and own H1 equity remain independent scanner checks."
+  ]
+}

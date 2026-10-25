@@ -1,0 +1,92 @@
+{
+  "checked_utc": "2026-10-19T08:12:26.086589+00:00",
+  "status": "verified",
+  "scope": "explicit Peli32 plus MQL45 only; Peli extra2086522 and prior FT5 excluded",
+  "expected": 77,
+  "verified": 77,
+  "errors": [],
+  "sqlite_uri_mode": "ro",
+  "query_only": true,
+  "sql_total_changes": 0,
+  "scanner_modules_imported": false,
+  "apis_terminals_models_accessed": false,
+  "gate_changes_made": false,
+  "time_basis": "Run receipts and db._now() are local client Europe/Berlin MESZ (UTC+02) on 2026-10-19; coordinator/start_ts also cross-checked in UTC; SQL timestamps resolve to seconds",
+  "source_summaries": {
+    "pelik": {
+      "source_uid": "a6bbb58c-510f-4ec5-a4cb-aa127eca126f",
+      "expected": 32,
+      "verified": 32,
+      "refresh": {
+        "total": 32,
+        "fetched": 32,
+        "failed": []
+      },
+      "coordinator_exit_code": 0,
+      "all_study_times_within_run": true,
+      "owner_ref_version_sha_and_both_paths_verified": true,
+      "basis_flags": {
+        "virtuell": 32
+      },
+      "report_statuses": {
+        "unvollstaendig": 18,
+        "ok": 13,
+        "skipped": 1
+      },
+      "reliability_flags": {
+        "False": 18,
+        "True": 13,
+        "None": 1
+      },
+      "source_path_ownership_kinds": {
+        "owner_uid_hash": 28,
+        "preserved_legacy_alias_path_bound_by_uid_ref_and_sha": 4
+      },
+      "unchanged_content_artifact_timestamps_predating_run": 32,
+      "errors": []
+    },
+    "mql5": {
+      "source_uid": "0a8faef1-a341-4899-a199-a87166b69079",
+      "expected": 45,
+      "verified": 45,
+      "refresh": {
+        "total": 45,
+        "fetched": 45,
+        "failed": []
+      },
+      "coordinator_exit_code": 0,
+      "all_study_times_within_run": true,
+      "owner_ref_version_sha_and_both_paths_verified": true,
+      "basis_flags": {
+        "nicht_virtuell_gespeichert": 45
+      },
+      "report_statuses": {
+        "ok": 39,
+        "unvollstaendig": 5,
+        "ok_teilmessung": 1
+      },
+      "reliability_flags": {
+        "True": 40,
+        "False": 5
+      },
+      "source_path_ownership_kinds": {
+        "owner_uid_hash": 44,
+        "preserved_legacy_alias_path_bound_by_uid_ref_and_sha": 1
+      },
+      "unchanged_content_artifact_timestamps_predating_run": 45,
+      "errors": []
+    }
+  },
+  "input_receipt_sha256": {
+    "targeted_studies_finished.json": "0ad2bbb018e0af4395f530d5b6495201cc754ea0f11fe4bc9ace08dde1ff263c",
+    "targeted_study_selection_pelik.json": "4618d81f49460220681538b1dfad91ba00655e6e18c1586b7b4632343e4f4a0e",
+    "studies_pelik\\studies_pelik.json": "b911216555f229047d8083fe3ef8bfa2a38984b19d24e7ed1e659c30e7d149ea",
+    "studies_pelik\\study_refresh.json": "a09d8a309e0e05bcb9767199469cd920c231ab0bc5b89b58b7f689060e27ef41",
+    "targeted_study_selection_mql5.json": "e46c43ea366b7015e126cc0043c22d5a05386e510edfd29d414bac93fa13e260",
+    "studies_mql5\\studies_mql5.json": "5350722ff71d5ebded38740b671dd1e93cb43898fa2805fc3079373df8522665",
+    "studies_mql5\\study_refresh.json": "0f4624c0c9e3e685a6db0db0093197a79a9bb70fbe487fe31302c76d1bdf3c6f"
+  },
+  "artifact_timestamp_note": "An unchanged content cache keeps its old fetched_at. ingest.hole_trades performs the HTTP CSV fetch before the content-SHA cache hit; receipt total=fetched and failed=[] are checked separately from study time.",
+  "interpretation": "A correct fresh binding is not a positive signal judgment. Virtual bases and unreliable H1 reports retain their original restrictions.",
+  "legacy_path_note": "ingest._kuerzel_verzeichnis explicitly preserves existing artifact paths. Five legacy alias paths are accepted only with the correct source UID/ref, current artifact version and four matching recorded SHAs plus both actual file hashes; no path or owner was changed."
+}

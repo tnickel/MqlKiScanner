@@ -1,0 +1,18 @@
+{
+  "checked_utc": "2026-10-19T07:36:31.357824+00:00",
+  "signal_id": 2101107,
+  "verified_empty_rows": 0,
+  "both_csv_and_meta_byte_unchanged": true,
+  "files": [
+    {
+      "path": "signals\\closed\\closed_2101107.csv",
+      "sha256": "cad8b36dfe19cdf0cd974c43a26cbeea3dd6ac420466c4bde7b3d89da6bece7d",
+      "unchanged": true
+    },
+    {
+      "path": "signals\\closed\\closed_2101107.meta",
+      "sha256": "885c2e6a2900eaaf4c0813e3e35c3138a13ccf47df2b5cb87efe6059132ae4cb",
+      "unchanged": true
+    }
+  ]
+}

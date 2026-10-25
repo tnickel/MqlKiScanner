@@ -1,0 +1,191 @@
+{
+  "checked_at_utc": "2026-10-19T08:24:50.630573+00:00",
+  "scope": "Defensive one-off Robo historical RStocks catalog metadata correction, preparation and COPY REHEARSAL ONLY. No production apply, source mutation, model, terminal or POST. Online backup used a mode=ro source while root independently continued another authorized source run.",
+  "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+  "source_id": 4,
+  "target_ids_to_refs": {
+    "93128696": 1099,
+    "93019895": 1102,
+    "93156209": 1161
+  },
+  "helper": {
+    "path": "data/runs/liveabschluss_20261019/plans/repair_robo_rst_catalog_claims.py",
+    "sha256": "484cc1b35d0041f6aa2836466d5f1d9fc0b1ab0c1aa1dfe9ccc262a16cb53470",
+    "default": "Creates a new private consistent online backup, lossless target row/metrics exports and copy-only rehearsal. Never acquires/modifies the production run lock in rehearsal.",
+    "production_apply_prepared_but_executed": false,
+    "apply_requirements": "Separate explicit --apply and --approved-rehearsal receipt from this exact helper, a new private output directory, production shared run lock, a fresh online backup, identical reviewed API200 normalized input and all exact preconditions rechecked; fresh copy rehearsal still runs before any production mutation.",
+    "guard_code_unchanged": true,
+    "normal_function": "db.katalog_upsert_many(robo, normalized current200 API rows)",
+    "source_database_code_sha256": "945ad23b18d5d5b3f5a4ab2e53f8d9c8a6478e7242ce08048fb9ae0c9f50cb7e"
+  },
+  "archive": {
+    "online_backup": "data/runs/liveabschluss_20261019/plans/robo_rst_metadata_rehearsal_v3_20261019/before.sqlite",
+    "sha256": "b489c2afbf71aabaa6341c1436e8f95d153e58fc03d8e08177b9cdff0b02d69e",
+    "consistent_online_backup": true,
+    "lossless_original_target_rows_exported": true,
+    "historical_metrics_files": [
+      {
+        "signal_ref": 1099,
+        "sha256": "6b30a74a199fd36236657b945a226312e64da65ef1df239398e67ca8bc0714ef",
+        "size_bytes": 471
+      },
+      {
+        "signal_ref": 1102,
+        "sha256": "a40e23690cfbab209879c9ff8fb74e3993b41767d05bcc344ba0fc0ce48a32fc",
+        "size_bytes": 467
+      },
+      {
+        "signal_ref": 1161,
+        "sha256": "98d9ae1e6669f2a717bce9469c3af0314efa0629ec328c9642b62c32b1c8256a",
+        "size_bytes": 463
+      }
+    ],
+    "metrics_bytes_and_records_retained_without_relabel": true
+  },
+  "transaction_rehearsal": {
+    "same_connection_actual_begin_immediate_before_three_updates": {
+      "connection": "2249904711760",
+      "begin_immediate_completed_before_corrections": true,
+      "all_200_identities_existing_in_transaction": true,
+      "narrow_updates_in_same_connection": 3
+    },
+    "normal_import_stored_deleted": [
+      200,
+      0
+    ],
+    "read_only_existing_schema_init_db_proven": true,
+    "observed_connection_sequence": [
+      {
+        "read_only_uri": true,
+        "database_kind": "readonly existing copy schema"
+      },
+      {
+        "read_only_uri": false,
+        "database_kind": "copy mutation transaction"
+      }
+    ],
+    "identity_insert_noops": 200,
+    "identity_authorizer_policy": "Only the exact canonical INSERT INTO signal_identitaeten(quellen_uid,externe_id) VALUES(?,?) ON CONFLICT(quellen_uid,externe_id) DO NOTHING is accepted at execute after UID/exact approved200-ID/current-ref checks and compiled as SQLITE_IGNORE. It performs no registry or allocation-sequence mutation. All other non-catalog INSERT/UPDATE/DELETE and DDL are denied, including source-owner writes.",
+    "verification": {
+      "all_non_catalog_tables_unchanged": true,
+      "other_source_catalog_unchanged": true,
+      "exact_200_api_identities": true,
+      "uid_ref_registry_unchanged": true,
+      "workflows_forensics_studies_reports_artifacts_unchanged": true,
+      "integrity": "ok",
+      "foreign_key_errors": 0
+    },
+    "all_non_catalog_table_values_including_sqlite_sequence_equal": true
+  },
+  "forced_later_guard_rollback": {
+    "copy_only": true,
+    "probe": {
+      "provider_id": 33170768,
+      "position": 200
+    },
+    "actual_unchanged_guard_error": "Plattformwiderspruch innerhalb derselben Signalidentitaet",
+    "three_updates_in_actual_transaction": {
+      "connection": "2249904711760",
+      "begin_immediate_completed_before_corrections": true,
+      "all_200_identities_existing_in_transaction": true,
+      "narrow_updates_in_same_connection": 3
+    },
+    "entire_database_table_values_including_sequence_equal_before_after": true,
+    "explanation": "A deliberately contradictory late MT-platform claim was supplied only to the separate rollback copy. The production platform guard rejected it after all three corrections and earlier normal catalog writes; the regular transaction rolled everything back."
+  },
+  "zero_dependencies_rechecked": {
+    "signal_fixierungen": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "signals": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "trade_files": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "forensik": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "analyses": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "subscriber_history": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "downloader_reports": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "ampel_verlauf": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "ampel_wechsel": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "signal_kommentare": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "signal_markierungen": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "equity_studien": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "agenten_laeufe": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "dossier_profil": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "dossier_beobachtungen": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    },
+    "trade_deltas": {
+      "1099": 0,
+      "1102": 0,
+      "1161": 0
+    }
+  },
+  "api_scope": {
+    "count": 200,
+    "normalized_sha256": "667aa63c55539a8509c42f06974d56fe3bef58400ce86fd5626e853df130941e",
+    "exact_owner_provider_platform_identities_preserved": true,
+    "raw_api_archived": true
+  },
+  "private_receipt": {
+    "path": "data/runs/liveabschluss_20261019/plans/robo_rst_metadata_rehearsal_v3_20261019/receipt.json",
+    "sha256": "1051d682e2c1eede9ed5f36795c72218bb0e718ec2e0c77af35c6d59a418f4cf"
+  },
+  "earlier_rehearsals": "Earlier copy-only attempts stopped because the strict authorizer rejected the production resolver existing-identity INSERT. Their directories/log are retained; no production operation occurred. The completedv3 receipt is the accepted result.",
+  "production_database_written": false,
+  "followup": "Root alone may review and invoke the separately prepared --apply path. This artifact does not execute it or relax platform rules."
+}

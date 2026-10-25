@@ -1,0 +1,61 @@
+{
+  "path": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\MqlDownloader\\target\\MqlDownloader-0.0.35-SNAPSHOT-jar-with-dependencies.jar",
+  "bytes": 51260413,
+  "sha256": "ff97255780e833a3ef185916e31508e6cacae17adaadf4eacf3f6cd6fa983ec5",
+  "classes": {
+    "rest/ProviderAge.class": {
+      "matchesTestedClasses": true,
+      "sha256": "cec407350d0f3362c52a2f7086c1e34032b040538f8760bdca3e42c5f78d5282"
+    },
+    "rest/ProviderAge$1.class": {
+      "matchesTestedClasses": true,
+      "sha256": "a78bf46aa8f6b075fc35e6a1210b393910959741b9f4a44dde5acee07e93805c"
+    },
+    "rest/ProviderAge$Snapshot.class": {
+      "matchesTestedClasses": true,
+      "sha256": "689cb71025dd721656cb5eae75a24367e85d44cf86fa5d8117e1043fbd747b72"
+    },
+    "rest/ProviderFiles.class": {
+      "matchesTestedClasses": true,
+      "sha256": "3d14886ed3414526925d20120894da4046c51b526bd0adadf8451c3b5f263a03"
+    },
+    "rest/RestApiServer.class": {
+      "matchesTestedClasses": true,
+      "sha256": "752940cda8acd4a99e82b4cca888c2f388b0e2cfbc1c13e3bcc1930f7cad5562"
+    },
+    "gui/ClientUpdateRunner.class": {
+      "matchesTestedClasses": true,
+      "sha256": "4e51747aa4cd6d8b84d405036caafa285483c98cdc764f675b3a4859aae3df7e"
+    },
+    "gui/DownloadManager.class": {
+      "matchesTestedClasses": true,
+      "sha256": "8fa787c9d21e185e2b546d3f09fca2f7909b498aea93c7eb51e43f14dc15ec5e"
+    },
+    "gui/MqlDownloaderGui.class": {
+      "matchesTestedClasses": true,
+      "sha256": "8590f724120f292785417cd4ae7a3e9e794018a8f437e0f3a09b1bda995de87c"
+    },
+    "downloader/SignalDownloader.class": {
+      "matchesTestedClasses": true,
+      "sha256": "7c47f08852c4accc6c89b9f5e5f058ed2a1f65f17ecfe13800ab98eb81a9fac9"
+    }
+  },
+  "deployedOrRestarted": false,
+  "latestTestRun": {
+    "tests": 148,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 148,
+    "command": "mvn test",
+    "headless": false
+  },
+  "packageBuildTestRun": {
+    "tests": 148,
+    "passed": 137,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 11,
+    "headless": true
+  }
+}

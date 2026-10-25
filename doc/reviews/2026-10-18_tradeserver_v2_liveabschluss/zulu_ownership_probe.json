@@ -1,0 +1,39 @@
+{
+  "samples": [
+    {
+      "requested_provider": 429450,
+      "status": 200,
+      "totalElements": 48396,
+      "rows": 100,
+      "owners": [
+        0
+      ],
+      "provider_names": [
+        "Manual"
+      ],
+      "ids_sha256": "1a5eea4b8c8a20ed2b35ed8455b1d380624cc41a009dbcc83d49130b6a7e5e67",
+      "close_range_ms": [
+        1791958058000,
+        1791987245000
+      ]
+    },
+    {
+      "requested_provider": 402995,
+      "status": 200,
+      "totalElements": 5725,
+      "rows": 100,
+      "owners": [
+        0
+      ],
+      "provider_names": [
+        "Manual"
+      ],
+      "ids_sha256": "8918c8522c90f300915fd18b60dfc074bbc046b71fdc210483d8fcdab635ec88",
+      "close_range_ms": [
+        1784631901000,
+        1792150314000
+      ]
+    }
+  ],
+  "cross_provider_first_page_identical": false
+}

@@ -1,0 +1,119 @@
+{
+  "recordedUtc": "2026-10-19T10:09:43.348410+00:00",
+  "status": "actual_intermediate_snapshot_verified",
+  "finalComplete": false,
+  "reasonNotFinal": "Vantage native215 update still running; report queue has accepted existing daily-budget boundary, other incomplete/stale workflow states remain visible.",
+  "remoteRunId": 14,
+  "signals": 204,
+  "documents": 95,
+  "currentOwnReports": 16,
+  "sourceOriginalPdfs": 79,
+  "sources": {
+    "zulu": 38,
+    "vant": 19,
+    "pelik": 39,
+    "mql5": 75,
+    "robo": 33
+  },
+  "reports": {
+    "classification": "partial_existing_budget_limit",
+    "accepted": true,
+    "queueExitCode": 2,
+    "budgetReason": "Agenten-Budget 2026-10-19 reicht nicht: 441737 verbraucht/reserviert, 59246 n\u00f6tig, Limit 500000.",
+    "budgetRejection": {
+      "kind": "day",
+      "period": "2026-10-19",
+      "usedOrReserved": 441737,
+      "nextReservation": 59246,
+      "limit": 500000
+    },
+    "allFailedPromptsBudgetOnly": [
+      {
+        "kind": "day",
+        "period": "2026-10-19",
+        "usedOrReserved": 441737,
+        "nextReservation": 59246,
+        "limit": 500000
+      }
+    ],
+    "completedPrompts": 16,
+    "failedPrompts": 1,
+    "skippedPrompts": 31,
+    "budgetLimits": {
+      "day": 500000,
+      "month": 5000000,
+      "run": 10000000
+    }
+  },
+  "scannerVerification": {
+    "integrity": "ok",
+    "foreign_key_errors": 0,
+    "workflow_rows": 204,
+    "catalog_only_rows": 2981,
+    "table_rows": 3185,
+    "unique_table_owners": 3185,
+    "current_forensics": 78,
+    "stale_forensics": 62,
+    "studies": 132,
+    "reliable_studies": 76,
+    "virtual_studies": 87,
+    "table_measured_dd": 48,
+    "ampel": {
+      "\ud83d\udfe2": 16,
+      "\ud83d\udfe1": 31,
+      "\ud83d\udd34": 86,
+      "\u26aa": 53,
+      "\u26d4": 18
+    },
+    "criteria": {
+      "schranke_eq_dd_pct": 50.0,
+      "min_calmar_jahr": 3.0,
+      "min_ertrag_pct_monat": 0.0,
+      "agenten_enabled": false
+    }
+  },
+  "actualRemote": {
+    "checked_at_utc": "2026-10-19T10:07:38.057338510Z",
+    "connection_mode": "existing WildFly-owned H2 TCP listener only",
+    "active_signals": 204,
+    "active_documents": 95,
+    "document_blob_hash_mismatches": 0,
+    "invalid_document_owners": 0,
+    "open_runs": 0,
+    "owner_and_lock_unchanged_after_read": true,
+    "deployed_war_sha256": "89d081fc1190d41589e6a3c6a5548e051715fe4417c1de9e989882ed1e3e2615",
+    "embedded_fallback": false,
+    "backup_database_opened": false,
+    "data_sql": "SELECT only",
+    "KI_SIGNALS_legacy_count": 32,
+    "KI_SIGNALS_legacy_hash": "67aa01bc2f6a7cde79c81d99da9850348c5171795df57cea2abe679901ae3e08",
+    "KI_DOCUMENTS_legacy_count": 313,
+    "KI_DOCUMENTS_legacy_hash": "4fe1a542d43bcb18f6b91de4abd681127c1916b85552023a2ef510f6d1921d71"
+  },
+  "comparison": {
+    "accepted": true,
+    "checksPassed": 827,
+    "failedOrGapChecks": [],
+    "explicitStringLimitsApplied": [],
+    "all52WireFieldsCompared": true,
+    "pdfBlobShaAndSizeCompared": true,
+    "ownersAndDisplayOrderCompared": true,
+    "virtualCapitalNoticePreserved": true
+  },
+  "inputSha256": {
+    "data/runs/liveabschluss_20261019/plans/reports_intermediate_20261019/finished.json": "63e612ba3b0a2948733d8f7ccb1d55ca9ffef285f27dd76a4d181d47de51b7a7",
+    "data/runs/liveabschluss_20261019/plans/reports_intermediate_20261019/reports_acceptance.json": "d80665455d69456ee1a4c77c55184b20b3fefb6b2e701249da9b73110bb66202",
+    "data/runs/liveabschluss_20261019/plans/reports_intermediate_20261019/before_publish.json": "7306e3bb5486bcdf16dfed8cfdbda81219a86ba2b8d1a48ba2b507521f538cf1",
+    "data/runs/liveabschluss_20261019/plans/reports_intermediate_20261019/publish/publish.json": "a7c5ac73fae41192d56dd6af0ebe2289d8c8a00fffe9b11c2dbef17df5be0535",
+    "data/runs/liveabschluss_20261019/plans/reports_intermediate_20261019/pdfs/inventory.json": "1289b00ba4651a88d5087573433fbe43f058a78feef9088071ecc3d64c8894d9",
+    "data/runs/liveabschluss_20261019/plans/reports_intermediate_20261019/verify/verify.json": "b4da8e53de00f172e6a9274bb14c18e657ea60ee3056cb90b5d6f923ee3c54b6",
+    "data/runs/liveabschluss_20261019/plans/reports_intermediate_20261019_tcp_audit.json": "2b56795d57009469d7cf52623236da8e72f4286a851c931998a96c81d9abd64c",
+    "data/runs/liveabschluss_20261019/plans/reports_intermediate_20261019_comparison.json": "1a2aa282c63b8cc177b71c8d90a980121d9199c96605147a2ca255f6c11dc4df"
+  },
+  "limits": [
+    "204 workflow heads are exported with their actual statuses; this does not mean204 newly successful forensic analyses.",
+    "16 current own reports plus79 source originals; source originals retain their documented historical basis.",
+    "35 virtual workflow rows retain virtual-capital notice; virtual studies do not prove real account drawdown.",
+    "No new model budgets or rating criteria; no Vantage whole-job success claim."
+  ]
+}

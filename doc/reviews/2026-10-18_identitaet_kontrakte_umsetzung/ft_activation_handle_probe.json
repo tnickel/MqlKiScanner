@@ -1,0 +1,91 @@
+{
+  "observed_utc": "2026-10-18T16:07:20.611222+00:00",
+  "platform": "win32",
+  "read_access": "GENERIC_READ",
+  "share_mode": "FILE_SHARE_DELETE",
+  "only_synthetic_files": true,
+  "matrix": [
+    {
+      "volume": "C:",
+      "held": [],
+      "replaced": true,
+      "error": null,
+      "live_bytes_after": "new-candidate",
+      "candidate_exists_after": false
+    },
+    {
+      "volume": "C:",
+      "held": [
+        "live"
+      ],
+      "replaced": false,
+      "winerror": 5,
+      "error": "PermissionError",
+      "live_bytes_after": "old-live",
+      "candidate_exists_after": true
+    },
+    {
+      "volume": "C:",
+      "held": [
+        "candidate"
+      ],
+      "replaced": true,
+      "error": null,
+      "live_bytes_after": "new-candidate",
+      "candidate_exists_after": false
+    },
+    {
+      "volume": "C:",
+      "held": [
+        "live",
+        "candidate"
+      ],
+      "replaced": false,
+      "winerror": 5,
+      "error": "PermissionError",
+      "live_bytes_after": "old-live",
+      "candidate_exists_after": true
+    },
+    {
+      "volume": "D:",
+      "held": [],
+      "replaced": true,
+      "error": null,
+      "live_bytes_after": "new-candidate",
+      "candidate_exists_after": false
+    },
+    {
+      "volume": "D:",
+      "held": [
+        "live"
+      ],
+      "replaced": false,
+      "winerror": 5,
+      "error": "PermissionError",
+      "live_bytes_after": "old-live",
+      "candidate_exists_after": true
+    },
+    {
+      "volume": "D:",
+      "held": [
+        "candidate"
+      ],
+      "replaced": true,
+      "error": null,
+      "live_bytes_after": "new-candidate",
+      "candidate_exists_after": false
+    },
+    {
+      "volume": "D:",
+      "held": [
+        "live",
+        "candidate"
+      ],
+      "replaced": false,
+      "winerror": 5,
+      "error": "PermissionError",
+      "live_bytes_after": "old-live",
+      "candidate_exists_after": true
+    }
+  ]
+}

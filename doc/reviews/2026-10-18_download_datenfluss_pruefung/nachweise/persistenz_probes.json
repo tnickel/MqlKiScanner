@@ -1,0 +1,38 @@
+{
+  "scope": "Isolated synthetic probes, temporary DB/files, no production reads/writes, no network/secrets",
+  "forensics_version": 19,
+  "ordinary_roundtrip": {
+    "scan_succeeded": true,
+    "snapshot_separate_from_mutable_input": true,
+    "snapshot_sha_matches_input_and_db": true,
+    "forensics_bound_to_snapshot_sha": true,
+    "forensics_current_after_reload": true,
+    "score_winrate_dd_match_reload": true,
+    "later_download_mutation_does_not_change_stored_snapshot": true
+  },
+  "mutation_between_analysis_and_persistence": {
+    "scan_reports_success": true,
+    "forensics_trade_count": 2,
+    "stored_snapshot_trade_count": 3,
+    "forensics_winrate": 50.0,
+    "stored_snapshot_winrate": 66.7,
+    "forensics_sha_claims_current_snapshot": true,
+    "reload_accepts_forensics_as_current": true
+  },
+  "catalog_reload_while_scan_lock_held": {
+    "manual_download_completed_despite_held_scan_lock": true,
+    "scan_reports_success": true,
+    "forensics_trade_count": 2,
+    "stored_snapshot_trade_count": 3,
+    "forensics_winrate": 50.0,
+    "stored_snapshot_winrate": 66.7,
+    "forensics_sha_claims_current_snapshot": true,
+    "reload_accepts_forensics_as_current": true
+  },
+  "missing_snapshot_reload": {
+    "snapshot_exists": false,
+    "reload_accepts_forensics_as_current": true,
+    "reload_reports_error": false,
+    "recorded_sha_present": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "baseline": "scanner_final_bundled_runtime_after.json",
+  "during": "scanner_final_transport_bundled_runtime_during.json",
+  "after": "scanner_final_transport_bundled_runtime_after.json",
+  "baseline_matches_after": true,
+  "during_matches_after": true,
+  "compared_fields": [
+    "executable",
+    "python_version",
+    "packages",
+    "source_module",
+    "loaded_modules",
+    "llm_tests_requested"
+  ],
+  "note": "Baseline package record predates this full run; an additional runtime/package record was taken during the run and compared after completion"
+}

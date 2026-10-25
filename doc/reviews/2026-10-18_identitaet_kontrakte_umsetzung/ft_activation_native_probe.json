@@ -1,0 +1,46 @@
+{
+  "observed_utc": "2026-10-18T16:08:16.779413+00:00",
+  "operation": "SetFileInformationByHandle FileRenameInfo ReplaceIfExists=True",
+  "candidate_access": "GENERIC_READ|DELETE",
+  "share_mode": "FILE_SHARE_DELETE",
+  "live_access": "GENERIC_READ",
+  "only_synthetic_files": true,
+  "matrix": [
+    {
+      "volume": "C:",
+      "held_live": false,
+      "native_rename_success": true,
+      "winerror": null,
+      "structure_offset": 20,
+      "live_bytes_after": "new-candidate",
+      "candidate_exists_after": false
+    },
+    {
+      "volume": "C:",
+      "held_live": true,
+      "native_rename_success": false,
+      "winerror": 5,
+      "structure_offset": 20,
+      "live_bytes_after": "old-live",
+      "candidate_exists_after": true
+    },
+    {
+      "volume": "D:",
+      "held_live": false,
+      "native_rename_success": true,
+      "winerror": null,
+      "structure_offset": 20,
+      "live_bytes_after": "new-candidate",
+      "candidate_exists_after": false
+    },
+    {
+      "volume": "D:",
+      "held_live": true,
+      "native_rename_success": false,
+      "winerror": 5,
+      "structure_offset": 20,
+      "live_bytes_after": "old-live",
+      "candidate_exists_after": true
+    }
+  ]
+}

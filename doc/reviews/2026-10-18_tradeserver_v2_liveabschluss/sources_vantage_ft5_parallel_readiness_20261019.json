@@ -1,0 +1,93 @@
+{
+  "checked_utc": "2026-10-19T07:25:27.513626+00:00",
+  "source_uid": "5a0c0980-d4d6-4662-9d4c-845c6df0e9ac",
+  "normal_update_status": {
+    "jobId": "u-20261019-092038-e16ea0fc",
+    "state": "running",
+    "phase": "tradelisten",
+    "done": 2,
+    "total": 215,
+    "message": "Ms Flower: 1720 / 7758 Trades geladen \u2026",
+    "startedAt": "2026-10-19T09:20:38",
+    "finishedAt": null,
+    "ergebnis": {
+      "signaleGeliefert": 215,
+      "tradelistenNeu": null,
+      "tradelistenAktualisiert": null,
+      "tradelistenFehler": 0,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": true,
+      "datenstand": null,
+      "hinweise": []
+    },
+    "error": null
+  },
+  "ft5_stable_current_bound_generations": true,
+  "all5_have_current_successful_rest_get": true,
+  "providers": [
+    {
+      "signal_id": 178177,
+      "scope_position_one_based": 215,
+      "normal_job_processed_by_counter": false,
+      "all4_native_files_unchanged_from_before_normal_update": true,
+      "rest_export_sha256": "6662234a20ac4241d72bce833dbd2d7e12aaa8ea2d54ebd56e699b73bea73283",
+      "rest_export_same_as_19_acceptance": true,
+      "trades_stored": 1091,
+      "trades_total_available": 1091,
+      "truncated": false,
+      "trade_time_basis": "UTC"
+    },
+    {
+      "signal_id": 1231244,
+      "scope_position_one_based": 98,
+      "normal_job_processed_by_counter": false,
+      "all4_native_files_unchanged_from_before_normal_update": true,
+      "rest_export_sha256": "56f21c7ec540a25d3b2617370346136431ea8b2329746d8b0d6fc4abba13039b",
+      "rest_export_same_as_19_acceptance": true,
+      "trades_stored": 254,
+      "trades_total_available": 254,
+      "truncated": false,
+      "trade_time_basis": "UTC"
+    },
+    {
+      "signal_id": 504191,
+      "scope_position_one_based": 130,
+      "normal_job_processed_by_counter": false,
+      "all4_native_files_unchanged_from_before_normal_update": true,
+      "rest_export_sha256": "7986cce2fc3243a8ab3c4cb911ad3f0b1851915d8392326ef68b5fdb2669494b",
+      "rest_export_same_as_19_acceptance": true,
+      "trades_stored": 1503,
+      "trades_total_available": 1503,
+      "truncated": false,
+      "trade_time_basis": "UTC"
+    },
+    {
+      "signal_id": 692325,
+      "scope_position_one_based": 122,
+      "normal_job_processed_by_counter": false,
+      "all4_native_files_unchanged_from_before_normal_update": true,
+      "rest_export_sha256": "49661f0a47012cee3caa21bdcb2ee1af6841e19ae07d794387cf2e88e4de5db8",
+      "rest_export_same_as_19_acceptance": true,
+      "trades_stored": 279,
+      "trades_total_available": 279,
+      "truncated": false,
+      "trade_time_basis": "UTC"
+    },
+    {
+      "signal_id": 762452,
+      "scope_position_one_based": 124,
+      "normal_job_processed_by_counter": false,
+      "all4_native_files_unchanged_from_before_normal_update": true,
+      "rest_export_sha256": "cf665a784aea045f49cb3eb3fe136750e65243be6177841ebb4db9846d6e5201",
+      "rest_export_same_as_19_acceptance": true,
+      "trades_stored": 196,
+      "trades_total_available": 196,
+      "truncated": false,
+      "trade_time_basis": "UTC"
+    }
+  ],
+  "limits": [
+    "These five generations are verified and stable; they have not yet been processed by the new normal update job.",
+    "Other providers may continue their source update; each provider is published under the native per-provider lock."
+  ]
+}

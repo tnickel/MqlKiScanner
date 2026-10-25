@@ -1,0 +1,173 @@
+{
+  "source_sha256_at_verification_start": "400fb80df72bd1759f9f84d66dfcbf8174d7f60ba137ba8ea7fc1c8f2627e98a",
+  "source_pre_backup_physical_sha_recorded": false,
+  "source_mtime_ns": 1792339372953997900,
+  "tables": {
+    "signals": {
+      "live_rows": 194,
+      "backup_rows": 194,
+      "all_values_equal": true,
+      "sha256": "33b3208c8598d568430e75ad24b7741a57b278c76cb6067e42b17d52780f203e"
+    },
+    "trade_files": {
+      "live_rows": 193,
+      "backup_rows": 193,
+      "all_values_equal": true,
+      "sha256": "f7ccfcb4b88da604f4d81c8f5314ded43a26ee4ce5970e43cab79ae58e831ea8"
+    },
+    "forensik": {
+      "live_rows": 163,
+      "backup_rows": 163,
+      "all_values_equal": true,
+      "sha256": "d4752bf6f389a6375c2d8aeeab9f25b01ef8900c387634812e563b6a32aed6f4"
+    },
+    "analyses": {
+      "live_rows": 2282,
+      "backup_rows": 2282,
+      "all_values_equal": true,
+      "sha256": "9c2e7f5585d61704872b36c7fbb950cd60ed178107f2af4a80eb5b7bef05187d"
+    },
+    "sqlite_sequence": {
+      "live_rows": 11,
+      "backup_rows": 11,
+      "all_values_equal": true,
+      "sha256": "0552e4029bacd23339d9698de779f8af669273cff46f0a7cb42e37618a320688"
+    },
+    "subscriber_history": {
+      "live_rows": 1305,
+      "backup_rows": 1305,
+      "all_values_equal": true,
+      "sha256": "a156a98ed165eba734f80065b905fa1d4d7ded1375058cc849d088428ed0f61a"
+    },
+    "downloader_reports": {
+      "live_rows": 68,
+      "backup_rows": 68,
+      "all_values_equal": true,
+      "sha256": "185339ce2719f384eb539dbca1fd0a96ef5425753e807ad16e8559fbc46a394a"
+    },
+    "tradeserver_sync_runs": {
+      "live_rows": 8,
+      "backup_rows": 8,
+      "all_values_equal": true,
+      "sha256": "68589fbd2d33e8e87582776e926248f3490a0a9c423b3e53a0161f82276c247a"
+    },
+    "ampel_verlauf": {
+      "live_rows": 834,
+      "backup_rows": 834,
+      "all_values_equal": true,
+      "sha256": "4b27f71ecfc86e84f2cf6481250ff40a5750bb0b23ffb9a1ad4aa8dad55ae3dc"
+    },
+    "ampel_wechsel": {
+      "live_rows": 240,
+      "backup_rows": 240,
+      "all_values_equal": true,
+      "sha256": "c4f5593cd65a7e4cf6fb9ee8b6c3e576bd80b2804348e597cb36b9040a3a2413"
+    },
+    "agenten_laeufe": {
+      "live_rows": 352,
+      "backup_rows": 352,
+      "all_values_equal": true,
+      "sha256": "e34e1c071b94fb3cc5238fb1dd87c3fb8623d5d3abf54a0f8f040ef996c076e7"
+    },
+    "agenten_schritte": {
+      "live_rows": 565,
+      "backup_rows": 565,
+      "all_values_equal": true,
+      "sha256": "3ceaaa6c7dda7541801f794be4176fc3c87e83b3c99e7228ea6d694110edd0eb"
+    },
+    "agenten_meldungen": {
+      "live_rows": 230,
+      "backup_rows": 230,
+      "all_values_equal": true,
+      "sha256": "6579f6c3d539d3a983f327de85957ba10b4a316be1db9096bc11bebf484919c3"
+    },
+    "agenten_steuerung": {
+      "live_rows": 10,
+      "backup_rows": 10,
+      "all_values_equal": false,
+      "sha256": "4df98c98eea6c495f1dcf5b869f7dba98a109f3e2d2b0269406e951a6767dd84"
+    },
+    "dossier_profil": {
+      "live_rows": 19,
+      "backup_rows": 19,
+      "all_values_equal": true,
+      "sha256": "6d75aace0c0a53b5d959822cd7e425ca887e6b3f323788066efc0dac55fcad8c"
+    },
+    "dossier_beobachtungen": {
+      "live_rows": 71,
+      "backup_rows": 71,
+      "all_values_equal": true,
+      "sha256": "41091096392cf6193c547c21cc13ee98883f184d85f1c71b0e7d5b2d0de15059"
+    },
+    "trade_deltas": {
+      "live_rows": 45,
+      "backup_rows": 45,
+      "all_values_equal": true,
+      "sha256": "d7dd946869a1eded3ea09211c70bc5f83104dc0a96c7d8102b8f66447628646d"
+    },
+    "markt_kontext": {
+      "live_rows": 10,
+      "backup_rows": 10,
+      "all_values_equal": true,
+      "sha256": "cbe30ef0245b0aae43cc16763ad3657f0e155e64a8b08bc86a48bedd2aeee405"
+    },
+    "datenquellen": {
+      "live_rows": 5,
+      "backup_rows": 5,
+      "all_values_equal": true,
+      "sha256": "393c8474aa3c12a29a8dec018c4fa3a88b1913b5db472163d9bd4d2e4872d5b8"
+    },
+    "quellen_artefakte": {
+      "live_rows": 3094,
+      "backup_rows": 3094,
+      "all_values_equal": true,
+      "sha256": "c121267d632831f2fbe025e325739f8bc53f2c8e3541d517dfca46435168abcb"
+    },
+    "client_updates": {
+      "live_rows": 41,
+      "backup_rows": 41,
+      "all_values_equal": true,
+      "sha256": "61b36e0d5e4401b9acf606dd1a1836bb2b86c705ea162206e3c6d8461a323ff4"
+    },
+    "katalog_signale": {
+      "live_rows": 1454,
+      "backup_rows": 1454,
+      "all_values_equal": true,
+      "sha256": "431f339314b050db2688a455bd13c0d45376f69ea3cadd92979b217b3b70fe08"
+    },
+    "katalog_sync": {
+      "live_rows": 5,
+      "backup_rows": 5,
+      "all_values_equal": true,
+      "sha256": "fa697b5c3e652db434a65c1eba5fa19951298cfb0fdf476fb8375284c48a8a85"
+    },
+    "equity_studien": {
+      "live_rows": 1572,
+      "backup_rows": 1572,
+      "all_values_equal": true,
+      "sha256": "da1e461e072daecfdc01eabbf26b7c38bd3ef45e2648691a22427c3c92f76376"
+    },
+    "signal_markierungen": {
+      "live_rows": 0,
+      "backup_rows": 0,
+      "all_values_equal": true,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "signal_kommentare": {
+      "live_rows": 4,
+      "backup_rows": 4,
+      "all_values_equal": true,
+      "sha256": "f8ccb56b0639534ff5484ab31c988c6835871a66a039a1473f84b0e018d5493b"
+    },
+    "llm_attempts": {
+      "live_rows": 0,
+      "backup_rows": 0,
+      "all_values_equal": true,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "schema_equal": true,
+  "source_sha256_at_verification_end": "400fb80df72bd1759f9f84d66dfcbf8174d7f60ba137ba8ea7fc1c8f2627e98a",
+  "source_mtime_ns_at_verification_end": 1792339372953997900,
+  "no_change_during_verification": true
+}

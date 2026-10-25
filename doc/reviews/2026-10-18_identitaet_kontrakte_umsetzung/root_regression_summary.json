@@ -1,0 +1,40 @@
+{
+  "utc": "2026-10-18T16:28:03.729182+00:00",
+  "unique_latest_results": {
+    "passed": 2673,
+    "skipped": 1
+  },
+  "unique_cases": 2674,
+  "runs": [
+    {
+      "file": "root_final_0.xml",
+      "counts": {
+        "passed": 1360,
+        "failed": 34
+      }
+    },
+    {
+      "file": "root_final_1.xml",
+      "counts": {
+        "passed": 1279,
+        "skipped": 1
+      }
+    },
+    {
+      "file": "root_final_recheck.xml",
+      "counts": {
+        "passed": 160
+      }
+    }
+  ],
+  "recheck_reason": "Three legacy test fixtures were ported to explicit source ownership / precise current validation messages. Production code was unchanged. Full file rechecks replace the same existing test nodes, not added counts.",
+  "rechecked_files": [
+    "tests/test_deepseek_weeks_validation.py",
+    "tests/test_handover_filter_contracts.py",
+    "tests/test_studien_waehrungsnachweis.py"
+  ],
+  "production_source_files_unchanged": 112,
+  "test_file_count": 176,
+  "paid_llm_tests_deselected": 4,
+  "activation_allowed": true
+}

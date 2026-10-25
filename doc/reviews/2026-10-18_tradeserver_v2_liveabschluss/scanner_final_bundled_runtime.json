@@ -1,0 +1,38 @@
+{
+  "executable": "C:\\Users\\tnickel\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+  "python_version": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "packages": {
+    "numpy": {
+      "version": "2.4.6",
+      "location": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages"
+    },
+    "streamlit": {
+      "version": "1.63.0",
+      "location": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages"
+    },
+    "pytest": {
+      "version": "9.1.1",
+      "location": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages"
+    },
+    "MetaTrader5": {
+      "version": "5.0.5735",
+      "location": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages"
+    },
+    "pandas": {
+      "version": "2.3.3",
+      "location": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages"
+    },
+    "requests": {
+      "version": "2.32.5",
+      "location": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages"
+    }
+  },
+  "source_module": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner\\src\\mqlkiscanner\\__init__.py",
+  "loaded_modules": {
+    "numpy": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\numpy\\__init__.py",
+    "streamlit": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\streamlit\\__init__.py",
+    "pytest": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\pytest\\__init__.py",
+    "MetaTrader5": "C:\\Users\\tnickel\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\MetaTrader5\\__init__.py"
+  },
+  "llm_tests_requested": false
+}

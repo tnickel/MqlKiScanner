@@ -1,0 +1,79 @@
+{
+  "source": "robo",
+  "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+  "status": "repair_blocked",
+  "phase": "normal_exit_backup",
+  "initial_job_id": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+  "initial_pid": 1351408,
+  "attempt_kind": "targeted_full_renewal",
+  "completed": [],
+  "failures": [],
+  "accepted": false,
+  "initial_status": {
+    "jobId": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+    "state": "done",
+    "phase": "deals",
+    "done": 200,
+    "total": 200,
+    "message": "Deals: 4 neu, 176 aktualisiert, 20 Fehler",
+    "startedAt": "2026-10-18T18:42:00",
+    "finishedAt": "2026-10-18T20:34:17",
+    "ergebnis": {
+      "signaleGeliefert": 200,
+      "tradelistenNeu": 4,
+      "tradelistenAktualisiert": 176,
+      "tradelistenFehler": 20,
+      "tradelistenAbgebrochen": false,
+      "katalogUebersprungen": false,
+      "datenstand": "2026-10-18T20:34:17",
+      "hinweise": [
+        "20 Deal-Downloads fehlgeschlagen (Details: data/robomonitor.log)"
+      ],
+      "tradelistenOhneAbonnenten": 0
+    },
+    "error": null
+  },
+  "checked_utc": "2026-10-18T18:42:12.358781+00:00",
+  "repair_ids": [
+    72166283,
+    37293345,
+    27406010,
+    7776453,
+    37371407,
+    34150222,
+    37232470,
+    37155456,
+    77004108,
+    37173630,
+    37009091,
+    7752268,
+    37346461,
+    37275457,
+    37107389,
+    37353857,
+    27215488
+  ],
+  "unsupported": [
+    {
+      "signal_id": 93128696,
+      "name": "TradingGoldTrade",
+      "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+      "observed_local_time": "2026-10-18 19:28:28"
+    },
+    {
+      "signal_id": 93019895,
+      "name": "TrendInvestSignal",
+      "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+      "observed_local_time": "2026-10-18 19:31:56"
+    },
+    {
+      "signal_id": 93156209,
+      "name": "SP500ETF",
+      "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+      "observed_local_time": "2026-10-18 19:51:48"
+    }
+  ],
+  "total": 17,
+  "done": 0,
+  "error": "Normal exit or offline backup failed; inspect private log"
+}

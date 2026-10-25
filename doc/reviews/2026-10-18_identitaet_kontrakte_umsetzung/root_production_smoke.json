@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-18T16:29:22.217354+00:00",
+  "http_health": 200,
+  "port": 8504,
+  "process_id": 1337240,
+  "process_running": true,
+  "workflow_results_loaded": 194,
+  "unique_source_keys": 194,
+  "catalogue_rows": 1454,
+  "pins": 15,
+  "active_studies": 0,
+  "production_smoke_external_network_allowed": false,
+  "materialize_pdfs": false,
+  "current_forensic_results": 0
+}

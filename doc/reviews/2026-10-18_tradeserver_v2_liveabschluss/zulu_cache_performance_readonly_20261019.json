@@ -1,0 +1,230 @@
+{
+  "recorded_utc": "2026-10-19T09:20:47.818142+00:00",
+  "scope": "Read-only performance diagnosis of running Zulu35 study; no production changes",
+  "source_signal": {
+    "id": 304366,
+    "name": "SignalGuide",
+    "trade_rows": 9250,
+    "raw_fx_symbols": [
+      "AUDCAD",
+      "AUDCHF",
+      "AUDNZD",
+      "AUDUSD",
+      "CADCHF",
+      "CHFJPY",
+      "EURCAD",
+      "EURCHF",
+      "EURGBP",
+      "EURJPY",
+      "EURNZD",
+      "EURUSD",
+      "GBPCAD",
+      "GBPJPY",
+      "GBPUSD",
+      "NZDCAD",
+      "NZDCHF",
+      "NZDUSD",
+      "USDCAD",
+      "USDCHF",
+      "USDJPY",
+      "USDMXN"
+    ],
+    "naive_trade_range": [
+      "2015.09.28 14:11:58",
+      "2026.04.23 18:18:18"
+    ],
+    "loader_rule": "One widest whole-signal time window for every traded symbol, extended for GMT candidates."
+  },
+  "consistent_readonly_snapshot": {
+    "observed_utc": "2026-10-19T09:14:20.130240+00:00",
+    "transaction_s": 1.2033388000008927,
+    "mode": "ro",
+    "query_only": true,
+    "total_changes": 0,
+    "database_bytes": 1618436096,
+    "database_copied": false,
+    "retained_attempt_ranges": 92669,
+    "retained_attempt_ranges_since_run_start": 36749,
+    "retained_bundled_call_starts_since_run_start": 4000,
+    "by_server": {
+      "ActivTradesMarkets-Server": {
+        "symbol_pairs": 25,
+        "retained_attempt_ranges_since_start": 10907,
+        "retained_bundled_call_starts": 1938
+      },
+      "Tickmill-Live": {
+        "symbol_pairs": 25,
+        "retained_attempt_ranges_since_start": 24134,
+        "retained_bundled_call_starts": 1842
+      },
+      "VantageMarkets-Live 10": {
+        "symbol_pairs": 11,
+        "retained_attempt_ranges_since_start": 1708,
+        "retained_bundled_call_starts": 220
+      }
+    },
+    "GBPJPY": [
+      {
+        "server": "ActivTradesMarkets-Server",
+        "cached_bars": 102939,
+        "retained_attempt_ranges": 379,
+        "bundled_call_starts": 76,
+        "empty_origin_ranges": 379,
+        "first_call_utc": "2026-10-19T09:07:00.157773+00:00",
+        "last_call_utc": "2026-10-19T09:07:14.002111+00:00",
+        "gap_lengths_hours_examples": [
+          23,
+          46,
+          47,
+          48,
+          56,
+          70,
+          71,
+          75
+        ]
+      },
+      {
+        "server": "Tickmill-Live",
+        "cached_bars": 50985,
+        "retained_attempt_ranges": 1053,
+        "bundled_call_starts": 82,
+        "empty_origin_ranges": 1053,
+        "first_call_utc": "2026-10-19T08:57:02.733893+00:00",
+        "last_call_utc": "2026-10-19T08:57:40.102244+00:00",
+        "gap_lengths_hours_examples": [
+          22,
+          26,
+          46,
+          47,
+          51,
+          70,
+          74,
+          94
+        ]
+      }
+    ],
+    "examined_signal_raw_symbol_feed_pairs": 49,
+    "examined_origin_gap_ranges_empty_in_snapshot": 32652,
+    "examined_origin_gap_ranges_with_bars": 0
+  },
+  "separate_bar_refresh_readonly_snapshot": {
+    "observed_utc": "2026-10-19T09:16:24.630234+00:00",
+    "transaction_s": 0.893529199999648,
+    "total_changes": 0,
+    "examined_feed_symbol_pairs": 61,
+    "h1_bar_rows_with_geladen_am_since_study_start": 0,
+    "meaning": "Observed cache activity updated attempt metadata; these 61 pairs did not store refreshed bars since this run began."
+  },
+  "findings": [
+    {
+      "path": "src/mqlkiscanner/kurs_cache.py",
+      "line": 234,
+      "certainty": "code and isolated SQL verified",
+      "fact": "Every original gap save executes combined MIN(epoch),MAX(epoch) across all finalized bars of this feed/symbol, even for empty responses. This aggregate traverses the pair, rather than two indexed endpoint seeks.",
+      "cost_shape": "O(gap_saves * cached_symbol_bars)"
+    },
+    {
+      "path": "src/mqlkiscanner/kurs_cache.py",
+      "line": 247,
+      "certainty": "code and actual EXPLAIN plan verified",
+      "fact": "Every original gap save executes global DELETE WHERE gueltig_bis<=now. No expiry index exists in actual schema; EXPLAIN reports SCAN h1_abrufversuche.",
+      "cost_shape": "O(gap_saves * global_attempt_rows); grows with accumulated gap state"
+    },
+    {
+      "path": "src/mqlkiscanner/kursdaten.py",
+      "line": 412,
+      "certainty": "code and matching retained attempt timestamps",
+      "fact": "SDK gap ranges already bundle old internally bounded gaps within 31 days, but speichere remains inside the original-gap loop. ~1000 attempt rows therefore do not imply ~1000 SDK calls.",
+      "gap_semantics": "Each original range retains its own TTL. Existing bridge bars returned by broad SDK calls are discarded, preserving original cached OHLC."
+    },
+    {
+      "path": "src/mqlkiscanner/kurs_cache.py",
+      "line": 124,
+      "certainty": "current code contract",
+      "fact": "Only actual finalized H1 bars prove coverage; internal empty ranges become eligible again after 24h. No calendar classification is used. This is why old empty ranges are retried."
+    },
+    {
+      "path": "src/mqlkiscanner/studien_batch.py",
+      "line": 325,
+      "certainty": "current code contract; per-signal invocation count not instrumented",
+      "fact": "If first reconstruction is not reliable, each additional feed gets a complete reconstruction, intentionally multiplying distinct feed/symbol gap work. Cache remains separated by terminal/server/exact symbol."
+    },
+    {
+      "path": "src/mqlkiscanner/forensics/equity_rekonstruktion.py",
+      "line": 604,
+      "certainty": "current code contract",
+      "fact": "Every symbol receives the widest complete signal window, not only that symbol's actual trade interval; safe later scope optimization needs proof that GMT/FX and timing evidence stay identical."
+    },
+    {
+      "path": "src/mqlkiscanner/kursdaten.py",
+      "line": 456,
+      "certainty": "code bound only; no live RPC profiling",
+      "fact": "An empty _hole_terminal_h1 response can trigger 3 sleeps of2seconds and4SDK reads total. This is not evidence that the present bundled responses were empty: they may contain known bridge bars."
+    }
+  ],
+  "isolated_benchmark": {
+    "synthetic_bars": 100000,
+    "synthetic_attempts": 93000,
+    "combined_minmax_median_s": 0.006710000000111904,
+    "combined_minmax_vm_steps_floor_1000": 1000000,
+    "first_plus_last_median_s": 2.499999936844688e-06,
+    "global_delete_unindexed_median_s": 0.0026690499998949235,
+    "global_delete_indexed_median_s": 8.000006346264854e-07,
+    "cleanup_sql_predicate_unchanged": true,
+    "same_source_speichere_equivalence_cases": 13,
+    "same_source_speichere_all_pass": true,
+    "additional_sql_edge_cases": 9,
+    "important_limit": "These are synthetic local costs, not an exclusive attribution of live process CPU or an end-to-end speedup guarantee."
+  },
+  "smallest_unapplied_proposal": {
+    "path": "data/runs/liveabschluss_20261019/zulu_recovery/performance_readonly/kurs_cache_minmax_expiry_index_PROPOSAL_NOT_APPLIED.diff",
+    "sha256": "88152666d19b2bb307a80c897efc06818d4788d79eadaea6841c599776fc32df",
+    "applied": false,
+    "production_source_sha256_unchanged": "392dd7f3c89a4350c2b34a7e991a1ca647ac31925e9aebde98b4935446e770b7",
+    "changes": "Two indexed first/last finalized-bar lookups plus an expiry index. Keep global cleanup SQL, TTLs, original gaps, bars, RPC logic and all forensic rules unchanged.",
+    "activation": "Only in a separately reviewed idle window after current study ends. No schema or source activation during current run.",
+    "expiry_index_vs_feed_local_cleanup": {
+      "expiry_index": "Recommended minimal semantic change: same global cleanup, planner seeks expired range. Schema/index creation must wait for a separately approved idle activation, never during current study.",
+      "feed_symbol_local": "Can reduce scans using current primary-key prefix, but changes global cleanup into local cleanup and leaves other feeds expired metadata until used; storage cleanup/state changes. Not the smallest semantic-preserving proposal.",
+      "no_global_loop_broadening": "No proposed reclassification of empty intervals, no calendar assumptions, no shortened retries, no invented coverage."
+    }
+  },
+  "current_progress_observation": {
+    "gesamt": 35,
+    "aktuell": 16,
+    "gerechnet": 16,
+    "phase": "rechnet",
+    "aktuelles_signal": "zulu:407191 · AUDCAD NZDCAD 100PA",
+    "fehler": [],
+    "fertig": false
+  },
+  "limitations": [
+    "Attempt rows are latest keyed state, not an append-only RPC log; exact total RPC retries and time per signal cannot be recovered from them.",
+    "No exclusive CPU profile was taken, so the measured structural amplification is a proved avoidable cost, not proof of its exact share of wall time.",
+    "Different empty-gap widths (including22,47,70hours) are not classified as weekends or holidays.",
+    "No TTL, gap coverage, calendar, broker, price, tick, or positive-verdict rule was changed."
+  ],
+  "private_evidence": [
+    {
+      "path": "data/runs/liveabschluss_20261019/zulu_recovery/performance_readonly/cache_snapshot_private.json",
+      "sha256": "004cfe4c59170507d77589d973387e812dfd1a21302da19e3a203f2a3180b7d5"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/zulu_recovery/performance_readonly/bar_refresh_snapshot_private.json",
+      "sha256": "0d88c0f86d3b3d42a7c41e79df56b526da8db3925f9edb0cde4b2b65356f71fc"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/zulu_recovery/performance_readonly/synthetic_sql_benchmark_private.json",
+      "sha256": "cc0d18cdcd090bf09471e24e62173756733236f1d8006e94f4c9fb7198898efc"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/zulu_recovery/performance_readonly/unapplied_patch_validation_private.json",
+      "sha256": "08206ec899382b8919e099a3c5504d3516ebda1fc3dfd93162f39994aa7f4618"
+    },
+    {
+      "path": "data/runs/liveabschluss_20261019/zulu_recovery/performance_readonly/source_copy_equivalence_private.json",
+      "sha256": "e90f3eb7b3dcac3a6eb19fcf921566a878d4988cd8aec15d7ae228a4b49b9fa3"
+    }
+  ],
+  "studies35_binding_audit": "Pending actual finished receipt; not started while production process is active."
+}

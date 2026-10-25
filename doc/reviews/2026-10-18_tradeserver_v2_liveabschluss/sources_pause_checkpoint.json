@@ -1,0 +1,314 @@
+{
+  "checked_utc": "2026-10-18T19:05:59.565573+00:00",
+  "user_pause_rule": "No scheduled continuation, no09h appointment. Resume only after explicit user instruction. No new source phases, POSTs, GUI restart or AI continuation.",
+  "vantage": {
+    "full_cli_pid": 1580932,
+    "readonly_api_pid": 1670220,
+    "readonly_api_port": 8092,
+    "readonly_stop_file": ".tmp/sources_vantage_readonly.stop",
+    "accepted_scope": [
+      178177,
+      1231244,
+      504191,
+      692325,
+      762452
+    ],
+    "remaining_batch": "14 workflow histories currently running",
+    "normal_update_allowed": false,
+    "progress": {
+      "status": "full_history_repair_running",
+      "server": "GET-only REST8092 while unrelated full-history repair continues",
+      "selected_providers": 19,
+      "identity_basis": "historyRecordId",
+      "phases": [
+        {
+          "phase": "ft",
+          "latest_progress": "FERTIG: 5 neu geladen, 0 übersprungen, 0 Fehler in 7 min"
+        },
+        {
+          "phase": "other_workflow",
+          "latest_progress": "  762414: 30500 / 34530 Trades geladen …"
+        }
+      ],
+      "ft_exit": {
+        "utc": "2026-10-18T17:44:51.2118647Z",
+        "selected_ids": "178177,1231244,504191,692325,762452",
+        "full": true,
+        "force": true,
+        "identity_basis": "historyRecordId",
+        "exit_code": 0
+      },
+      "other_workflow_exit": null,
+      "attempt_kind": "explicit_source_scoped_full_repair",
+      "evidence_file": "sources_vantage_repair_plan.json",
+      "verified_ft_scope_only": [
+        178177,
+        1231244,
+        504191,
+        692325,
+        762452
+      ],
+      "verified_ft_evidence": "sources_vantage_ft_readonly_acceptance.json",
+      "post_update_disabled": true,
+      "readonly_api_reachable": true
+    }
+  },
+  "robo": {
+    "coordinator_pid": 1764128,
+    "coordinator_followup_guard": "Exact own non-writer coordinator terminated under explicit parent/user pause authorization; py-spy proves subprocess._wait; no console or descendant signal",
+    "progress": {
+      "source": "robo",
+      "source_uid": "2267f37b-c01a-4c2f-aaf6-04bd96583606",
+      "status": "user_paused_controller_stopped_current_native_writer_finishing",
+      "phase": "paused_no_followups",
+      "initial_job_id": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+      "initial_pid": 1351408,
+      "attempt_kind": "targeted_full_renewal",
+      "completed": [
+        {
+          "signal_id": 72166283,
+          "rows": 22785,
+          "unique_ids": 22785,
+          "csv_sha256": "02ba5f6501cc0021174450762388ba2206d6ff6c8bf2201e13b20ff558065758",
+          "meta_sha256": "888f2aa31de33f5a0578525f0ea84d6618688737985b705dd25f25bfa029e395",
+          "fetched_at": "2026-10-18T18:46:02Z",
+          "fetch_id": "d9ca6381-c589-4c2f-8f69-96b2af2e5c29",
+          "platform": "mt4",
+          "provider_source_id": "aaac",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_72166283.csv_3862941413550818832",
+              "original_csv_sha256": "0da85f094ea5cf2769fbe34f17c58f4381fe4ac5b5141ceaba7fb936343e978f",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 37293345,
+          "rows": 54056,
+          "unique_ids": 54056,
+          "csv_sha256": "d2b48213b7d1abf2df6b7983826f44b085338c57172319b61c5ba2c19bb5507a",
+          "meta_sha256": "905afb065bdad58085e0c1b59a319e4db74c2fbca73724c6cbfc307fc7ce44c7",
+          "fetched_at": "2026-10-18T18:53:24Z",
+          "fetch_id": "689626bc-fce5-4821-8094-f0283ae560a7",
+          "platform": "mt5",
+          "provider_source_id": "bbba",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_37293345.csv_678850962965140589",
+              "original_csv_sha256": "be4d7bc5f9fcb9c1945206dd60f034805f42c54828d841940a9178e7441ef24f",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 27406010,
+          "rows": 35999,
+          "unique_ids": 35999,
+          "csv_sha256": "8ab2eba362f0035fe777e2dd806dab05dfb4d193ece9e47151559d180f167cf8",
+          "meta_sha256": "7b2b070504bd415ce3ba664427feaf5f3f8f86209edaff837b1fafcf9bfd213b",
+          "fetched_at": "2026-10-18T18:57:53Z",
+          "fetch_id": "88942937-1bea-47a5-a917-28304786c12e",
+          "platform": "mt5",
+          "provider_source_id": "bbba",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_27406010.csv_2490192089902171958",
+              "original_csv_sha256": "4ba4fb06179bf28ee4d83bc8017522cf73ac7aa0b1b8a17961fe277f66a27b87",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 7776453,
+          "rows": 1644,
+          "unique_ids": 1644,
+          "csv_sha256": "9023abd2d91b8c0a9f6b7cef30388c7cb90ebb24272770939443a13d91b361d6",
+          "meta_sha256": "870e43a8e2476182130b41a74fa1a2dbdeda9b4832eb3f46053d9eabe9a258bb",
+          "fetched_at": "2026-10-18T18:58:07Z",
+          "fetch_id": "936a3cd4-380d-4ab5-9fdf-f0dd044cd9f1",
+          "platform": "mt5",
+          "provider_source_id": "bbbb",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_7776453.csv_11347934815822031899",
+              "original_csv_sha256": "aa132f77c9ed9245773e3859bfe0e2cdf3343cd2da0b7338cefe4ef3cb1c7848",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 37371407,
+          "rows": 40060,
+          "unique_ids": 40060,
+          "csv_sha256": "ae6d109b3b9a99ddf031041937eefb9c540a123e7ce70cec50a776cca5ab3ce9",
+          "meta_sha256": "716c3b521686549413deda6e0a4f52392de4d4507d12f0070e5c2c95b557a9d3",
+          "fetched_at": "2026-10-18T19:03:20Z",
+          "fetch_id": "12a24084-9dd5-47ea-89d7-306a8ed9bc72",
+          "platform": "mt5",
+          "provider_source_id": "bbba",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_37371407.csv_10426569590690375084",
+              "original_csv_sha256": "5b3a24fdbf07020dad301e095cc3fa4164b1e6479cd66a0d1a699c43d14e8efd",
+              "original_meta_preserved": true
+            }
+          ]
+        },
+        {
+          "signal_id": 34150222,
+          "rows": 17882,
+          "unique_ids": 17882,
+          "csv_sha256": "e59234b6f9865ddc9d15392ff5a63c8e860e9b61807f0bdd25161e45490375e1",
+          "meta_sha256": "4c455b61490bdca8eaae0d09fe54c84959bd9b8dbd44be49ea0531bb9f8ad39c",
+          "fetched_at": "2026-10-18T19:03:47Z",
+          "fetch_id": "56b56df2-556b-49e4-bbc0-ea3842841cd8",
+          "platform": "mt4",
+          "provider_source_id": "aaar",
+          "pagination_complete": true,
+          "renewed_from_unverified": true,
+          "legacy_included": false,
+          "quarantine": [
+            {
+              "directory": "deals_34150222.csv_7119534231614409476",
+              "original_csv_sha256": "15911249b7ebf803df81cf71a0c8560fd5ad3b1b0e158acb71267c348fb3dfea",
+              "original_meta_preserved": true
+            }
+          ]
+        }
+      ],
+      "failures": [],
+      "accepted": false,
+      "initial_status": {
+        "jobId": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+        "state": "done",
+        "phase": "deals",
+        "done": 200,
+        "total": 200,
+        "message": "Deals: 4 neu, 176 aktualisiert, 20 Fehler",
+        "startedAt": "2026-10-18T18:42:00",
+        "finishedAt": "2026-10-18T20:34:17",
+        "ergebnis": {
+          "signaleGeliefert": 200,
+          "tradelistenNeu": 4,
+          "tradelistenAktualisiert": 176,
+          "tradelistenFehler": 20,
+          "tradelistenAbgebrochen": false,
+          "katalogUebersprungen": false,
+          "datenstand": "2026-10-18T20:34:17",
+          "hinweise": [
+            "20 Deal-Downloads fehlgeschlagen (Details: data/robomonitor.log)"
+          ],
+          "tradelistenOhneAbonnenten": 0
+        },
+        "error": null
+      },
+      "checked_utc": "2026-10-18T19:05:59.564573+00:00",
+      "repair_ids": [
+        72166283,
+        37293345,
+        27406010,
+        7776453,
+        37371407,
+        34150222,
+        37232470,
+        37155456,
+        77004108,
+        37173630,
+        37009091,
+        7752268,
+        37346461,
+        37275457,
+        37107389,
+        37353857,
+        27215488
+      ],
+      "unsupported": [
+        {
+          "signal_id": 93128696,
+          "name": "TradingGoldTrade",
+          "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+          "observed_local_time": "2026-10-18 19:28:28"
+        },
+        {
+          "signal_id": 93019895,
+          "name": "TrendInvestSignal",
+          "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+          "observed_local_time": "2026-10-18 19:31:56"
+        },
+        {
+          "signal_id": 93156209,
+          "name": "SP500ETF",
+          "error": "Plattform „rst“: Die Members-API liefert nur MT4-/MT5-Deals – für dieses Signal ist keine Deal-Historie verfügbar.",
+          "observed_local_time": "2026-10-18 19:51:48"
+        }
+      ],
+      "total": 17,
+      "done": 6,
+      "repair_started_utc": "2026-10-18T18:45:26.049211+00:00",
+      "current_provider": 37232470,
+      "current_cli_pid": 1771524,
+      "coordinator_pid": 1764128,
+      "coordinator_ended": true,
+      "automatic_gui_restart_disabled": true,
+      "automatic_next_provider_disabled": true,
+      "resume_only_after_explicit_user_instruction": true,
+      "current_native_writer_allowed_to_finish": true,
+      "pause_receipt": "sources_robo_user_pause_receipt.json"
+    },
+    "immutable_stage": ".tmp/source_staged_builds/robo_native_units_20261018T1835",
+    "stage_jar_sha256": "47fa66fc692b3d92f49ffeb1c194ffd31f1607e52ac9589ab075c7b44ad6a0e1",
+    "tests": 195,
+    "build_receipt": "sources_robo_units_build_receipt.json",
+    "initial_terminal_job": "u-e55d8f83-aa56-415a-8aea-e06342aaef32",
+    "initial_append_row": 66,
+    "coordinator_ended": true,
+    "pause_receipt": "sources_robo_user_pause_receipt.json",
+    "current_native_writer_pid": 1771524,
+    "current_native_writer_provider": 37232470,
+    "completed_ids": [
+      72166283,
+      37293345,
+      27406010,
+      7776453,
+      37371407,
+      34150222
+    ],
+    "unstarted_ids": [
+      37155456,
+      77004108,
+      37173630,
+      37009091,
+      7752268,
+      37346461,
+      37275457,
+      37107389,
+      37353857,
+      27215488
+    ],
+    "warning": "Do not rerun the old full coordinator: tied to exited PID1351408 and old API job; resume only remaining IDs after validating current writer end and unchanged immutable stage."
+  },
+  "readonly_progress_watcher_pid": 1773324,
+  "progress_file": "sources_current_progress.json",
+  "mql_owner": "/root/kontrakte_fx_abschluss",
+  "zulu_owner": "/root/kontrakte_fx_abschluss",
+  "pelican_owner": "/root",
+  "automatic_continuation": false,
+  "scheduled_resume_time": null,
+  "resume_only_after_explicit_user_instruction": true
+}
