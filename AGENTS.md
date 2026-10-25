@@ -13,6 +13,21 @@ Dieser Block und die aktuellen Design-Regeln ordnen die datierten
 Umsetzungsnotizen unten ein. Frühere Testzahlen, Bewertungen und inzwischen
 abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
 
+- **Review-Behebungen (25.10.2026, Nutzerauftrag):** Pelican/Zulu erhalten
+  frische Zähler auch beim Herausfallen aus der Auswahl; Robo veröffentlicht
+  gültige gelesene Nullzähler. Scanner erhält den Quellenkontext im
+  Historienfortschritt, sperrt Frischmessung anhand des tatsächlichen Workers
+  und bewahrt Kapitalherkunft/-unsicherheit/Studienbasis in Tabelle und CSV.
+  Die 17 belegten Altfehlschläge wurden gegen die aktuellen Kapitalregeln und
+  Exportbelege korrigiert; keine Rückkehr zur alten virtuellen Fixbasis.
+  Native Compile-/Volltests: Pelican 224, Robo 224, Zulu 182 bestanden.
+  Abschließende Scanner-Vollsuite: 4.018 bestanden, 1 übersprungen,
+  4 KI-Tests abgewählt. Zusätzlich wurde eine zeitabhängige NTFS-Testfixture
+  durch definierte Datei-/Empfangszeiten stabilisiert. Keine Commits oder
+  produktiven Neustarts; keine neuen Daten-/KI-Läufe oder Änderungen
+  historischer Ergebnisse durch diese Behebung. Details und Teststand:
+  `doc/reviews/2026-10-25_abonnenten_belege_nachruestung/README.md`.
+
 - **Abonnenten-Belegfelder Pelican/Robo/Zulu (25.10.2026, Nutzerauftrag):**
   Die drei Clients liefern jetzt denselben Abdeckungsbeleg wie MqlDownloader
   (Auswahl) und Vantage (`subscriberCatalog*`): Beleg-Record mit

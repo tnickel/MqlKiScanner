@@ -28,9 +28,11 @@ def test_independent_current_study_is_not_presented_as_old_raw_dd():
     result = pipeline.ScanResult(
         id=123, quelle="mql5", platform="MT5", account_currency="USD",
         forensik_stale=True, equity_dd_rekon_roh_pct=13.83,
-        studie_anzeige_dd_pct=7.0, studie_anzeige_vorbehalt=False)
+        studie_anzeige_dd_pct=7.0, studie_anzeige_vorbehalt=False,
+        true_dd_kapitalbasis_usd=1000, true_dd_kapitalbasis_quelle="csv_einzahlungen")
     row = tabellen_zeile(result, {"dauer_monate": 12, "cagr_jahr_pct": 42,
-                                "ertrag_monat_geom_pct": 3})
+                                "ertrag_monat_geom_pct": 3, "kapitalbasis_usd": 1000,
+                                "kapitalbasis_modell": False})
     assert row["True-DD %"] == 7 and row["True-DD ≈"] is None
     assert row["TrueRetDD"] == 6
     assert "Unabhängige H1-Studie" in row["Messstatus"]
@@ -89,6 +91,8 @@ def test_results_csv_uses_same_factual_snapshot_as_table(monkeypatch, filtered):
         for expected, actual in zip(factual[column], exported[column]):
             if pd.isna(expected) or expected == "":
                 assert actual == ""
+            elif isinstance(expected, bool):
+                assert actual == str(expected)
             elif isinstance(expected, (int, float)):
                 assert float(actual) == pytest.approx(expected)
             elif isinstance(expected, pd.Timestamp):

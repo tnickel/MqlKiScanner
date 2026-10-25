@@ -346,7 +346,7 @@ def test_workflow_bulk_keine_fremden_oder_veraenderten_stats(tmp_path, stoerung)
 
 
 @pytest.mark.parametrize('csv_flow,initial,basis,quelle', [
-    (False, None, 10000, 'virtuelle_annahme'),
+    (False, None, 10000, 'modell_fallback_10000'),
     (False, 500, 500, 'signalseite_initial_deposit'),
     (True, 500, 200, 'csv_einzahlungen'),
 ])
@@ -371,6 +371,7 @@ def test_workflow_frische_virtualbasis_respektiert_initial_und_csv(
     result = signal_statistik.berechne(str(pfad), stats[('vant', 43)])
     assert result['kapitalbasis_usd'] == basis
     assert result['kapitalbasis_quelle'] == quelle
+    assert result['kapitalbasis_modell'] is (quelle == 'modell_fallback_10000')
     assert result['ertrag_monat_geom_pct'] is not None
     # Ein Gewinn ohne Verlust liefert kein definiertes PF; kein Equity-DD
     # wurde gemessen, deshalb bleibt auch RetDD unbekannt.

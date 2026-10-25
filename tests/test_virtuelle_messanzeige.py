@@ -17,7 +17,9 @@ def test_virtuelle_studie_zeigt_kursqualitaet_ohne_workflow_freigabe(reliable):
     assert row['True-DD %'] == 0.3518
     assert row['TrueRetDD'] == pytest.approx(12 / 0.3518)
     assert row['RetDD/Monat'] == pytest.approx(1 / 0.3518)
-    assert '10.000 USD virtuell' in row['Messstatus']
+    assert 'Modellstudie:' in row['Messstatus']
+    assert 'Historische virtuelle Kapitalannahme; keine belegte Kontogroesse' in row['Messstatus']
+    assert '10.000' not in row['Messstatus']  # Dieser Altbeleg nennt keinen Betrag.
     if reliable:
         assert row['True-DD ≈'] is None
         assert row['TrueRetDD ≈'] is None

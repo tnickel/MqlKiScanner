@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
+import os
 from pathlib import Path
 
 import pytest
@@ -90,10 +91,16 @@ def test_mql_copies_original_bytes_with_flows_without_marking_history_full(tmp_p
     assert result["modell"] == e["modell"] and result["eligible"] is False
 
 
-def test_mql_matching_historical_receipt_is_separate_from_new_snapshot_sha(tmp_path):
+@pytest.mark.parametrize("file_age_seconds", [0, 60])
+def test_mql_matching_historical_receipt_is_separate_from_new_snapshot_sha(tmp_path, file_age_seconds):
     e,c,_ = mql(tmp_path)
+    # Fix both clocks explicitly: NTFS has finer precision than datetime.now()
+    # and an immediate timestamp can otherwise precede st_mtime by < 1 us.
+    received = datetime(2026, 1, 7, tzinfo=timezone.utc)
+    file_time = received.timestamp() - file_age_seconds
+    os.utime(c["originalpfad"], (file_time, file_time))
     receipt = {"fullHistory": True, "platformRefreshed": True, "providerId": "123", "version": "mql5",
-               "refreshedAt": datetime.now(timezone.utc).isoformat()}
+               "refreshedAt": received.isoformat()}
     e["refresh"] = receipt
     c["full_history_beleg"] = deepcopy(receipt)
     result = importer.prepare_candidate(e,c,out_dir=tmp_path/"snapshots")

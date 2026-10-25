@@ -1,6 +1,9 @@
 """Reject ambiguous CSV schemas and avoid fictitious intrasecond risk paths."""
+from copy import deepcopy
 from datetime import datetime, timedelta
+from hashlib import sha256
 from itertools import permutations
+from pathlib import Path
 
 import pytest
 
@@ -31,6 +34,14 @@ def write_export(tmp_path, rows, header=None, capital=1000):
     path.write_text("\n".join(";".join(row) for row in [header, balance, *rows]) + "\n",
                     encoding="utf-8-sig")
     return str(path)
+
+
+def without_verified_export_sha(finding, path):
+    """Only the source SHA changes when equivalent CSV rows are permuted."""
+    result = deepcopy(finding)
+    source_sha = result["kapitalbasis_details"]["beleg"].pop("trades_sha256")
+    assert source_sha == sha256(Path(path).read_bytes()).hexdigest()
+    return result
 
 
 @pytest.mark.parametrize("header", [POSITION, ORDERBOOK])
@@ -69,13 +80,14 @@ def test_same_second_profit_and_loss_are_a_single_drawdown_booking(tmp_path):
     rows = [trade(0, 24, 400, entry=1960), trade(1, 24, -400, entry=2040)]
     outcomes = []
     for ordered in permutations(rows):
-        report = engine.analyze(write_export(tmp_path, ordered))
+        path = write_export(tmp_path, ordered)
+        report = engine.analyze(path)
         drawdown = report["forensics"]["drawdown"]
         assert drawdown["trading_dd"]["dd_usd"] == 0
         assert drawdown["trading_dd"]["dd_pct_max_rel"] == 0
         assert drawdown["trading_dd"]["end_balance"] == 1000
         assert not scoring.evaluate(report)["schranke_eq_dd_verletzt"]
-        outcomes.append(drawdown)
+        outcomes.append(without_verified_export_sha(drawdown, path))
     assert outcomes[0] == outcomes[1]
 
 
@@ -95,12 +107,13 @@ def test_same_second_closes_cannot_invent_temporary_capital_shortage(tmp_path):
             trade(2, 48, 0)]
     outcomes = []
     for ordered in permutations(rows):
-        report = engine.analyze(write_export(tmp_path, ordered))
+        path = write_export(tmp_path, ordered)
+        report = engine.analyze(path)
         exposure = report["forensics"]["exposure"]
         assert exposure["shock_pct_max"] == 60
         assert exposure["shock_pct_peak_account"] == 1000
         assert exposure["temporal_risk_available"]
-        outcomes.append(exposure)
+        outcomes.append(without_verified_export_sha(exposure, path))
     assert all(result == outcomes[0] for result in outcomes)
 
 
@@ -109,11 +122,12 @@ def test_same_second_hedged_opens_have_no_csv_order_dependent_intermediate_shock
             trade(0, 24, 0, lots=.1)]
     outcomes = []
     for ordered in permutations(rows):
-        exposure = engine.analyze(write_export(tmp_path, ordered))["forensics"]["exposure"]
+        path = write_export(tmp_path, ordered)
+        exposure = engine.analyze(path)["forensics"]["exposure"]
         assert exposure["peak_open_positions"] == 3
         assert exposure["shock_usd"] == 500
         assert exposure["shock_pct_max"] == 50
-        outcomes.append(exposure)
+        outcomes.append(without_verified_export_sha(exposure, path))
     assert all(result == outcomes[0] for result in outcomes)
 
 

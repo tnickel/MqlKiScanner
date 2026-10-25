@@ -407,7 +407,8 @@ def tabellen_zeile(result, statistik: dict | None,
 # Spalten mit Textinhalten — alles andere wird auf der Seite numerisch
 # konvertiert (None → NaN → leere Zelle statt „None“-Text in der Tabelle).
 TEXT_SPALTEN = {"Mark.", "Komm.", "Beob.", "Ber.", "Doku", "Ampel", "Fix", "Name", "Link", "Quelle",
-                "Herkunft", "Plattform", "Basis", "Forensik", "Messstatus"}
+                "Herkunft", "Plattform", "Basis", "Forensik", "Messstatus",
+                "Kapitalherkunft", "Kapitalunsicherheit", "Studienbasis"}
 
 
 def _fix_ids() -> set:

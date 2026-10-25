@@ -1,11 +1,12 @@
 """Remaining exact Vantage contracts and non-ECB exposure fail-closed rules."""
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 import json
 from pathlib import Path
 
 import pytest
 
-from mqlkiscanner import config, fx_rates, symbols
+from mqlkiscanner import config, fx_rates, parser, symbols
 from mqlkiscanner.forensics import exposure
 from mqlkiscanner.forensics.exposure_fx import ExposureUsdUmrechnung
 from mqlkiscanner.models import BalanceRow, ParsedExport, Trade
@@ -165,27 +166,43 @@ def test_no_provider_keeps_cnh_unknown_even_with_cny_ecb(monkeypatch):
     assert result["shock_usd"] is None and result["conversion_complete"] is False
 
 
-def test_engine_forwards_its_provider_to_exposure(monkeypatch):
+def write_engine_export(tmp_path, parsed):
+    """Give the engine actual source bytes matching the price/feed fixture."""
+    rows = [list(parser.POSITION_HEADER)]
+    for flow in parsed.balances:
+        rows.append([flow.time.strftime(parser.TIME_FMT), "Balance", *([""] * 8), str(flow.amount)])
+    for trade in parsed.trades:
+        rows.append([trade.open_time.strftime(parser.TIME_FMT), trade.direction, str(trade.volume),
+                     trade.symbol, str(trade.entry_price), str(trade.volume),
+                     trade.close_time.strftime(parser.TIME_FMT), str(trade.exit_price),
+                     str(trade.commission), str(trade.swap), str(trade.profit)])
+    path = tmp_path / "source.csv"
+    path.write_text("\n".join(";".join(row) for row in rows) + "\n", encoding="utf-8")
+    return path
+
+
+def test_engine_forwards_its_provider_to_exposure(monkeypatch, tmp_path):
     from mqlkiscanner import engine
     parsed, provider, _ = sample()
-    monkeypatch.setattr(engine.parser, "load_export", lambda *a, **k: parsed)
+    path = write_engine_export(tmp_path, parsed)
     observed = []
     def calculate(p, **kwargs):
         observed.append(kwargs.get("kursanbieter"))
         return {"conversion_complete": False, "per_symbol_scenarios": {"USDCNH": {"quote_currency": "CNH"}}}
     monkeypatch.setattr(engine.exposure, "run", calculate)
     monkeypatch.setattr(engine.equity_rekonstruktion, "rekonstruiere", lambda *a, **k: observed.append("equity") or {})
-    engine.analyze("test", kursanbieter=provider)
+    report = engine.analyze(str(path), kursanbieter=provider)
     assert observed == [None, "equity", provider]
+    assert report["forensics"]["kapitalbasis"]["beleg"]["trades_sha256"] == sha256(path.read_bytes()).hexdigest()
 
 
-def test_unproven_contract_is_rejected_before_course_access(monkeypatch):
+def test_unproven_contract_is_rejected_before_course_access(monkeypatch, tmp_path):
     from mqlkiscanner import engine
     parsed, provider, _ = sample("NO_SUCH_INSTRUMENT", "CNH")
-    monkeypatch.setattr(engine.parser, "load_export", lambda *a, **k: parsed)
+    path = write_engine_export(tmp_path, parsed)
     def forbidden(*args, **kwargs):
         raise AssertionError("No course access before contract validation")
     provider.hole_h1 = forbidden
     monkeypatch.setattr(engine.equity_rekonstruktion, "rekonstruiere", forbidden)
     with pytest.raises(ValueError, match="Unbekannte Instrumente"):
-        engine.analyze("test", kursanbieter=provider)
+        engine.analyze(str(path), kursanbieter=provider)

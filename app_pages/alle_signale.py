@@ -82,7 +82,8 @@ with st.container(horizontal=True, vertical_alignment='center'):
                    + (f" — Stand {max((w.get('gelaufen_am') or '')[:16] for w in sync_status.values())}"
                       if sync_status else ''))
 
-_batch_run = tabellen_ui.studien_batch_merken(st.session_state, scan_worker.active_run())
+_active_run = scan_worker.active_run()
+_batch_run = tabellen_ui.studien_batch_merken(st.session_state, _active_run)
 _batch_tabellenstand = tabellen_ui.studien_batch_tabellenstand(_batch_run)
 _lade_start = time.monotonic()
 _lade_status = st.empty()
@@ -93,7 +94,8 @@ _lade_balken = st.empty()
 # hier steht je Quelle, wann zuletzt WIRKLICH gemessen wurde (>24 h = ⚠),
 # plus Button für die Frischmessung (Fortschritt auf Abonnentenstatistik).
 # Bewusst OHNE eigenen scan_worker.active_run()-Aufruf: der Scan-Sperr-
-# Zustand kommt aus _batch_run (aufrufzählergenaue Tests, AppTest-Fallen).
+# Zustand kommt aus _active_run; ein gemerkter Studienlauf kann bereits
+# beendet sein (aufrufzählergenaue Tests, AppTest-Fallen).
 if sync_status:
     from mqlkiscanner import abonnenten_statistik as _abo_stat
     _frische = _abo_stat.juengste_messung(list(sync_status))
@@ -108,7 +110,7 @@ if sync_status:
                       + (" :red[⚠]" if _stunden > 24.0 else ''))
     st.caption('Abonnenten-Messung je Quelle: ' + ' · '.join(_teile)
                + ' — ⚠ älter als 24 h: Zahlen können hinter dem Broker zurückliegen.')
-    _scan_laeuft = _batch_run is not None
+    _scan_laeuft = _active_run is not None
     if _abo_stat.refresh_laeuft():
         st.caption(':blue[Abonnenten-Frischmessung läuft — Fortschritt und Ergebnis '
                    'auf der Seite „Abonnentenstatistik".]')

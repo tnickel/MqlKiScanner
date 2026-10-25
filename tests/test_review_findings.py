@@ -331,7 +331,16 @@ def test_self_cross_symbol_net_lots_not_zero_when_shock_high():
 
 def test_self_zero_start_capital_still_has_relative_dd():
     trades = [_t(0, 1, "Buy", 0.1, profit=-50)]
-    dd = drawdown.run(ParsedExport("x", "positions", trades=trades, balances=[]))
+    first_open = trades[0].open_time
+    # A recorded deposit fully withdrawn before trading proves a zero anchor;
+    # an absent capital history instead uses the separately labelled model.
+    balances = [BalanceRow(first_open - timedelta(days=1), 1000),
+                BalanceRow(first_open - timedelta(hours=1), -1000)]
+    dd = drawdown.run(ParsedExport("x", "positions", trades=trades, balances=balances))
+    assert dd["startkapital_raw"] == 0
+    assert dd["kapitalbasis_details"]["quelle"] == "csv_einzahlungen"
+    assert dd["kapitalbasis_modell"] is False
+    assert dd["kapitalbasis_details"]["gueltig"] is False
     assert dd["trading_dd"]["dd_usd"] == pytest.approx(50.0)
     assert dd["trading_dd"]["dd_pct_max_rel"] == pytest.approx(100.0)
 

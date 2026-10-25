@@ -541,7 +541,13 @@ def starte_refresh(*, messen: bool, kuerzels: list[str] | None = None,
 
     def _lesen_fortschritt(stand: dict) -> None:
         with _REFRESH_LOCK:
-            _REFRESH["lesen"] = dict(stand)
+            if stand.get("phase") == "quelle":
+                # Neue Quelle: Historienzähler der vorigen Quelle verwerfen.
+                _REFRESH["lesen"] = dict(stand)
+            else:
+                # Historienmeldungen enthalten keinen Quellenindex. Den zuvor
+                # gemeldeten Kontext für den gemeinsamen UI-Balken behalten.
+                _REFRESH["lesen"] = {**(_REFRESH.get("lesen") or {}), **stand}
 
     def _arbeit() -> None:
         try:

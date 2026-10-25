@@ -4,6 +4,71 @@ Datum: 25.10.2026 · Umsetzung nach ausdrücklichem Nutzerauftrag („rüste die
 belegfelder nach, wir wollen doch alle clients gleich haben“ / Login-Hinweis
 präzisieren / Timeout 30→60 s).
 
+## Nachprüfung und Fehlerbehebung vom 25.10.2026
+
+Nutzerauftrag: „behebe alle gefundenen fehler“. Die folgenden Korrekturen
+ergänzen den ursprünglichen Umsetzungsstand und den historischen `ENDREPORT.md`:
+
+1. **Pelican/Zulu: frische Vollkatalogzähler erhalten.** Die Veröffentlichung
+   aktualisiert auch die Zähler der bisherigen Auswahl unter demselben
+   Katalog-Lock. Ihre Mitgliedschaft, Profildetails und Auswahlzeit bleiben
+   erhalten. Die anschließende Veröffentlichung der neuen Auswahl kann
+   ausgeschiedene Anbieter nicht mehr auf alte Zähler zurücksetzen.
+2. **Robo: gelesene Nullzähler veröffentlichen.** Gültige Nullzeilen zählen zu
+   `alleGelesene` und `scannedProviders` und erreichen Katalog und Tageshistorie.
+   Nur die Top-Auswahl filtert weiterhin auf positive Abonnentenzahlen.
+3. **Historienfortschritt:** Meldungen behalten Quellenindex und Quellenzahl;
+   der Wechsel zur nächsten Quelle verwirft alte Historienzähler.
+4. **Frischmess-Sperre:** Der tatsächliche aktive Worker entscheidet über die
+   Sperre. Eine gemerkte abgeschlossene Studie blockiert den Button nicht.
+   Die Anzahl der `active_run()`-Aufrufe bleibt unverändert.
+5. **Kapitalhinweise in Tabelle und CSV:** `Kapitalherkunft`,
+   `Kapitalunsicherheit` und `Studienbasis` bleiben Textfelder; sie werden
+   nicht mehr durch numerische Konvertierung zu leeren Zellen.
+
+Die 17 auf dem vorherigen Commit unabhängig bestätigten Testfehlschläge
+wurden gegen die aktuellen Anforderungen geprüft. Die Korrekturen betreffen
+überholte Herkunftsbezeichnungen, echte Exportdateien statt Parser-Fakes ohne
+Datei, separat geprüfte Export-SHAs bei Permutationsvergleichen, belegtes
+Nullkapital statt fehlender Kapitalhistorie, übereinstimmende Kapitalbasen für
+RetDD und boolesche CSV-Felder. Keiner der 17 Altfehlschläge wurde übersprungen
+oder als erwartet fehlschlagend markiert. Zusätzliche Fälle sichern die getrennte
+Modellkennzeichnung nach DB-Reload und die RetDD-Sperre bei fehlenden oder
+abweichenden Kapitalbasen.
+
+Insbesondere wird der historische virtuelle Fixwert **nicht** wieder zum
+vorrangigen Kapitalbeleg gemacht: Die Nutzerentscheidung vom 24.10. bleibt
+maßgeblich. Eine belegte nichtpositive CSV-Basis bleibt nichtpositiv; fehlende
+Kapitalbelege erlauben nur das gekennzeichnete Modell ohne Grün-Freigabe.
+Forensikversion 22 und produktive Daten bleiben unverändert.
+
+Verifikation der Korrekturen:
+
+- Pelican: `mvn -q compile` und vollständiges `mvn -q test`: **224 bestanden**.
+- Robo: dieselben Aufrufe: **224 bestanden**.
+- Zulu: dieselben Aufrufe: **182 bestanden**.
+- Regressionen belegen den ursprünglichen Fehler und die Korrektur für
+  ausgeschiedene Anbieter 100→0/1, gemessene Robo-Nullzähler, tatsächliche
+  Streamlit-Fortschrittsanzeigen, Worker-Sperren und CSV-Download-Daten.
+- Abschließende Scanner-Vollsuite: **4.018 bestanden, 1 übersprungen,
+  4 KI-Tests abgewählt**, keine Fehler (696,51 Sekunden). Aufruf:
+  `python -m pytest tests -q --tb=short --durations=12 --junitxml=<Testbericht>`
+  mit `PYTHONPATH=src` und den installierten Projektpaketen unter Python 3.12.
+  Der bestehende Skip betrifft fehlende Windows-Rechte zum Erstellen eines
+  symbolischen Links (`test_symlink_is_rejected_without_following_target`).
+- Im ersten Prüflauf zusätzlich gefundene instabile MQL-Import-Testfixture:
+  NTFS-Dateizeit und unmittelbar erstellter Empfangszeitpunkt konnten sich
+  unterhalb einer Mikrosekunde widersprechen. Die Fixture belegt die zeitliche
+  Reihenfolge jetzt explizit und prüft auch den Gleichheitsfall. Alle 20 Fälle
+  des Moduls sowie die danach neu gestartete Vollsuite bestehen; die produktive
+  Importprüfung wurde nicht gelockert.
+- Maschinenlesbare Testzahlen, Ausgangscommits und SHA-256 der geänderten
+  Code-/Testdateien stehen in `behebung_nachweis.json`.
+
+Dies ist eine Code-/Testabnahme. Keine produktiven Neustarts, Zählerläufe,
+Neuberechnungen oder KI-Aufrufe; Aktivierung und grüne produktive Läufe sind
+separat nachzuweisen.
+
 ## Ausgangsbefunde (alle live gegen die laufenden Systeme belegt)
 
 1. **Gelbe Hinweise „unbestätigter Auswahl“ für pelik/robo/zulu:** Der Scanner

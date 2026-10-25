@@ -1,0 +1,155 @@
+{
+  "created_at_utc": "2026-10-25T07:45:11.872764+00:00",
+  "client_timezone": "Europe/Berlin",
+  "scanner_verification": {
+    "command": "python -m pytest tests -q --tb=short --durations=12 --junitxml=<temporary test report>",
+    "python_version": "3.12.14",
+    "tests": 4019,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "passed": 4018,
+    "deselected": 4,
+    "junit_sha256": "157ba5075381705d0c1ced3436ede0bf7af54e591732d5c37ee18bba4c85fa41",
+    "skips": [
+      {
+        "test": "test_symlink_is_rejected_without_following_target",
+        "reason": "No local symlink privilege: 1314"
+      }
+    ]
+  },
+  "repositories": {
+    "scanner": {
+      "base_commit": "77bb221f54836c2597d961bbda3108494e35ec2e",
+      "changed_code_and_tests": [
+        {
+          "path": "app_pages/alle_signale.py",
+          "sha256": "afaaa72a2cf81102c6e446b5addcd7de97290b311034480daad001d8ca2a68b1"
+        },
+        {
+          "path": "src/mqlkiscanner/abonnenten_statistik.py",
+          "sha256": "42bfc22a6a2366bc077841675577a119c4a6ff22669cde2d6aa66d4d26e8b72f"
+        },
+        {
+          "path": "src/mqlkiscanner/alle_signale_ui.py",
+          "sha256": "b34c4c9b36890f01d889afeca79cb02d4cab1ccb6e869968fb9e7694ce3e0810"
+        },
+        {
+          "path": "tests/test_abonnenten_native_cache_import.py",
+          "sha256": "e1cde8a5e87e7c11a5c83260ebc2860e380601250845e5e95cba02a1121eea6c"
+        },
+        {
+          "path": "tests/test_katalog.py",
+          "sha256": "a6567a874022dacf4898cdd7a1df044373a3368b6a300283e9593120a3a0855c"
+        },
+        {
+          "path": "tests/test_partial_forensik.py",
+          "sha256": "4c2135eed7ef67fd155fc9d3b8431c6883832b93f2923f110c3529e5cf4081e7"
+        },
+        {
+          "path": "tests/test_remaining_contracts_h1_exposure.py",
+          "sha256": "f62b1ff8cc738011e3e09a29e346cd4ad10ff9de3b70a68b7527f0ee76bdfa30"
+        },
+        {
+          "path": "tests/test_review15_engine.py",
+          "sha256": "455ce3cde43fa9ca62af385048c2e954545be68236c9733c271de0556696fd47"
+        },
+        {
+          "path": "tests/test_review_abonnenten_ui_datenfluss.py",
+          "sha256": "1da0c2de4653e75014c5fb638fed0d7df3aa37070aded1ec980e54b9eb5ca927"
+        },
+        {
+          "path": "tests/test_review_findings.py",
+          "sha256": "12c8c127c23200322081ab0af3890da52968f29b3f8eb9c407d4c1a741af2fec"
+        },
+        {
+          "path": "tests/test_review_table_fixes.py",
+          "sha256": "38c8c5abfe21dcf07e1fe898467f4f28a4bbf78ac8fd5e47c3420ae3542669d5"
+        },
+        {
+          "path": "tests/test_stale_independent_study_display.py",
+          "sha256": "36e8ae2e308e456e250b09fac01b2f8ed03ee95a927c7488a3051cf321e50b57"
+        },
+        {
+          "path": "tests/test_virtuelle_messanzeige.py",
+          "sha256": "a1e9f14ff6d7e8efb27d7725cfc693d3cc2f83818ed73a41130298f4cbaf276f"
+        }
+      ]
+    },
+    "pelican": {
+      "base_commit": "b2e2ce44f246aa166804bb85ad5d6357f82130ba",
+      "changed_code_and_tests": [
+        {
+          "path": "src/main/java/de/pelicanmonitor/store/DataStore.java",
+          "sha256": "427e267f389c1ffab4a1fe3e707845892ca6da0870e2c09d53d70cc690c3ca0d"
+        },
+        {
+          "path": "src/test/java/de/pelicanmonitor/store/DataStoreAtomicWriteTest.java",
+          "sha256": "8cd464bb747dcf13972dd3e4acc0453f47903742f19ded82ffb94589429b36d5"
+        }
+      ],
+      "verification": {
+        "command": [
+          "mvn -q compile",
+          "mvn -q test"
+        ],
+        "suites": 33,
+        "tests": 224,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "robo": {
+      "base_commit": "ca7a38f909c18f9dc0a487db3e34017fcfb0caba",
+      "changed_code_and_tests": [
+        {
+          "path": "src/main/java/de/robomonitor/api/RoboForexClient.java",
+          "sha256": "f6f43ede8e8a16d7fc2c74880192b1eff30ec44c35d6ba93676f5a3a7ef24bae"
+        },
+        {
+          "path": "src/test/java/de/robomonitor/api/SubscriberRankingTest.java",
+          "sha256": "11b46a3e7784bf7b35c630e435c6409e0649075e2fbf6e2db76aab8c641841b0"
+        }
+      ],
+      "verification": {
+        "command": [
+          "mvn -q compile",
+          "mvn -q test"
+        ],
+        "suites": 24,
+        "tests": 224,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "zulu": {
+      "base_commit": "75001f90d70de1e790de49544770f748fd93a4be",
+      "changed_code_and_tests": [
+        {
+          "path": "src/main/java/de/zulumonitor/store/DataStore.java",
+          "sha256": "4856d29849ff75297b9026dc50af739687f47db42511ed8badf56497cfbc4ec9"
+        },
+        {
+          "path": "src/test/java/de/zulumonitor/store/DataStoreIntegrityTest.java",
+          "sha256": "45cac133f860bf0fee0aec0ac7dd0fe8b63a49193c7eaad2d86454cb5ff7250d"
+        }
+      ],
+      "verification": {
+        "command": [
+          "mvn -q compile",
+          "mvn -q test"
+        ],
+        "suites": 24,
+        "tests": 182,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  },
+  "productive_restart_performed": false,
+  "productive_counter_or_analysis_job_started": false,
+  "llm_tests_enabled": false
+}
