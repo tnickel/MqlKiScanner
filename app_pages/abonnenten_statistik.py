@@ -133,6 +133,22 @@ def _refresh_fortschritt() -> None:
         if zustand.get('phase') == 'clients':
             st.info('Frisch messen (ohne Tradelisten) läuft — Status je '
                     'Client:', icon=':material/sync:')
+            # Aggregierter Balken über alle Clients mit done/total (Nutzer-
+            # Wunsch 25.10.: auch hier ein Progress-Slider; Quellen ohne
+            # total zählen noch nicht in den Anteil — ihr Status steht in
+            # den Zeilen darunter).
+            _quellen_z = sorted((zustand.get('quellen') or {}).items())
+            _mit_total = [(k, z) for k, z in _quellen_z if z.get('total')]
+            if _mit_total:
+                _fertig_c = sum(min(int(z.get('done') or 0), int(z['total']))
+                                for _, z in _mit_total)
+                _gesamt_c = sum(int(z['total']) for _, z in _mit_total)
+                st.progress(min(_fertig_c / _gesamt_c, 1.0),
+                            text=f'Frisch messen: {_fertig_c}/{_gesamt_c} '
+                                 f'Abonnentenzähler über '
+                                 f'{len(_mit_total)}/{len(_quellen_z)} Quellen')
+            else:
+                st.progress(0.0, text='Frisch messen: Clients anstoßen …')
             for kuerzel, z in sorted((zustand.get('quellen') or {}).items()):
                 zeichen = _STATUS_ZEICHEN.get(
                     client_updates.STATUS_FARBE.get(z.get('status'), 'grau'), '⚪')
