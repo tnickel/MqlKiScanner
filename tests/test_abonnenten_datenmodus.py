@@ -107,6 +107,18 @@ def test_single_provider_gap_is_explicit_and_resume_reuses_complete_measurements
     assert store.read(run["id"])["daten_vollstaendig"]
 
 
+def test_data_reload_all_forces_new_measurement_of_completed_providers(data_run):
+    # Nutzer-Entscheidung 24.10. abends: „Alle neu laden" überschreibt auch
+    # abgeschlossene Datenversuche; Standard (ohne Feld) bleibt Wiederverwendung.
+    store, run, calls, control = data_run
+    analyse._execute(store, run["id"], config.load_settings())
+    assert calls["data"] == [3, 2, 1]
+    store.update(run["id"], tradelisten_modus="alle")
+    analyse._execute(store, run["id"], config.load_settings())
+    assert calls["data"].count(1) == calls["data"].count(2) == calls["data"].count(3) == 2
+    assert store.read(run["id"])["daten_vollstaendig"]
+
+
 def test_data_stop_waits_for_provider_cleanup_and_does_not_enter_trends(data_run):
     store, run, calls, control = data_run
     control["stop"] = 2
@@ -125,13 +137,34 @@ def test_data_start_has_no_prompt_budget_parallelity_prerequisites_and_uses_scan
         launched.append((callback, kwargs))
         return object()
     monkeypatch.setattr(analyse.scan_worker, "start", start)
-    run_id = analyse.daten_starten(["mql5"], settings={"abonnenten_analyse_parallelitaet": "irrelevant"})
+    run_id = analyse.daten_starten(["mql5"], settings={"abonnenten_analyse_parallelitaet": "irrelevant"},
+                                   akzeptiere_veraltete_abos=True)
     result = Store().read(run_id)
     assert result["workflow_modus"] == analyse.DATA_WORKFLOW_MODE
     assert result["retdd_gewicht"] == 30
+    assert result["tradelisten_modus"] == "fehlt"
+    with pytest.raises(ValueError, match="Tradelisten-Modus"):
+        analyse.daten_starten(["mql5"], tradelisten_modus="ungueltig")
     assert not {"budget_settings", "budget_applied", "ki_parallelitaet"}.intersection(result)
     assert launched[0][1]["lock_basis"] == config.DATA_DIR
     assert launched[0][1]["workflow"]["abonnenten_id"] == run_id
+    # Frische-Schranke (Nutzer-Anforderung 25.10.): Ohne Messung gar nichts,
+    # mit veralteter Messung nur mit Override, mit frischer ohne.
+    with pytest.raises(ValueError, match="nicht frisch"):
+        analyse.daten_starten(["mql5"])
+    from datetime import datetime, timedelta
+    alte = (datetime.now() - timedelta(hours=48)).isoformat(timespec="seconds")
+    db.store_history_points(43, "mql5", [{"timestamp": alte, "subscribers": 6}], quelle="mql5")
+    with pytest.raises(ValueError, match="48 h alt"):
+        analyse.daten_starten(["mql5"])
+    run_id3 = analyse.daten_starten(["mql5"], akzeptiere_veraltete_abos=True)
+    assert Store().read(run_id3)["abonnenten_frische"]["akzeptiert_veraltete"] is True
+    frisch = (datetime.now() - timedelta(hours=2)).isoformat(timespec="seconds")
+    db.store_history_points(42, "mql5", [{"timestamp": frisch, "subscribers": 5}], quelle="mql5")
+    run_id2 = analyse.daten_starten(["mql5"])
+    frisch_run = Store().read(run_id2)
+    assert frisch_run["abonnenten_frische"]["juengste_messung"]["mql5"] is not None
+    assert frisch_run["abonnenten_frische"]["akzeptiert_veraltete"] is False
 
 
 def test_data_resume_refuses_to_repurpose_an_original_ki_job(monkeypatch):

@@ -148,6 +148,28 @@ def test_sync_teilmenge_und_quellenausfall(fake_client, monkeypatch):
     assert summary["quellen"]["tot"]["abgebrochen"]
 
 
+def test_sync_meldet_fortschritt_fuer_ui_balken(fake_client):
+    """Nutzer-Wunsch 25.10.: Der Lesephase-Refresh meldet Quelle x/y und
+    Historie-Fortschritt an einen Callback (Grundlage für st.progress)."""
+    quelle = _quelle("fake")
+    fake_client(_FakeClient(
+        [_item(i, f"S{i}", subs=i) for i in range(1, 61)],
+        history={(i, "mql5"): [_punkt(2, i)] for i in range(1, 61)}))
+    meldungen: list[dict] = []
+    summary = abo.sync(kuerzels=[quelle["kuerzel"]],
+                       on_fortschritt=meldungen.append)
+    assert summary["quellen"]["fake"]["anzahl"] == 60
+    quellen_meldung = [m for m in meldungen if m["phase"] == "quelle"]
+    assert quellen_meldung == [{"phase": "quelle", "kuerzel": "fake",
+                                "nr": 1, "von": 1}]
+    historie = [m for m in meldungen if m["phase"] == "historie"]
+    assert historie[0] == {"phase": "historie", "kuerzel": "fake",
+                           "gesamt": 60, "fertig": 0}
+    assert historie[-1]["fertig"] == 60
+    # In 25er-Schritten plus Endstand: 0, 25, 50, 60
+    assert [m["fertig"] for m in historie] == [0, 25, 50, 60]
+
+
 # --- zeilen(): Bilanz über die vereinte Messreihe --------------------------
 
 def _reihe_seed(quelle="fake"):

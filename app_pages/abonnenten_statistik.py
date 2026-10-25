@@ -102,8 +102,10 @@ def _refresh_dialog():
                                'bis zu 200 Anbieter, meiste Abonnenten zuerst')
                 st.caption('MQL4 und MQL5 teilen sich die 200 Plätze. Die gewählten Clients laufen parallel — die '
                            'Gesamtdauer ist die des langsamsten. Ein Login '
-                           'kann zwischendurch nötig sein; der Status zeigt '
-                           'das an.')
+                           'kann zwischendurch nötig sein (z. B. Pelican nach '
+                           'Session-Ablauf): Der Status nennt dann ausdrücklich '
+                           'das FENSTER, in dem du dich einloggen musst — nicht '
+                           'hier im Scanner.')
     if st.button('Aktualisieren', type='primary', icon=':material/refresh:',
                  disabled=messen and not kuerzels):
         if abonnenten_statistik.starte_refresh(messen=messen,
@@ -135,13 +137,35 @@ def _refresh_fortschritt() -> None:
                 zeichen = _STATUS_ZEICHEN.get(
                     client_updates.STATUS_FARBE.get(z.get('status'), 'grau'), '⚪')
                 text = z.get('detail') or z.get('phase') or z.get('status') or ''
+                # Login-Situation (Nutzer-Hinweis 25.10.): Die Zeile muss
+                # unübersehbar sagen, WO getippt wird — im FENSTER des Clients.
+                if z.get('status') == client_updates.LOGIN:
+                    text = f"**{text}**"
                 fortschritt = (f" · {z.get('done') or 0}/{z.get('total') or 0}"
                                if z.get('total') else '')
                 st.caption(f"{zeichen} **{kuerzel}**: {text}{fortschritt}")
                 if z.get('job_id'):
                     st.caption(f"Client-Job {z['job_id']} · Stand {z.get('geaendert') or 'unbekannt'}")
         else:
-            st.info('Abonnentenzahlen neu einlesen …', icon=':material/sync:')
+            # Progress-Balken (Nutzer-Wunsch 25.10.): Quelle x/y plus
+            # Historie-Fortschritt je Quelle, alle 2 s live aus dem
+            # Refresh-Thread; ohne Meldung bewusst unbestimmt weiterlaufen.
+            lesen = zustand.get('lesen') or {}
+            nr, von = int(lesen.get('nr') or 0), int(lesen.get('von') or 0)
+            fertig, gesamt = (int(lesen.get('fertig') or 0),
+                              int(lesen.get('gesamt') or 0))
+            kuerzel = str(lesen.get('kuerzel') or '…')
+            if von and gesamt:
+                anteil = ((nr - 1) + (fertig / gesamt)) / von
+                st.progress(min(max(anteil, 0.0), 1.0),
+                            text=f"Neu einlesen: Quelle {nr}/{von} — {kuerzel}: "
+                                 f"Historie {fertig}/{gesamt} Anbieter")
+            elif von:
+                st.progress(min(max((nr - 1) / von, 0.0), 1.0),
+                            text=f"Neu einlesen: Quelle {nr}/{von} — {kuerzel}: "
+                                 f"Katalog laden …")
+            else:
+                st.progress(0.0, text='Abonnentenzahlen neu einlesen …')
         log = list(zustand.get('logs') or [])
         if log:
             with st.expander('Verlauf', expanded=False):

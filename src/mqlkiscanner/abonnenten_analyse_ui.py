@@ -1340,12 +1340,53 @@ def daten_dialog() -> None:
                "Alle verfügbaren Trades des Exportfensters werden für die Messung verwendet.")
     st.info("Stufe 1 sammelt Daten und berechnet Zufluss, Nettogewinn, Rendite, Floating-Equity-DD und RetDD. "
             "Alle ausgewählten Anbieter bleiben mit Datenstatus und offenen Datenpunkten in der Tabelle.")
+    # Frische-Schranke (Nutzer-Anforderung 25.10.: Abonnentenzahlen maximal
+    # 24 h alt, sonst erst 'Abonnentenzahlen aktualisieren' mit 'Frisch
+    # messen'). Geprüft wird die jüngste echte MESSUNG je gewählter Quelle.
+    veraltet: dict[str, float] = {}
+    if chosen:
+        try:
+            from . import abonnenten_statistik
+            frische = abonnenten_statistik.juengste_messung(chosen)
+            jetzt = datetime.now()
+            for kuerzel, ts in frische.items():
+                if ts is None:
+                    veraltet[kuerzel] = -1.0
+                    continue
+                stunden = (jetzt - ts).total_seconds() / 3600.0
+                if stunden > 24.0:
+                    veraltet[kuerzel] = stunden
+        except Exception:
+            veraltet = {}
+    uebersteuern = False
+    if veraltet:
+        teile = [f"**{k}**: {'nie gemessen' if h < 0 else f'letzte Messung vor {h:.0f} h'}"
+                 for k, h in sorted(veraltet.items())]
+        st.warning("Abonnentenzahlen nicht frisch (Schranke: maximal 24 h). "
+                   "Betroffen: " + " · ".join(teile) + ". Bevorzugt zuerst oben "
+                   "„Abonnentenzahlen aktualisieren“ mit „Frisch messen“ ausführen.",
+                   icon=":material/history:")
+        uebersteuern = st.checkbox(
+            "Trotzdem mit veralteten Abonnentenzahlen starten",
+            key="abonnenten_daten_veraltete_akzeptieren",
+            help="Ausdrückliche Übersteuerung; der Lauf vermerkt die Übersteuerung "
+                 "und die verwendeten Messzeitpunkte.")
+    tradelisten_modus = st.radio(
+        "Tradelisten", ["Nur fehlende laden (vorhandene behalten)", "Alle neu laden (überschreiben)"],
+        help="Nur fehlende: bereits abgeschlossene Anbieter behalten ihre geladenen Trades "
+             "und Kennzahlen — nach einem Abbruch wird nicht alles neu geladen. "
+             "Alle neu laden: jeder Anbieter erhält eine frische Vollständigmessung "
+             "seiner Tradeliste; alte Messwerte werden überschrieben.",
+        key="abonnenten_daten_tradelisten")
     st.caption("Deterministische Vorauswertung: 70 % normierter Nettozuwachs und 30 % Jahres-RetDD. "
                "Normierung: Δ7 / durchschnittlicher positiver Abonnentenbestand der ursprünglichen Auswahl je Quelle.")
-    st.caption("Ein getrennt gekennzeichnetes Startkapital-Szenario lässt sich anschließend aus gespeicherten Daten berechnen.")
-    if st.button("Datenauftrag starten", key="abonnenten_daten_start", type="primary", disabled=not chosen):
+    if st.button("Datenauftrag starten", key="abonnenten_daten_start", type="primary",
+                 disabled=not chosen or (bool(veraltet) and not uebersteuern)):
         try:
-            run_id = _backend().daten_starten(chosen, retdd_gewicht=30, dd_grenze=None)
+            run_id = _backend().daten_starten(
+                chosen, retdd_gewicht=30, dd_grenze=None,
+                tradelisten_modus=("fehlt" if tradelisten_modus.startswith("Nur fehlende") else "alle"),
+                akzeptiere_veraltete_abos=uebersteuern)
             st.session_state["_abonnenten_daten_lauf_neu"] = run_id
             st.session_state["_abonnenten_daten_dialog"] = False
             st.rerun()
@@ -1419,13 +1460,25 @@ def _render_daten_results(backend, run_id: str, state: dict) -> None:
     state_view = {**state, "entries": entries, "auswahl_modus": _ZUFLUSS_MODUS}
     st.caption(f"Ausgewählter Datenbestand: {run_id} · gespeichert {state.get('updated_at') or 'Zeitpunkt unbekannt'}")
     if data_mode:
+        fertig = sum(bool(e.get("data_done")) for e in entries)
+        gesamt = len(entries)
+        if running and gesamt and not model_only:
+            # Progress-Balken (Nutzer-Wunsch 25.10.): Anteil fertiger
+            # Daten-Endstände, live über das 2-s-Polling des Fragments.
+            # Der reine Modellauftrag hat seinen eigenen Fortschritt.
+            st.progress(min(fertig / gesamt, 1.0),
+                        text=f"{state.get('phase') or 'arbeit'}: {fertig}/{gesamt} "
+                             "Daten-Endstände")
         if model_only:
             st.caption("Modellauftrag: " + str(state.get("daten_status") or "geplant"))
-            st.caption(f"Übernommene Messdaten: {sum(bool(e.get('data_done')) for e in entries)}/{len(entries)} "
+            st.caption(f"Übernommene Messdaten: {fertig}/{gesamt} "
                        "gespeicherte Daten-Endstände; dieser Zähler ist nicht der Modellfortschritt.")
         else:
+            modus = ("Modus: Alle neu laden (jeder Anbieter wird frisch vermessen)"
+                     if state.get("tradelisten_modus") == "alle"
+                     else "Modus: Nur fehlende laden (fertige bleiben)")
             st.caption("Datenauftrag: " + str(state.get("daten_status") or "geplant")
-                       + f" · {sum(bool(e.get('data_done')) for e in entries)}/{len(entries)} Daten-Endstände")
+                       + f" · {fertig}/{gesamt} Daten-Endstände · " + modus)
         if state.get("daten_workflow_abgeschlossen"):
             (st.success if state.get("daten_vollstaendig") else st.warning)(
                 ("Modellberechnung aus Bestand beendet; alle benötigten Werte berechnet." if model_only
@@ -1433,11 +1486,17 @@ def _render_daten_results(backend, run_id: str, state: dict) -> None:
                 else ("Modellberechnung aus Bestand beendet; offene Modellpunkte stehen in der Tabelle." if model_only
                       else "Datenablauf beendet; offene Datenpunkte stehen weiterhin in der Tabelle."))
         if running:
-            if st.button("Berechnung aus Bestand stoppen" if model_only else "Datensammlung stoppen", key=f"abonnenten_daten_stop_{run_id}"):
+            # Zahlen am Button (Nutzer-Wunsch 25.10.): Sofort sichtbar, wie
+            # viel geladen ist und wie viel offen bleibt.
+            if st.button(("Berechnung aus Bestand stoppen" if model_only else "Datensammlung stoppen")
+                         + f" — {fertig}/{gesamt} geladen", key=f"abonnenten_daten_stop_{run_id}"):
                 backend.stoppen(run_id)
                 st.rerun()
         elif not state.get("daten_vollstaendig"):
-            if st.button("Berechnung aus Bestand fortsetzen" if model_only else "Datensammlung fortsetzen", key=f"abonnenten_daten_resume_{run_id}"):
+            offen = max(gesamt - fertig, 0)
+            if st.button(("Berechnung aus Bestand fortsetzen" if model_only else "Datensammlung fortsetzen")
+                         + f" — {fertig}/{gesamt} geladen, {offen} offen",
+                         key=f"abonnenten_daten_resume_{run_id}"):
                 try:
                     backend.daten_fortsetzen(run_id)
                     st.rerun()
@@ -1453,16 +1512,11 @@ def _render_daten_results(backend, run_id: str, state: dict) -> None:
                 st.rerun()
             except Exception as error:
                 st.error(f"Datenbestand nicht übernommen: {error}")
-    model_builder = getattr(backend, "modell_aus_lauf", None)
-    if callable(model_builder) and not running:
-        if st.button("Modellwerte aus vorhandenen Trades berechnen", key=f"abonnenten_modell_start_{run_id}",
-                     help="Neuer Modellauftrag aus gespeicherten Trade- und Kursdaten; keine Quellenaktualisierung."):
-            try:
-                new_id = model_builder(run_id)
-                st.session_state["_abonnenten_daten_lauf_neu"] = new_id
-                st.rerun()
-            except Exception as error:
-                st.error(f"Modellberechnung nicht gestartet: {error}")
+    # Nutzer-Entscheidung 24.10. abends: Der separate Start einer „Modellberechnung
+    # aus Bestand" (Trades unverändert, keine Beschaffung) ist entfernt. Der
+    # Datenauftrag lädt selbst Tradelisten und berechnet alles; ein Abbruch wird
+    # über den Tradelisten-Modus „nur fehlende" fortgesetzt. Historische
+    # Bestandsläufe bleiben abwärtskompatibel lesbar (modell_nur_bestand-Anzeige).
     models = [entry["modell"] for entry in entries if isinstance(entry.get("modell"), dict)]
     show_models = bool(models) or state.get("kapitalmodell_aktiv") is True
     st.caption("Alle ausgewählten Anbieter bleiben sichtbar, einschließlich unvollständiger Daten. "

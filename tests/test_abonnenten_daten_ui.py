@@ -134,14 +134,26 @@ def test_historical_data_requires_explicit_new_data_job_before_data_only_resume(
 def test_start_dialog_has_no_prompt_key_or_parallelism_prerequisite(backend, monkeypatch):
     db.init_db()
     db.add_quelle("mql5", "MQL", "http://fake.invalid")
+    # Frische-Schranke (25.10.): Ohne frische Messung ist der Start-Button
+    # gesperrt — der Test misst frisch, damit er den Startweg erreicht.
+    from datetime import datetime, timedelta
+    db.store_history_points(7, "mql5", [{
+        "timestamp": (datetime.now() - timedelta(hours=1)).isoformat(timespec="seconds"),
+        "subscribers": 9}], quelle="mql5")
     monkeypatch.setattr(prompts, "fehlende_vorlagen", lambda *a, **k: pytest.fail("No prompt checks"))
     at = _app()
     at.button(key="abonnenten_daten_oeffnen").click().run()
     assert not at.exception
     assert not at.number_input
+    # Nutzer-Entscheidung 24.10. abends: Vor dem Start wird gefragt, ob nur
+    # fehlende Tradelisten geladen (Fortsetzen nach Abbruch) oder alle
+    # überschrieben werden; Standard ist "nur fehlende".
+    assert len(at.radio(key="abonnenten_daten_tradelisten").options) == 2
     at.button(key="abonnenten_daten_start").click().run()
     assert not at.exception
-    assert backend.started == [(["mql5"], {"retdd_gewicht": 30, "dd_grenze": None})]
+    assert backend.started == [(["mql5"], {"retdd_gewicht": 30, "dd_grenze": None,
+                                           "tradelisten_modus": "fehlt",
+                                           "akzeptiere_veraltete_abos": False})]
 
 
 def test_page_open_never_starts_download_or_reads_saved_report_artifacts(backend, monkeypatch):
@@ -271,22 +283,21 @@ def test_ignored_native_flows_keep_count_and_currency_separate_in_csv():
     assert row["Währung ignorierter Kapitalflüsse"] == "EUR"
 
 
-def test_model_job_button_is_explicit_and_resume_is_labelled_as_cache_only(backend, monkeypatch):
-    calls = []
-
-    def build(run_id):
-        calls.append(run_id)
-        backend._new()
-        backend.states["data"].update(modell_nur_bestand=True, kapitalmodell_aktiv=True)
-        backend.states["data"]["entries"][0]["modell"] = _model()
-        return "data"
-
-    monkeypatch.setattr(backend, "modell_aus_lauf", build, raising=False)
+def test_model_stock_start_removed_and_legacy_resume_stays_labelled(backend, monkeypatch):
+    # Nutzer-Entscheidung 24.10. abends: Der separate Start einer
+    # „Modellberechnung aus Bestand" ist entfernt; der Datenauftrag lädt
+    # selbst Tradelisten. Historische Bestandsläufe bleiben lesbar.
+    backend._new()
+    backend.states["data"].update(modell_nur_bestand=True, kapitalmodell_aktiv=True)
+    backend.states["data"]["entries"][0]["modell"] = _model()
     at = _app()
-    assert not calls
-    at.button(key="abonnenten_modell_start_old").click().run()
-    assert not at.exception and calls == ["old"]
-    assert at.button(key="abonnenten_daten_resume_data").label == "Berechnung aus Bestand fortsetzen"
+    assert not at.exception
+    assert not any(str(button.key).startswith("abonnenten_modell_start") for button in at.button)
+    # Zahlen am Button (Nutzer-Wunsch 25.10.): geladen/offen sofort sichtbar
+    # (Fixture: 2 von 3 Einträgen mit data_done).
+    label = at.button(key="abonnenten_daten_resume_data").label
+    assert label.startswith("Berechnung aus Bestand fortsetzen — ")
+    assert "2/3 geladen, 1 offen" in label
     assert any("30 % Modell-Jahres-RetDD" in e.value for e in at.caption)
     assert any("10.000-USD-Annahme" in e.value for e in at.caption)
     assert set(at.dataframe[0].value["Strategie"]) == {"Measured", "Incomplete", "Source profit"}

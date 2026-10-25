@@ -501,8 +501,12 @@ def _update_eine_quelle_ablauf(quelle: dict, *, z: dict, settings: dict, log, on
         if state == "login_required":
             if login_seit is None:
                 login_seit = time.monotonic()
-                _melde(f"Client wartet auf Login-Eingabe ({nachricht or 'Login nötig'}) — "
-                       f"Timeout {login_timeout_s / 60:.0f} min",
+                # Nutzer-Hinweis 25.10.: Der Text muss sagen, WO getippt wird —
+                # nämlich im Fenster des Clients, nicht im Scanner/Browser.
+                # Die Fettmarkierung setzt die UI-Schicht (Status login).
+                _melde(f"Login erforderlich — bitte jetzt im Fenster von "
+                       f"{z['kuerzel']} einloggen ({nachricht or 'Login nötig'}) "
+                       f"— Timeout {login_timeout_s / 60:.0f} min",
                        status=LOGIN, phase=phase)
             elif time.monotonic() - login_seit > login_timeout_s:
                 _melde(f"Login-Timeout ({login_timeout_s / 60:.0f} min) — weiter mit "

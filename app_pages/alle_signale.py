@@ -88,6 +88,47 @@ _lade_start = time.monotonic()
 _lade_status = st.empty()
 _lade_balken = st.empty()
 
+# ── Abonnenten-Frische (Nutzer-Anforderung 25.10.) ───────────────────────
+# Die Tabelle zeigt den Stand des letzten Client-Laufs, keine Live-Zahl —
+# hier steht je Quelle, wann zuletzt WIRKLICH gemessen wurde (>24 h = ⚠),
+# plus Button für die Frischmessung (Fortschritt auf Abonnentenstatistik).
+# Bewusst OHNE eigenen scan_worker.active_run()-Aufruf: der Scan-Sperr-
+# Zustand kommt aus _batch_run (aufrufzählergenaue Tests, AppTest-Fallen).
+if sync_status:
+    from mqlkiscanner import abonnenten_statistik as _abo_stat
+    _frische = _abo_stat.juengste_messung(list(sync_status))
+    _jetzt = datetime.now()
+    _teile = []
+    for _k, _ts in sorted(_frische.items()):
+        if _ts is None:
+            _teile.append(f"{_k} nie gemessen :red[⚠]")
+            continue
+        _stunden = (_jetzt - _ts).total_seconds() / 3600.0
+        _teile.append(f"{_k} vor {_stunden:.0f} h"
+                      + (" :red[⚠]" if _stunden > 24.0 else ''))
+    st.caption('Abonnenten-Messung je Quelle: ' + ' · '.join(_teile)
+               + ' — ⚠ älter als 24 h: Zahlen können hinter dem Broker zurückliegen.')
+    _scan_laeuft = _batch_run is not None
+    if _abo_stat.refresh_laeuft():
+        st.caption(':blue[Abonnenten-Frischmessung läuft — Fortschritt und Ergebnis '
+                   'auf der Seite „Abonnentenstatistik".]')
+    elif st.button('Abonnentenzahlen frisch messen', key='alle_signale_abo_messen',
+                   icon=':material/autorenew:', disabled=_scan_laeuft,
+                   help='Startet denselben Zählerlauf wie auf der Abonnentenstatistik '
+                        '(je Quelle Top 200, keine Tradelisten) und danach das Neu-'
+                        'einlesen. Fortschritt und Ergebnis erscheinen dort; diese '
+                        'Seite zeigt danach die aktuellen Zahlen. Gesperrt, während '
+                        'ein Workflow-Scan läuft.'
+                       if not _scan_laeuft else
+                       'Gesperrt: Es läuft ein Workflow-Scan (dessen Stufe 0 '
+                       'aktualisiert die Clients bereits).'):
+        if _abo_stat.starte_refresh(messen=True, kuerzels=None):
+            st.caption(':blue[Frischmessung gestartet — Fortschritt und Ergebnis '
+                       'auf der Seite „Abonnentenstatistik". Diese Seite aktualisiert '
+                       'die Zahlen nach Abschluss.]')
+        else:
+            st.caption('Es läuft bereits eine Abonnenten-Frischmessung.')
+
 
 def _lade_phase(text: str):
     """Reale Arbeit zählen; Restzeit gilt nur für die laufende Phase."""

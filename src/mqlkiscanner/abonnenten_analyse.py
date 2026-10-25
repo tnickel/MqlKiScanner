@@ -279,14 +279,55 @@ def _data_run(quellen, retdd_gewicht, dd_grenze):
             "daten_status": "geplant", "daten_workflow_abgeschlossen": False, "daten_vollstaendig": False}
 
 
-def daten_starten(quellen: list[str], settings=None, retdd_gewicht=30, dd_grenze=None) -> str:
-    """Explicitly start a separate data-only job without KI prerequisites."""
+def daten_starten(quellen: list[str], settings=None, retdd_gewicht=30, dd_grenze=None,
+                  *, tradelisten_modus: str = "fehlt",
+                  akzeptiere_veraltete_abos: bool = False) -> str:
+    """Explicitly start a separate data-only job without KI prerequisites.
+
+    ``tradelisten_modus``: "fehlt" behält abgeschlossene Datenversuche bei
+    (Fortsetzen nach Abbruch ohne Neuverladen), "alle" erzwingt für jeden
+    Anbieter eine neue Vollständigmessung seiner Tradeliste.
+    ``akzeptiere_veraltete_abos``: Ausdrückliche Nutzer-Übersteuerung der
+    Frische-Schranke (jüngste Abonnenten-Messung je Quelle maximal 24 h,
+    Nutzer-Anforderung 25.10.); die Übersteuerung wird im Lauf vermerkt.
+    """
+    if tradelisten_modus not in {"fehlt", "alle"}:
+        raise ValueError("Tradelisten-Modus muss 'fehlt' oder 'alle' sein")
+    if type(akzeptiere_veraltete_abos) is not bool:
+        raise ValueError("akzeptiere_veraltete_abos muss boolesch sein")
     active = db.list_quellen(nur_aktiv=True)
     chosen = {db.kanonische_quelle(source) for source in quellen}
     if not chosen or chosen - {db.kanonische_quelle(source["kuerzel"]) for source in active}:
         raise ValueError("Mindestens eine gültige aktive Quelle auswählen")
+    from . import abonnenten_statistik
+    from datetime import datetime as _datetime
+    frische = abonnenten_statistik.juengste_messung(sorted(chosen))
+    jetzt = _datetime.now()
+    veraltet: dict[str, float] = {}
+    for kuerzel, ts in frische.items():
+        if ts is None:
+            veraltet[kuerzel] = -1.0
+            continue
+        stunden = (jetzt - ts).total_seconds() / 3600.0
+        if stunden > 24.0:
+            veraltet[kuerzel] = stunden
+    if veraltet and not akzeptiere_veraltete_abos:
+        teile = []
+        for kuerzel, stunden in sorted(veraltet.items()):
+            teile.append(f"{kuerzel}: nie gemessen" if stunden < 0
+                         else f"{kuerzel}: letzte Messung {stunden:.0f} h alt")
+        raise ValueError(
+            "Abonnentenzahlen nicht frisch (maximal 24 h erlaubt) — erst "
+            "'Abonnentenzahlen aktualisieren' mit 'Frisch messen' ausführen. "
+            + "; ".join(teile))
     run = _data_run(sorted(chosen), retdd_gewicht, dd_grenze)
-    run.update(kapitalmodell_aktiv=True, modell_version=CAPITAL_MODEL_VERSION)
+    run.update(kapitalmodell_aktiv=True, modell_version=CAPITAL_MODEL_VERSION,
+               tradelisten_modus=tradelisten_modus)
+    run.update(abonnenten_frische={
+        "geprueft_am": jetzt.isoformat(timespec="seconds"),
+        "juengste_messung": {k: (ts.isoformat(timespec="seconds") if ts else None)
+                             for k, ts in frische.items()},
+        "akzeptiert_veraltete": bool(veraltet)})
     store = Store()
     store.create(run)
     try:
@@ -1370,12 +1411,16 @@ def _execute_data_only(store, run_id, settings):
             store.update(run_id, abo_quellen_referenz=references, abo_quellen_referenz_historie=reference_history)
         entries = _arbeitsreihenfolge(store.tasks(run_id), run["quellen"])
         common, exclusions = daten_basis(settings), _restart_exclusions()
+        # Nutzer-Entscheidung 24.10. abends: „Alle neu laden" überschreibt auch
+        # abgeschlossene Datenversuche; Standard bleibt das Fortsetzen ohne
+        # erneutes Laden bereits vorliegender Trades.
+        force_reload = run.get("tradelisten_modus") == "alle"
         with AnalyseDaten(settings, log=log) as provider:
             store.update(run_id, phase="trades_und_equity")
             for entry in entries:
                 if stopped():
                     raise Angehalten("Stop angefordert")
-                if _data_attempt_reusable(entry, common, exclusions):
+                if not force_reload and _data_attempt_reusable(entry, common, exclusions):
                     continue
                 entry.update(status="rechnet", daten_status="laeuft", grund="", data_done=False, abgebrochen=False)
                 store.save_task(run_id, entry)

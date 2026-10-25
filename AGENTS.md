@@ -13,6 +13,22 @@ Dieser Block und die aktuellen Design-Regeln ordnen die datierten
 Umsetzungsnotizen unten ein. Frühere Testzahlen, Bewertungen und inzwischen
 abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
 
+- **Abonnenten-Belegfelder Pelican/Robo/Zulu (25.10.2026, Nutzerauftrag):**
+  Die drei Clients liefern jetzt denselben Abdeckungsbeleg wie MqlDownloader
+  (Auswahl) und Vantage (`subscriberCatalog*`): Beleg-Record mit
+  Auswahl + allen gelesenen Anbietern + reachedEnd + months + sort; Runner
+  emittieren die sechs Scanner-Felder, Wächter wie Vantage. Zusätzlich
+  veröffentlichen die Zählerläufe frische Zähler für ALLE gelesenen Anbieter
+  (Katalog-Merge + Tages-Snapshot), nicht nur für die Top-200-Auswahl —
+  Ursache der Meldung „Pelican-Zahlen kommen nicht an" (Seite zeigt
+  Historienwerte; bisher snapshottete nur die Auswahl). Scanner:
+  Login-Meldung nennt jetzt das Client-FENSTER (UI fett bei login),
+  Katalog-Timeout der Lesephase 30→60 s (mql5-Abbruchbefund 03:00).
+  Tests: Pelican 222, Robo 222, Zulu 180, Scanner 207 grün. WIRKSAM erst
+  nach Neubau/Neustart der drei Monitore und der Streamlit-App; danach sind
+  grüne Zählerläufe separat nachzuweisen. Nachweis:
+  `doc/reviews/2026-10-25_abonnenten_belege_nachruestung/README.md`.
+
 - **Drawdown-Review und Konsolidierung (24.10.2026):** Gemeinsamer Peak-/Flow-
   Kern in `forensics/drawdown_core.py` für Closing, H1, Studie, Diagramm und
   Modell. Die unterschiedliche Kurvenbildung/Abdeckungsprüfung bleibt

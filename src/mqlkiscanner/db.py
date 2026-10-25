@@ -792,13 +792,19 @@ def get_latest_analysis(signal_id: int | None, kind: str, *, basis=None,
 
 
 def list_catalog() -> list[dict]:
-    """Alle Signale mit Forensik und neuesten KI-Texten (eine Zeile je Signal)."""
+    """Alle Signale mit Forensik und neuesten KI-Texten (eine Zeile je Signal).
+
+    Die Abonnentenzahl kommt bevorzugt aus dem Katalog-Spiegel
+    (katalog_signale — Stand des letzten Client-Laufs; Nutzer-Anforderung
+    25.10.: „Tabelle aktuell"), der Workflow-Scan-Stand ist nur Fallback
+    für Signale ohne Katalogzeile.
+    """
     init_db()
     with _connect() as conn:
         rows = conn.execute(
             """
             SELECT i.externe_id AS signal_id, s.signal_ref, q.quellen_uid, q.kuerzel AS quelle, s.name, s.platform, s.url, s.autor, s.abo_preis,
-                   s.abonnenten, s.wochen,
+                   COALESCE(k.abonnenten, s.abonnenten) AS abonnenten, s.wochen,
                    s.stats_json, s.updated_at AS signal_updated,
                    t.path AS trades_path, t.sha256 AS trades_sha256, t.fetched_at AS trades_fetched,
                    f.json AS forensik_json, f.updated_at AS forensik_updated,
@@ -829,6 +835,7 @@ def list_catalog() -> list[dict]:
             FROM signals s
              JOIN signal_identitaeten i ON i.signal_ref=s.signal_ref
              JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid
+            LEFT JOIN katalog_signale k ON k.signal_ref = s.signal_ref
             LEFT JOIN trade_files t ON t.signal_ref = s.signal_ref
             LEFT JOIN forensik f ON f.signal_ref = s.signal_ref
             ORDER BY COALESCE(f.updated_at, s.updated_at) DESC, i.externe_id DESC

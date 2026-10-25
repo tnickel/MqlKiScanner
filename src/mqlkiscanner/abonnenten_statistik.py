@@ -77,8 +77,11 @@ def sparkline_png(werte, *, trend: int, breite: int = 88,
 
 # Katalog-Abruf mit großzügigerem Timeout als der Standard-Client: der
 # MqlDownloader braucht für 372 Zeilen mit Wochen-Dateialter-Scan kalt
-# bis ~10 s (gemessen 20.10.2026).
-_KATALOG_TIMEOUT_S = 30.0
+# bis ~10 s (gemessen 20.10.2026). Erhöhung 30→60 s (25.10.): Direkt nach
+# dem eigenen Zählerlauf antwortete der MqlDownloader auf den Vollkatalog
+# erst nach Ablauf der 30 s — der Sync brach mql5 ab (Verbindungsabbruch
+# im Monitor-Log), obwohl derselbe Abruf entlastet nur ~2,5 s braucht.
+_KATALOG_TIMEOUT_S = 60.0
 
 
 def _parse_ts(wert) -> datetime | None:
@@ -86,6 +89,30 @@ def _parse_ts(wert) -> datetime | None:
         return datetime.fromisoformat(str(wert))
     except (TypeError, ValueError):
         return None
+
+
+def juengste_messung(kuerzels: list[str]) -> dict[str, datetime | None]:
+    """Jüngste echte Abonnenten-MESSUNG je Quelle (Nutzer-Anforderung 25.10.:
+    „max 1 Tag alt"). Grundlage ist max(ts) aus subscriber_history — NICHT
+    der Spiegelzeitpunkt: Neulesen bestätigt keine frische Zahl. Quellen
+    ohne jeden Messpunkt liefern None (müssen erst frisch messen).
+    """
+    db.init_db()
+    gesucht = [db.kanonische_quelle(k) for k in kuerzels]
+    with db._connect() as conn:
+        rows = conn.execute(
+            "SELECT q.kuerzel AS kuerzel, max(h.ts) AS juengste "
+            "FROM subscriber_history h "
+            "JOIN signal_identitaeten i ON i.signal_ref=h.signal_ref "
+            "JOIN quellen_identitaeten q ON q.quellen_uid=i.quellen_uid "
+            "GROUP BY q.kuerzel").fetchall()
+    stand = {db.kanonische_quelle(str(r["kuerzel"])): r["juengste"]
+             for r in rows}
+    out: dict[str, datetime | None] = {}
+    for k in gesucht:
+        roh = stand.get(k)
+        out[k] = _parse_ts(roh) if roh else None
+    return out
 
 
 def _vergleichspunkt(reihe: list[tuple[datetime, int]], tage: int) -> int | None:
@@ -106,7 +133,8 @@ def _vergleichspunkt(reihe: list[tuple[datetime, int]], tage: int) -> int | None
 
 # ── Sync: Katalog + belegte native Historie ──────────────────────────────
 def sync_quelle(quelle: dict, *, log: Callable[[str], None] | None = None,
-                eigene_messpunkte: bool = False) -> dict:
+                eigene_messpunkte: bool = False,
+                on_fortschritt: Callable[[dict], None] | None = None) -> dict:
     """Katalog + vollständige Abonnenten-Historie EINER Quelle spiegeln.
 
     1. Vollkatalog (minSubscribers=0) via ingest.hole_katalog — dieselbe
@@ -117,6 +145,8 @@ def sync_quelle(quelle: dict, *, log: Callable[[str], None] | None = None,
     Katalogzeilen und selbst ein stabiler Update-Job binden die einzelnen
     Zähler nicht an einen Messzeitpunkt. Daher entstehen keine Eigenpunkte.
     ``eigene_messpunkte`` bleibt nur zur Aufrufkompatibilität angenommen.
+    ``on_fortschritt`` erhält Dikt-Meldungen für den UI-Progress-Balken
+    ({"phase": "historie", "kuerzel", "gesamt", "fertig"}).
 
     Rückgabe {"anzahl", "history_punkte", "messpunkte", "fehler" (Liste),
     "abgebrochen" (str|None)}. Verbindungs-/Auth-Fehler brechen DIESE Quelle
@@ -150,7 +180,13 @@ def sync_quelle(quelle: dict, *, log: Callable[[str], None] | None = None,
     eintrag["anzahl"] = gespeichert
     _log(f"Katalog: {gespeichert} Signale übernommen, {geloescht} rausgefallen.")
 
-    for zeile in zeilen:
+    # Fortschritt für die UI (Progress-Balken): Meldung in Schritten von 25,
+    # damit der Zustand nicht bei jedem Einzelabruf neu geschrieben wird.
+    gesamt = len(zeilen)
+    if on_fortschritt:
+        on_fortschritt({"phase": "historie", "kuerzel": kuerzel,
+                        "gesamt": gesamt, "fertig": 0})
+    for nr, zeile in enumerate(zeilen, start=1):
         signal_id = int(zeile["signal_id"])
         version = str(zeile.get("version") or "")
         punkte: list[dict] = []
@@ -172,6 +208,9 @@ def sync_quelle(quelle: dict, *, log: Callable[[str], None] | None = None,
         except db.IdentityError as exc:
             eintrag["fehler"].append(f"#{signal_id}: {exc}")
             continue
+        if on_fortschritt and (nr % 25 == 0 or nr == gesamt):
+            on_fortschritt({"phase": "historie", "kuerzel": kuerzel,
+                            "gesamt": gesamt, "fertig": nr})
     if eintrag["fehler"]:
         _log(f"{len(eintrag['fehler'])} Einzel fehler bei der Historie.")
     _log(f"Historie gespiegelt: {eintrag['history_punkte']} Punkte, "
@@ -182,19 +221,26 @@ def sync_quelle(quelle: dict, *, log: Callable[[str], None] | None = None,
 
 
 def sync(log: Callable[[str], None] | None = None,
-         kuerzels: list[str] | None = None) -> dict:
+         kuerzels: list[str] | None = None,
+         on_fortschritt: Callable[[dict], None] | None = None) -> dict:
     """Stufe A: alle aktiven Quellen (oder Teilmenge) spiegeln.
 
     Eine ausgefallene Quelle bricht die anderen nicht ab — ihr Fehler
-    landet im Summary (Muster katalog.sync). """
+    landet im Summary (Muster katalog.sync). ``on_fortschritt`` erhält je
+    Quellenwechsel {"phase": "quelle", "kuerzel", "nr", "von"} und die
+    Historie-Meldungen aus sync_quelle — Grundlage für den UI-Balken. """
     quellen._ensure()
     aktiv = db.list_quellen(nur_aktiv=True)
     if kuerzels:
         erlaubt = {db.kanonische_quelle(k) for k in kuerzels}
-        aktiv = [q for q in aktiv if db.kanonische_quelle(q["kuerzel"]) in erlaubt]
+        aktiv = [q for q in aktiv if db.kanonische_quelle(q['kuerzel']) in erlaubt]
     summary = {"quellen": {}, "gesamt": 0}
-    for quelle in aktiv:
-        eintrag = sync_quelle(quelle, log=log)
+    for nr, quelle in enumerate(aktiv, start=1):
+        if on_fortschritt:
+            on_fortschritt({"phase": "quelle",
+                            "kuerzel": db.kanonische_quelle(quelle.get("kuerzel") or ""),
+                            "nr": nr, "von": len(aktiv)})
+        eintrag = sync_quelle(quelle, log=log, on_fortschritt=on_fortschritt)
         summary["quellen"][str(quelle["kuerzel"])] = eintrag
         summary["gesamt"] += int(eintrag["anzahl"] or 0)
     return summary
@@ -493,6 +539,10 @@ def starte_refresh(*, messen: bool, kuerzels: list[str] | None = None,
         with _REFRESH_LOCK:
             _REFRESH.setdefault("quellen", {})[str(z.get("kuerzel"))] = z
 
+    def _lesen_fortschritt(stand: dict) -> None:
+        with _REFRESH_LOCK:
+            _REFRESH["lesen"] = dict(stand)
+
     def _arbeit() -> None:
         try:
             client_ergebnisse = {}
@@ -511,7 +561,8 @@ def starte_refresh(*, messen: bool, kuerzels: list[str] | None = None,
                     _REFRESH["phase"] = "abgebrochen"
                     return
                 _REFRESH["phase"] = "lesen"
-            summary = sync(log=_log)
+                _REFRESH["lesen"] = None
+            summary = sync(log=_log, on_fortschritt=_lesen_fortschritt)
             for kuerzel, ergebnis in client_ergebnisse.items():
                 coverage = ergebnis.get("abonnenten_katalog") or {}
                 if ergebnis.get("abonnenten_auswahl_unbestaetigt") is True:
