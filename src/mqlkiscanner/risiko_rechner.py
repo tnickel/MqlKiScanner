@@ -232,8 +232,22 @@ def _epoch_text(epoch) -> str:
     return datetime.fromtimestamp(int(epoch), tz=timezone.utc).strftime("%d.%m.%Y %H:%M")
 
 
+def _gitter_stufe(v_min: float, v_max: float, ziel: int) -> float:
+    """Runde Achsen-Stufe (1/2/5 × 10^n) mit ~ziel Teilstrichen."""
+    roh = ((v_max - v_min) / ziel) if v_max > v_min else 1.0
+    mag = 10.0 ** math.floor(math.log10(roh))
+    for m in (1, 2, 5, 10):
+        if roh <= m * mag:
+            return m * mag
+    return 10 * mag
+
+
 def kurve_png(pfad: Path, punkte: list, startkapital: float) -> None:
-    """Equity/realisiert oben, Unterwasser-Prozent unten (Pillow)."""
+    """Equity/realisiert oben, Unterwasser-Prozent unten (Pillow).
+
+    Beschriftete Achsen: oben USD-Stufen, unten Rückgang in Prozent,
+    unten Zeit-Ticks (UTC) — zuvor ohne jede Achsenskala.
+    """
     from PIL import Image as PImage
     from PIL import ImageDraw
 
@@ -253,8 +267,10 @@ def kurve_png(pfad: Path, punkte: list, startkapital: float) -> None:
     y_min = min(alle_werte + [startkapital] if startkapital else alle_werte)
     y_max = max(alle_werte)
     spanne = (y_max - y_min) or 1.0
-    ml, mr, mt, mb = 110, 30, 60, 200
-    ho = h - mb - 40  # Höhe Oberpanel
+    ml, mr, mt = 150, 30, 64
+    ho = 510                # Unterkante Oberpanel
+    uw_top, uw_hoch = 555, 130  # Unterwasser: 0-%-Linie, Tiefe in px
+    uw_bottom = uw_top + uw_hoch
 
     def X(p):
         t0, t1 = punkte[0]["t"], punkte[-1]["t"]
@@ -263,17 +279,38 @@ def kurve_png(pfad: Path, punkte: list, startkapital: float) -> None:
     def Y_oben(v):
         return mt + (ho - mt - 20) * (1 - (v - y_min) / spanne)
 
-    def Y_unten(v):
-        u_max = max([(p.get("_uw") or 0.0) for p in punkte] + [1.0])
-        return ho + 40 + 130 * (v / u_max)
+    def rechts(text, y, farbe=(120, 120, 120)):
+        img.text((ml - 10 - img.textlength(text, font=fk), y - 10), text,
+                 font=fk, fill=farbe)
 
+    def achse_usd(v):
+        if abs(v) >= 1_000_000:
+            return _de(v / 1_000_000, 1, 1, " Mio")
+        return f"{v:,.0f}".replace(",", ".")
+
+    # ── Oberpanel: Rahmen + USD-Gitter mit Beschriftung ─────────────────
     img.line([(ml, mt - 8), (ml, ho), (w - mr, ho)], fill=(90, 90, 90), width=2)
-    img.line([(ml, ho + 40), (ml, h - mb + 40), (w - mr, h - mb + 40)], fill=(90, 90, 90), width=2)
+    step = _gitter_stufe(y_min, y_max, 4)
+    stufen = [step * i for i in range(math.floor(y_min / step) + 1,
+                                      math.floor(y_max / step) + 1)]
+    if len(stufen) < 2:  # winzige Spanne: gleichmässige Fallback-Stufen
+        stufen = [y_min + spanne * i / 3 for i in range(4)]
+    for i, wert in enumerate(stufen):
+        y = Y_oben(wert)
+        if i:
+            img.line([(ml, y), (w - mr, y)], fill=(228, 228, 228), width=1)
+        rechts(achse_usd(wert), y)
+    img.text((ml - 10 - img.textlength("USD", font=fk), mt - 34), "USD",
+             font=fk, fill=(120, 120, 120))
     # Startkapital-Linie
     if startkapital and startkapital > 0:
         y0 = Y_oben(startkapital)
         img.line([(ml, y0), (w - mr, y0)], fill=(158, 158, 158), width=1)
-        img.text((w - mr - 150, y0 - 22), "Startkapital", font=fk, fill=(120, 120, 120))
+        text = f"Startkapital {achse_usd(startkapital)}"
+        tw = img.textlength(text, font=fk)
+        x0 = w - mr - tw - 10
+        img.rectangle([x0 - 4, y0 - 28, x0 + tw + 4, y0 - 2], fill="white")
+        img.text((x0, y0 - 26), text, font=fk, fill=(120, 120, 120))
     # realisiert (immer vorhanden)
     rl = [(X(p["t"]), Y_oben(p["realisiert"])) for p in punkte if p.get("realisiert") is not None]
     if len(rl) > 1:
@@ -294,14 +331,37 @@ def kurve_png(pfad: Path, punkte: list, startkapital: float) -> None:
         p["_uw"] = uw
     for p in punkte:
         p["_uw"] = p.get("_uw") or 0.0
+    u_wirklich = max(p["_uw"] for p in punkte)
+    u_max = u_wirklich or 1.0  # nur Divisions-Basis, falls nie unter Wasser
+
+    def Y_unten(v):
+        return uw_top + uw_hoch * (v / u_max)
+
+    # ── Unterpanel: 0-%-Linie, Tiefpunkt, Rahmen ────────────────────────
+    img.line([(ml, uw_top), (w - mr, uw_top)], fill=(228, 228, 228), width=1)
+    img.line([(ml, uw_top), (ml, uw_bottom), (w - mr, uw_bottom)],
+             fill=(90, 90, 90), width=2)
+    rechts("0 %", uw_top)
+    if u_wirklich > 0:
+        rechts(f"\u2212{_de(u_max * 100, 1, 1, ' %')}", uw_bottom)
     uwp = [(X(p["t"]), Y_unten(p["_uw"])) for p in punkte]
     if len(uwp) > 1:
         img.line(uwp, fill=(198, 40, 40), width=2)
     img.text((ml, 8), "H1-Equity (grün), realisiert (grau); unten: Rückgang vom Hochpunkt",
              font=f, fill=(30, 30, 30))
-    t0 = _epoch_text(punkte[0]["t"]) if punkte else "—"
-    t1 = _epoch_text(punkte[-1]["t"]) if punkte else "—"
-    img.text((ml, h - mb + 48), f"{t0} (UTC)  …  {t1} (UTC)", font=fk, fill=(90, 90, 90))
+    # ── X-Achse: 5 Zeit-Ticks (UTC) unter dem Unterpanel ────────────────
+    t0, t1 = punkte[0]["t"], punkte[-1]["t"]
+    tage = (t1 - t0) / 86400 if t1 > t0 else 0.0
+    fmt = "%m.%Y" if tage >= 730 else ("%d.%m.%Y" if tage >= 90 else "%d.%m. %H:%M")
+    for i in range(5):
+        t = t0 + (t1 - t0) * i / 4
+        x = X(t)
+        img.line([(x, uw_bottom), (x, uw_bottom + 6)], fill=(90, 90, 90), width=1)
+        text = datetime.fromtimestamp(int(t), tz=timezone.utc).strftime(fmt)
+        if i == 4:
+            text += " (UTC)"
+        img.text((x - img.textlength(text, font=fk) / 2, uw_bottom + 12), text,
+                 font=fk, fill=(90, 90, 90))
     pfad.parent.mkdir(parents=True, exist_ok=True)
     basis.save(pfad)
 
