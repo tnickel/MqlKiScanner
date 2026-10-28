@@ -10,7 +10,9 @@ werden taeglich erneut versucht, unbekannte Raender/Leerantworten nach
 """
 from __future__ import annotations
 
+import json
 import math
+import re
 from pathlib import Path
 import sqlite3
 import time
@@ -266,3 +268,184 @@ class KursCache:
                     geladen_am = MAX(h1_abrufversuche.geladen_am, excluded.geladen_am),
                     gueltig_bis = MAX(h1_abrufversuche.gueltig_bis, excluded.gueltig_bis)
             """, versuche)
+
+
+def uebersicht(cache_pfad: str | Path | None = None,
+               studien: Iterable[Mapping] | None = None,
+               alias_pfad: str | Path | None = None) -> list[dict]:
+    """Kurs-Bestand je Symbol für den Einstellungs-Tab „Kursdaten".
+
+    Listet ALLE bekannten Symbole — auch solche, zu denen Equity-Studien
+    nur „ohne Kurse/Kontrakt" meldeten (Nutzer 28.10.2026: die Tabelle
+    soll zeigen, was im MetaTrader-Kursbezug noch fehlt). Bar-Bestand
+    kommt aus h1_bars (Feed/Symbol-übergreifend), die Studien-Nennungen
+    aus den gespeicherten Studien-JSONs. Kursose zuerst, dann alphabetisch.
+    """
+    from datetime import datetime, timezone
+
+    pfad = Path(cache_pfad) if cache_pfad is not None else config.DATA_DIR / "kursdaten.db"
+    bestand: dict[str, dict] = {}
+    if pfad.exists():
+        with sqlite3.connect(pfad, timeout=30.0) as conn:
+            for symbol, bars, feeds, von, bis in conn.execute(
+                    "SELECT symbol, COUNT(*), COUNT(DISTINCT feed),"
+                    " MIN(epoch), MAX(epoch) FROM h1_bars GROUP BY symbol"):
+                bestand[symbol] = {"bars": bars, "feeds": feeds,
+                                   "von": von, "bis": bis}
+    alias = _lese_alias(alias_pfad) if alias_pfad else ersetzungen()
+    if studien is None:
+        from . import db
+        studien = db.list_equity_studien(identitaeten=True).values()
+    ohne: dict[str, int] = {}
+    for item in studien:
+        studie = (item.get("report")
+                  if isinstance(item, Mapping) and "report" in item else item)
+        if not isinstance(studie, Mapping):
+            continue
+        gemeldet: set[str] = set()
+        for schluessel in ("symbole_ohne_kurse", "symbole_ohne_kontrakt"):
+            for symbol in (studie.get(schluessel) or []):
+                if isinstance(symbol, str) and symbol.strip():
+                    gemeldet.add(symbol)
+        for symbol in gemeldet:
+            ohne[symbol] = ohne.get(symbol, 0) + 1
+        # „Mit Kursen" gemeldete Symbole ohne Bar-Bestand bleiben sichtbar
+        for symbol in (studie.get("symbole_mit_kursen") or []):
+            if (isinstance(symbol, str) and symbol.strip()
+                    and symbol not in bestand and symbol not in ohne):
+                ohne[symbol] = 0
+    zeilen = []
+    index = {raw.upper(): raw for raw, b in bestand.items() if b["bars"]}
+    fmt = (lambda e: datetime.fromtimestamp(e, tz=timezone.utc)
+           .strftime("%d.%m.%Y %H:%M") if e else "")
+    ersatz: dict[str, str] = {}
+    for symbol in sorted(set(bestand) | set(ohne)):
+        b = bestand.get(symbol)
+        match = None if b else _kurs_match(symbol, index, alias)
+        zeilen.append({
+            "Symbol": symbol,
+            "Status": ("Kurse vorhanden" if b else
+                       "Ersetzung" if match else "keine Kurse"),
+            "Im Bestand als": match or "",
+            "Bars": b["bars"] if b else 0,
+            "Erster Kurs": fmt(b["von"]) if b else "",
+            "Letzter Kurs": fmt(b["bis"]) if b else "",
+            "Feeds": b["feeds"] if b else 0,
+            "Studien ohne Kurse": ohne.get(symbol, 0),
+        })
+        if match:
+            ersatz[symbol] = match
+    # Echte Lücken zuerst, dann Ersetzungsfälle, dann eigener Bestand.
+    zeilen.sort(key=lambda z: ((2 if z["Status"] == "Kurse vorhanden" else
+                                (1 if z["Status"] == "Ersetzung" else 0)),
+                               z["Symbol"]))
+    # Ersetzungszeilen zeigen die Kurswerte ihres Ersatz-Symbols — die
+    # Tabelle wirkt als Kontrolle komplett (Nutzer 28.10.2026); die Spalte
+    # „Im Bestand als" nennt die Quelle, „Status" die Herkunft.
+    for z in zeilen:
+        if z["Status"] == "Ersetzung":
+            qb = bestand[ersatz[z["Symbol"]]]
+            z["Bars"] = qb["bars"]
+            z["Erster Kurs"] = fmt(qb["von"])
+            z["Letzter Kurs"] = fmt(qb["bis"])
+            z["Feeds"] = qb["feeds"]
+    return zeilen
+
+
+# Ersetzungstabelle (Nutzer 28.10.2026): bekannte Umbenennungen OHNE
+# gemeinsames Suffix — Ziel muss im Bestand liegen, sonst bleibt die Zeile
+# eine echte Lücke. Ergänzungen/Überschreibungen: data/kurs_alias.json
+# ({"SYMBOL": "BESTANDSSYMBOL"}), wird bei jedem Übersichtslesen gelesen.
+_KURS_ALIAS: dict[str, str] = {
+    "BITCOIN": "BTCUSD",
+    "GER30CASH": "GER40",
+    "DE30M": "GER40",
+    "US100": "USTEC",
+    "USOIL-FUTURE": "USOUSD",
+    "WTI": "USOUSD",
+}
+
+
+_ERSATZ_CACHE: dict = {"mtime": None, "daten": {}}
+
+
+def ersetzungen() -> dict[str, str]:
+    """Die zentrale Ersetzungstabelle — Studien-Symbol → Bestands-Symbol.
+
+    Genau diese Tabelle nutzt KursDaten.hole_h1 als letzte Stufe der
+    Symbol-Auflösung (also JEDE Drawdown-/Studien-Berechnung) UND die
+    Übersichtstabelle im Einstellungs-Tab — ein Bestand, eine Wahrheit
+    (Nutzer 28.10.2026: „zentrale Komponente, von allen Funktionen
+    verwendet"). data/kurs_alias.json ergänzt/überschreibt die Eingebauten
+    und wird bei Dateiänderung automatisch neu gelesen.
+    """
+    pfad = config.DATA_DIR / "kurs_alias.json"
+    mtime = pfad.stat().st_mtime if pfad.exists() else None
+    if _ERSATZ_CACHE["mtime"] != mtime:
+        _ERSATZ_CACHE["daten"] = _lese_alias(pfad)
+        _ERSATZ_CACHE["mtime"] = mtime
+    return {**_KURS_ALIAS, **_ERSATZ_CACHE["daten"]}
+
+
+def _lese_alias(pfad: Path) -> dict[str, str]:
+    """Nutzer-Erweiterungen der Ersetzungstabelle (robust gegen kaputte Datei)."""
+    if not pfad.exists():
+        return {}
+    try:
+        daten = json.loads(pfad.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(daten, dict):
+        return {}
+    return {str(k).strip().upper(): str(v).strip().upper()
+            for k, v in daten.items()
+            if isinstance(k, str) and isinstance(v, str) and k.strip() and v.strip()}
+
+
+def _kurs_match(symbol: str, index: dict[str, str],
+                alias: dict[str, str] | None = None) -> str | None:
+    """Anzeige-Matching für den Übersichts-Tab: zu einem Symbol ohne Bars
+    den vorhandenen Bestand finden, der namensmäßig dahintersteckt
+    (Suffix-Varianten wie GBPUSDM, USDCAD+, US500CASH, JPN225FT).
+
+    Ausschließlich ANZEIGE im Übersichts-Tab — die Studien-Auflösung
+    bleibt beim belegten Brokersymbol (Kontraktgrößen und Feed-Nachweis
+    unterscheiden sich). Mitgliedschafts-gebremst: gematcht wird nur,
+    wofür tatsächlich Bars liegen; nichts wird umbenannt oder gespeichert.
+    """
+    alias = alias or {}
+    sym = symbol.strip().upper()
+    treffer = index.get(sym)
+    if treffer:
+        return treffer
+    ziel = alias.get(sym)
+    if ziel and ziel in index:
+        return index[ziel]
+    kandidat = re.sub(r"[.+]+$", "", sym)
+    for token in ("FUTURE", "CASH", "MICRO", "PRO", "FT"):
+        if kandidat.endswith(token) and len(kandidat) > len(token) + 2:
+            kandidat = kandidat[:-len(token)]
+            break
+    ziel = alias.get(kandidat)
+    if ziel and ziel in index:
+        return index[ziel]
+    while len(kandidat) > 3:
+        if kandidat in index:
+            return index[kandidat]
+        kandidat = kandidat[:-1]
+    # Umgekehrt: Bestand trägt das Suffix (XAUAUD ≙ XAUAUD+), Basis nicht
+    for bestand_sym, raw in index.items():
+        if bestand_sym.upper().startswith(sym) and len(bestand_sym) > len(sym):
+            rest = bestand_sym[len(sym):]
+            while rest:
+                for suf in ("+", "M", "FT", "CASH", ".A", ".M", "PRO",
+                            "MICRO", "-FUTURE", "-P"):
+                    if rest.upper().endswith(suf):
+                        rest = rest[:-len(suf)]
+                        break
+                else:
+                    rest = ""
+                    break
+            else:
+                return raw
+    return None

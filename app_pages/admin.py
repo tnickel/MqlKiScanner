@@ -113,9 +113,9 @@ with st.container(horizontal=True):
     st.badge("Lokale Engine ohne KI-Key nutzbar", color="blue")
 
 (access_tab, models_tab, downloader_tab, tradeserver_tab, rest_api_tab, scan_tab,
- prompts_tab, agenten_tab) = st.tabs(
+ prompts_tab, kurs_tab, agenten_tab) = st.tabs(
     ["Zugänge", "KI & Modelle", "Datenquellen", "Tradeserver", "REST-API",
-     "Scan & Risiko", "Analysevorlagen", "Agenten"]
+     "Scan & Risiko", "Analysevorlagen", "Kursdaten", "Agenten"]
 )
 
 with access_tab:
@@ -1002,6 +1002,76 @@ with prompts_tab:
                 info_button("settings_prompt_preview", key="admin_prompt_preview_help")
             with st.expander("Standardvorlage ansehen", icon=":material/visibility:"):
                 st.markdown(llm_prompts.DEFAULTS[prompt_key])
+
+with kurs_tab:
+    # Kurs-Bestand je Symbol (Nutzer 28.10.2026): was ist geladen, wie tief
+    # reicht die Historie — und welche Studien-Symbole blieben ohne Kurse.
+    import pandas as pd
+    from mqlkiscanner import kurs_cache
+
+    @st.cache_data(ttl=300, show_spinner="Kursbestand lesen …")
+    def _kurs_uebersicht_zeilen():
+        return kurs_cache.uebersicht()
+
+    if st.button("Aktualisieren", key="admin_kurs_refresh",
+                 icon=":material/refresh:",
+                 help="Liest den Kurs-Cache und die Studien neu (Caching 5 Minuten)."):
+        _kurs_uebersicht_zeilen.clear()
+    zeilen = _kurs_uebersicht_zeilen()
+    if not zeilen:
+        st.info("Noch kein Kursbestand und keine Studien-Symbole vorhanden.")
+    else:
+        bars_gesamt = sum(z["Bars"] for z in zeilen)
+        ohne_kurse = [z for z in zeilen if not z["Bars"]]
+        mit_match = [z for z in ohne_kurse if z["Im Bestand als"]]
+        st.caption(
+            f"**{len(zeilen)} Symbole** · eigene {bars_gesamt:,} H1-Bars".replace(",", ".")
+            + f" · **{len(ohne_kurse)} Symbole ohne eigene Kurse**, davon "
+              f"**{len(mit_match)} per Ersetzung abgedeckt** (Suffix-Varianten "
+              "wie GBPUSDM ≙ GBPUSD oder Ersetzungstabelle wie BITCOIN ≙ "
+              "BTCUSD — Anzeige, keine Umbenennung)"
+            + (f" · **{len(ohne_kurse) - len(mit_match)} echte Lücken**"
+               if ohne_kurse else "")
+            + " · Ersetzungszeilen zeigen die Kurse des Ersatz-Symbols "
+              "(Status „Ersetzung“, Spalte „Im Bestand als“ nennt die Quelle). "
+              "Sortierung: echte Lücken → Ersetzung → eigener Bestand. "
+              "„Studien ohne Kurse“ zählt, wie viele Studien das Symbol "
+              "vergeblich angefragt haben. Bars enden am Trade-Fenster der "
+              "bisherigen Studien — nicht an „jetzt“.")
+        st.dataframe(
+            pd.DataFrame(zeilen), hide_index=True, height=520, width="stretch",
+            column_config={
+                "Symbol": st.column_config.TextColumn("Symbol", width=140),
+                "Status": st.column_config.TextColumn(
+                    "Status", width=130,
+                    help="keine Kurse = Studien-Symbol, für das kein einziger "
+                         "H1-Bar im Cache liegt (Broker hat das Symbol nicht "
+                         "oder unter anderem Namen)"),
+                "Im Bestand als": st.column_config.TextColumn(
+                    "Im Bestand als", width=130,
+                    help="Suffix-Variante oder Ersetzung eines Symbols, zu "
+                         "dem Bars liegen (z. B. GBPUSDM ≙ GBPUSD, BITCOIN ≙ "
+                         "BTCUSD). Nur Anzeige — die Studien nutzen weiter "
+                         "das belegte Brokersymbol, weil Kontraktgrößen "
+                         "abweichen können. Eigene Erweiterungen: "
+                         "data/kurs_alias.json"),
+                "Status": st.column_config.TextColumn(
+                    "Status", width=130,
+                    help="Kurse vorhanden = eigener Bar-Bestand · Ersetzung "
+                         "= Kurse des Ersatz-Symbols (Zeile zeigt dessen "
+                         "Werte) · keine Kurse = weder eigen noch Ersatz"),
+                "Bars": st.column_config.NumberColumn("H1-Bars", format="%.0f"),
+                "Erster Kurs": st.column_config.TextColumn(
+                    "Erster Kurs (UTC)", width=150),
+                "Letzter Kurs": st.column_config.TextColumn(
+                    "Letzter Kurs (UTC)", width=150),
+                "Feeds": st.column_config.NumberColumn(
+                    "Feeds", format="%.0f",
+                    help="Wie viele Terminal-/Server-Feeds Bars zu diesem "
+                         "Symbol liefern (z. B. ActivTrades + Vantage)"),
+                "Studien ohne Kurse": st.column_config.NumberColumn(
+                    "Studien ohne Kurse", format="%.0f"),
+            })
 
 with agenten_tab:
     # Inhalt des Agenten-Betriebs (Rollen, Budget, Daemon, Rollen-Prompts)

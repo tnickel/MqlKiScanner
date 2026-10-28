@@ -37,7 +37,7 @@ import subprocess
 import time
 
 from .agenten.marktdata import broker_symbol, terminal_beenden, terminal_laueft
-from .kurs_cache import KursCache
+from .kurs_cache import KursCache, ersetzungen
 from .symbols import alias_fuer_symbol, normalize_symbol
 
 ERLAUBTE_MT5_AUFRUFE = frozenset((
@@ -378,6 +378,12 @@ class KursDaten:
                                       self.settings.get("symbol_aliases"))
             if alias and alias not in kandidaten:
                 kandidaten.append(alias)
+            # Zentrale Ersetzungstabelle (kurs_alias.json + Eingebaute) —
+            # letzte Stufe; deckt Studien-Symbole ab, die kein Broker führt,
+            # wenn ein Bestands-Symbol dahintersteckt (z. B. BITCOIN→BTCUSD).
+            ersatz = ersetzungen().get(str(symbol).upper().strip())
+            if ersatz:
+                kandidaten.append(broker_symbol(ersatz, self.settings))
             gewaehlt = next((k for k in kandidaten if mt5.symbol_select(k, True)), None)
         if gewaehlt is None:
             self._laufcache_setzen(key, None, jetzt)
