@@ -1206,6 +1206,7 @@ def daten_tabelle(entries: list[dict], state: dict | None = None) -> pd.DataFram
                                else "H1-Abdeckung unbekannt"))
         rows.append({
             "Quelle": e.get("quelle"), "Strategie": e.get("name"), "ID": e.get("id"),
+            "Link": quellen.oeffnen_url(e.get("quelle"), e.get("id"), e.get("url") or ""),
             "Abonnenten": _number(e.get("abonnenten")),
             "Nettozuwachs 7 Tage": _number(trend.get("delta_7")),
             "Zufluss / Quellenmittel": _number(e.get("abo_zufluss_skaliert")),
@@ -1242,7 +1243,17 @@ def daten_tabelle(entries: list[dict], state: dict | None = None) -> pd.DataFram
                           else "Exportierte geschlossene Positionen; Floating an H1-Bar-Schlüssen"),
             **_modell_spalten(e),
         })
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    # Zahlen-Spalten strikt numerisch — eine Spalte ohne EINEN echten Wert
+    # (alles None) bliebe sonst object/pyarrow-null und renderte als Text
+    # „None" statt leerer Zelle (Nutzer-Screenshot 28.10.: Modell-Netto-
+    # gewinn USD bei Quellenwerten ohne Trade-Export). Text-Spalten bleiben
+    # unverändert, weil die Koercierung dort Werte verlieren würde.
+    for spalte in df.columns:
+        zahlen = pd.to_numeric(df[spalte], errors="coerce")
+        if zahlen.notna().sum() == df[spalte].notna().sum():
+            df[spalte] = zahlen
+    return df
 
 
 def daten_csv(entries: list[dict], state: dict | None = None) -> bytes:
@@ -1300,7 +1311,9 @@ def _render_daten_detail(entry: dict, state: dict) -> None:
         if isinstance(model.get("kapital_details"), dict):
             with st.expander("Parameter der Modell-Kapitalbasis"):
                 st.json(model["kapital_details"])
-    values = table.iloc[0].map(lambda value: "unbekannt" if pd.isna(value) else str(value))
+    # Link ist in der Haupttabelle klickbar; im Messwert-Dump wäre er nur Text.
+    values = (table.iloc[0].drop(labels=["Link"], errors="ignore")
+              .map(lambda value: "unbekannt" if pd.isna(value) else str(value)))
     st.table(values.rename_axis("Messwert").reset_index(name="Wert"))
     if hint := _abo_auswahlhinweis(_daten_auswahlkopie(entry, {**state, "auswahl_modus": _ZUFLUSS_MODUS})):
         st.warning(hint)
@@ -1567,10 +1580,14 @@ def _render_daten_results(backend, run_id: str, state: dict) -> None:
                    else ["Nettogewinn USD", "Rendite Exportfenster %", "Max. gemessener Equity-DD %", "Jahres-RetDD"])
     selected = st.dataframe(table, hide_index=True, width="stretch", height=min(650, 40 + 35 * len(table)),
         key=f"abonnenten_daten_tabelle_{run_id}", selection_mode="single-row", on_select="rerun",
-        column_order=["Quelle", "Strategie", "Abonnenten", "Nettozuwachs 7 Tage", "Zufluss / Quellenmittel", *main_values,
+        column_order=["Quelle", "Strategie", "Link", "Abonnenten", "Nettozuwachs 7 Tage", "Zufluss / Quellenmittel", *main_values,
             "Monate", "Trades", "Trade-Export-Status", "Abdeckungsstatus", "Status", "Grund", "Quellengewinn USD", "Quellrendite %",
             "Datenrang", "Vorauswertung", "Auswahlhinweis"],
-        column_config={"Max. gemessener Equity-DD %": st.column_config.NumberColumn(format="%.2f %%"),
+        column_config={"Link": st.column_config.LinkColumn(
+                "Link", width=48, display_text="↗",
+                help="Öffnet die Signalseite beim Broker (MQL5, ZuluTrade, "
+                     "Vantage, Pelican, RoboForex) in einem neuen Browser-Tab"),
+            "Max. gemessener Equity-DD %": st.column_config.NumberColumn(format="%.2f %%"),
             "Status": st.column_config.TextColumn("Status der Messdaten" if show_models else "Status"),
             "Grund": st.column_config.TextColumn("Offene Messdatenpunkte" if show_models else "Grund"),
             "Abdeckungsstatus": st.column_config.TextColumn("Abdeckung der Messdaten" if show_models else "Abdeckungsstatus"),

@@ -196,6 +196,34 @@ def test_missing_trade_count_is_not_zero_and_unproven_export_is_not_complete():
     assert "nicht belegt" in row["Trade-Export-Status"]
 
 
+def test_first_table_links_to_the_broker_per_source():
+    """Nutzer 28.10.: In der ersten Tabelle (Datentabelle) fehlte der
+    Broker-Link — je Quelle die richtige Detail-URL, gespeicherte URL gewinnt."""
+    zeilen = ui.daten_tabelle(_entries())
+    assert zeilen.loc[0, "Link"] == "https://www.mql5.com/en/signals/23"
+    assert zeilen.loc[1, "Link"] == "https://pelican.copy-trade.io/strategy/24"
+    mit_url = ui.daten_tabelle([{**_entries()[0],
+                                 "url": "https://spiegel.example/sig/23"}])
+    assert mit_url.loc[0, "Link"] == "https://spiegel.example/sig/23"
+
+
+def test_all_none_model_column_renders_empty_not_none_text():
+    """Nutzer 28.10.: Modell-Nettogewinn ohne EINEN echten Wert in der
+    Ansicht (robo, Quellenwerte ohne Trade-Export) zeigte den Text „None“ —
+    pyarrow-null-Spalte. Strikte Koercierung erzwingt float64 → leere Zelle."""
+    entry = {**_entries()[1], "modell": {
+        "status": "datenluecke",
+        "grund": "Kein gespeicherter Trade-Export mit SHA-Beleg vorhanden.",
+        "kapital_methode": "Annahme: 10.000 USD", "startkapital_usd": 10_000.0}}
+    df = ui.daten_tabelle([entry])
+    assert str(df["Modell-Nettogewinn USD"].dtype) == "float64"
+    assert pd.isna(df.loc[0, "Modell-Nettogewinn USD"])
+    assert df.loc[0, "Modell-Startkapital USD"] == 10_000.0
+    # Text-Spalten bleiben Text (Währung mit None-Anteil darf nicht verschwinden)
+    assert "USD" in df["Modell-Währung"].astype(str).iloc[0] or \
+        pd.isna(df.loc[0, "Modell-Währung"])
+
+
 def _model(**changes):
     model = {"version": "abonnenten_modellkapital_v1", "status": "berechnet", "grund": "",
              "startkapital_usd": 2500, "kapital_methode": "Lotschätzung",
