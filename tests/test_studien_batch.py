@@ -9,11 +9,14 @@ Lückenerkennung, Persistenz, basislos-Pfad und Abbruch.
 from __future__ import annotations
 
 import json
+import threading
+import time
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
-from mqlkiscanner import db, pipeline, studien_batch
+from mqlkiscanner import db, downloader_client, katalog, kursdaten, pipeline, studien_batch
 from mqlkiscanner.parser import load_export
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -451,3 +454,79 @@ def test_modellstudie_speichert_genaue_herkunft_und_tatsaechliche_basis(tmp_path
     assert saved['report']['kapitalbasis_details']['quelle'] == 'modell_fallback_10000'
     assert saved['report']['kapitalbasis_details']['beleg']['trades_sha256'] == 'model-sha'
     assert saved['report']['kapitalbasis_modell'] is True
+
+
+# ---------------------------------------------------- Trades parallel vorladen
+def test_trades_vorladen_laadt_quellen_parallel_und_setzt_cache(monkeypatch, tmp_path):
+    """Nutzer-Wunsch 28.10.: 5 Anbieter → parallele Downloads. Ein Thread je
+    Quelle; Erfolg setzt trades_path/sha256 direkt aufs Resultat."""
+    resultate = [pipeline.ScanResult(id=i, name=f"S{i}", quelle=q)
+                 for i, q in ((1, "vant"), (2, "zulu"), (3, "robo"), (4, "vant"))]
+    guard = threading.Lock()
+    stand = {"offen": 0, "max": 0}
+
+    def fake_lade(result, log=None, *, allow_offline_cache=True):
+        with guard:
+            stand["offen"] += 1
+            stand["max"] = max(stand["max"], stand["offen"])
+        time.sleep(0.05)
+        with guard:
+            stand["offen"] -= 1
+        ziel = tmp_path / f"{result.id}.csv"
+        ziel.write_text("x", encoding="utf-8")
+        result.quelle_id, result.quelle_version = 9, "v1"  # wie echt
+        return str(ziel), True
+
+    monkeypatch.setattr(katalog, "lade_signal_daten", fake_lade)
+    monkeypatch.setattr(db, "get_quellen_artefakt",
+                        lambda *args: {"sha256": f"sha{args[1]}"})
+    control = {"abbruch": False, "phase": "", "aktuelles_signal": ""}
+    fehler = studien_batch._trades_vorladen(resultate, control)
+    assert fehler == {}
+    assert all(Path(r.trades_path).exists() for r in resultate)
+    assert {r.trades_sha256 for r in resultate} == {"sha1", "sha2", "sha3", "sha4"}
+    assert control["vorladen_gesamt"] == 4 and control["vorladen_fertig"] == 4
+    assert stand["max"] >= 2  # Quellen laufen wirklich gleichzeitig
+
+
+def test_vorladen_ueberspringt_gedeckte_und_nicht_usd_signale(monkeypatch, tmp_path):
+    gedeckt = tmp_path / "deckt.csv"
+    gedeckt.write_text("x", encoding="utf-8")
+    resultate = [
+        pipeline.ScanResult(id=1, name="Gedeckt", quelle="vant",
+                            trades_path=str(gedeckt)),
+        pipeline.ScanResult(id=2, name="EUR", quelle="vant",
+                            account_currency="EUR"),
+    ]
+    def unerwartet(result, log=None, *, allow_offline_cache=True):
+        raise AssertionError(f"Fetch für #{result.id} hätte nicht passieren dürfen")
+    monkeypatch.setattr(katalog, "lade_signal_daten", unerwartet)
+    control = {"abbruch": False, "phase": "", "aktuelles_signal": ""}
+    assert studien_batch._trades_vorladen(resultate, control) == {}
+    assert control.get("vorladen_gesamt", 0) == 0
+
+
+def test_vorlade_fehler_springt_ohne_zweitversuch_und_ohne_terminal(monkeypatch):
+    """Fetch-Fehler wird EINMAL im Vorladen gemeldet; der Rechen-Loop
+    überspringt das Signal, startet das Terminal nie und fetcht nicht doppelt."""
+    resultate = [pipeline.ScanResult(id=i, name=f"F{i}", quelle=q,
+                                     account_currency="USD")
+                 for i, q in ((1, "vant"), (2, "zulu"))]
+    aufrufe = []
+
+    def fake_lade(result, log=None, *, allow_offline_cache=True):
+        aufrufe.append(result.id)
+        raise downloader_client.DownloaderError("Client offline")
+
+    monkeypatch.setattr(katalog, "lade_signal_daten", fake_lade)
+    factory = Mock()
+    monkeypatch.setattr(kursdaten, "KursDaten", factory)
+    control = dict(abbruch=False, aktuell=0, gerechnet=0, uebersprungen=0,
+                   fehler=[], summary="")
+    studien_batch._laufe(resultate, control, {}, True)
+    assert sorted(aufrufe) == [1, 2]        # genau EIN Fetch je Signal
+    factory.assert_not_called()             # Terminal nie gestartet
+    assert control["gerechnet"] == 0 and control["uebersprungen"] == 0
+    assert len(control["fehler"]) == 2
+    assert any("Trade-Nachladen fehlgeschlagen" in g
+               for g in control.get("skipped_gruende", []))

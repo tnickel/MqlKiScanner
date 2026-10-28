@@ -25,6 +25,8 @@ Laufprinzip:
 from __future__ import annotations
 
 import time
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from .signal_identity import identity_key
 import math
 from collections import deque
@@ -134,6 +136,7 @@ def starten(resultate: list, *, nur_luecken: bool = True,
         "gesamt": len(jobs), "aktuell": 0, "fertig_count": erledigt,
         "uebersprungen": 0, "gerechnet": 0, "fehler": [], "skipped_gruende": [],
         "phase": "startet", "aktuelles_signal": "",
+        "vorladen_gesamt": 0, "vorladen_fertig": 0,
         "restzeit_s": None, "dauer_je_s": None, "start_ts": time.time(),
         "summary": "",
         "nur_luecken": nur_luecken, "trades_nachladen": trades_nachladen,
@@ -151,6 +154,63 @@ def starten(resultate: list, *, nur_luecken: bool = True,
     return run
 
 
+def _trades_vorladen(jobs: list, control: dict) -> dict:
+    """Fehlende Trade-Caches VOR dem Rechnen parallel nachladen — ein
+    Thread je Quelle (Nutzer-Wunsch 28.10.: „5 Anbieter, 5 Downloads
+    parallel").
+
+    Die fünf Monitor-Clients sind getrennte REST-Dienste; innerhalb einer
+    Quelle bleibt es bewusst serial, weil der Monitor seine Provider-Abrufe
+    selbst nacheinander abarbeitet und deckelt. ingest sichert je Artefakt
+    per RLock ab. Erfolg setzt trades_path/sha256 direkt aufs Resultat —
+    der serielle Rechen-Loop (ein MT5-Terminal pro Prozess, klebender
+    Fallback) bleibt unangetastet. Rückgabe: Identität → Fehlermeldung;
+    der Loop überspringt diese Signale ohne zweiten Serien-Fetch.
+    """
+    auftraege: dict[str, list] = {}
+    for res in jobs:
+        pfad = getattr(res, "trades_path", "") or ""
+        if pfad and Path(res.trades_path).exists():
+            continue
+        try:
+            pipeline.require_usd_account(res)
+        except ValueError:
+            continue  # Nicht-USD: der Loop überspringt sie ohnehin — kein Fetch
+        auftraege.setdefault(str(identity_key(res)[0]), []).append(res)
+    if not auftraege:
+        return {}
+    control["vorladen_gesamt"] = sum(len(v) for v in auftraege.values())
+    control["vorladen_fertig"] = 0
+    control["phase"] = "Trades nachladen"
+    fehler: dict = {}
+    fort = threading.Lock()
+
+    def _arbeit(kuerzel: str, liste: list) -> None:
+        for res in liste:
+            if control["abbruch"]:
+                return
+            control["aktuelles_signal"] = (
+                f"{kuerzel}:#{getattr(res, 'id', '?')} Trade-Load")
+            try:
+                pfad, _ = katalog.lade_signal_daten(res)
+                res.trades_path = pfad
+                artefakt = db.get_quellen_artefakt(
+                    int(res.quelle_id), int(res.id),
+                    str(res.quelle_version or ""), "trades")
+                res.trades_sha256 = (artefakt or {}).get("sha256") or ""
+            except Exception as exc:
+                fehler[identity_key(res)] = (
+                    f"[{kuerzel}] #{getattr(res, 'id', '?')} "
+                    f"{getattr(res, 'name', '')}: {type(exc).__name__}: {exc}")
+            with fort:
+                control["vorladen_fertig"] += 1
+
+    with ThreadPoolExecutor(max_workers=min(len(auftraege), 6)) as pool:
+        for kuerzel, liste in auftraege.items():
+            pool.submit(_arbeit, kuerzel, liste)
+    return fehler
+
+
 def _laufe(jobs: list, control: dict, settings: dict,
            trades_nachladen: bool) -> None:
     """Der Batch selbst (läuft im Worker-Thread)."""
@@ -159,6 +219,10 @@ def _laufe(jobs: list, control: dict, settings: dict,
     dauer_serie: deque[float] = deque(maxlen=8)
     anbieter = None
     control.setdefault("start_ts", time.time())   # direkte Aufrufe (Tests/Live)
+    # Trade-Lücken VOR dem Rechnen parallel je Quelle holen — der MT5-
+    # Kursteil bleibt serial (ein Terminal pro Prozess, klebender Fallback).
+    vorlad_fehler: dict = (
+        _trades_vorladen(jobs, control) if trades_nachladen else {})
     try:
         for res in jobs:
             if control["abbruch"]:
@@ -169,22 +233,30 @@ def _laufe(jobs: list, control: dict, settings: dict,
             control["phase"] = "rechnet"
             t0 = time.time()
             try:
-                katalog.require_studienwaehrung(res)
-                # Connect only after the first eligible account. A batch of
-                # unknown / non-USD MQL exports must not start a terminal.
-                if anbieter is None:
-                    control["phase"] = "Terminal verbinden"
-                    anbieter = kursdaten.KursDaten(settings)
-                    ok, grund = anbieter.starten()
-                    if not ok:
-                        control["phase"] = "fehler"
-                        control["fehler"].append(f"Kursdaten nicht verfügbar: {grund}")
-                        return
-                    control["phase"] = "rechnet"
-                if _rechne_ein_signal(res, control, anbieter, trades_nachladen):
-                    control["gerechnet"] += 1
+                fehl = vorlad_fehler.pop(identity_key(res), None)
+                if fehl is not None:
+                    control["fehler"].append(fehl)
+                    control.setdefault("skipped_gruende", []).append(
+                        f"[{identity_key(res)[0]}] #{getattr(res, 'id', '?')} "
+                        f"{getattr(res, 'name', '')}: Trade-Nachladen "
+                        "fehlgeschlagen — übersprungen")
                 else:
-                    control["uebersprungen"] += 1
+                    katalog.require_studienwaehrung(res)
+                    # Connect only after the first eligible account. A batch of
+                    # unknown / non-USD MQL exports must not start a terminal.
+                    if anbieter is None:
+                        control["phase"] = "Terminal verbinden"
+                        anbieter = kursdaten.KursDaten(settings)
+                        ok, grund = anbieter.starten()
+                        if not ok:
+                            control["phase"] = "fehler"
+                            control["fehler"].append(f"Kursdaten nicht verfügbar: {grund}")
+                            return
+                        control["phase"] = "rechnet"
+                    if _rechne_ein_signal(res, control, anbieter, trades_nachladen):
+                        control["gerechnet"] += 1
+                    else:
+                        control["uebersprungen"] += 1
             except Exception as exc:  # ein Signal darf den Batch nie brechen
                 control["fehler"].append(
                     f"[{identity_key(res)[0]}] #{res.id} {getattr(res, 'name', '')}: "

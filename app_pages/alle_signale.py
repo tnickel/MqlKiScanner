@@ -36,6 +36,7 @@ from mqlkiscanner import quellen
 from mqlkiscanner import kapitalbasis, signal_statistik, studien_batch
 from mqlkiscanner import tiefen_batch
 from mqlkiscanner import alle_signale_ui as tabellen_ui
+from mqlkiscanner import app_ui
 from mqlkiscanner.alle_signale_ui import render_detail, tabellen_zeile
 from mqlkiscanner.ui_design import apply_theme, info_button, page_header
 
@@ -342,8 +343,14 @@ def _batch_fortschritt() -> None:
         return
     gesamt = c.get('gesamt') or 0
     aktuell = c.get('aktuell') or 0
-    anteil = min(1.0, (aktuell / gesamt) if gesamt else 1.0)
-    text = (f'Δ Signal {aktuell}/{gesamt} · Ø '
+    vorladen = c.get('vorladen_gesamt') or 0
+    vorl_fertig = min(vorladen, c.get('vorladen_fertig') or 0)
+    basis = gesamt + vorladen
+    anteil = min(1.0, ((aktuell + vorl_fertig) / basis) if basis else 1.0)
+    vorl_text = (f'Trades parallel geladen {vorl_fertig}/{vorladen} '
+                 f'(je Quelle ein Thread) · '
+                 if vorladen and vorl_fertig < vorladen else '')
+    text = (f'{vorl_text}Δ Signal {aktuell}/{gesamt} · Ø '
             f'{_dauer_text(c.get("dauer_je_s"))}/Signal · Rest ≈ '
             f'{_dauer_text(c.get("restzeit_s"))} · {c.get("aktuelles_signal") or c.get("phase", "")}')
     st.progress(anteil, text=text)
@@ -472,6 +479,7 @@ def _tabelle_rendern(schluessel: str, tab_paare, dateiname: str) -> None:
         st.caption('Kein Signal in diesem Tab (Filter).')
         return
     df = _tabellen_frame(tab_paare)
+    app_ui.styler_zellenlimit_anpassen(df)
     gestylt = df.style.format(na_rep='').apply(_mark_stil, axis=1)
     gestylt = gestylt.apply(_virtueller_vorbehalt_stil, axis=1,
                            subset=['True-DD USD', 'RetDD/Monat', 'Messstatus'])
