@@ -165,7 +165,9 @@ def _trades_vorladen(jobs: list, control: dict) -> dict:
     per RLock ab. Erfolg setzt trades_path/sha256 direkt aufs Resultat —
     der serielle Rechen-Loop (ein MT5-Terminal pro Prozess, klebender
     Fallback) bleibt unangetastet. Rückgabe: Identität → Fehlermeldung;
-    der Loop überspringt diese Signale ohne zweiten Serien-Fetch.
+    der Loop überspringt diese Signale ohne zweiten Serien-Fetch. Fehlende
+    native Währungsbelege werden im Quellen-Worker erneuert; neue native
+    CSVs benötigen aktuelle USD-Metrics statt eines Offline-Altbelegs.
     """
     auftraege: dict[str, list] = {}
     for res in jobs:
@@ -175,7 +177,9 @@ def _trades_vorladen(jobs: list, control: dict) -> dict:
         try:
             pipeline.require_usd_account(res)
         except ValueError:
-            continue  # Nicht-USD: der Loop überspringt sie ohnehin — kein Fetch
+            currency = str(getattr(res, "account_currency", None) or "").strip().casefold()
+            if currency not in {"", "unknown", "unbekannt", "uneindeutig", "unbekannt/uneindeutig"}:
+                continue  # Bekanntes Nicht-USD bleibt gesperrt, ohne Fetch.
         auftraege.setdefault(str(identity_key(res)[0]), []).append(res)
     if not auftraege:
         return {}
@@ -192,7 +196,23 @@ def _trades_vorladen(jobs: list, control: dict) -> dict:
             control["aktuelles_signal"] = (
                 f"{kuerzel}:#{getattr(res, 'id', '?')} Trade-Load")
             try:
-                pfad, _ = katalog.lade_signal_daten(res)
+                try:
+                    pipeline.require_usd_account(res)
+                except ValueError:
+                    katalog.require_studienwaehrung(res)
+                if control["abbruch"]:
+                    return
+                # Resolve the actual export version, including older results
+                # without quelle_version. Only native MQL requires fresh
+                # metrics here; converting monitors retain their contract.
+                ref = katalog.quellen_referenz(res)
+                native_mql = bool(ref and ref[1] in {"mql4", "mql5"})
+                pfad, _ = katalog.lade_signal_daten(
+                    res, **({"allow_offline_cache": False} if native_mql else {}))
+                # lade_signal_daten updates currency from this download's
+                # metrics. An old USD flag must not survive missing/non-USD
+                # evidence and then be revived by a serial metrics retry.
+                pipeline.require_usd_account(res)
                 res.trades_path = pfad
                 artefakt = db.get_quellen_artefakt(
                     int(res.quelle_id), int(res.id),
@@ -307,12 +327,15 @@ def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
     verglichen. Kein Zusammenkleben ihrer Zeitreihen, kein Auffuellen von Bars.
     """
     from .forensics import equity_rekonstruktion, feed_auswahl
+    from .equity_studie import _KursProvenienz
+    from copy import deepcopy
 
     versuche = []
     best = None
     erster_fehler = None
+    provenienz = None
 
-    def erfasst(report, modus):
+    def erfasst(report, modus, provenienz):
         feed = getattr(anbieter, "terminal_pfad", None)
         report = dict(report)
         report["kursdaten_terminal"] = feed
@@ -326,10 +349,9 @@ def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
         symbole = {t.symbol.strip().upper() for t in getattr(parsed, "trades", [])
                    if getattr(t, "symbol", None)}
         bestaetigt = {str(s).strip().upper() for s in (report.get("symbole_mit_kursen") or [])}
-        herkunft = getattr(anbieter, "terminal_herkunft", {})
-        mapping = {s: herkunft[s] for s in sorted(symbole & bestaetigt) if s in herkunft}
-        if mapping:
-            versuch["symbol_feeds"] = mapping
+        metadata = provenienz.metadaten(symbole & bestaetigt)
+        report.update(deepcopy(metadata))
+        versuch.update(deepcopy(metadata))
         versuche.append(versuch)
         return report
 
@@ -337,16 +359,21 @@ def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
         nonlocal erster_fehler
         if erster_fehler is None:
             erster_fehler = error
-        versuche.append({"terminal": getattr(anbieter, "terminal_pfad", None),
-                        "status": status, "grund": f"{type(error).__name__}: {error}"})
+        versuch = {"terminal": getattr(anbieter, "terminal_pfad", None),
+                   "status": status, "grund": f"{type(error).__name__}: {error}"}
+        if status == "berechnung_fehlgeschlagen" and provenienz is not None:
+            versuch.update(provenienz.metadaten(
+                t.symbol for t in getattr(parsed, "trades", []) if getattr(t, "symbol", None)))
+        versuche.append(versuch)
 
     def reset():
         feed_auswahl.reset_feed(anbieter, meldung=versuche.append, fehler=fehler)
 
     try:
         try:
+            provenienz = _KursProvenienz(anbieter)
             best = erfasst(equity_rekonstruktion.rekonstruiere(
-                parsed, anbieter, kapital, broker=broker), "symbol_fallback")
+                parsed, provenienz, kapital, broker=broker), "symbol_fallback", provenienz)
         except Exception as error:
             fehler(error, "berechnung_fehlgeschlagen")
         if best is None or not feed_auswahl.ausreichend(best):
@@ -357,8 +384,9 @@ def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
                     anbieter, weiter_nach_verbindungsfehler=True,
                     meldung=versuche.append, fehler=fehler):
                 try:
+                    provenienz = _KursProvenienz(anbieter)
                     kandidat = erfasst(equity_rekonstruktion.rekonstruiere(
-                        parsed, _AktuellerFeed(anbieter), kapital, broker=broker), "einzelfeed")
+                        parsed, _AktuellerFeed(provenienz), kapital, broker=broker), "einzelfeed", provenienz)
                 except Exception as error:
                     fehler(error, "berechnung_fehlgeschlagen")
                     continue

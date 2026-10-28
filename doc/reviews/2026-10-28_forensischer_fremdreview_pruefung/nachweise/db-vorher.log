@@ -1,0 +1,218 @@
+FFFFF.....                                                               [100%]
+================================== FAILURES ===================================
+_ test_real_wal_lock_beyond_default_timeout_is_retried_without_repeating_writes _
+
+source = 1
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002CF9F45B260>
+
+    def test_real_wal_lock_beyond_default_timeout_is_retried_without_repeating_writes(source, monkeypatch):
+        """Der erste BEGIN scheitert wirklich nach busy_timeout=5000, kein Mock-Lock."""
+        acquired = threading.Event()
+        busy_seen = threading.Event()
+        released = threading.Event()
+        errors = []
+    
+        def holder():
+            try:
+                with contextlib.closing(sqlite3.connect(db.DB_PATH)) as conn:
+                    conn.execute("BEGIN IMMEDIATE")
+                    acquired.set()
+                    if not busy_seen.wait(12):
+                        raise AssertionError("Der echte erste Lock-Timeout wurde nicht beobachtet")
+                    conn.rollback()
+            except BaseException as exc:
+                errors.append(exc)
+            finally:
+                released.set()
+    
+        thread = threading.Thread(target=holder)
+        thread.start()
+        assert acquired.wait(3)
+    
+        def execute(conn, sql, args):
+            try:
+                return conn.execute(sql, *args)
+            except sqlite3.OperationalError as exc:
+                if sql == "BEGIN IMMEDIATE" and exc.sqlite_errorcode == sqlite3.SQLITE_BUSY:
+                    busy_seen.set()
+                    assert released.wait(3)
+                raise
+    
+        statements = _observe_connections(monkeypatch, on_execute=execute)
+        try:
+>           db.store_quellen_artefakt(source, 42, "mql5", "trades", "new-sha", "synthetic.csv")
+
+tests\test_db_artefakt_lock_retry.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\mqlkiscanner\db.py:1500: in store_quellen_artefakt
+    conn.execute("BEGIN IMMEDIATE")
+tests\test_db_artefakt_lock_retry.py:38: in execute
+    return on_execute(self.conn, sql, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+conn = <sqlite3.Connection object at 0x000002CF9F4B5990>
+sql = 'BEGIN IMMEDIATE', args = ()
+
+    def execute(conn, sql, args):
+        try:
+>           return conn.execute(sql, *args)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E           sqlite3.OperationalError: database is locked
+
+tests\test_db_artefakt_lock_retry.py:78: OperationalError
+____ test_persistent_real_lock_has_bounded_attempts_and_keeps_old_artifact ____
+
+source = 1
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002CF9F45B560>
+
+    def test_persistent_real_lock_has_bounded_attempts_and_keeps_old_artifact(source, monkeypatch):
+        db.store_quellen_artefakt(source, 42, "mql5", "trades", "old-sha", "old.csv")
+        with contextlib.closing(sqlite3.connect(db.DB_PATH)) as holder:
+            holder.execute("BEGIN IMMEDIATE")
+            statements = _observe_connections(monkeypatch, timeout_ms=10)
+            with pytest.raises(sqlite3.OperationalError) as caught:
+                db.store_quellen_artefakt(source, 42, "mql5", "trades", "new-sha", "new.csv")
+            assert caught.value.sqlite_errorcode == sqlite3.SQLITE_BUSY
+>           assert statements.count("BEGIN IMMEDIATE") == 3
+E           AssertionError: assert 1 == 3
+E            +  where 1 = <built-in method count of list object at 0x000002CF9F581580>('BEGIN IMMEDIATE')
+E            +    where <built-in method count of list object at 0x000002CF9F581580> = ['BEGIN IMMEDIATE'].count
+
+tests\test_db_artefakt_lock_retry.py:108: AssertionError
+_____________ test_busy_extended_codes_retry_acquisition_only[5] ______________
+
+source = 1
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002CF9F466660>
+code = 5
+
+    @pytest.mark.parametrize("code", [sqlite3.SQLITE_BUSY, sqlite3.SQLITE_BUSY_RECOVERY,
+                                     sqlite3.SQLITE_BUSY_SNAPSHOT])
+    def test_busy_extended_codes_retry_acquisition_only(source, monkeypatch, code):
+        attempts = 0
+    
+        def execute(conn, sql, args):
+            nonlocal attempts
+            if sql == "BEGIN IMMEDIATE":
+                attempts += 1
+                if attempts == 1:
+                    raise _error(code)
+            return conn.execute(sql, *args)
+    
+        _observe_connections(monkeypatch, on_execute=execute)
+>       db.store_quellen_artefakt(source, 42, "mql5", "trades", "sha", "synthetic.csv")
+
+tests\test_db_artefakt_lock_retry.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\mqlkiscanner\db.py:1500: in store_quellen_artefakt
+    conn.execute("BEGIN IMMEDIATE")
+tests\test_db_artefakt_lock_retry.py:38: in execute
+    return on_execute(self.conn, sql, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+conn = <sqlite3.Connection object at 0x000002CF9F53DF30>
+sql = 'BEGIN IMMEDIATE', args = ()
+
+    def execute(conn, sql, args):
+        nonlocal attempts
+        if sql == "BEGIN IMMEDIATE":
+            attempts += 1
+            if attempts == 1:
+>               raise _error(code)
+E               sqlite3.OperationalError: synthetischer SQLite-Fehler
+
+tests\test_db_artefakt_lock_retry.py:124: OperationalError
+____________ test_busy_extended_codes_retry_acquisition_only[261] _____________
+
+source = 1
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002CF9F466510>
+code = 261
+
+    @pytest.mark.parametrize("code", [sqlite3.SQLITE_BUSY, sqlite3.SQLITE_BUSY_RECOVERY,
+                                     sqlite3.SQLITE_BUSY_SNAPSHOT])
+    def test_busy_extended_codes_retry_acquisition_only(source, monkeypatch, code):
+        attempts = 0
+    
+        def execute(conn, sql, args):
+            nonlocal attempts
+            if sql == "BEGIN IMMEDIATE":
+                attempts += 1
+                if attempts == 1:
+                    raise _error(code)
+            return conn.execute(sql, *args)
+    
+        _observe_connections(monkeypatch, on_execute=execute)
+>       db.store_quellen_artefakt(source, 42, "mql5", "trades", "sha", "synthetic.csv")
+
+tests\test_db_artefakt_lock_retry.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\mqlkiscanner\db.py:1500: in store_quellen_artefakt
+    conn.execute("BEGIN IMMEDIATE")
+tests\test_db_artefakt_lock_retry.py:38: in execute
+    return on_execute(self.conn, sql, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+conn = <sqlite3.Connection object at 0x000002CF9F53E5C0>
+sql = 'BEGIN IMMEDIATE', args = ()
+
+    def execute(conn, sql, args):
+        nonlocal attempts
+        if sql == "BEGIN IMMEDIATE":
+            attempts += 1
+            if attempts == 1:
+>               raise _error(code)
+E               sqlite3.OperationalError: synthetischer SQLite-Fehler
+
+tests\test_db_artefakt_lock_retry.py:124: OperationalError
+____________ test_busy_extended_codes_retry_acquisition_only[517] _____________
+
+source = 1
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002CF9F467410>
+code = 517
+
+    @pytest.mark.parametrize("code", [sqlite3.SQLITE_BUSY, sqlite3.SQLITE_BUSY_RECOVERY,
+                                     sqlite3.SQLITE_BUSY_SNAPSHOT])
+    def test_busy_extended_codes_retry_acquisition_only(source, monkeypatch, code):
+        attempts = 0
+    
+        def execute(conn, sql, args):
+            nonlocal attempts
+            if sql == "BEGIN IMMEDIATE":
+                attempts += 1
+                if attempts == 1:
+                    raise _error(code)
+            return conn.execute(sql, *args)
+    
+        _observe_connections(monkeypatch, on_execute=execute)
+>       db.store_quellen_artefakt(source, 42, "mql5", "trades", "sha", "synthetic.csv")
+
+tests\test_db_artefakt_lock_retry.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\mqlkiscanner\db.py:1500: in store_quellen_artefakt
+    conn.execute("BEGIN IMMEDIATE")
+tests\test_db_artefakt_lock_retry.py:38: in execute
+    return on_execute(self.conn, sql, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+conn = <sqlite3.Connection object at 0x000002CF9F53EA70>
+sql = 'BEGIN IMMEDIATE', args = ()
+
+    def execute(conn, sql, args):
+        nonlocal attempts
+        if sql == "BEGIN IMMEDIATE":
+            attempts += 1
+            if attempts == 1:
+>               raise _error(code)
+E               sqlite3.OperationalError: synthetischer SQLite-Fehler
+
+tests\test_db_artefakt_lock_retry.py:124: OperationalError
+=========================== short test summary info ===========================
+FAILED tests/test_db_artefakt_lock_retry.py::test_real_wal_lock_beyond_default_timeout_is_retried_without_repeating_writes
+FAILED tests/test_db_artefakt_lock_retry.py::test_persistent_real_lock_has_bounded_attempts_and_keeps_old_artifact
+FAILED tests/test_db_artefakt_lock_retry.py::test_busy_extended_codes_retry_acquisition_only[5]
+FAILED tests/test_db_artefakt_lock_retry.py::test_busy_extended_codes_retry_acquisition_only[261]
+FAILED tests/test_db_artefakt_lock_retry.py::test_busy_extended_codes_retry_acquisition_only[517]
+5 failed, 5 passed in 6.30s

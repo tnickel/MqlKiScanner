@@ -1,0 +1,254 @@
+# Befundkatalog — Code-Review MqlKiScanner (Neu-Commits 28.10. + None/Lücken-Audit)
+
+
+## 1. Die fünf Neuerungen im Detail
+
+
+### 1.1 Styler-Zellenlimit (9f331a0) — `src/mqlkiscanner/app_ui.py:392`
+
+
+`styler_zellenlimit_anpassen(df)` hebt `pd.set_option('styler.render.max_elements')` prozessweit auf `df.size`, wenn die Tabelle größer ist als das pandas-Default (262.144 Zellen). Aufgerufen in `render_results_table` („Alle Signale"), `_tabelle_rendern` (alle_signale.py:479) und `_tabelle_rendern` (abonnenten_statistik.py:451), **vor** dem ersten `.style`-Aufruf — korrekt.
+
+
+**Befunde:**
+
+
+
+- **P2 (Prozess-global, Thread-Race):** `pd.set_option` ist prozessweit. Unter gleichzeitigen Streamlit-Sessions (mehrere Browser-Tabs) setzen sich Sessions gegenseitig das Limit auf die jeweils größte Tabelle. Folge: kurzzeitig zu hohes Limit für die kleinere Tabelle — harmlos, denn pandas schneidet erst *bei* Überschreitung ab; keine Datenkorruption, kein Crash. Keine wirkliche Behebung nötig, aber dokumentieren.
+
+- **P2 (fehlende Obergrenze):** Es gibt keine Cap. Bei sehr großen Katalogen (>> 1 Mio Zellen) wächst der Styler-Pfad (Python-Loop über alle Zellen) im RAM und in der Latenz; Streamlit wirft irgendwann selbst einen `StreamlitAPIException`. Vorschlag: harte Cap (z. B. 2 Mio Zellen); darüber `st.dataframe` ohne Styler (nativ) rendern oder Seitenweise.
+
+- **P3:** Test fährt exakt `streamlit.elements.lib.pandas_styler_utils.marshall_styler` mit 270k Zellen — grün (94 Tests insgesamt grün).
+
+
+
+### 1.2 Risiko-Rechner-Grafik (bf69b5f) — `src/mqlkiscanner/risiko_rechner.py:236`
+
+
+`kurve_png` hat jetzt USD-Gitter (1/2/5×10^n-Stufen), „0 % / −x %"-Untermauer, 5 UTC-Zeit-Ticks, Startkapital-Label mit weißem Hintergrund.
+
+
+**Randfälle (alle geprüft, keine Abstürze):**
+
+
+
+- `punkte` leer → früherer Frühreturn „keine Kurvenpunkte messbar" (Zeile ~272) greift vor `punkte[0]`. ✅
+
+- `t1 == t0` (ein einziger Punkt): `X(p)` degeneriert auf Mitte; 5 Zeit-Ticks überlagern sich kosmetisch; kein Crash. **P3.**
+
+- `y_min == y_max`: `spanne = 1.0`, flache Linie. **P3.**
+
+- Startkapital-Label bei 6-stelligen Basen: Text kann Achsenrand-Labeln übermalen (x0 = w-mr-tw-10 ohne Unterlauf-Prüfung). Kosmetisch. **P3.**
+
+- UTC: Achse zeigt Terminal-Epochen als UTC — konsistent mit `hole_h1` (Terminal-Raum) und den Studienwerten. Kein GMT-Versatz-Problem auf der Achse. ✅
+
+
+
+**`monate_p3` nicht angefasst:** Keine Zeitachse, keine Monats-Labels, nur „Skala ±X USD". Dieselbe Problemklasse (Achsenlosigkeit), aber vom Nutzer nicht bemängelt. **P3 (nachrüsten bei Gelegenheit).**
+
+
+### 1.3 Broker-Link-Spalte + „None"-Bekämpfung (3e40459) — `src/mqlkiscanner/abonnenten_analyse_ui.py`
+
+
+
+- `daten_tabelle` bekommt Spalte „Link" via `quellen.oeffnen_url(quelle, id, url)` — gespeicherte URL gewinnt, sonst Muster je Quelle (MQL5, Pelican, Zulu, Vantage). ✅
+
+- `_render_daten_detail` droppt die Link-Zeile (sonst reiner Text im Messwert-Dump). ✅
+
+- **Kernfix:** Am Ende werden alle Spalten mit `pd.to_numeric(errors="coerce")` koerziert, wenn kein Wert verloren geht (`zahlen.notna().sum() == df[spalte].notna().sum()`). Eine Spalte ohne *einen* echten Wert (alles None) wird so von object/pyarrow-null zu `float64` → leere Zelle statt Text „None". Das war der Nutzer-Screenshot 28.10. (Modell-Nettogewinn USD bei Quellenwerten ohne Trade-Export). **P1 — behoben**, Test `test_all_none_model_column_renders_empty_not_none_text` grün.
+
+
+
+**Falsch-positiv-Risiko des notna-Vergleichs:** Numerisch parsebare Strings in Textspalten (z. B. „2026") würden zu Float. Praktisch irrelevant: die Textspalten hier sind URLs, Status, Währungen („USD"), Plattformen — „USD" parst nicht. Test prüft explizit, dass „Modell-Währung" Text bleibt. **P2, akut nicht kritisch.**
+
+
+**Bleibt „None" in ANDEREN Tabellen?** Systematischer Audit aller `st.dataframe`/`st.table`-Sites (siehe Kapitel 2): Die zuvor bekannten Stellen (`alle_signale._tabellen_frame` mit numerischer Koercion + `na_rep=''`; `abonnenten_statistik._tabellen_daten` mit `to_numeric` und bewusster Float-statt-Int64-Vermeidung; Kurs-Übersicht mit leeren Strings; `daten_csv` → leeres CSV-Feld) sind sauber. Einzelne `None`-Zellen in gemischten Spalten rendert Streamlit leer. Keine offene P1 mehr.
+
+
+### 1.4 Paralleles Trade-Vorladen (fc09e98) — `src/mqlkiscanner/studien_batch.py:154`
+
+
+`_trades_vorladen` lädt fehlende Trade-Caches *vor* dem Rechnen mit `ThreadPoolExecutor(max_workers=min(Quellen, 6))`, ein Thread je Quelle, serial innerhalb der Quelle. Erfolg schreibt `res.trades_path`/`res.trades_sha256` direkt aufs Resultat; Fehler landen in `fehler`-Dict, Loop überspringt ohne Zweitversuch und startet nie das Terminal.
+
+
+**Befunde:**
+
+
+
+- **P1 (Thread-Safety Result-Objekte):** `res.trades_path/trades_sha256` werden von Worker-Threads geschrieben, gelesen erst nach `Executor-Join` in `_laufe`. Kein früherer Lesepfad gefunden. ✅
+
+- **P2 (SQLite Write-Konflikt):** 5 Worker + Hauptthread teilen sich `kursdaten.db` (WAL, `busy_timeout=5000` in `KursCache._verbinden`, timeout=30 s). Gleichzeitige `speichere`-Aufrufe verschiedener Feeds können `sqlite3.OperationalError: database is locked` werfen → Signal wird als „fehlgeschlagen" markiert, obwohl es nur Lock-Timing war. Im Vorladen gibt es **keinen Retry** (von Design: „ohne Zweitversuch"). Nachweisbar nur mit echtem MT5/Batch-Lauf (READ-ONLY nicht möglich) → **P2, offen, empfohlen: einmaliger Retry bei `database is locked`.**
+
+- **P3 (`control["aktuelles_signal"]` ohne Lock):** Wird aus mehreren Worker-Threads und später vom Hauptthread überschrieben. GIL-Atomizität reicht für String-Zuweisung (kein teilweises Lesen); Folge ist nur eine verfälschte Fortschrittsanzeige. Kosmetisch. ✅
+
+- `control["vorladen_fertig"]` unter `threading.Lock` — korrekt. `fehler`-Dict wird nur vom schreibenden Thread selbst beschrieben. ✅
+
+- `require_usd_account` filtert Nicht-USD vor dem Fetch; gedeckte Caches werden übersprungen. ✅
+
+- Kein verborgener Zusammenhangs-State in `lade_signal_daten` pro Quelle (ingest RLocks pro Artefakt). ✅
+
+- **scan_worker/daemon:** Batch ist selbst ein Lauf (`scan_worker.start()`), exklusiv gegenüber Scan und Equity-Studie; Daemon durch dateibasiertes Lauf-Lock geschützt. ✅
+
+- Tests: `test_trades_vorladen_laadt_quellen_parallel_und_setzt_cache`, `test_vorladen_ueberspringt_gedeckte_und_nicht_usd_signale`, `test_vorlade_fehler_springt_ohne_zweitversuch_und_ohne_terminal` — alle grün.
+
+
+
+### 1.5 Kursdaten-Übersicht + Ersetzungstabelle (853bc3a)
+
+
+`kurs_cache.py:uebersicht()`, `ersetzungen()`, `_kurs_match()`; `hole_h1` konsultiert die Ersetzungstabelle als **letzte Stufe** (nach broker_suffix → normalize → `alias_fuer_symbol` je Terminal → `ersetzungen()`). Admin-Tab `app_pages/admin.py:1006` (cached 5 Min).
+
+
+**Befunde:**
+
+
+
+- **Richtigkeit (P1 — geprüft, kein Befund):** `_kurs_match` matcht nur gegen Symbole, die tatsächlich Bars haben (`index` aus `h1_bars GROUP BY symbol`); `ziel = alias.get(sym)` nur wenn `ziel in index`. Kein falsches Umbiegen ohne Beleg. `suffix_annahmen` protokolliert raw → verwendet in `hole_h1` — ausreichend für Transparenz.
+
+- **Mitgliedschafts-Gating:** In `hole_h1` entscheidet letztlich `mt5.symbol_select(kandidat)` — Ziel muss am Terminal existieren. Für die Übersicht gilt: Ziel muss Bars haben. Wasserdicht für beide Kontexte. ✅
+
+- **Doppelpfade/Widersprüche:** `symbol_aliases` (per Broker, z. B. `GER40→DE40` bei Tickmill) vs. `kurs_alias.json` (BITCOIN→BTCUSD) haben getrennte Key-Sets; `hole_h1`-Reihenfolge ist eindeutig. Keine Widersprüche. ✅
+
+- **Leistung (P2):** `uebersicht()` führt `GROUP BY symbol` über die gesamte `h1_bars`-Tabelle (~10,2 Mio Zeilen, WITHOUT ROWID, PK = feed,symbol,zeitrahmen,epoch) aus → Volltabellenscan, behauptet ~8 s, im Tab 5 Min gecacht. Bei wachsendem Cache Empfehlung: separater Index auf `symbol` (oder `CREATE INDEX ... ON h1_bars(symbol)`). Nicht blockierend jetzt.
+
+- **Case-Sensitivity:** `GROUP BY symbol` ist `COLLATE BINARY` („EURUSD" ≠ „eurusd"); `uebersicht` normalisiert fürs Matching mit `raw.upper()`. Anzeige-OK, Rohbestand bleibt getrennte Zeilen. Hinweis. **P3.**
+
+- **Ersetzungszeilen:** Zeigen Bars/Erster/Letzter des *Ersatz*-Symbols, Status „Ersetzung", „Im Bestand als" nennt die Quelle. Deutlich von „eigenen Kursen" unterschieden. ✅
+
+- **Fachliche Prüfung der 6 Einträge (P2-Hinweis, kein Fehler):**
+
+- BITCOIN→BTCUSD: gleicher Underlying ✅
+
+- GER30CASH→GER40, DE30M→GER40: Index-Umbenennung (gleicher DAX-Verlauf), aber **Kontraktgröße/Punktwert kann abweichen** (symbols.py dokumentiert: „Kursreferenz, keine Behauptung gleicher Handelskontrakte"). Drawdown in %-Termen ist kontrakt-unabhängig → Berechnungen nicht verfälscht; nur bei USD-Euro-Kontraktumrechnung relevant. Dokumentationshinweis.
+
+- US100→USTEC: NAS100-Nachfolger, gleicher Index ✅
+
+- USOIL-FUTURE→USOUSD, WTI→USOUSD: WTI-Spot-CFD vs. Future — leicht abweichende Kurse, kein identischer Underlying. Hinweis.
+
+- **Die 3 echten Lücken AUDSGDM, F40, XCUUSDM:** Statisch (ohne MT5-Zugang, der laut Regeln nicht hergestellt werden darf) gibt es für alle drei **keinen Alias** — weder in `symbols.py` (`normalize_symbol`, `_KNOWN`, `SYMBOL_ALIASE_DEFAULT`) noch in `_KURS_ALIAS` noch in `data/kurs_alias.json` (Datei nicht im Repo/evtl. lokal, Einträge unbekannt). `hole_h1` würde nur den Rohnamen an `symbol_select` schicken. Nahe Varianten, die *nicht* probiert sind laut Tabellen: CAC40/FRA40 (für F40), XCUUSD (Kupfer), AUDSGD+ (Vantage fx-Schleife hängen alle FX an „+" — AUDSGD wäre Kandidat, ob der Terminal AUDSGD+ führt, unklar). Die Behauptung „keiner der drei Broker führt sie" ist **ohne MT5-Login nicht verifizierbar** → **P2 (offen, externe Evidenz nötig bei erstem Terminal-Zugang).** Für die Übersicht korrekt als „keine Kurse" ausgewiesen.
+
+
+
+## 2. None/Lücken-Audit — alle UI-Render-Stellen
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+| Stelle | Render | Verhalten bei None/leer | Bewertung |
+| --- | --- | --- | --- |
+| `alle_signale.py:_tabellen_frame` | `st.dataframe` (gestylt) | Nicht-Text-Spalten per `to_numeric` → NaN, `na_rep=''` → leere Zelle | ✅ FIX (08.10.) |
+| `abonnenten_statistik.py:_tabellen_daten` | `st.dataframe` (gestylt) | `to_numeric`, bewusst Float (Int64/pd.NA rendert „None"-Text) | ✅ FIX (20.10.) |
+| `abonnenten_analyse_ui.py:daten_tabelle` | `st.dataframe` | Zwangskoercion zu float64; alles-None-Spalten → leer | ✅ FIX (28.10., 3e40459) |
+| `admin.py:kurs_tab` (`uebersicht`) | `st.dataframe` | Fehlende Bars als `""`; Status-Text „keine Kurse"/„Ersetzung" | ✅ legit |
+| `_render_daten_detail` | `st.table` | NaN → „unbekannt", Link-Zeile entfernt | ✅ FIX (3e40459) |
+| `daten_csv` | CSV-Export | None → leeres Feld | ✅ |
+| `equity_studie_ui`, `alle_signale_ui` (per_symbol, tradeliste) | `st.dataframe` | Gemischte Spalten, einzelne None → leer | ✅ (Rest P3) |
+| `station_dialoge.py` (mehrere) | `st.dataframe` | Fallbacks `or ""` / `or "—"` | ✅ |
+
+
+
+**Ergebnis:** Keine Stelle rendert mehr wörtlichen Text „None" wegen pyarrow-null-Spalten. Die „None"-Meldungen der Abonnentenstatistik (Modellspalten, robo/CopytradeJournal ohne Trade-Export) sind durch 3e40459 behoben. Restrisiko nur kosmetische Einzel-None in gemischten Spalten → **P3.**
+
+
+## 3. Stichprobe ältere Commits (17.10.–27.10.)
+
+
+
+- **5c1458c** (2026-10 review evidence): Reine Dokumentation (`doc/reviews`, `doc/Prompts`, `.gitignore`) — kein Code, keine Befunde.
+
+- **a37538f** (Fix subscriber refresh state): `app_pages/alle_signale.py` (Abonn.-Spalte COALESCE `katalog_signale`→`signals`), README, Tests — keine neuen None-/Lücken-Risiken, Tests grün.
+
+- **77bb221** (subscriber receipts/freshness): Monitor-Logik liegt in externen Repos; hier nur UI/Timeout-Änderungen (30 s→60 s). Full suite 3993 Tests grün; 17 vorbestehende Failures identisch ohne diese Änderungen (git-stash-Isolation dokumentiert).
+
+
+
+**Keine Anschlussbefunde P1/P2 aus der Stichprobe.**
+
+
+## 4. Fazit
+
+
+**Sofort handeln (P1):** nichts mehr offen — die „None"-Meldungen in der Abonnenten-Datentabelle sind behoben (3e40459, Tests grün), Styler-Limit greift korrekt.
+
+
+**Können warten (P2):**
+
+
+
+1. SQLite-Schreibkonflikt bei parallelem Trade-Vorladen (`database is locked` → Signal fälschlich als fehlgeschlagen): einmaliger Retry im Vorladen (`fc09e98`, `studien_batch.py:_trades_vorladen`).
+
+2. Styler-Zellenlimit: harte Obergrenze einführen, bevor Kataloge den RAM-Limit-Pfad reißen (`9f331a0`, `app_ui.py:392`).
+
+3. Kurslücken AUDSGDM / F40 / XCUUSDM: bei erstem erlaubten MT5-Zugang einmal pro `hole_h1` über die drei Terminals prüfen; bisher statisch nicht widerlegbar (`kurs_cache.py`, `symbols.py`).
+
+4. `kurs_cache.uebersicht()`: Volltabellenscan über ~10 Mio Zeilen — Index auf `symbol` erwägen, wenn der Cache wächst.
+
+
+
+**Können warten (P3):**
+
+
+
+- `monate_p3` Achsen-Labels nachrüsten (Parität mit `kurve_png`, `risiko_rechner.py`).
+
+- `kurve_png`: Unterlauf-Schutz Startkapital-Label; `t1 == t0` Kosmetik.
+
+- GER30CASH/DE30M→GER40 und USOIL-FUTURE/WTI→USOUSD als Kurs-Referenzen (nicht identische Kontrakte) in der Kurs-Übersicht dokumentieren.

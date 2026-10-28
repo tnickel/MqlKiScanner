@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="17" time="0.458" timestamp="2026-10-28T18:04:04.554068+01:00" hostname="Ryzen7950X"><testcase classname="tests.test_kurs_alias_ziel_review" name="test_zentrale_ersetzung_erreicht_terminalalias_und_bewahrt_herkunft" time="0.077"><failure message="AssertionError: assert None&#10; +  where None = hole_h1('DE30M', 1700002800, 1700002800)&#10; +    where hole_h1 = &lt;mqlkiscanner.kursdaten.KursDaten object at 0x000002B5DC28C380&gt;.hole_h1">def test_zentrale_ersetzung_erreicht_terminalalias_und_bewahrt_herkunft():
+        kd, versuche = _lieferant({"Ger40"})
+&gt;       assert kd.hole_h1("DE30M", 1_700_002_800, 1_700_002_800)
+E       AssertionError: assert None
+E        +  where None = hole_h1('DE30M', 1700002800, 1700002800)
+E        +    where hole_h1 = &lt;mqlkiscanner.kursdaten.KursDaten object at 0x000002B5DC28C380&gt;.hole_h1
+
+tests\test_kurs_alias_ziel_review.py:30: AssertionError</failure></testcase><testcase classname="tests.test_kurs_alias_ziel_review" name="test_exakte_namen_gehen_terminalalias_vor[verfuegbar0-erwartet0]" time="0.007" /><testcase classname="tests.test_kurs_alias_ziel_review" name="test_exakte_namen_gehen_terminalalias_vor[verfuegbar1-erwartet1]" time="0.006" /><testcase classname="tests.test_kurs_alias_ziel_review" name="test_aliaszyklus_wird_nicht_rekursiv_verfolgt_oder_doppelt_abgefragt" time="0.011" /><testcase classname="tests.test_kurs_alias_ziel_review" name="test_keine_blinde_normalisierung_des_exakten_ersatzziels" time="0.011" /><testcase classname="tests.test_kurs_alias_ziel_review" name="test_uebersicht_erhaelt_casezeilen_und_waehlt_exaktes_aliasziel[GER40]" time="0.039"><failure message="AssertionError: assert 'Ger40' == 'GER40'&#10;  &#10;  - GER40&#10;  + Ger40">tmp_path = WindowsPath('C:/Users/tnickel/AppData/Local/Temp/quellen_alias_ziel_fix_20261028_lw79g3ji/before_tmp/test_uebersicht_erhaelt_caseze0')
+ziel = 'GER40'
+
+    @pytest.mark.parametrize("ziel", ["GER40", "Ger40"])
+    def test_uebersicht_erhaelt_casezeilen_und_waehlt_exaktes_aliasziel(tmp_path, ziel):
+        pfad = tmp_path / "bestand.db"
+        with sqlite3.connect(pfad) as conn:
+            conn.execute("CREATE TABLE h1_bars(feed TEXT,symbol TEXT,epoch INTEGER)")
+            conn.executemany("INSERT INTO h1_bars VALUES(?,?,?)", [
+                ("feed1", "GER40", 1_700_000_000),
+                ("feed2", "Ger40", 1_700_003_600),
+                ("feed2", "Ger40", 1_700_007_200)])
+        alias = tmp_path / "kurs_alias.json"
+        alias.write_text(json.dumps({"A": ziel}), encoding="utf8")
+        rows = {r["Symbol"]: r for r in kurs_cache.uebersicht(
+            pfad, [{"report": {"symbole_ohne_kurse": ["A"]}}], alias)}
+        assert rows["GER40"]["Bars"] == 1
+        assert rows["Ger40"]["Bars"] == 2
+        assert rows["GER40"]["Feeds"] == rows["Ger40"]["Feeds"] == 1
+&gt;       assert rows["A"]["Im Bestand als"] == ziel
+E       AssertionError: assert 'Ger40' == 'GER40'
+E         
+E         - GER40
+E         + Ger40
+
+tests\test_kurs_alias_ziel_review.py:80: AssertionError</failure></testcase><testcase classname="tests.test_kurs_alias_ziel_review" name="test_uebersicht_erhaelt_casezeilen_und_waehlt_exaktes_aliasziel[Ger40]" time="0.035" /><testcase classname="tests.test_kurs_alias_ziel_review" name="test_case_lookup_verliert_keine_variante_und_raet_nicht[GER40-GER40]" time="0.006" /><testcase classname="tests.test_kurs_alias_ziel_review" name="test_case_lookup_verliert_keine_variante_und_raet_nicht[Ger40-Ger40]" time="0.006"><failure message="AssertionError: assert 'GER40' == 'Ger40'&#10;  &#10;  - Ger40&#10;  + GER40">ziel = 'Ger40', erwartet = 'Ger40'
+
+    @pytest.mark.parametrize("ziel,erwartet", [("GER40", "GER40"), ("Ger40", "Ger40"), ("ger40", None)])
+    def test_case_lookup_verliert_keine_variante_und_raet_nicht(ziel, erwartet):
+        index = {"GER40": "GER40", "Ger40": "Ger40"}
+&gt;       assert kurs_cache._kurs_match("A", index, {"A": ziel}) == erwartet
+E       AssertionError: assert 'GER40' == 'Ger40'
+E         
+E         - Ger40
+E         + GER40
+
+tests\test_kurs_alias_ziel_review.py:87: AssertionError</failure></testcase><testcase classname="tests.test_kurs_alias_ziel_review" name="test_case_lookup_verliert_keine_variante_und_raet_nicht[ger40-None]" time="0.006"><failure message="AssertionError: assert 'GER40' == None&#10; +  where 'GER40' = &lt;function _kurs_match at 0x000002B5DC3BC180&gt;('A', {'GER40': 'GER40', 'Ger40': 'Ger40'}, {'A': 'ger40'})&#10; +    where &lt;function _kurs_match at 0x000002B5DC3BC180&gt; = kurs_cache._kurs_match">ziel = 'ger40', erwartet = None
+
+    @pytest.mark.parametrize("ziel,erwartet", [("GER40", "GER40"), ("Ger40", "Ger40"), ("ger40", None)])
+    def test_case_lookup_verliert_keine_variante_und_raet_nicht(ziel, erwartet):
+        index = {"GER40": "GER40", "Ger40": "Ger40"}
+&gt;       assert kurs_cache._kurs_match("A", index, {"A": ziel}) == erwartet
+E       AssertionError: assert 'GER40' == None
+E        +  where 'GER40' = &lt;function _kurs_match at 0x000002B5DC3BC180&gt;('A', {'GER40': 'GER40', 'Ger40': 'Ger40'}, {'A': 'ger40'})
+E        +    where &lt;function _kurs_match at 0x000002B5DC3BC180&gt; = kurs_cache._kurs_match
+
+tests\test_kurs_alias_ziel_review.py:87: AssertionError</failure></testcase><testcase classname="tests.test_kurs_alias_ziel_review" name="test_case_insensitiver_lookup_bleibt_bei_eindeutigem_bestand_moeglich" time="0.005" /><testcase classname="tests.test_kurs_alias_ziel_review" name="test_suffix_case_lookup_bevorzugt_exakte_basis[GER40M-GER40]" time="0.006" /><testcase classname="tests.test_kurs_alias_ziel_review" name="test_suffix_case_lookup_bevorzugt_exakte_basis[Ger40M-Ger40]" time="0.006"><failure message="AssertionError: assert 'GER40' == 'Ger40'&#10;  &#10;  - Ger40&#10;  + GER40">symbol = 'Ger40M', erwartet = 'Ger40'
+
+    @pytest.mark.parametrize("symbol,erwartet", [("GER40M", "GER40"), ("Ger40M", "Ger40"), ("ger40M", None)])
+    def test_suffix_case_lookup_bevorzugt_exakte_basis(symbol, erwartet):
+&gt;       assert kurs_cache._kurs_match(symbol, {"GER40": "GER40", "Ger40": "Ger40"}) == erwartet
+E       AssertionError: assert 'GER40' == 'Ger40'
+E         
+E         - Ger40
+E         + GER40
+
+tests\test_kurs_alias_ziel_review.py:96: AssertionError</failure></testcase><testcase classname="tests.test_kurs_alias_ziel_review" name="test_suffix_case_lookup_bevorzugt_exakte_basis[ger40M-None]" time="0.005"><failure message="AssertionError: assert 'GER40' == None&#10; +  where 'GER40' = &lt;function _kurs_match at 0x000002B5DC3BC180&gt;('ger40M', {'GER40': 'GER40', 'Ger40': 'Ger40'})&#10; +    where &lt;function _kurs_match at 0x000002B5DC3BC180&gt; = kurs_cache._kurs_match">symbol = 'ger40M', erwartet = None
+
+    @pytest.mark.parametrize("symbol,erwartet", [("GER40M", "GER40"), ("Ger40M", "Ger40"), ("ger40M", None)])
+    def test_suffix_case_lookup_bevorzugt_exakte_basis(symbol, erwartet):
+&gt;       assert kurs_cache._kurs_match(symbol, {"GER40": "GER40", "Ger40": "Ger40"}) == erwartet
+E       AssertionError: assert 'GER40' == None
+E        +  where 'GER40' = &lt;function _kurs_match at 0x000002B5DC3BC180&gt;('ger40M', {'GER40': 'GER40', 'Ger40': 'Ger40'})
+E        +    where &lt;function _kurs_match at 0x000002B5DC3BC180&gt; = kurs_cache._kurs_match
+
+tests\test_kurs_alias_ziel_review.py:96: AssertionError</failure></testcase><testcase classname="tests.test_kurs_alias_ziel_review" name="test_reverse_case_lookup_bevorzugt_exakte_basis[GER40-GER40+]" time="0.005" /><testcase classname="tests.test_kurs_alias_ziel_review" name="test_reverse_case_lookup_bevorzugt_exakte_basis[Ger40-Ger40+]" time="0.005"><failure message="AssertionError: assert 'GER40+' == 'Ger40+'&#10;  &#10;  - Ger40+&#10;  + GER40+">symbol = 'Ger40', erwartet = 'Ger40+'
+
+    @pytest.mark.parametrize("symbol,erwartet", [("GER40", "GER40+"), ("Ger40", "Ger40+"), ("ger40", None)])
+    def test_reverse_case_lookup_bevorzugt_exakte_basis(symbol, erwartet):
+&gt;       assert kurs_cache._kurs_match(symbol, {"GER40+": "GER40+", "Ger40+": "Ger40+"}) == erwartet
+E       AssertionError: assert 'GER40+' == 'Ger40+'
+E         
+E         - Ger40+
+E         + GER40+
+
+tests\test_kurs_alias_ziel_review.py:101: AssertionError</failure></testcase><testcase classname="tests.test_kurs_alias_ziel_review" name="test_reverse_case_lookup_bevorzugt_exakte_basis[ger40-None]" time="0.005"><failure message="AssertionError: assert 'GER40+' == None&#10; +  where 'GER40+' = &lt;function _kurs_match at 0x000002B5DC3BC180&gt;('ger40', {'GER40+': 'GER40+', 'Ger40+': 'Ger40+'})&#10; +    where &lt;function _kurs_match at 0x000002B5DC3BC180&gt; = kurs_cache._kurs_match">symbol = 'ger40', erwartet = None
+
+    @pytest.mark.parametrize("symbol,erwartet", [("GER40", "GER40+"), ("Ger40", "Ger40+"), ("ger40", None)])
+    def test_reverse_case_lookup_bevorzugt_exakte_basis(symbol, erwartet):
+&gt;       assert kurs_cache._kurs_match(symbol, {"GER40+": "GER40+", "Ger40+": "Ger40+"}) == erwartet
+E       AssertionError: assert 'GER40+' == None
+E        +  where 'GER40+' = &lt;function _kurs_match at 0x000002B5DC3BC180&gt;('ger40', {'GER40+': 'GER40+', 'Ger40+': 'Ger40+'})
+E        +    where &lt;function _kurs_match at 0x000002B5DC3BC180&gt; = kurs_cache._kurs_match
+
+tests\test_kurs_alias_ziel_review.py:101: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,44 @@
+{
+  "captured_at": "2026-10-28T17:47:37.074458+01:00",
+  "head_before": "853bc3a743040256e17f2333b63fbfb9e4219e13",
+  "status": "frozen",
+  "files": [
+    {
+      "path": "src/mqlkiscanner/equity_studie_ui.py",
+      "rawSha256": "ec91ce3d54ae308c17c8d5f92d002ef46e59b2ced81de82b50303dff6a2c9001",
+      "lfSha256": "bd83095df0557871991d106bac2bce38e5e9ab0b9896d3c7d6a93472cdb48167"
+    },
+    {
+      "path": "tests/test_review_20261028_ui_followup.py",
+      "rawSha256": "49ef8189c9cbe7359efc7e9ccea2b5f61353538f839b84076fdb52d968e5733e",
+      "lfSha256": "49ef8189c9cbe7359efc7e9ccea2b5f61353538f839b84076fdb52d968e5733e"
+    }
+  ],
+  "root_owned_dependency": [
+    {
+      "path": "src/mqlkiscanner/studien_anzeigezeit.py",
+      "rawSha256": "53ec2824c48b1f450b088a097e52649bc8f087ce07254eb650cb3b5c4df1992f",
+      "lfSha256": "53ec2824c48b1f450b088a097e52649bc8f087ce07254eb650cb3b5c4df1992f"
+    }
+  ],
+  "test_result": {
+    "exit_code": 0,
+    "passed": 46,
+    "new_followup_cases": 12,
+    "previous_fix_cases": 8,
+    "existing_equity_cases": 26,
+    "seconds": 11.23,
+    "modules": [
+      "tests/test_review_20261028_ui_followup.py",
+      "tests/test_review_20261028_ui_fixes.py",
+      "tests/test_equity_studie.py"
+    ],
+    "log": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\none_ui_review_2026-10-28\\ui_followup_after.log",
+    "logSha256": "4d420992d886a2018b503c824848f453c3fd26201e586e6bda9a003076293a8d"
+  },
+  "negative_repros": {
+    "P3-2": "schema preserves numeric-looking names; no generic coercion introduced",
+    "P3-3": "all-null and mixed ImageColumn passed; installed frontend image/missing paths passed; no fillna or Sparkline product change",
+    "frontend_result": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\none_ui_review_2026-10-28\\image_column_probe.json"
+  }
+}

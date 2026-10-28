@@ -1,0 +1,68 @@
+{
+  "created_at": "2026-10-28T18:10:10.339988+01:00",
+  "head": "853bc3a743040256e17f2333b63fbfb9e4219e13",
+  "findings_fixed": [
+    "5: terminal alias for central replacement target",
+    "8: exact case target lost in lookup",
+    "4: bounded retry acquiring artifact write lock",
+    "II.1: defensive missing lots display"
+  ],
+  "tests": {
+    "tests": "401",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "81.568",
+    "timestamp": "2026-10-28T18:07:12.499195+01:00"
+  },
+  "test_modules": [
+    "tests.test_alle_signale_seite",
+    "tests.test_db_artefakt_lock_retry",
+    "tests.test_db_initialization_atomicity",
+    "tests.test_external_review_db",
+    "tests.test_identity_db",
+    "tests.test_ingest_owner_cache",
+    "tests.test_kurs_alias_ziel_review",
+    "tests.test_kurs_symbolaufloesung_review",
+    "tests.test_kurs_uebersicht",
+    "tests.test_kursdaten_innenluecken",
+    "tests.test_kursdaten_nachladen",
+    "tests.test_kursdaten_persistenz",
+    "tests.test_kursdaten_stundengrenze",
+    "tests.test_kursdaten_terminalwechsel",
+    "tests.test_kursdaten_vantage_portable",
+    "tests.test_quellen",
+    "tests.test_review_20261028_lots_ui",
+    "tests.test_review_20261028_ui_fixes",
+    "tests.test_signal_statistik",
+    "tests.test_source_identity_contract",
+    "tests.test_studien_batch",
+    "tests.test_studien_batch_prefetch_currency",
+    "tests.test_studien_symbolprovenienz"
+  ],
+  "new_regression_cases": {
+    "aliases": 17,
+    "database_locks": 13,
+    "lots_ui": 7
+  },
+  "separate_test_pass_counts_not_added_to_combined": [
+    175,
+    66,
+    16
+  ],
+  "source_sha256": {
+    "src/mqlkiscanner/kursdaten.py": "fa8559d6994d0839e9e1f0cfb842afebbd41574157d63461ee606b3afe222c9a",
+    "src/mqlkiscanner/kurs_cache.py": "1f7f1db6b10eaee5761334f3245b048d975c58f63101840e47f4d43c807c2bb5",
+    "tests/test_kurs_alias_ziel_review.py": "834ffe2bd4c2d2d51b9d792d8a070886c0f133680e7bd752d4522e0c7a3288b9",
+    "src/mqlkiscanner/db.py": "1aa43e7621d531710faa588c53a8afd126f37e60b255276a9e6b362aff7fc1ed",
+    "tests/test_db_artefakt_lock_retry.py": "b5538b5e86608c399fe46aa3f6c8e03ed922656858763956c41934ac9b3e406c",
+    "src/mqlkiscanner/alle_signale_ui.py": "e6d1ec0e8422a2ffb5179f81ae799e5995952d8be0a28b60bc08a29ec3977b8a",
+    "tests/test_review_20261028_lots_ui.py": "246998969f0f266183255b03ff4287ab2b33b48e232b722d21cf175acf9c136c"
+  },
+  "source_files_match_isolated_passed_snapshots": true,
+  "commits_created": false,
+  "pushed": false,
+  "other_eight_repo_statuses_unchanged": true,
+  "productive_db_mt5_or_platform_access": false,
+  "productive_alias_or_trade_changes": false
+}

@@ -177,7 +177,12 @@ def test_mixed_first_attempt_records_only_current_confirmed_symbols(monkeypatch)
     feeds=Feeds()
     feeds.terminal_herkunft={'EURUSD':'broker-0','XAUUSD':'broker-2',
                             'GBPUSD':'stale','USDJPY':'missing'}
-    setup(monkeypatch,[measured(99,9,True,symbole_mit_kursen=['EURUSD','XAUUSD','GBPUSD'])])
+    feeds.hole_h1 = lambda *args, **kwargs: [{'time': 1, 'close': 1}]
+    def reko(parsed, provider, *args, **kwargs):
+        provider.hole_h1('EURUSD', 0, 1)
+        provider.hole_h1('XAUUSD', 0, 1)
+        return measured(99,9,True,symbole_mit_kursen=['EURUSD','XAUUSD','GBPUSD'])
+    monkeypatch.setattr(equity_rekonstruktion, 'rekonstruiere', reko)
     parsed=SimpleNamespace(trades=[SimpleNamespace(symbol=s) for s in ['EURUSD','XAUUSD','USDJPY']])
     result=studien_batch._rekonstruiere_mit_feed_fallback(parsed,feeds,10000,None)
     assert result['kursdaten_versuche'][0]['symbol_feeds']=={

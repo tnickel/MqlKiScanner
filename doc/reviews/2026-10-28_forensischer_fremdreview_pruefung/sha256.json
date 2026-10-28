@@ -1,0 +1,23 @@
+{
+  "abschluss.json": "72cfcc0ef09511f2e7225deed690b3b95f3056a0958af1eadc7d797af3595d6c",
+  "nachweise/alias-manifest.json": "216fc30b24ce8dee1c2f332fc1e9a6af397c60b9844b4ab8857ee160d0619711",
+  "nachweise/alias-nachher.log": "f834f22c4c550ce18dab0066df87c3595ca3393267c025715bda351ce51b29e9",
+  "nachweise/alias-nachher.xml": "3f30f67436d640eca103bd8e5aacd14644b8194441f311577abeac0ab98c7ba0",
+  "nachweise/alias-vorher.log": "07cae364d1b20bf90237918d4c12baac89bc60f9ca8e23f0d98747d21ee14141",
+  "nachweise/alias-vorher.xml": "6adfb72ebd23ca13b1d3c1b3956b01c5391ab881b42be8412073c3038f88e3fd",
+  "nachweise/combined-tests.log": "5985da6769f5baa666d8745eb225b132e0ed420ab8e3d0600de2ce2eb18c573f",
+  "nachweise/combined-tests.xml": "f4a8ca8da692e9ae25e54de000de350a47085d04308d2b9c993c452c4228d8ac",
+  "nachweise/db-nachher.log": "40b451b4d6bef1a88a1b03048de7a9e8b01feb92604d10638407d94a34418211",
+  "nachweise/db-nachher.xml": "b49e274bba3a22c947f97e84689b1c0232a85e9b5b0874e5315cda094aa9e6b8",
+  "nachweise/db-vorher.log": "05adf7c9c3768f1db55f12aa5afb8e81ceccd9c135e85c794a31dc49084e9424",
+  "nachweise/lots-gegenpruefung.md": "c57e232d7f2b34e16487ec30ff7095d1b87312ef2b277466caffa8eb790bb287",
+  "nachweise/lots-manifest.json": "6257eafa5b11a1e8d754dc4dcee19f23d600aa8424411526e396c4b000819169",
+  "nachweise/lots-nachher.log": "8415a61b1e928d0a250dfb4d284716fe664a9172a41c4257ee039ce4c0982074",
+  "nachweise/lots-vorher.log": "5f796df40610630fb9c777b02dfb2001e875904bad1073a0be51046a4402c228",
+  "nachweise/png-geometrie.json": "56f32ec2649581fbb2d3e392f7264540731fc6d5436693d20f2037cf0bee3ed3",
+  "nachweise/review_eingang.txt": "dc6800f134a482dd7815d6909814b65bc69cd1b64f3f88303c53da4604955d2a",
+  "nachweise/startkapital_am_maximum.png": "1c739f4001537ce3b548718aae80afa9a7858892fecaad8842fdd0b9d9c76fbf",
+  "nachweise/test-command.json": "3d42255f1d9fe3025547dc83e886db7d766a5618bee82d3870277a4c8bfa21a9",
+  "nachweise/workspace-status.json": "f7716db447ed3da690ab8386efca6456080a61a0c1eb4c3d4cd787a077e78671",
+  "README.md": "af20b443c2276c534d19731c0d922a8a03f8d06b6c4b6143789d1f3fbf764de6"
+}

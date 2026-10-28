@@ -446,9 +446,9 @@ def _tabellen_frame(tab_paare):
                                       beobachtet=beobachtet_refs,
                                       dokumente=dokumente_refs)
                        for r, s in tab_paare])
-    # Zahlen-Spalten strikt numerisch: None → NaN → LEERE Zelle statt „None“-
-    # Text (Nutzer 08.10.2026: kompakte, lesbare Tabelle). Runden einmalig hier —
-    # der Styler rendert die Werte dann ohne column_config-Formatierungs-Bridge.
+    # Zahlen-Spalten numerisch halten; unbekannte Werte bleiben fehlend.
+    # Ihre leere Anzeige steuert placeholder. Runden einmalig hier — der
+    # Styler rendert die Werte dann ohne column_config-Formatierungs-Bridge.
     for _spalte in df.columns:
         if _spalte not in tabellen_ui.TEXT_SPALTEN:
             df[_spalte] = pd.to_numeric(df[_spalte], errors='coerce')
@@ -503,7 +503,7 @@ def _tabelle_rendern(schluessel: str, tab_paare, dateiname: str) -> None:
         key=schluessel,
         on_select='rerun',
         selection_mode='multi-row',
-        hide_index=True,
+        hide_index=True, placeholder='',
         height=480,
         width="stretch",
         column_config={

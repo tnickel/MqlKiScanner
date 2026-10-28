@@ -28,6 +28,7 @@ import os
 import sqlite3
 import tempfile
 import uuid
+from time import sleep as _sleep
 
 from .signal_identity import (SignalIdentity, IdentityError, AmbiguousSignalIdentity,
                               IdentityMigrationRequired, source_label)
@@ -1493,11 +1494,31 @@ def list_equity_studien(*, identitaeten=False, quelle=None) -> dict:
 
 
 
+def _begin_artefakt_write(conn) -> None:
+    """Nur den Erwerb des Schreiblocks wiederholen, niemals die Transaktion.
+
+    Drei Versuche mit bestehendem busy_timeout=5000 plus 0,1/0,25 s Pause:
+    maximal ca. 15,35 s Lock-Wartezeit. SQLITE_BUSY umfasst auch extended
+    Codes; SQLITE_LOCKED (z. B. eigener Cursor/Shared-Cache) wird nicht als
+    temporaerer konkurrierender Schreiber behandelt.
+    """
+    for pause in (0.1, 0.25, None):
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            return
+        except sqlite3.OperationalError as exc:
+            code = getattr(exc, "sqlite_errorcode", None)
+            if (pause is None or conn.in_transaction or not isinstance(code, int)
+                    or code & 0xFF != sqlite3.SQLITE_BUSY):
+                raise
+            _sleep(pause)
+
+
 def store_quellen_artefakt(quelle_id: int, signal_id: int, version: str, art: str,
                           sha256: str, path: str) -> None:
     init_db()
     with _connect() as conn:
-        conn.execute("BEGIN IMMEDIATE")
+        _begin_artefakt_write(conn)
         identity = _connection_identity(conn,quelle_id,signal_id,create=True)
         conn.execute("""INSERT INTO quellen_artefakte(quelle_id,signal_ref,version,art,sha256,path,fetched_at)
             VALUES(?,?,?,?,?,?,?) ON CONFLICT(quelle_id,signal_ref,version,art) DO UPDATE SET

@@ -1076,7 +1076,7 @@ def render_results() -> None:
             if any(entry.get("abo_referenz_vollstaendig") is False for entry in visible):
                 column_order.append("Auswahlhinweis")
             selection = st.dataframe(
-                df, hide_index=True, width="stretch", height=min(560, 40 + 35 * len(df)),
+                df, hide_index=True, placeholder="", width="stretch", height=min(560, 40 + 35 * len(df)),
                 column_order=column_order,
                 key=f"abonnenten_analyse_tabelle_{run_id}_{view}_{signature}",
                 selection_mode="single-row", on_select="rerun",
@@ -1244,15 +1244,22 @@ def daten_tabelle(entries: list[dict], state: dict | None = None) -> pd.DataFram
             **_modell_spalten(e),
         })
     df = pd.DataFrame(rows)
-    # Zahlen-Spalten strikt numerisch — eine Spalte ohne EINEN echten Wert
-    # (alles None) bliebe sonst object/pyarrow-null und renderte als Text
-    # „None" statt leerer Zelle (Nutzer-Screenshot 28.10.: Modell-Netto-
-    # gewinn USD bei Quellenwerten ohne Trade-Export). Text-Spalten bleiben
-    # unverändert, weil die Koercierung dort Werte verlieren würde.
-    for spalte in df.columns:
-        zahlen = pd.to_numeric(df[spalte], errors="coerce")
-        if zahlen.notna().sum() == df[spalte].notna().sum():
-            df[spalte] = zahlen
+    # Nur Messwerte typisieren, auch wenn die ganze Spalte unbekannt ist.
+    # Namen, Identitäten, Versionen und Hashes bleiben unverändert als Text;
+    # die leere Darstellung fehlender Werte steuert st.dataframe.placeholder.
+    for spalte in (
+        "Abonnenten", "Nettozuwachs 7 Tage", "Zufluss / Quellenmittel", "Nettogewinn USD",
+        "Rendite Exportfenster %", "Max. gemessener Equity-DD %", "Jahres-RetDD", "Monate", "Trades",
+        "Nettogewinn Kontowährung", "Datenrang", "Vorauswertung", "Quellengewinn USD", "Quellrendite %",
+        "Nettozuwachs 7 Tage %", "Quellenmittel Abonnenten", "Quellenmittel Anbieterzahl", "Zufluss-Perzentil",
+        "Jahresrendite annualisiert %", "H1-Abdeckung %", "Modell-Startkapital USD", "Modell-Nettogewinn USD",
+        "Modell-Rendite Exportfenster %", "Modell-Jahresrendite annualisiert %",
+        "Modell-Equity-DD inkl. Floating %", "Modell-Equity-DD USD", "Modell-Jahres-RetDD",
+        "Modell-Closing-DD %", "Modell-Closing-DD USD", "Modell-Trades", "Modell-H1-Abdeckung %",
+        "Im Modell ignorierte Kapitalflüsse", "Ignorierte Einzahlungen (nativ)", "Ignorierte Auszahlungen (nativ)",
+    ):
+        if spalte in df:
+            df[spalte] = pd.to_numeric(df[spalte], errors="coerce")
     return df
 
 
@@ -1578,7 +1585,7 @@ def _render_daten_results(backend, run_id: str, state: dict) -> None:
                    "Modell-Rendite Exportfenster %", "Modell-Equity-DD inkl. Floating %", "Modell-Jahres-RetDD",
                    "Modell-Trades", "Modell-H1-Abdeckung %", "Modellstatus", "Modellgrund"] if show_models
                    else ["Nettogewinn USD", "Rendite Exportfenster %", "Max. gemessener Equity-DD %", "Jahres-RetDD"])
-    selected = st.dataframe(table, hide_index=True, width="stretch", height=min(650, 40 + 35 * len(table)),
+    selected = st.dataframe(table, hide_index=True, placeholder="", width="stretch", height=min(650, 40 + 35 * len(table)),
         key=f"abonnenten_daten_tabelle_{run_id}", selection_mode="single-row", on_select="rerun",
         column_order=["Quelle", "Strategie", "Link", "Abonnenten", "Nettozuwachs 7 Tage", "Zufluss / Quellenmittel", *main_values,
             "Monate", "Trades", "Trade-Export-Status", "Abdeckungsstatus", "Status", "Grund", "Quellengewinn USD", "Quellrendite %",

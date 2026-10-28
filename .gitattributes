@@ -1,0 +1,6 @@
+# Keep dated review evidence byte-exact so recorded SHA256 checksums remain valid.
+# Imported reports and verbatim test logs retain their original whitespace.
+doc/reviews/2026-10-28_scanner_review_behebung/** -text -whitespace
+doc/reviews/2026-10-28_fremdreview_gegenpruefung/** -text -whitespace
+doc/reviews/2026-10-28_befundkatalog_gegenpruefung/** -text -whitespace
+doc/reviews/2026-10-28_forensischer_fremdreview_pruefung/** -text -whitespace

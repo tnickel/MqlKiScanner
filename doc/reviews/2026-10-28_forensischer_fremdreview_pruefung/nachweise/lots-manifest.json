@@ -1,0 +1,37 @@
+{
+  "captured_at": "2026-10-28T18:07:43.882611+01:00",
+  "head_before": "853bc3a743040256e17f2333b63fbfb9e4219e13",
+  "status": "frozen",
+  "classification": "defensive rendering for incomplete statistics payloads, not a demonstrated current fetch error",
+  "files": [
+    {
+      "path": "src/mqlkiscanner/alle_signale_ui.py",
+      "rawSha256": "e6d1ec0e8422a2ffb5179f81ae799e5995952d8be0a28b60bc08a29ec3977b8a",
+      "lfSha256": "6a4b16c6a6cd62dda09a88b68fdf8d302afb518bfa5888a164d5084d362b5dbb"
+    },
+    {
+      "path": "tests/test_review_20261028_lots_ui.py",
+      "rawSha256": "246998969f0f266183255b03ff4287ab2b33b48e232b722d21cf175acf9c136c",
+      "lfSha256": "246998969f0f266183255b03ff4287ab2b33b48e232b722d21cf175acf9c136c"
+    }
+  ],
+  "test_result": {
+    "exit_code": 0,
+    "passed": 16,
+    "new_app_test_cases": 7,
+    "existing_statistic_cases": 9,
+    "seconds": 5.27,
+    "modules": [
+      "tests/test_review_20261028_lots_ui.py",
+      "tests/test_signal_statistik.py"
+    ],
+    "log": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\none_ui_review_2026-10-28\\lots_ui_after.log",
+    "logSha256": "8415a61b1e928d0a250dfb4d284716fe664a9172a41c4257ee039ce4c0982074"
+  },
+  "before_result": {
+    "failed": 5,
+    "passed": 2,
+    "normal_producer_and_known_zero_passed": true,
+    "log": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\none_ui_review_2026-10-28\\lots_ui_before.log"
+  }
+}

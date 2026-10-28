@@ -1,0 +1,73 @@
+{
+  "created_at": "2026-10-28T17:54:19.988581+01:00",
+  "head": "853bc3a743040256e17f2333b63fbfb9e4219e13",
+  "scope": "local fixes only; no commit, push, productive recalculation or terminal connection",
+  "combined_tests": {
+    "tests": "531",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "123.224",
+    "timestamp": "2026-10-28T17:47:21.536727+01:00"
+  },
+  "test_modules": [
+    "tests.test_abonnenten_analyse_ui",
+    "tests.test_abonnenten_daten_ui",
+    "tests.test_abonnenten_statistik",
+    "tests.test_alle_signale_seite",
+    "tests.test_drawdown_core",
+    "tests.test_equity_studie",
+    "tests.test_equity_zeitabschnitte",
+    "tests.test_hub_ui",
+    "tests.test_kurs_cache",
+    "tests.test_kurs_cache_ablaufindex",
+    "tests.test_kurs_symbolaufloesung_review",
+    "tests.test_kurs_uebersicht",
+    "tests.test_kursdaten_innenluecken",
+    "tests.test_kursdaten_nachladen",
+    "tests.test_kursdaten_persistenz",
+    "tests.test_kursdaten_stundengrenze",
+    "tests.test_kursdaten_terminalwechsel",
+    "tests.test_report_pdf_ui",
+    "tests.test_review_20261028_ui_fixes",
+    "tests.test_review_20261028_ui_followup",
+    "tests.test_risiko_png_review",
+    "tests.test_risiko_rechner",
+    "tests.test_studien_anzeigezeit",
+    "tests.test_studien_batch",
+    "tests.test_studien_batch_prefetch_currency",
+    "tests.test_studien_feed_fallback",
+    "tests.test_studien_symbolprovenienz",
+    "tests.test_styler_zellenlimit"
+  ],
+  "new_regression_cases": {
+    "provenance": 9,
+    "ui": 12,
+    "display_time": 8
+  },
+  "source_sha256": {
+    "src/mqlkiscanner/equity_studie.py": "b3f754b158308d1a23c341a7a6d4070fa2a9ec24f9b2977dba0173736be5c387",
+    "src/mqlkiscanner/equity_studie_ui.py": "ec91ce3d54ae308c17c8d5f92d002ef46e59b2ced81de82b50303dff6a2c9001",
+    "src/mqlkiscanner/kursdaten.py": "29e4bb9fa0a658ad777b2c2e28460da9bfeeea351a565a7721307929bcef2b76",
+    "src/mqlkiscanner/risiko_rechner.py": "2e3c2d38106c6e9b71e151ba9c823189e9db303fc299fb9acfe22fcb4db974d5",
+    "src/mqlkiscanner/studien_batch.py": "e2c94e640a50e6e1230d52396debf82534725dae12efc3fc39e717d49e6dee06",
+    "src/mqlkiscanner/studien_anzeigezeit.py": "53ec2824c48b1f450b088a097e52649bc8f087ce07254eb650cb3b5c4df1992f",
+    "tests/test_studien_feed_fallback.py": "fb754adf0a813aa1e19652826c2414b4864599cc763a500250168d4a6def1131",
+    "tests/test_risiko_png_review.py": "4cec0b3019f7a1eed9f2d2656e4e2691c05e3136cceb6da55e46dc2d79fb6cbc",
+    "tests/test_studien_symbolprovenienz.py": "5c978ad1068227cd1b1fe6f07bbd2f4d01295dd1379925b6089d17ada9e9eb82",
+    "tests/test_review_20261028_ui_followup.py": "49ef8189c9cbe7359efc7e9ccea2b5f61353538f839b84076fdb52d968e5733e",
+    "tests/test_studien_anzeigezeit.py": "032f83fa349434f7699d35825f4ec8ac8a89f78842312a8f3db7921d0b071998"
+  },
+  "evidence_sha256": {
+    "nachweise/combined-tests.log": "bf7db0f5e926afe5f101c30539c81663746269d1fe894f73fd7712d47dcb7f18",
+    "nachweise/combined-tests.xml": "0a3f813af0a79c1be1b64161ce8cc14c6de0c3fe86b2df9c54712536ea6c4319",
+    "nachweise/herkunft-tests.log": "07b03b079d2cd5a821d76aeddf537bde0af3ccb5fca1befe691a8dd82c70139f",
+    "nachweise/herkunft-tests.xml": "2afeae19ab9800e5b68fd36839530ca0aea18511e32d1b676f939083b07dbb41",
+    "nachweise/review_eingang.txt": "3a5e850382957b17cb41095aa47c4816589cce62ffdb34f19fe6be23517066f8",
+    "nachweise/ui-gegenpruefung-manifest.json": "d715b032827ada037cd3c47737f378573b97c5772a1b53b61f190461023ba1a0",
+    "nachweise/ui-gegenpruefung.md": "ce440a89f561ffd37240b8c6dbc8dedfbf58f8fe0c82a9d3cf8dea37be0dd574",
+    "nachweise/ui-tests.log": "4d420992d886a2018b503c824848f453c3fd26201e586e6bda9a003076293a8d",
+    "nachweise/workspace-status.json": "4aad1fdef0acf8a12f18449133766c5c22baa9bceebd82b0a34795e745e19b61"
+  },
+  "other_eight_repo_statuses_unchanged": true
+}

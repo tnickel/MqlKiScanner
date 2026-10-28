@@ -1,0 +1,273 @@
+{
+  "Time": "2026-10-28T17:37:12.9094265+01:00",
+  "StartingHead": "853bc3a743040256e17f2333b63fbfb9e4219e13",
+  "FindingsFixed": [
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B09",
+    "B10",
+    "B11",
+    "H01"
+  ],
+  "Tests": {
+    "Passed": 457,
+    "Failures": 0,
+    "Errors": 0,
+    "Seconds": 119.85,
+    "Files": 22,
+    "NewRegressionCases": 64
+  },
+  "TestCounts": [
+    {
+      "Name": "tests.test_abonnenten_analyse_ui",
+      "Count": 73
+    },
+    {
+      "Name": "tests.test_abonnenten_daten_ui",
+      "Count": 26
+    },
+    {
+      "Name": "tests.test_abonnenten_statistik",
+      "Count": 53
+    },
+    {
+      "Name": "tests.test_alle_signale_seite",
+      "Count": 43
+    },
+    {
+      "Name": "tests.test_drawdown_core",
+      "Count": 12
+    },
+    {
+      "Name": "tests.test_equity_studie",
+      "Count": 26
+    },
+    {
+      "Name": "tests.test_hub_ui",
+      "Count": 6
+    },
+    {
+      "Name": "tests.test_kurs_cache",
+      "Count": 22
+    },
+    {
+      "Name": "tests.test_kurs_cache_ablaufindex",
+      "Count": 1
+    },
+    {
+      "Name": "tests.test_kurs_symbolaufloesung_review",
+      "Count": 32
+    },
+    {
+      "Name": "tests.test_kurs_uebersicht",
+      "Count": 9
+    },
+    {
+      "Name": "tests.test_kursdaten_innenluecken",
+      "Count": 10
+    },
+    {
+      "Name": "tests.test_kursdaten_nachladen",
+      "Count": 23
+    },
+    {
+      "Name": "tests.test_kursdaten_persistenz",
+      "Count": 12
+    },
+    {
+      "Name": "tests.test_kursdaten_stundengrenze",
+      "Count": 4
+    },
+    {
+      "Name": "tests.test_kursdaten_terminalwechsel",
+      "Count": 14
+    },
+    {
+      "Name": "tests.test_review_20261028_ui_fixes",
+      "Count": 8
+    },
+    {
+      "Name": "tests.test_risiko_png_review",
+      "Count": 9
+    },
+    {
+      "Name": "tests.test_risiko_rechner",
+      "Count": 17
+    },
+    {
+      "Name": "tests.test_studien_batch",
+      "Count": 39
+    },
+    {
+      "Name": "tests.test_studien_batch_prefetch_currency",
+      "Count": 14
+    },
+    {
+      "Name": "tests.test_styler_zellenlimit",
+      "Count": 4
+    }
+  ],
+  "CodeAndTests": [
+    {
+      "Path": "app_pages/abonnenten_statistik.py",
+      "Sha256": "A2E6F27BB6D61D0C8DC5C1297B8397FB43C9A820A88DF21ED3256B97A732DC75"
+    },
+    {
+      "Path": "app_pages/admin.py",
+      "Sha256": "B0565D203088299621B5559D6A9F4403C178814492B0F1AAF15F66CB8939985E"
+    },
+    {
+      "Path": "app_pages/alle_signale.py",
+      "Sha256": "0123E469D2702B4BECB4913EF5196B4D9DB8AA1DFAF7D85C75924FDBB3CCDA26"
+    },
+    {
+      "Path": "src/mqlkiscanner/abonnenten_analyse_ui.py",
+      "Sha256": "B63F9B537FD36051A7F8ED7229EDFD3D9B748F2215C0E34B46C0D3F0BAD2E166"
+    },
+    {
+      "Path": "src/mqlkiscanner/alle_signale_ui.py",
+      "Sha256": "FA99E9D7D54A08D313B26A9000745B611C9E3B7CE97BBD6F457B2121EC75BCBE"
+    },
+    {
+      "Path": "src/mqlkiscanner/app_ui.py",
+      "Sha256": "F50E8360251769214B8CD773C192187F2FEF8EBB60DE0A228A469C41A6AB0A1D"
+    },
+    {
+      "Path": "src/mqlkiscanner/equity_studie_ui.py",
+      "Sha256": "47E2C40E4340A8517D7B84969B02017866648476282CB7B0CA94C8395CD690D0"
+    },
+    {
+      "Path": "src/mqlkiscanner/kurs_cache.py",
+      "Sha256": "78A30E4166877E0DCF7E7C4694F1CB157DA78F24B9C9159D1A3375532E9817C9"
+    },
+    {
+      "Path": "src/mqlkiscanner/kursdaten.py",
+      "Sha256": "280E30A361885343ED49F2FBC86D88655B640FEA86D15F17A101BF1C7A235AC0"
+    },
+    {
+      "Path": "src/mqlkiscanner/risiko_rechner.py",
+      "Sha256": "A654E97A1C86FC8DF981BEC25F767D955460DE6E3A0523AB4D759EFCA051F244"
+    },
+    {
+      "Path": "src/mqlkiscanner/station_dialoge.py",
+      "Sha256": "F8F345DC159301A87D52A1E54A38C2A72031D7E23DC8B11C53ECC36FD5ADB7FC"
+    },
+    {
+      "Path": "src/mqlkiscanner/studien_batch.py",
+      "Sha256": "F424D0C22D8CC52B905F79843E3665388F431B2F9F1A84AAA02DA6F28C096324"
+    },
+    {
+      "Path": "tests/test_kurs_symbolaufloesung_review.py",
+      "Sha256": "A5228D4584299003C1028FD468E75DD8096AA7DFA3F0BE6977C0187C93867DBB"
+    },
+    {
+      "Path": "tests/test_review_20261028_ui_fixes.py",
+      "Sha256": "80499A340D9E1FFEF021BF1444EC8A3CCEE90C35E29BC9FFD61CC963544B9BCA"
+    },
+    {
+      "Path": "tests/test_risiko_png_review.py",
+      "Sha256": "010875CAC157234B35BA2B653297C0D86D1D16FC70C3966EB72A08E1AF6AC6CB"
+    },
+    {
+      "Path": "tests/test_studien_batch_prefetch_currency.py",
+      "Sha256": "E1EA9B0B7C51C6B8C09B2FD736B98144777A0C8D2175A422E0CEA33AFF118B30"
+    },
+    {
+      "Path": "tests/test_styler_zellenlimit.py",
+      "Sha256": "9C4AF48BCFEBD8E9E8FE80489C3FE030F5E675CC6246C67F875CAF32B1633ED2"
+    }
+  ],
+  "UserUntrackedStillPresent": [
+    {
+      "Path": "data/mqlkiscanner.sqlite3",
+      "Present": true
+    },
+    {
+      "Path": "scripts/top5_strategien_pdf.py",
+      "Present": true
+    },
+    {
+      "Path": "doc/Prompts/Abonnentenzaehler_Pruefung_Reparatur_AlleQuellen_2026-10-26.md",
+      "Present": true
+    },
+    {
+      "Path": "doc/reviews/2026-10-26_abonnentenzaehler_pruefung_reparatur",
+      "Present": true
+    },
+    {
+      "Path": "doc/reviews/2026-10-28_kursdaten_none_review",
+      "Present": true
+    }
+  ],
+  "Repositories": [
+    {
+      "Repo": ".",
+      "Head": "c0591cf22c9739ed9216e296f2ecc2e2bf4fc121",
+      "HeadUnchanged": true,
+      "StatusUnchanged": true
+    },
+    {
+      "Repo": "SignalKiScanner",
+      "Head": "853bc3a743040256e17f2333b63fbfb9e4219e13",
+      "HeadUnchanged": true,
+      "StatusUnchanged": false
+    },
+    {
+      "Repo": "MqlDownloader",
+      "Head": "563af284b1a5f76264b95489b7216ec38f4e6576",
+      "HeadUnchanged": true,
+      "StatusUnchanged": true
+    },
+    {
+      "Repo": "PelicanTrading",
+      "Head": "e0245b7f78be5eb85767e0ae0cc572f735366a18",
+      "HeadUnchanged": true,
+      "StatusUnchanged": true
+    },
+    {
+      "Repo": "roboforex",
+      "Head": "cae740d0e2f84e0c86b0439c82d5a4a1023e1740",
+      "HeadUnchanged": true,
+      "StatusUnchanged": true
+    },
+    {
+      "Repo": "vantage",
+      "Head": "8dae3ce029c06876f959dc49b06ee36b6e049f39",
+      "HeadUnchanged": true,
+      "StatusUnchanged": true
+    },
+    {
+      "Repo": "zulumonitor",
+      "Head": "dbfb4cfdbfc8e52cbc00403234457a9603347956",
+      "HeadUnchanged": true,
+      "StatusUnchanged": true
+    },
+    {
+      "Repo": "MqlRealmonitor",
+      "Head": "66956b5a61053505af73259e137029f0489fb3db",
+      "HeadUnchanged": true,
+      "StatusUnchanged": true
+    },
+    {
+      "Repo": "PelicanWinnerLooser",
+      "Head": "258f7e51cd423c2432ae3f4edfd3f5c13945a38a",
+      "HeadUnchanged": true,
+      "StatusUnchanged": true
+    }
+  ],
+  "AppListener": [
+    {
+      "LocalPort": 8504,
+      "OwningProcess": 165596
+    }
+  ],
+  "StagedFiles": [],
+  "CommitsCreated": false,
+  "Pushed": false
+}

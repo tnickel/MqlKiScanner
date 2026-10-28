@@ -1021,9 +1021,9 @@ with kurs_tab:
     if not zeilen:
         st.info("Noch kein Kursbestand und keine Studien-Symbole vorhanden.")
     else:
-        bars_gesamt = sum(z["Bars"] for z in zeilen)
-        ohne_kurse = [z for z in zeilen if not z["Bars"]]
-        mit_match = [z for z in ohne_kurse if z["Im Bestand als"]]
+        bars_gesamt = sum(z["Bars"] for z in zeilen if z["Status"] == "Kurse vorhanden")
+        ohne_kurse = [z for z in zeilen if z["Status"] != "Kurse vorhanden"]
+        mit_match = [z for z in zeilen if z["Status"] == "Ersetzung"]
         st.caption(
             f"**{len(zeilen)} Symbole** · eigene {bars_gesamt:,} H1-Bars".replace(",", ".")
             + f" · **{len(ohne_kurse)} Symbole ohne eigene Kurse**, davon "

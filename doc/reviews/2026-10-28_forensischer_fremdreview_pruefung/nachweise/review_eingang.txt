@@ -1,0 +1,289 @@
+Code-Review & Forensischer Audit: MqlKiScanner
+0. Vorab-Korrektur falscher Grundannahmen (Klartext)
+Bevor wir in die Details gehen, müssen zwei zentrale Annahmen aus der Aufgabenstellung auf Basis von Code und Datenbankfunden korrigiert werden:
+
+Falsche Annahme zu den 3 „echten Kurs-Lücken“ (AUDSGDM, F40, XCUUSDM):
+
+„Behauptung: diese führt keiner der drei Broker unter irgendeinem Namen.“
+
+Das ist empirisch und beweisbar falsch. Alle drei Instrumente sind in data/kursdaten.db mit tausenden bis zehntausenden H1-Bars vorhanden:
+
+AUDSGDM: Ist AUD/SGD mit Micro-Suffix M. Vantage führt AUDSGD+ mit 8.233 H1-Bars im Cache.
+F40: Ist der französische Leitindex CAC 40. Vantage führt FRA40 mit 13.563 H1-Bars im Cache.
+XCUUSDM: Ist Kupfer (XCU/USD) mit Micro-Suffix M. Tickmill führt COPPER mit 1.558 H1-Bars im Cache.
+Die Symbole blieben nicht wegen fehlender Brokerkurse Lücken, sondern wegen blinder Flecken im Namensabgleich (_kurs_match scheitert, wenn beide Seiten unterschiedliche Suffixe tragen: AUDSGDM vs. AUDSGD+; F40 und XCUUSD fehlten schlicht in _KURS_ALIAS).
+
+Falsche Annahme zur Kursdaten-Übersicht im Einstellungs-Tab: Die Tabelle im Einstellungs-Tab zeigt dem Nutzer aktuell:
+
+„283 Symbole · eigene 17.234.777 H1-Bars · 3 Symbole ohne eigene Kurse, davon 0 per Ersetzung abgedeckt · 3 echte Lücken“
+
+Diese Anzeige ist mathematisch und logisch defekt. Der reale Bestand hat 10.209.803 Bars. Die Anzeige bläht den Bestand um 7.024.974 Bars (+68,8 %) auf und meldet „0 per Ersetzung abgedeckt“, obwohl 49 Ersetzungen greifen. Ursache ist eine fatale Variablenüberschreibung in 
+
+kurs_cache.py:348
+ kombiniert mit 
+
+admin.py:1024-1026
+.
+
+Teil I: Befundkatalog der fünf Fokus-Features
+Befund 1 (P1): Übersichts-Statistik im Kursdaten-Tab bläht Bar-Zahl um 7 Mio. auf und meldet 0 Ersetzungen
+Ort: 
+
+admin.py:1024-1026
+ in Interaktion mit 
+
+kurs_cache.py:346-352
+Problem: In kurs_cache.py wird für alle Zeilen mit Status == "Ersetzung" der Wert z["Bars"] mit den Bars des Ersatz-Symbols überschrieben (z["Bars"] = qb["bars"]). In admin.py rechnet die UI dann:
+python
+bars_gesamt = sum(z["Bars"] for z in zeilen)
+ohne_kurse = [z for z in zeilen if not z["Bars"]]
+mit_match = [z for z in ohne_kurse if z["Im Bestand als"]]
+Weil z["Bars"] für die 49 Ersetzungszeilen nun positiv ist (z. B. 154.172 Bars), gilt:
+bars_gesamt addiert die Bars der Ersatzsymbole doppelt (17.234.777 statt 10.209.803 Bars).
+ohne_kurse filtert not z["Bars"] — alle 49 Ersetzungszeilen fliegen aus ohne_kurse heraus!
+mit_match wird zwingend 0 (len(mit_match) == 0).
+Die Fußzeile behauptet: 3 Symbole ohne eigene Kurse, davon 0 per Ersetzung abgedeckt.
+Beweis (Live-Ausführung an kursdaten.db):
+python
+# Gemessen auf aktuellem Bestand:
+bars_gesamt = 17234777  # Real: 10209803
+len(ohne_kurse) = 3     # Real ohne eigene Bars: 52
+len(mit_match) = 0      # Real vorhanden: 49
+Fix: In 
+
+admin.py:1024-1026
+ sauber nach Status filtern:
+python
+bars_gesamt = sum(z["Bars"] for z in zeilen if z["Status"] == "Kurse vorhanden")
+ohne_eigene = [z for z in zeilen if z["Status"] != "Kurse vorhanden"]
+mit_match = [z for z in ohne_eigene if z["Status"] == "Ersetzung"]
+echte_luecken = [z for z in ohne_eigene if z["Status"] == "keine Kurse"]
+Befund 2 (P2): Falsch-Positive bei blinder numerischer Spalten-Koerzierung
+Ort: 
+
+abonnenten_analyse_ui.py:1252-1255
+Problem: Commit 3e40459 versucht PyArrow-None-Textspalten zu bekämpfen über:
+python
+for spalte in df.columns:
+    zahlen = pd.to_numeric(df[spalte], errors="coerce")
+    if zahlen.notna().sum() == df[spalte].notna().sum():
+        df[spalte] = zahlen
+Das führt zu zwei handfesten Problemen:
+Zerstörung von Text-Inhalten: Hat eine Textspalte (z. B. Strategie, ID, Kommentar oder ein numerischer Modell-Name wie "2026" oder "777") in einer Filteransicht nur numerisch parsebare Strings, ist zahlen.notna().sum() == df[spalte].notna().sum() wahr. Ein Signalname "777" wird lautlos zu Float 777.0.
+Typ-Verfälschung bei All-None-Textspalten: Enthält ein Datensatz lauter None in reinen Textfeldern (z. B. Modell-Trade-SHA256, Modell-Währung, Währung Trade-Export), ist 0 == 0 wahr. Die Spalte wird zu float64 konvertiert (geprüft in Run d38440b6...: df["Währung Trade-Export"].dtype == float64).
+Widerspruch im Repo: In 
+
+abonnenten_analyse_ui.py:665-674
+ (ergebnis_tabelle) existiert dafür längst eine sichere, explizite Whitelist bekannter Zahlenspalten. daten_tabelle ignoriert dieses etablierte Pattern.
+Fix: Keine Blind-Iteration über alle Spalten. Entweder dieselbe Whitelist wie in Zeile 665 nutzen oder gezielt nur Spalten koerzieren, die nicht vom Typ str bzw. keine deklarierten Textspalten sind.
+Befund 3 (P2): Styler in render_results_table lässt None als Text durchrutschen
+Ort: 
+
+app_ui.py:470-474
+Problem: Während alle_signale.py:483 und abonnenten_statistik.py:454 nach 
+
+app_ui.py:styler_zellenlimit_anpassen
+ konsequent df.style.format(na_rep='') aufrufen, tut 
+
+app_ui.py:render_results_table
+ dies nicht:
+python
+styler_zellenlimit_anpassen(df)
+styled = df.style.map(lambda value: _max_drawdown_zellenstil(value, limit),
+                      subset=["Max-Drawdown %"])
+Pandas Styler formatiert fehlende Werte ohne na_rep='' standardmäßig als Text "nan" bzw. "None". Jedes Signal in der Scan-Ergebnistabelle mit leerem Urteil, fehlendem Datum oder fehlendem Messwert rendert als unschönes wörtliches "None".
+Fix: In 
+
+app_ui.py:473
+:
+python
+styled = df.style.format(na_rep="").map(...)
+Befund 4 (P2): SQLite Lock-Timeout beim Trade-Vorladen führt zu unberechtigtem Signal-Ausschluss ohne Retry
+Ort: 
+
+studien_batch.py:194-204
+ und 
+
+studien_batch.py:236-242
+Problem: In _trades_vorladen laden bis zu 6 Quellen parallel Trades herunter. Jeder erfolgreiche Download ruft 
+
+ingest.py:hole_trades
+ -> 
+
+db.py:store_quellen_artefakt
+ auf. Dort wird BEGIN IMMEDIATE auf data/mqlkiscanner.db ausgeführt.
+Wenn mehrere Worker oder die GUI gleichzeitig in SQLite schreiben und ein Lock länger als busy_timeout=5000 ms blockiert, fliegt sqlite3.OperationalError: database is locked.
+Der Worker fängt pauschal except Exception as exc: und schreibt den Fehler in fehler[res].
+Im anschließenden Rechenloop wird das Signal ohne Zweitversuch übersprungen und nicht gerechnet (vorlad_fehler.pop(...) -> skipped). Ein rein temporärer DB-Schreibkonflikt führt somit zum endgültigen Abbruch der Signalanalyse im Batch.
+Fix: Spezifische Behandlung von sqlite3.OperationalError mit kurzem Exponential Backoff (3 Retries à 500 ms) in store_quellen_artefakt oder _trades_vorladen.
+Befund 5 (P2): Entkopplung der Ersetzungstabelle von terminalspezifischen Symbolaliassen (hole_h1)
+Ort: 
+
+kursdaten.py:381-387
+Problem: Die Stufe ersetzungen() ist Stufe 4 in der Auflösungskette. Sie löst z. B. DE30M -> GER40 auf und hängt broker_symbol(ersatz, self.settings) an die Kandidaten an. Aber: Das aufgelöste Ersatzsymbol durchläuft nicht mehr die Broker-Aliasse aus 
+
+symbols.py:alias_fuer_symbol
+.
+Beispiel ActivTrades: DAX heißt dort nachweislich Ger40 (mit kleinem er, 29.905 Bars in DB).
+Stufe 4 generiert nur GER40.
+MT5-Terminals matchen Symbolnamen exakt (case-sensitive). mt5.symbol_select("GER40") scheitert am ActivTrades-Terminal, obwohl der Kurs als Ger40 bereitsteht.
+Fix: Wenn ersatz gefunden wird, muss es auch gegen alias_fuer_symbol(ersatz, self.terminal_pfad) geprüft werden:
+python
+if ersatz:
+    kandidaten.append(broker_symbol(ersatz, self.settings))
+    alias_ersatz = alias_fuer_symbol(ersatz, self.terminal_pfad, self.settings.get("symbol_aliases"))
+    if alias_ersatz and alias_ersatz not in kandidaten:
+        kandidaten.append(alias_ersatz)
+Befund 6 (P3): suffix_annahmen in KursDaten wird nirgends persistiert oder angezeigt
+Ort: 
+
+kursdaten.py:125
+ und 
+
+kursdaten.py:357
+Problem: Der Commit 853bc3a dokumentiert: „suffix_annahmen protokolliert raw→verwendet — eine Tabelle treibt Übersicht und Berechnung“. Tatsächlich wird self.suffix_annahmen[symbol] = gewaehlt nur in das ephemere Instanz-Dictionary von KursDaten geschrieben. Weder equity_studie.py, noch studien_batch.py, noch die Datenbank (equity_studien) lesen dieses Dictionary jemals aus. Nach Beendigung des Terminals wird es verworfen. In den Studienberichten und in der UI gibt es keine Spur davon, welches Symbol durch welches Ersatzsymbol substituiert wurde. Die Transparenz existiert nur im RAM während des Laufs.
+Fix: suffix_annahmen in das report-Dictionary von equity_studie.py bzw. in die ScanResult-Metadaten übergeben und in db.store_equity_studie mitspeichern.
+Befund 7 (P3): Randfall-Schwächen in kurve_png (Risiko-Rechner)
+Ort: 
+
+risiko_rechner.py:276, 310-313, 353-364
+Probleme:
+Überlappende X-Achsen-Ticks bei t0 == t1: Bei einem Signal mit nur einem Zeitpunkt (t0 == t1) berechnet Zeile 357 t = t0 + (t1 - t0) * i / 4 = t0. Alle 5 Ticks werden exakt auf denselben X-Pixel gezeichnet und überlagern sich 5-fach zu einem unlesbaren Klumpen.
+Startkapital-Label Überdeckung oben: Wenn ein Signal nie im Plus war, ist startkapital == y_max. Dann ist y0 = mt = 64. Die Box [y0 - 28, y0 - 2] liegt bei y = 36 bis 62 und kollidiert mit dem oberen Rand bzw. dem Diagrammtitel (y = 8).
+Zeitzonen-Label irreführend: Die Epochen p["t"] stammen aus MT5-H1-Bars und entsprechen der Serverzeit des Brokers (meist UTC+2 / UTC+3). datetime.fromtimestamp(int(t), tz=timezone.utc) formatiert diese Roh-Epochen als UTC und hängt (UTC) an. Der Zeitstempel ist um 2–3 Stunden gegen echtes UTC verschoben. (Hinweis: Innerhalb des Berichts ist es konsistent zur Tabelle „Rückfallzeitraum“, die dieselbe Server-Epoche nutzt).
+monate_png: Wurde nicht angefasst. Hat weiterhin überhaupt keine X-Achsen-Beschriftungen je Monat, keine Y-Gitterlinien und nur ein globales Skala ±X USD.
+Befund 8 (P3): Case-Sensitivität in kurs_cache.uebersicht() zersplittert Bestandsanzeige
+Ort: 
+
+kurs_cache.py:46-47
+ und 
+
+kurs_cache.py:290-294
+Problem: Die Tabelle h1_bars nutzt symbol TEXT COLLATE BINARY. Das GROUP BY symbol gruppiert binär case-sensitiv. In der echten Datenbank führt das zu Duplikaten:
+GER40 (Vantage: 30.787 Bars) vs. Ger40 (ActivTrades: 29.905 Bars)
+BRENT (Tickmill: 31.319 Bars) vs. Brent (ActivTrades: 31.674 Bars) In der Übersichtstabelle erscheinen diese Instrumente als zwei getrennte Zeilen mit je 1 Feed statt als 1 Instrument mit 2 Feeds und kumulierten Bars. Zudem überschreiben sie sich gegenseitig im Lookup-Dictionary index = {raw.upper(): raw ...}.
+Fix: In uebersicht() über UPPER(symbol) aggregieren oder ein kanonisches Mapping verwenden.
+Teil II: Das „None / Lücken“-Audit
+1. Render-Mechanik: Warum taucht „None“ in Tabellen auf?
+Streamlit nutzt intern Apache Arrow und das Glide Data Grid. Das Rendering verhält sich strikt nach Datentyp:
+
+Datentyp in Pandas	Werte in Zelle	PyArrow Typ	Streamlit Rendering
+float64	np.nan	double	Leere Zelle (gewünscht)
+object (Zahlen)	None	null (wenn alle None)	Text "None" (störend)
+object (gemischt: Text + None)	"USD", None	string	Text "None" bei unkonfigurierten Spalten
+pd.DataFrame.style	None / NaN	Protobuf/HTML	Text "None" / "nan", wenn na_rep='' fehlt!
+Audit aller st.dataframe / st.table Fundstellen:
+
+
+app_ui.py:489
+ (render_results_table): BUG. Verwendet df.style, ruft aber kein .format(na_rep="") auf. Alle fehlenden Werte in to_row() (Kurzfassung, Urteil, Bericht vom) rendern als Text "None".
+
+
+abonnenten_analyse_ui.py:1581
+ (daten_tabelle): TEILWEISE BEHOBEN. Commit 3e40459 fängt reine All-None-Spalten ab, erzeugt aber Falsch-Positive. Gemischte Textspalten mit None rendern weiter als Text "None".
+
+
+station_dialoge.py:577
+ & 
+
+682
+: BUG. forensik_styled und basis_styled nutzen .style ohne na_rep="".
+
+
+alle_signale_ui.py:802
+: BUG. f"{werte.get('lots_min')}–{werte.get('lots_max')}" erzeugt bei fehlenden Werten wörtlich den String "None–None".
+
+
+kurs_cache.py:325-335
+ (uebersicht): SAUBER. Verwendet Leerstrings "" statt None und 0 für Zahlen.
+2. Datenlage Kursdaten: Die 3 „echten Lücken“ existieren nicht
+Die Behauptung, dass für AUDSGDM, F40 und XCUUSDM keine Kurse beschaffbar seien, wurde an data/kursdaten.db falsifiziert:
+
+sql
+-- Abfrage an kursdaten.db:
+SELECT symbol, feed, count(*) FROM h1_bars 
+WHERE symbol IN ('AUDSGD+', 'FRA40', 'COPPER') 
+GROUP BY symbol, feed;
+Ergebnis:
+
+AUDSGD+ (Vantage Live 10): 8.233 Bars vorhanden!
+Warum scheiterte das Matching? Das Signal heisst AUDSGDM (Suffix M). In _kurs_match wird M gestrippt -> AUDSGD. Aber AUDSGD liegt nicht im Index (dort liegt AUDSGD+). Das Reverse-Matching scheitert ebenfalls, weil AUDSGD+ nicht mit AUDSGDM beginnt.
+FRA40 (Vantage Live 10): 13.563 Bars vorhanden!
+Warum scheiterte das Matching? F40 ist CAC 40. Bei Vantage heisst der Index FRA40 (in 
+
+symbols.py:254
+ sogar explizit gelistet!). Es fehlte lediglich das Alias "F40": "FRA40".
+COPPER (Tickmill Live): 1.558 Bars vorhanden!
+Warum scheiterte das Matching? XCUUSD ist der Rohstoff Kupfer. Tickmill führt ihn unter dem Klarnamen COPPER. Es fehlte lediglich das Alias "XCUUSDM": "COPPER".
+Lösung: Ein Eintrag in data/kurs_alias.json schließt alle 3 Lücken sofort auf bestehende Daten:
+
+json
+{
+  "AUDSGDM": "AUDSGD+",
+  "F40": "FRA40",
+  "XCUUSDM": "COPPER"
+}
+Damit sinkt die Zahl echter Kurslücken im gesamten Bestand auf exakt 0.
+
+3. Fachliche Prüfung der eingebauten Ersetzungen
+Quell-Symbol	Ziel-Symbol	Fachliche Prüfung / Underlying	Risiken & Fallen
+BITCOIN	BTCUSD	Identisch. Beide BTC/USD Spot/CFD, 1 Lot = 1 BTC.	Keine.
+GER30CASH	GER40	Identisch. DAX 30 ging im Sep 2021 nahtlos in DAX 40 über (Divisor angepasst, kein Kurssprung).	Casing-Falle: ActivTrades führt Ger40 statt GER40.
+DE30M	GER40	Identisch. DAX Mini/Cash CFD (1 EUR/Punkt).	Casing-Falle an ActivTrades.
+US100	USTEC	Identisch. Beide bilden den NASDAQ 100 Cash Index in USD ab.	Keine.
+WTI	USOUSD	Identisch. WTI Crude Oil Cash CFD in USD je Barrel.	Kontraktgrößen bei Brokern beachten (100 vs. 1.000 bbl).
+USOIL-FUTURE	USOUSD	Underlying gleich (WTI), aber Kontraktart verschieden! Futures haben Verfallstermine und Contango/Backwardation-Spreads gegenüber Spot Cash.	Geringe Basispreis-Abweichungen bei Floating-Berechnungen um Roll-Termine möglich.
+4. Abonnentenstatistik: Analyse von Run d38440b6... (800 Tasks)
+In data/abonnenten_analyse/jobs.sqlite3 wurden alle 800 Tasks des letzten validen Laufs forensisch geprüft:
+
+Nettogewinn USD leer: 563 von 800 Einträgen (70,4 %)
+Modell-Nettogewinn USD leer: 800 von 800 Einträgen (100 %) (in diesem Run wurden keine Modellkurven gerechnet)
+Exakte Ursachenanalyse der 563 leeren Nettogewinn-Werte:
+200x Pelican (pelik): Session abgelaufen (DownloaderAuthError: Pelican-Session ungültig; Login abgelaufen). Es konnten keine Tradelisten geladen werden.
+200x RoboForex (robo): Legitim. Status quellenwerte (CopytradeJournal). Die Plattform liefert monatliche aggregierte Kennzahlen, aber keinen Trade-Export mit SHA-Nachweis. Die Werte stehen unter Quellenprofitabilität; dass Nettogewinn USD (Forensik) leer bleibt, ist methodisch zwingend richtig.
+47x MQL5 Nicht-USD Konten: 29 EUR, 6 AUD, 5 JPY, 2 SGD etc. (ValueError: Belegte USD-Kontowährung fehlt). Forensische Rekonstruktion ist im System per Design USD-only. Legitim.
+116x Datenlücken (Zulu & MQL5): 42x Anbieter im Downloader-Katalog gelöscht/nicht auffindbar; 37x Kontraktspezifikationen nicht anwendbar; 19x ungültiges Plattform-Antwortschema; 18x Scraper-Paginierungsfehler.
+Semantik-Fazit: Dass bei 563 Signalen kein Nettogewinn USD steht, ist zu ~44 % methodisch legitim (RoboForex Quellenwerte + Nicht-USD Konten) und zu ~56 % auf externe Verbindungs-/Exportprobleme zurückzuführen.
+
+Teil III: Stichproben-Review der älteren Commits (17.10.–27.10.)
+Drawdown-Konsolidierung (8354944):
+Sehr gute Bereinigung: drawdown_core.py vereinheitlicht die Peak-to-Trough-Berechnung über alle Module.
+Anschlussbefund: zahlen.py stellt saubere Rundungsfunktionen bereit, wird aber in abonnenten_analyse_ui.py noch nicht konsequent genutzt.
+Data-Only Subscriber Analysis & Modellkapital (1728fad):
+kapitalbasis.py trennt vorbildlich zwischen realen Kontobewegungen und Modellannahmen (kapitalbasis_modell).
+Die Architektur verhindert wirksam, dass Modell-Drawdowns unbemerkt als reale Kontowerte publiziert werden.
+Parallelisierung & adaptive Request Limits (5f91676):
+Die Drosselungen für LLM-Aufrufe greifen sauber. Die Queue-Verwaltung in abonnenten_analyse_store.py verhindert Deadlocks.
+Teil IV: Fazit & Prioritäten-Aktionsplan
+Sofort beheben (P1 / P2)
+
+
+admin.py:1024
+: Bar-Summierung und Filter ohne_kurse korrigieren (Befund 1). Die aktuelle Bar-Zahl (17,2 Mio.) ist peinlich falsch und die Ersetzungsanzeige steht fälschlich auf 0.
+data/kurs_alias.json: Die 3 Aliase AUDSGDM -> AUDSGD+, F40 -> FRA40 und XCUUSDM -> COPPER eintragen. Damit sind mit einem Schlag alle Kurslücken der App geschlossen.
+
+
+app_ui.py:473
+: In render_results_table .format(na_rep="") ergänzen, um das Durchrutschen von "None" in der Haupt-Ergebnistabelle zu stoppen (Befund 3).
+
+
+abonnenten_analyse_ui.py:1252
+: Die blinde Spalten-Koerzierung auf die Whitelist aus Zeile 665 umstellen, um Typ-Verfälschungen von Textspalten zu verhindern (Befund 2).
+Zeitnah beheben (P2 / P3)
+
+
+kursdaten.py:384
+: Nach ersetzungen() das Ersatzsymbol durch alias_fuer_symbol leiten, um ActivTrades Ger40 zu erreichen (Befund 5).
+
+
+studien_batch.py:194
+: SQLite-Lock-Fehler in _trades_vorladen mit Retry abfedern, statt Signale sofort dauerhaft zu überspringen (Befund 4).
+
+
+kurs_cache.py:290
+: GROUP BY UPPER(symbol) nutzen, um Case-Duplikate (GER40/Ger40, BRENT/Brent) zusammenzuführen (Befund 8).
+
+
+risiko_rechner.py:353
+: Randfall t0 == t1 in kurve_png abfangen (Befund 7).
+4:10 PM

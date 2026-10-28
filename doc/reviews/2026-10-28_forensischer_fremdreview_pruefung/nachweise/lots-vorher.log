@@ -1,0 +1,167 @@
+.FFFFF.                                                                  [100%]
+================================== FAILURES ===================================
+_ test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds0-None] _
+
+bounds = {}, expected = None
+
+    @pytest.mark.parametrize("bounds,expected", [
+        ({}, None),
+        ({"lots_min": None, "lots_max": None}, None),
+        ({"lots_min": None, "lots_max": 0.125}, "unbekannt–0.125"),
+        ({"lots_min": 0.001}, "0.001–unbekannt"),
+        ({"lots_min": float("nan"), "lots_max": None}, None),
+        ({"lots_min": 0, "lots_max": 0}, "0–0"),
+    ])
+    def test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero(bounds, expected):
+        statistics = {"kapitalbasis_ok": False, "trades": 1, "per_symbol": {
+            "EURUSD": {"trades": 1, "net": 0, "winrate_pct": 0, **bounds}}}
+        element = _detail(statistics)
+        value = element.value.iloc[0]["Lots min/max"]
+        if expected is None:
+>           assert pd.isna(value)
+E           AssertionError: assert False
+E            +  where False = <function isna at 0x00000187B006E7A0>('None–None')
+E            +    where <function isna at 0x00000187B006E7A0> = pd.isna
+
+tests\test_review_20261028_lots_ui.py:58: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-28 18:05:06.757 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-28 18:05:06.758 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call ------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+_ test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds1-None] _
+
+bounds = {'lots_min': None, 'lots_max': None}, expected = None
+
+    @pytest.mark.parametrize("bounds,expected", [
+        ({}, None),
+        ({"lots_min": None, "lots_max": None}, None),
+        ({"lots_min": None, "lots_max": 0.125}, "unbekannt–0.125"),
+        ({"lots_min": 0.001}, "0.001–unbekannt"),
+        ({"lots_min": float("nan"), "lots_max": None}, None),
+        ({"lots_min": 0, "lots_max": 0}, "0–0"),
+    ])
+    def test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero(bounds, expected):
+        statistics = {"kapitalbasis_ok": False, "trades": 1, "per_symbol": {
+            "EURUSD": {"trades": 1, "net": 0, "winrate_pct": 0, **bounds}}}
+        element = _detail(statistics)
+        value = element.value.iloc[0]["Lots min/max"]
+        if expected is None:
+>           assert pd.isna(value)
+E           AssertionError: assert False
+E            +  where False = <function isna at 0x00000187B006E7A0>('None–None')
+E            +    where <function isna at 0x00000187B006E7A0> = pd.isna
+
+tests\test_review_20261028_lots_ui.py:58: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-28 18:05:07.248 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-28 18:05:07.248 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call ------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+_ test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds2-unbekannt\u20130.125] _
+
+bounds = {'lots_min': None, 'lots_max': 0.125}, expected = 'unbekannt–0.125'
+
+    @pytest.mark.parametrize("bounds,expected", [
+        ({}, None),
+        ({"lots_min": None, "lots_max": None}, None),
+        ({"lots_min": None, "lots_max": 0.125}, "unbekannt–0.125"),
+        ({"lots_min": 0.001}, "0.001–unbekannt"),
+        ({"lots_min": float("nan"), "lots_max": None}, None),
+        ({"lots_min": 0, "lots_max": 0}, "0–0"),
+    ])
+    def test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero(bounds, expected):
+        statistics = {"kapitalbasis_ok": False, "trades": 1, "per_symbol": {
+            "EURUSD": {"trades": 1, "net": 0, "winrate_pct": 0, **bounds}}}
+        element = _detail(statistics)
+        value = element.value.iloc[0]["Lots min/max"]
+        if expected is None:
+            assert pd.isna(value)
+            assert element.proto.HasField("placeholder") and element.proto.placeholder == ""
+        else:
+>           assert value == expected
+E           AssertionError: assert 'None–0.125' == 'unbekannt–0.125'
+E             
+E             - unbekannt–0.125
+E             + None–0.125
+
+tests\test_review_20261028_lots_ui.py:61: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-28 18:05:07.783 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-28 18:05:07.783 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call ------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+_ test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds3-0.001\u2013unbekannt] _
+
+bounds = {'lots_min': 0.001}, expected = '0.001–unbekannt'
+
+    @pytest.mark.parametrize("bounds,expected", [
+        ({}, None),
+        ({"lots_min": None, "lots_max": None}, None),
+        ({"lots_min": None, "lots_max": 0.125}, "unbekannt–0.125"),
+        ({"lots_min": 0.001}, "0.001–unbekannt"),
+        ({"lots_min": float("nan"), "lots_max": None}, None),
+        ({"lots_min": 0, "lots_max": 0}, "0–0"),
+    ])
+    def test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero(bounds, expected):
+        statistics = {"kapitalbasis_ok": False, "trades": 1, "per_symbol": {
+            "EURUSD": {"trades": 1, "net": 0, "winrate_pct": 0, **bounds}}}
+        element = _detail(statistics)
+        value = element.value.iloc[0]["Lots min/max"]
+        if expected is None:
+            assert pd.isna(value)
+            assert element.proto.HasField("placeholder") and element.proto.placeholder == ""
+        else:
+>           assert value == expected
+E           AssertionError: assert '0.001–None' == '0.001–unbekannt'
+E             
+E             - 0.001–unbekannt
+E             + 0.001–None
+
+tests\test_review_20261028_lots_ui.py:61: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-28 18:05:08.393 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-28 18:05:08.393 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call ------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+_ test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds4-None] _
+
+bounds = {'lots_min': nan, 'lots_max': None}, expected = None
+
+    @pytest.mark.parametrize("bounds,expected", [
+        ({}, None),
+        ({"lots_min": None, "lots_max": None}, None),
+        ({"lots_min": None, "lots_max": 0.125}, "unbekannt–0.125"),
+        ({"lots_min": 0.001}, "0.001–unbekannt"),
+        ({"lots_min": float("nan"), "lots_max": None}, None),
+        ({"lots_min": 0, "lots_max": 0}, "0–0"),
+    ])
+    def test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero(bounds, expected):
+        statistics = {"kapitalbasis_ok": False, "trades": 1, "per_symbol": {
+            "EURUSD": {"trades": 1, "net": 0, "winrate_pct": 0, **bounds}}}
+        element = _detail(statistics)
+        value = element.value.iloc[0]["Lots min/max"]
+        if expected is None:
+>           assert pd.isna(value)
+E           AssertionError: assert False
+E            +  where False = <function isna at 0x00000187B006E7A0>('nan–None')
+E            +    where <function isna at 0x00000187B006E7A0> = pd.isna
+
+tests\test_review_20261028_lots_ui.py:58: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-28 18:05:09.064 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-28 18:05:09.064 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call ------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:479 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+=========================== short test summary info ===========================
+FAILED tests/test_review_20261028_lots_ui.py::test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds0-None]
+FAILED tests/test_review_20261028_lots_ui.py::test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds1-None]
+FAILED tests/test_review_20261028_lots_ui.py::test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds2-unbekannt\u20130.125]
+FAILED tests/test_review_20261028_lots_ui.py::test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds3-0.001\u2013unbekannt]
+FAILED tests/test_review_20261028_lots_ui.py::test_incomplete_historical_lot_bounds_stay_unknown_without_inventing_zero[bounds4-None]
+5 failed, 2 passed in 4.98s

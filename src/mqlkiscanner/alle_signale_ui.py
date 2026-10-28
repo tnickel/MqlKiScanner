@@ -172,6 +172,15 @@ def _de(wert, nachstellen: int = 2) -> str:
     return text.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
 
 
+def _lots_spannentext(minimum, maximum) -> str | None:
+    """Unvollständige Statistikpayloads anzeigen, ohne Lotsgrenzen zu erfinden."""
+    unten = None if pd.isna(minimum) else str(minimum)
+    oben = None if pd.isna(maximum) else str(maximum)
+    if unten is None and oben is None:
+        return None
+    return f"{unten if unten is not None else 'unbekannt'}–{oben if oben is not None else 'unbekannt'}"
+
+
 def basis_kuerzel(quelle: str | None) -> str:
     return BASIS_KUERZEL.get(quelle or "", "—")
 
@@ -405,7 +414,7 @@ def tabellen_zeile(result, statistik: dict | None,
 
 
 # Spalten mit Textinhalten — alles andere wird auf der Seite numerisch
-# konvertiert (None → NaN → leere Zelle statt „None“-Text in der Tabelle).
+# konvertiert. Fehlende Werte bleiben unbekannt; placeholder steuert die Anzeige.
 TEXT_SPALTEN = {"Mark.", "Komm.", "Beob.", "Ber.", "Doku", "Ampel", "Fix", "Name", "Link", "Quelle",
                 "Herkunft", "Plattform", "Basis", "Forensik", "Messstatus",
                 "Kapitalherkunft", "Kapitalunsicherheit", "Studienbasis"}
@@ -799,10 +808,10 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
                 "Trades": werte.get("trades"),
                 "Netto USD": werte.get("net"),
                 "Winrate %": werte.get("winrate_pct"),
-                "Lots min/max": f"{werte.get('lots_min')}–{werte.get('lots_max')}",
+                "Lots min/max": _lots_spannentext(werte.get("lots_min"), werte.get("lots_max")),
             } for sym, werte in sorted(per_symbol.items(),
                                        key=lambda kv: -kv[1].get("trades", 0))],
-                hide_index=True, width="stretch")
+                hide_index=True, placeholder="", width="stretch")
 
     # ── Tradeliste + Haltezeit-Statistik (Nutzer-Wunsch 05.10.) ────────────
     st.divider()

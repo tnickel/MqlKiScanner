@@ -1,0 +1,57 @@
+{
+  "time": "2026-10-28T18:00:26.329390+01:00",
+  "prior_531_run_source_hashes_unchanged": {
+    "src/mqlkiscanner/equity_studie.py": true,
+    "src/mqlkiscanner/equity_studie_ui.py": true,
+    "src/mqlkiscanner/kursdaten.py": true,
+    "src/mqlkiscanner/risiko_rechner.py": true,
+    "src/mqlkiscanner/studien_batch.py": true,
+    "src/mqlkiscanner/studien_anzeigezeit.py": true,
+    "tests/test_studien_feed_fallback.py": true,
+    "tests/test_risiko_png_review.py": true,
+    "tests/test_studien_symbolprovenienz.py": true,
+    "tests/test_review_20261028_ui_followup.py": true,
+    "tests/test_studien_anzeigezeit.py": true
+  },
+  "overlapping_alias_keys": [
+    "BITCOIN",
+    "GER30CASH",
+    "US100",
+    "USOIL-FUTURE",
+    "WTI"
+  ],
+  "drawdown_counterexample": [
+    {
+      "capital": 10000,
+      "lots": 1,
+      "price_drop": 1,
+      "contract_factor": 100,
+      "loss": 100,
+      "drawdown_pct": 1.0
+    },
+    {
+      "capital": 10000,
+      "lots": 1,
+      "price_drop": 1,
+      "contract_factor": 1000,
+      "loss": 1000,
+      "drawdown_pct": 10.0
+    }
+  ],
+  "sqlite_plan": {
+    "database": ":memory:",
+    "rows": 240,
+    "sqlite_version": "3.45.3",
+    "query": "SELECT symbol, COUNT(*), COUNT(DISTINCT feed), MIN(epoch), MAX(epoch) FROM h1_bars GROUP BY symbol",
+    "before_symbol_index": [
+      "SCAN h1_bars",
+      "USE TEMP B-TREE FOR GROUP BY",
+      "USE TEMP B-TREE FOR count(DISTINCT)"
+    ],
+    "after_symbol_index": [
+      "SCAN h1_bars USING COVERING INDEX synthetic_symbol",
+      "USE TEMP B-TREE FOR count(DISTINCT)"
+    ],
+    "production_timings_or_speedup_measured": false
+  }
+}

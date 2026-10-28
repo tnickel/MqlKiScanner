@@ -1,0 +1,5 @@
+{
+  "src/mqlkiscanner/kursdaten.py": "fa8559d6994d0839e9e1f0cfb842afebbd41574157d63461ee606b3afe222c9a",
+  "src/mqlkiscanner/kurs_cache.py": "1f7f1db6b10eaee5761334f3245b048d975c58f63101840e47f4d43c807c2bb5",
+  "tests/test_kurs_alias_ziel_review.py": "834ffe2bd4c2d2d51b9d792d8a070886c0f133680e7bd752d4522e0c7a3288b9"
+}

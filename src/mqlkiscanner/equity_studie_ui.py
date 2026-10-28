@@ -22,6 +22,7 @@ from plotly.subplots import make_subplots
 from . import config, kapitalbasis, kursdaten, parser, scan_worker
 from .equity_studie import studie
 from .forensics import drawdown
+from .studien_anzeigezeit import als_anzeigezeit, zeitachsen_label
 
 # Plotly-Modebar: Zoom/Pan sind Standard; dazu Zeichenwerkzeuge (Linien/
 # Rechtecke) und Radzoom — professionelle Chart-Bedienung im Dialog.
@@ -150,9 +151,7 @@ def _berechne_exklusiv(result, progress) -> dict:
 
 
 def _als_datetime(epoch_wert: int | None):
-    if epoch_wert is None:
-        return None
-    return dt.datetime.fromtimestamp(int(epoch_wert), dt.timezone.utc)
+    return als_anzeigezeit(epoch_wert)
 
 
 def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
@@ -224,6 +223,7 @@ def _chart(daten: dict, startkapital: float, schranke: float) -> go.Figure:
     fig.update_yaxes(title_text="USD", tickformat=",.0f", row=1, col=1,
                      gridcolor="#e8e8e8")
     fig.update_yaxes(title_text="%", row=2, col=1, gridcolor="#e8e8e8")
+    fig.update_xaxes(title_text=zeitachsen_label(daten), row=2, col=1)
     # Trennstrich zwischen den beiden Ebenen (Nutzer 03.10.) — Mitte des
     # Zwischenraums: row1-Domain [0.436, 1], row2 [0, 0.376] bei
     # row_heights 0.60/0.40 und vertical_spacing 0.06.
@@ -354,7 +354,7 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
             + (f" zwischen {rel_von:%d.%m.%Y} und {rel_bis:%d.%m.%Y}"
                if rel_von else f" am {rel_bis:%d.%m.%Y}") + ".")
     if (k.get("floating_min_usd") or 0) < 0:
-        wann = (f" (tiefstes am {dt.datetime.fromtimestamp(k['floating_min_t'], dt.timezone.utc):%d.%m.%Y})"
+        wann = (f" (tiefstes am {_als_datetime(k['floating_min_t']):%d.%m.%Y})"
                 if k.get("floating_min_t") else "")
         bausteine.append(
             f"Offene Positionen standen zeitweise **{k['floating_min_usd']:,.0f} USD "
@@ -397,8 +397,56 @@ def _risiko_einschaetzung(result, daten: dict, schranke: float) -> None:
                    f"{float(monitor):.1f} % — unabhängige dritte Messung.")
 
 
+def _symbol_herkunft_anzeigen(daten: dict) -> None:
+    """Nur den gespeicherten Beleg dieses Reports zeigen, keine heutigen Aliase."""
+    herkunft = daten.get("symbol_herkunft")
+    herkunft = herkunft if isinstance(herkunft, dict) else {}
+    ersetzungen = daten.get("symbol_substitutionen")
+    ersetzungen = ersetzungen if isinstance(ersetzungen, dict) else {}
+    if not herkunft and not ersetzungen:
+        st.caption("Kurs-Symbolzuordnung: Kein gespeicherter Beleg für den tatsächlich "
+                   "verwendeten Brokernamen vorhanden. Ein identischer Name ist damit nicht nachgewiesen.")
+        return
+    zeilen = []
+    abweichend = False
+    for symbol in sorted(set(herkunft) | set(ersetzungen)):
+        beleg = herkunft.get(symbol)
+        beleg = beleg if isinstance(beleg, dict) else {}
+        broker_symbol = beleg.get("broker_symbol") or ersetzungen.get(symbol)
+        bekannt = isinstance(broker_symbol, str) and bool(broker_symbol.strip())
+        anders = bekannt and broker_symbol != symbol
+        abweichend = abweichend or anders
+        zeilen.append({"Trade-Symbol": symbol,
+                       "Verwendeter Brokername": broker_symbol if bekannt else "unbekannt",
+                       "Kurs-Terminal": beleg.get("terminal") or "unbekannt",
+                       "Zuordnung": ("Abweichender Brokername" if anders else
+                                     "Identischer Brokername belegt" if bekannt else "unbekannt")})
+    with st.expander("Kursdaten-Provenienz: verwendete Brokernamen"):
+        st.caption("Gespeicherter Beleg dieses Studienergebnisses; keine Ableitung aus heutigen Alias-Einstellungen.")
+        st.dataframe(zeilen, hide_index=True, placeholder="", width="stretch")
+        if abweichend:
+            st.info("Die Namenszuordnung allein belegt keine gleiche Kontraktspezifikation "
+                    "oder identische Kurse des Originalbrokers.")
+
+
+def _zeitbasis_perioden_anzeige(perioden: list[dict]) -> list[dict]:
+    """CSV-Wanduhrzeiten als Kopie formatieren; gespeicherte Ziffern nicht verschieben."""
+    zeilen = [dict(periode) for periode in perioden]
+    for zeile in zeilen:
+        for feld in ("von", "bis"):
+            wert = zeile.get(feld)
+            if isinstance(wert, str):
+                try:
+                    zeile[feld] = dt.datetime.fromisoformat(wert.replace("Z", "+00:00")).replace(
+                        tzinfo=None).isoformat(sep=" ")
+                except ValueError:
+                    pass
+    return zeilen
+
+
 def _symbol_diagnose(daten: dict) -> None:
     """GMT je Währungspaar, fehlende Kurse und Datenbasis offenlegen."""
+    _symbol_herkunft_anzeigen(daten)
     zeitbasis = daten.get("zeitbasis") or {}
     if zeitbasis:
         with st.expander(f"Uhrzeit-Abgleich Kurszuordnung ({zeitbasis.get('modus', 'unbekannt')}) — Details"):
@@ -414,7 +462,9 @@ def _symbol_diagnose(daten: dict) -> None:
                 st.caption("Dieses gemeinsame Zeitmodell wurde nicht auf die Kurve angewandt; "
                            "die Symbol-Zeitversätze sind uneinheitlich.")
             if zeitbasis.get("perioden"):
-                st.dataframe(zeitbasis["perioden"], hide_index=True, width="stretch")
+                st.caption("Periodengrenzen: CSV-/Brokerzeit, ohne Zeitzonenumrechnung.")
+                st.dataframe(_zeitbasis_perioden_anzeige(zeitbasis["perioden"]),
+                             hide_index=True, placeholder="", width="stretch")
             if zeitbasis.get("annahme"):
                 st.caption(zeitbasis["annahme"])
             if not zeitbasis.get("verlaesslich", False):
@@ -457,7 +507,9 @@ def _symbol_diagnose(daten: dict) -> None:
             with st.expander(f"Zeitbasis {b['symbol']}: {zeitbasis.get('modus', 'unbekannt')}"):
                 perioden = zeitbasis.get("perioden") or []
                 if perioden:
-                    st.dataframe(perioden, hide_index=True, width="stretch")
+                    st.caption("Periodengrenzen: CSV-/Brokerzeit, ohne Zeitzonenumrechnung.")
+                    st.dataframe(_zeitbasis_perioden_anzeige(perioden),
+                                 hide_index=True, placeholder="", width="stretch")
                 if zeitbasis.get("annahme"):
                     st.caption(zeitbasis["annahme"])
                 if not zeitbasis.get("verlaesslich", False):
@@ -523,7 +575,7 @@ def _ueberdeckung_chart(daten: dict, key_prefix: str) -> None:
     fig.update_layout(
         height=max(150, 60 + 34 * len(eintraege)),
         margin=dict(l=10, r=10, t=10, b=10),
-        xaxis=dict(title=None, gridcolor="#e5e7eb"),
+        xaxis=dict(title=zeitachsen_label({"zeitbasis": {"frame": "referenzkurszeit"}}), gridcolor="#e5e7eb"),
         yaxis=dict(title=None, gridcolor="#e5e7eb"),
         plot_bgcolor="white", dragmode="zoom")
     st.plotly_chart(fig, width="stretch",
@@ -624,6 +676,7 @@ def _kopier_simulation(daten: dict, key_prefix: str) -> None:
             legend={"orientation": "h", "yanchor": "bottom", "y": 1.02})
         fig.update_yaxes(title_text="USD", tickformat=",.0f",
                          gridcolor="#e8e8e8")
+        fig.update_xaxes(title_text=zeitachsen_label(daten))
         st.plotly_chart(fig, width="stretch", config=_CHART_CONFIG,
                         key=f"{key_prefix}_kopie_chart")
         ende_text = ""
@@ -727,6 +780,8 @@ def render_studie(result, *, key_prefix: str = "eqdd") -> None:
         f"{zeitraum} · Kapitalbasis: {basis_text} · {k['rasterpunkte']} "
         f"Stundenpunkte, davon {k['messpunkte']} mit offenen Positionen und "
         f"vollständigen Kursen · Abdeckung {k['abdeckung_pct']:.0f} %")
+    st.caption(f"Zeitachse: {zeitachsen_label(daten)}. "
+               "Die gespeicherten Uhrzeiten werden ohne Umrechnung in die Browserzeitzone angezeigt.")
     st.caption(
         "Equity = Startkapital + realisiertes Netto + Ein-/Auszahlungen + "
         "Summe des offenen PnL aller Positionen im Export — "

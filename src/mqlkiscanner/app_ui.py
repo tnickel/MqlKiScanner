@@ -7,6 +7,7 @@ import math
 import re
 from copy import copy
 from pathlib import Path
+from threading import Lock
 from typing import TYPE_CHECKING
 
 import pandas as pd
@@ -389,6 +390,9 @@ def results_table_dataframe(results, fresh_ids: set[int] | None = None,
     return df
 
 
+_STYLER_LIMIT_LOCK = Lock()
+
+
 def styler_zellenlimit_anpassen(df: pd.DataFrame) -> None:
     """Streamlit-Styler-Grenze an die Tabellengröße anpassen (vor .style!).
 
@@ -399,8 +403,11 @@ def styler_zellenlimit_anpassen(df: pd.DataFrame) -> None:
     Tabelle; pandas selbst schneidet die Darstellung erst BEI diesem Limit
     ab, deshalb muss es VOR dem ersten .style...-Aufruf stehen.
     """
-    if df.size > int(pd.get_option('styler.render.max_elements')):
-        pd.set_option('styler.render.max_elements', df.size)
+    # pandas-Optionen gelten pro Prozess. Eine zweite Session darf zwischen
+    # Lesen und Schreiben kein größeres Limit setzen, das wir wieder senken.
+    with _STYLER_LIMIT_LOCK:
+        if df.size > int(pd.get_option('styler.render.max_elements')):
+            pd.set_option('styler.render.max_elements', df.size)
 
 
 def render_results_table(results, key: str = "results_table", compact: bool = True,
@@ -488,6 +495,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
             _trueretdd_stil, axis=1, subset=["TrueRetDD", "TrueRetDD (Vorbehalt)"])
     event = st.dataframe(
         styled,
+        placeholder="",
         key=key,
         on_select="rerun",
         selection_mode="single-row",
@@ -842,7 +850,7 @@ def _render_dl_history(result) -> None:
         tabelle = df[["version", "ts", "subscribers", "change"]].copy()
         tabelle["ts"] = tabelle["ts"].dt.strftime("%d.%m.%Y %H:%M:%S")
         tabelle.columns = ["Version", "Zeitpunkt", "Abonnenten", "Änderung"]
-        st.dataframe(tabelle, hide_index=True, height=260)
+        st.dataframe(tabelle, hide_index=True, height=260, placeholder="")
 
 
 def _render_dl_reports(result) -> None:

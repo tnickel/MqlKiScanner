@@ -52,6 +52,53 @@ from .forensics.equity_kapitalfluesse import diagnostik as konto_diagnostik
 MIN_EIGENE_PROBEN = 3
 
 
+class _KursProvenienz:
+    """Snapshot successful reads before fallback/reset changes provider state.
+
+    The first successful series per symbol is the one retained by the study.
+    Unknown broker names on older providers stay unknown, never inferred from
+    a raw symbol or another signal's unqueried metadata.
+    """
+
+    def __init__(self, anbieter):
+        self.anbieter = anbieter
+        self._geladen: dict[str, dict] = {}
+
+    def __getattr__(self, name):
+        return getattr(self.anbieter, name)
+
+    def hole_h1(self, symbol, *args, **kwargs):
+        bars = self.anbieter.hole_h1(symbol, *args, **kwargs)
+        raw = str(symbol).strip().upper()
+        if bars and raw not in self._geladen:
+            source = getattr(self.anbieter, "symbol_herkunft", {})
+            entry = source.get(raw) if isinstance(source, dict) else None
+            entry = dict(entry) if isinstance(entry, dict) else {}
+            if not entry.get("broker_symbol"):
+                assumptions = getattr(self.anbieter, "suffix_annahmen", {})
+                if isinstance(assumptions, dict):
+                    entry["broker_symbol"] = next((v for k, v in assumptions.items()
+                        if str(k).strip().upper() == raw), None)
+            if not entry.get("terminal"):
+                feeds = getattr(self.anbieter, "terminal_herkunft", {})
+                entry["terminal"] = (feeds.get(raw) if isinstance(feeds, dict) else None)
+                entry["terminal"] = entry["terminal"] or getattr(self.anbieter, "terminal_pfad", None)
+            self._geladen[raw] = {k: v for k, v in entry.items()
+                if k in {"broker_symbol", "terminal"} and isinstance(v, str) and v.strip()}
+        return bars
+
+    def metadaten(self, symbole):
+        erlaubt = {str(s).strip().upper() for s in symbole}
+        records = {s: dict(row) for s, row in self._geladen.items()
+                   if s in erlaubt and row}
+        return {
+            "symbol_herkunft": records,
+            "symbol_feeds": {s: row["terminal"] for s, row in records.items() if row.get("terminal")},
+            "symbol_substitutionen": {s: row["broker_symbol"] for s, row in records.items()
+                if row.get("broker_symbol") and row["broker_symbol"] != s},
+        }
+
+
 def _raster_stunde(epoch_s: int, offset_s: int) -> int:
     """Trade-Epoch + GMT-Shift, auf die volle Stunde normiert."""
     return ((epoch_s + offset_s) // 3600) * 3600
@@ -250,6 +297,7 @@ def studie(parsed, kurse, startkapital: float,
         return {"status": "skipped", "grund": "keine geschlossenen Trades",
                 "punkte": [], "symbole": [], "kennzahlen": {}}
     symbole = sorted({t.symbol.strip().upper() for t in trades if t.symbol})
+    kurse = _KursProvenienz(kurse)
 
     von = min(_epoch(t.open_time) for t in trades)
     bis = max(_epoch(t.close_time) for t in trades) + 3600
@@ -323,7 +371,8 @@ def studie(parsed, kurse, startkapital: float,
             gruende.append("GMT-Versatz für kein Symbol bestimmbar")
         return {"status": "skipped",
                 "grund": " · ".join(gruende),
-                "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {}}
+                "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {},
+                **kurse.metadaten(bars_je_symbol)}
 
     median_offset = int(statistics.median(offsets.values()))
     original_median = median_offset
@@ -333,7 +382,7 @@ def studie(parsed, kurse, startkapital: float,
     if not zeitbasis.monoton:
         return {"status": "skipped", "grund": zeitbasis.nichtmonoton_grund,
                 "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {},
-                "zeitbasis": zeitbasis.metadata()}
+                "zeitbasis": zeitbasis.metadata(), **kurse.metadaten(bars_je_symbol)}
     gemeinsame_zeitbasis = len(set(offsets.values())) == 1
     if zeitbasis.variable and gemeinsame_zeitbasis:
         parsed = zeitbasis.normalisiere(parsed)
@@ -358,7 +407,8 @@ def studie(parsed, kurse, startkapital: float,
                      if erste < ((b["time"] // 3600 + 1) * 3600) <= endpunkt})
     if not raster:
         return {"status": "skipped", "grund": "keine H1-Bars im Trade-Zeitraum",
-                "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {}}
+                "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {},
+                **kurse.metadaten(bars_je_symbol)}
 
     raster = sorted(set(raster) | {endpunkt})
     closes_je_symbol = {s: {(b["time"] // 3600 + 1) * 3600: b["close"]
@@ -523,7 +573,8 @@ def studie(parsed, kurse, startkapital: float,
     _p(0.92, "Kennzahlen ableiten …")
     if any(p["messpunkt"] and not math.isfinite(p["equity"]) for p in punkte):
         return {"status": "skipped", "grund": "NaN/Inf in der Equity-Kurve",
-                "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {}}
+                "punkte": [], "symbole": gmt["befunde"], "kennzahlen": {},
+                **kurse.metadaten(bars_je_symbol)}
     measured_dd = max_drawdown_aus_kurve(
         ((p["t"], p["equity"], p["messpunkt"], p.get("flow_delta", 0.0))
          for p in punkte), verlauf=True)
@@ -609,6 +660,7 @@ def studie(parsed, kurse, startkapital: float,
         kennzahlen["fx_umrechnungen"] = umrechnung.provenienz()
     _p(1.0, "fertig")
     return {
+        **kurse.metadaten(bars_je_symbol),
         "status": "ok",
         "punkte": punkte,
         "symbole": gmt["befunde"],

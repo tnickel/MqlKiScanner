@@ -14,14 +14,16 @@ from __future__ import annotations
 
 import math
 import statistics
-from datetime import datetime, timezone
+from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 
 from . import config, kursdaten, parser
 from .equity_studie import studie
 from .forensics import drawdown
+from .forensics.drawdown_core import max_drawdown_aus_kurve
 from . import kapitalbasis
+from .studien_anzeigezeit import als_anzeigezeit, zeitachsen_label
 
 JAHR_TAGE = 365.2425
 MONAT_TAGE = JAHR_TAGE / 12.0
@@ -229,7 +231,7 @@ def _de(v, nd=2, faktor=1.0, suffix=""):
 def _epoch_text(epoch) -> str:
     if not epoch:
         return "—"
-    return datetime.fromtimestamp(int(epoch), tz=timezone.utc).strftime("%d.%m.%Y %H:%M")
+    return als_anzeigezeit(epoch).strftime("%d.%m.%Y %H:%M")
 
 
 def _gitter_stufe(v_min: float, v_max: float, ziel: int) -> float:
@@ -242,11 +244,12 @@ def _gitter_stufe(v_min: float, v_max: float, ziel: int) -> float:
     return 10 * mag
 
 
-def kurve_png(pfad: Path, punkte: list, startkapital: float) -> None:
+def kurve_png(pfad: Path, punkte: list, startkapital: float, *, zeitbasis: dict | None = None) -> None:
     """Equity/realisiert oben, Unterwasser-Prozent unten (Pillow).
 
     Beschriftete Achsen: oben USD-Stufen, unten Rückgang in Prozent,
-    unten Zeit-Ticks (UTC) — zuvor ohne jede Achsenskala.
+    unten Zeit-Ticks im gespeicherten Anzeigeraum. Die Report-Metadaten
+    unterscheiden CSV-/Brokerzeit und normalisierte Referenzkurszeit.
     """
     from PIL import Image as PImage
     from PIL import ImageDraw
@@ -264,8 +267,8 @@ def kurve_png(pfad: Path, punkte: list, startkapital: float) -> None:
         pfad.parent.mkdir(parents=True, exist_ok=True)
         basis.save(pfad)
         return
-    y_min = min(alle_werte + [startkapital] if startkapital else alle_werte)
-    y_max = max(alle_werte)
+    skalenwerte = alle_werte + ([startkapital] if startkapital else [])
+    y_min, y_max = min(skalenwerte), max(skalenwerte)
     spanne = (y_max - y_min) or 1.0
     ml, mr, mt = 150, 30, 64
     ho = 510                # Unterkante Oberpanel
@@ -311,27 +314,42 @@ def kurve_png(pfad: Path, punkte: list, startkapital: float) -> None:
         x0 = w - mr - tw - 10
         img.rectangle([x0 - 4, y0 - 28, x0 + tw + 4, y0 - 2], fill="white")
         img.text((x0, y0 - 26), text, font=fk, fill=(120, 120, 120))
-    # realisiert (immer vorhanden)
-    rl = [(X(p["t"]), Y_oben(p["realisiert"])) for p in punkte if p.get("realisiert") is not None]
-    if len(rl) > 1:
-        img.line(rl, fill=(176, 190, 197), width=2)
-    # Equity (Messpunkte)
-    eq = [(X(p["t"]), Y_oben(p["equity"])) for p in mess]
-    if len(eq) > 1:
-        img.line(eq, fill=(46, 125, 50), width=3)
-    # Unterwasser: laufender Peak über Equity-Messpunkte
-    peak = None
-    for p in punkte:
-        uw = 0.0
-        if p.get("messpunkt") and p.get("equity") is not None:
-            e = p["equity"]
-            peak = e if peak is None else max(peak, e)
-            if peak > 0:
-                uw = (peak - e) / peak
-        p["_uw"] = uw
-    for p in punkte:
-        p["_uw"] = p.get("_uw") or 0.0
-    u_wirklich = max(p["_uw"] for p in punkte)
+    def zeichne_segmente(werte, farbe, breite):
+        # None ist eine unbekannte Strecke, kein interpolierter Messwert.
+        segment = []
+
+        def zeichne():
+            if len(segment) > 1:
+                img.line(segment, fill=farbe, width=breite)
+            elif segment:
+                x, y = segment[0]
+                radius = breite / 2
+                img.ellipse((x - radius, y - radius, x + radius, y + radius), fill=farbe)
+
+        for wert in werte:
+            if wert is None:
+                zeichne()
+                segment = []
+            else:
+                segment.append(wert)
+        zeichne()
+
+    # Die realisierte Kurve bleibt auch bei fehlenden Floatingkursen bekannt.
+    zeichne_segmente(
+        [(X(p["t"]), Y_oben(p["realisiert"]))
+         if p.get("realisiert") is not None else None for p in punkte],
+        (176, 190, 197), 2)
+    zeichne_segmente(
+        [(X(p["t"]), Y_oben(p["equity"]))
+         if p.get("messpunkt") and p.get("equity") is not None else None for p in punkte],
+        (46, 125, 50), 3)
+    # Derselbe Flow-/Peak-Vertrag wie die ausgewiesenen Studienkennzahlen;
+    # fehlende Messpunkte bleiben None. Eingabepunkte werden nicht verändert.
+    verlauf = max_drawdown_aus_kurve(
+        ((p["t"], p.get("equity"), bool(p.get("messpunkt")), p.get("flow_delta", 0.0))
+         for p in punkte), verlauf=True)["verlauf"]
+    unterwasser = [wert["dd_pct"] / 100.0 if wert is not None else None for wert in verlauf]
+    u_wirklich = max((wert for wert in unterwasser if wert is not None), default=0.0)
     u_max = u_wirklich or 1.0  # nur Divisions-Basis, falls nie unter Wasser
 
     def Y_unten(v):
@@ -344,24 +362,28 @@ def kurve_png(pfad: Path, punkte: list, startkapital: float) -> None:
     rechts("0 %", uw_top)
     if u_wirklich > 0:
         rechts(f"\u2212{_de(u_max * 100, 1, 1, ' %')}", uw_bottom)
-    uwp = [(X(p["t"]), Y_unten(p["_uw"])) for p in punkte]
-    if len(uwp) > 1:
-        img.line(uwp, fill=(198, 40, 40), width=2)
+    zeichne_segmente(
+        [(X(p["t"]), Y_unten(wert)) if wert is not None else None
+         for p, wert in zip(punkte, unterwasser)],
+        (198, 40, 40), 2)
     img.text((ml, 8), "H1-Equity (grün), realisiert (grau); unten: Rückgang vom Hochpunkt",
              font=f, fill=(30, 30, 30))
-    # ── X-Achse: 5 Zeit-Ticks (UTC) unter dem Unterpanel ────────────────
+    # X-Achse im Report-Zeitraum, ohne nachtraegliche Zeitverschiebung.
     t0, t1 = punkte[0]["t"], punkte[-1]["t"]
     tage = (t1 - t0) / 86400 if t1 > t0 else 0.0
     fmt = "%m.%Y" if tage >= 730 else ("%d.%m.%Y" if tage >= 90 else "%d.%m. %H:%M")
-    for i in range(5):
-        t = t0 + (t1 - t0) * i / 4
+    ticks = [t0 + (t1 - t0) * i / 4 for i in range(5)] if t1 > t0 else [t0]
+    for i, t in enumerate(ticks):
         x = X(t)
         img.line([(x, uw_bottom), (x, uw_bottom + 6)], fill=(90, 90, 90), width=1)
-        text = datetime.fromtimestamp(int(t), tz=timezone.utc).strftime(fmt)
-        if i == 4:
-            text += " (UTC)"
-        img.text((x - img.textlength(text, font=fk) / 2, uw_bottom + 12), text,
+        text = als_anzeigezeit(t).strftime(fmt)
+        links, _, rechts_rand, _ = img.textbbox((0, 0), text, font=fk)
+        text_x = max(4 - links, min(w - 4 - rechts_rand,
+                                   x - img.textlength(text, font=fk) / 2))
+        img.text((text_x, uw_bottom + 12), text,
                  font=fk, fill=(90, 90, 90))
+    img.text((ml, uw_bottom + 47), zeitachsen_label({"zeitbasis": zeitbasis}),
+             font=fk, fill=(90, 90, 90))
     pfad.parent.mkdir(parents=True, exist_ok=True)
     basis.save(pfad)
 
@@ -459,6 +481,7 @@ def baue_pdf(daten: dict, ziel: Path | None = None) -> tuple[Path, int]:
         ["Erstellt", heute.strftime("%d.%m.%Y %H:%M")],
         ["Kurs-/Zeitbasis", f"{daten.get('status')} · "
                        + ("belastbar" if k.get("verlaesslich") else "mit Vorbehalten (Abdeckung/Zeitbasis)")],
+        ["Zeitbasis der Kurve", zeitachsen_label(daten)],
         ["Startkapital", f"{_de(k.get('startkapital'), 2, 1, ' USD')} "
                          f"({kapitalbasis.beschreibung(meta.get('kapitalbasis_details') or meta.get('startkapital_quelle'))})"],
         ["Trades / Symbole", f"{st.get('n_trades', k.get('trades_total'))} / "
@@ -502,7 +525,8 @@ def baue_pdf(daten: dict, ziel: Path | None = None) -> tuple[Path, int]:
           f"Max-DD {_de(k.get('equity_dd_pct'), 1, 1, ' %')} inklusive offener Trades.</font>", text)
     story.append(Spacer(1, 6))
     p1 = tmp / "mrr_kurve.png"
-    kurve_png(p1, daten.get("punkte") or [], float(k.get("startkapital") or 0.0))
+    kurve_png(p1, daten.get("punkte") or [], float(k.get("startkapital") or 0.0),
+              zeitbasis=daten.get("zeitbasis"))
     story.append(Image(str(p1), width=170 * mm, height=92 * mm))
     story.append(Spacer(1, 8))
     p2 = tmp / "mrr_monate.png"

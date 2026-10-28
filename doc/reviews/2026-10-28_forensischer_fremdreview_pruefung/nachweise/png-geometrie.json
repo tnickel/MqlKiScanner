@@ -1,0 +1,21 @@
+{
+  "capital": {
+    "text": "Startkapital 100.000",
+    "bbox": [
+      1146.0,
+      42.0,
+      1360.0,
+      62.0
+    ]
+  },
+  "title": {
+    "text": "H1-Equity (grün), realisiert (grau); unten: Rückgang vom Hochpunkt",
+    "bbox": [
+      150,
+      12,
+      1069,
+      36
+    ]
+  },
+  "overlap": false
+}

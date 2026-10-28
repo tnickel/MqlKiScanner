@@ -1,0 +1,137 @@
+[
+  {
+    "repo": ".",
+    "head": "c0591cf22c9739ed9216e296f2ecc2e2bf4fc121",
+    "head_unchanged": true,
+    "status": [
+      " M startall.bat"
+    ],
+    "status_unchanged_vs_previous_review": true,
+    "staged_files": []
+  },
+  {
+    "repo": "SignalKiScanner",
+    "head": "853bc3a743040256e17f2333b63fbfb9e4219e13",
+    "head_unchanged": true,
+    "status": [
+      " M app_pages/abonnenten_statistik.py",
+      " M app_pages/admin.py",
+      " M app_pages/alle_signale.py",
+      " M src/mqlkiscanner/abonnenten_analyse_ui.py",
+      " M src/mqlkiscanner/alle_signale_ui.py",
+      " M src/mqlkiscanner/app_ui.py",
+      " M src/mqlkiscanner/equity_studie.py",
+      " M src/mqlkiscanner/equity_studie_ui.py",
+      " M src/mqlkiscanner/kurs_cache.py",
+      " M src/mqlkiscanner/kursdaten.py",
+      " M src/mqlkiscanner/risiko_rechner.py",
+      " M src/mqlkiscanner/station_dialoge.py",
+      " M src/mqlkiscanner/studien_batch.py",
+      " M tests/test_abonnenten_daten_ui.py",
+      " M tests/test_studien_feed_fallback.py",
+      " M tests/test_styler_zellenlimit.py",
+      "?? data/mqlkiscanner.sqlite3",
+      "?? doc/Prompts/Abonnentenzaehler_Pruefung_Reparatur_AlleQuellen_2026-10-26.md",
+      "?? doc/reviews/2026-10-26_abonnentenzaehler_pruefung_reparatur/",
+      "?? doc/reviews/2026-10-28_befundkatalog_gegenpruefung/",
+      "?? doc/reviews/2026-10-28_fremdreview_gegenpruefung/",
+      "?? doc/reviews/2026-10-28_kursdaten_none_review/",
+      "?? doc/reviews/2026-10-28_scanner_review_behebung/",
+      "?? scripts/top5_strategien_pdf.py",
+      "?? src/mqlkiscanner/studien_anzeigezeit.py",
+      "?? tests/test_kurs_symbolaufloesung_review.py",
+      "?? tests/test_review_20261028_ui_fixes.py",
+      "?? tests/test_review_20261028_ui_followup.py",
+      "?? tests/test_risiko_png_review.py",
+      "?? tests/test_studien_anzeigezeit.py",
+      "?? tests/test_studien_batch_prefetch_currency.py",
+      "?? tests/test_studien_symbolprovenienz.py"
+    ],
+    "status_unchanged_vs_previous_review": false,
+    "staged_files": []
+  },
+  {
+    "repo": "MqlDownloader",
+    "head": "563af284b1a5f76264b95489b7216ec38f4e6576",
+    "head_unchanged": true,
+    "status": [],
+    "status_unchanged_vs_previous_review": true,
+    "staged_files": []
+  },
+  {
+    "repo": "PelicanTrading",
+    "head": "e0245b7f78be5eb85767e0ae0cc572f735366a18",
+    "head_unchanged": true,
+    "status": [],
+    "status_unchanged_vs_previous_review": true,
+    "staged_files": []
+  },
+  {
+    "repo": "roboforex",
+    "head": "cae740d0e2f84e0c86b0439c82d5a4a1023e1740",
+    "head_unchanged": true,
+    "status": [],
+    "status_unchanged_vs_previous_review": true,
+    "staged_files": []
+  },
+  {
+    "repo": "vantage",
+    "head": "8dae3ce029c06876f959dc49b06ee36b6e049f39",
+    "head_unchanged": true,
+    "status": [
+      " M src/main/java/de/vantagemonitor/VantageMonitorApp.java",
+      " M src/main/java/de/vantagemonitor/api/VantageClient.java",
+      " M src/test/java/de/vantagemonitor/api/CompleteHistoryRepairTest.java",
+      "?? src/test/java/de/vantagemonitor/api/CatalogIsolationTest.java",
+      "?? src/test/java/de/vantagemonitor/api/CompleteTradesCapTest.java"
+    ],
+    "status_unchanged_vs_previous_review": true,
+    "staged_files": []
+  },
+  {
+    "repo": "zulumonitor",
+    "head": "dbfb4cfdbfc8e52cbc00403234457a9603347956",
+    "head_unchanged": true,
+    "status": [
+      " M src/main/java/de/zulumonitor/ZuluMonitorApp.java",
+      " M src/main/java/de/zulumonitor/api/ZuluTradeClient.java",
+      " M src/main/java/de/zulumonitor/update/ProviderRefresh.java",
+      "?? src/test/java/de/zulumonitor/api/TradeCapTest.java",
+      "?? tmp/"
+    ],
+    "status_unchanged_vs_previous_review": true,
+    "staged_files": []
+  },
+  {
+    "repo": "MqlRealmonitor",
+    "head": "66956b5a61053505af73259e137029f0489fb3db",
+    "head_unchanged": true,
+    "status": [],
+    "status_unchanged_vs_previous_review": true,
+    "staged_files": []
+  },
+  {
+    "repo": "PelicanWinnerLooser",
+    "head": "258f7e51cd423c2432ae3f4edfd3f5c13945a38a",
+    "head_unchanged": true,
+    "status": [
+      " M README.md",
+      " M src/main/java/de/pelicanwinnerlooser/PelicanWinnerLooserApp.java",
+      " M src/main/java/de/pelicanwinnerlooser/api/PelicanApi.java",
+      " M src/main/java/de/pelicanwinnerlooser/gui/GewinnkurvenFenster.java",
+      " M src/main/java/de/pelicanwinnerlooser/gui/RankingTabelle.java",
+      " M src/main/java/de/pelicanwinnerlooser/gui/SignalTabelle.java",
+      " M src/main/java/de/pelicanwinnerlooser/store/StrategyRepository.java",
+      " M src/test/java/de/pelicanwinnerlooser/gui/GewinnkurvenVerdichtungTest.java",
+      "?? src/main/java/de/pelicanwinnerlooser/analytics/StrategieKurvenService.java",
+      "?? src/main/java/de/pelicanwinnerlooser/auth/KurvenWiederaufnahme.java",
+      "?? src/main/resources/migrations/V4__init.sql",
+      "?? src/test/java/de/pelicanwinnerlooser/SignalkurvenAnmeldungTest.java",
+      "?? src/test/java/de/pelicanwinnerlooser/StrategieKurvenServiceTest.java",
+      "?? src/test/java/de/pelicanwinnerlooser/auth/KurvenWiederaufnahmeTest.java",
+      "?? src/test/java/de/pelicanwinnerlooser/gui/GewinnkurvenZuordnungTest.java"
+    ],
+    "status_unchanged_vs_previous_review": true,
+    "staged_files": []
+  }
+]

@@ -15,6 +15,7 @@ import math
 import re
 from pathlib import Path
 import sqlite3
+import threading
 import time
 from collections.abc import Iterable, Mapping
 from contextlib import contextmanager
@@ -315,7 +316,9 @@ def uebersicht(cache_pfad: str | Path | None = None,
                     and symbol not in bestand and symbol not in ohne):
                 ohne[symbol] = 0
     zeilen = []
-    index = {raw.upper(): raw for raw, b in bestand.items() if b["bars"]}
+    # GER40 und Ger40 koennen verschiedene exakte Brokernamen sein.
+    # Keine Variante durch einen gemeinsamen Uppercase-Schluessel verlieren.
+    index = {raw: raw for raw, b in bestand.items() if b["bars"]}
     fmt = (lambda e: datetime.fromtimestamp(e, tz=timezone.utc)
            .strftime("%d.%m.%Y %H:%M") if e else "")
     ersatz: dict[str, str] = {}
@@ -366,7 +369,8 @@ _KURS_ALIAS: dict[str, str] = {
 }
 
 
-_ERSATZ_CACHE: dict = {"mtime": None, "daten": {}}
+_ERSATZ_CACHE: dict = {}
+_ERSATZ_LOCK = threading.Lock()
 
 
 def ersetzungen() -> dict[str, str]:
@@ -380,26 +384,50 @@ def ersetzungen() -> dict[str, str]:
     und wird bei Dateiänderung automatisch neu gelesen.
     """
     pfad = config.DATA_DIR / "kurs_alias.json"
-    mtime = pfad.stat().st_mtime if pfad.exists() else None
-    if _ERSATZ_CACHE["mtime"] != mtime:
-        _ERSATZ_CACHE["daten"] = _lese_alias(pfad)
-        _ERSATZ_CACHE["mtime"] = mtime
-    return {**_KURS_ALIAS, **_ERSATZ_CACHE["daten"]}
+    with _ERSATZ_LOCK:
+        try:
+            stat = pfad.stat()
+            stand = (str(pfad.resolve()), stat.st_mtime_ns, stat.st_ctime_ns,
+                     stat.st_size)
+            if _ERSATZ_CACHE.get("stand") != stand:
+                daten = _bereinigte_alias(json.loads(pfad.read_text(encoding="utf-8")))
+                _ERSATZ_CACHE.clear()
+                _ERSATZ_CACHE.update(stand=stand, daten=daten)
+        except (OSError, ValueError):
+            # Keine alten Overrides bei fehlender/defekter Datei weitergeben.
+            # Fehler nicht cachen: voruebergehende Lesefehler sind erneut pruefbar.
+            _ERSATZ_CACHE.clear()
+            return dict(_KURS_ALIAS)
+        return {**_KURS_ALIAS, **_ERSATZ_CACHE["daten"]}
 
 
 def _lese_alias(pfad: Path) -> dict[str, str]:
     """Nutzer-Erweiterungen der Ersetzungstabelle (robust gegen kaputte Datei)."""
-    if not pfad.exists():
-        return {}
     try:
         daten = json.loads(pfad.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
+    return _bereinigte_alias(daten)
+
+
+def _bereinigte_alias(daten) -> dict[str, str]:
     if not isinstance(daten, dict):
         return {}
-    return {str(k).strip().upper(): str(v).strip().upper()
+    # MT5-Zielnamen sind case-sensitiv (z. B. ActivTrades Ger40).
+    return {k.strip().upper(): v.strip()
             for k, v in daten.items()
             if isinstance(k, str) and isinstance(v, str) and k.strip() and v.strip()}
+
+
+_ANZEIGE_SUFFIX = re.compile(
+    r"(?:MICRO|CENT|CASH|PRO|RAW|ECN|FT|M|R|C|\+|"
+    r"[._-](?:MICRO|CENT|CASH|FUTURE|PRO|RAW|ECN|FT|A|M|R|C|F|P))+"
+)
+
+
+def _suffix_variante(basis: str, symbol: str) -> bool:
+    return (symbol.startswith(basis) and len(symbol) > len(basis)
+            and _ANZEIGE_SUFFIX.fullmatch(symbol[len(basis):]) is not None)
 
 
 def _kurs_match(symbol: str, index: dict[str, str],
@@ -414,38 +442,46 @@ def _kurs_match(symbol: str, index: dict[str, str],
     wofür tatsächlich Bars liegen; nichts wird umbenannt oder gespeichert.
     """
     alias = alias or {}
-    sym = symbol.strip().upper()
-    treffer = index.get(sym)
+    roh = symbol.strip()
+    sym = roh.upper()
+    bestand = dict.fromkeys(index.values())
+    case_index: dict[str, list[str]] = {}
+    for raw in bestand:
+        case_index.setdefault(raw.upper(), []).append(raw)
+
+    def finde(name):
+        if name in bestand:
+            return name
+        varianten = case_index.get(name.upper(), [])
+        # Ohne exakte Schreibweise ist eine Case-Kollision keine eindeutige
+        # Ersetzung. Rohbestandszeilen bleiben unveraendert getrennt sichtbar.
+        return varianten[0] if len(varianten) == 1 else None
+
+    treffer = finde(roh)
     if treffer:
         return treffer
     ziel = alias.get(sym)
-    if ziel and ziel in index:
-        return index[ziel]
-    kandidat = re.sub(r"[.+]+$", "", sym)
-    for token in ("FUTURE", "CASH", "MICRO", "PRO", "FT"):
-        if kandidat.endswith(token) and len(kandidat) > len(token) + 2:
-            kandidat = kandidat[:-len(token)]
-            break
-    ziel = alias.get(kandidat)
-    if ziel and ziel in index:
-        return index[ziel]
-    while len(kandidat) > 3:
-        if kandidat in index:
-            return index[kandidat]
-        kandidat = kandidat[:-1]
+    if ziel:
+        treffer = finde(ziel)
+        if treffer:
+            return treffer
+    # Nur vollstaendig bekannte Suffixe entfernen. Praefixgleichheit allein
+    # belegt keine Variante: EURUSDT ist beispielsweise nicht EURUSD.
+    for kandidat in sorted(set(case_index) | set(alias), key=lambda k: (-len(k), k)):
+        if _suffix_variante(kandidat, sym):
+            ziel = alias.get(kandidat)
+            treffer = finde(ziel) if ziel else None
+            if treffer:
+                return treffer
+            treffer = finde(roh[:len(kandidat)])
+            if treffer:
+                return treffer
     # Umgekehrt: Bestand trägt das Suffix (XAUAUD ≙ XAUAUD+), Basis nicht
-    for bestand_sym, raw in index.items():
-        if bestand_sym.upper().startswith(sym) and len(bestand_sym) > len(sym):
-            rest = bestand_sym[len(sym):]
-            while rest:
-                for suf in ("+", "M", "FT", "CASH", ".A", ".M", "PRO",
-                            "MICRO", "-FUTURE", "-P"):
-                    if rest.upper().endswith(suf):
-                        rest = rest[:-len(suf)]
-                        break
-                else:
-                    rest = ""
-                    break
-            else:
-                return raw
+    rueckwaerts = [raw for raw in bestand if _suffix_variante(sym, raw.upper())]
+    for raw in rueckwaerts:
+        if raw.startswith(roh):
+            return raw
+    for raw in rueckwaerts:
+        if len(case_index[raw.upper()]) == 1:
+            return raw
     return None

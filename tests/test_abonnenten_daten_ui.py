@@ -207,10 +207,12 @@ def test_first_table_links_to_the_broker_per_source():
     assert mit_url.loc[0, "Link"] == "https://spiegel.example/sig/23"
 
 
-def test_all_none_model_column_renders_empty_not_none_text():
-    """Nutzer 28.10.: Modell-Nettogewinn ohne EINEN echten Wert in der
-    Ansicht (robo, Quellenwerte ohne Trade-Export) zeigte den Text „None“ —
-    pyarrow-null-Spalte. Strikte Koercierung erzwingt float64 → leere Zelle."""
+def test_unknown_model_profit_preserves_numeric_schema_and_missing_value():
+    """Ein vollständig unbekannter Modellgewinn bleibt numerisch und fehlend.
+
+    Das leere Placeholder-Rendering wird separat in
+    test_review_20261028_ui_fixes.py geprüft, nicht durch den Pandas-Dtype.
+    """
     entry = {**_entries()[1], "modell": {
         "status": "datenluecke",
         "grund": "Kein gespeicherter Trade-Export mit SHA-Beleg vorhanden.",

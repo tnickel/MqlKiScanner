@@ -120,12 +120,16 @@ class KursDaten:
         self._cache_defekt = False
         self._feed_je_terminal: dict[str, str] = {}
         self._aufgeloeste_symbole: dict[tuple[str, str], str] = {}
+        self._ersetzungs_stand = tuple(sorted(ersetzungen().items()))
         # B10: roh-Symbol → tatsächlich verwendetes Terminal-Symbol, wenn
         # das exakte (suffigierte) Symbol nicht existierte.
         self.suffix_annahmen: dict[str, str] = {}
         # 05.10.: Welches Terminal lieferte welches Symbol (Transparenz,
         # GMT je Feed unterschiedlich — Auto-GMT-Abgleich je Symbol).
         self.terminal_herkunft: dict[str, str] = {}
+        # Confirmed name/feed of the last successful read, including exact
+        # configured broker suffixes (which are not suffix assumptions).
+        self.symbol_herkunft: dict[str, dict[str, str]] = {}
 
     # ------------------------------------------------------------ Lebenszyklus
 
@@ -344,6 +348,16 @@ class KursDaten:
             return None
         terminal_key, feed = self._feed_identitaet()
         feed_key = feed or terminal_key
+        ersatz_tabelle = ersetzungen()
+        ersetzungs_stand = tuple(sorted(ersatz_tabelle.items()))
+        if ersetzungs_stand != self._ersetzungs_stand:
+            # Auch exakte RAM-Fenster duerfen keine Kurse der alten Ersetzung
+            # liefern. Persistierte Bars bleiben unter ihrem Feed/Brokersymbol.
+            self._aufgeloeste_symbole.clear()
+            self._cache.clear()
+            self._cache_zeit.clear()
+            self._cache_bis.clear()
+            self._ersetzungs_stand = ersetzungs_stand
         key = f"{feed_key}|{symbol}|{von_s}|{bis_s}"
         jetzt = time.time()
         aufloesung = (feed_key, symbol)
@@ -353,10 +367,18 @@ class KursDaten:
         def herkunft(bars):
             if bars:
                 self.terminal_herkunft[symbol.upper().strip()] = self.terminal_pfad
+                self.symbol_herkunft[symbol.upper().strip()] = {
+                    "terminal": self.terminal_pfad, "broker_symbol": gewaehlt}
                 if gewaehlt and gewaehlt != am_broker:
                     self.suffix_annahmen[symbol] = gewaehlt
                 else:
                     self.suffix_annahmen.pop(symbol, None)
+            else:
+                # Nur die Herkunft des gerade angefragten Symbols erneuern.
+                # Bereits geladene andere Studien-Serien behalten ihre Belege.
+                self.suffix_annahmen.pop(symbol, None)
+                self.terminal_herkunft.pop(symbol.upper().strip(), None)
+                self.symbol_herkunft.pop(symbol.upper().strip(), None)
             return bars
 
         # Kurzlebige exakte Ergebnisse sparen DB-Abfragen; Teilhistorien und
@@ -369,25 +391,34 @@ class KursDaten:
         mt5 = self._mt5
         if gewaehlt is None:
             if not self._aktiv or mt5 is None:
-                return None
+                return herkunft(None)
             normalisiert = normalize_symbol(symbol)
             kandidaten = [am_broker]
             if normalisiert != symbol.upper().strip():
                 kandidaten.append(broker_symbol(normalisiert, self.settings))
-            alias = alias_fuer_symbol(symbol, self.terminal_pfad,
-                                      self.settings.get("symbol_aliases"))
-            if alias and alias not in kandidaten:
-                kandidaten.append(alias)
+            for name in dict.fromkeys((symbol, normalisiert)):
+                alias = alias_fuer_symbol(name, self.terminal_pfad,
+                                          self.settings.get("symbol_aliases"))
+                if alias and alias not in kandidaten:
+                    kandidaten.append(alias)
             # Zentrale Ersetzungstabelle (kurs_alias.json + Eingebaute) —
             # letzte Stufe; deckt Studien-Symbole ab, die kein Broker führt,
             # wenn ein Bestands-Symbol dahintersteckt (z. B. BITCOIN→BTCUSD).
-            ersatz = ersetzungen().get(str(symbol).upper().strip())
+            ersatz = ersatz_tabelle.get(str(symbol).upper().strip())
             if ersatz:
                 kandidaten.append(broker_symbol(ersatz, self.settings))
+                # Ein explizites Ersatzziel kann am konkreten Terminal anders
+                # heissen (GER40 -> Ger40). Genau eine Brokeralias-Stufe;
+                # weder zentrale Aliaszyklen noch blinde Normalisierung folgen.
+                alias_ersatz = alias_fuer_symbol(
+                    ersatz, self.terminal_pfad, self.settings.get("symbol_aliases"))
+                if alias_ersatz:
+                    kandidaten.append(alias_ersatz)
+            kandidaten = list(dict.fromkeys(kandidaten))
             gewaehlt = next((k for k in kandidaten if mt5.symbol_select(k, True)), None)
         if gewaehlt is None:
             self._laufcache_setzen(key, None, jetzt)
-            return None
+            return herkunft(None)
         self._aufgeloeste_symbole[aufloesung] = gewaehlt
 
         bereiche = [(von_s, bis_s)]

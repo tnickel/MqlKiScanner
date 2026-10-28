@@ -1,0 +1,82 @@
+{
+  "captured_at": "2026-10-28T17:33:35.066216+01:00",
+  "head_before": "853bc3a743040256e17f2333b63fbfb9e4219e13",
+  "root": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\SignalKiScanner",
+  "status": "frozen",
+  "findings": [
+    "B01",
+    "B06",
+    "B09"
+  ],
+  "files": [
+    {
+      "path": "app_pages/abonnenten_statistik.py",
+      "rawSha256": "a2e6f27bb6d61d0c8dc5c1297b8397fb43c9a820a88df21ed3256b97a732dc75",
+      "lfSha256": "92d18334aa93d60edd7d5120b642a87e8b6c785595d825c6f347719927accb9c"
+    },
+    {
+      "path": "app_pages/admin.py",
+      "rawSha256": "b0565d203088299621b5559d6a9f4403c178814492b0f1aaf15f66cb8939985e",
+      "lfSha256": "589d2b7e96ee01e504f10d57c956e7a37a33165dfb4c046add1906e0a11c362c"
+    },
+    {
+      "path": "app_pages/alle_signale.py",
+      "rawSha256": "0123e469d2702b4becb4913ef5196b4d9db8aa1dfaf7d85c75924fdbb3ccda26",
+      "lfSha256": "a8a24a73316f3d6ea53021b9b6df36f2870b1c8933b1c74f12bf05f38130fcfe"
+    },
+    {
+      "path": "src/mqlkiscanner/abonnenten_analyse_ui.py",
+      "rawSha256": "b63f9b537fd36051a7f8ed7229edfd3d9b748f2215c0e34b46c0d3f0bad2e166",
+      "lfSha256": "06f43a709d1a7c07c2e9305b6584c9b1c4899bd83c1ab1424fb24f1004605b05"
+    },
+    {
+      "path": "src/mqlkiscanner/alle_signale_ui.py",
+      "rawSha256": "fa99e9d7d54a08d313b26a9000745b611c9e3b7ce97bbd6f457b2121ec75bcbe",
+      "lfSha256": "2214313af6faca25e0128ba834ac200c63267dbcdf2ac98121bdb3dc407b3121"
+    },
+    {
+      "path": "src/mqlkiscanner/equity_studie_ui.py",
+      "rawSha256": "47e2c40e4340a8517d7b84969b02017866648476282cb7b0ca94c8395cd690d0",
+      "lfSha256": "4e19c029148eed4890455910064b4e3b729b641be4bc41783d80d22a234c9e19"
+    },
+    {
+      "path": "src/mqlkiscanner/station_dialoge.py",
+      "rawSha256": "f8f345dc159301a87d52a1e54a38c2a72031d7e23dc8b11c53ecc36fd5adb7fc",
+      "lfSha256": "23f7782f8f55ac1dff4b11cdab9c2161228f81950c6d36660b0e2840d4bbfbb9"
+    },
+    {
+      "path": "tests/test_review_20261028_ui_fixes.py",
+      "rawSha256": "80499a340d9e1ffef021bf1444ec8a3ccee90c35e29bc9ffd61cc963544b9bca",
+      "lfSha256": "80499a340d9e1ffef021bf1444ec8a3ccee90c35e29bc9ffd61cc963544b9bca"
+    }
+  ],
+  "test_result": {
+    "exit_code": 0,
+    "passed": 236,
+    "new_regressions": 8,
+    "seconds": 125.33,
+    "modules": [
+      "tests/test_review_20261028_ui_fixes.py",
+      "tests/test_abonnenten_daten_ui.py",
+      "tests/test_abonnenten_analyse_profit_ui.py",
+      "tests/test_abonnenten_analyse_ui.py",
+      "tests/test_abonnenten_statistik.py",
+      "tests/test_alle_signale_seite.py",
+      "tests/test_scan_station_details.py",
+      "tests/test_station_dialog_interaktion.py"
+    ],
+    "log": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\none_ui_review_2026-10-28\\ui_final_targeted.log",
+    "logSha256": "c39606430c4881914cace2df3b25f372b7fd393f1fa7952470f1ecfc86a68591"
+  },
+  "before_result": {
+    "failed": 6,
+    "passed": 1,
+    "log": "D:\\AntiGravitySoftware\\GitWorkspace\\SIGNALDOWNLOADER\\waste\\none_ui_review_2026-10-28\\ui_before.log"
+  },
+  "constraints": {
+    "no_product_data_modified": true,
+    "no_live_app_access": true,
+    "no_network_or_paid_calls": true,
+    "no_stage_commit_push": true
+  }
+}

@@ -297,7 +297,7 @@ def _dialog_clients() -> None:
             "Tradelisten neu": e.get("tradelisten_neu"),
             "Datenstand": e.get("datenstand"),
             "Dauer s": e.get("dauer_s"), "Fehler": e.get("fehler") or "",
-        } for e in chronik]), width="stretch", hide_index=True)
+        } for e in chronik]), width="stretch", hide_index=True, placeholder="")
     else:
         st.caption("Noch keine Einträge — Chronik füllt sich mit dem ersten Stufe-0-Lauf.")
     st.caption("Regeln: Ziel ≥200 Signale mit Abonnenten je Client (Versuch genügt — "
@@ -378,7 +378,7 @@ def _dialog_listen() -> None:
     quellen_tabelle = pd.DataFrame(rows, columns=["Quelle", "Kürzel", "Zugriff", "Im Scan aktiv",
                  "Geladene Signale", "Letzter Verbindungstest", "Geprüft am"])
     quellen_tabelle["Geladene Signale"] = pd.array(quellen_tabelle["Geladene Signale"], dtype="Int64")
-    st.dataframe(quellen_tabelle, width="stretch", hide_index=True)
+    st.dataframe(quellen_tabelle, width="stretch", hide_index=True, placeholder="")
     st.caption("Die Tabelle verwendet gespeicherte Verbindungstests. "
                "Aktivierung zeigt die aktuellen Einstellungen.")
     if mql5_nicht_getrennt:
@@ -397,7 +397,7 @@ def _dialog_listen() -> None:
         st.caption(f"**Alle {len(zeilen)} geladenen Signale** — Herkunft je "
                    "Signal; über die Filter lässt sich je Quelle einschränken.")
         zeilen = _filterleiste(zeilen, "listen")
-        st.dataframe(zeilen, width="stretch", hide_index=True,
+        st.dataframe(zeilen, width="stretch", hide_index=True, placeholder="",
                      column_config={"Link": _link_spalte()})
         st.caption("Pelican-Signale haben keinen klickbaren Ursprungs-Link — "
                    "die Plattform liefert keine Signal-URL (nur die Startseite); "
@@ -456,7 +456,7 @@ def _dialog_auswahl() -> None:
     zeilen = _begruendung_zeilen(eintraege)
     zeilen = _filterleiste(zeilen, "auswahl")
     st.caption(f"Angezeigt: {len(zeilen)} von {n_gesamt} Signalen.")
-    st.dataframe(_ohne_intern(zeilen), width="stretch", hide_index=True,
+    st.dataframe(_ohne_intern(zeilen), width="stretch", hide_index=True, placeholder="",
                  column_config={"Link": _link_spalte()})
     st.caption("Status-Bedeutung: ✅ geprüft · 📌 Fix-ID (immer scannen) · "
                "⏭️ im Teilscan nicht dran (letztes Urteil nicht 🟢/🟡) · "
@@ -574,7 +574,7 @@ def _dialog_forensik() -> None:
             return ["background-color: rgba(249,115,22,0.12); color: #fb923c", ""]
         forensik_styled = forensik_styled.apply(
             _trueretdd_stil, axis=1, subset=["TrueRetDD", "TrueRetDD (Vorbehalt)"])
-    st.dataframe(forensik_styled, width="stretch", hide_index=True,
+    st.dataframe(forensik_styled, width="stretch", hide_index=True, placeholder="",
                  column_config={"Link": _link_spalte()})
     calmar_schwelle = f"{config.min_calmar_jahr(settings):g}".replace(".", ",")
     st.caption("Max-Drawdown (Equity) enthält Floating der exportierten Positionen "
@@ -679,7 +679,7 @@ def _dialog_portfolio() -> None:
             basis_styled = basis_styled.apply(
                 _trueretdd_stil_basis, axis=1,
                 subset=["TrueRetDD", "TrueRetDD (Vorbehalt)"])
-        st.dataframe(basis_styled, width="stretch", hide_index=True,
+        st.dataframe(basis_styled, width="stretch", hide_index=True, placeholder="",
                      column_config={"Link": _link_spalte()})
 
 

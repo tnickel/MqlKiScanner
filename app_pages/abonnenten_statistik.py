@@ -371,9 +371,8 @@ def _tabellen_daten(tab_zeilen: list[dict], mit_quelle: bool) -> pd.DataFrame:
     df = pd.DataFrame(daten)
     if df.empty:
         return df
-    # Bewusst FLOAT statt Int64: Streamlit rendert pd.NA (nullable Int64)
-    # in Zellen als Text „None" (Nutzer-Screenshot 20.10.), float-NaN dagegen
-    # als leere Zelle (na_rep des Stylers greift).
+    # Delta-/Zählerwerte numerisch halten; unbekannte Werte bleiben fehlend.
+    # Ihre leere Anzeige steuert placeholder, unabhängig vom Pandas-Dtype.
     for spalte in ('ID', 'Abonnenten', 'Δ seit Messung', 'Δ 7 Tage',
                    'Δ 7 Tage %', 'Δ 30 Tage'):
         df[spalte] = pd.to_numeric(df[spalte], errors='coerce')
@@ -532,7 +531,7 @@ def _tabelle_rendern(tab_zeilen: list[dict], schluessel: str,
         konfig['Quelle'] = st.column_config.TextColumn('Quelle', width=80)
     st.dataframe(gestylt, key=f'abonnenten_tabelle_{schluessel}',
                  on_select='rerun', selection_mode='multi-row',
-                 hide_index=True,
+                 hide_index=True, placeholder='',
                  height=min(640, 40 + 33 * len(df)), width='stretch',
                  column_config=konfig)
     st.download_button(
@@ -664,7 +663,7 @@ if _gewaehlt is not None:
             } for p in reversed(punkte)])
             with st.expander(f'Messpunkte ({len(punkte)}) — neueste zuerst',
                              expanded=False):
-                st.dataframe(detail_df, hide_index=True, height=260,
+                st.dataframe(detail_df, hide_index=True, placeholder='', height=260,
                              key=f'abonnenten_punkte_{signal_ref}')
         if not punkte:
             st.caption('Keine Messpunkte gespeichert — Zahlen stammen allein '

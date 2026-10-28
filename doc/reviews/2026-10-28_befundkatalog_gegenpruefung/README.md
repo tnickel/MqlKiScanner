@@ -1,0 +1,59 @@
+# Gegenprüfung des zusätzlichen Befundkatalogs, 28.10.2026
+
+Eingang: Nutzeranhang „Befundkatalog — Code-Review MqlKiScanner (Neu-Commits 28.10. + None/Lücken-Audit)“. Ausgangs-HEAD des Scanners: `853bc3a743040256e17f2333b63fbfb9e4219e13`, ergänzt um die bereits vorhandenen lokalen Review-Korrekturen. Maßgeblich ist der Arbeitsbaum, nicht allein dieser Commit.
+
+**Ergebnis: Kein zusätzlicher Laufzeitfehler aus diesem Katalog bestätigt.** Die zuvor gefundenen echten Fehler bleiben behoben. Mehrere Entlastungen und Begründungen des Katalogs sind dagegen falsch; ein spekulativer Retry oder eine willkürliche Styling-Cap würde sie nicht sachgerecht korrigieren. Korrigiert wurde ein verbliebener irreführender Testname/Docstring, der eine nicht geprüfte Rendering-Eigenschaft behauptete.
+
+Die Gegenprüfung erfolgte parallel für UI/Rendering, Prefetch-/DB-Pfade sowie Symbol-/Finanzlogik; die Ergebnisse wurden am aktuellen Code zusammengeführt. Keine Produktionsdatenbank wurde geöffnet, keine Plattform/MT5-Verbindung oder produktive Neuberechnung gestartet.
+
+## Befunde und Entscheidungen
+
+| Katalogstelle | Kritische Bewertung | Aktueller Stand / Entscheidung |
+|---|---|---|
+| 1.1: Styler-Thread-Race sei harmlos, nur kurzzeitig zu hohes Limit | Falsch. Ein kleiner Aufruf kann einen zwischenzeitlich gesetzten größeren Wert überschreiben und das Limit senken. Getrennte Lese-/Schreiboperationen sind keine atomare Erhöhung. | Bereits mit gemeinsamem Lock in `app_ui.py:393–410` und erzwungenem Parallelitätsfall in `test_styler_zellenlimit.py` behoben. Keine neue Änderung. |
+| 1.1: fehlende Obergrenze verursache irgendwann `StreamlitAPIException`; Cap bei 2 Mio. Zellen | Hoher Speicher-/Zeitbedarf großer Tabellen ist plausibel. Ein bestimmter sicherer Grenzwert, aktueller Ausfall oder zwangsläufiger Exception-Pfad ist damit nicht nachgewiesen. Die explizite Größenprüfung vergleicht gerade gegen das angehobene Limit. | Keine unbegründete Cap und kein stilles Entfernen finanzieller Markierungen. Für eine konkrete Grenze fehlen Lastmessung und gewünschtes Ressourcenbudget. |
+| 1.2: identische Zeitpunkte erzeugten fünf überlagerte Labels | Für den aktuellen Stand veraltet: `kurve_png` erzeugt bei `t1 == t0` genau einen Tick. | Bestehende Regression deckt identischen Zeitpunkt, kurze/lange Fenster und Bildgrenzen ab. |
+| 1.2: sechsstellige Startkapitalwerte könnten wegen fehlendem x-Unterlaufschutz Achsenlabels übermalen | Kein neuer reproduzierter Fehler. Das Review nennt weder konkreten Wert noch Bild-/Textbeleg. Sechsstellige Beträge allein begründen keinen horizontalen Unterlauf; große Beträge werden zudem als Mio. formatiert. | Keine spekulative Änderung. Startkapital ist bereits in beiden Skalengrenzen enthalten. |
+| 1.2: pauschale UTC-Beschriftung sei korrekt | Falsch. `equity_studie.py:545` kann Koordinaten im CSV-/Brokerraum speichern; `zeitbasis.frame` unterscheidet diese von normalisierter Referenzkurszeit. H1-Zeiten und Kurvenkoordinaten sind nicht generell dieselbe Domäne. | Bereits behoben: gemeinsamer Anzeigehelper, gespeicherter Frame als Label, kein unbelegter UTC-Suffix. Gilt für PNG, PDF, Hauptkurve und Kopiersimulation; Überdeckungsplot behält seine Referenzkursdomäne. |
+| 1.2 / Fazit: Monatschart ohne Einzelmonatslabels | Zutreffende Ausstattungs-/Lesbarkeitseinschränkung, kein nachgewiesener Rechenfehler. Titel enthält Zeitbereich, Fußzeile die USD-Skala. Die genannte Funktion heißt tatsächlich `monate_png`, nicht `monate_p3`. | Keine neue Diagrammfunktion im Rahmen einer Fehlerbehebung eingeführt. |
+| 1.3 / Kapitel 2: Float-NaN und gemischte None-Spalten seien automatisch leer; generische Koercion löse Rendering | Für das installierte Streamlit 1.63.0 falsch. Die Darstellung fehlender Werte wird über den Widget-Platzhalter gesteuert, nicht allein über `float64`. `arrow.py:896–899` dokumentiert den Default `None`. | Explizites `placeholder=""` an den 15 ursprünglich belegten nullable Aufrufen bleibt erhalten. Die neue Provenienztabelle setzt ihn ebenfalls. Tatsächliche Protobuf-/AppTest-Belege existieren. |
+| 1.3: numerische Textspalten seien praktisch irrelevant | Die Koercionsheuristik kann Namen/Identitäten wie `00123` verändern. Dass eine Beispielwährung `USD` nicht numerisch ist, widerlegt diese Fehlerklasse nicht. | Bereits durch explizite Messwert-Whitelist behoben; Text-/Identitätsregressionen bleiben erhalten. |
+| 1.4: Prefetch-Worker schrieben gleichzeitig in `kursdaten.db`; 5-s-Timeout könne so Signale scheitern lassen | Behauptete Callchain ist falsch. Prefetch führt über `katalog`/`ingest` zu Quellenartefakten in `mqlkiscanner.db` und Dateien. H1-Kursdatenbankzugriffe beginnen erst nach dem Executor-Join in der seriellen Rechenphase. Auch die Timeouts wurden vermischt. | Kein Retry-Fix für einen nicht vorhandenen Prefetch-H1-Schreibpfad. Allgemeine Konkurrenz mit fremden DB-Schreibern ist möglich, aber kein belegter neuer Fehler dieses Katalogs. |
+| 1.4: Result-Objekte vor Join gelesen / Fortschrittsfeld | Der Katalog selbst fand keinen frühen Lesepfad. Die Stringanzeige kann zwischen Quellen wechseln; das ist kein Beleg verlorener Finanzdaten. | Kein neuer Datenfehler; keine Änderung. |
+| 1.4: Nicht-USD-Filter vor Download sei vollständig ausreichend | Für unbekannte oder während des Downloads aktualisierte Währungsbelege war dies unvollständig. | Bereits vorher behoben: unbekannte native MQL-Währung im Quellen-Worker klären, frische native Metrics/CSV und erneute USD-Prüfung nach Download. Bekannte Nicht-USD bleiben gesperrt. |
+| 1.5: Cache-Mitgliedschaft und `symbol_select` seien „wasserdicht“ | Sie belegen Bestand/Verfügbarkeit, nicht wirtschaftliche Gleichheit von Instrumenten oder vollständige historische Abdeckung. Vorhandene Preisreihen können fachlich ungeeignet sein. | Keine zusätzlichen ungeprüften Aliase. Bestehende Referenzkurszuordnung darf nicht als Beweis identischer Originalbrokerkurse gelesen werden. |
+| 1.5: flüchtige `suffix_annahmen` seien ausreichende Transparenz | Falsch für historische Studien: Terminalwechsel/Reset und nachträgliche Aliasänderungen können den Zustand verändern. Ein exakt konfiguriertes Suffix muss außerdem keine Suffixannahme sein. | Bereits ergänzt: exakter Brokername und Terminal sofort beim erfolgreichen Abruf erfassen, je Versuch/ausgewähltem Bericht kopieren und persistieren. Alte unbekannte Herkunft wird nicht erfunden. |
+| 1.5: zentrale und terminalspezifische Alias-Key-Sets seien getrennt | Falsch. Bereits die statischen Dictionaries überschneiden sich bei `BITCOIN`, `GER30CASH`, `US100`, `USOIL-FUTURE`, `WTI`. | Die explizite Auflösungspriorität ist nachvollziehbar; eine Überschneidung ist für sich kein Fehler. Kein künstliches Zusammenlegen oder Entfernen bestehender Einträge. |
+| 1.5: Prozent-Drawdown sei kontraktunabhängig | Mathematisch falsch bei gleichem Kapital und gleicher Lotzahl. Floating-PnL hängt vom Kontraktfaktor ab und verändert damit den Prozent-DD. | Der aktuelle Code verwendet den Faktor bereits. Eigene Gegenrechnung unten; kein Produktfix erforderlich. |
+| 1.5: keine statischen Kandidaten für AUDSGDM/F40/XCUUSDM | Als pauschale Aussage falsch. AUDSGD+ ist ausdrücklich im Vantage-Mapping hinterlegt; die normalisierte Auflösung wurde bereits korrigiert. Vorhandene Inventarbelege enthalten zudem Frankreichindex-/Kupferkandidaten. | Kandidaten belegen weder heutige Verfügbarkeit noch vollständige Zeitfenster oder Kontraktgleichheit. F40-/Kupfer-Lücken bleiben ungeklärt; keine Live-Probe durchgeführt. |
+| 1.5: zusätzlicher Symbolindex | Plausible Optimierung, kein aktueller Korrektheitsfehler. Ein isolierter SQLite-Plan zeigt den möglichen Wegfall des temporären GROUP-BY-Baums; der Scan über alle relevanten Zeilen und Arbeit für `COUNT(DISTINCT feed)` bleiben. | Keine produktive Schemaänderung. Ein Geschwindigkeitsgewinn und geeignete Indexwahl benötigen Messung am tatsächlichen Workload einschließlich Schreibkosten. |
+| Kapitel 3: ältere Commits nur als Stichprobe | Der begrenzte Umfang ist nachvollziehbar, ersetzt aber kein umfassendes Finanzreview. Historische Testzahlen sind keine neuen Laufnachweise. | Keine Aussage über vollständige Finanzkorrektheit oder künftig beste Signale abgeleitet. |
+
+## Konkreter Nachweis zum Prefetch-Pfad
+
+`studien_batch._trades_vorladen:198–220` ruft `katalog.require_studienwaehrung` / `lade_signal_daten` auf. Diese führen über `ingest.hole_metrics` / `hole_trades` zur Quellenartefaktspeicherung (`db.store_quellen_artefakt:1496ff`): Hauptdatenbank und Metrics-/CSV-Dateien.
+
+Der Executor-Block endet in `studien_batch.py:228–230`. `_laufe` erzeugt `KursDaten` erst ab Zeile 269 und rechnet die Signale ab Zeile 276 seriell. Den H1-Cache nutzt `KursDaten.hole_h1` beim Lesen/Speichern (`kursdaten.py:424,456`). `KursCache._verbinden` verwendet `sqlite3.connect(..., timeout=30.0)`; `PRAGMA busy_timeout=5000` steht in der Hauptdatenbankverbindung (`db.py:282`). Cache-Schreibfehler werden in `kursdaten.py:458ff` kontrolliert behandelt. Die im Katalog behauptete Vermischung dieser Wege rechtfertigt keinen pauschalen Wiederholungsversuch.
+
+## Eigene Gegenrechnung zum Kontraktfaktor
+
+Gleiches Startkapital 10.000 USD, 1 Lot, Preisrückgang 1 USD, keine Kapitalflüsse:
+
+| Kontraktfaktor | Verlust | Equity danach | Prozent-DD |
+|---:|---:|---:|---:|
+| 100 | 100 USD | 9.900 USD | 1 % |
+| 1.000 | 1.000 USD | 9.000 USD | 10 % |
+
+Nachgerechnet mit dem aktuellen reinen `forensics/drawdown_core.py`. Der Rechenweg im Produkt entspricht dem: `equity_studie.py:532` bildet `volume × factor × Preisänderung`, Zeilen 538/546 übernehmen das in Floating/Equity; der Drawdown-Kern teilt den Verlust durch den Equity-Hochpunkt. Prozentwerte sind erst bei entsprechend angepasster wirtschaftlicher Positionsgröße oder proportional skalierter gesamter Equity einschließlich Kapital/Flows invariant. Das darf nicht pauschal für einen Alias angenommen werden.
+
+## Änderung und Verifikation
+
+Einzige zusätzliche Code-/Testdateiänderung dieser Gegenprüfung: `tests/test_abonnenten_daten_ui.py`. Der Test heißt jetzt `test_unknown_model_profit_preserves_numeric_schema_and_missing_value`. Seine Erklärung beschreibt die tatsächlichen Assertions zu numerischem Schema und fehlendem Wert. Die falsche Behauptung `float64 → leere Zelle` wurde entfernt; die tatsächliche Platzhalterprüfung ist in `test_review_20261028_ui_fixes.py` ausdrücklich referenziert. Keine Laufzeitlogik geändert.
+
+**34 Tests bestanden, 0 Fehler, 14,34 Sekunden**, ausschließlich `test_abonnenten_daten_ui.py` und `test_review_20261028_ui_fixes.py`, mit `-B`, deaktiviertem pytest-Cache, isolierten Testdaten und eigenem TEMP-Verzeichnis. Finales Log in `nachweise/ui-tests.log`.
+
+Der vorherige gemeinsame Lauf mit **531 bestandenen Tests in 28 Dateien** bleibt ein historischer Nachweis des davor geprüften Produktstands. Die damals festgehaltenen Quell-/Testdateihashes sind weiterhin identisch; nur der oben genannte, dort nicht gehashte Testname/Docstring wurde zusätzlich berichtigt. Die 34 Fälle sind eine erneut geprüfte Teilmenge, keine zusätzlich auf 531 zu addierenden Tests. Kein erneuter Voll-/531er-Lauf war für diese Erklärungskorrektur erforderlich.
+
+Eingangstext, maschinenlesbare Gegenrechnungen/Abfragepläne, Hashprüfung und Status stehen unter `nachweise/` sowie `abschluss.json`. Die früheren Berichte werden unverändert aufbewahrt, insbesondere `../2026-10-28_fremdreview_gegenpruefung/` und `../2026-10-28_scanner_review_behebung/`.
+
+Keine Commits oder Pushes, keine produktiven Neustarts, Daten-/Aliasänderungen oder Neuberechnungen. Bestehende lokale Korrekturen und Nutzeränderungen bleiben erhalten. Die Aussage „keine zusätzlichen bestätigten Fehler“ ist weder eine Garantie vollständiger Softwarekorrektheit noch eine Beseitigung unbekannter Kurs-/Kontraktlücken.

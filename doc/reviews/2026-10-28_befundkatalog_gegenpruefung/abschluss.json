@@ -1,0 +1,29 @@
+{
+  "created_at": "2026-10-28T18:00:26.329390+01:00",
+  "starting_head": "853bc3a743040256e17f2333b63fbfb9e4219e13",
+  "new_confirmed_runtime_bugs": 0,
+  "runtime_source_changes": [],
+  "test_comment_and_name_changes": [
+    "tests/test_abonnenten_daten_ui.py"
+  ],
+  "tests_this_turn": {
+    "passed": 34,
+    "files": 2,
+    "seconds": 14.34,
+    "failure_count": 0,
+    "modules": [
+      "tests/test_abonnenten_daten_ui.py",
+      "tests/test_review_20261028_ui_fixes.py"
+    ]
+  },
+  "previous_531_run": "../2026-10-28_fremdreview_gegenpruefung/nachweise/combined-tests.xml",
+  "previous_run_not_repeated_or_added_to_current_test_count": true,
+  "source_sha256": {
+    "tests/test_abonnenten_daten_ui.py": "bc65e3101728315932d3005a43034d256d264cf1f86961d24450375e6809d196",
+    "src/mqlkiscanner/forensics/drawdown_core.py": "50b90b7ecd73f54e44ce6882dd1bba3167d03c08aab8ea51ae522032170d74e5"
+  },
+  "other_eight_repo_statuses_unchanged": true,
+  "commit_created": false,
+  "pushed": false,
+  "productive_db_terminal_network_access": false
+}
