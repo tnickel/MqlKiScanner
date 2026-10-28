@@ -32,6 +32,7 @@ import streamlit as st
 from mqlkiscanner import abonnenten_statistik, client_updates, db, quellen, scan_worker
 from mqlkiscanner import downloader_client, katalog, pipeline
 from mqlkiscanner import abonnenten_analyse_ui
+from mqlkiscanner.app_ui import styler_zellenlimit_anpassen
 from mqlkiscanner.ui_design import apply_theme, page_header
 
 apply_theme()
@@ -449,6 +450,7 @@ def _tabelle_rendern(tab_zeilen: list[dict], schluessel: str,
                 f'color: {_AMPEL_FG[stufe]}; font-weight: 600')
         return [stil, '']
 
+    styler_zellenlimit_anpassen(df)
     gestylt = (df.style.format(na_rep='', formatter={
         'Δ seit Messung': lambda w: '' if pd.isna(w) else f'{w:+.0f}',
         'Δ 7 Tage': lambda w: '' if pd.isna(w) else f'{w:+.0f}',

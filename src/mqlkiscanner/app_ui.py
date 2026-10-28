@@ -389,6 +389,20 @@ def results_table_dataframe(results, fresh_ids: set[int] | None = None,
     return df
 
 
+def styler_zellenlimit_anpassen(df: pd.DataFrame) -> None:
+    """Streamlit-Styler-Grenze an die Tabellengröße anpassen (vor .style!).
+
+    Streamlit verwirft st.dataframe mit Pandas-Styler, sobald die Tabelle
+    pandas' Standardlimit styler.render.max_elements (262 144 Zellen)
+    überschreitet — der Vollkatalog „Alle Signale" wächst darüber (28.10.:
+    370 224 Zellen). Das Prozess-Limit folgt hier der größten gerenderten
+    Tabelle; pandas selbst schneidet die Darstellung erst BEI diesem Limit
+    ab, deshalb muss es VOR dem ersten .style...-Aufruf stehen.
+    """
+    if df.size > int(pd.get_option('styler.render.max_elements')):
+        pd.set_option('styler.render.max_elements', df.size)
+
+
 def render_results_table(results, key: str = "results_table", compact: bool = True,
                          fresh_ids: set[int] | None = None,
                          fix_ids: set[int] | None = None, *,
@@ -453,6 +467,7 @@ def render_results_table(results, key: str = "results_table", compact: bool = Tr
                            "Link", "Abonnenten", "30 Tage", "7 Tage", "Dokumente"])
 
     limit = config.load_settings().get("schranke_eq_dd_pct", 30.0)
+    styler_zellenlimit_anpassen(df)
     # Styler färbt nur Zellen. Zahlenformate, ButtonColumns und Auswahl
     # bleiben bei der nativen Dataframe-Konfiguration.
     styled = df.style.map(lambda value: _max_drawdown_zellenstil(value, limit),
