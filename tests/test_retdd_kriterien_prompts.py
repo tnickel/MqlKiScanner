@@ -45,7 +45,7 @@ def test_hilfe_verlangt_eigene_messung_und_gelbe_signale_bleiben_beobachtung():
     portfolio = HELP_CONTENT["portfolio_report"][1]
     assert "geometrische Monatsrendite" in metrics
     assert "niemals als Ersatznenner" in metrics
-    assert "min_calmar_jahr" in metrics and "3 Monaten" in metrics
+    assert "min_calmar_jahr" in metrics and "4 Wochen" in metrics
     assert "Gelb bleibt Beobachtung" in portfolio
     assert "Fehlender Stop-Nachweis ist neutral" in portfolio
     assert "Signale ohne Stop-Nachweis" not in portfolio

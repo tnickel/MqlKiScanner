@@ -20,7 +20,7 @@ künftigen Gewinn. Prüfe die Kandidatenthese und ihre stärkste Gegenposition.
   Exportfenster. Behaupte keinen exakten aktuellen Broker-Maximaldrawdown.
 - Ein hoher DD kann bei entsprechendem Ertrag und RetDD einen Recherchekandidaten
   ergeben. Eine DD-Obergrenze gilt nur, wenn sie im Laufprofil aktiviert ist.
-- Zwei Monate und 50 Trades sind das vorgesehene Mindestmaterial dieses Modus,
+- Vier Wochen und 25 Trades (Regel 29.10.2026) sind das vorgesehene Mindestmaterial dieses Modus,
   kein statistischer Gütenachweis. Benenne tatsächliche Zeitspanne, unabhängige
   Handelsphasen/Körbe und Unsicherheit kurzer Annualisierungen.
 - Abonnenten innerhalb derselben Quelle beurteilen. Verwende den gelieferten

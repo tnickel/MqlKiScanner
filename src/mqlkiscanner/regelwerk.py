@@ -128,7 +128,7 @@ def regelwerk_markdown(settings: dict | None = None) -> str:
         f"Monatsrendite ≥ {min_ertrag:g} % und Jahres-Calmar ≥ {min_calmar:g}. "
         "Jahres-Calmar = Jahres-CAGR ÷ gemessenen Max-Drawdown der Equity; "
         "er benötigt eine eigene belastbare H1-Equity-Messung inklusive Floating "
-        "und mindestens drei Monate Trade-Historie. "
+        "und mindestens vier Wochen Trade-Historie (Regel 29.10.2026). "
         "Monats-RetDD ist eine Zusatzkennzahl ohne eigenes Mindest-Gate. "
         "Die konservative Drawdown-Schranke prüft zusätzlich Plattform- "
         "und geschlossene Drawdowns sowie Monitor-DD nur als Kanal der Drawdown-Schranke; "

@@ -129,8 +129,11 @@ def rank_datamodus(entries: list[dict], weight: float = 30) -> list[dict]:
     for entry in copies:
         entry["ki_klaerung_gesperrt"] = False
         entry["review_pending"] = False
-        if model_mode:
-            model = entry.get("modell") or {}
+        model = entry.get("modell")
+        if model_mode and isinstance(model, dict):
+            # Nur Einträge MIT Modellszenario zeigen dessen Werte; belegte
+            # Messungen (z. B. Robo seit Freigabe 29.10. mit CSV-Balance)
+            # behalten ihre eigenen Messwerte (nie Werte über Fakten schreiben).
             for field in ("retdd_jahr", "equity_dd_pct", "cagr_jahr_pct", "rendite_zeitraum_pct"):
                 entry[field] = model.get(field)
             entry["forensik"] = {"stats": {"net": model.get("nettogewinn_usd")}}
@@ -139,6 +142,15 @@ def rank_datamodus(entries: list[dict], weight: float = 30) -> list[dict]:
                                  and _finite(model.get("equity_dd_pct"))
                                  and model["equity_dd_pct"] > 0
                                  and _finite(model.get("retdd_jahr")))
+        elif model_mode:
+            # Lauf enthält Modelle, dieser Eintrag aber eine echte Messung:
+            # eligible nach den gemessenen Fakten (RetDD da, DD > 0, Historie
+            # vollständig) — SARUJA-Fall 29.10. (49 Trades: Regel greift im
+            # rank_entries/Mindestmaterial, nicht hier).
+            entry["eligible"] = (entry.get("data_done") is True
+                                 and _finite(entry.get("equity_dd_pct"))
+                                 and entry["equity_dd_pct"] > 0
+                                 and _finite(entry.get("retdd_jahr")))
         elif entry.get("data_done") is False:
             entry["eligible"] = False
     rank_entries(copies, weight, kurztest_optional=True, auswahl_modus="abo_zufluss_retdd_v1")
@@ -151,7 +163,10 @@ def rank_datamodus(entries: list[dict], weight: float = 30) -> list[dict]:
 
 
 def _profile(run: dict) -> dict:
-    result = {"policy_version": POLICY_VERSION, "min_monate": 2, "min_trades": 50,
+    from .abonnenten_analyse_daten import MIN_MONATE as _MIN_MONATE
+    result = {"policy_version": POLICY_VERSION,
+            "min_monate": round(_MIN_MONATE, 4), "min_monate_regel": "4 Wochen (Nutzer 29.10.2026)",
+            "min_trades": 25, "min_trades_regel": "25 (Nutzer 29.10.2026)",
             "retdd_definition": "Jahres-CAGR / maximaler gemessener relativer Equity-DD inklusive Floating",
             "dd_grenze": run["dd_grenze"], "retdd_gewicht": run["retdd_gewicht"],
             "abonnenten_gewicht": 100-run["retdd_gewicht"], "top_n_je_quelle": 200,
@@ -1653,8 +1668,10 @@ def _execute(store, run_id, settings):
 
 
 def _ki_possible(entry):
+    from .abonnenten_analyse_daten import MIN_MONATE, MIN_TRADES
     return bool(entry.get("trades_path") and entry.get("forensik") and
-                (entry.get("trades") or 0) >= 50 and (entry.get("dauer_monate") or 0) >= 2)
+                (entry.get("trades") or 0) >= MIN_TRADES
+                and (entry.get("dauer_monate") or 0) >= MIN_MONATE)
 
 
 def daten_basis(settings):

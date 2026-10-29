@@ -175,8 +175,10 @@ with st.sidebar:
             st.markdown(f"**≥ {min_return:g} % Ertrag / Monat**")
         else:
             st.caption("Absolute Monats-Ertragshürde deaktiviert.")
-        st.caption(f"Mindestens {portfolio_statistik.MIN_HISTORIE_MONATE:g} Monate "
-                   "Trade-Historie. Calmar auf gemessener Equity inklusive Floating.")
+        hist_wochen = round(portfolio_statistik.MIN_HISTORIE_MONATE
+                            * portfolio_statistik.MONAT_TAGE / 7)
+        st.caption(f"Mindestens {hist_wochen:g} Wochen Trade-Historie (Regel 29.10.2026). "
+                   "Calmar auf gemessener Equity inklusive Floating.")
         st.caption("Fehlender SL-Nachweis ist neutral; ein belegter Stop entlastet.")
     if st.session_state.last_run_file:
         st.caption(f"Letzter Lauf · {Path(st.session_state.last_run_file).parent.name}")

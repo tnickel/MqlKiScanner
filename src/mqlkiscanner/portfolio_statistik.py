@@ -35,7 +35,10 @@ MONAT_TAGE = JAHR_TAGE / 12.0
 # es keine belastbare Effizienz — annualisieren bläht Kurzläufer auf
 # (10-Tage-Fall: +400 USD → 12,7 %/M → RetDD 6,3 → falsches Grün; nach
 # 12 realistischen Monaten läge dasselbe Signal bei 0,33).
-MIN_HISTORIE_MONATE = 3.0
+# Nutzer-Entscheidung 29.10.2026: Mindesthistorie von 3 Monaten auf 4 Wochen
+# gesenkt (SARUJA-Fall). Unter 4 Wochen Trade-Spanne bleibt der Calmar
+# unbekannt (historie_zu_kurz).
+MIN_HISTORIE_MONATE = 28.0 / MONAT_TAGE
 
 
 def _positiv_endlich(wert) -> float | None:
@@ -231,8 +234,8 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
     die geschlossene CSV alleine liefert sie nicht.
     """
     # Andere ausdrücklich versionierte Analyseprofile dürfen denselben
-    # Rechenkern nutzen. Der Hauptworkflow behält unverändert drei Monate;
-    # insbesondere kein globales Umschalten der Konstanten im Batch.
+    # Rechenkern nutzen. Seit der Nutzer-Entscheidung 29.10.2026 gilt überall
+    # die 4-Wochen-Mindesthistorie; Profile können sie weiter anheben.
     min_historie = _positiv_endlich(min_historie_monate)
     if min_historie is None:
         raise ValueError("Mindesthistorie muss eine endliche positive Monatszahl sein.")
@@ -344,10 +347,10 @@ def effizienz_kennzahlen(trades_pfad: str | None, startkapital: float | None,
         retdd_monat = None
     if retdd_jahr is not None and not math.isfinite(retdd_jahr):
         retdd_jahr = None
-    # Nutzer-Regel 05.10. (Mindesthistorie): Unter 3 Monaten Trade-Spanne
-    # KEIN RetDD/Calmar (Ertragswerte bleiben als Anzeige gefüllt — sie
-    # sind kein Gate-Wert mehr; pipeline.refresh_efficiency sperrt über
-    # den Status "historie_zu_kurz" auch den Vorbehaltswert).
+    # Nutzer-Regel 05.10., gelockert 29.10.2026 (4 Wochen): Unter der
+    # Mindest-Trade-Spanne KEIN RetDD/Calmar (Ertragswerte bleiben als
+    # Anzeige gefüllt; pipeline.refresh_efficiency sperrt über den Status
+    # "historie_zu_kurz" auch den Vorbehaltswert).
     if monate < min_historie:
         retdd_monat = None
         retdd_jahr = None

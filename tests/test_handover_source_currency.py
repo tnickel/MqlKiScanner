@@ -22,7 +22,7 @@ def test_source_adapter_preserves_native_money_without_implicit_usd(currency):
 
 
 @pytest.mark.parametrize("currency", [None, "unknown", "USC", "EUR", "USD"])
-@pytest.mark.parametrize("alias", ["mql5", "mql_mirror", "robo", "pelican", "vantage", "vant", "zulu"])
+@pytest.mark.parametrize("alias", ["mql5", "mql_mirror", "pelican", "vantage", "vant", "zulu"])
 def test_source_pipeline_currency_guard_precedes_fx_and_terminal(tmp_path, monkeypatch, currency, alias):
     db.init_db()
     qid = db.add_quelle(alias, "Synthetic MQL mirror", "http://127.0.0.1:1")
@@ -50,11 +50,12 @@ def test_source_pipeline_currency_guard_precedes_fx_and_terminal(tmp_path, monke
 
 
 @pytest.mark.parametrize("version,alias", [("pelican", "pelican"), ("vantage", "vant"),
-                                         ("zulu", "zulu"), ("mql5", "robo")])
+                                         ("zulu", "zulu"), ("mql5", "robo"), (None, "robo")])
 def test_documented_usd_normalizing_source_contract_is_preserved(version, alias):
+    # Robo seit Nutzer-Freigabe 29.10.2026 USD-normalisiert am KÜRZEL
+    # (CopyFX-PnL USD, Zehntel-Lots ×10 bewiesen 6544ef7) — die kollidierende
+    # mql4/mql5-Version allein beweist weiterhin nichts.
     metrics = {"Balance": 1100}
-    if alias == "robo":
-        metrics["Currency"] = "USD"  # Actual Robo contract; its alias proves no unit.
     stats = ingest.metrics_zu_stats({"version": version, "metrics": metrics}, alias)
     assert stats["account_currency"] == "USD"
     assert stats["balance_usd"] == 1100
@@ -71,8 +72,10 @@ def test_pelican_currency_is_original_account_while_exported_money_is_usd():
 @pytest.mark.parametrize("currency", [None, "USC", "EUR", "USD"])
 def test_catalogue_retains_verified_currency_before_study_guard(tmp_path, currency):
     db.init_db()
-    qid = db.add_quelle("robo", "Synthetic MQL mirror", "http://127.0.0.1:1")
-    db.katalog_upsert_many("robo", [{"signal_id": 123, "version": "mql5", "platform": "mt5"}])
+    # Robo ist seit 29.10. USD-normalisiert (Kürzel) — für Fremdwährungs-Fälle
+    # eine neutrale Spiegelquelle ohne Normalisierungsvertrag.
+    qid = db.add_quelle("mql_mirror", "Synthetic MQL mirror", "http://127.0.0.1:1")
+    db.katalog_upsert_many("mql_mirror", [{"signal_id": 123, "version": "mql5", "platform": "mt5"}])
     for kind, payload in (("trades", b"synthetic native export"),
             ("metrics", json.dumps({"signalId": 123, "version": "mql5", "metrics": {
                 "Currency": currency, "Balance": 1100, "InitialDeposit": 1000}}).encode())):
@@ -87,7 +90,7 @@ def test_catalogue_retains_verified_currency_before_study_guard(tmp_path, curren
     else:
         with pytest.raises(ValueError, match="Kontowährung"):
             pipeline.require_usd_account(result)
-    assert stats[("robo", 123)]["balance_usd"] == (1100 if currency == "USD" else None)
+    assert stats[("mql_mirror", 123)]["balance_usd"] == (1100 if currency == "USD" else None)
 
 
 def test_catalogue_manual_reload_carries_currency_proof_to_result(tmp_path, monkeypatch):
@@ -104,8 +107,8 @@ def test_catalogue_manual_reload_carries_currency_proof_to_result(tmp_path, monk
 
 def test_failed_native_metrics_reload_invalidates_previous_usd_proof_for_new_csv(tmp_path, monkeypatch):
     db.init_db()
-    qid = db.add_quelle("robo", "Synthetic native mirror", "http://127.0.0.1:1")
-    result = pipeline.ScanResult(id=123, quelle="robo", quelle_id=qid, platform="MT5",
+    qid = db.add_quelle("mql_mirror", "Synthetic native mirror", "http://127.0.0.1:1")
+    result = pipeline.ScanResult(id=123, quelle="mql_mirror", quelle_id=qid, platform="MT5",
                                  quelle_version="mql5", account_currency="USD")
     monkeypatch.setattr(ingest, "hole_metrics", Mock(side_effect=downloader_client.DownloaderError("synthetic metadata error")))
     monkeypatch.setattr(ingest, "hole_trades", lambda *_: (str(tmp_path / "new_native.csv"), True))

@@ -617,7 +617,7 @@ und ihrer Risiken. Das ist keine Freigabe zum Abonnieren oder Handeln.
   eine im Laufprofil aktivierte DD-Grenze; keine Grenze aus Erinnerung ergänzen.
   Ertrag und Risiko werden über den gelieferten RetDD gemeinsam eingeordnet.
 - Der Mindestumfang dieses Recherchelaufs steht im Laufprofil; vorgesehen sind
-  mindestens zwei Monate und 50 abgeschlossene, normalisierte Trades. Diese
+  mindestens vier Wochen und 25 abgeschlossene (Regel 29.10.2026), normalisierte Trades. Diese
   Untergrenzen garantieren keine statistische Belastbarkeit. Beachte gemeinsame
   Körbe, zeitliche Häufung und fehlende unabhängige Verlustphasen.
 - Ordne Jahres-RetDD/CAGR aus weniger als zwölf Monaten ausdrücklich als
@@ -730,7 +730,7 @@ künftigen Gewinn. Prüfe die Kandidatenthese und ihre stärkste Gegenposition.
   Exportfenster. Behaupte keinen exakten aktuellen Broker-Maximaldrawdown.
 - Ein hoher DD kann bei entsprechendem Ertrag und RetDD einen Recherchekandidaten
   ergeben. Eine DD-Obergrenze gilt nur, wenn sie im Laufprofil aktiviert ist.
-- Zwei Monate und 50 Trades sind das vorgesehene Mindestmaterial dieses Modus,
+- Vier Wochen und 25 Trades (Regel 29.10.2026) sind das vorgesehene Mindestmaterial dieses Modus,
   kein statistischer Gütenachweis. Benenne tatsächliche Zeitspanne, unabhängige
   Handelsphasen/Körbe und Unsicherheit kurzer Annualisierungen.
 - Abonnenten innerhalb derselben Quelle beurteilen. Verwende den gelieferten

@@ -473,8 +473,11 @@ def metrics_zu_stats(antwort: dict | None, quelle_kuerzel: str | None = None,
     # transport protocol alone never establishes a USD contract (Robo also uses
     # mql4/mql5 version names). Pelican's Currency describes the original
     # account, whereas its successful CSV and money metrics are already USD.
+    # Robo (Nutzer-Freigabe 29.10.2026): erkannt am KÜRZEL, nicht an der
+    # Version — CopyFX-PnL ist USD, Zehntel-Lots ×10 bewiesen (6544ef7).
     normalizes_usd = (str(quelle_version or antwort.get("version") or "").lower()
-                      in {"pelican", "vantage", "zulu"})
+                      in {"pelican", "vantage", "zulu"}
+                      or str(quelle_kuerzel or "").strip().lower() == "robo")
     currency = (str(metrics["Currency"]).strip().upper()
                 if metrics.get("Currency") is not None else None)
     if normalizes_usd:

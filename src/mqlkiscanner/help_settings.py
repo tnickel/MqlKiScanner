@@ -154,7 +154,7 @@ eigene geometrische Monatsrendite mit **größer oder gleich** der eingestellten
 
 **Mindest-Calmar pro Jahr** bleibt ein zusätzliches Grün-Gate: Jahres-CAGR geteilt
 durch belastbaren eigenen H1-Equity-DD einschließlich Floating, gegen die konfigurierte
-Schwelle (Standard 3,0). Unter drei Monaten Trade-Historie oder ohne belastbare
+Schwelle (Standard 3,0). Unter vier Wochen Trade-Historie (Nutzer 29.10.2026) oder ohne belastbare
 Messbasis bleibt Grün gesperrt. Ein größerer zulässiger DD ersetzt diese Prüfung nicht.
 
 Drawdown und Ertrag allein beweisen keine Sicherheit. Peak-Exposure, Martingale,

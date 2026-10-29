@@ -13,6 +13,42 @@ Dieser Block und die aktuellen Design-Regeln ordnen die datierten
 Umsetzungsnotizen unten ein. Frühere Testzahlen, Bewertungen und inzwischen
 abgelöste Regeln sind historische Angaben, keine aktuellen Laufnachweise.
 
+- **Robo-Sperre aufgehoben + Messregeln gelockert (Nutzerentscheidung
+  29.10.2026, „sieh zu das die Daten für SARUJA durchkommen"):** Die
+  Robo-Tradeforensik-Sperre vom 23.10. ist ENTFERNT. RoboMonitor:
+  `TradeUnits` freigegeben (`released_user_2026_10_29`; die beweisbasierte
+  Zehntel-Lots-×10-Konvertierung und Balance-Zeilen aus 6544ef7 bleiben
+  tragend), Closing-DD-Beweiskette (TradeDdStore/Chart/Payload) wieder aktiv,
+  gezielter Einzelanbieter-Refresh implementiert (ProviderRefresh-Job,
+  Vertrag wie Vantage: providerId/version/platformRefreshed/fullHistory/
+  refreshedAt; nur mql4/mql5), Health meldet providerRefresh=true. Scanner:
+  Der Robo-Frühzweig (nur Quellenwerte) im Abonnenten-Datenpfad ist entfernt —
+  Robo läuft durch Refresh/Metrics/Trades wie jede Quelle; Ratingwerte
+  (ProfitUsd usw.) bleiben als `quellen_profitabilitaet`-Zusatzbeleg sichtbar;
+  `ingest` erkennt Robo-USD am Kürzel (nicht an der mql4/mql5-Version, die
+  mit MqlDownloader kollidiert). **Messregeln:** Kursabdeckungsgrenze in den
+  Abonnenten-Messungen 95 % → >80 % (`min_abdeckung`-Parameter an
+  `equity_rekonstruktion.rekonstruiere`/`_rekonstruiere_mit_feed_fallback`;
+  Hauptscanner behält 95 %); unter 95 % trägt das Ergebnis
+  `h1_abdeckung_vorbehalt`. Mindesthistorie 3 Monate → 4 Wochen
+  (portfolio_statistik.MIN_HISTORIE_MONATE = 28/MONAT_TAGE, gilt Haupt- und
+  Abonnenten-Workflow). Nachtrag gleicher Tag: Mindest-Trades 50 → 25
+  (Nutzerentscheidung „genau dann senke die Regel auf 25 Trades ab";
+  MIN_TRADES=25, _ki_possible nutzt die Konstanten, UI-/Prompt-Texte
+  synchron). SARUJA damit eligible (Rang 2). UI-/Hilfe-/Prompt-Texte
+  synchron angepasst. **Live-Acceptanz SARUJA (robo:21596244, 2.113 Abos):**
+  RoboMonitor neu gebaut+neu gestartet, trades.csv liefert (Balance 10.000 +
+  XAUUSD-Trades), gezielter Refresh zog frische Deals (meta 29.10. 14:00),
+  Messung im Datenauftrag da69c42a: **True-DD (H1-Equity inkl. Floating)
+  34,05 % bei 97 % Abdeckung, verlässlich**, Kapitalbasis 10.000 USD BELEGT
+  (CSV-Balance-Zeile, kein Modell), 49 Trades über 1,84 Monate, CAGR/RetDD
+  nur annualisiertes Szenario; eligible blockiert allein an der
+  50-Trade-Regel (49) — durch die spätere 25-Trade-Regel desselben Tages
+  abgelöst; SARUJA ist eligible (Rang 2). Robo-Testsuite 224 grün; Scanner-Vollsuite
+  4.160 bestanden, 1 übersprungen, 4 KI-Tests abgewählt. Vorherige Sperr-Regeln
+  („Robo-Tradeforensik gesperrt", Quellenprofitabilitäts-Frühzweig) sind
+  damit historisch.
+
 - **Review-Behebungen (25.10.2026, Nutzerauftrag):** Pelican/Zulu erhalten
   frische Zähler auch beim Herausfallen aus der Auswahl; Robo veröffentlicht
   gültige gelesene Nullzähler. Scanner erhält den Quellenkontext im

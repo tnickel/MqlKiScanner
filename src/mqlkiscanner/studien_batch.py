@@ -319,12 +319,16 @@ def _laufe(jobs: list, control: dict, settings: dict,
         control["restzeit_s"] = 0
 
 
-def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
+def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker,
+                                    min_abdeckung: float | None = None):
     """Auch Teilhistorie oder unbrauchbare Zeitbasis an weiteren Brokern pruefen.
 
     Der bisherige Symbolfallback bleibt der erste Versuch. Liefert er keine
     bestandene Messung, werden weitere Terminals als ganze, getrennte Feeds
     verglichen. Kein Zusammenkleben ihrer Zeitreihen, kein Auffuellen von Bars.
+    ``min_abdeckung`` (Nutzer-Freigabe 29.10.2026, >80 %) senkt nur die
+    Verlässlichkeitsgrenze der Abonnenten-Messungen; Batch-Studien und
+    Hauptscanner behalten ohne Angabe die 95-%-Norm.
     """
     from .forensics import equity_rekonstruktion, feed_auswahl
     from .equity_studie import _KursProvenienz
@@ -373,7 +377,8 @@ def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
         try:
             provenienz = _KursProvenienz(anbieter)
             best = erfasst(equity_rekonstruktion.rekonstruiere(
-                parsed, provenienz, kapital, broker=broker), "symbol_fallback", provenienz)
+                parsed, provenienz, kapital, broker=broker,
+                min_abdeckung=min_abdeckung), "symbol_fallback", provenienz)
         except Exception as error:
             fehler(error, "berechnung_fehlgeschlagen")
         if best is None or not feed_auswahl.ausreichend(best):
@@ -386,7 +391,8 @@ def _rekonstruiere_mit_feed_fallback(parsed, anbieter, kapital, broker):
                 try:
                     provenienz = _KursProvenienz(anbieter)
                     kandidat = erfasst(equity_rekonstruktion.rekonstruiere(
-                        parsed, _AktuellerFeed(provenienz), kapital, broker=broker), "einzelfeed", provenienz)
+                        parsed, _AktuellerFeed(provenienz), kapital, broker=broker,
+                        min_abdeckung=min_abdeckung), "einzelfeed", provenienz)
                 except Exception as error:
                     fehler(error, "berechnung_fehlgeschlagen")
                     continue

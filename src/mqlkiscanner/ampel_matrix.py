@@ -146,7 +146,7 @@ KRITERIEN: list[Kriterium] = [
         "retdd_monat bleibt sichtbare Zahl, entscheidet aber nicht; Calmar "
         "mindestens min_calmar_jahr ist die verbindliche "
         "Empfehlungsvoraussetzung. "
-        "Unter 3 Monaten Trade-Historie oder ohne belastbare "
+        "Unter 4 Wochen Trade-Historie (Regel 29.10.2026) oder ohne belastbare "
         "Equity-Messung nicht messbar und kein Grün. Messzeitraum, "
         "Kapitalbasis und H1-Grenzen beachten; keine Prognose."),
     Kriterium(
@@ -435,7 +435,7 @@ def _retdd_zelle(r, settings: dict | None = None) -> Zelle:
         }.get(r.effizienz_befund.get("effizienz_status"), "")
         return Zelle(KEINE_DATEN, "unbekannt",
                      "Calmar nicht berechenbar: aktuelle Rendite, mindestens "
-                     "3 Monate Trade-Historie und ein belastbar gemessener "
+                     "4 Wochen Trade-Historie (Regel 29.10.2026) und ein belastbar gemessener "
                      "positiver Max-Equity-Drawdown sind erforderlich "
                      "(kein Rendite-Risiko-Urteil möglich; "
                      "ohne diesen Nachweis kein Grün). Plattform-, Balance- "

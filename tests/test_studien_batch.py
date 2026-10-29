@@ -348,7 +348,7 @@ def test_batch_nutzt_broker_aus_aufgeloesten_metrics_ohne_id_sonderfall(
     monkeypatch.setattr(studien_batch.katalog, 'metrics_stats',
         lambda r: {'initial_deposit_usd': 20000.0, 'broker_server': 'vantage'})
     captured = {}
-    def reconstruct(parsed, provider, capital, *, broker=None):
+    def reconstruct(parsed, provider, capital, *, broker=None, min_abdeckung=None):
         captured.update(capital=capital, broker=broker)
         return {'status': 'skipped', 'grund': 'Testkursanbieter'}
     monkeypatch.setattr(equity_rekonstruktion, 'rekonstruiere', reconstruct)
@@ -375,7 +375,7 @@ def test_batch_markiert_tatsaechliche_kapitalbasis_nach_csv_kaskade(
         path.write_text(content.replace(KOPF, KOPF+';'.join(balance)+'\n', 1), encoding='utf-8-sig')
     monkeypatch.setattr(studien_batch.katalog, 'metrics_stats', lambda _: dict(stats))
     captured = {}
-    def reconstruct(parsed, provider, capital, *, broker=None):
+    def reconstruct(parsed, provider, capital, *, broker=None, min_abdeckung=None):
         captured['capital'] = capital
         return {'status': 'ok', 'verlaesslich': True, 'equity_dd_pct': 10,
                 'equity_dd_pct_raw': 10, 'equity_dd_usd': capital*.1}
@@ -410,7 +410,7 @@ def test_direkte_mql5_seitenbasis_nur_positiv_und_nach_cached_metrics(
         path.write_text(content.replace(KOPF, KOPF+';'.join(row)+'\n', 1), encoding='utf-8-sig')
     monkeypatch.setattr(studien_batch.katalog, 'metrics_stats', lambda _: dict(stats))
     captured = {}
-    def reconstruct(parsed, provider, capital, *, broker=None):
+    def reconstruct(parsed, provider, capital, *, broker=None, min_abdeckung=None):
         captured['capital'] = capital
         return {'status': 'skipped', 'grund': 'Testkursanbieter'}
     monkeypatch.setattr(equity_rekonstruktion, 'rekonstruiere', reconstruct)

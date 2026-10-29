@@ -21,7 +21,7 @@ und ihrer Risiken. Das ist keine Freigabe zum Abonnieren oder Handeln.
   eine im Laufprofil aktivierte DD-Grenze; keine Grenze aus Erinnerung ergänzen.
   Ertrag und Risiko werden über den gelieferten RetDD gemeinsam eingeordnet.
 - Der Mindestumfang dieses Recherchelaufs steht im Laufprofil; vorgesehen sind
-  mindestens zwei Monate und 50 abgeschlossene, normalisierte Trades. Diese
+  mindestens vier Wochen und 25 abgeschlossene (Regel 29.10.2026), normalisierte Trades. Diese
   Untergrenzen garantieren keine statistische Belastbarkeit. Beachte gemeinsame
   Körbe, zeitliche Häufung und fehlende unabhängige Verlustphasen.
 - Ordne Jahres-RetDD/CAGR aus weniger als zwölf Monaten ausdrücklich als

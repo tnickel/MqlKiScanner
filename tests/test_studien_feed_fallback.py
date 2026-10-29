@@ -26,7 +26,7 @@ class Feeds:
 
 def setup(monkeypatch, reports):
     calls=[]
-    def reko(parsed, provider, capital, *, broker=None):
+    def reko(parsed, provider, capital, *, broker=None, min_abdeckung=None):
         index = provider.anbieter.terminal_idx if isinstance(provider, studien_batch._AktuellerFeed) else provider.terminal_idx
         calls.append((index, hasattr(provider, 'hat_weiteren_terminal'), capital, broker))
         response=reports[index]
@@ -160,7 +160,7 @@ def test_reset_failure_preserves_best_report(monkeypatch,raises):
 def test_initial_error_after_symbol_switch_resets_before_comparison(monkeypatch):
     feeds=Feeds()
     calls=[]
-    def reko(parsed,provider,capital,*,broker=None):
+    def reko(parsed,provider,capital,*,broker=None,min_abdeckung=None):
         calls.append(feeds.terminal_idx)
         if not isinstance(provider,studien_batch._AktuellerFeed):
             feeds.terminal_idx=2

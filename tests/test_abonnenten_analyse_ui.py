@@ -86,7 +86,7 @@ def test_dialog_defaults_start_and_no_automatic_start(backend):
     assert parallel.proto.min == 1 and parallel.proto.max == 10 and parallel.proto.step == 1
     assert type(config.DEFAULT_SETTINGS["abonnenten_analyse_parallelitaet"]) is int
     assert config.DEFAULT_SETTINGS["abonnenten_analyse_parallelitaet"] == 10
-    assert any("2 Monate und 50" in x.value for x in at.info)
+    assert any("4 Wochen" in x.value and "25" in x.value for x in at.info)
     at.button(key="abonnenten_analyse_start").click().run()
     assert not at.exception, at.exception
     assert backend.started == [(["mql5", "pelik"], 30.0, None)]

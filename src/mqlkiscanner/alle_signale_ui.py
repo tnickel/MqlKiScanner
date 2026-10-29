@@ -635,7 +635,7 @@ def render_detail(auswahl, statistik: dict | None, *, key_prefix: str = "detail"
                 "Schwelle 1,0 verlangte aufgezinst Calmar 14-40 je nach DD — "
                 "nicht risikoneutral. **Belastbar** = Kursabdeckung geprüft "
                 "und Zeitbasis bestanden — nur so zählt der Wert für Grün; "
-                "unter 3 Monaten Historie bleibt er unbekannt.")
+                "unter 4 Wochen Historie (Regel 29.10.2026) bleibt er unbekannt.")
         elif retdd_vorbehalt is not None:
             roh = getattr(auswahl, "equity_dd_rekon_roh_pct", None)
             grund = (getattr(auswahl, "retdd_vorbehalt_grund", "")

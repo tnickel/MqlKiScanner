@@ -56,7 +56,7 @@ def test_regelwerk_beschreibt_aktuellen_jahres_calmar_statt_monats_gate(settings
     text = regelwerk_markdown(settings)
     assert f"Jahres-Calmar mindestens {minimum}" in text
     assert f"Jahres-Calmar ≥ {minimum}" in text
-    assert "mindestens drei Monate Trade-Historie" in text
+    assert "mindestens vier Wochen Trade-Historie" in text
     assert "eigene belastbare H1-Equity-Messung inklusive Floating" in text
     assert "Monats-RetDD ist eine Zusatzkennzahl ohne eigenes Mindest-Gate" in text
     assert "Monitor-DD nur als Kanal der Drawdown-Schranke" in text

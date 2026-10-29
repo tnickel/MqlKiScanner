@@ -25,13 +25,13 @@ def set_export(env, count=50, days=65, **options):
     equity.update(trades_total=count, trades_mit_kurs_und_kontrakt=count)
 
 
-@pytest.mark.parametrize("count,days", [(49, 65), (50, 15), (3, 4), (1, 65)])
+@pytest.mark.parametrize("count,days", [(24, 65), (50, 15), (3, 4), (1, 65)])
 def test_below_material_gate_still_measures_all_trades_h1_and_returns(service_env, monkeypatch, count, days):
     entry, client, created, equity, _ = service_env
     set_export(service_env, count, days)
     seen = []
 
-    def reconstruct(parsed, provider, capital, broker):
+    def reconstruct(parsed, provider, capital, broker, min_abdeckung=None):
         seen.append(len(parsed.trades))
         return deepcopy(equity)
 
@@ -45,18 +45,18 @@ def test_below_material_gate_still_measures_all_trades_h1_and_returns(service_en
     assert result["rendite_zeitraum_pct"] == pytest.approx(count)
     assert result["cagr_jahr_pct"] is not None and result["retdd_jahr"] is not None
     assert result["eligible"] is False and result["mindestmaterial_erfuellt"] is False
-    assert result["rang_pruefhinweis"] and "50-Trade" in result["annualisierung_hinweis"]
+    assert result["rang_pruefhinweis"] and "25-Trade" in result["annualisierung_hinweis"]
     assert result["trade_history_complete"] is True
     assert result["trade_history_status"] == "vollstaendig"
     db.verify_trade_file(result["trades_path"], result["trades_sha256"])
 
 
 def test_legacy_short_history_still_stops_before_terminal(service_env):
-    set_export(service_env, 49, 65)
+    set_export(service_env, 10, 65)
     result = measure(service_env, settings={})
     assert result["data_complete"] is True and result["eligible"] is False
     assert result["equity_dd_pct"] is None and not service_env[2]
-    assert "Weniger als 50" in result["grund"]
+    assert "Weniger als 25" in result["grund"]
 
 
 @pytest.mark.parametrize("currency", ["EUR", "AUD", None])
@@ -159,7 +159,7 @@ def test_full_export_is_not_shortened_to_material_or_prompt_limits(service_env, 
     count = 517
     set_export(service_env, count, 120)
     seen = []
-    monkeypatch.setattr(data, "_rekonstruiere_mit_feed_fallback", lambda parsed, *args:
+    monkeypatch.setattr(data, "_rekonstruiere_mit_feed_fallback", lambda parsed, *args, **kwargs:
                         (seen.append(len(parsed.trades)) or deepcopy(service_env[3])))
     monkeypatch.setattr(GlmClient, "__init__", lambda *a, **k: pytest.fail("No prompt processing in data-only mode"))
     result = measure(service_env)

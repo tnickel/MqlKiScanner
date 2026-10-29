@@ -363,7 +363,7 @@ class ScanResult:
             self.ertrag_monat_geom_pct = None
         if self.forensik_stale or flow_equity_unbelegt or not endlich(self.cagr_jahr_pct):
             self.cagr_jahr_pct = None
-        # Nutzer-Regel 05.10. (Mindesthistorie): Unter 3 Monaten Trade-Spanne
+        # Nutzer-Regel 05.10., gelockert 29.10.2026: Unter 4 Wochen Trade-Spanne
         # ist kein belastbarer RetDD/Calmar — der Produzent (effizienz_
         # kennzahlen) meldet "historie_zu_kurz"; Ertragswerte bleiben als
         # Anzeige stehen, aber kein Gate-Wert (auch kein Vorbehalt).

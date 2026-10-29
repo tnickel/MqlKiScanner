@@ -585,7 +585,8 @@ def ermittle_gmt_offset(trades, bars_je_symbol: dict[str, list[dict]],
 
 def rekonstruiere(parsed, kurse, startkapital: float,
                   broker: str | None = None, *, gmt_offset_h: int | None = None,
-                  fx_lookup=None, include_curve: bool = False, compute_dd: bool = True) -> dict:
+                  fx_lookup=None, include_curve: bool = False, compute_dd: bool = True,
+                  min_abdeckung: float | None = None) -> dict:
     """Equity-Kurve auf H1-Raster + maximaler Equity-Drawdown.
 
     kurse: Anbieter mit hole_h1(symbol, von, bis, gmt_offset_s) (kursdaten.
@@ -594,9 +595,14 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     ``compute_dd=False`` requires ``include_curve=True``: return coverage and
     the constructed curve without calculating or emitting drawdown metrics.
     Used by explicit scenarios whose pre-cost anchor differs from this curve.
+    ``min_abdeckung`` senkt NUR die Verlässlichkeitsgrenze dieses Aufrufs
+    (Nutzer-Freigabe 29.10.2026: Abonnenten-Messungen akzeptieren >80 %).
+    Fehlende Kurse erfinden weiterhin keine Messpunkte; alle anderen
+    Belastbarkeitsbedingungen (FX, Trades, Zeitbasis) wirken unverändert.
     """
     if not compute_dd and not include_curve:
         raise ValueError("compute_dd=False erfordert include_curve=True")
+    schranke_abdeckung = SCHRANKE_MIN_ABDECKUNG if min_abdeckung is None else min_abdeckung
     trades = [t for t in parsed.trades if t.close_time and t.open_time]
     if not trades:
         return {"test": "equity_rekonstruktion", "status": "skipped",
@@ -939,7 +945,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     # durften frueher still verschwinden, waehrend die 95-%-Abdeckungspruefung
     # nur Rasterpunkte offener Positionen zählte (Review 29.09., Befund 7).
     trades_vollstaendig = len(nutzbare) == len(trades)
-    verlaesslich = (abdeckung >= SCHRANKE_MIN_ABDECKUNG and not fx_fehlt
+    verlaesslich = (abdeckung >= schranke_abdeckung and not fx_fehlt
                     and trades_vollstaendig and zeitbasis.verlaesslich)
 
     # Nutzer-Regel 04.10. nachts: Fehlende Kurse EINZELNER Symbole werfen
@@ -956,7 +962,7 @@ def rekonstruiere(parsed, kurse, startkapital: float,
     symbole_nicht_betrachtet = sorted(
         set(fehlende_symbole or []) | set(symbole_ohne_kontrakt or []))
     teilmessung = (not verlaesslich and bool(symbole_nicht_betrachtet)
-                   and not fx_fehlt and abdeckung_teil >= SCHRANKE_MIN_ABDECKUNG
+                   and not fx_fehlt and abdeckung_teil >= schranke_abdeckung
                    and zeitbasis.verlaesslich)
     if teilmessung:
         verlaesslich = True  # Nenner-freigabe; Kennzeichnung siehe unten
@@ -1014,8 +1020,8 @@ def rekonstruiere(parsed, kurse, startkapital: float,
         ergebnis["fx_luecke"] = True
     if not verlaesslich:
         gruende = []
-        if abdeckung < SCHRANKE_MIN_ABDECKUNG:
-            gruende.append(f"Abdeckung < {SCHRANKE_MIN_ABDECKUNG:.0%} "
+        if abdeckung < schranke_abdeckung:
+            gruende.append(f"Abdeckung < {schranke_abdeckung:.0%} "
                            f"(gerundet {abdeckung:.1%})")
         if fx_fehlt:
             gruende.append("EZB-Kurslücke")

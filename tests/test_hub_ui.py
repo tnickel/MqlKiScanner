@@ -34,7 +34,7 @@ def test_sidebar_zeigt_konfigurierte_kriterien_ohne_dienste(
                      for e in getattr(at.sidebar, art))
     for regel in erwartete_regeln:
         assert regel in text
-    assert "3 Monate Trade-Historie" in text
+    assert "Wochen Trade-Historie" in text
     assert "Fehlender SL-Nachweis ist neutral" in text
     assert "> 5 % Ertrag / Monat" not in text
     if monatshuerde is None:

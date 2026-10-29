@@ -18,14 +18,20 @@ from .studien_batch import _rekonstruiere_mit_feed_fallback
 from .zahlen import endliche_zahl as _zahl, json_sicher as _json_sicher
 
 POLICY_VERSION = "abonnenten_recherche_v1"
-MIN_MONATE = 2.0
-MIN_TRADES = 50
+# Nutzer-Entscheidung 29.10.2026: Mindesthistorie von 2 Monaten auf 4 Wochen
+# gesenkt (SARUJA-Fall: CopyFX liefert nur das letzte Deal-Fenster); Mindest-
+# trades von 50 auf 25 gesenkt (SARUJA: 49 normalisierte Trades).
+MIN_MONATE = 28.0 / portfolio_statistik.MONAT_TAGE
+MIN_TRADES = 25
+# Nutzer-Freigabe 29.10.2026: Kursabdeckung >80 % genügt für die Messungen
+# der Abonnenten-Statistik; unter 95 % bleibt der Vorbehalt sichtbar.
+MIN_ABDECKUNG_ABO = 0.80
 MESSHINWEIS = (
     "Historisches Exportfenster; aktuelle offene Positionen nicht erfasst. "
     "Floating der exportierten Positionen aus H1-Bar-Schlüssen; keine "
     "Intrabar-Tiefs und kein exakter aktueller Broker-Maximaldrawdown. "
     "Jahres-RetDD ist annualisiert aus der ausgewiesenen Trade-Zeitspanne; "
-    "zwei Monate und 50 Trades garantieren keine statistische Belastbarkeit."
+    "vier Wochen und 25 Trades garantieren keine statistische Belastbarkeit."
 )
 
 
@@ -77,12 +83,12 @@ def robo_quellenwerte(raw: dict, sid: int, version: str) -> dict:
 
 
 def pruefe_mindestmaterial(dauer_monate, trades) -> tuple[bool, str]:
-    """Reine Prüfung des expliziten 2-Monate-/50-Positionen-Profils."""
+    """Reine Prüfung des expliziten 4-Wochen-/25-Positionen-Profils (29.10.)."""
     monate, anzahl = _zahl(dauer_monate), _zahl(trades)
     if monate is None or monate < MIN_MONATE:
-        return False, "Trade-Historie unter 2 Monaten oder Zeitspanne unbelegt."
+        return False, "Trade-Historie unter 4 Wochen oder Zeitspanne unbelegt."
     if anzahl is None or not anzahl.is_integer() or anzahl < MIN_TRADES:
-        return False, "Weniger als 50 abgeschlossene normalisierte Trades."
+        return False, "Weniger als 25 abgeschlossene normalisierte Trades."
     return True, ""
 
 
@@ -154,7 +160,7 @@ def _daten_effizienz(result, path, kapital, dd):
     result["annualisierung_hinweis"] = (
         "Annualisierte Renditen/RetDD sind geometrische Hochrechnungen des ausgewiesenen Exportfensters; "
         "kein beobachtetes Jahresergebnis und keine künftige Renditezusage. "
-        "Die 2-Monate-/50-Trade-Regel betrifft nur die Recherche-Rangtauglichkeit.")
+        "Die 4-Wochen-/25-Trade-Regel (29.10.) betrifft nur die Recherche-Rangtauglichkeit.")
     return eff
 
 
@@ -244,14 +250,6 @@ class AnalyseDaten:
             if not version:
                 raise ValueError("Eindeutige Quellen-/Plattformversion fehlt.")
             cli = quellen.client_fuer_quelle(quelle)
-            if source == "robo":
-                if version not in {"mql4", "mql5", "rst"}:
-                    raise ValueError("Unbekannte Robo-Plattform in der Quellenprofitabilität.")
-                self.log(f"robo:{sid}: Gewinn und Rendite aus Quellenkennzahlen lesen …")
-                raw = ingest.hole_metrics(quelle, sid, version, client=cli, allow_offline_cache=False)
-                self._stop(should_stop)
-                result.update(robo_quellenwerte(raw, sid, version))
-                return _json_sicher(result)
             self.log(f"{source}:{sid}: aktuelle vollständige Quelldaten beschaffen …")
             refresh = cli.refresh_provider(sid, version, should_stop=should_stop)
             self._stop(should_stop)
@@ -277,6 +275,16 @@ class AnalyseDaten:
             stats = ingest.metrics_zu_stats(raw_metrics, quelle_kuerzel=source,
                                             quelle_version=version)
             result["quellen_stats"] = stats
+            if source == "robo":
+                # Nutzer-Freigabe 29.10.2026: volle Messung inklusive Trades
+                # statt des früheren Quellenwerte-Frühzweigs; die Ratingwerte
+                # bleiben als Zusatzbeleg neben der eigenen Rechnung sichtbar.
+                roh_metrics = raw_metrics.get("metrics") if isinstance(
+                    raw_metrics.get("metrics"), dict) else {}
+                result["quellen_profitabilitaet"] = {
+                    key: roh_metrics.get(key) for key in (
+                        "ProfitUsd", "YieldWindowPct", "YieldWindowMonths",
+                        "RatingBalanceUsd", "RatingCurrency")}
             currency = str(stats.get("account_currency") or "").strip().upper()
             result["account_currency"] = currency or None
             if currency != "USD" and not data_only:
@@ -373,7 +381,8 @@ class AnalyseDaten:
             self._stop(should_stop)
             provider = self._kurse()
             equity = _rekonstruiere_mit_feed_fallback(parsed, provider, kapital,
-                                                      stats.get("broker_server"))
+                                                      stats.get("broker_server"),
+                                                      min_abdeckung=MIN_ABDECKUNG_ABO)
             equity["account_currency"] = currency
             result["equity"] = equity
             findings["equity_rekonstruktion"] = equity

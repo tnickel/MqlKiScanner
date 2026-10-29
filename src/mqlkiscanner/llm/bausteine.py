@@ -88,7 +88,7 @@ Nenne die tatsaechliche Schaetzmethode; eine komplexe Schaetzung darf nicht
 pauschal als 10.000-USD-Annahme oder als belegtes Initial Deposit erscheinen.
 Bei fehlenden/veralteten Werten: nicht berechenbar, KEINE eigene Division
 oder Ersatzrechnung. Nur Engine-Gruen und ALLE eingesetzten Nutzer-Kriterien
-erlauben eine Empfehlung: Calmar (retdd_jahr = CAGR / gemessener Max-Equity-DD) mindestens an der konfigurierten min_calmar_jahr-Schwelle (Default 3,0 — Nutzer-Entscheid 05.10.; unter 3 Monaten Trade-Historie gilt Calmar als nicht bestimmbar), geometrische Monatsrendite
+erlauben eine Empfehlung: Calmar (retdd_jahr = CAGR / gemessener Max-Equity-DD) mindestens an der konfigurierten min_calmar_jahr-Schwelle (Default 3,0 — Nutzer-Entscheid 05.10.; unter 4 Wochen Trade-Historie (Regel 29.10.2026) gilt Calmar als nicht bestimmbar), geometrische Monatsrendite
 mindestens an der AKTUELL konfigurierten Ertragsschwelle sowie keine
 Ausschluss- oder harte Risikoregel. Der Risiko-Score ist eine Zusatzinformation,
 kein eigenstaendiges Gruen- oder Empfehlungsgate. Die aktuelle Drawdown-

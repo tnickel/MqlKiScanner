@@ -253,7 +253,7 @@ def render_defaults_editor(settings: dict) -> None:
     with st.expander("Standard für die Abonnentenanalyse", expanded=False):
         weight, limit = _policy_inputs(settings, "admin_abonnenten_analyse")
         parallel = _parallelitaet_input(settings, "admin_abonnenten_analyse")
-        st.caption("Top 200 je Quelle, mindestens 1 Abonnent · 2 Monate und 50 Trades · "
+        st.caption("Top 200 je Quelle, mindestens 1 Abonnent · 4 Wochen und 25 Trades (29.10.) · "
                    "Kurztest für alle auswertbaren Strategien, Vollbericht für die besten 5.")
         if st.button("Analyse-Standard speichern", key="admin_abonnenten_standard",
                      icon=":material/save:"):
@@ -292,7 +292,7 @@ def analyse_dialog() -> None:
         st.session_state["_abonnenten_analyse_letzter_modus"] = mode
     weight, limit = _policy_inputs(settings, "abonnenten_analyse_start", auswahl_modus=mode)
     parallel = _parallelitaet_input(settings, "abonnenten_analyse_start")
-    st.info("Mindestens 2 Monate und 50 abgeschlossene Trades. Fehlende Daten werden automatisch geladen. "
+    st.info("Mindestens 4 Wochen und 25 abgeschlossene Trades (29.10.). Fehlende Daten werden automatisch geladen. "
             + ("Kurz-KI ist ein optionales Addon; die fünf Endanalysen benötigen vollständig geprüfte Daten "
                "und entschiedene Prüfhinweise. " if mode else
                "Kurz-KI für alle auswertbaren Strategien; ausführliche Analyse für die besten 5. ")

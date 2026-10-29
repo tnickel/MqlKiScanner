@@ -111,9 +111,11 @@ def service_env(monkeypatch):
 
 
 @pytest.mark.parametrize("monate,trades,ok", [
-    (2.0, 50, True), (2.000001, 50, True), (1.999999, 50, False),
-    (2.1, 49, False), (2.1, 50.5, False), (float("nan"), 50, False),
-    (2.1, True, False), (None, 50, False), (2.1, float("inf"), False),
+    (2.0, 50, True), (2.000001, 50, True), (1.999999, 49, True),
+    (daten.MIN_MONATE, 25, True), (daten.MIN_MONATE, 24, False),
+    (0.5, 50, False), (None, 50, False), (2.1, 24.5, False),
+    (2.1, 50.5, False), (float("nan"), 50, False),
+    (2.1, True, False), (2.1, float("inf"), False),
 ])
 def test_mindestmaterial(monate, trades, ok):
     assert daten.pruefe_mindestmaterial(monate, trades)[0] is ok
@@ -128,20 +130,23 @@ def test_kriterien_keine_alten_3_monate_dd50_calmar3_oder_score_sperren():
     assert not daten.pruefe_kriterien(dict(facts, hard_excluded=True))[0]
 
 
-def test_effizienz_2_monate_explizit_default_bleibt_3(tmp_path):
+def test_effizienz_default_4_wochen_explizites_profil_bleibt_getrennt(tmp_path):
+    # Nutzer 29.10.2026: Default-Mindesthistorie 4 Wochen; ein explizit
+    # strengeres Profil (3 Monate) bleibt davon unberührt und umgekehrt.
     path = tmp_path / "two-months.csv"
     path.write_bytes(csv_bytes())
     normal = portfolio_statistik.effizienz_kennzahlen(str(path), 1000, 60)
     research = portfolio_statistik.effizienz_kennzahlen(str(path), 1000, 60,
-                                                       min_historie_monate=2)
-    assert normal["min_historie_monate"] == 3
-    assert normal["effizienz_status"] == "historie_zu_kurz"
-    assert normal["retdd_jahr"] is None
-    assert research["effizienz_status"] == "ok"
-    assert research["retdd_jahr"] == pytest.approx(research["cagr_jahr_pct"] / 60)
+                                                       min_historie_monate=3)
+    assert normal["min_historie_monate"] == pytest.approx(
+        portfolio_statistik.MIN_HISTORIE_MONATE)
+    assert normal["effizienz_status"] == "ok"
+    assert research["min_historie_monate"] == 3
+    assert research["effizienz_status"] == "historie_zu_kurz"
+    assert research["retdd_jahr"] is None
     assert research["dauer_monate"] < 3
     # A subsequent normal call cannot inherit the separate policy.
-    assert portfolio_statistik.effizienz_kennzahlen(str(path), 1000, 60)["retdd_jahr"] is None
+    assert portfolio_statistik.effizienz_kennzahlen(str(path), 1000, 60)["retdd_jahr"] is not None
 
 
 @pytest.mark.parametrize("minimum", [0, -1, None, True, float("nan"), float("inf")])
@@ -376,29 +381,32 @@ def test_falscher_eigentuemer_vor_quellenaktion_gesperrt(service_env):
     assert not providers and not client.calls
 
 
-def test_robo_keine_spekulative_volumen_waehrungsannahme(service_env):
+def test_robo_nimmt_standardpfad_mit_rating_zusatzbeleg(service_env):
+    # Nutzer-Freigabe 29.10.2026: Robo läuft durch Refresh/Metrics/Trades wie
+    # jede Quelle; die Ratingwerte bleiben als Zusatzbeleg erhalten.
     entry, client, providers, _, _ = service_env
-    qid = db.add_quelle("robo", "Unverified robo", "http://synthetic-robo:8198")
+    qid = db.add_quelle("robo", "Released robo", "http://synthetic-robo:8198")
     entry.update(quelle="robo", quelle_id=qid, quellen_uid=db.get_quelle(qid)["quellen_uid"])
+    client.answer["metrics"].update(
+        {"RatingCurrency": "USD", "ProfitUsd": 123.4, "YieldWindowPct": 5.0})
     with daten.AnalyseDaten({}) as service:
         result = service.berechne(entry)
-    assert not result["eligible"]
-    assert result["auswertung_typ"] == "quellenprofitabilitaet"
-    assert result["account_currency"] is None
-    assert result["gewinn_usd"] is None
-    assert result["equity_dd_pct"] is None
-    assert not result["data_complete"]
-    assert not providers and client.calls == [("metrics", 811, "mql5")]
+    assert ("refresh", 811, "mql5") in client.calls
+    assert ("trades", 811, "mql5") in client.calls
+    assert result["quellen_profitabilitaet"]["ProfitUsd"] == 123.4
+    assert result["account_currency"] == "USD"
+    assert result["data_complete"] is True
 
 
 def test_unzureichendes_mindestmaterial_startet_kein_terminal(service_env):
+    # 4-Wochen-Regel (29.10.2026): unter 28 Tagen kein Terminalstart.
     entry, client, providers, _, _ = service_env
-    client.raw = csv_bytes(days=60)
+    client.raw = csv_bytes(days=20)
     with daten.AnalyseDaten({}) as service:
         result = service.berechne(entry)
     assert not result["eligible"]
     assert result["data_complete"]
-    assert "unter 2 Monaten" in result["grund"]
+    assert "unter 4 Wochen" in result["grund"]
     assert result["forensik"]["forensics"]["martingale"]
     assert not providers
 

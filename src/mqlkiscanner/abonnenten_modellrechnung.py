@@ -26,6 +26,10 @@ from .symbols import alias_fuer_symbol, normalize_symbol
 
 VERSION = 1
 JAHR_SEKUNDEN = 365.25 * 86400
+# Nutzer-Freigabe 29.10.2026: Kursabdeckung >80 % genügt in den Abonnenten-
+# Messungen (statt der 95-%-Norm des Hauptscanners). Unter 95 % bleibt die
+# Messung ausdrücklich als Vorbehalt gekennzeichnet.
+MIN_ABDECKUNG_ABO = 0.80
 KAPITAL_METHODEN = {
     "csv_einzahlungen_vor_handelsbeginn": "Belegt: Einzahlungen vor Handelsbeginn",
     "native_initial_deposit_usd": "Belegt: ursprüngliche Einzahlung der Quelle",
@@ -211,7 +215,8 @@ def _equity(parsed, capital, broker, providers, lookup):
             # A wrapper deliberately exposes no terminal-switch/start methods.
             report = equity_rekonstruktion.rekonstruiere(
                 parsed, _NurLesen(provider), trading_capital, broker=broker,
-                fx_lookup=lookup, include_curve=True, compute_dd=False)
+                fx_lookup=lookup, include_curve=True, compute_dd=False,
+                min_abdeckung=MIN_ABDECKUNG_ABO)
             report = dict(report)
             _modell_dd(report, capital, prior_costs)
             report["cache_feed"] = getattr(provider, "feed", None)
@@ -377,6 +382,11 @@ def berechne_modell(entry, kapital, kurse=None):
                 result["retdd_jahr"] = result["cagr_jahr_pct"]/dd
             result["status"] = "berechnet"
             result["grund"] = "Modellszenario aus gesichertem Export und getrennt geprüftem H1-Feed; keine realen Kontokennzahlen."
+            if (_zahl(result.get("h1_abdeckung_pct")) is not None
+                    and result["h1_abdeckung_pct"] < equity_rekonstruktion.SCHRANKE_MIN_ABDECKUNG * 100):
+                result["h1_abdeckung_vorbehalt"] = True
+                result["grund"] += (f" Abdeckung {result['h1_abdeckung_pct']:.1f} % unter der 95-%-Norm"
+                                    f" (Nutzer-Freigabe >{MIN_ABDECKUNG_ABO:.0%} ab 29.10.2026).")
             if (dd == 0 or annual_reason or report.get("modell_insolvent")
                     or dd >= 100 or closing["dd_pct_max_rel_raw"] >= 100):
                 result["status"] = "eingeschraenkt"

@@ -121,6 +121,11 @@ def test_all_reviewed_nullable_widgets_declare_a_blank_placeholder():
 
 
 def test_admin_counts_only_own_bars_and_keeps_replacements_among_missing_own(monkeypatch):
+    # st.cache_data ist prozessglobal (ttl=300): Ein früherer AppTest darf
+    # den Kursbestand-Cache nicht über diesen Mock hinweg am Leben halten —
+    # der Decorator wird für diesen Lauf zur Identität.
+    import streamlit as _st
+    monkeypatch.setattr(_st, "cache_data", lambda *a, **k: (lambda f: f))
     db.init_db()
     rows = [{"Symbol": "BTCUSD", "Status": "Kurse vorhanden", "Im Bestand als": "",
              "Bars": 100, "Erster Kurs": "01.01.2026", "Letzter Kurs": "02.01.2026",
